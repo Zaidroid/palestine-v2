@@ -1,0 +1,1365 @@
+[
+ {
+  "username": "gbateaask",
+  "title": "اخبار جنين قباطية",
+  "participants": 3494,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "جنين",
+   "قباطية"
+  ],
+  "msgs_per_day": 750.0,
+  "last_post": "2025-07-17T00:19:32+00:00",
+  "days_since_post": 379.4
+ },
+ {
+  "username": "nabuls_news",
+  "title": "أخبار نابلس",
+  "participants": 187471,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار نابلس"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "نابلس"
+  ],
+  "msgs_per_day": 218.75,
+  "last_post": "2026-07-31T09:45:19+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "nabllus22",
+  "title": "مناقشات أخبار نابلس جبل النار",
+  "participants": 3915,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار نابلس"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "نابلس"
+  ],
+  "msgs_per_day": 93.93,
+  "last_post": "2026-07-31T09:51:24+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "qalqilianewss",
+  "title": "أخبار قلقيلية",
+  "participants": 14954,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ],
+  "msgs_per_day": 66.87,
+  "last_post": "2026-07-31T08:04:37+00:00",
+  "days_since_post": 0.1
+ },
+ {
+  "username": "jeninnews1",
+  "title": "Jenin News | أخبار جنين",
+  "participants": 241902,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "جنين",
+   "jenin"
+  ],
+  "msgs_per_day": 63.95,
+  "last_post": "2026-07-31T09:55:19+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "Aree3_jenin",
+  "title": "اخبار ذئاب الشمال_جنين✌️🇵🇸",
+  "participants": 85403,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "جنين",
+   "jenin"
+  ],
+  "msgs_per_day": 58.3,
+  "last_post": "2026-07-31T09:27:01+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "khalelnews",
+  "title": "شبكة أخبار الخليل",
+  "participants": 83892,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "الخليل"
+  ],
+  "msgs_per_day": 56.51,
+  "last_post": "2026-07-31T08:57:10+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "tulkrmeoon",
+  "title": "أخبار طولكرم - Tulkarm News",
+  "participants": 67183,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "طولكرم",
+   "tulkarm"
+  ],
+  "msgs_per_day": 45.68,
+  "last_post": "2026-07-31T09:37:56+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "tulkarmeoon",
+  "title": "مناقشات أخبار طولكرم \"💬\"",
+  "participants": 10925,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "طولكرم",
+   "tulkarm"
+  ],
+  "msgs_per_day": 45.68,
+  "last_post": "2026-07-31T09:37:59+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "ramallahnewss",
+  "title": "أخبارك رام الله",
+  "participants": 58672,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "رام الله",
+   "ramallah"
+  ],
+  "msgs_per_day": 45.49,
+  "last_post": "2026-07-31T09:55:01+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "JerichoNews",
+  "title": "أخبار أريحا",
+  "participants": 14611,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "أريحا",
+   "jericho"
+  ],
+  "msgs_per_day": 30.23,
+  "last_post": "2026-07-31T08:59:22+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "ar_eh_a",
+  "title": "شبكة أخبار أريحا و مخيماتها",
+  "participants": 3152,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "أريحا"
+  ],
+  "msgs_per_day": 28.61,
+  "last_post": "2026-07-31T09:53:38+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "bethlehemnewss",
+  "title": "🇵🇸 وكالة أخبار بيت لحم 🇵🇸",
+  "participants": 20356,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "بيت لحم",
+   "bethlehem"
+  ],
+  "msgs_per_day": 28.28,
+  "last_post": "2026-07-31T08:54:08+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "ahladr",
+  "title": "أخبار الخليل أول بأول 🇵🇸🖤",
+  "participants": 11739,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "الخليل"
+  ],
+  "msgs_per_day": 27.88,
+  "last_post": "2026-07-31T09:30:07+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "tulkarembaladna1",
+  "title": "طولكرم بلدنا - متابعة إخبارية 🇵🇸",
+  "participants": 7493,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "طولكرم"
+  ],
+  "msgs_per_day": 22.03,
+  "last_post": "2026-07-31T00:32:08+00:00",
+  "days_since_post": 0.4
+ },
+ {
+  "username": "Nablusnablus",
+  "title": "أخبار مدينة نابلس",
+  "participants": 19374,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار نابلس"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "نابلس",
+   "nablus"
+  ],
+  "msgs_per_day": 8.71,
+  "last_post": "2026-07-31T10:04:51+00:00",
+  "days_since_post": 0.0
+ },
+ {
+  "username": "SalfeetNews",
+  "title": "أخبار سلفيت- الصحفية عُلا موقدي",
+  "participants": 6379,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار سلفيت"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "سلفيت"
+  ],
+  "msgs_per_day": 7.63,
+  "last_post": "2026-07-31T05:30:22+00:00",
+  "days_since_post": 0.2
+ },
+ {
+  "username": "momenq_20",
+  "title": "اخبار الخليل وضواحيها 🇵🇸✌🏻",
+  "participants": 3766,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "الخليل"
+  ],
+  "msgs_per_day": 5.36,
+  "last_post": "2026-07-31T07:59:32+00:00",
+  "days_since_post": 0.1
+ },
+ {
+  "username": "Jenincamppsj",
+  "title": "اخبار مخيم جنين",
+  "participants": 3437,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "جنين",
+   "jenin"
+  ],
+  "msgs_per_day": 4.93,
+  "last_post": "2026-07-31T00:26:06+00:00",
+  "days_since_post": 0.4
+ },
+ {
+  "username": "a5barsalfeet",
+  "title": "🇵🇸 أخبار محافظة سلفيت 🇵🇸",
+  "participants": 5869,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار سلفيت"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "سلفيت"
+  ],
+  "msgs_per_day": 4.49,
+  "last_post": "2026-07-30T23:07:30+00:00",
+  "days_since_post": 0.5
+ },
+ {
+  "username": "jessier_2023",
+  "title": "اخبار الجسر واستراحة اريحا",
+  "participants": 9585,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "اريحا"
+  ],
+  "msgs_per_day": 2.06,
+  "last_post": "2026-07-31T08:02:02+00:00",
+  "days_since_post": 0.1
+ },
+ {
+  "username": "news_nablus1",
+  "title": "أخبار نابلس - الوثائقية",
+  "participants": 4923,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار نابلس"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "نابلس",
+   "nablus"
+  ],
+  "msgs_per_day": 1.91,
+  "last_post": "2026-07-31T04:48:02+00:00",
+  "days_since_post": 0.2
+ },
+ {
+  "username": "palmoh",
+  "title": "وزارة الصحة الفلسطينية",
+  "participants": 43827,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "وزارة الصحة"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "فلسطين"
+  ],
+  "msgs_per_day": 0.4,
+  "last_post": "2026-07-24T09:10:15+00:00",
+  "days_since_post": 7.0
+ },
+ {
+  "username": "ramallah101F",
+  "title": "🇵🇸✌️اخبار رام الله✌️🇵🇸",
+  "participants": 3075,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "رام الله",
+   "ramallah"
+  ],
+  "msgs_per_day": 0.14,
+  "last_post": "2025-08-26T08:58:57+00:00",
+  "days_since_post": 339.0
+ },
+ {
+  "username": "JenynSmod",
+  "title": "اخبار 👈نابلس&جنين🔥طولكرم🫶🏻",
+  "participants": 5149,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين",
+   "اخبار طولكرم",
+   "اخبار نابلس"
+  ],
+  "relevance": 6,
+  "relevance_reasons": [
+   "نابلس",
+   "جنين",
+   "طولكرم"
+  ],
+  "msgs_per_day": 0.09,
+  "last_post": "2026-04-04T13:32:55+00:00",
+  "days_since_post": 117.9
+ },
+ {
+  "username": "YY5YG",
+  "title": "شبكة أخبار الخليل",
+  "participants": 12896,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "الخليل"
+  ],
+  "msgs_per_day": 0.02,
+  "last_post": "2026-04-04T06:01:06+00:00",
+  "days_since_post": 118.2
+ },
+ {
+  "username": "glsgfavvdgldasmga",
+  "title": "فلسطين الضفة نابلس جنين طولكرم طوباس رام الله الخليل احرار بيت لحم كتيبة شباب الضفه قروب مخيم دردشه اريحا مناقشات اخبار القدس",
+  "participants": 1003,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم",
+   "اخبار طوباس"
+  ],
+  "relevance": 24,
+  "relevance_reasons": [
+   "فلسطين",
+   "الضفة",
+   "الضفه",
+   "القدس",
+   "نابلس",
+   "الخليل",
+   "جنين",
+   "رام الله",
+   "طولكرم",
+   "بيت لحم",
+   "اريحا",
+   "طوباس"
+  ]
+ },
+ {
+  "username": "tubasnew",
+  "title": "أخبار طوباس والأغوار",
+  "participants": 1040,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طوباس"
+  ],
+  "relevance": 6,
+  "relevance_reasons": [
+   "طوباس",
+   "الأغوار",
+   "tubas"
+  ]
+ },
+ {
+  "username": "tulkarmi1",
+  "title": "إجتماعيات و أخبار كرميون \" طولكرم \"",
+  "participants": 2393,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "طولكرم",
+   "tulkarm"
+  ]
+ },
+ {
+  "username": "jeninnew2",
+  "title": "أخبار جنين \"الاحتياطية\" 🔥✊",
+  "participants": 1759,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "جنين",
+   "jenin"
+  ]
+ },
+ {
+  "username": "JerichoNewss",
+  "title": "مناقشات أخبار أريحا",
+  "participants": 1704,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "أريحا",
+   "jericho"
+  ]
+ },
+ {
+  "username": "News_of_Ramallah_villagess",
+  "title": "اخبارك قرى رام الله",
+  "participants": 1425,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "رام الله",
+   "ramallah"
+  ]
+ },
+ {
+  "username": "nabdnablus1",
+  "title": "إجتماعيات و أخبار نابلس \" نبض نابلس \"",
+  "participants": 1366,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار نابلس"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "نابلس",
+   "nablus"
+  ]
+ },
+ {
+  "username": "hebronnews4",
+  "title": "أخبار الخليل \"الاحتياطية\"",
+  "participants": 955,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "الخليل",
+   "hebron"
+  ]
+ },
+ {
+  "username": "gedcogaza",
+  "title": "كهرباء غزة⚡️",
+  "participants": 531,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "services"
+  ],
+  "matched": [
+   "كهرباء"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "غزة",
+   "gaza"
+  ]
+ },
+ {
+  "username": "QalqilyaMunicipality",
+  "title": "بلدية قلقيلية - مصدر مُطلع",
+  "participants": 499,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "services"
+  ],
+  "matched": [
+   "بلدية"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "قلقيلية",
+   "qalqilya"
+  ]
+ },
+ {
+  "username": "tubas123",
+  "title": "أخبار طوباس والمنطقة",
+  "participants": 465,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طوباس"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "طوباس",
+   "tubas"
+  ]
+ },
+ {
+  "username": "jerichomix2021",
+  "title": "اخبار المدينة اريحا",
+  "participants": 457,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "اريحا",
+   "jericho"
+  ]
+ },
+ {
+  "username": "GasstationsinHebronGovernorate",
+  "title": "محطات الوقود في فلسطين",
+  "participants": 304,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "fuel"
+  ],
+  "matched": [
+   "محطات الوقود"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "فلسطين",
+   "hebron"
+  ]
+ },
+ {
+  "username": "hebronq20",
+  "title": "اخبار الخليل وضواحيها 2️⃣4️⃣",
+  "participants": 255,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "الخليل",
+   "hebron"
+  ]
+ },
+ {
+  "username": "aassffffgjhdn",
+  "title": "اخبار رام الله فلسطين",
+  "participants": 166,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "فلسطين",
+   "رام الله"
+  ]
+ },
+ {
+  "username": "TUBAS45",
+  "title": "اخبار طوباس🔥💚",
+  "participants": 91,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طوباس"
+  ],
+  "relevance": 4,
+  "relevance_reasons": [
+   "طوباس",
+   "tubas"
+  ]
+ },
+ {
+  "username": "Palrcs",
+  "title": "🚨🚑 الهلال الأحمر الفلسطيني-الصفحة الرسمية",
+  "participants": 2561,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "الهلال الاحمر"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "فلسطين"
+  ]
+ },
+ {
+  "username": "Ahssisn",
+  "title": "اخبار مخيمات طولكرم 🖤🦅",
+  "participants": 2188,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "طولكرم"
+  ]
+ },
+ {
+  "username": "JBLKhaleel",
+  "title": "أخبار جبل الخليل",
+  "participants": 2182,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار الخليل"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "الخليل"
+  ]
+ },
+ {
+  "username": "Aueiwo",
+  "title": "مناقشات اخبار مخيمات طولكرم🖤🦅",
+  "participants": 2058,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طولكرم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "طولكرم"
+  ]
+ },
+ {
+  "username": "blnewsteam",
+  "title": "أخبار بيت لحم والمحافظة",
+  "participants": 1799,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "بيت لحم"
+  ]
+ },
+ {
+  "username": "maksnsb",
+  "title": "اخبار بيت لحم الحدث",
+  "participants": 1167,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "بيت لحم"
+  ]
+ },
+ {
+  "username": "Ser_Jinan",
+  "title": "اخبار صير - جنين 🖤.",
+  "participants": 1023,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار جنين"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "جنين"
+  ]
+ },
+ {
+  "username": "euufhiifhhii",
+  "title": "الطيرة اخباري( رام الله)🇵🇸🔥",
+  "participants": 883,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "رام الله"
+  ]
+ },
+ {
+  "username": "nursing20002000",
+  "title": "دورات اسعافات اولية اون لاين",
+  "participants": 766,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "اسعاف"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "دورا"
+  ]
+ },
+ {
+  "username": "hospitaleeng",
+  "title": "إعلام مستشفى غزة الأوروبي",
+  "participants": 610,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "مستشفى"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "غزة"
+  ]
+ },
+ {
+  "username": "ALJESERNEWSs",
+  "title": "اخبار جسر الملك حسين واستراحة اريحا المعابر معبر الكرامه",
+  "participants": 458,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار اريحا"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "اريحا"
+  ]
+ },
+ {
+  "username": "azhnigiffjcc",
+  "title": "📍اخبار المغير رام الله 📍",
+  "participants": 411,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "رام الله"
+  ]
+ },
+ {
+  "username": "llhag",
+  "title": "قلقيلية الآن✌️🇵🇸 و أخبار منوعة",
+  "participants": 348,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ]
+ },
+ {
+  "username": "AhmadLberh",
+  "title": "اخبار رام الله و البيرة",
+  "participants": 339,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار رام الله"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "رام الله"
+  ]
+ },
+ {
+  "username": "attoozz00112255",
+  "title": "اخبار المحافظة بيت لحم",
+  "participants": 334,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "بيت لحم"
+  ]
+ },
+ {
+  "username": "JDECONET",
+  "title": "شركة كهرباء محافظة القدس JDECO",
+  "participants": 334,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "services"
+  ],
+  "matched": [
+   "كهرباء"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "القدس"
+  ]
+ },
+ {
+  "username": "Artas_Village",
+  "title": "اخبار عامة *ارطاس ، بيت لحم*",
+  "participants": 290,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "بيت لحم"
+  ]
+ },
+ {
+  "username": "chatgroupbl",
+  "title": "أخبار بيت لحم والمحافظة 24",
+  "participants": 256,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار بيت لحم"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "بيت لحم"
+  ]
+ },
+ {
+  "username": "prcs11",
+  "title": "PRCS..الهلال الاحمر الفلسطيني",
+  "participants": 200,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "الهلال الاحمر"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "فلسطين"
+  ]
+ },
+ {
+  "username": "safha_qalqilia_alrasmiA",
+  "title": "اخبار قلقيلية 🖤",
+  "participants": 199,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ]
+ },
+ {
+  "username": "akbarsalfeet",
+  "title": "أخبار سلفيت أول بأول",
+  "participants": 177,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار سلفيت"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "سلفيت"
+  ]
+ },
+ {
+  "username": "First_aid_Qalqilia",
+  "title": "تعلم اسعاف اولي قلقيليه",
+  "participants": 166,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "اسعاف"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيليه"
+  ]
+ },
+ {
+  "username": "alquds21alquds",
+  "title": "محطة كهرباء القدس",
+  "participants": 129,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "services"
+  ],
+  "matched": [
+   "كهرباء"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "القدس"
+  ]
+ },
+ {
+  "username": "salfeet12345",
+  "title": "اخبار الطرق (سلفيت)salfeet",
+  "participants": 86,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار سلفيت"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "سلفيت"
+  ]
+ },
+ {
+  "username": "n0d0_0",
+  "title": "دورات إسعافات أولية |المدربة ندى فلاته",
+  "participants": 74,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "medical"
+  ],
+  "matched": [
+   "اسعاف"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "دورا"
+  ]
+ },
+ {
+  "username": "ameer_oodeh",
+  "title": "اخبار قلقيلية العاجلة",
+  "participants": 68,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ]
+ },
+ {
+  "username": "gchndfjhjj",
+  "title": "اخبار قلقيلية عاجل",
+  "participants": 13,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ]
+ },
+ {
+  "username": "salfeetal",
+  "title": "اخبار سلفيت البلد🖤",
+  "participants": 9,
+  "broadcast": false,
+  "megagroup": true,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار سلفيت"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "سلفيت"
+  ]
+ },
+ {
+  "username": "tyevigf",
+  "title": "اخبار طوباس",
+  "participants": 7,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طوباس"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "طوباس"
+  ]
+ },
+ {
+  "username": "hbkdbddm",
+  "title": "اخبار طوباس",
+  "participants": 4,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار طوباس"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "طوباس"
+  ]
+ },
+ {
+  "username": "akhbar2042",
+  "title": "اخبار قلقيلية وقراها",
+  "participants": 2,
+  "broadcast": true,
+  "megagroup": false,
+  "categories": [
+   "local_news"
+  ],
+  "matched": [
+   "اخبار قلقيلية"
+  ],
+  "relevance": 2,
+  "relevance_reasons": [
+   "قلقيلية"
+  ]
+ }
+]

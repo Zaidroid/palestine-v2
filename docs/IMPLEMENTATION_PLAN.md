@@ -327,7 +327,7 @@ claims/observations/states → measured contribution.
 - [ ] **P4.4** IODA + Cloudflare Radar outage APIs → `internet` state per
       region/ASN; corroborate with the existing OONI databank category.
 - [ ] **P4.5** HDX HAPI + ReliefWeb API → observations + Loop B corpus.
-- [ ] **P4.6** Telegram source-discovery loop productionized: forwarded-from
+- [x] **P4.6** Telegram source-discovery loop productionized: forwarded-from
       graph + candidate scoring by corroboration contribution → weekly proposal
       list **[ZAID]** → join approved channels.
 - [ ] **P4.7** Signal classes: movement (queue-time estimation from update
