@@ -1,0 +1,234 @@
+# P0.11 — declarative source registry.
+#
+# Every source MUST declare license + attribution + expect BEFORE it can run
+# (framework.BaseFetcher refuses to construct otherwise). `commercial_use: false`
+# sources are loop-only: they may score our accuracy, never appear in a response.
+#
+# status: active | planned  — planned entries are contracts written ahead of code.
+
+sources:
+
+  # ── Live tier ─────────────────────────────────────────────────────────────
+  - key: telegram_security
+    name: Telegram security channels
+    kind: telegram
+    status: planned            # Phase 1, gated on the session decision (TRAP-1)
+    license: {spdx: NONE, commercial_use: false}
+    attribution: "Telegram channel authors"
+    authority_rank: 5
+    cadence: continuous
+    expect: {min_records: 1}
+    note: >
+      Fair-use ingestion of public channels. Raw text is NOT redistributable;
+      derived events are. Treated as non-commercial until reviewed.
+
+  - key: telegram_checkpoints
+    name: Telegram roads/checkpoint channels
+    kind: telegram
+    status: planned
+    license: {spdx: NONE, commercial_use: false}
+    attribution: "Telegram channel authors"
+    authority_rank: 5
+    cadence: continuous
+    expect: {min_records: 1}
+
+  - key: telegram_fuel
+    name: Telegram fuel/commerce channels
+    kind: telegram
+    status: planned            # Phase 1 primary signal
+    license: {spdx: NONE, commercial_use: false}
+    attribution: "Telegram channel authors"
+    authority_rank: 5
+    cadence: continuous
+    expect: {min_records: 1}
+
+  - key: gdelt_geo
+    name: GDELT 2.0 GEO API
+    kind: api
+    status: planned            # Phase 4
+    license: {spdx: CC-BY-4.0, commercial_use: true}
+    attribution: "The GDELT Project"
+    authority_rank: 2
+    cadence: 15min
+    expect: {min_records: 1, max_records: 50000}
+
+  - key: nasa_firms
+    name: NASA FIRMS VIIRS active fire
+    kind: satellite
+    status: planned
+    license: {spdx: NASA-Open, commercial_use: true}
+    attribution: "NASA FIRMS / LANCE"
+    authority_rank: 3
+    cadence: 12h
+    allow_empty: true          # legitimately zero thermal anomalies in a window
+    expect: {max_records: 20000}
+
+  - key: nasa_black_marble
+    name: NASA Black Marble VNP46 nighttime lights
+    kind: satellite
+    status: planned
+    license: {spdx: NASA-Open, commercial_use: true}
+    attribution: "NASA Black Marble / VIIRS Land Team"
+    authority_rank: 3
+    cadence: daily
+    expect: {min_records: 1}
+
+  - key: ioda
+    name: IODA internet outage detection
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-4.0, commercial_use: true}
+    attribution: "IODA, Georgia Tech Internet Intelligence Lab"
+    authority_rank: 3
+    cadence: hourly
+    allow_empty: true          # no outage is the good case
+    expect: {max_records: 10000}
+
+  - key: cloudflare_radar
+    name: Cloudflare Radar outages
+    kind: api
+    status: planned
+    license: {spdx: PROPRIETARY-FREE-API, commercial_use: true}
+    attribution: "Cloudflare Radar"
+    authority_rank: 3
+    cadence: hourly
+    allow_empty: true
+    expect: {max_records: 5000}
+
+  # ── Reference / gazetteer ─────────────────────────────────────────────────
+  - key: ocha_admin
+    name: OCHA oPt administrative boundaries
+    kind: file
+    status: active             # P0.14
+    license: {spdx: CC-BY-3.0-IGO, commercial_use: true}
+    attribution: "UN OCHA oPt"
+    authority_rank: 4
+    cadence: yearly
+    expect: {min_records: 10, max_records: 5000}
+
+  - key: osm_places
+    name: OpenStreetMap places (Overpass)
+    kind: api
+    status: active             # P0.15
+    license: {spdx: ODbL-1.0, commercial_use: true}
+    attribution: "© OpenStreetMap contributors"
+    authority_rank: 2
+    cadence: weekly
+    expect: {min_records: 500, max_records: 100000}
+
+  - key: osm_fuel_stations
+    name: OpenStreetMap fuel stations (Overpass)
+    kind: api
+    status: active             # P1.3
+    license: {spdx: ODbL-1.0, commercial_use: true}
+    attribution: "© OpenStreetMap contributors"
+    authority_rank: 2
+    cadence: weekly
+    expect: {min_records: 50, max_records: 5000}
+
+  - key: v1_checkpoints
+    name: v1 checkpoint registry (migration)
+    kind: file
+    status: active             # P0.16
+    license: {spdx: NONE, commercial_use: true}
+    attribution: "Palestine Data Backend v1"
+    authority_rank: 3
+    cadence: once
+    expect: {min_records: 100, max_records: 2000}
+
+  # ── Databank (Phase 2) ────────────────────────────────────────────────────
+  - key: hdx_hapi
+    name: HDX Humanitarian API
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-IGO-3.0, commercial_use: true}
+    attribution: "UN OCHA Centre for Humanitarian Data"
+    authority_rank: 4
+    cadence: daily
+    expect: {min_records: 1}
+
+  - key: reliefweb
+    name: ReliefWeb API
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-3.0-IGO, commercial_use: true}
+    attribution: "ReliefWeb / UN OCHA"
+    authority_rank: 4
+    cadence: hourly
+    expect: {min_records: 1}
+
+  - key: un_fts
+    name: UN OCHA Financial Tracking Service
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-IGO-3.0, commercial_use: true}
+    attribution: "UN OCHA FTS"
+    authority_rank: 4
+    cadence: daily
+    expect: {min_records: 100}
+
+  - key: worldbank
+    name: World Bank Open Data
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-4.0, commercial_use: true}
+    attribution: "World Bank Open Data"
+    authority_rank: 4
+    cadence: weekly
+    expect: {min_records: 100}
+
+  - key: wfp_food_prices
+    name: WFP food prices (HDX)
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-IGO-3.0, commercial_use: true}
+    attribution: "World Food Programme"
+    authority_rank: 4
+    cadence: monthly
+    expect: {min_records: 1000}
+
+  - key: tech4palestine
+    name: Tech For Palestine datasets
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-4.0, commercial_use: true}
+    attribution: "Tech For Palestine"
+    authority_rank: 3
+    cadence: daily
+    expect: {min_records: 100}
+
+  # ── Loop B ground truth — NON-COMMERCIAL, never served ────────────────────
+  - key: acled
+    name: ACLED conflict events
+    kind: api
+    status: planned
+    license: {spdx: ACLED-TOU, commercial_use: false}
+    attribution: "Armed Conflict Location & Event Data Project (ACLED)"
+    authority_rank: 4
+    cadence: weekly
+    expect: {min_records: 10}
+    note: >
+      LOOP B ONLY. Non-commercial terms. Used to score our own accuracy;
+      must never appear in a served response. Enforced in SQL via
+      source.commercial_use, not by convention.
+
+  - key: btselem
+    name: B'Tselem fatality database
+    kind: file
+    status: planned
+    license: {spdx: CC-BY-NC-4.0, commercial_use: false}
+    attribution: "B'Tselem"
+    authority_rank: 4
+    cadence: monthly
+    expect: {min_records: 100}
+
+  - key: ocha_sitrep
+    name: OCHA oPt Humanitarian Situation Updates
+    kind: api
+    status: planned
+    license: {spdx: CC-BY-3.0-IGO, commercial_use: true}
+    attribution: "UN OCHA oPt"
+    authority_rank: 5
+    cadence: 2x_weekly
+    expect: {min_records: 1}
+    note: No clean API — needs an HTML parser. Prime Loop B ground truth.

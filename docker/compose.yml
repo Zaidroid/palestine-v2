@@ -1,0 +1,36 @@
+# Palestine v2 — database stack (P0.5)
+# Isolated from v1: own container name, own port (5433), own volume.
+# Nothing here touches /opt/stacks/palestine.
+
+name: palestine-v2
+
+services:
+  db:
+    image: timescale/timescaledb-ha:pg16
+    container_name: palestine-v2-db
+    restart: unless-stopped
+    # Loopback only — never expose the DB beyond the host.
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-palestine_v2}
+      POSTGRES_USER: ${PGUSER:-palestine}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?PGPASSWORD must be set in .env}
+      # Keep the HA image in single-node mode (no patroni cluster bootstrap).
+      PATRONI_SCOPE: palestine-v2
+    volumes:
+      - ../data/pg:/home/postgres/pgdata
+    shm_size: 256mb
+    # P0.6 budget. Default 1.5G until the P0.4 reclamation audit is approved;
+    # raise to 2G in .env (PG_MEM_LIMIT) once RAM is freed.
+    mem_limit: ${PG_MEM_LIMIT:-1536m}
+    mem_reservation: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-palestine} -d ${PGDATABASE:-palestine_v2}"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

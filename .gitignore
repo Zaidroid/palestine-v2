@@ -1,0 +1,8 @@
+.env
+data/pg/
+data/bronze/
+ops/audit/stats.ndjson
+ops/audit/pull.log
+__pycache__/
+*.pyc
+.venv/
