@@ -31,7 +31,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from cascade.palhub_fuel import parse_spool
 from resolve.arabic import is_generic_alias, variants
 from resolve.db import connect
+from resolve.belief import refresh as belief_refresh
 from resolve.geo import resolve_place
+
+# The kinds this loader owns, named so the belief refresh can be scoped to them.
+FUEL_KINDS = ("fuel_diesel", "fuel_gasoline", "cooking_gas")
 
 SPOOL_DIR = Path("/opt/stacks/palestine/services/westbank-alerts/data/tee")
 SOURCE_KEY = "telegram_fuel"
@@ -127,9 +131,24 @@ def load(spool_files=None) -> dict:
         cur.execute("SELECT COUNT(*) FROM place WHERE kind='station'")
         before = cur.fetchone()[0]
 
+        # The spool is append-only and this reads all of it every run, so
+        # without a cursor every sweep is re-inserted on every 5-minute tick.
+        # It was: 774,374 fuel rows for 11,765 real observations, 98.48% exact
+        # duplicates, one observation stored 490 times. See migration 023.
+        cur.execute("SELECT external_id FROM ingest_seen WHERE source_id=%s",
+                    (source_id,))
+        seen: set[str] = {r[0] for r in cur.fetchall()}
+        stats["skipped_seen"] = 0
+
         resolved: dict[tuple, tuple] = {}
         now_utc = datetime.now(timezone.utc)
         for sw in sweeps:
+            # A sweep with no msg_id cannot be deduped, so it is still
+            # processed — under-collecting is worse than a rare repeat.
+            msg_id = getattr(sw, "msg_id", None)
+            if msg_id is not None and str(msg_id) in seen:
+                stats["skipped_seen"] += 1
+                continue
             # observed_at comes from the TELEGRAM message date, which is UTC and
             # authoritative. The "آخر تحديث" stamp inside the message is
             # channel-LOCAL (UTC+3) with no offset; treating it as UTC put every
@@ -175,25 +194,46 @@ def load(spool_files=None) -> dict:
                      json.dumps({"region": rd.region, "locality": rd.locality,
                                  "station_raw": rd.station_raw,
                                  "geo_precision": precision, "geo_basis": how,
-                                 "msg_id": getattr(sw, "msg_id", None),
+                                 "msg_id": msg_id,
                                  "palhub_stamp_local": sw.updated_raw,
                                  "future_skew_clamped_s": future_skew_s or None})))
                 stats["observations"] += 1
 
-        # Rebuild state_current from the newest observation per (place, kind).
-        cur.execute("""
-            INSERT INTO state_current
-                (place_id,state_kind,value,observed_at,source_id,base_confidence,
-                 independent_sources,contradicted_by,updated_at)
-            SELECT DISTINCT ON (place_id, state_kind)
-                   place_id, state_kind, value, observed_at, source_id, confidence, 1, 0, now()
-            FROM state_observation
-            ORDER BY place_id, state_kind, observed_at DESC
-            ON CONFLICT (place_id, state_kind) DO UPDATE SET
-                value=EXCLUDED.value, observed_at=EXCLUDED.observed_at,
-                source_id=EXCLUDED.source_id, base_confidence=EXCLUDED.base_confidence,
-                updated_at=now()
-            WHERE EXCLUDED.observed_at >= state_current.observed_at""")
+            # Marked only after every reading in the sweep is written, and
+            # committed in the same transaction — a crash mid-sweep must leave
+            # it unmarked so the next run finishes it rather than skipping it.
+            if msg_id is not None:
+                cur.execute("""INSERT INTO ingest_seen (source_id, external_id)
+                               VALUES (%s,%s) ON CONFLICT DO NOTHING""",
+                            (source_id, str(msg_id)))
+                seen.add(str(msg_id))
+
+        # Belief for fuel is resolve/belief.py — the same model that serves
+        # checkpoints, rather than a second one living here.
+        #
+        # SCOPED TO FUEL, as it always was: without the scope this would
+        # recompute EVERY kind and a fuel ingest would overwrite checkpoint
+        # belief. The two feeds share a table and must not write outside their
+        # own rows.
+        #
+        # What used to be here was `SELECT DISTINCT ON (place_id, state_kind)`
+        # with `independent_sources=1, contradicted_by=0` hardcoded and the
+        # PARSE confidence used as the belief confidence — a flat 0.95 on every
+        # fuel row in the database, asserted for a single unverified reading
+        # while an identical checkpoint reading said 0.85 and meant it.
+        #
+        # It also had NO modality filter, which stopped being untidy and became
+        # dangerous the moment crowd reporting arrived: one crowd report —
+        # including one the engine had already refused and marked
+        # `rate_limited` — would have overwritten belief at full confidence,
+        # past corroboration, past earned trust and past the P2.4 gate, on the
+        # vertical where crowd reports were already turning up.
+        #
+        # Fuel is still one independence unit, so its confidence becomes 0.85
+        # rather than 0.95. That is a smaller number meaning more: 0.85 is
+        # measured, 0.95 was a parser's confidence in its own regex wearing a
+        # belief's clothing.
+        belief_refresh(FUEL_KINDS, conn=conn)
 
         cur.execute("SELECT COUNT(*) FROM place WHERE kind='station'")
         stats["stations_created"] = cur.fetchone()[0] - before
