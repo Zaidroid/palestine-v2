@@ -32,6 +32,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Silent longer than this and a channel is dead for a real-time feed, whatever
+# its historical posting rate was.
+STALE_AFTER_DAYS = 14
+
 OUT = ROOT / "ops" / "channel-candidates.md"
 RAW = ROOT / "ops" / "channel-candidates.json"
 
@@ -53,6 +57,35 @@ QUERIES: dict[str, list[str]] = {
     ],
     "medical": [
         "الهلال الاحمر", "اسعاف", "مستشفى", "وزارة الصحة", "طوارئ",
+    ],
+    # ── added for tier-1 coverage gaps ───────────────────────────────────────
+    # The live tracker currently answers fuel, checkpoints and incidents. These
+    # target the kinds of question a family actually asks that nothing yet
+    # covers.
+    "crossings": [
+        # Travel abroad runs through one bridge; when it closes or backs up,
+        # that is the single highest-consequence movement fact for a family,
+        # and no channel now polled reports it.
+        "جسر الملك حسين", "معبر الكرامة", "الكرامة", "معبر اللنبي",
+        "حالة الجسر", "السفر عبر الجسر", "معبر رفح",
+    ],
+    "utilities": [
+        "انقطاع الكهرباء", "شركة كهرباء القدس", "كهرباء الشمال",
+        "مصلحة مياه", "انقطاع المياه", "الاتصالات الفلسطينية", "جوال",
+    ],
+    "displacement": [
+        "هدم المنازل", "اخطارات هدم", "نزوح", "اخلاء", "مسافر يطا",
+        "الاغوار الشمالية", "التطهير العرقي",
+    ],
+    "markets": [
+        "اسعار", "اسعار الخضار", "سوق", "غلاء الاسعار", "المستهلك",
+    ],
+    "education": [
+        "وزارة التربية والتعليم", "تعليق الدوام", "الدوام المدرسي",
+        "جامعة النجاح", "جامعة بيرزيت",
+    ],
+    "weather": [
+        "طقس فلسطين", "الارصاد الجوية", "حالة الطقس", "منخفض جوي",
     ],
 }
 
@@ -83,15 +116,26 @@ NON_PS_MARKERS = [
 
 
 def v1_channels() -> set[str]:
+    """Everything ALREADY polled, by either account.
+
+    v1's list and agent2's own list both count. Re-surfacing a channel one of
+    them already reads wastes the review and, if added, would double the load on
+    the same content for no extra signal — the two accounts exist to cover
+    different ground, not the same ground twice.
+    """
     out: set[str] = set()
-    if not V1_ENV.exists():
-        return out
-    for line in V1_ENV.read_text().splitlines():
-        for key in ("TELEGRAM_CHANNELS=", "CHECKPOINT_CHANNELS=", "FUEL_CHANNELS=",
-                    "GAZA_BULLETIN_CHANNELS="):
-            if line.startswith(key):
-                out |= {c.strip().lstrip("@").lower()
-                        for c in line.split("=", 1)[1].split(",") if c.strip()}
+    for path, keys in (
+        (V1_ENV, ("TELEGRAM_CHANNELS=", "CHECKPOINT_CHANNELS=", "FUEL_CHANNELS=",
+                  "GAZA_BULLETIN_CHANNELS=")),
+        (ROOT / ".env", ("V2_TELEGRAM_CHANNELS=",)),
+    ):
+        if not path.exists():
+            continue
+        for line in path.read_text().splitlines():
+            for key in keys:
+                if line.startswith(key):
+                    out |= {c.strip().lstrip("@").lower()
+                            for c in line.split("=", 1)[1].split(",") if c.strip()}
     return out
 
 
@@ -178,11 +222,19 @@ async def discover(categories: list[str], per_query: int = 25) -> dict:
 
 
 def write_report(found: dict) -> None:
-    # Rank live channels first: rate is what a real-time feed needs, and
-    # subscriber count is a vanity metric for this purpose.
-    all_rows = sorted(found.values(),
-                      key=lambda r: (-(r.get("msgs_per_day") or 0), -r["relevance"],
-                                     -r["participants"]))
+    # RECENCY GATES RATE. Ranking on rate alone is not enough and produced its
+    # own version of the @JDECONET mistake: @alrasedaljawe scored 14.1 msgs/day
+    # and sorted top, but its newest post was 17 months old — the rate was
+    # computed across the span of messages it made back when it was alive.
+    # @alquds21alquds likewise, last post 2021. A channel silent for a
+    # fortnight is dead for a real-time feed whatever it used to do, so it
+    # sorts below every live one regardless of rate.
+    def _rank(r):
+        ago = r.get("days_since_post")
+        stale = ago is None or ago > STALE_AFTER_DAYS
+        return (stale, -(r.get("msgs_per_day") or 0), -r["relevance"], -r["participants"])
+
+    all_rows = sorted(found.values(), key=_rank)
     rows = [r for r in all_rows if r["relevance"] > 0]
     rejected = [r for r in all_rows if r["relevance"] <= 0]
     RAW.write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")

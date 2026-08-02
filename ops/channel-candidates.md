@@ -1,6 +1,6 @@
 # Channel candidates — discovered 2026-07-31
 
-Searched 96 results; **73 are Palestine-relevant**, 0 filtered out as other-country or off-topic. Excludes the 23 channels v1 already polls.
+Searched 132 results; **22 are Palestine-relevant**, 79 filtered out as other-country or off-topic. Excludes the 31 channels v1 already polls.
 **Nothing has been joined or added.**
 
 > Telegram search is regional: "محروقات" returns Syrian and Iraqi fuel
@@ -14,71 +14,73 @@ freshly-registered account is the most ban-prone thing on Telegram.
 
 | # | channel | msg/day | last post | subs | type | category | title |
 |--:|:--|--:|:--|--:|:--|:--|:--|
-| 1 | `gbateaask` | **750** | 379.4d ago | 3,494 | broadcast | local_news | اخبار جنين قباطية |
-| 2 | `nabuls_news` | **218.75** | 0d ago | 187,471 | broadcast | local_news | أخبار نابلس |
-| 3 | `nabllus22` | **93.93** | 0d ago | 3,915 | group | local_news | مناقشات أخبار نابلس جبل النار |
-| 4 | `qalqilianewss` | **66.87** | 0.1d ago | 14,954 | broadcast | local_news | أخبار قلقيلية |
-| 5 | `jeninnews1` | **63.95** | 0d ago | 241,902 | broadcast | local_news | Jenin News / أخبار جنين |
-| 6 | `Aree3_jenin` | **58.3** | 0d ago | 85,403 | broadcast | local_news | اخبار ذئاب الشمال_جنين✌️🇵🇸 |
-| 7 | `khalelnews` | **56.51** | 0d ago | 83,892 | broadcast | local_news | شبكة أخبار الخليل |
-| 8 | `tulkrmeoon` | **45.68** | 0d ago | 67,183 | broadcast | local_news | أخبار طولكرم - Tulkarm News |
-| 9 | `tulkarmeoon` | **45.68** | 0d ago | 10,925 | group | local_news | مناقشات أخبار طولكرم "💬" |
-| 10 | `ramallahnewss` | **45.49** | 0d ago | 58,672 | broadcast | local_news | أخبارك رام الله |
-| 11 | `JerichoNews` | **30.23** | 0d ago | 14,611 | broadcast | local_news | أخبار أريحا |
-| 12 | `ar_eh_a` | **28.61** | 0d ago | 3,152 | group | local_news | شبكة أخبار أريحا و مخيماتها |
-| 13 | `bethlehemnewss` | **28.28** | 0d ago | 20,356 | broadcast | local_news | 🇵🇸 وكالة أخبار بيت لحم 🇵🇸 |
-| 14 | `ahladr` | **27.88** | 0d ago | 11,739 | group | local_news | أخبار الخليل أول بأول 🇵🇸🖤 |
-| 15 | `tulkarembaladna1` | **22.03** | 0.4d ago | 7,493 | group | local_news | طولكرم بلدنا - متابعة إخبارية 🇵🇸 |
-| 16 | `Nablusnablus` | **8.71** | 0d ago | 19,374 | broadcast | local_news | أخبار مدينة نابلس |
-| 17 | `SalfeetNews` | **7.63** | 0.2d ago | 6,379 | broadcast | local_news | أخبار سلفيت- الصحفية عُلا موقدي |
-| 18 | `momenq_20` | **5.36** | 0.1d ago | 3,766 | group | local_news | اخبار الخليل وضواحيها 🇵🇸✌🏻 |
-| 19 | `Jenincamppsj` | **4.93** | 0.4d ago | 3,437 | broadcast | local_news | اخبار مخيم جنين |
-| 20 | `a5barsalfeet` | **4.49** | 0.5d ago | 5,869 | broadcast | local_news | 🇵🇸 أخبار محافظة سلفيت 🇵🇸 |
-| 21 | `jessier_2023` | **2.06** | 0.1d ago | 9,585 | group | local_news | اخبار الجسر واستراحة اريحا |
-| 22 | `news_nablus1` | **1.91** | 0.2d ago | 4,923 | broadcast | local_news | أخبار نابلس - الوثائقية |
-| 23 | `palmoh` | **0.4** | 7d ago | 43,827 | broadcast | medical | وزارة الصحة الفلسطينية |
-| 24 | `ramallah101F` | **0.14** | 339d ago | 3,075 | broadcast | local_news | 🇵🇸✌️اخبار رام الله✌️🇵🇸 |
-| 25 | `JenynSmod` | **0.09** | 117.9d ago | 5,149 | group | local_news | اخبار 👈نابلس&جنين🔥طولكرم🫶🏻 |
-| 26 | `YY5YG` | **0.02** | 118.2d ago | 12,896 | broadcast | local_news | شبكة أخبار الخليل |
-| 27 | `glsgfavvdgldasmga` | — | — | 1,003 | group | local_news | فلسطين الضفة نابلس جنين طولكرم طوباس رام |
-| 28 | `tubasnew` | — | — | 1,040 | group | local_news | أخبار طوباس والأغوار |
-| 29 | `tulkarmi1` | — | — | 2,393 | group | local_news | إجتماعيات و أخبار كرميون " طولكرم " |
-| 30 | `jeninnew2` | — | — | 1,759 | broadcast | local_news | أخبار جنين "الاحتياطية" 🔥✊ |
-| 31 | `JerichoNewss` | — | — | 1,704 | group | local_news | مناقشات أخبار أريحا |
-| 32 | `News_of_Ramallah_villagess` | — | — | 1,425 | broadcast | local_news | اخبارك قرى رام الله |
-| 33 | `nabdnablus1` | — | — | 1,366 | group | local_news | إجتماعيات و أخبار نابلس " نبض نابلس " |
-| 34 | `hebronnews4` | — | — | 955 | broadcast | local_news | أخبار الخليل "الاحتياطية" |
-| 35 | `gedcogaza` | — | — | 531 | broadcast | services | كهرباء غزة⚡️ |
-| 36 | `QalqilyaMunicipality` | — | — | 499 | broadcast | services | بلدية قلقيلية - مصدر مُطلع |
-| 37 | `tubas123` | — | — | 465 | broadcast | local_news | أخبار طوباس والمنطقة |
-| 38 | `jerichomix2021` | — | — | 457 | group | local_news | اخبار المدينة اريحا |
-| 39 | `GasstationsinHebronGovernorate` | — | — | 304 | group | fuel | محطات الوقود في فلسطين |
-| 40 | `hebronq20` | — | — | 255 | group | local_news | اخبار الخليل وضواحيها 2️⃣4️⃣ |
-| 41 | `aassffffgjhdn` | — | — | 166 | group | local_news | اخبار رام الله فلسطين |
-| 42 | `TUBAS45` | — | — | 91 | broadcast | local_news | اخبار طوباس🔥💚 |
-| 43 | `Palrcs` | — | — | 2,561 | broadcast | medical | 🚨🚑 الهلال الأحمر الفلسطيني-الصفحة الرسمي |
-| 44 | `Ahssisn` | — | — | 2,188 | broadcast | local_news | اخبار مخيمات طولكرم 🖤🦅 |
-| 45 | `JBLKhaleel` | — | — | 2,182 | broadcast | local_news | أخبار جبل الخليل |
-| 46 | `Aueiwo` | — | — | 2,058 | group | local_news | مناقشات اخبار مخيمات طولكرم🖤🦅 |
-| 47 | `blnewsteam` | — | — | 1,799 | broadcast | local_news | أخبار بيت لحم والمحافظة |
-| 48 | `maksnsb` | — | — | 1,167 | broadcast | local_news | اخبار بيت لحم الحدث |
-| 49 | `Ser_Jinan` | — | — | 1,023 | broadcast | local_news | اخبار صير - جنين 🖤. |
-| 50 | `euufhiifhhii` | — | — | 883 | broadcast | local_news | الطيرة اخباري( رام الله)🇵🇸🔥 |
-| 51 | `nursing20002000` | — | — | 766 | broadcast | medical | دورات اسعافات اولية اون لاين |
-| 52 | `hospitaleeng` | — | — | 610 | broadcast | medical | إعلام مستشفى غزة الأوروبي |
-| 53 | `ALJESERNEWSs` | — | — | 458 | broadcast | local_news | اخبار جسر الملك حسين واستراحة اريحا المع |
-| 54 | `azhnigiffjcc` | — | — | 411 | broadcast | local_news | 📍اخبار المغير رام الله 📍 |
-| 55 | `llhag` | — | — | 348 | broadcast | local_news | قلقيلية الآن✌️🇵🇸 و أخبار منوعة |
-| 56 | `AhmadLberh` | — | — | 339 | broadcast | local_news | اخبار رام الله و البيرة |
-| 57 | `attoozz00112255` | — | — | 334 | broadcast | local_news | اخبار المحافظة بيت لحم |
-| 58 | `JDECONET` | — | — | 334 | broadcast | services | شركة كهرباء محافظة القدس JDECO |
-| 59 | `Artas_Village` | — | — | 290 | broadcast | local_news | اخبار عامة *ارطاس ، بيت لحم* |
-| 60 | `chatgroupbl` | — | — | 256 | group | local_news | أخبار بيت لحم والمحافظة 24 |
+| 1 | `alrasedaljawe` | **14.1** | **1.5y ago** | 115 | broadcast | weather | الراصد الجوي - طقس فلسطين والاردن |
+| 2 | `asarsook` | **3.11** | 1.3d ago | 5,068 | broadcast | markets | أسعار السوق - غزة |
+| 3 | `Taqspalasteen` | **3** | **2.6y ago** | 247 | broadcast | weather | احوال طقس فلسطين واسعار العملات 💵 |
+| 4 | `mohepalestine` | **2.77** | 1.3d ago | 18,900 | broadcast | education | وزارة التربية والتعليم العالي - فلسطين |
+| 5 | `bzunewss` | **2.74** | 0.6d ago | 6,670 | broadcast | education | أخبار جامعة بيرزيت |
+| 6 | `Taqsfalasteen` | **1.77** | 0.8d ago | 42,249 | broadcast | weather | موقع طقس فلسطين |
+| 7 | `palestine_weather_today` | **1.66** | 0.2d ago | 391 | broadcast | weather | طقس فلسطين اليوم |
+| 8 | `alquds21alquds` | **1.64** | **4.9y ago** | 129 | broadcast | services | محطة كهرباء القدس |
+| 9 | `TeijanAlNoor` | **0.79** | 1.8d ago | 174 | broadcast | education | ملتقى تيجان النّور - جامعة بيرزيت |
+| 10 | `sarayaalquds5` | **0.73** | **1.6y ago** | 316 | broadcast | education | الرابطة الاسلامية/جامعة بيرزيت |
+| 11 | `birzeitstd` | **0.54** | **1.2y ago** | 1,064 | broadcast | education | اخبار طلاب وطالبات جامعة بيرزيت (الرئيسي |
+| 12 | `palestineeducation` | **0.42** | 1d ago | 1,197 | broadcast | education | وزارة التربية والتعليم العالي |
+| 13 | `mvdgj24` | **0.27** | 26.4d ago | 950 | broadcast | weather | طقس فلسطين ☀️🌤🌧 |
+| 14 | `gedcogaza` | **0.26** | 2d ago | 531 | broadcast | services | كهرباء غزة⚡️ |
+| 15 | `Shabiba_bzu` | **0.23** | **1.2y ago** | 775 | broadcast | education | حركة الشبيبة الطلابية - جامعة بيرزيت (sh |
+| 16 | `nnznnc` | **0.18** | 2.1d ago | 2,118 | group | education | جامعة بيرزيت |
+| 17 | `QalqilyaMunicipality` | **0.09** | 1.2d ago | 499 | broadcast | services | بلدية قلقيلية - مصدر مُطلع |
+| 18 | `evrreee` | **0.06** | 176.8d ago | 10,415 | group | education | جامعة بيرزيت |
+| 19 | `palweather` | **0.06** | 4.3d ago | 2,067 | broadcast | weather | طقس فلسطين |
+| 20 | `JDECONET` | **0.06** | **3.6y ago** | 334 | broadcast | services | شركة كهرباء محافظة القدس JDECO |
+| 21 | `gaza_557` | — | — | 13 | group | markets | محاربة غلاء الاسعار لجميع السلع غزة📢🔊 |
+| 22 | `palweatherps` | — | — | 102 | broadcast | weather | طقس فلسطين palweather |
 
-<details><summary>Filtered out (0) — other country or off-topic</summary>
+<details><summary>Filtered out (79) — other country or off-topic</summary>
 
 | channel | subs | why |
 |:--|--:|:--|
+| `corona` | 136,440 | no PS marker |
+| `B5_TD` | 62,912 | no PS marker |
+| `MOEAFT` | 35,482 | no PS marker |
+| `khaledkashkas` | 10,652 | no PS marker |
+| `Goold_dollar` | 8,203 | no PS marker |
+| `goldPrice74` | 7,699 | no PS marker |
+| `moe_ps` | 6,652 | no PS marker |
+| `ConsumerSh` | 6,266 | no PS marker |
+| `NNU2023` | 5,925 | no PS marker |
+| `mohe_ps` | 5,103 | no PS marker |
+| `kutla_nnu` | 4,615 | no PS marker |
+| `fahad0872f` | 3,213 | no PS marker |
+| `ArabSocialMedia` | 3,120 | no PS marker |
+| `kissbeautyh` | 2,466 | no PS marker |
+| `ANajahUni` | 2,163 | no PS marker |
+| `meyah7` | 1,949 | no PS marker |
+| `shabiba_nnu` | 1,908 | no PS marker |
+| `Rafah_EW` | 1,716 | no PS marker |
+| `ministry_of_edu_israel_arabic` | 1,524 | no PS marker |
+| `ethpat` | 1,503 | no PS marker |
+| `cpaksa` | 1,106 | no PS marker |
+| `worlweather2023` | 1,081 | no PS marker |
+| `Tartousflash` | 788 | no PS marker |
+| `worlweather` | 766 | no PS marker |
+| `hsinw9` | 726 | no PS marker |
+| `canal_smart_services` | 617 | no PS marker |
+| `alzahra1998` | 490 | no PS marker |
+| `ASAAR_ALAMULAT2` | 440 | no PS marker |
+| `worldevents10` | 435 | no PS marker |
+| `samoumunicipality` | 429 | no PS marker |
+| `FruVeg_KSA` | 398 | no PS marker |
+| `urgenthj` | 381 | no PS marker |
+| `taibehmuni` | 369 | no PS marker |
+| `ElectricityCompany` | 360 | no PS marker |
+| `alisdfgj` | 265 | no PS marker |
+| `MetocUAE` | 244 | no PS marker |
+| `electricity133` | 230 | no PS marker |
+| `jabaliaalnazla` | 199 | no PS marker |
+| `najah9778` | 190 | no PS marker |
+| `pslfnnu` | 173 | no PS marker |
 
 </details>
 

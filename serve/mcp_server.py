@@ -11,6 +11,14 @@ A voice assistant can read `answer` aloud verbatim; a UI can use the rest. That
 keeps the phrasing — especially how uncertainty is expressed — in one place
 rather than re-invented by each agent.
 
+NO DATABASE CREDENTIALS
+This server talks to the v2 HTTP API, never to Postgres directly. hermes runs
+as user `admin`, which cannot read `.env` (chmod 600, holds the DB password and
+the Telegram api_hash) — and the fix for that is not to loosen those permissions
+but to give the MCP layer no secrets to need. The API is the single data path;
+MCP is a typed facade over it, so both agents and any HTTP client see exactly
+the same values.
+
 UNCERTAINTY IS SPOKEN, NOT DROPPED
 When a reading has decayed the answer says so ("آخر تحديث قبل ساعتين") instead
 of asserting a stale value. For fuel during a shortage that difference is a
@@ -21,6 +29,7 @@ the caveat rather than smoothing it away.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,20 +37,20 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import psycopg
-from psycopg.rows import dict_row
-
-from resolve.db import dsn
-from resolve.geo import resolve_place
+import httpx
 
 PROTOCOL = "2024-11-05"
+API = os.environ.get("PALESTINE_API", "http://127.0.0.1:7870")
 FUEL_AR = {"fuel_diesel": "سولار", "fuel_gasoline": "بنزين", "cooking_gas": "غاز"}
 
 
-def q(sql: str, params: tuple = ()) -> list[dict]:
-    with psycopg.connect(dsn(), row_factory=dict_row) as conn, conn.cursor() as cur:
-        cur.execute(sql, params)
-        return cur.fetchall()
+def api(path: str, **params) -> dict:
+    """GET the v2 API. Raises on failure so the caller can answer honestly
+    rather than inventing a reassuring reply."""
+    r = httpx.get(f"{API}{path}", params={k: v for k, v in params.items() if v is not None},
+                  timeout=30.0)
+    r.raise_for_status()
+    return r.json()
 
 
 def _age_ar(minutes: int | None) -> str:
@@ -59,114 +68,349 @@ def _age_ar(minutes: int | None) -> str:
 def fuel_near(place: str | None = None, lat: float | None = None,
               lon: float | None = None, fuel: str = "diesel", limit: int = 5) -> dict:
     """Where can I get diesel/petrol right now?"""
-    kind = {"diesel": "fuel_diesel", "سولار": "fuel_diesel",
-            "gasoline": "fuel_gasoline", "petrol": "fuel_gasoline",
-            "بنزين": "fuel_gasoline", "gas": "cooking_gas", "غاز": "cooking_gas"
-            }.get(fuel.lower(), "fuel_diesel")
+    fuel = {"سولار": "diesel", "بنزين": "gasoline", "غاز": "gas",
+            "petrol": "gasoline"}.get(fuel.lower(), fuel.lower())
 
     if lat is None or lon is None:
         if not place:
-            return {"error": "need either place or lat/lon"}
-        r = resolve_place(place, learn=False)
-        if not r:
-            return {"answer": f"ما عرفت وين {place}", "error": "place not resolved"}
-        row = q("SELECT ST_Y(centroid::geometry) la, ST_X(centroid::geometry) lo "
-                "FROM place WHERE place_id=%s", (r.place_id,))[0]
-        lat, lon, place = row["la"], row["lo"], (r.name_ar or r.name_en or place)
+            return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
+        geo = api("/v2/geo/resolve", q=place)
+        if not geo.get("found"):
+            return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
+        lat, lon, place = geo["lat"], geo["lon"], geo["name"]
 
-    rows = q("""
-        SELECT s.name_ar, s.name_en, s.value, s.confidence, s.age_minutes,
-               s.staleness_band, s.last_known_value,
-               p.attrs->>'geo_precision' AS geo_precision,
-               p.source_refs->>'palhub_region' AS region,
-               ST_Distance(s.centroid, ST_SetSRID(ST_MakePoint(%s,%s),4326)::geography)/1000 km
-        FROM state_serving s JOIN place p ON p.place_id=s.place_id
-        WHERE s.state_kind=%s AND s.value='available'
-        ORDER BY km ASC LIMIT %s""", (lon, lat, kind, limit))
+    d = api("/v2/fuel/nearby", lat=lat, lon=lon, fuel=fuel, limit=limit, radius_km=60)
+    label = {"diesel": "سولار", "gasoline": "بنزين", "gas": "غاز"}.get(fuel, fuel)
+    res = d.get("results", [])
 
-    label = FUEL_AR.get(kind, kind)
-    if not rows:
-        total = q("SELECT COUNT(*) n FROM state_serving WHERE state_kind=%s", (kind,))[0]["n"]
-        answer = (f"ما في ولا محطة فيها {label} حالياً حسب آخر تحديث "
-                  f"(تم فحص {total} محطة).")
+    if not res:
+        answer = f"ما في ولا محطة فيها {label} حالياً حسب آخر تحديث."
     else:
         parts = []
-        for r in rows[:3]:
-            nm = r["name_ar"] or r["name_en"]
-            approx = "" if (r["geo_precision"] or "station") in ("station", "town") \
-                else " (الموقع تقريبي)"
-            parts.append(f"{nm} على بعد {r['km']:.0f} كم{approx}")
-        answer = (f"في {len(rows)} محطة فيها {label}: " + "، ".join(parts) +
-                  f". آخر تحديث {_age_ar(rows[0]['age_minutes'])}.")
+        for r in res[:3]:
+            approx = "" if r.get("location_note") is None else " (الموقع تقريبي)"
+            dist = (f"{r['drive_minutes']:.0f} دقيقة بالسيارة"
+                    if r.get("drive_minutes") is not None
+                    else f"{r.get('straight_km') or 0:.0f} كم")
+            parts.append(f"{r['name']} على بعد {dist}{approx}")
+        answer = (f"في {len(res)} محطة فيها {label}: " + "، ".join(parts) +
+                  f". آخر تحديث {_age_ar(res[0].get('age_minutes'))}.")
 
-    return {
-        "answer": answer,
-        "fuel": label, "origin": place or f"{lat:.4f},{lon:.4f}",
-        "count": len(rows),
-        "stations": [{
-            "name": r["name_ar"] or r["name_en"], "region": r["region"],
-            "distance_km": round(r["km"], 1), "value": r["value"],
-            "confidence": round(float(r["confidence"]), 2),
-            "age_minutes": r["age_minutes"], "staleness_band": r["staleness_band"],
-            "location_precise": (r["geo_precision"] or "station") in ("station", "town"),
-        } for r in rows],
-        "source": "Palhub - احوال الوقود (Telegram)",
-    }
+    return {"answer": answer, "fuel": label,
+            "origin": place or f"{lat:.4f},{lon:.4f}",
+            "count": len(res), "counts": d.get("counts"),
+            "routing": d.get("routing"),
+            "stations": [{
+                "name": r["name"], "region": r.get("region"),
+                "drive_minutes": r.get("drive_minutes"),
+                "straight_km": r.get("straight_km"),
+                "value": r["value"], "confidence": r["confidence"],
+                "age_minutes": r.get("age_minutes"),
+                "staleness_band": r.get("staleness_band"),
+                "location_precise": r.get("location_note") is None,
+            } for r in res],
+            "source": d.get("attribution")}
 
 
 def fuel_summary() -> dict:
-    rows = q("""SELECT state_kind,
-                       COUNT(*) FILTER (WHERE value='available') avail, COUNT(*) total
-                FROM state_serving WHERE state_kind LIKE 'fuel%%' GROUP BY 1""")
-    fresh = q("SELECT MAX(observed_at) t FROM state_current WHERE state_kind LIKE 'fuel%%'")[0]["t"]
-    age = None
-    if fresh:
-        age = int((datetime.now(timezone.utc) - fresh).total_seconds() // 60)
-    bits = [f"{FUEL_AR.get(r['state_kind'], r['state_kind'])}: {r['avail']} من {r['total']} محطة"
-            for r in rows]
-    return {"answer": "وضع الوقود بالضفة — " + "، ".join(bits) + f". آخر تحديث {_age_ar(age)}.",
-            "totals": {r["state_kind"]: {"available": r["avail"], "total": r["total"]} for r in rows},
-            "feed_age_minutes": age,
-            "source": "Palhub - احوال الوقود (Telegram)"}
+    d = api("/v2/fuel/summary")
+    h = api("/health")
+    bits = [f"{FUEL_AR.get('fuel_' + k, k)}: {v['available']} من {v['total']} محطة"
+            for k, v in d.get("totals", {}).items()]
+    age = h.get("feed_age_minutes")
+    return {"answer": "وضع الوقود بالضفة — " + "، ".join(bits) +
+                      f". آخر تحديث {_age_ar(age)}.",
+            "totals": d.get("totals"), "by_region": d.get("by_region"),
+            "feed_age_minutes": age, "source": d.get("attribution")}
+
+
+# ── checkpoints ──────────────────────────────────────────────────────────────
+# The serving layer refuses to assert a reading it cannot stand behind, and
+# returns `unknown` with the last reading preserved beside it. The temptation
+# here is to answer "ما بعرف" ("I don't know") and stop — which throws away the
+# one thing the caller can actually use.
+#
+# So an uncertain answer LEADS with the age: "آخر تحديث قبل ساعتين: كان سالك."
+# The listener gets the reading and its age in the same breath and decides for
+# themselves, which is what a person standing at a junction actually needs. What
+# is never done is stating a decayed value as though it were current — the
+# failure this whole layer exists to prevent, and the one that puts someone on a
+# road that closed three hours ago.
+
+FLOW_AR = {"open": "سالك", "closed": "مغلق", "congested": "فيه أزمة",
+           "slow": "بطيء", "unknown": "غير معروف"}
+PRESENCE_AR = {"idf": "جيش", "police": "شرطة", "settlers": "مستوطنين",
+               "inspection": "تفتيش"}
+DIR_AR = {"inbound": "للداخل", "outbound": "للخارج", "both": "بالاتجاهين"}
+DIR_IN = {"داخل": "inbound", "للداخل": "inbound", "دخول": "inbound",
+          "خارج": "outbound", "للخارج": "outbound", "خروج": "outbound",
+          "in": "inbound", "out": "outbound"}
+
+
+def _flow_phrase(cp: dict) -> str:
+    """One clause describing flow, honest about staleness."""
+    if cp["flow"] != "unknown":
+        return FLOW_AR.get(cp["flow"], cp["flow"])
+    last = cp.get("last_known_flow")
+    if not last or last == "unknown":
+        return "ما عندي معلومات عنه"
+    return f"ما في تحديث جديد — آخر معلومة {_age_ar(cp.get('age_minutes'))}: كان {FLOW_AR.get(last, last)}"
+
+
+def _presence_phrase(cp: dict) -> str:
+    who = [PRESENCE_AR.get(p, p) for p in (cp.get("present") or [])]
+    return f" وفي {' و'.join(who)}" if who else ""
+
+
+def checkpoint_status(name: str, direction: str = "both") -> dict:
+    """Is a named checkpoint open? Optionally for one travel direction."""
+    direction = DIR_IN.get(direction.strip().lower(), direction.strip().lower())
+    if direction not in ("inbound", "outbound", "both"):
+        direction = "both"
+    d = api("/v2/checkpoints/status", name=name, direction=direction)
+    if not d.get("found"):
+        return {"answer": f"ما عرفت حاجز اسمه {name}.", **d}
+
+    nm = d["match"]["resolved_to"]
+    by = d.get("by_direction") or {}
+    inb, outb = by.get("inbound"), by.get("outbound")
+
+    # Where the two directions genuinely differ, say so — that difference is
+    # the whole reason direction is tracked, and it is exactly what a bare
+    # status hides.
+    if (direction == "both" and inb and outb
+            and inb["flow"] != outb["flow"]
+            and "unknown" not in (inb["flow"], outb["flow"])):
+        answer = (f"{nm}: {FLOW_AR.get(inb['flow'], inb['flow'])} للداخل، "
+                  f"و{FLOW_AR.get(outb['flow'], outb['flow'])} للخارج."
+                  f"{_presence_phrase(d)}")
+    else:
+        suffix = "" if direction == "both" else f" {DIR_AR[direction]}"
+        answer = f"{nm}{suffix}: {_flow_phrase(d)}.{_presence_phrase(d)}"
+        if d["flow"] != "unknown":
+            answer += f" آخر تحديث {_age_ar(d.get('age_minutes'))}."
+
+    return {"answer": answer, "name": nm, "direction": direction,
+            "flow": d["flow"], "passable": d["passable"],
+            "last_known_flow": d.get("last_known_flow"),
+            "age_minutes": d.get("age_minutes"),
+            "staleness_band": d.get("staleness_band"),
+            "confidence": d.get("confidence"),
+            "independent_sources": d.get("independent_sources"),
+            "present": d.get("present"), "by_direction": by,
+            "lat": d.get("lat"), "lon": d.get("lon"),
+            "source": d.get("attribution")}
+
+
+def checkpoints_near(place: str | None = None, lat: float | None = None,
+                     lon: float | None = None, direction: str = "both",
+                     radius_km: float = 15.0, limit: int = 6) -> dict:
+    """What are the checkpoints around here doing?"""
+    direction = DIR_IN.get(direction.strip().lower(), direction.strip().lower())
+    if direction not in ("inbound", "outbound", "both"):
+        direction = "both"
+    if lat is None or lon is None:
+        if not place:
+            return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
+        geo = api("/v2/geo/resolve", q=place)
+        if not geo.get("found"):
+            return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
+        lat, lon, place = geo["lat"], geo["lon"], geo["name"]
+
+    d = api("/v2/checkpoints/nearby", lat=lat, lon=lon, direction=direction,
+            radius_km=radius_km, limit=limit)
+    res, counts = d.get("results", []), d.get("counts", {})
+    known = [r for r in res if r["flow"] != "unknown"]
+
+    if not known:
+        answer = (f"ما في تحديثات جديدة عن الحواجز حوالين {place or 'هون'}. "
+                  f"في {counts.get('in_radius', 0)} حاجز بالمنطقة بس آخر أخبارهم قديمة.")
+    else:
+        closed = [r for r in known if r["flow"] == "closed"]
+        parts = [f"{r['name']} {FLOW_AR.get(r['flow'], r['flow'])}"
+                 f"{_presence_phrase(r)}" for r in known[:4]]
+        answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."
+        if closed:
+            answer += f" انتبه: {'، '.join(r['name'] for r in closed)} مغلق."
+        # Never let the confident part imply full coverage.
+        if counts.get("unknown"):
+            answer += f" وفي {counts['unknown']} حاجز ما إلهم تحديث حديث."
+
+    return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
+            "direction": direction, "counts": counts,
+            "checkpoints": [{"name": r["name"], "flow": r["flow"],
+                             "passable": r["passable"],
+                             "last_known_flow": r.get("last_known_flow"),
+                             "km": r.get("straight_km"),
+                             "age_minutes": r.get("age_minutes"),
+                             "staleness_band": r.get("staleness_band"),
+                             "present": r.get("present"),
+                             "independent_sources": r.get("independent_sources")}
+                            for r in res],
+            "source": d.get("attribution")}
+
+
+def checkpoints_summary() -> dict:
+    """West-Bank-wide picture, including the size of the blind spot."""
+    d = api("/v2/checkpoints/summary")
+    t = d.get("totals", {})
+    closed = d.get("closed_now", [])
+    bits = []
+    if t.get("open"):
+        bits.append(f"{t['open']} سالك")
+    if t.get("closed"):
+        bits.append(f"{t['closed']} مغلق")
+    if t.get("congested"):
+        bits.append(f"{t['congested']} فيه أزمة")
+    answer = ("وضع الحواجز بالضفة — " + "، ".join(bits) + "."
+              if bits else "ما في تحديثات حديثة عن الحواجز.")
+    if t.get("unknown"):
+        # Coverage stated, not implied. We track 246 checkpoints and have fresh
+        # readings for a minority of them at any moment; a summary that omits
+        # that reads as though the rest are fine.
+        answer += f" و{t['unknown']} حاجز ما إلهم تحديث حديث."
+    if closed:
+        answer += " المغلقة حالياً: " + "، ".join(c["name"] for c in closed[:6]) + "."
+    return {"answer": answer, "totals": t,
+            "known_fraction": d.get("known_fraction"),
+            "tracked": d.get("tracked"), "presence": d.get("presence"),
+            "closed_now": [{"name": c["name"], "age_minutes": c["age_minutes"],
+                            "present": c.get("present")} for c in closed],
+            "source": d.get("attribution")}
+
+
+# ── incidents ────────────────────────────────────────────────────────────────
+INCIDENT_AR = {
+    "raid": "اقتحام", "settler_attack": "اعتداء مستوطنين", "closure": "إغلاق",
+    "siege": "حصار", "arrest": "اعتقالات", "injury": "إصابات",
+    "shooting": "إطلاق نار", "demolition": "هدم", "death": "استشهاد",
+}
+
+
+def incidents_near(place: str | None = None, lat: float | None = None,
+                   lon: float | None = None, hours: int = 12,
+                   radius_km: float = 25.0, limit: int = 8) -> dict:
+    """What has been happening around here — raids, settler attacks, closures."""
+    if lat is None or lon is None:
+        if not place:
+            return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
+        geo = api("/v2/geo/resolve", q=place)
+        if not geo.get("found"):
+            return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
+        lat, lon, place = geo["lat"], geo["lon"], geo["name"]
+
+    d = api("/v2/incidents/recent", lat=lat, lon=lon, hours=hours,
+            radius_km=radius_km, limit=limit)
+    items = d.get("incidents", [])
+    if not items:
+        answer = f"ما في أحداث مسجلة حوالين {place or 'موقعك'} بآخر {hours} ساعة."
+    else:
+        parts = []
+        for i in items[:4]:
+            ar = INCIDENT_AR.get(i["type"], i["type"])
+            parts.append(f"{ar} في {i['place']} {_age_ar(_mins_since(i['occurred_at']))}")
+        answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."
+        # Corroboration stated plainly — a single channel is not the same as four.
+        solo = sum(1 for i in items if i["independent_sources"] < 2)
+        if solo:
+            answer += f" ({solo} منها من مصدر واحد بس.)"
+    return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
+            "hours": hours, "count": len(items), "by_type": d.get("by_type"),
+            "incidents": items, "source": d.get("attribution")}
+
+
+def incidents_summary(hours: int = 24) -> dict:
+    d = api("/v2/incidents/summary", hours=hours)
+    bt = d.get("by_type", {})
+    if not bt:
+        return {"answer": f"ما في أحداث مسجلة بآخر {hours} ساعة.", **d}
+    bits = [f"{v['n']} {INCIDENT_AR.get(k, k)}" for k, v in
+            sorted(bt.items(), key=lambda kv: -kv[1]["n"])[:5]]
+    places = ", ".join(p["place"] for p in d.get("by_place", [])[:4])
+    answer = f"بآخر {hours} ساعة بالضفة: " + "، ".join(bits) + "."
+    if places:
+        answer += f" الأكثر تأثراً: {places}."
+    return {"answer": answer, **d}
+
+
+def _mins_since(iso: str | None) -> int | None:
+    if not iso:
+        return None
+    try:
+        t = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        return int((datetime.now(timezone.utc) - t).total_seconds() // 60)
+    except (ValueError, TypeError):
+        return None
+
+
+WEATHER_AR = {
+    "extreme_heat": "حر شديد جداً", "heat_wave": "موجة حر", "storm": "عاصفة",
+    "frost": "صقيع", "cold": "برد شديد", "rain": "أمطار",
+    "high_wind": "رياح قوية", "normal": "عادي", "unknown": "غير معروف",
+}
+
+
+def weather_now(place: str | None = None) -> dict:
+    """Conditions per governorate, and whether anything is worth warning about."""
+    d = api("/v2/weather", place=place)
+    govs, notable = d.get("governorates", []), d.get("notable", [])
+    if not govs:
+        return {"answer": "ما عندي معلومات طقس حالياً.", **d}
+
+    if place and len(govs) == 1:
+        g = govs[0]
+        t = (g.get("today") or {})
+        answer = (f"{g['governorate_ar'] or g['governorate']}: "
+                  f"{WEATHER_AR.get(g['advisory'], g['advisory'])}، "
+                  f"الحرارة الآن {g.get('temp_now_c')} والعظمى {t.get('max_c')}.")
+    elif notable:
+        # Lead with what is actionable; a list of eleven "normal" helps nobody.
+        parts = [f"{n['governorate_ar'] or n['governorate']} "
+                 f"{WEATHER_AR.get(n['advisory'], n['advisory'])} "
+                 f"({(n.get('today') or {}).get('max_c')}°)" for n in notable]
+        answer = "تحذيرات الطقس: " + "، ".join(parts) + "."
+    else:
+        hottest = govs[0]
+        answer = (f"الطقس عادي بالضفة. أعلى حرارة في "
+                  f"{hottest['governorate_ar'] or hottest['governorate']} "
+                  f"{(hottest.get('today') or {}).get('max_c')}°.")
+    return {"answer": answer, "notable": notable, "governorates": govs,
+            "source": d.get("attribution")}
+
+
+def connectivity_now() -> dict:
+    """Is the internet up in the West Bank? Measured, not reported."""
+    d = api("/v2/connectivity")
+    st = d.get("status")
+    if st == "unknown":
+        return {"answer": "ما عندي قياس للشبكة حالياً.", **d}
+    if st == "outage":
+        answer = ("في انقطاع واسع بالإنترنت بالضفة حسب القياس الخارجي "
+                  f"({d.get('signals_agreeing')} مؤشرات مستقلة متفقة).")
+    elif st == "degraded":
+        answer = "في تراجع بجودة الإنترنت بالضفة حسب القياس الخارجي."
+    else:
+        answer = "الإنترنت بالضفة شغال طبيعي حسب القياس الخارجي."
+    return {"answer": answer, **d}
 
 
 def latest_news(area: str | None = None, limit: int = 8) -> dict:
-    """Most recent messages, optionally filtered to an area."""
-    if area:
-        rows = q("""
-            SELECT c.raw_text, c.reported_at, s.name AS src
-            FROM claim c JOIN source s ON s.source_id=c.source_id
-            WHERE c.raw_text ILIKE %s AND length(c.raw_text) > 30
-            ORDER BY c.reported_at DESC LIMIT %s""", (f"%{area}%", limit))
-    else:
-        rows = q("""
-            SELECT c.raw_text, c.reported_at, s.name AS src
-            FROM claim c JOIN source s ON s.source_id=c.source_id
-            WHERE length(c.raw_text) > 30
-            ORDER BY c.reported_at DESC LIMIT %s""", (limit,))
-    if not rows:
-        return {"answer": f"ما في أخبار جديدة عن {area}." if area else "ما في أخبار جديدة.",
+    d = api("/v2/news/latest", area=area, limit=limit)
+    items = d.get("items", [])
+    if not items:
+        return {"answer": (f"ما في أخبار جديدة عن {area}." if area else "ما في أخبار جديدة."),
                 "items": []}
-    head = " ".join(rows[0]["raw_text"].split())[:180]
-    return {"answer": f"آخر خبر: {head}",
-            "count": len(rows),
-            "items": [{"text": " ".join(r["raw_text"].split())[:400],
-                       "source": r["src"], "at": r["reported_at"].isoformat()} for r in rows]}
+    return {"answer": f"آخر خبر: {items[0]['text'][:180]}",
+            "count": len(items), "items": items}
 
 
 def coverage() -> dict:
-    """What this system currently knows — so an agent can answer honestly."""
-    src = q("""SELECT s.name, s.key, COUNT(c.*) claims, MAX(c.reported_at) newest
-               FROM source s LEFT JOIN claim c ON c.source_id=s.source_id
-               GROUP BY 1,2 HAVING COUNT(c.*)>0 ORDER BY 3 DESC""")
-    st = q("""SELECT state_kind, COUNT(*) n FROM state_serving GROUP BY 1 ORDER BY 2 DESC""")
-    pl = q("""SELECT kind::text, COUNT(*) n FROM place GROUP BY 1 ORDER BY 2 DESC""")
-    return {"answer": f"عندي {sum(r['claims'] for r in src)} رسالة من {len(src)} مصدر، "
-                      f"و{sum(r['n'] for r in st)} حالة مباشرة.",
-            "sources": [{"name": r["name"], "claims": r["claims"],
-                         "newest": r["newest"].isoformat() if r["newest"] else None} for r in src],
-            "live_states": {r["state_kind"]: r["n"] for r in st},
-            "places": {r["kind"]: r["n"] for r in pl}}
+    d = api("/v2/coverage")
+    return {"answer": f"عندي {d['total_claims']} رسالة من {len(d['sources'])} مصدر، "
+                      f"و{sum(d['live_states'].values())} حالة مباشرة.",
+            **d}
 
 
 TOOLS = {
@@ -179,6 +423,55 @@ TOOLS = {
                       "limit": {"type": "integer"}}}),
     "fuel_summary": (fuel_summary, "West-Bank-wide fuel availability totals.",
                      {"type": "object", "properties": {}}),
+    "checkpoint_status": (checkpoint_status,
+                          "Is a named checkpoint open right now? Returns flow (open/congested/"
+                          "slow/closed), whether it is passable, who is present (army, police, "
+                          "settlers, inspection) as a SEPARATE fact, and how old the reading is. "
+                          "Inbound and outbound can differ and are both reported.",
+                          {"type": "object", "properties": {
+                              "name": {"type": "string", "description": "e.g. حوارة, قلنديا, Huwara"},
+                              "direction": {"type": "string", "enum": ["inbound", "outbound", "both"],
+                                            "description": "direction of travel; both is the default"}},
+                           "required": ["name"]}),
+    "checkpoints_near": (checkpoints_near,
+                         "Checkpoints around a place or coordinate, nearest first, with what is "
+                         "known and how much is NOT known. Give `place` or lat/lon.",
+                         {"type": "object", "properties": {
+                             "place": {"type": "string", "description": "e.g. نابلس, Ramallah"},
+                             "lat": {"type": "number"}, "lon": {"type": "number"},
+                             "direction": {"type": "string", "enum": ["inbound", "outbound", "both"]},
+                             "radius_km": {"type": "number"},
+                             "limit": {"type": "integer"}}}),
+    "checkpoints_summary": (checkpoints_summary,
+                            "West-Bank-wide checkpoint picture: how many are open, closed or "
+                            "congested, which are closed now, and how many have no recent reading.",
+                            {"type": "object", "properties": {}}),
+    "incidents_near": (incidents_near,
+                       "Recent located incidents around a place — raids, settler attacks, "
+                       "closures, arrests, demolitions — with how many INDEPENDENT channels "
+                       "reported each. Give `place` or lat/lon.",
+                       {"type": "object", "properties": {
+                           "place": {"type": "string", "description": "e.g. نابلس, Hebron"},
+                           "lat": {"type": "number"}, "lon": {"type": "number"},
+                           "hours": {"type": "integer", "description": "lookback window, default 12"},
+                           "radius_km": {"type": "number"},
+                           "limit": {"type": "integer"}}}),
+    "incidents_summary": (incidents_summary,
+                          "West-Bank-wide incident counts by type and the worst-affected "
+                          "places over a time window.",
+                          {"type": "object", "properties": {
+                              "hours": {"type": "integer"}}}),
+    "weather_now": (weather_now,
+                    "Weather conditions and advisories per West Bank governorate — heat waves, "
+                    "storms, frost. Optionally filter to one governorate. Useful alongside "
+                    "movement answers: 43C changes what a checkpoint queue means.",
+                    {"type": "object", "properties": {
+                        "place": {"type": "string", "description": "governorate, e.g. اريحا, Hebron"}}}),
+    "connectivity_now": (connectivity_now,
+                         "Whether West Bank internet is reachable, measured externally by IODA "
+                         "(routing table, active probes, darknet telescope) rather than reported "
+                         "by anyone. Answers 'is the internet down' when nobody can post that it is.",
+                         {"type": "object", "properties": {}}),
     "latest_news": (latest_news, "Most recent ingested messages, optionally filtered by area.",
                     {"type": "object", "properties": {
                         "area": {"type": "string"}, "limit": {"type": "integer"}}}),

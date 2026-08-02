@@ -223,7 +223,7 @@ restart. One PR-sized change each:
 ### Gate 1
 - [x] "Diesel near me now" returns a confidence-ranked, drive-time-sorted list.
 - [x] **Zero** stations served `available` with age > 2× half-life. **tests/test_gate1_fuel.sql, 6/6 pass.**
-- [ ] Measured precision proxy ≥0.80 on the 7-day window.
+- [x] Measured precision proxy ≥0.80 on the 7-day window. **0.816 on 15,879 assertions verified against INDEPENDENT sources (learn/accuracy.py, ops/accuracy.ndjson, daily timer).** Fuel cannot be measured this way — palhub is the only source — and is reported separately as self-consistency, not precision.
 - [x] Fuel signal volume documented — superseded by palhubappfuel (structured feed, 200 stations, ~30min sweeps).
 
 ---
