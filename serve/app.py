@@ -294,8 +294,14 @@ def fuel_stations(region: str | None = None, only_available: bool = False) -> di
         FROM state_serving s
         JOIN place p ON p.place_id = s.place_id
         WHERE s.state_kind LIKE 'fuel%%'
-          AND (%s IS NULL OR p.source_refs->>'palhub_region' = %s)
-          AND (%s = false OR s.value = 'available')
+          -- The ::text cast is load-bearing. `$1 IS NULL` gives Postgres no
+          -- context to infer a type from, so it raises IndeterminateDatatype
+          -- and the endpoint 500s on EVERY call, not just the region-less one.
+          -- Every other optional filter in this file already casts; this one
+          -- was written without and stayed broken for two days because no test
+          -- ever issued an HTTP request against it.
+          AND (%s::text IS NULL OR p.source_refs->>'palhub_region' = %s)
+          AND (%s::boolean = false OR s.value = 'available')
         ORDER BY p.source_refs->>'palhub_region', s.name_ar""",
         (region, region, only_available))
     by_station: dict[int, dict] = {}
@@ -854,11 +860,33 @@ def coverage() -> dict:
                GROUP BY 1,2 HAVING COUNT(c.*) > 0 ORDER BY 3 DESC""")
     st = q("SELECT state_kind, COUNT(*) AS n FROM state_serving GROUP BY 1 ORDER BY 2 DESC")
     pl = q("SELECT kind::text AS kind, COUNT(*) AS n FROM place GROUP BY 1 ORDER BY 2 DESC")
+    # `live_states` is built from state_serving, so a field with no data at all
+    # simply DOES NOT APPEAR — the blind spot is invisible in the very endpoint
+    # whose job is to describe the blind spots. `fields` lists every configured
+    # kind whether or not anything feeds it (migration 036).
+    fields = q("""SELECT state_kind, coverage_state, no_source, crowd_reportable,
+                         observations, non_crowd_sources, last_observed_at
+                    FROM state_kind_coverage
+                   ORDER BY coverage_state, state_kind""")
     return {"sources": [{"name": r["name"], "key": r["key"], "claims": r["claims"],
                          "newest": r["newest"]} for r in src],
             "total_claims": sum(r["claims"] for r in src),
             "live_states": {r["state_kind"]: r["n"] for r in st},
-            "places": {r["kind"]: r["n"] for r in pl}}
+            "places": {r["kind"]: r["n"] for r in pl},
+            "fields": [dict(r) for r in fields],
+            "field_states": {
+                "live": "a source is feeding this and the last reading is "
+                        "within its assert ceiling",
+                "stale": "a source exists but has gone quiet past the ceiling — "
+                         "everything reads unknown until it speaks again",
+                "crowd_only": "no non-crowd source has ever reported this. A "
+                              "lone crowd unit cannot clear the P2.4 gate on a "
+                              "reassuring value, so in practice this field can "
+                              "raise cautions but not give all-clears",
+                "never_reported": "NOTHING reports this to us, ever. Not quiet "
+                                  "— absent. Do not render this as 'unknown' "
+                                  "alongside fields that are merely quiet",
+            }}
 
 
 @app.get("/v2/geo/resolve", tags=["meta"])
@@ -918,9 +946,22 @@ def crowd_fields() -> dict:
     """
     from crowd.engine import reportable_kinds
     kinds = reportable_kinds()
+    # Attach coverage so a reporter can see WHY their report matters. Four of
+    # these fields (power, water, cooking_gas, crossing_status) have never had a
+    # single observation from anyone — a report against those is not
+    # corroborating a feed, it is the only thing there is.
+    cov = {r["state_kind"]: r for r in q(
+        "SELECT state_kind, coverage_state, no_source FROM state_kind_coverage")}
+    for k in kinds:
+        c = cov.get(k.get("state_kind"))
+        if c:
+            k["coverage_state"] = c["coverage_state"]
+            k["no_source"] = c["no_source"]
     return {
         "fields": kinds,
         "count": len(kinds),
+        "sourceless": sorted(k["state_kind"] for k in kinds
+                             if k.get("coverage_state") == "never_reported"),
         "note": ("Values under `gated_values` are the reassuring ones. A crowd "
                  "report may always corroborate them and may always raise a "
                  "caution alone, but sole authorship of reassurance is "

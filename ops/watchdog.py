@@ -496,6 +496,52 @@ def capacity_check() -> list[dict]:
              "detail": f"{free_gb:.0f} GB free"}]
 
 
+def routing_check() -> list[dict]:
+    """Valhalla, which every corridor and route answer depends on.
+
+    Not a DEPENDENCIES entry because those are judged by file mtime, and a
+    routing engine has no file to age. It is checked by asking it who it is.
+
+    THE FAILURE THIS EXISTS FOR IS NOT "VALHALLA IS DOWN". It is that
+    `VALHALLA_URL` pointed at `127.0.0.1:8002`, a host port belonging to
+    honcho-api-1 — an unrelated application on this machine — which answered
+    every routing request with a perfectly well-formed 404. Nothing was down.
+    Something was LISTENING, and it was the wrong thing. So a reachability
+    check is not enough: the response has to identify itself as Valhalla, or
+    the next port collision passes the check while /v2/route returns 503.
+
+    Production escaped this only by accident: the systemd unit sets no
+    VALHALLA_URL, so it fell through to the correct default in code while every
+    shell that sourced .env got the stranger. That is precisely the kind of
+    divergence a monitor is supposed to close.
+    """
+    url = os.environ.get("VALHALLA_URL", "http://172.22.0.2:8002")
+    row = {"check": "dep", "name": "valhalla", "age_minutes": None,
+           "threshold_minutes": None}
+    try:
+        import httpx
+        r = httpx.get(f"{url}/status", timeout=10.0)
+    except Exception as exc:                                    # noqa: BLE001
+        return [{**row, "status": "unreachable", "fault": True,
+                 "detail": f"{url}: {type(exc).__name__} — /v2/route and every "
+                           f"corridor answer will 503"}]
+    if r.status_code != 200:
+        return [{**row, "status": "wrong-service", "fault": True,
+                 "detail": f"{url}/status returned {r.status_code} — something "
+                           f"is listening but it is not Valhalla; check for a "
+                           f"port collision before assuming an outage"}]
+    try:
+        version = r.json().get("version")
+    except ValueError:
+        version = None
+    if not version:
+        return [{**row, "status": "wrong-service", "fault": True,
+                 "detail": f"{url}/status answered 200 but names no valhalla "
+                           f"version — this is a different application"}]
+    return [{**row, "status": "ok", "fault": False,
+             "detail": f"valhalla {version}"}]
+
+
 def dependency_checks() -> list[dict]:
     """P3.3 — the upstream files v2 reads but does not control.
 
@@ -555,7 +601,8 @@ def main() -> int:
     jobs = job_checks()
     # The watchdog re-measures; /health reads what the watchdog recorded.
     feeds = feed_checks(jobs, measure_cadence())
-    rows = jobs + capacity_check() + dependency_checks() + feeds
+    rows = (jobs + capacity_check() + dependency_checks() + routing_check()
+            + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:

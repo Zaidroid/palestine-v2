@@ -211,3 +211,59 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS'
 FROM state_kind_config k
 WHERE k.place_kind IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM place p WHERE p.kind::text = k.place_kind);
+
+\echo '--- G2.15: every state kind has all THREE serving gates ---'
+-- Confidence floor, staleness band, assert ceiling. Seven kinds had no ceiling
+-- until 036, including BOTH FUELS — the largest data kind in the system. The
+-- ceiling is the gate that does not depend on the half-life being tuned right,
+-- so it was missing in exactly the place a mis-tuned half-life would have cost
+-- the most. A new kind added without one must fail here, not in production.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || string_agg(state_kind, ', ')
+                 || ' have no max_assert_seconds — only two of three gates' END AS g2_three_gates
+FROM state_kind_config
+WHERE max_assert_seconds IS NULL;
+
+\echo '--- G2.16: the assert ceiling is never SHORTER than the half-life ---'
+-- A ceiling below the half-life would silently make decay unreachable: the
+-- reading is cut off long before its confidence ever falls, so the floor and
+-- the band become decorative and only one gate is really running.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || string_agg(state_kind || ' (' || max_assert_seconds
+                 || 's ceiling vs ' || half_life_seconds || 's half-life)', ', ')
+       END AS g2_ceiling_above_halflife
+FROM state_kind_config
+WHERE max_assert_seconds IS NOT NULL AND half_life_seconds IS NOT NULL
+  AND max_assert_seconds < half_life_seconds;
+
+\echo '--- G2.17: "no source" is distinguishable from "quiet" ---'
+-- power, water, cooking_gas and crossing_status have never had one observation.
+-- Reporting them as `unknown` beside a checkpoint nobody has mentioned for an
+-- hour states two different things in the same word. The view must keep them
+-- apart, and must keep saying so even after a source appears for one of them.
+SELECT CASE
+         WHEN NOT EXISTS (SELECT 1 FROM state_kind_coverage)
+           THEN 'FAIL: state_kind_coverage is empty — migration 036 missing?'
+         WHEN EXISTS (SELECT 1 FROM state_kind_coverage
+                       WHERE coverage_state NOT IN
+                             ('live','stale','crowd_only','never_reported'))
+           THEN 'FAIL: unrecognised coverage_state'
+         WHEN (SELECT count(*) FROM state_kind_coverage) <>
+              (SELECT count(*) FROM state_kind_config)
+           THEN 'FAIL: a configured kind is missing from the coverage view'
+         ELSE 'PASS (' || (SELECT count(*) FROM state_kind_coverage
+                            WHERE coverage_state = 'never_reported')
+              || ' sourceless, ' || (SELECT count(*) FROM state_kind_coverage
+                            WHERE coverage_state = 'live') || ' live)'
+       END AS g2_no_source_visible;
+
+\echo '--- G2.18: no_source agrees with the observations behind it ---'
+-- The flag is DERIVED so it cannot drift, and this asserts the derivation
+-- rather than trusting it: nothing may claim to have a source while having no
+-- non-crowd observations, and nothing may claim sourcelessness while a real
+-- feed is writing to it.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || string_agg(state_kind, ', ')
+                 || ' — no_source disagrees with non_crowd_sources' END AS g2_no_source_honest
+FROM state_kind_coverage
+WHERE no_source <> (non_crowd_sources = 0);
