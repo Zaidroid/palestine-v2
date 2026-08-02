@@ -44,13 +44,42 @@ WHERE state_kind LIKE 'checkpoint%'
 -- 12,536 of v1's stored updates come from interrogative lines, 4,566 of them
 -- recorded as `open`. People ask about checkpoints they fear are CLOSED, so the
 -- false evidence concentrates exactly where being wrong is most expensive.
+--
+-- The invariant is that a non-assertion never becomes BELIEF — not that no
+-- non-assertion row may exist. The original form asserted the latter, which was
+-- equivalent while `question` was the only reason for one. It stopped being
+-- equivalent when migration 033 added `quarantined`: a source collected in full
+-- while its accuracy is established. Palhub's 26,162 rows are exactly that, and
+-- the old check called their existence a failure while the property it cared
+-- about — none of them reaching a served value — was holding perfectly.
+--
+-- So the check now follows the row through to state_current, which is the thing
+-- that would actually hurt somebody.
 SELECT CASE WHEN COUNT(*) = 0 THEN 'PASS'
-            ELSE 'FAIL: ' || COUNT(*) || ' non-assertions in a belief-bearing kind'
+            ELSE 'FAIL: ' || COUNT(*) || ' beliefs built on a non-assertion'
        END AS g2_questions_excluded
-FROM state_observation
-WHERE state_kind IN ('checkpoint_flow','checkpoint_idf','checkpoint_police',
-                     'checkpoint_settlers','checkpoint_inspection')
-  AND modality <> 'assertion';
+FROM state_current sc
+WHERE sc.state_kind IN ('checkpoint_flow','checkpoint_idf','checkpoint_police',
+                        'checkpoint_settlers','checkpoint_inspection')
+  AND NOT EXISTS (
+        SELECT 1 FROM state_observation o
+         WHERE o.place_id = sc.place_id AND o.state_kind = sc.state_kind
+           AND o.direction = sc.direction AND o.observed_at = sc.observed_at
+           AND o.source_id = sc.source_id AND o.modality = 'assertion');
+
+\echo '--- G2.4b: quarantined sources are collected but never served ---'
+-- The other half of the same property, stated positively: a quarantined source
+-- must be accumulating rows AND authoring none of the belief.
+SELECT CASE
+         WHEN (SELECT count(*) FROM state_current sc JOIN source s USING (source_id)
+                WHERE s.key = 'tg_palhubapproad') > 0
+           THEN 'FAIL: a quarantined source is authoring served belief'
+         ELSE 'PASS (' || (SELECT count(*) FROM state_observation o
+                            JOIN source s USING (source_id)
+                           WHERE s.key = 'tg_palhubapproad'
+                             AND o.modality = 'quarantined')
+              || ' rows collected, 0 served)'
+       END AS g2_quarantine_holds;
 
 \echo '--- G2.5: every belief traces to an observation that supports it ---'
 SELECT CASE WHEN COUNT(*) = 0 THEN 'PASS'

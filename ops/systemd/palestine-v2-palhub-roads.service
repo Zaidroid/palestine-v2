@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — Palhub road bulletin -> quarantined observations (P6)
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/ingest-palhub-roads.sh
+TimeoutStartSec=600

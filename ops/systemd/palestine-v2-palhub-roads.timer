@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — parse Palhub road bulletins every 5 minutes
+
+[Timer]
+OnBootSec=7min
+OnUnitActiveSec=5min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
