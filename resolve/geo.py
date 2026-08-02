@@ -302,29 +302,43 @@ def resolve_many(texts: Iterable[str], context: dict | None = None) -> list[Reso
 # failure is silent: a report or a question lands on a row that looks right and
 # holds none of the data.
 
-# Which KIND of place each field's reports belong to. Without this a crowd
-# report resolves to whatever matches the name best, which is almost always the
-# locality — and the parsers attach checkpoint readings to `checkpoint` places
-# and fuel readings to `station` places.
+# Which KIND of place each field's observations live on.
 #
-# Caught by testing rather than by reasoning: a crowd report of "الظاهرية open"
-# landed on place 61, the town, while every channel report for that checkpoint
-# sits on place 1703. The submission was accepted, stored, and correct-looking,
-# and it could never have corroborated anything or satisfied the P2.4 gate,
-# because it was describing a different row. The engine would have run for
-# months accepting checkpoint reports that were structurally incapable of
-# reaching a served value, and nothing would have complained.
+# READ FROM state_kind_config.place_kind (migration 035), not hardcoded. It was
+# a dict here and the same silent failure happened three times — crowd
+# checkpoint reports landing on towns, MCP history returning empty, crowd
+# crossing reports landing on Rafah the city instead of Rafah the crossing.
+# Every time, a new state kind had been added without anyone remembering this
+# list, and every time the report was accepted and stored somewhere no other
+# source would ever meet it.
 #
-# 236 of 252 checkpoint place-rows are `checkpoint`, 196 of 199 fuel ones are
-# `station`, so this is where the reports have to land. power, water, internet
-# and road_closure are genuinely locality-level and pass no preference.
-PREFER_PLACE_KIND = {
-    "checkpoint_status": "checkpoint", "checkpoint_flow": "checkpoint",
-    "checkpoint_idf": "checkpoint", "checkpoint_police": "checkpoint",
-    "checkpoint_settlers": "checkpoint", "checkpoint_inspection": "checkpoint",
-    "fuel_diesel": "station", "fuel_gasoline": "station",
-    "cooking_gas": "station",
-}
+# Cached for the process: it is configuration that changes at migration time,
+# and re-reading it per resolution would add a query to the hot path.
+_PLACE_KIND_CACHE: dict | None = None
+
+
+def _prefer_place_kinds(conn=None) -> dict:
+    global _PLACE_KIND_CACHE
+    if _PLACE_KIND_CACHE is not None:
+        return _PLACE_KIND_CACHE
+    sql = ("SELECT state_kind, place_kind FROM state_kind_config "
+           "WHERE place_kind IS NOT NULL")
+    try:
+        if conn is not None:
+            with conn.cursor() as cur:
+                cur.execute(sql)
+                rows = cur.fetchall()
+        else:
+            from resolve.db import connect
+            with connect() as own, own.cursor() as cur:
+                cur.execute(sql)
+                rows = cur.fetchall()
+        _PLACE_KIND_CACHE = dict(rows)
+    except Exception:                                   # noqa: BLE001
+        # A database hiccup must not turn every resolution into the generic
+        # path silently; an empty cache is not memoised, so it retries.
+        return {}
+    return _PLACE_KIND_CACHE
 
 
 class _Ambiguous(Exception):
@@ -378,7 +392,7 @@ NAME_SQL = "SELECT place_id, name_ar, name_en FROM place WHERE kind = %s"
 
 def resolve_for_state_kind(conn, place: str, state_kind: str):
     """Resolve a place phrase to the row this field's data actually lives on."""
-    want = PREFER_PLACE_KIND.get(state_kind)
+    want = _prefer_place_kinds(conn).get(state_kind)
     if want:
         from resolve.arabic import fold_for_match, normalize
         target = fold_for_match(place)

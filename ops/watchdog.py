@@ -144,6 +144,7 @@ EXPECTED_JOBS = {
     "watchdog":          (600, 900),
     "crowd-refresh":     (120, 600),
     "ingest-palhub-roads": (300, 900),
+    "ingest-gaza":       (3600, 7200),
     "stream":            (10, 300),
     "rollup":            (86400, 10800),
     "measure-accuracy":  (86400, 10800),

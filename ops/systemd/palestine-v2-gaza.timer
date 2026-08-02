@@ -1,0 +1,8 @@
+[Unit]
+Description=Palestine v2 — parse Gaza MoH reports hourly
+[Timer]
+OnBootSec=9min
+OnUnitActiveSec=1h
+AccuracySec=5min
+[Install]
+WantedBy=timers.target

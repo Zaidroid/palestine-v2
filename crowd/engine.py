@@ -51,8 +51,8 @@ sys.path.insert(0, str(ROOT))
 
 from ingest import bronze                              # noqa: E402
 from resolve.db import connect                         # noqa: E402
-from resolve.geo import (PREFER_PLACE_KIND, _Ambiguous,  # noqa: E402,F401
-                         resolve_for_state_kind, resolve_place)
+from resolve.geo import (_Ambiguous, resolve_for_state_kind,  # noqa: E402,F401
+                         resolve_place)
 
 # A submitter's place phrase must resolve at least this well before the report
 # is believed. Lower than the parsers use, because a person naming where they

@@ -180,3 +180,34 @@ SELECT flow, COUNT(*) AS n, ROUND(AVG(age_minutes)) AS avg_age_min,
        ROUND(AVG(confidence)::numeric, 3) AS avg_conf
 FROM checkpoint_serving WHERE direction = 'both'
 GROUP BY flow ORDER BY n DESC;
+
+\echo '--- G2.13: every crowd-reportable kind has decided where its data lives ---'
+-- place_kind was a dict in Python and the same silent failure happened THREE
+-- times: crowd checkpoint reports landing on towns, MCP history returning
+-- empty, crowd crossing reports landing on Rafah the city rather than Rafah the
+-- crossing. Each time a new state kind had been added without anyone
+-- remembering the list, and each time the report was accepted and stored
+-- somewhere no other source would ever meet it.
+--
+-- NULL is a valid answer (locality-level) but it must be a DECISION. A kind
+-- reaching production without one is how this recurs.
+SELECT CASE WHEN count(*) = 0
+            THEN 'PASS (' || (SELECT count(*) FROM state_kind_config
+                               WHERE place_kind IS NOT NULL)
+                 || ' kinds pinned to a place kind)'
+            ELSE 'FAIL: ' || string_agg(state_kind, ', ')
+                 || ' — crowd-reportable, point-shaped, and no place_kind'
+       END AS g2_place_kind_decided
+FROM state_kind_config
+WHERE crowd_reportable
+  AND place_kind IS NULL
+  -- These genuinely describe a locality; anything else point-shaped must say so.
+  AND state_kind NOT IN ('power','water','internet','weather','road_closure');
+
+\echo '--- G2.14: a kind''s place_kind names a place kind that exists ---'
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || string_agg(DISTINCT k.place_kind, ', ')
+                 || ' is not a kind any place has' END AS g2_place_kind_real
+FROM state_kind_config k
+WHERE k.place_kind IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM place p WHERE p.kind::text = k.place_kind);

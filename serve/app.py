@@ -1450,3 +1450,57 @@ def route_between(
     res["destination"] = {"query": destination, "place": rb.name_ar or rb.name_en,
                           "place_id": rb.place_id}
     return res
+
+
+@app.get("/v2/crossings", tags=["crossings"])
+def crossings(area: str | None = Query(None, description="governorate name")) -> dict:
+    """Crossings and what is known about them — Gaza and West Bank.
+
+    A crossing is not a checkpoint. Its state persists for days rather than
+    ninety minutes, it is asymmetric in kind (Kerem Shalom takes goods, Rafah
+    moves people), and "open" is rarely binary — open for medical evacuation is
+    not open. `partial` is kept distinct for that reason.
+
+    Every crossing will read `unknown` until a source reports one. That is the
+    honest state and it is shown rather than hidden: leaving the crossings out
+    entirely would make the same ignorance invisible.
+    """
+    rows = q("""
+        SELECT p.place_id, p.name_ar, p.name_en,
+               p.attrs->>'crossing_role'   AS role,
+               p.attrs->>'note'            AS note,
+               g.name_en                   AS governorate,
+               ST_Y(p.centroid::geometry)  AS lat,
+               ST_X(p.centroid::geometry)  AS lon,
+               s.value, s.last_known_value, s.confidence,
+               s.age_minutes, s.staleness_band, s.independent_sources
+          FROM place p
+          LEFT JOIN place g ON g.kind = 'governorate'
+                           AND g.admin2_pcode = p.admin2_pcode
+          LEFT JOIN state_serving s ON s.place_id = p.place_id
+                                   AND s.state_kind = 'crossing_status'
+         WHERE p.kind = 'crossing'
+           AND (%s::text IS NULL OR g.name_en ILIKE %s)
+         ORDER BY g.name_en NULLS LAST, p.name_en
+    """, (area, f"%{area}%" if area else None))
+
+    out = [{"place_id": r["place_id"],
+            "name": r["name_ar"] or r["name_en"], "name_en": r["name_en"],
+            "governorate": r["governorate"], "role": r["role"], "note": r["note"],
+            "lat": r["lat"], "lon": r["lon"],
+            "value": r["value"] or "unknown",
+            "last_known_value": r["last_known_value"],
+            "confidence": round(r["confidence"], 3) if r["confidence"] is not None else None,
+            "age_minutes": float(r["age_minutes"]) if r["age_minutes"] is not None else None,
+            "staleness_band": r["staleness_band"],
+            "independent_sources": r["independent_sources"]} for r in rows]
+    known = [c for c in out if c["value"] != "unknown"]
+    return {
+        "crossings": out,
+        "total": len(out), "with_a_current_reading": len(known),
+        "vocabulary": ["open", "partial", "closed"],
+        "note": ("`partial` means open for some traffic only — medical cases, "
+                 "aid lorries, a named list. It is never rounded up to `open`. "
+                 "No source reports crossing status yet, so these read "
+                 "`unknown`; that is the truth rather than a gap."),
+    }

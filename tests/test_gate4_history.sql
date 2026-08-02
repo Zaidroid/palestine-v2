@@ -108,3 +108,47 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS'
             ELSE 'FAIL: ' || count(*) || ' rows without a state_kind in attrs' END AS g4_7_provenance
 FROM observation o JOIN dataset d USING (dataset_id)
 WHERE d.key = 'tier1_daily' AND (o.attrs->>'state_kind') IS NULL;
+
+\echo '--- G4.8: Gaza MoH tiers are never conflated ---'
+-- Daily, since-ceasefire and cumulative all use the words شهداء and إصابات. A
+-- parser matching the words alone reads 73,356 as today's figure — wrong by
+-- four orders of magnitude, in the direction that gets quoted. The tiers must
+-- stay ordered: cumulative >= since_ceasefire >= daily, always.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' days where a tier is out of order' END AS g4_8_tiers_distinct
+FROM (
+  SELECT o.occurred_at,
+         max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.daily')            AS d,
+         max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.since_ceasefire')  AS sc,
+         max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.cumulative')       AS cu
+    FROM observation o JOIN dataset ds USING (dataset_id)
+   WHERE ds.key = 'gaza_moh_daily' GROUP BY 1
+) t
+WHERE (sc IS NOT NULL AND d  IS NOT NULL AND sc < d)
+   OR (cu IS NOT NULL AND sc IS NOT NULL AND cu < sc);
+
+\echo '--- G4.9: the daily figure reconciles against the cumulative delta ---'
+-- The Ministry publishes both, so they check each other: on consecutive days
+-- the change in the cumulative total should equal that day''s count. This is
+-- the parser grading itself against the source, and it caught two real bugs —
+-- "العدد التراكمي" being read as a section header, and a value sitting on the
+-- line after its label. 90% allows for the Ministry's own revisions.
+SELECT CASE
+         WHEN pairs < 20 THEN 'SKIP: only ' || pairs || ' comparable day-pairs yet'
+         WHEN exact::float / pairs >= 0.90
+           THEN 'PASS (' || exact || '/' || pairs || ' reconcile exactly)'
+         ELSE 'FAIL: only ' || exact || ' of ' || pairs || ' reconcile — the '
+              || 'daily and cumulative figures disagree, so one is misparsed'
+       END AS g4_9_moh_reconciles
+FROM (
+  SELECT count(*) pairs, count(*) FILTER (WHERE cum - prev = daily) exact
+  FROM (
+    SELECT dt, daily, cum, lag(cum) OVER (ORDER BY dt) prev,
+           dt - lag(dt) OVER (ORDER BY dt) gap
+    FROM (SELECT o.occurred_at::date dt,
+                 max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.daily')      daily,
+                 max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.cumulative') cum
+            FROM observation o JOIN dataset ds USING (dataset_id)
+           WHERE ds.key='gaza_moh_daily' GROUP BY 1) x
+  ) y WHERE daily IS NOT NULL AND prev IS NOT NULL AND gap = 1
+) z;
