@@ -1,0 +1,156 @@
+"""Regression cases for the checkpoint reader.
+
+Every case here is a real line from the v1 corpus that was parsed WRONG at some
+point — either by v1, or by an earlier version of this module. They are kept as
+tests because each one represents a specific way Arabic road-status text defeats
+a naive parser, and several of them invert meaning rather than merely lose it.
+
+    ./.venv/bin/python -m pytest tests/test_checkpoint_text.py -q
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from cascade.checkpoint_text import read  # noqa: E402
+
+
+def facts_of(text: str) -> str:
+    r = read(text)
+    if r.modality != "assertion":
+        return r.modality.upper()
+    return " ".join(f"{f.direction[:3]}:{f.value}"
+                    for f in sorted(r.facts, key=lambda x: (x.direction, x.axis, x.value)))
+
+
+# ── questions are not evidence ────────────────────────────────────────────────
+# v1 stored all of these as facts; 4,566 lines like the first became `open`.
+@pytest.mark.parametrize("text", [
+    "بوابة دورا فاتحة؟",           # "is the Dura gate open?"
+    "النبي يونس لسا فاتحة ؟",      # "is Nabi Yunis still open?"
+    "شو وضع شافي شمرون",           # "what's the status of Shavei Shomron" (no ?)
+    "اي حاجز سالك المربعه ولا عورتا ؟",
+    "عطارة للخارج كيف",            # interrogative particle LAST
+    "كيف عورتا للخارج",
+])
+def test_questions_are_not_evidence(text):
+    assert read(text).modality == "question"
+    assert not read(text).is_evidence
+
+
+# ── direction is per-clause, and can differ within one line ───────────────────
+@pytest.mark.parametrize("text,expect", [
+    # "Anabta: inspection outbound, flowing inbound" — v1 tagged the OUTBOUND
+    # fact with direction=inbound and dropped the inbound fact entirely.
+    ("🔴عنبتا تفتيش للخارج، سالك للداخل.", "inb:open out:inspection"),
+    ("حوارة سالك للداخل ومغلق للخارج",     "inb:open out:closed"),
+    ("عناب (عنبتا): الداخل: سالك - الخارج مغلق", "inb:open out:closed"),
+    # No separator at all — direction binds positionally.
+    ("عناب سالك ل الداخل مغلق للخارج",     "inb:open out:closed"),
+    ("دير شرف ازمه للخارج مع تفتيش و للداخل سالك",
+     "inb:open out:congested out:inspection"),
+    # A single direction governs every status in the clause.
+    ("جبع ازمة وتفتيش للخارج", "out:congested out:inspection"),
+])
+def test_direction_binding(text, expect):
+    assert facts_of(text) == expect
+
+
+# ── flow and presence are separate axes ───────────────────────────────────────
+@pytest.mark.parametrize("text,expect", [
+    # "Ein Shibli opened, with inspection" — v1 returned `inspection` alone,
+    # losing the fact that it is passable.
+    ("عين شبلي فتحت مع تفتيش ⚠️", "bot:open bot:inspection"),
+    ("🔴المربعة تواجد للمستوطنين يرجى الحذر.", "bot:settlers"),
+])
+def test_axes_are_independent(text, expect):
+    assert facts_of(text) == expect
+
+
+# ── negation, and the traps around it ─────────────────────────────────────────
+@pytest.mark.parametrize("text,expect", [
+    ("مراح رياح مش سالك", "bot:closed"),          # genuine negation
+    # "ما زال" / "لا زالت" mean STILL, not NOT. Reading the particle as a
+    # negator turned "still closed" into open.
+    ("النبي الياس ما زال مغلق❌", "bot:closed"),
+    ("عين سينيا لا زالت مغلق❌", "bot:closed"),
+    # "لا" before an adjective is the discourse "no", not negation.
+    ("لا مسكر", "bot:closed"),
+])
+def test_negation(text, expect):
+    assert facts_of(text) == expect
+
+
+def test_absence_is_recorded_not_discarded():
+    """"بدون جيش" used to be thrown away, and P1.3 measured the cost: 28.31% of
+    all presence mentions in the corpus are negated, and they are the only
+    statements of absence anybody ever makes. Without them `present` was the
+    only value presence could take, so it could never be contradicted and the
+    served state was `unknown` for 99.5% of places."""
+    r = read("حومش سالك بدون جيش")
+    assert r.flow_for("both").value == "open"
+    assert r.absence_for("both") == ["idf"]
+    # The original protection still holds: absence must never read as presence.
+    assert r.presence_for("both") == []
+
+
+def test_a_negator_is_consumed_by_the_word_it_reaches_first():
+    """"المربعة بدون جيش سالكة" — "without army, FLOWING". The بدون belongs to
+    جيش, which sits between it and سالكة. Reading two tokens back inverted the
+    road to CLOSED: the most expensive error this parser can make, produced by
+    a line that is good news twice over."""
+    r = read("المربعة بدون جيش سالكة")
+    assert r.flow_for("both").value == "open"
+    assert r.absence_for("both") == ["idf"]
+
+
+def test_phrase_match_respects_token_boundaries():
+    """"حومش سالك" ("Homesh is flowing") contains the characters of "مش سالك"
+    ("not flowing") across a word boundary. Substring matching inverted it."""
+    assert facts_of("حومش سالك") == "bot:open"
+    assert facts_of("حومش سالك ✅") == "bot:open"
+    assert facts_of("مش سالك") == "bot:closed"
+
+
+def test_emoji_attached_to_word_does_not_hide_it():
+    """Channels append emoji with no space; the token must still be found."""
+    assert facts_of("بني نعيم سالكه✔️✔️✔️") == "bot:open"
+    assert facts_of("ياسوف: ❌ مغلق") == "bot:closed"
+
+
+def test_bare_noun_is_not_a_status():
+    """v1 maps حاجز ("checkpoint") to idf, so naming a checkpoint reported
+    soldiers at it. Only the predicative use counts."""
+    assert facts_of("عابود حاجز") == "bot:idf"          # "there's a checkpoint"
+    assert facts_of("المربعه في حاجز") == "bot:idf"
+    assert facts_of("حاجز قلنديا سالك") == "bot:open"   # naming, not reporting
+
+
+def test_withdrawal_clears_presence():
+    """v1 stored "the army withdrew from Sarra" as a place NAME.
+
+    A withdrawal now asserts BOTH that the road opened and that the army is
+    gone — the second at lower confidence, since the verb may attach to a
+    different entity than the one named."""
+    r = read("انسحب الجيش عن صرة")
+    assert r.flow_for("both").value == "open"
+    assert r.absence_for("both") == ["idf"]
+    assert r.presence_for("both") == []
+    assert facts_of("عطارة شالو الحاجز") == "bot:open"
+
+
+def test_most_restrictive_flow_wins_per_direction():
+    r = read("دير شرف فاتح بس البوابة مسكرة")
+    assert r.flow_for("both").value == "closed"
+
+
+def test_nothing_is_silently_dropped():
+    """A line we cannot read is still a Reading, never an exception."""
+    for text in ["", "   ", "قلنديا", "🔴🔴", None]:
+        r = read(text)
+        assert r.modality in ("unparsed", "assertion", "question")
+        assert not (r.modality == "unparsed" and r.facts)

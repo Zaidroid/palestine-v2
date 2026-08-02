@@ -1,0 +1,136 @@
+{
+  "measured_at": "2026-08-01T10:48:10.715798+00:00",
+  "overall": {
+    "n": 123,
+    "precision": 0.732,
+    "ci95": [
+      0.647,
+      0.802
+    ]
+  },
+  "per_type": {
+    "arrest": {
+      "n": 10,
+      "precision": 0.9,
+      "ci95": [
+        0.596,
+        0.982
+      ],
+      "is_incident": "9/10",
+      "type_ok": "9/9",
+      "place_ok": "9/9",
+      "west_bank": "9/9"
+    },
+    "closure": {
+      "n": 20,
+      "precision": 0.5,
+      "ci95": [
+        0.299,
+        0.701
+      ],
+      "is_incident": "17/20",
+      "type_ok": "12/17",
+      "place_ok": "15/17",
+      "west_bank": "17/17"
+    },
+    "death": {
+      "n": 2,
+      "precision": 1.0,
+      "ci95": [
+        0.342,
+        1.0
+      ],
+      "is_incident": "2/2",
+      "type_ok": "2/2",
+      "place_ok": "2/2",
+      "west_bank": "2/2"
+    },
+    "demolition": {
+      "n": 17,
+      "precision": 0.353,
+      "ci95": [
+        0.173,
+        0.587
+      ],
+      "is_incident": "14/17",
+      "type_ok": "6/14",
+      "place_ok": "14/14",
+      "west_bank": "14/14"
+    },
+    "injury": {
+      "n": 20,
+      "precision": 0.8,
+      "ci95": [
+        0.584,
+        0.919
+      ],
+      "is_incident": "20/20",
+      "type_ok": "18/20",
+      "place_ok": "18/20",
+      "west_bank": "20/20"
+    },
+    "raid": {
+      "n": 20,
+      "precision": 0.75,
+      "ci95": [
+        0.531,
+        0.888
+      ],
+      "is_incident": "20/20",
+      "type_ok": "15/20",
+      "place_ok": "20/20",
+      "west_bank": "20/20"
+    },
+    "settler_attack": {
+      "n": 20,
+      "precision": 1.0,
+      "ci95": [
+        0.839,
+        1.0
+      ],
+      "is_incident": "20/20",
+      "type_ok": "20/20",
+      "place_ok": "20/20",
+      "west_bank": "20/20"
+    },
+    "shooting": {
+      "n": 4,
+      "precision": 0.75,
+      "ci95": [
+        0.301,
+        0.954
+      ],
+      "is_incident": "4/4",
+      "type_ok": "3/4",
+      "place_ok": "4/4",
+      "west_bank": "4/4"
+    },
+    "siege": {
+      "n": 10,
+      "precision": 0.9,
+      "ci95": [
+        0.596,
+        0.982
+      ],
+      "is_incident": "10/10",
+      "type_ok": "10/10",
+      "place_ok": "9/10",
+      "west_bank": "10/10"
+    }
+  },
+  "rejects": {
+    "n": 40,
+    "were_really_incidents": 10,
+    "miss_rate": 0.25
+  },
+  "gate": {
+    "overall_required": 0.8,
+    "per_type_required": 0.6,
+    "overall_pass": false,
+    "types_below_floor": [
+      "closure",
+      "demolition"
+    ],
+    "pass": false
+  }
+}

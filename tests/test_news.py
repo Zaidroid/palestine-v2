@@ -1,0 +1,260 @@
+"""Regression cases for the news incident reader.
+
+Every case is a real message from the agent2 feed that was classified WRONG at
+some point. The recurring theme is that Arabic nouns and participles NAME
+people and things far more often than they report events, and that verbs carry
+tense on a prefix — so matching the dictionary form finds almost nothing.
+
+    ./.venv/bin/python -m pytest tests/test_news.py -q
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from cascade.news import read  # noqa: E402
+
+
+def kind(text: str) -> str:
+    r = read(text)
+    return r.incident_type if r.verdict == "incident" else r.verdict
+
+
+# ── verbs carry tense on a PREFIX ────────────────────────────────────────────
+# "تقتحم" and "اقتحم" share no leading letters, and the imperfective is the
+# commonest headline form. Matching only the perfective missed most raids.
+@pytest.mark.parametrize("text,expect", [
+    ("قوات الاحتلال تقتحم بلدة بيت امر شمال الخليل", "raid"),
+    ("قوات الاحتلال اقتحمت بلدة يعبد جنوب جنين", "raid"),
+    ("قوات الاحتلال تداهم عددًا من المنازل خلال اقتحامها لبلدة علار شمال طولكرم", "raid"),
+    ("قوات الاحتلال تعتقل شابين من بلدة بيتا جنوب نابلس", "arrest"),
+    ("الاحتلال يغلق مدخل بلدة سنجل شمال رام الله", "closure"),
+])
+def test_verb_prefixes(text, expect):
+    assert kind(text) == expect
+
+
+# ── a noun that names someone is not a report ────────────────────────────────
+def test_martyr_noun_is_not_a_death_report():
+    """"الشهيد" is overwhelmingly referential here — the grave OF martyr X, the
+    father OF the martyrs. Treating the noun as a death filed a settler attack
+    on a cemetery as a killing."""
+    assert kind("مستوطنون يعتدون على قبر الشهيد محمد الجنيدي خلال اقتحام قرية الجنيد غرب نابلس") \
+        == "settler_attack"
+    assert kind("رسائل والد الشهيدين محمد ورامي أبو بكر") != "death"
+    # A killing VERB still reports a death.
+    assert kind("استشهد الشاب محمد خلال اقتحام قوات الاحتلال لبلدة يعبد جنوب جنين") == "death"
+
+
+def test_detainee_noun_is_not_an_arrest():
+    """Same shape: "المعتقل" names a person, it does not report an arrest."""
+    assert kind("نادي الأسير: الطفل المعتقل محمد موسى حميد") != "arrest"
+
+
+# ── geography is a hard filter ───────────────────────────────────────────────
+@pytest.mark.parametrize("text", [
+    "الشهيد الطفل زيد نوفل قتله الاحتلال فجر اليوم بغارة استهدفت منزلاً في مخيم البريج وسط قطاع غزة",
+    "طواقم الهلال الأحمر تتجه نحو معبر رفح بعد وصول نداءات حول جرحى",
+])
+def test_gaza_is_rejected(text):
+    """Real news, wrong geography. Counting it would attribute Gaza incidents to
+    West Bank governorates."""
+    assert read(text).verdict == "rejected"
+    assert read(text).reject_reason == "gaza"
+
+
+@pytest.mark.parametrize("text", [
+    "رسميا الاردن تعلن الاحتفاظ بحق الرد على ايران والعراق",
+    "القناة 13 العبرية: تشديد مواقف مجتبى خامنئي يثير قلقًا في إسرائيل",
+])
+def test_international_is_rejected(text):
+    assert read(text).verdict == "rejected"
+
+
+def test_commentary_is_rejected():
+    assert read("هل بات الانتظار قدر الفلسطيني في الضفة؟؟ وقود وحواجز وأزمات متتالية").verdict \
+        == "rejected"
+    assert read("تمرّ علينا اليوم الذكرى الثانية لرحيل قائد الأمة").verdict == "rejected"
+
+
+# ── place extraction ─────────────────────────────────────────────────────────
+def test_place_survives_a_fused_preposition():
+    """Arabic writes the preposition onto the noun — "لبلدة إذنا", "بمدينة بيت
+    لحم". Matching only the bare form missed most of the corpus, because the
+    place word almost always follows a verb of motion."""
+    assert read("قوات الاحتلال تداهم منزلا خلال اقتحامها لبلدة إذنا").place_text == "اذنا"
+    assert read("اقتحام قوات الاحتلال لمدينة سلفيت").place_text == "سلفيت"
+
+
+def test_multiword_place_is_not_truncated():
+    assert read("تواصل قوات الاحتلال اقتحامها لبلدة بيت أمر شمال الخليل").place_text == "بيت امر"
+
+
+def test_bearing_does_not_leak_into_the_name():
+    """"قرية المغير، شمال رام الله" must give المغير — normalize() has already
+    turned the comma into a space, so punctuation cannot terminate the name."""
+    r = read("إطلاق الرصاص الحي صوب الشبان خلال اقتحام قرية المغير، شمال رام الله")
+    assert r.place_text == "المغير"
+    assert r.governorate == "رام الله"
+
+
+def test_waw_ends_the_name():
+    """"قرية جنيد والقرى المحيطة" is one village, not three words of one."""
+    assert read("قوات الاحتلال تقتحم قرية جنيد والقرى المحيطة بمدينة نابلس").place_text == "جنيد"
+
+
+def test_neighbourhood_word_does_not_match_inside_another_word():
+    """"حي" matched inside "الرصاص الحي" ("LIVE ammunition") and captured the
+    next token as a place. Two-letter place words cannot be distinguished from
+    substrings, so the word is not used at all."""
+    r = read("٣ اصابات بالرصاص الحي في بيت امر قرب الخليل")
+    assert r.place_text != "في"
+
+
+def test_rejecting_is_the_default():
+    """Anything without a concrete action AND a place stays unclassified. The
+    claim is retained either way, so a miss costs nothing and a false positive
+    is announced to a family planning a journey."""
+    assert read("عشرات آلاف المصلين يؤدون صلاة الجمعة في باحات المسجد الأقصى").verdict != "incident"
+    assert read("").verdict == "rejected"
+    assert read(None).verdict == "rejected"
+
+
+# ── P1.1 findings: every case below is a real message the classifier got wrong,
+# found by hand-scoring a stratified sample of 163 classifications. The measured
+# result was 0.732 overall with demolition at 0.353 and closure at 0.500, both
+# under the 0.60 floor. ────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("text", [
+    # Settlers storming a village was filed as an ARMY raid, because the
+    # settler pattern spelled the stem "اقتحم" — the same tense-prefix bug this
+    # file already tests for `raid`. "يقتحمون" contains "قتح", not "اقتحم".
+    "مستوطنون رفقة أغنامهم يقتحمون أراضي المواطنين في خربة قواويس بمسافر يطا جنوب الخليل",
+    # The actor came AFTER the verb, so the settler gate never fired.
+    "جانب من اقتحام المستوطنين بحماية قوات الاحتلال منذ ساعات الصباح بلدة تل في نابلس",
+    "مستوطنون يشعلون حريقًا في أراضي المواطنين شرق قرية أبو فلاح، شرق رام الله بالتزامن مع اقتحامهم المنطقة",
+    # Seizure verbs were absent entirely.
+    "مجموعات من المستوطنين تقوم بالاستيلاء على عين القصعة في أراضي مدينة البيرة",
+])
+def test_settler_actions_are_not_army_raids(text):
+    """Recording a settler attack as an army raid gets the ACTOR wrong, which
+    is the single fact a reader most needs from this feed."""
+    assert kind(text) == "settler_attack"
+
+
+@pytest.mark.parametrize("text", [
+    # Nominal casualty reports have no verb at all. The referential-noun guard
+    # correctly rejects "the grave of the martyr" and wrongly rejected these.
+    "وزارة الصحة: شهيد ومصابان أحدهما بجروح حرجة برصاص الاحتلال في تل جنوب غرب نابلس",
+    "الهلال الاحمر : شهيد و١٣ اصابة منهم ٣ اصابات خطيرة خلال اقتحام قوات الاحتلال لمخيم بلاطة في نابلس",
+    "وزارة الصحة: ارتفاع حصيلة الشهداء في تل جنوب غرب نابلس إلى ٤ شهداء و٤ إصابات، ٣ منها حرجة",
+])
+def test_casualty_reports_are_deaths(text):
+    """A death filed as a raid or an injury loses the most important fact in
+    the message. A bare "شهيد" is still not enough — the count-and-casualty
+    frame is what distinguishes a report from a reference to a person."""
+    assert kind(text) == "death"
+
+
+def test_the_grave_of_a_martyr_is_still_not_a_death():
+    """The guard that made the above necessary must not be undone by it."""
+    assert kind("مستوطنون يعتدون على قبر الشهيد محمد الجنيدي خلال اقتحام قرية الجنيد غرب نابلس") \
+        == "settler_attack"
+
+
+@pytest.mark.parametrize("text,reason", [
+    # Three of twenty sampled `closure` incidents were road-status bulletins —
+    # one of them reporting that the roads were OPEN. That is checkpoint data,
+    # already carried by its own pipeline.
+    ("احوال طرق اريحا ومحيطها ✅كافة حواجز أريحا سالكه ✅المعرجات كرملوا سالكين", "status bulletin"),
+    ("⚪أحوال حواجز مدينة رام الله.. 🚧 عطارة: حاجز بالاتجاهين. ✅ عين سينيا: سالك. ❌ سنجل: مغلق", "status bulletin"),
+    # A notice is not an act; the demolition may never follow.
+    ("ماذا قال أصحاب منازل ومنشآت بعد تسليمهم إخطارات هدم في بلدة نحالين غرب بيت لحم؟", "notice not act"),
+    # Four of seventeen sampled demolitions were one story about a woman freed
+    # after 8 days, filed as a fresh demolition because it mentions هدم.
+    ("الإفراج عن السيدة حنين فنون بعد 8 أيام من اعتقالها أثناء هدم منزل عائلتها في بلدة نحالين", "aftermath"),
+    # A six-month statistic is not an event.
+    ("تصدرت محافظتا القدس وقلقيلية عدد المنشآت التي هدمها الاحتلال خلال النصف الأول من عام 2026", "statistical"),
+])
+def test_non_events_are_rejected(text, reason):
+    r = read(text)
+    assert r.verdict != "incident", f"{reason}: served as {r.incident_type}"
+    assert r.reject_reason == reason
+
+
+def test_a_west_bank_university_is_not_foreign_news():
+    """"الجامعة الأمريكية" is in Jenin. Matching "امريك" inside it rejected a
+    real raid on student housing sheltering displaced people as world news."""
+    assert kind("قوات الاحتلال تقتحم منطقة سكنات الجامعة الأمريكية التي تؤوي نازحين من مخيم جنين") \
+        == "raid"
+
+
+def test_gas_fired_at_people_is_an_incident():
+    """Rejected as "no incident verb" while describing tear gas and stun
+    grenades fired at a wedding."""
+    assert kind("عاجل | قوات الاحتلال تطلق قنابل الغاز والصوت تجاه حفل زفاف في بلدة بيت أمر، شمال الخليل") \
+        == "shooting"
+
+
+def test_casualty_outranks_the_action_that_caused_it():
+    """`raid` sat above `injury`, so a Red Crescent casualty report became a
+    raid and the wounded man disappeared from the record."""
+    assert kind("عاجل| الهلال الأحمر: إصابة شاب برصاص جيش الاحتلال في البطن خلال اقتحام بلدة بيت أمر شمال الخليل") \
+        == "injury"
+
+
+def test_threatening_to_demolish_is_not_demolishing():
+    """A conditional threat filed a report of a detainee being tortured in
+    Jericho prison as a demolition."""
+    r = read("أجهزة أمن السلطة تعرض الأسير أمين القوقا للتعذيب في سجن أريحا، "
+             "وقام الاحتلال بتهديده بنية هدم منزله إذا لم يسلم نفسه واعتقل أفراد عائلته")
+    assert r.incident_type != "demolition"
+
+
+def test_rural_locality_prefixes_resolve():
+    """خربة / خلة are where settler incidents concentrate. Without them the
+    event was read correctly and then dropped for having no place."""
+    assert read("مستوطنون يسيطرون على المزيد من آبار المياه والأراضي في خلة الحمص جنوب يطا"
+                ).place_text is not None
+
+
+@pytest.mark.parametrize("text,expect", [
+    # "رأي" (opinion) normalises to "راي", which is a SUBSTRING of "اسراييلي"
+    # — إسرائيلي, "Israeli". 142 claims were rejected as commentary for
+    # containing the word "Israeli".
+    ("قوات الاحتلال الإسرائيلي تقتحم بلدة بيت أمر شمال الخليل", "raid"),
+    # ...and of "حرايق" (fires), which filed a settler arson report as opinion.
+    ("اندلاع حرائق في قرية كفر مالك، شمال شرق رام الله؛ إثر إطلاق قوات الاحتلال قنابل الغاز",
+     "shooting"),
+])
+def test_short_reject_terms_do_not_match_inside_longer_words(text, expect):
+    """The `حومش سالك` / `مش سالك` family, at corpus scale. In Arabic a short
+    string is almost always inside a longer real word."""
+    assert kind(text) == expect
+
+
+def test_deportation_is_not_a_memorial():
+    """"رحيل" (passing) sits inside "ترحيل" — DEPORTATION. It is still not
+    CLASSIFIED, because the taxonomy has no type for it, but it must not be
+    thrown away as a memorial post: `unclear` keeps the claim reachable for a
+    later rule, `rejected/commentary` buries it."""
+    r = read("الاحتلال يقرر ترحيل عائلة فلسطينية من منزلها في بلدة سلوان بالقدس")
+    assert r.reject_reason != "commentary"
+
+
+def test_genuine_commentary_is_still_rejected():
+    """The boundary fix must not disarm the rule it protects."""
+    r = read("بقلم الكاتب: رأي في الوضع الفلسطيني الراهن وتحليل المشهد السياسي")
+    assert r.verdict == "rejected" and r.reject_reason == "commentary"
+
+
+def test_the_verbal_noun_of_martyrdom_is_a_death():
+    """استشهاد is ا-س-ت-ش-ه-ا-د and does not contain the perfective stem
+    استشهد — the same trap as اقتحام/اقتحم. It filed a man who died of his
+    wounds as an INJURY, which is the worst direction for the error to run."""
+    assert kind("استشهاد الشاب محمود زياد العملة (٣٢ عاماً) متأثراً بجروح حرجة "
+                "أصيب بها برصاص الاحتلال قرب بلدة بيت أولا شمال الخليل") == "death"
