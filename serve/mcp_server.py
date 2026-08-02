@@ -413,7 +413,109 @@ def coverage() -> dict:
             **d}
 
 
+
+# ── P5.1/P5.2 parity: an agent must be able to reach everything a frontend can ─
+# Otherwise "one place to read everything" quietly means "one place, unless you
+# are an agent", and the two surfaces drift until nobody knows which is
+# authoritative.
+
+def place_history(place: str, state_kind: str | None = None,
+                  days: int = 30) -> dict:
+    """Daily report counts for a place, from the databank rollup."""
+    g = api("/v2/geo/resolve", q=place, state_kind=state_kind or "checkpoint_status")
+    if not g.get("found"):
+        return {"answer": f"ما عرفت وين {place}.", "found": False, **g}
+    d = api("/v2/history/place", place_id=g["place_id"],
+            state_kind=state_kind, days=days)
+    series = d.get("series", [])
+    if not series:
+        return {"answer": f"ما عندي تاريخ محفوظ عن {g['name']} بعد.",
+                "place": g["name"], "series": []}
+    # Summarise so a model does not have to reduce 30 days itself to answer
+    # "has it been bad lately".
+    tot: dict[str, dict[str, int]] = {}
+    for day in series:
+        for kind, v in day["kinds"].items():
+            slot = tot.setdefault(kind, {})
+            for val, n in v.get("values", {}).items():
+                slot[val] = slot.get(val, 0) + n
+    return {"answer": f"{g['name']}: تاريخ {len(series)} يوم.",
+            "place": g["name"], "place_id": g["place_id"],
+            "days_with_data": len(series), "totals_by_kind": tot,
+            "series": series,
+            "counts": "reports, not time — sparse days mean sparse attention."}
+
+
+def place_pattern(place: str, state_kind: str = "checkpoint_status",
+                  days: int = 60) -> dict:
+    """What usually happens here, by hour of day, local time."""
+    g = api("/v2/geo/resolve", q=place, state_kind=state_kind)
+    if not g.get("found"):
+        return {"answer": f"ما عرفت وين {place}.", "found": False, **g}
+    d = api("/v2/patterns/place", place_id=g["place_id"],
+            state_kind=state_kind, days=days)
+    known = [h for h in d["hours"] if h["usually"] != "unknown"]
+    if not known:
+        return {"answer": f"ما في تقارير كافية عن {g['name']} لأستنتج نمط.",
+                "place": g["name"], "hours": d["hours"]}
+    worst = [h for h in known if h["usually"] in ("closed", "unavailable")]
+    hrs = "، ".join(f"{h['hour']:02d}:00" for h in worst[:6]) or "ما في"
+    return {"answer": f"{g['name']}: عادة مسكّر الساعات {hrs}." if worst
+                      else f"{g['name']}: عادة سالك بمعظم الساعات.",
+            "place": g["name"], "place_id": g["place_id"],
+            "timezone": d["timezone"], "hours": d["hours"],
+            "caveat": d["note"]}
+
+
+def area_history(state_kind: str | None = None, days: int = 30) -> dict:
+    """Totals by governorate — the cross-tier view."""
+    d = api("/v2/history/area", state_kind=state_kind, days=days)
+    govs = d.get("governorates", {})
+    return {"answer": f"تاريخ {days} يوم عبر {len(govs)} محافظة.",
+            "governorates": govs, "note": d.get("note")}
+
+
+def stream_info() -> dict:
+    """How to subscribe to live changes, and whether the stream is alive."""
+    d = api("/v2/stream/status")
+    return {"answer": ("البث شغال." if d.get("running") else "البث واقف."),
+            "url": "/v2/stream",
+            "protocol": "server-sent events",
+            "emits": "changes in what the system will ASSERT, including a "
+                     "reading decaying to 'unknown'",
+            **d}
+
+
 TOOLS = {
+    "place_history": (place_history,
+                      "What has been happening at a place over recent days: daily counts of "
+                      "reports and what they said, plus how many INDEPENDENT reporters. Use "
+                      "for 'has Huwara been bad this month'. Counts are reports, not time.",
+                      {"type": "object", "properties": {
+                          "place": {"type": "string", "description": "e.g. حوارة, Huwara"},
+                          "state_kind": {"type": "string",
+                                         "description": "e.g. checkpoint_status, fuel_diesel"},
+                          "days": {"type": "integer"}},
+                       "required": ["place"]}),
+    "place_pattern": (place_pattern,
+                      "What USUALLY happens at a place by hour of day, in local time. Use for "
+                      "'when is Za'tara usually closed'. Hours with too few reports come back "
+                      "as unknown rather than as a confident share of two observations.",
+                      {"type": "object", "properties": {
+                          "place": {"type": "string"},
+                          "state_kind": {"type": "string"},
+                          "days": {"type": "integer"}},
+                       "required": ["place"]}),
+    "area_history": (area_history,
+                     "Totals by governorate over recent days — checkpoints, fuel and the rest "
+                     "joined on place and time. Use for 'which governorate had the most "
+                     "closures this month'.",
+                     {"type": "object", "properties": {
+                         "state_kind": {"type": "string"}, "days": {"type": "integer"}}}),
+    "stream_info": (stream_info,
+                    "How to subscribe to live changes over server-sent events, and whether the "
+                    "stream is currently running.",
+                    {"type": "object", "properties": {}}),
     "fuel_near": (fuel_near, "Which stations have diesel/petrol right now, nearest first. "
                              "Give `place` (Arabic or English name) or lat/lon.",
                   {"type": "object", "properties": {

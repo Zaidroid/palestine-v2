@@ -117,6 +117,7 @@ EXPECTED_JOBS = {
     "ingest-external":   (900, 1800),
     "watchdog":          (600, 900),
     "crowd-refresh":     (120, 600),
+    "stream":            (10, 300),
     "rollup":            (86400, 10800),
     "measure-accuracy":  (86400, 10800),
     "learn-checkpoints": (86400, 10800),

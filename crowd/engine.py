@@ -51,7 +51,8 @@ sys.path.insert(0, str(ROOT))
 
 from ingest import bronze                              # noqa: E402
 from resolve.db import connect                         # noqa: E402
-from resolve.geo import resolve_place                  # noqa: E402
+from resolve.geo import (PREFER_PLACE_KIND, _Ambiguous,  # noqa: E402,F401
+                         resolve_for_state_kind, resolve_place)
 
 # A submitter's place phrase must resolve at least this well before the report
 # is believed. Lower than the parsers use, because a person naming where they
@@ -64,29 +65,6 @@ MIN_PLACE_CONFIDENCE = 0.55
 TOKEN_BYTES = 32
 UNVERIFIED_GROUP = "crowd:unverified"
 
-# Which KIND of place each field's reports belong to. Without this a crowd
-# report resolves to whatever matches the name best, which is almost always the
-# locality — and the parsers attach checkpoint readings to `checkpoint` places
-# and fuel readings to `station` places.
-#
-# Caught by testing rather than by reasoning: a crowd report of "الظاهرية open"
-# landed on place 61, the town, while every channel report for that checkpoint
-# sits on place 1703. The submission was accepted, stored, and correct-looking,
-# and it could never have corroborated anything or satisfied the P2.4 gate,
-# because it was describing a different row. The engine would have run for
-# months accepting checkpoint reports that were structurally incapable of
-# reaching a served value, and nothing would have complained.
-#
-# 236 of 252 checkpoint place-rows are `checkpoint`, 196 of 199 fuel ones are
-# `station`, so this is where the reports have to land. power, water, internet
-# and road_closure are genuinely locality-level and pass no preference.
-PREFER_PLACE_KIND = {
-    "checkpoint_status": "checkpoint", "checkpoint_flow": "checkpoint",
-    "checkpoint_idf": "checkpoint", "checkpoint_police": "checkpoint",
-    "checkpoint_settlers": "checkpoint", "checkpoint_inspection": "checkpoint",
-    "fuel_diesel": "station", "fuel_gasoline": "station",
-    "cooking_gas": "station",
-}
 
 
 @dataclass
@@ -201,88 +179,6 @@ def reportable_kinds() -> list[dict]:
                 for k, v, g, u, h in cur.fetchall()]
 
 
-class _Ambiguous(Exception):
-    """The phrase names more than one place of the right kind."""
-    def __init__(self, options):
-        self.options = options
-        super().__init__("ambiguous place")
-
-
-@dataclass
-class _Place:
-    place_id: int
-    name_ar: str | None
-    name_en: str | None
-    precision: str
-    confidence: float
-    method: str
-
-
-# Match a typed name against places of one kind, by the same folding the
-# gazetteer uses. Deliberately NOT done by adding place_alias rows.
-#
-# 172 of 359 checkpoint places have no alias at all — they came from v1's
-# registry, which addresses them by its own id and never needed names — and 81
-# of those carry live data. So a crowd member typing a checkpoint name reaches
-# the LOCALITY of the same name instead, lands on a different row from every
-# channel report, and can never corroborate anything.
-#
-# The obvious fix, backfilling place_alias, would change resolution for
-# everything else too: `_prefer` scores a checkpoint above a locality, so a news
-# sentence mentioning the town الظاهرية would start geocoding to the checkpoint.
-# That is a live regression in the incident pipeline to fix a crowd bug. This
-# stays inside the crowd path, where the caller knows which kind it wants.
-# Folding happens in Python, with the same helper the gazetteer and every
-# parser use. Doing it in SQL would mean a second implementation of Arabic
-# normalisation, and this project has already been bitten twice by two
-# normalisers disagreeing (`ILIKE` not folding hamza; patterns not folded at
-# import). Under 600 rows per kind, so scanning them costs nothing.
-NAME_SQL = "SELECT place_id, name_ar, name_en FROM place WHERE kind = %s"
-
-
-def _resolve_for_kind(conn, place: str, state_kind: str):
-    """Resolve a place phrase to the row this field's data actually lives on."""
-    want = PREFER_PLACE_KIND.get(state_kind)
-    if want:
-        from resolve.arabic import fold_for_match, normalize
-        target = fold_for_match(place)
-        typed = place.strip().lower()
-        with conn.cursor() as cur:
-            cur.execute(NAME_SQL, (want,))
-            rows = cur.fetchall()
-
-        # Exact name first, folded name second. `fold_for_match` strips generic
-        # words, so "بوابة حوارة" (Huwara Gate) and "حوارة" both fold to
-        # حواره — meaning the fuller, more specific name a submitter types to
-        # disambiguate would itself come back ambiguous, and the refusal would
-        # offer them options they cannot express. Matching the exact name first
-        # makes the answer to "which one?" typeable.
-        exact = [(pid, ar, en) for pid, ar, en in rows
-                 if (ar and normalize(ar) == normalize(place))
-                 or (en and en.strip().lower() == typed)]
-        if len(exact) == 1:
-            pid, ar, en = exact[0]
-            return _Place(pid, ar, en, "exact", 0.92, f"name:{want}")
-
-        hits = [(pid, ar, en) for pid, ar, en in rows
-                if (ar and fold_for_match(ar) == target)
-                or (en and en.strip().lower() == typed)]
-        if len(hits) == 1:
-            pid, ar, en = hits[0]
-            return _Place(pid, ar, en, "exact", 0.9, f"name:{want}")
-        if len(hits) > 1:
-            # Genuinely ambiguous: "حوارة" is both a checkpoint and the gate
-            # beside it. Falling through to the general resolver here put the
-            # report on the TOWN — a row no channel writes to, so it could
-            # never corroborate and never be served. Silently filing a report
-            # against the wrong place is worse than declining it, and the
-            # submitter is the only one who knows which they meant.
-            raise _Ambiguous([(pid, ar or en) for pid, ar, en in hits])
-
-    return resolve_place(place, {"prefer_kind": want} if want else None,
-                         conn=conn)
-
-
 def _rate_limited(cur, source_id: int, place_id: int, state_kind: str,
                   cap: int) -> int:
     cur.execute("""
@@ -315,7 +211,7 @@ def submit(handle: str, token: str, state_kind: str, place: str, value: str,
             return Result(False, "rejected", "direction must be both/inbound/outbound")
 
         try:
-            res = _resolve_for_kind(conn, place, state_kind)
+            res = resolve_for_state_kind(conn, place, state_kind)
         except _Ambiguous as amb:
             names = " / ".join(n for _, n in amb.options[:4])
             return Result(False, "rejected",

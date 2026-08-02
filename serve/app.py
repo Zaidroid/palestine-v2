@@ -854,14 +854,35 @@ def coverage() -> dict:
 
 
 @app.get("/v2/geo/resolve", tags=["meta"])
-def geo_resolve(q_: str = Query(..., alias="q", min_length=2)) -> dict:
+def geo_resolve(q_: str = Query(..., alias="q", min_length=2),
+                state_kind: str | None = Query(
+                    None, description="resolve to the place kind this field's "
+                                      "data actually lives on")) -> dict:
     """Resolve a free-text Arabic/English place name to coordinates.
 
     Exposed so the MCP layer (and any agent) can turn "نابلس" into a lat/lon
     without needing database access or its own copy of the gazetteer.
+
+    PASS `state_kind` WHEN YOU MEAN A CHECKPOINT OR A STATION. Without it,
+    "حوارة" resolves to the TOWN — and every channel report about that
+    checkpoint sits on a different row, so a history or pattern query comes
+    back empty while looking perfectly healthy. The crowd engine hit this
+    first; the resolver is now shared so both cannot drift.
     """
-    from resolve.geo import resolve_place
-    r = resolve_place(q_, learn=False)
+    from resolve.geo import resolve_for_state_kind, resolve_place
+    if state_kind:
+        from resolve.db import connect
+        from resolve.geo import _Ambiguous
+        try:
+            with connect() as conn:
+                r = resolve_for_state_kind(conn, q_, state_kind)
+        except _Ambiguous as amb:
+            return {"found": False, "query": q_, "ambiguous": True,
+                    "options": [{"place_id": pid, "name": n} for pid, n in amb.options],
+                    "note": "more than one place of that kind has this name — "
+                            "ask again with the fuller name"}
+    else:
+        r = resolve_place(q_, learn=False)
     if not r:
         return {"found": False, "query": q_}
     row = q("SELECT ST_Y(centroid::geometry) la, ST_X(centroid::geometry) lo "
@@ -1124,4 +1145,154 @@ def patterns_place(
         "note": ("A pattern is what was REPORTED at that hour, not what was "
                  "true — nobody reports a quiet checkpoint at 3am, so sparse "
                  "hours mean sparse attention, not calm."),
+    }
+
+
+# ── P5.2: real-time push ─────────────────────────────────────────────────────
+
+@app.on_event("startup")
+async def _start_stream() -> None:
+    from serve.stream import broadcaster
+    broadcaster.start()
+
+
+@app.on_event("shutdown")
+async def _stop_stream() -> None:
+    from serve.stream import broadcaster
+    await broadcaster.stop()
+
+
+@app.get("/v2/stream", tags=["stream"])
+async def stream(
+    state_kind: str | None = Query(None, description="only this kind"),
+    place_id: int | None = Query(None, description="only this place"),
+    snapshot: bool = Query(True, description="send current state on connect"),
+):
+    """Server-sent events: changes in what the system will assert.
+
+        curl -N localhost:7870/v2/stream
+        curl -N 'localhost:7870/v2/stream?state_kind=checkpoint_status'
+
+    Events are belief changes, not raw reports — a thirty-eighth "Huwara open"
+    is not news, Huwara closing is. `decayed: true` marks a reading that aged
+    out of assertability, which is a real transition and the one most easily
+    forgotten: without it a phone connected at noon would still show "open" at
+    midnight, which is exactly the v1 failure this architecture exists to fix.
+
+    See serve/stream.py for why SSE rather than WebSockets.
+    """
+    from fastapi.responses import StreamingResponse
+
+    from serve.stream import event_source
+    return StreamingResponse(
+        event_source(state_kind, place_id, snapshot),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            # Nginx and some Cloudflare configurations buffer proxied responses,
+            # which turns a live stream into a long silence followed by
+            # everything at once.
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@app.get("/v2/stream/status", tags=["stream"])
+def stream_status() -> dict:
+    """Whether the stream is actually running — a dead poller and a quiet night
+    look identical to a subscriber, which is the same trap P3.1 exists for."""
+    from serve.stream import POLL_SECONDS, broadcaster
+    last = broadcaster.last_poll_at
+    age = (datetime.now(timezone.utc) - last).total_seconds() if last else None
+    return {
+        "running": broadcaster._task is not None and not broadcaster._task.done(),
+        "subscribers": broadcaster.subscribers,
+        "poll_seconds": POLL_SECONDS,
+        "last_poll_at": last.isoformat() if last else None,
+        "last_poll_age_seconds": round(age, 1) if age is not None else None,
+        "watched_states": len(broadcaster._last),
+        "events_sent": broadcaster.events_sent,
+    }
+
+
+# ── P5.3: one entry point ────────────────────────────────────────────────────
+
+@app.get("/v2", tags=["discovery"])
+def discovery() -> dict:
+    """Everything this system can answer, from one URL.
+
+    A frontend or an agent should not have to be told twenty URLs, and a list
+    maintained by hand beside the code drifts from it within a week. This is
+    generated from the live route table and the live configuration, so it
+    describes what the server will actually do rather than what someone
+    remembered to write down.
+
+    The reading contract is stated here too, because the single most dangerous
+    way to consume this API is to take `value` and ignore everything beside it.
+    """
+    routes = sorted(
+        {r.path for r in app.routes
+         if getattr(r, "path", "").startswith("/v2") and r.path != "/v2"})
+
+    def group(prefix: str) -> list[str]:
+        return [p for p in routes if p.startswith(prefix)]
+
+    try:
+        kinds = q("""SELECT state_kind, serving_mode, crowd_reportable,
+                            confidence_floor, max_assert_seconds
+                       FROM state_kind_config ORDER BY state_kind""")
+    except Exception:                                   # noqa: BLE001
+        kinds = []
+
+    return {
+        "service": "Palestine Data Platform v2",
+        "now": datetime.now(timezone.utc).isoformat(),
+        "read_this_first": {
+            "value": "what we are willing to assert RIGHT NOW. 'unknown' means "
+                     "nobody credible has looked recently — it is an answer, "
+                     "not a gap, and must not be rendered as the last value.",
+            "last_known_value": "what it was before it decayed. Show it WITH "
+                                "age_minutes or not at all.",
+            "confidence": "decayed from corroboration by independent observers. "
+                          "Below the kind's floor, value becomes 'unknown'.",
+            "independent_sources": "how many INDEPENDENT units agree. Nine "
+                                   "channels reposting each other count as one.",
+            "serving_mode": "'state' describes now. 'sighting' describes a "
+                            "moment that was observed — read it with "
+                            "age_minutes and never as current.",
+        },
+        "live": {
+            "fuel": group("/v2/fuel"),
+            "checkpoints": group("/v2/checkpoints"),
+            "incidents": group("/v2/incidents"),
+            "other": ["/v2/weather", "/v2/connectivity", "/v2/services",
+                      "/v2/news/latest"],
+        },
+        "history": {
+            "endpoints": group("/v2/history") + group("/v2/patterns"),
+            "source": "the tier-2 `observation` table — tier 1's memory and the "
+                      "databank are the same rows, joinable on place and time.",
+            "counts": "reports, not shares of time.",
+        },
+        "realtime": {
+            "endpoints": group("/v2/stream"),
+            "protocol": "server-sent events",
+            "emits": "changes in what the system will ASSERT, including a "
+                     "reading decaying to 'unknown'.",
+        },
+        "contribute": {
+            "endpoints": group("/v2/crowd"),
+            "note": "reassuring values need a second independent witness; "
+                    "cautions do not. See /v2/crowd/fields.",
+        },
+        "meta": {"health": "/health", "coverage": "/v2/coverage",
+                 "geo": "/v2/geo/resolve", "openapi": "/openapi.json"},
+        "fields": [
+            {"state_kind": k["state_kind"], "serving_mode": k["serving_mode"],
+             "crowd_reportable": k["crowd_reportable"],
+             "confidence_floor": k["confidence_floor"]}
+            for k in kinds
+        ],
+        "route_count": len(routes),
     }
