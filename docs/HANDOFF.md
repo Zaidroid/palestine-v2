@@ -3,10 +3,14 @@
 State as of 2026-08-01. Written to survive a context reset: everything here was
 verified, not remembered.
 
-**Next session's job:** finish tier 1 against `docs/TIER1_COMPLETION_PLAN.md`.
-P0, P1, P2 and P3 are done and **Gate T1 is 7 of 8** — only T1.8 (a human can
-see and export what the system holds) is unbuilt, which is **P4**. Do not start
-tier 2 until Gate T1 passes.
+**Next session's job:** the frontend. Everything it reads is built, public and
+verified — one API at **https://live-api.zaidlab.xyz**, one MCP server, live
+state + history + patterns + an SSE stream + crowd submission.
+
+P0-P3 and P5 are done; **Gate T1 is 7 of 8**, and the last criterion (T1.8, a
+human can see and export what the system holds) IS the frontend. Do not start
+tier 2 until Gate T1 passes — though P5.1 already did tier 2's admin backfill
+and cross-tier gate on the way past.
 
 ---
 
@@ -36,7 +40,7 @@ tier 2 until Gate T1 passes.
 
 | unit | cadence | does |
 |:--|:--|:--|
-| `palestine-v2-api` | daemon | FastAPI on :7870 |
+| `palestine-v2-api` | daemon | FastAPI on :7870 — **public at https://live-api.zaidlab.xyz** |
 | `palestine-v2-poller` | daemon | agent2 Telegram poller, 10 channels, 30s |
 | `palestine-v2-checkpoints.timer` | 2 min | v1 SQLite → claims/state |
 | `palestine-v2-fuel.timer` | 5 min | palhub tee → fuel state |
