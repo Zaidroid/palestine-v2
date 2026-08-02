@@ -941,3 +941,187 @@ def crowd_pending() -> dict:
                          "value": r["value"], "units": r["agree"],
                          "units_needed": r["need"],
                          "observed_at": r["observed_at"]} for r in rows]}
+
+
+# ── P5.1: history and patterns ───────────────────────────────────────────────
+# Everything above answers "right now". These answer "what has been happening",
+# which is the question a frontend charts and an agent reasons about.
+#
+# The source is `observation` — the DATABANK's table — written daily by
+# ops/rollup.py. Tier 1's memory and tier 2's corpus are the same rows against
+# the same place_id and clock, so a cross-tier query is a GROUP BY rather than a
+# future migration. See db/migrations/031_tier1_history.sql.
+#
+# Counts of REPORTS, never shares of time. A checkpoint with three reports a day
+# cannot speak for the other 23 hours, and a "40% closed" figure invites exactly
+# that misreading. `units` travels with every count because nine channels
+# reposting each other are one observer.
+
+HISTORY_SQL = """
+SELECT o.occurred_at::date                          AS day,
+       (o.attrs->>'state_kind')                     AS state_kind,
+       o.indicator,
+       o.value_num
+  FROM observation o
+  JOIN dataset d USING (dataset_id)
+ WHERE d.key = 'tier1_daily'
+   AND o.place_id = %s
+   AND o.occurred_at >= CURRENT_DATE - %s::int
+   AND (%s::text IS NULL OR o.attrs->>'state_kind' = %s)
+ ORDER BY 1
+"""
+
+
+@app.get("/v2/history/place", tags=["history"])
+def history_place(
+    place_id: int = Query(..., description="from /v2/geo/resolve"),
+    state_kind: str | None = Query(None, description="e.g. checkpoint_status"),
+    days: int = Query(30, ge=1, le=365),
+) -> dict:
+    """Daily report counts for one place, per state kind and value."""
+    rows = q(HISTORY_SQL, (place_id, days, state_kind, state_kind))
+    if not rows:
+        return {"place_id": place_id, "days": days, "series": [],
+                "note": "no rolled-up history — the place may be new, or the "
+                        "rollup has not run for these days"}
+
+    by_day: dict[str, dict[str, Any]] = {}
+    for r in rows:
+        d = str(r["day"])
+        kind = r["state_kind"]
+        slot = by_day.setdefault(d, {}).setdefault(
+            kind, {"reports": 0, "units": 0, "values": {}})
+        ind = r["indicator"]
+        n = int(r["value_num"] or 0)
+        if ind.endswith(".units"):
+            slot["units"] = n
+        elif ind.endswith(".reports"):
+            slot["reports"] = n
+        else:
+            slot["values"][ind.rsplit(".", 1)[-1]] = n
+
+    return {
+        "place_id": place_id,
+        "days": days,
+        "series": [{"day": d, "kinds": k} for d, k in sorted(by_day.items())],
+        "counts": "reports, not time — a day with 3 reports does not describe "
+                  "the other 23 hours. `units` is how many INDEPENDENT "
+                  "reporters those came from.",
+    }
+
+
+AREA_SQL = """
+SELECT g.name_en                                    AS governorate,
+       g.admin2_pcode,
+       (o.attrs->>'state_kind')                     AS state_kind,
+       o.indicator,
+       sum(o.value_num)                             AS total,
+       count(DISTINCT o.place_id)                   AS places
+  FROM observation o
+  JOIN dataset d USING (dataset_id)
+  JOIN place p ON p.place_id = o.place_id
+  JOIN place g ON g.kind = 'governorate' AND g.admin2_pcode = p.admin2_pcode
+ WHERE d.key = 'tier1_daily'
+   AND o.occurred_at >= CURRENT_DATE - %s::int
+   AND (%s::text IS NULL OR o.attrs->>'state_kind' = %s)
+ GROUP BY 1,2,3,4
+"""
+
+
+@app.get("/v2/history/area", tags=["history"])
+def history_area(
+    state_kind: str | None = Query(None),
+    days: int = Query(30, ge=1, le=365),
+) -> dict:
+    """The same counts rolled up to governorate — the cross-tier query.
+
+    Only possible since migration 032 gave every mapped place an admin2 code:
+    ZERO of 235 checkpoint places carrying history had one, so this returned an
+    empty result while looking perfectly healthy. Coverage is now 100%, with
+    spatially-derived codes marked as such in place.attrs.
+    """
+    rows = q(AREA_SQL, (days, state_kind, state_kind))
+    out: dict[str, dict] = {}
+    for r in rows:
+        g = out.setdefault(r["governorate"], {
+            "admin2_pcode": r["admin2_pcode"], "places": 0, "kinds": {}})
+        g["places"] = max(g["places"], r["places"])
+        k = g["kinds"].setdefault(r["state_kind"],
+                                  {"reports": 0, "values": {}})
+        ind, n = r["indicator"], int(r["total"] or 0)
+        if ind.endswith(".units"):
+            continue                      # not summable across places
+        if ind.endswith(".reports"):
+            k["reports"] = n
+        else:
+            k["values"][ind.rsplit(".", 1)[-1]] = n
+    return {"days": days, "governorates": out,
+            "note": "`units` is deliberately absent here: independent-observer "
+                    "counts do not sum across places. Ask /v2/history/place "
+                    "for that."}
+
+
+# Hour-of-day comes from state_observation rather than a stored hourly rollup.
+# Inventing a second grain for a question the raw record already answers is
+# premature aggregation, and the raw record is compressed and retained anyway.
+#
+# DISTINCT for the same reason the rollup uses it: 762,609 retained duplicate
+# fuel rows would otherwise dominate every pattern they touch.
+PATTERN_SQL = """
+WITH obs AS (
+  SELECT DISTINCT o.value, o.source_id, o.observed_at,
+         extract(hour FROM o.observed_at AT TIME ZONE 'Asia/Hebron')::int AS hour
+    FROM state_observation o
+   WHERE o.place_id = %s AND o.state_kind = %s
+     AND o.modality = 'assertion'
+     AND o.observed_at >= now() - (%s::int * interval '1 day')
+)
+SELECT hour, value, count(*) AS n FROM obs GROUP BY 1,2 ORDER BY 1,2
+"""
+
+
+@app.get("/v2/patterns/place", tags=["history"])
+def patterns_place(
+    place_id: int = Query(...),
+    state_kind: str = Query("checkpoint_status"),
+    days: int = Query(60, ge=7, le=365),
+    min_reports: int = Query(5, ge=1,
+                             description="hours with fewer are returned as unknown"),
+) -> dict:
+    """What usually happens here, by hour of day, in local time.
+
+    Reported in Asia/Hebron, because "usually closed at 7am" is a claim about
+    somebody's morning, not about UTC.
+
+    An hour with too few reports is returned as `unknown` rather than as a
+    confident share of two observations. This is the same discipline the
+    watchdog applies to feeds it cannot judge: saying "not enough to tell" is a
+    result, and quietly returning a percentage computed from n=2 is not.
+    """
+    rows = q(PATTERN_SQL, (place_id, state_kind, days))
+    hours: dict[int, dict[str, int]] = {}
+    for r in rows:
+        hours.setdefault(int(r["hour"]), {})[r["value"]] = int(r["n"])
+
+    out = []
+    for h in range(24):
+        counts = hours.get(h, {})
+        total = sum(counts.values())
+        if total < min_reports:
+            out.append({"hour": h, "reports": total, "usually": "unknown",
+                        "why": f"only {total} reports in {days} days"})
+            continue
+        top, n = max(counts.items(), key=lambda kv: kv[1])
+        out.append({"hour": h, "reports": total, "usually": top,
+                    "share": round(n / total, 2), "counts": counts})
+
+    known = [h for h in out if h["usually"] != "unknown"]
+    return {
+        "place_id": place_id, "state_kind": state_kind, "days": days,
+        "timezone": "Asia/Hebron",
+        "hours": out,
+        "hours_with_enough_data": len(known),
+        "note": ("A pattern is what was REPORTED at that hour, not what was "
+                 "true — nobody reports a quiet checkpoint at 3am, so sparse "
+                 "hours mean sparse attention, not calm."),
+    }
