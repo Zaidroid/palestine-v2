@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — daily precision backtest (Gate 1)
+After=docker.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/measure-accuracy.sh
+TimeoutStartSec=1800

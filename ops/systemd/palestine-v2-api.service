@@ -1,0 +1,14 @@
+[Unit]
+Description=Palestine v2 — serving API (:7870)
+After=docker.service
+
+[Service]
+Type=simple
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/.venv/bin/uvicorn serve.app:app --host 127.0.0.1 --port 7870
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

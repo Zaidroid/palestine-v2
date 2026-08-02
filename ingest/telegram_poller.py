@@ -18,6 +18,32 @@ safer per action. Accordingly:
   * A per-channel failure never stops the loop; one dead handle must not take
     the poller down (v1 carries a dead `Almasshta` that errors every startup).
 
+RECONNECTION, AND WHY IT IS NOT JUST A RETRY (added 2026-08-01, after a live
+8-hour outage). A network blip at 08:35 exhausted Telethon's own connection
+retries. The client then stayed permanently disconnected while THIS loop kept
+running: every 30 seconds it called into the dead client, caught "Cannot send
+requests while disconnected" in the per-channel handler above, printed it, and
+carried on. systemd reported `active (running)` the whole time. The news
+classifier ran every 5 minutes and cheerfully reported "read 0 unclassified
+claims". Nothing anywhere said the feed was dark.
+
+That is the same failure this project keeps finding in its data: the thing still
+looks fine and its meaning has been lost. The per-channel handler exists so one
+dead CHANNEL cannot stop the loop, and it silently absorbed one dead CLIENT.
+
+So the loop now distinguishes the two. A transport failure is not a channel
+failure: it is checked before the channel loop, repaired with backoff, and if it
+cannot be repaired the process EXITS non-zero so systemd restarts it and
+`OnFailure=` raises an alarm. A crash that gets noticed beats a run that does
+not. Losing authorisation exits 2 instead, which the unit refuses to restart —
+retrying an unauthorised session is exactly the behaviour that would put the
+account at risk, and this account is the scarcest thing in the project.
+
+Liveness is also asserted positively, not inferred: every completed cycle
+records a heartbeat (`ops_heartbeat`) that ops/watchdog.py reads. Without it,
+"the poller is dead" and "the channels are quiet" produce the identical
+evidence — no new rows — and only one of them is a fault.
+
 v1 is untouched by anything here. Separate account, separate session, separate
 process — that separation is the whole reason for the second account.
 """
@@ -37,11 +63,31 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from ingest import bronze                     # noqa: E402
+from ops.heartbeat import beat, fail          # noqa: E402
 from resolve.db import connect                # noqa: E402
 
 SESSION = ROOT / "data" / "session" / "v2_ingest"
 STATE = ROOT / "data" / "session" / "poller_state.json"
 _stop = False
+
+HEARTBEAT = "telegram-poller"
+# A cycle is ~10 channels x ~1.5s of stagger plus the 30s interval, so roughly
+# 45s. 15 minutes of grace is deliberately loose: the poller is allowed to sit
+# out a FloodWait without being declared dead, and an outage that matters lasts
+# a great deal longer than fifteen minutes. A watchdog tuned tight enough to
+# catch every blip is a watchdog whose alarms stop being read.
+_GRACE = 900
+# How many reconnect attempts before giving up and letting systemd restart the
+# whole process. Backoff is 15s, 30s, 60s, 120s, 240s, 300s — about 12 minutes
+# of patience, then a clean exit. A fresh process reconnects from a clean state,
+# which is strictly more likely to work than the seventh attempt from a dirty
+# one, and it produces the failure signal that this outage lacked.
+RECONNECT_ATTEMPTS = 6
+
+
+class Deauthorised(Exception):
+    """The session is no longer valid. Distinct from a transport failure because
+    the correct response is the opposite one: stop, and do not retry."""
 
 
 def _env() -> dict[str, str]:
@@ -136,6 +182,92 @@ def _fwd_id(m):
         return None
 
 
+PAGE = 100
+# 20 pages = 2,000 messages per channel per cycle. The busiest channel produces
+# ~80 in eight hours, so this absorbs an outage of several days. It is a
+# backstop against a runaway, not a working limit — and hitting it is printed,
+# never silent.
+MAX_PAGES = 20
+# Seconds between pages of a catch-up. Channels are already staggered; a long
+# backlog would otherwise fire twenty requests back to back, which is the shape
+# of traffic that gets a young account throttled. Named so tests can set it to
+# zero — the pacing is real behaviour worth keeping, not worth waiting for.
+PAGE_PAUSE = 1.0
+
+
+async def _fetch_since(client, ent, last: int) -> list:
+    """Every message with id > last, oldest first, paging until caught up.
+
+    A single get_messages(limit=100) returns the NEWEST hundred above `last`.
+    After an outage that produced more than a hundred, the older remainder is
+    never returned — and because the caller then advances its cursor to the
+    newest id it saw, those messages are skipped PERMANENTLY. The gap does not
+    reappear and nothing reports it.
+
+    That nearly happened on 2026-08-01: the 8-hour outage recovered 80 messages
+    on the busiest channel against a limit of 100. Twenty more and the system
+    would have quietly dropped the difference while appearing to have fully
+    recovered — a silent violation of the retain-everything rule, and the kind
+    only discovered long after the data is gone.
+
+    Paging must run OLDEST-FIRST (`reverse=True`) rather than newest-first.
+    Both directions collect the same messages when the backlog fits inside the
+    page cap, so the choice looks cosmetic; it is not. The cursor may only
+    advance across a CONTIGUOUS run. Paging newest-first and stopping early
+    leaves a hole below the cursor, so the cap would silently drop exactly what
+    it claims to defer. Paging oldest-first means an interrupted catch-up
+    leaves the cursor at the end of an unbroken run, and the remainder really
+    does arrive next cycle.
+    """
+    out, cursor = [], last
+    for page in range(MAX_PAGES):
+        msgs = [m for m in await client.get_messages(
+            ent, limit=PAGE, min_id=cursor, reverse=True) if m.id > cursor]
+        if not msgs:
+            break
+        out.extend(msgs)
+        cursor = max(m.id for m in msgs)
+        if len(msgs) < PAGE:
+            break
+        if page == MAX_PAGES - 1:
+            print(f"  WARNING: hit the {MAX_PAGES}-page cap on this channel; "
+                  f"the remainder resumes from {cursor} next cycle")
+        await asyncio.sleep(PAGE_PAUSE)    # pace the pages, not just the channels
+    return out
+
+
+async def _reconnect(client) -> None:
+    """Restore the transport after Telethon's own retries are exhausted.
+
+    Raises on failure rather than returning a flag, because every caller's
+    correct response to "still disconnected" is to stop, and a flag is the kind
+    of thing a later edit forgets to check.
+    """
+    for attempt in range(1, RECONNECT_ATTEMPTS + 1):
+        delay = min(300, 15 * 2 ** (attempt - 1))
+        print(f"reconnect attempt {attempt}/{RECONNECT_ATTEMPTS} in {delay}s")
+        await asyncio.sleep(delay)
+        if _stop:
+            raise ConnectionError("stopping during reconnect")
+        try:
+            await client.connect()
+            if not client.is_connected():
+                continue
+            # A restored socket is not a restored session. Checking this before
+            # polling means a revoked account is reported as a revoked account,
+            # instead of as ten channels that all mysteriously stopped working.
+            if not await client.is_user_authorized():
+                raise Deauthorised("session is no longer authorised")
+            print(f"reconnected after {attempt} attempt(s)")
+            return
+        except Deauthorised:
+            raise
+        except Exception as exc:                        # noqa: BLE001
+            print(f"  reconnect failed: {exc}")
+    raise ConnectionError(
+        f"could not reconnect after {RECONNECT_ATTEMPTS} attempts")
+
+
 async def run(once: bool = False, backfill: int = 0) -> int:
     from telethon import TelegramClient
     from telethon.errors import FloodWaitError
@@ -183,24 +315,71 @@ async def run(once: bool = False, backfill: int = 0) -> int:
             await asyncio.sleep(3)
         _save_state(state)
 
+    # A cycle where EVERY channel raised is a transport failure wearing a
+    # channel failure's clothing — ten independent handles do not break at the
+    # same instant. is_connected() reported the truth in the outage that
+    # prompted this, but relying on it alone would leave the loop trusting one
+    # flag to notice it has stopped working.
+    dead_cycles = 0
+
     while not _stop:
-        total = 0
+        if not client.is_connected():
+            print("transport is down — Telethon's own retries are exhausted")
+            try:
+                await _reconnect(client)
+            except Deauthorised as exc:
+                print(f"FATAL: {exc}")
+                fail(HEARTBEAT, str(exc), int(interval), _GRACE)
+                return 2
+            except Exception as exc:                    # noqa: BLE001
+                print(f"FATAL: {exc}")
+                fail(HEARTBEAT, str(exc), int(interval), _GRACE)
+                return 1
+            dead_cycles = 0
+
+        total, failures = 0, 0
         for ch, ent in entities.items():
             try:
                 last = state.get(ch, 0)
-                msgs = await client.get_messages(ent, limit=100, min_id=last)
-                fresh = [m for m in reversed(msgs) if m.id > last]
+                fresh = await _fetch_since(client, ent, last)   # oldest first
                 if fresh:
                     total += store(ch, fresh)
                     state[ch] = max(m.id for m in fresh)
             except FloodWaitError as fw:
                 # Respect it exactly. Blind retry is how a new account gets banned.
                 print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")
+                # Beat before sleeping. Waiting out a flood is the poller doing
+                # its job correctly, and a long one would otherwise trip the
+                # watchdog into reporting a dead poller. The duration goes into
+                # detail so a PERMANENT throttle — healthy heartbeats, no
+                # claims, a flood_wait every cycle — is still legible.
+                beat(HEARTBEAT, int(interval), _GRACE,
+                     {"flood_wait_seconds": fw.seconds, "channel": ch})
                 await asyncio.sleep(fw.seconds + 5)
             except Exception as exc:                    # noqa: BLE001
+                failures += 1
                 print(f"poll @{ch} failed: {exc}")
             # Stagger so five channels are not hit in the same instant.
             await asyncio.sleep(1.0 + random.random())
+
+        if entities and failures == len(entities):
+            dead_cycles += 1
+            print(f"every channel failed ({dead_cycles} cycle(s) in a row)")
+            if dead_cycles >= 3:
+                fail(HEARTBEAT, f"all {failures} channels failing", int(interval), _GRACE)
+                print("FATAL: every channel has failed for 3 cycles — exiting "
+                      "so systemd restarts and the alarm fires")
+                return 1
+        else:
+            dead_cycles = 0
+            # Recorded on EVERY good cycle, including the ones that found
+            # nothing. A heartbeat that only fires when there is news cannot
+            # distinguish a dead poller from a quiet Saturday, which is the
+            # entire failure this is here to prevent.
+            beat(HEARTBEAT, int(interval), _GRACE,
+                 {"channels": len(entities), "claims": total,
+                  "channel_failures": failures})
+
         if total:
             _save_state(state)
             print(f"[{datetime.now(timezone.utc):%H:%M:%S}] +{total} claim(s)")

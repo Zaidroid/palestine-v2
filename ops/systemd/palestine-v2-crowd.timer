@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — crowd belief refresh every 2 minutes
+
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=2min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

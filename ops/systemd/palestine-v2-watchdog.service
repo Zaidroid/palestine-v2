@@ -1,0 +1,16 @@
+[Unit]
+Description=Palestine v2 — watchdog over every job and feed (P3.1)
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/watchdog.sh
+TimeoutStartSec=300
+# The watchdog exits 1 when it finds a fault. That is a successful RUN with a
+# bad RESULT, and systemd cannot tell the difference — without this, every
+# detected fault would also mark the watchdog itself as failed, raising a
+# second alarm about the alarm. SuccessExitStatus keeps the two apart.
+SuccessExitStatus=0 1

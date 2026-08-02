@@ -1,0 +1,18 @@
+[Unit]
+Description=Palestine v2 — Telegram poller (agent2 account)
+After=network-online.target docker.service
+# Never let a restart storm hammer Telegram — agent2 is new and rate-limit
+# fragile. Three failures in 10 minutes stops the unit rather than looping.
+StartLimitIntervalSec=600
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/.venv/bin/python -m ingest.telegram_poller
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync Palestine v2 checkpoint state every 2 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target

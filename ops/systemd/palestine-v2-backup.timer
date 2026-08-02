@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly backup at 02:30, before the learn jobs rewrite anything
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

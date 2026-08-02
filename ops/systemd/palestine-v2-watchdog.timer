@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — run the watchdog every 10 minutes
+
+[Timer]
+OnBootSec=6min
+OnUnitActiveSec=10min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

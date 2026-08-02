@@ -1,0 +1,315 @@
+"""P3.1 — the properties that make a watchdog worth having.
+
+    ./.venv/bin/python -m pytest tests/test_watchdog.py -q
+
+The failure these defend against is not "the watchdog crashes". It is the
+watchdog running happily and reporting health it did not establish, which is
+indistinguishable from a healthy system right up until the moment it matters.
+That is not hypothetical here: on 2026-08-01 the Telegram poller was dead for
+eight hours while systemd, /health and the news classifier all reported normal
+operation, and it was found by hand.
+
+So most of these assert that specific things are NOT silently tolerated.
+"""
+from __future__ import annotations
+
+import json
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from ops import alert, watchdog                                     # noqa: E402
+from ops.watchdog import (EXPECTED_JOBS, FEED_COLLECTOR,            # noqa: E402
+                          LATE_MULTIPLE, MIN_ARRIVALS,
+                          WEAK_THRESHOLD_SECONDS, feed_checks, job_checks)
+
+
+# ── the registry must match what the jobs actually do ────────────────────────
+
+def test_expected_jobs_match_the_cadence_each_script_reports():
+    """EXPECTED_JOBS duplicates the numbers in the shell scripts on purpose.
+
+    A timer whose interval changes without its watchdog entry changing would
+    otherwise be judged against the old cadence forever — quietly, and in the
+    safe-looking direction if the interval got shorter. The duplication only
+    earns its keep if something checks it, so this is that something.
+    """
+    pattern = re.compile(r"with-heartbeat\.sh\s+(\S+)\s+(\d+)\s+(\d+)")
+    found: dict[str, tuple[int, int]] = {}
+    for sh in (ROOT / "ops").glob("*.sh"):
+        for name, iv, gr in pattern.findall(sh.read_text()):
+            found[name] = (int(iv), int(gr))
+
+    assert found, "no wrapped jobs found — has with-heartbeat.sh been renamed?"
+    for name, (iv, gr) in found.items():
+        assert name in EXPECTED_JOBS, f"{name} is wrapped but not in EXPECTED_JOBS"
+        assert EXPECTED_JOBS[name] == (iv, gr), (
+            f"{name}: script says {(iv, gr)}, EXPECTED_JOBS says {EXPECTED_JOBS[name]}")
+
+
+def test_every_job_that_reports_inline_is_also_registered():
+    """Two jobs call ops.heartbeat directly rather than through the wrapper —
+    the poller, which beats per cycle rather than per run, and ingest-external,
+    which counts partial step failures. Both must still be in the registry, or
+    the watchdog cannot notice them going missing."""
+    for name in ("telegram-poller", "ingest-external"):
+        assert name in EXPECTED_JOBS
+
+
+def test_every_mapped_collector_is_a_registered_job():
+    """A feed pointing at a collector that does not exist would silently fall
+    through to 'its collector is not healthy' forever."""
+    for kind, collector in FEED_COLLECTOR.items():
+        assert collector in EXPECTED_JOBS, f"{kind} -> unknown collector {collector}"
+
+
+# ── classification: the part that decides whether anyone is told ─────────────
+
+def _checks(cadence, ages, jobs, monkeypatch):
+    """Run feed_checks against fabricated cadence/current rows."""
+    monkeypatch.setattr(watchdog, "_q", lambda sql: [
+        {"state_kind": k, "latest": None, "age_seconds": v} for k, v in ages.items()
+    ] if "max(observed_at)" in sql else [])
+    return {c["name"]: c for c in feed_checks(jobs, cadence)}
+
+
+def _cad(p99, arrivals=500, watchable=True):
+    return {"arrivals": arrivals, "p50_seconds": 60.0, "p99_seconds": p99,
+            "threshold_seconds": p99 * LATE_MULTIPLE if watchable else None,
+            "watchable": watchable}
+
+
+HEALTHY = [{"name": "ingest-fuel", "status": "ok", "fault": False}]
+BROKEN = [{"name": "ingest-fuel", "status": "not_running", "fault": True}]
+
+
+def test_a_feed_past_its_own_threshold_is_a_fault(monkeypatch):
+    out = _checks({"fuel_diesel": _cad(600)},          # threshold 1800s
+                  {"fuel_diesel": 5000}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "silent"
+    assert out["fuel_diesel"]["fault"] is True
+
+
+def test_a_feed_inside_its_threshold_is_not(monkeypatch):
+    out = _checks({"fuel_diesel": _cad(600)},
+                  {"fuel_diesel": 1000}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "ok"
+    assert out["fuel_diesel"]["fault"] is False
+
+
+def test_one_dead_collector_does_not_become_one_alarm_per_vertical(monkeypatch):
+    """The single most important property here. A dead poller makes every feed
+    downstream of it look silent at once; reporting each one would turn one
+    fault into ten alarms, and an alerting channel that does that gets muted —
+    after which the next real fault is delivered to nobody."""
+    out = _checks({"fuel_diesel": _cad(600), "fuel_gasoline": _cad(600)},
+                  {"fuel_diesel": 5000, "fuel_gasoline": 5000}, BROKEN, monkeypatch)
+    for kind in ("fuel_diesel", "fuel_gasoline"):
+        assert out[kind]["status"] == "collector_down"
+        assert out[kind]["fault"] is False, "the collector's own alarm covers this"
+
+
+def test_a_feed_nobody_watches_reports_itself_as_unwatched(monkeypatch):
+    """An unwatchable feed whose collector is fine is covered, and says so."""
+    out = _checks({"fuel_diesel": _cad(0, arrivals=MIN_ARRIVALS - 1, watchable=False)},
+                  {"fuel_diesel": 99999}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "collector_only"
+    assert out["fuel_diesel"]["fault"] is False
+
+
+def test_a_hole_in_the_monitoring_is_itself_a_fault(monkeypatch):
+    """No usable cadence AND no healthy collector means nothing whatsoever is
+    watching this feed. That is reported as a fault, because a gap in coverage
+    looks exactly like health and is the reason this file exists."""
+    out = _checks({"fuel_diesel": _cad(0, arrivals=3, watchable=False)},
+                  {"fuel_diesel": 99999}, BROKEN, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "uncovered"
+    assert out["fuel_diesel"]["fault"] is True
+
+
+def test_an_unmapped_feed_is_uncovered_not_quietly_skipped(monkeypatch):
+    """A new state_kind added without a FEED_COLLECTOR entry must surface, or
+    every future vertical arrives unmonitored by default."""
+    out = _checks({"brand_new_kind": _cad(0, arrivals=2, watchable=False)},
+                  {"brand_new_kind": 10}, HEALTHY, monkeypatch)
+    assert out["brand_new_kind"]["status"] == "uncovered"
+    assert out["brand_new_kind"]["fault"] is True
+
+
+def test_a_threshold_too_wide_to_be_useful_is_labelled_as_such(monkeypatch):
+    """checkpoint_settlers' measured p99 puts its deadline at 9.7 days. The
+    check is honest and would still take a week and a half to fire; calling
+    that plain 'ok' overstates what is known."""
+    wide = WEAK_THRESHOLD_SECONDS  # p99 * 3 lands far past the ceiling
+    out = _checks({"checkpoint_settlers": _cad(wide)},
+                  {"checkpoint_settlers": 60}, HEALTHY, monkeypatch)
+    assert out["checkpoint_settlers"]["status"] == "watched_loosely"
+    assert out["checkpoint_settlers"]["fault"] is False
+
+
+def test_a_feed_with_no_observations_at_all_is_a_fault(monkeypatch):
+    out = _checks({"fuel_diesel": _cad(600)}, {}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "no_data"
+    assert out["fuel_diesel"]["fault"] is True
+
+
+# ── the baseline must not learn to accept a decline ──────────────────────────
+
+def test_the_baseline_excludes_the_window_it_judges():
+    """A threshold measured over a period that includes the period being tested
+    drifts down with a degrading feed and never fires. The SQL must hold the
+    judged window out of the baseline."""
+    sql = watchdog.CADENCE_SQL
+    assert f"interval '{watchdog.BASELINE_DAYS} days'" in sql
+    assert f"<= now() - interval '{watchdog.JUDGE_HOURS} hours'" in sql
+    assert watchdog.JUDGE_HOURS > 0
+
+
+def test_arrivals_are_bucketed_so_a_batch_write_is_one_arrival():
+    """Six hundred rows in one transaction are one arrival. Without the bucket
+    every gap percentile collapses to zero and every feed looks perpetually
+    overdue by a factor of hundreds."""
+    assert "date_trunc('minute'" in watchdog.CADENCE_SQL
+
+
+# ── P3.4: capacity, which nothing was watching at all ────────────────────────
+
+def test_a_full_disk_is_a_fault(monkeypatch):
+    """A full filesystem stops Postgres, the backups and every collector at the
+    same moment. It was the largest unwatched failure in the system."""
+    monkeypatch.setattr(watchdog.os, "statvfs",
+                        lambda p: type("S", (), {"f_bavail": 1000,
+                                                 "f_frsize": 4096})())
+    out = watchdog.capacity_check()[0]
+    assert out["status"] == "critical"
+    assert out["fault"] is True
+
+
+def test_a_low_disk_warns_without_alarming(monkeypatch):
+    """Between the warning line and the floor there is nothing to DO yet;
+    raising an alarm there spends the one thing an alert channel has."""
+    gb = 1024 ** 3
+    monkeypatch.setattr(watchdog.os, "statvfs",
+                        lambda p: type("S", (), {"f_bavail": int(15 * gb / 4096),
+                                                 "f_frsize": 4096})())
+    out = watchdog.capacity_check()[0]
+    assert out["status"] == "low"
+    assert out["fault"] is False
+
+
+def test_ample_disk_is_ok(monkeypatch):
+    gb = 1024 ** 3
+    monkeypatch.setattr(watchdog.os, "statvfs",
+                        lambda p: type("S", (), {"f_bavail": int(250 * gb / 4096),
+                                                 "f_frsize": 4096})())
+    assert watchdog.capacity_check()[0]["status"] == "ok"
+
+
+# ── P3.3: the upstream files v2 does not control ─────────────────────────────
+
+def _dep(monkeypatch, spec):
+    monkeypatch.setattr(watchdog, "DEPENDENCIES", spec)
+    return {c["name"]: c for c in watchdog.dependency_checks()}
+
+
+def test_a_sqlite_dependency_is_judged_by_its_wal_not_its_db_file(tmp_path,
+                                                                  monkeypatch):
+    """The trap that was live when this was written.
+
+    SQLite in WAL mode leaves the .db file untouched between checkpoints. The
+    real v1 database was 40 minutes stale while its -wal was 24 seconds old and
+    v1 was writing normally — so judging the .db alone reports a healthy
+    upstream as dead, and names the wrong stack to restart.
+    """
+    db = tmp_path / "checkpoints.db"
+    db.write_text("x")
+    wal = tmp_path / "checkpoints.db-wal"
+    wal.write_text("x")
+    import os
+    os.utime(db, (0, 0))                      # .db last checkpointed in 1970
+    out = _dep(monkeypatch, {"v1": (str(db), 3600, "why")})
+    assert out["v1"]["status"] == "ok", "a fresh -wal means the writer is alive"
+    assert out["v1"]["age_minutes"] < 1
+
+
+def test_a_genuinely_stalled_dependency_is_a_fault(tmp_path, monkeypatch):
+    import os
+    db = tmp_path / "checkpoints.db"
+    db.write_text("x")
+    os.utime(db, (0, 0))
+    out = _dep(monkeypatch, {"v1": (str(db), 3600, "v1 stopped")})
+    assert out["v1"]["status"] == "stale"
+    assert out["v1"]["fault"] is True
+
+
+def test_a_missing_dependency_is_a_fault_not_an_exception(tmp_path, monkeypatch):
+    out = _dep(monkeypatch, {"v1": (str(tmp_path / "nope.db"), 3600, "why")})
+    assert out["v1"]["status"] == "missing"
+    assert out["v1"]["fault"] is True
+
+
+def test_a_rolling_spool_is_judged_by_its_newest_file(tmp_path, monkeypatch):
+    """The tee spool rolls daily. Yesterday's file stops changing the moment
+    today's is created, so judging any single file would report a stall every
+    midnight."""
+    import os
+    (tmp_path / "2026-07-31.ndjson").write_text("old")
+    os.utime(tmp_path / "2026-07-31.ndjson", (0, 0))
+    (tmp_path / "2026-08-01.ndjson").write_text("new")
+    out = _dep(monkeypatch, {"spool": (str(tmp_path), 3600, "why")})
+    assert out["spool"]["status"] == "ok"
+
+
+# ── alarms: conditions close, events do not ──────────────────────────────────
+
+@pytest.fixture()
+def alerts(monkeypatch):
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "alerts.ndjson"
+        monkeypatch.setattr(alert, "ALERTS", p)
+        yield p
+
+
+def test_a_persistent_fault_raises_once_not_once_per_run(alerts, monkeypatch):
+    """A fault lasting a week must not append an alarm every ten minutes. The
+    guard is watchdog._already_open, so that is what is exercised here."""
+    monkeypatch.setattr(watchdog, "open_alerts", alert.open_alerts)
+    key = "watchdog:job:poller"
+    assert watchdog._already_open(key) is False
+    alert.raise_alert(key, "not_running")
+    assert watchdog._already_open(key) is True
+    assert len(alert.open_alerts()) == 1
+
+
+def test_resolving_closes_the_alarm_without_deleting_the_history(alerts):
+    alert.raise_alert("watchdog:job:poller", "not_running")
+    alert.resolve("watchdog:job:poller", "back within cadence")
+    assert alert.open_alerts() == []
+    lines = [json.loads(x) for x in alerts.read_text().splitlines() if x.strip()]
+    assert len(lines) == 2, "resolving must append, never rewrite"
+    assert lines[0]["unit"] == "watchdog:job:poller"
+
+
+def test_a_fault_that_comes_back_is_reported_again(alerts):
+    """Resolution must not permanently silence a flapping fault — otherwise the
+    second outage of the day is the one nobody hears about."""
+    alert.raise_alert("watchdog:job:poller", "not_running")
+    alert.resolve("watchdog:job:poller")
+    assert alert.open_alerts() == []
+    alert.raise_alert("watchdog:job:poller", "not_running again")
+    assert len(alert.open_alerts()) == 1
+
+
+def test_clearing_acknowledges_everything_open(alerts):
+    alert.raise_alert("unit-a", "boom")
+    alert.raise_alert("unit-b", "boom")
+    with alerts.open("a") as fh:
+        fh.write(json.dumps({"ts": "2999-01-01T00:00:00+00:00",
+                             "clear_marker": True}) + "\n")
+    assert alert.open_alerts() == []

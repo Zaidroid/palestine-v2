@@ -1,0 +1,8 @@
+[Unit]
+Description=Palestine v2 — record an operational alarm for %i
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/.venv/bin/python -m ops.alert %i

@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — recompute belief over crowd-reportable fields (P2)
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/crowd-refresh.sh
+TimeoutStartSec=300

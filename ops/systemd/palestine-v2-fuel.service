@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — ingest fuel state from the tee spool
+After=docker.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/ingest-fuel.sh
+TimeoutStartSec=300

@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — re-measure source independence and status persistence
+After=docker.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/learn-checkpoints.sh
+TimeoutStartSec=1800
