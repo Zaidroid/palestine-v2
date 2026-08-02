@@ -1365,3 +1365,88 @@ def limits() -> dict:
     return {"limits": rl.stats(),
             "local_exempt": True,
             "note": "per client address, sliding window. 429 carries Retry-After."}
+
+
+# ── P7.1: corridors ──────────────────────────────────────────────────────────
+# Everything above answers about a PLACE. This answers about a JOURNEY, which is
+# the question somebody actually has. See resolve/corridor.py for why route-level
+# aggregation is what makes 23% point coverage useful rather than embarrassing.
+
+@app.get("/v2/route", tags=["corridors"])
+def route(
+    from_lat: float = Query(..., ge=29.0, le=34.0),
+    from_lon: float = Query(..., ge=33.0, le=37.0),
+    to_lat: float = Query(..., ge=29.0, le=34.0),
+    to_lon: float = Query(..., ge=33.0, le=37.0),
+    alternates: int = Query(2, ge=0, le=3),
+    include_shape: bool = Query(False, description="route polylines, for a map"),
+) -> dict:
+    """Can I get from here to there right now — and if not, which way instead.
+
+    Returns every reasonable route scored by the checkpoints ON it, in travel
+    order, each with its own age and confidence. Ranked by verdict then by
+    time: how much is known is reported on every route, never used to send
+    somebody the long way round for our benefit.
+
+    One confirmed closure blocks a route regardless of how many open
+    checkpoints surround it — a journey is a conjunction, every checkpoint has
+    to be passable. Unknowns never block and are never hidden; they are named,
+    so "we do not know" is an answer rather than a silence.
+    """
+    from resolve.corridor import routes as _routes
+    try:
+        found = _routes((from_lat, from_lon), (to_lat, to_lon), alternates)
+    except Exception as e:                              # noqa: BLE001
+        # A routing outage must not look like "no way through" — that is the
+        # same failure as serving a stale checkpoint as open, one step removed.
+        raise HTTPException(503, f"routing unavailable: {e}")
+
+    out = []
+    for c in found:
+        d = c.as_dict()
+        if not include_shape:
+            d.pop("shape", None)
+        out.append(d)
+    best = found[0] if found else None
+    return {
+        "routes": out,
+        "best": {"verdict": best.verdict, "summary": best.summary,
+                 "distance_km": best.distance_km,
+                 "duration_minutes": best.duration_minutes} if best else None,
+        "corridor_metres": __import__("resolve.corridor", fromlist=["x"]).CORRIDOR_METRES,
+        "note": ("checkpoints are matched to a route by proximity to its "
+                 "geometry; `unreported` names the ones on your way that "
+                 "nobody has checked recently, which is a real part of the "
+                 "answer rather than a gap in it"),
+    }
+
+
+@app.get("/v2/route/between", tags=["corridors"])
+def route_between(
+    origin: str = Query(..., description="place name, Arabic or English"),
+    destination: str = Query(...),
+    alternates: int = Query(2, ge=0, le=3),
+) -> dict:
+    """The same answer, by place name — 'من رام الله لنابلس'."""
+    from resolve.geo import resolve_place
+
+    # NOT named `q` — that is the module-level query helper, and shadowing it
+    # here fails at call time with "'str' object is not callable" rather than
+    # at import.
+    def _pt(name: str):
+        r = resolve_place(name, learn=False)
+        if not r:
+            raise HTTPException(404, f"could not place {name!r}")
+        row = q("SELECT ST_Y(centroid::geometry) la, ST_X(centroid::geometry) lo "
+                "FROM place WHERE place_id=%s", (r.place_id,))
+        if not row or row[0]["la"] is None:
+            raise HTTPException(404, f"{name!r} has no coordinates")
+        return (row[0]["la"], row[0]["lo"]), r
+
+    (a, ra), (b, rb) = _pt(origin), _pt(destination)
+    res = route(a[0], a[1], b[0], b[1], alternates, False)
+    res["origin"] = {"query": origin, "place": ra.name_ar or ra.name_en,
+                     "place_id": ra.place_id}
+    res["destination"] = {"query": destination, "place": rb.name_ar or rb.name_en,
+                          "place_id": rb.place_id}
+    return res

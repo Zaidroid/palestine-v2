@@ -486,7 +486,51 @@ def stream_info() -> dict:
             **d}
 
 
+def can_i_travel(origin: str, destination: str) -> dict:
+    """Route-level answer: can I get from A to B right now, and if not, how."""
+    d = api("/v2/route/between", origin=origin, destination=destination, alternates=2)
+    rs = d.get("routes") or []
+    if not rs:
+        return {"answer": f"ما قدرت أحسب طريق من {origin} لـ{destination}.", **d}
+    best = rs[0]
+    say = {"likely_open": "الطريق سالك على الأغلب",
+           "slow": "الطريق سالك بس فيه ازمة",
+           "blocked": "الطريق مسكّر",
+           "unknown": "ما في تقارير حديثة عن هالطريق"}[best["verdict"]]
+    detail = ""
+    if best["blocked_at"]:
+        detail = " — مسكّر عند " + "، ".join(best["blocked_at"][:2])
+        alt = next((r for r in rs if r["verdict"] in ("likely_open", "slow")), None)
+        if alt:
+            detail += f". بديل: {alt['duration_minutes']:.0f} دقيقة ({alt['verdict']})"
+    return {"answer": f"{say}{detail}. "
+                      f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة.",
+            "verdict": best["verdict"],
+            "duration_minutes": best["duration_minutes"],
+            "distance_km": best["distance_km"],
+            "blocked_at": best["blocked_at"],
+            "congested_at": best["slow_at"],
+            "not_reported_recently": best["unreported"],
+            "cautions": best["cautions"],
+            "routes": [{k: r[k] for k in ("verdict", "duration_minutes", "distance_km",
+                                          "known", "checkpoints_on_route",
+                                          "blocked_at", "unreported")} for r in rs],
+            "caveat": "one confirmed closure blocks a route; unreported checkpoints "
+                      "never block and are always named"}
+
+
 TOOLS = {
+    "can_i_travel": (can_i_travel,
+                     "Can I get from A to B right now? Returns every reasonable route scored by "
+                     "the checkpoints ON it — in travel order, each with its age — plus "
+                     "alternatives when one is blocked. Use this instead of checking checkpoints "
+                     "one by one: a journey needs EVERY checkpoint passable, so one confirmed "
+                     "closure blocks the route. Checkpoints nobody has reported recently never "
+                     "block and are always named.",
+                     {"type": "object", "properties": {
+                         "origin": {"type": "string", "description": "e.g. رام الله, Ramallah"},
+                         "destination": {"type": "string", "description": "e.g. نابلس, Nablus"}},
+                      "required": ["origin", "destination"]}),
     "place_history": (place_history,
                       "What has been happening at a place over recent days: daily counts of "
                       "reports and what they said, plus how many INDEPENDENT reporters. Use "

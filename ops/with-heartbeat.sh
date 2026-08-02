@@ -25,7 +25,22 @@ name="$1"; interval="$2"; grace="$3"; shift 3
 "$@"
 rc=$?
 
-if [ "$rc" -eq 0 ]; then
+# OK_EXIT_CODES lets a job say "this exit code means I worked, and found
+# something" — the watchdog exits 1 when it DETECTS a fault, which is a
+# successful run with a bad result.
+#
+# Without it the watchdog recorded `--fail` on every run that found anything,
+# so it reported ITSELF as failing, which is a fault, which it then found on
+# the next run. Seven consecutive failures had accumulated before gate G3.7
+# caught it. systemd already knew better via SuccessExitStatus=0 1; the
+# heartbeat did not, and the two disagreeing is exactly the drift this wrapper
+# exists to prevent.
+ok=0
+for code in 0 ${OK_EXIT_CODES:-}; do
+  [ "$rc" -eq "$code" ] && ok=1
+done
+
+if [ "$ok" -eq 1 ]; then
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
       --interval "$interval" --grace "$grace" || true
 else
