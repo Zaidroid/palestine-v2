@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx
 import psycopg
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 
@@ -99,7 +99,8 @@ def _drive_times(origin: tuple[float, float], targets: list[dict]) -> dict[int, 
 
 
 @app.get("/health")
-def health(verbose: bool = Query(True, description="include the per-check detail")) -> dict:
+def health(request: Request,
+           verbose: bool = Query(True, description="include the per-check detail")) -> dict:
     """P3.2 — every vertical, its age, and whether that age is within cadence.
 
     This used to report fuel and nothing else, so nine of the ten verticals
@@ -157,7 +158,14 @@ def health(verbose: bool = Query(True, description="include the per-check detail
         "feeds_ok": sum(1 for c in feeds if not c["fault"]),
         "feeds_total": len(feeds),
     }
-    if verbose:
+    # The per-check detail names internal jobs and the absolute paths of the
+    # upstream files this system reads. That is exactly what an operator needs
+    # and exactly what a stranger does not, so once the API is reachable from
+    # outside it is answered only for local callers. The COUNTS stay public:
+    # "13 of 13 jobs healthy" is a useful public promise, and hiding it would
+    # make a degraded system look identical to a healthy one.
+    from serve.ratelimit import client_ip, is_local
+    if verbose and is_local(client_ip(request)):
         out["checks"] = {
             "jobs": [{"name": c["name"], "status": c["status"],
                       "age_minutes": c["age_minutes"],
@@ -1296,3 +1304,64 @@ def discovery() -> dict:
         ],
         "route_count": len(routes),
     }
+
+
+# ── P5.3: going public ───────────────────────────────────────────────────────
+
+@app.middleware("http")
+async def _rate_limit(request, call_next):
+    """One visitor cannot spoil it for everyone. See serve/ratelimit.py."""
+    from fastapi.responses import JSONResponse
+
+    from serve import ratelimit as rl
+    ip = rl.client_ip(request)
+    cls = rl.classify(request.url.path, request.method)
+    ok, retry = rl.check(ip, cls)
+    if not ok:
+        return JSONResponse(
+            {"error": "rate limited", "class": cls, "retry_after_seconds": retry,
+             "note": "limits are per address and generous for honest use; see "
+                     "/v2 for what is available"},
+            status_code=429, headers={"Retry-After": str(retry)})
+    return await call_next(request)
+
+
+@app.get("/", tags=["discovery"])
+def root() -> dict:
+    """The bare hostname answers with the map of the system rather than a 404."""
+    return discovery()
+
+
+@app.post("/v2/crowd/register", tags=["crowd"])
+def crowd_register(
+    handle: str = Query(..., min_length=3, max_length=40,
+                        description="letters, digits, _ - . only"),
+    note: str = Query("", max_length=200, description="optional, for you"),
+) -> dict:
+    """Create a submitter and receive a token. **The token is shown once.**
+
+    Open, by decision: the point is that anybody can contribute. That is safe
+    for a structural reason rather than a procedural one — every unverified
+    submitter shares ONE independence unit and scores 0.17, below every
+    confidence floor, so a thousand sign-ups carry the weight of one anonymous
+    stranger. Standing is earned afterwards by being right, and it is earned
+    per person, not per account.
+
+    Rate limited to three an hour per address, which is about disk and noise
+    rather than trust.
+    """
+    from crowd.engine import register
+    try:
+        return register(handle, channel="http", note=note)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/v2/limits", tags=["meta"])
+def limits() -> dict:
+    """What the rate limits are, so a client can pace itself instead of
+    discovering them by being refused."""
+    from serve import ratelimit as rl
+    return {"limits": rl.stats(),
+            "local_exempt": True,
+            "note": "per client address, sliding window. 429 carries Retry-After."}
