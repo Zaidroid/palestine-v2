@@ -250,6 +250,68 @@ def test_stream_opens_and_sends_a_snapshot() -> None:
     assert isinstance(payload["states"], list)
 
 
+# REST read routes with no MCP tool, and why. Anything not listed here must
+# have one, so a new read endpoint cannot quietly become frontend-only.
+MCP_EXEMPT = {
+    "/", "/v2", "/health",          # service metadata, not data
+    "/v2/limits", "/v2/services",   # ditto
+    "/v2/stream",                   # an agent cannot hold an SSE socket open;
+                                    # `stream_info` describes it instead
+    "/v2/crowd/pending",            # moderation surface, human-only
+    # The crowd WRITE path is deliberately absent from MCP entirely: an agent
+    # that can file reports is the sock-puppet problem P2.4 exists for, running
+    # at machine speed. See the note at the foot of the TOOLS registry.
+    "/v2/crowd/register", "/v2/crowd/report", "/v2/crowd/fields",
+    # Covered by can_i_travel, which answers the journey rather than the maths.
+    "/v2/route", "/v2/route/between",
+    # Covered by checkpoint_status / checkpoints_near / fuel_near.
+    "/v2/checkpoints/status", "/v2/checkpoints/nearby", "/v2/fuel/nearby",
+    "/v2/fuel/stations",
+    # Covered by place_history / place_pattern / area_history, which resolve the
+    # name themselves so an agent never has to hold a place_id.
+    "/v2/history/place", "/v2/history/area", "/v2/patterns/place",
+    "/v2/stream/status", "/v2/geo/resolve",
+}
+
+
+def test_mcp_read_surface_is_at_parity_with_rest() -> None:
+    """"One place to read everything" must not mean "unless you are an agent".
+
+    Two surfaces that drift end with nobody knowing which is authoritative.
+    MCP had 16 tools against 30 routes and was missing crossings and place
+    resolution outright — an agent asked about Rafah had no way to answer.
+    """
+    from serve.mcp_server import TOOLS
+
+    covered = {
+        "/v2/coverage": "coverage", "/v2/crossings": "crossings",
+        "/v2/weather": "weather_now", "/v2/connectivity": "connectivity_now",
+        "/v2/news/latest": "latest_news", "/v2/incidents/recent": "incidents_near",
+        "/v2/incidents/summary": "incidents_summary",
+        "/v2/checkpoints/summary": "checkpoints_summary",
+        "/v2/fuel/summary": "fuel_summary",
+    }
+    missing = _routes() - MCP_EXEMPT - set(covered)
+    assert not missing, f"REST routes with no MCP tool and no exemption: {sorted(missing)}"
+    for path, tool in covered.items():
+        assert tool in TOOLS, f"{path} claims MCP tool {tool!r}, which does not exist"
+
+
+def test_mcp_never_exposes_the_crowd_write_path() -> None:
+    """An agent must not be able to file a crowd report.
+
+    P2.4 gates reassuring values behind independent units precisely because one
+    actor with many voices is the failure mode. A tool would hand that to any
+    agent with a socket.
+    """
+    from serve.mcp_server import TOOLS
+
+    banned = {"report", "submit", "register", "crowd"}
+    for name in TOOLS:
+        assert not any(b in name.lower() for b in banned), \
+            f"MCP tool {name!r} looks like a write path"
+
+
 def test_health_reports_faults_honestly() -> None:
     """/health must go degraded when the watchdog has faults, not always-200-ok.
 

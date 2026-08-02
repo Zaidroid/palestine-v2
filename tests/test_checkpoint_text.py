@@ -154,3 +154,68 @@ def test_nothing_is_silently_dropped():
         r = read(text)
         assert r.modality in ("unparsed", "assertion", "question")
         assert not (r.modality == "unparsed" and r.facts)
+
+
+# ── negation inside a PHRASE ─────────────────────────────────────────────────
+# Single tokens were negation-checked from the start; the phrase table was not,
+# so "ما فيه جيش على الحاجز" — somebody standing at the checkpoint saying the
+# army is NOT there — was read as `presence: idf`. The phrase matched inside its
+# own negation. Two costs, and the second is larger: a caution is manufactured
+# out of good news, AND the absence is discarded, when a negated mention is the
+# only way anybody ever states that soldiers have gone (P1.3: 28.31% of all
+# presence mentions in the corpus are negated).
+
+def test_negated_presence_phrase_is_absence_not_presence():
+    for line in ("ما فيه جيش على الحاجز", "ما في محسوم ع جبع",
+                 "ما فيه شرطه هناك"):
+        r = read(line)
+        axes = {(f.axis, f.value) for f in r.facts}
+        assert not any(a == "presence" for a, _ in axes), f"{line} -> {axes}"
+        assert any(a == "absence" for a, _ in axes), f"{line} -> {axes}"
+
+
+def test_unnegated_presence_phrase_is_unchanged():
+    """The fix must not cost the case the phrase existed for."""
+    assert ("presence", "idf") in {(f.axis, f.value) for f in read("فيه جيش على الحاجز").facts}
+
+
+def test_negated_flow_phrase_flips():
+    assert ("flow", "open") in {(f.axis, f.value) for f in read("ما في ازمه").facts}
+
+
+# ── vocabulary found by sampling what v1 read and we did not ────────────────
+
+def test_machsom_is_read_only_when_something_was_PUT_there():
+    """محسوم (Hebrew מחסום) is a NOUN meaning checkpoint, like حاجز.
+
+    "حطو محسوم" says one was erected — that is a sighting. A bare
+    "اللبن الشرقي محسوم" is genuinely ambiguous between "there is a checkpoint
+    here" and "the road is blocked", and v1 resolves it by asserting `closed`,
+    which is a caution invented from a noun. We decline it on purpose.
+    """
+    assert ("presence", "idf") in {(f.axis, f.value) for f in read("جبع حطو محسوم هلكيت").facts}
+    bare = read("اللبن الشرقي محسوم")
+    assert not any(f.axis == "flow" for f in bare.facts), \
+        "a bare noun must not become a flow verdict"
+
+
+def test_zaatim_is_congestion():
+    for line in ("جبع زاطم", "المشاة زاطم", "الكونتينر باتجاه الجنوب زاطم"):
+        assert ("flow", "congested") in {(f.axis, f.value) for f in read(line).facts}, line
+
+
+def test_elongation_for_emphasis_still_reaches_the_lexicon():
+    """normalize() strips tatweel but not a genuinely repeated letter.
+
+    "زااااااااااطم" and "ازززمه" are real lines from the channels. They missed
+    the lexicon entirely and fell through to `unparsed`.
+    """
+    for line in ("عين سينيا للخارج زااااااااااطم", "بيت فوريك ازززمه",
+                 "وجبع زاطمممممم"):
+        assert ("flow", "congested") in {(f.axis, f.value) for f in read(line).facts}, line
+
+
+def test_collapsing_never_overrides_a_direct_hit():
+    """Collapse is a LAST resort, after the literal forms have had their turn."""
+    assert ("flow", "open") in {(f.axis, f.value) for f in read("سالك").facts}
+    assert ("flow", "closed") in {(f.axis, f.value) for f in read("مسكر").facts}

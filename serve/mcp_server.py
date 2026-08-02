@@ -408,9 +408,68 @@ def latest_news(area: str | None = None, limit: int = 8) -> dict:
 
 def coverage() -> dict:
     d = api("/v2/coverage")
-    return {"answer": f"عندي {d['total_claims']} رسالة من {len(d['sources'])} مصدر، "
-                      f"و{sum(d['live_states'].values())} حالة مباشرة.",
+    # Lead with the BLIND SPOTS, not the totals. An agent that reads
+    # "1,000,000 messages from 47 sources" and stops has learned the opposite
+    # of what this endpoint is for; the fields that nothing reports are the
+    # part it needs before it answers a question about them.
+    fields = d.get("fields", [])
+    dark = [f["state_kind"] for f in fields if f.get("coverage_state") == "never_reported"]
+    stale = [f["state_kind"] for f in fields if f.get("coverage_state") == "stale"]
+    say = (f"عندي {d['total_claims']} رسالة من {len(d['sources'])} مصدر، "
+           f"و{sum(d['live_states'].values())} حالة مباشرة.")
+    if dark:
+        say += f" ما في ولا مصدر لـ: {'، '.join(dark)}."
+    if stale:
+        say += f" وهاي ساكتة من زمان: {'، '.join(stale)}."
+    return {"answer": say,
+            "no_source": dark,
+            "stale": stale,
+            "warning": ("Fields under `no_source` have NEVER had an "
+                        "observation. Do not report them as 'unknown' — that "
+                        "word is also used for a field that is merely quiet, "
+                        "and telling a person 'unknown' when the truth is "
+                        "'nobody measures this' invites them to ask again "
+                        "tomorrow for an answer that will never come."),
             **d}
+
+
+def crossings(area: str | None = None) -> dict:
+    """Gaza and West Bank crossings — open, partial, closed, or unknown.
+
+    Kept out of `checkpoint_status` on purpose: a crossing is asymmetric in
+    KIND (Kerem Shalom takes goods, Rafah moves people), its state persists for
+    days rather than ninety minutes, and `partial` is not `open`.
+    """
+    d = api("/v2/crossings", area=area)
+    items = d.get("crossings", [])
+    known = [c for c in items if c.get("value") not in (None, "unknown")]
+    if not known:
+        return {"answer": ("ما عندي ولا مصدر بيقول عن حالة المعابر — "
+                           "مش معناها مفتوحة، معناها ما حدا بيخبرنا."),
+                "count": len(items), "crossings": items,
+                "no_source": True,
+                "warning": ("Every crossing reads `unknown` because NO source "
+                            "reports crossing status yet. This is absence of "
+                            "evidence, not evidence of absence. Never present "
+                            "it as 'the crossing is open'.")}
+    say = "، ".join(f"{c['name']}: {c['value']}" for c in known[:6])
+    return {"answer": say, "count": len(items), "crossings": items}
+
+
+def where_is(place: str, state_kind: str | None = None) -> dict:
+    """Resolve an Arabic or English place name to coordinates.
+
+    PASS `state_kind` WHEN YOU MEAN A CHECKPOINT, A STATION OR A CROSSING.
+    Without it "حوارة" resolves to the TOWN, and every report about that
+    checkpoint sits on a different row — so a history or pattern query comes
+    back empty while looking perfectly healthy. Three separate silent failures
+    came from exactly this before it was made a shared resolver.
+    """
+    d = api("/v2/geo/resolve", q=place, state_kind=state_kind)
+    if not d.get("found"):
+        return {"answer": f"ما عرفت وين {place}.", **d}
+    return {"answer": f"{d.get('name')} ({d.get('kind')}) — "
+                      f"{d.get('lat')}, {d.get('lon')}", **d}
 
 
 
@@ -621,9 +680,37 @@ TOOLS = {
     "latest_news": (latest_news, "Most recent ingested messages, optionally filtered by area.",
                     {"type": "object", "properties": {
                         "area": {"type": "string"}, "limit": {"type": "integer"}}}),
-    "coverage": (coverage, "What sources and data this system currently holds.",
+    "coverage": (coverage, "What sources and data this system currently holds — "
+                           "and, more usefully, what it holds NOTHING for. Check "
+                           "this before answering a question about power, water, "
+                           "cooking gas or crossings.",
                  {"type": "object", "properties": {}}),
+    "crossings": (crossings, "Status of Gaza and West Bank crossings (Rafah, Kerem "
+                             "Shalom, Erez, Zikim, Kissufim, Allenby...). Values are "
+                             "open / partial / closed / unknown, where `partial` "
+                             "means open only for some traffic and is NOT open. "
+                             "Currently every crossing reads unknown because no "
+                             "source reports this yet — say so plainly.",
+                  {"type": "object", "properties": {
+                      "area": {"type": "string",
+                               "description": "governorate or region, e.g. غزة"}}}),
+    "where_is": (where_is, "Resolve an Arabic or English place name to coordinates. "
+                           "Pass state_kind when you mean a checkpoint, fuel station "
+                           "or crossing rather than the town of the same name — "
+                           "'حوارة' the checkpoint and 'حوارة' the town are different "
+                           "rows and their data does not mix.",
+                 {"type": "object", "properties": {
+                     "place": {"type": "string"},
+                     "state_kind": {"type": "string",
+                                    "description": "e.g. checkpoint_status, "
+                                                   "fuel_diesel, crossing_status"}},
+                  "required": ["place"]}),
 }
+
+# DELIBERATELY ABSENT: the crowd WRITE path (/v2/crowd/register, /v2/crowd/report).
+# An agent that can file reports is the sock-puppet problem P2.4 exists for,
+# running at machine speed and without a person who can be held to a claim. The
+# read surface is at parity; the write surface stays human.
 
 
 # ── MCP stdio loop ───────────────────────────────────────────────────────────

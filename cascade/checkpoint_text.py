@@ -75,6 +75,10 @@ FLOW_WORDS: dict[str, str] = {
     "مزدحمه": "congested", "ازدحام": "congested", "اختناق": "congested",
     "وقفه": "congested", "واقف": "congested", "واقفه": "congested",
     "كثافه": "congested", "كثافة": "congested", "تكدس": "congested",
+    # Dialect for "jammed", absent until a recall sample turned it up in lines
+    # v1 had read and we had not: "المشاة زاطم", "يعني مازمة عالحمرا".
+    "زاطم": "congested", "زاطمه": "congested", "مزطوم": "congested",
+    "زطمه": "congested", "مازمه": "congested",
     # closed
     "مغلق": "closed", "مغلقه": "closed", "مغلقين": "closed",
     "مقفل": "closed", "مقفله": "closed", "مسكر": "closed", "مسكره": "closed",
@@ -101,6 +105,17 @@ PHRASES: list[tuple[str, str, str]] = [
     ("مش ماشي", "flow", "closed"), ("ما بيمشي", "flow", "closed"),
     ("نصب حاجز", "presence", "idf"), ("عمل حاجز", "presence", "idf"),
     ("حاجز طيار", "presence", "idf"), ("حواجز طياره", "presence", "idf"),
+    # محسوم — the Hebrew loanword (מחסום) these channels use constantly and
+    # this parser did not know at all. It is a NOUN meaning "checkpoint", so
+    # the same rule applies as to حاجز: only the forms that say one was PUT
+    # THERE are read as presence. A bare "اللبن الشرقي محسوم" is left alone,
+    # because it is genuinely ambiguous between "there is a checkpoint here"
+    # and "the road is blocked", and v1 resolves that ambiguity by asserting
+    # `closed` — which is a caution invented from a noun.
+    ("حطو محسوم", "presence", "idf"), ("حطوا محسوم", "presence", "idf"),
+    ("نصب محسوم", "presence", "idf"), ("في محسوم", "presence", "idf"),
+    ("فيه محسوم", "presence", "idf"), ("محسوم طيار", "presence", "idf"),
+    ("حطو حاجز", "presence", "idf"), ("حطوا حاجز", "presence", "idf"),
     ("فيه جيش", "presence", "idf"), ("عليه جيش", "presence", "idf"),
     ("سيارات الجيش", "presence", "idf"), ("سياره جيش", "presence", "idf"),
     ("فيه شرطه", "presence", "police"), ("سياره شرطه", "presence", "police"),
@@ -178,6 +193,12 @@ _ARTICLE = re.compile(r"^(?:لل|[بلكفو]ال|ال)")
 # constantly, so stripping them at tokenisation is worth more than any rule.
 _NONWORD = re.compile(r"[^\w؀-ۿ]+", re.UNICODE)
 
+# Three or more of the same letter in a row is emphasis, never spelling.
+# Two is left alone: real Arabic doubles letters (شدة is written out in these
+# channels as an actual repeat often enough that collapsing pairs would damage
+# genuine words).
+_ELONGATED = re.compile(r"(.)\1{2,}")
+
 
 def tokens(clause: str) -> list[str]:
     """Lexicon-ready tokens: emoji and stray symbols removed, empties dropped."""
@@ -199,6 +220,19 @@ def _lex(tok: str, table: dict[str, str]) -> str | None:
         return table[stripped]
     if len(tok) >= 4 and tok[0] == "و" and tok[1:] in table:
         return table[tok[1:]]
+    # Elongation for emphasis: "محسوووم", "سالكككك", "مسكررر". normalize()
+    # strips tatweel but not a genuinely repeated letter, so these missed the
+    # lexicon entirely and the line fell through to `unparsed`. Collapsed only
+    # as a LAST resort, after the literal forms have had their chance, so a
+    # real word with a legitimate doubling is never rewritten out from under a
+    # direct hit.
+    collapsed = _ELONGATED.sub(r"\1", tok)
+    if collapsed != tok and len(collapsed) >= 3:
+        if collapsed in table:
+            return table[collapsed]
+        stripped = _ARTICLE.sub("", collapsed)
+        if len(stripped) >= 3 and stripped in table:
+            return table[stripped]
     return None
 
 
@@ -369,6 +403,27 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             if toks[i:i + len(pt)] == pt:
                 consumed.update(range(i, i + len(pt)))
                 at = i if at < 0 else at
+        # PHRASES MUST RESPECT NEGATION, exactly as single tokens do.
+        #
+        # They did not, and "ما فيه جيش على الحاجز" — somebody standing there
+        # saying the army is NOT present — was read as `presence: idf`. The
+        # phrase "فيه جيش" matched inside its own negation. Two costs, and the
+        # second is the larger: a caution is manufactured from good news, AND
+        # the absence is thrown away, when absence is the only statement of
+        # "they have gone" anybody ever makes (P1.3 measured 28.31% of presence
+        # mentions as negated).
+        #
+        # Found by adding "في محسوم" to this table: "يعني ما في محسوم ع جبع"
+        # turned up in the recall sample reading as soldiers present. The
+        # existing "فيه جيش" and "فيه شرطه" had the same hole all along.
+        if at >= 0 and _negated(toks, at):
+            # Mirror the single-token path: a negated presence is an ABSENCE
+            # sighting; a negated flow reading flips.
+            if axis == "presence":
+                out.append(("absence", value, 0.86, at))
+            else:
+                out.append(("flow", _FLIP.get(value, value), 0.80, at))
+            continue
         out.append((axis, value, 0.92, at))
 
     cleared = any(t in CLEARING_WORDS or (t[:1] == "و" and t[1:] in CLEARING_WORDS)
