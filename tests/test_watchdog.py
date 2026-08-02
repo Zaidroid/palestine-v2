@@ -116,9 +116,14 @@ def test_one_dead_collector_does_not_become_one_alarm_per_vertical(monkeypatch):
 
 
 def test_a_feed_nobody_watches_reports_itself_as_unwatched(monkeypatch):
-    """An unwatchable feed whose collector is fine is covered, and says so."""
+    """An unwatchable feed whose collector is fine is covered, and says so.
+
+    The age here sits INSIDE the silence ceiling on purpose. It used to be
+    27.8h, which this test called healthy — and that expectation is exactly
+    what let fuel sit dark for 23 hours reading `collector_only ... ok`.
+    """
     out = _checks({"fuel_diesel": _cad(0, arrivals=MIN_ARRIVALS - 1, watchable=False)},
-                  {"fuel_diesel": 99999}, HEALTHY, monkeypatch)
+                  {"fuel_diesel": 3600}, HEALTHY, monkeypatch)
     assert out["fuel_diesel"]["status"] == "collector_only"
     assert out["fuel_diesel"]["fault"] is False
 
@@ -313,3 +318,67 @@ def test_clearing_acknowledges_everything_open(alerts):
         fh.write(json.dumps({"ts": "2999-01-01T00:00:00+00:00",
                              "clear_marker": True}) + "\n")
     assert alert.open_alerts() == []
+
+
+# ── the hole that let fuel sit dark for 23 hours ─────────────────────────────
+
+def _cad_unwatchable(days=1, max_gap=None):
+    return {"arrivals": 30, "p50_seconds": 60.0, "p99_seconds": None,
+            "threshold_seconds": None, "watchable": False,
+            "baseline_days": days, "max_gap_seconds": max_gap}
+
+
+def test_an_unwatchable_feed_still_has_a_silence_ceiling(monkeypatch):
+    """`collector_only` was supposed to mean "watched via its collector". It
+    meant NOT WATCHED, because a collector that runs fine and finds nothing
+    looks exactly like a healthy one. Fuel — the flagship vertical — read
+    `collector_only ... ok` for 23 hours while its upstream had stopped
+    publishing entirely."""
+    out = _checks({"fuel_diesel": _cad_unwatchable()},
+                  {"fuel_diesel": 30 * 3600}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "silent"
+    assert out["fuel_diesel"]["fault"] is True
+    assert "upstream has stopped" in out["fuel_diesel"]["detail"]
+
+
+def test_an_unwatchable_feed_within_the_ceiling_is_still_fine(monkeypatch):
+    """The ceiling must not turn every sporadic feed into a permanent alarm —
+    road_closure is news-driven and 14 quiet hours is an ordinary night."""
+    out = _checks({"fuel_diesel": _cad_unwatchable()},
+                  {"fuel_diesel": 14 * 3600}, HEALTHY, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "collector_only"
+    assert out["fuel_diesel"]["fault"] is False
+
+
+def test_a_dead_collector_is_reported_as_a_hole_not_as_a_silent_feed(monkeypatch):
+    """With no usable cadence AND no healthy collector, nothing watches this
+    feed at all — `uncovered`. It must not be labelled `silent`, which would
+    blame the upstream for our own collector being down and send whoever reads
+    the alarm to the wrong system."""
+    out = _checks({"fuel_diesel": _cad_unwatchable()},
+                  {"fuel_diesel": 99 * 3600}, BROKEN, monkeypatch)
+    assert out["fuel_diesel"]["status"] == "uncovered"
+    assert "not healthy" in out["fuel_diesel"]["detail"]
+
+
+def test_the_ceiling_says_whether_it_was_measured_or_chosen():
+    """A chosen number reported as a measured one stops being questioned —
+    this project already shipped a 0.70 "trust" and a 0.95 fuel confidence
+    that both wore a measurement's clothing."""
+    ceiling, basis = watchdog._silence_ceiling(_cad_unwatchable(days=1))
+    assert ceiling == watchdog.SILENT_AFTER_SECONDS
+    assert "too little history" in basis
+
+    long_gap = 40 * 3600
+    ceiling, basis = watchdog._silence_ceiling(
+        _cad_unwatchable(days=watchdog.MIN_DAYS_FOR_MEASURED_SILENCE, max_gap=long_gap))
+    assert basis == "measured"
+    assert ceiling == long_gap * watchdog.SILENCE_MARGIN
+
+
+def test_a_measured_ceiling_never_drops_below_the_default():
+    """A feed that has only ever been busy would otherwise earn a ceiling of
+    minutes and alarm on its first quiet evening."""
+    ceiling, _ = watchdog._silence_ceiling(
+        _cad_unwatchable(days=30, max_gap=60))
+    assert ceiling >= watchdog.SILENT_AFTER_SECONDS

@@ -97,6 +97,32 @@ LATE_MULTIPLE = 3.0
 # the whole subject of this file.
 WEAK_THRESHOLD_SECONDS = 48 * 3600
 
+# THE HOLE THIS CLOSES, found the hard way on 2026-08-02.
+#
+# `collector_only` was supposed to mean "too irregular to judge by cadence, so
+# we watch the collector instead". In practice it meant NOT WATCHED AT ALL,
+# because a collector that runs fine and finds nothing is indistinguishable
+# from a healthy one. The fuel vertical — the flagship, the thing a family most
+# needs — sat dark for 23 hours reading `collector_only ... ok` the entire time.
+# Its upstream had stopped publishing and nothing said so.
+#
+# That is exactly the failure P3.1 exists to prevent, inside the one category
+# P3.1 exempted from itself. "We cannot judge its rhythm" was allowed to become
+# "it can never be late", and those are not the same statement.
+#
+# So an unwatchable feed still gets a ceiling: silence this long, while its
+# collector is demonstrably healthy, is a fault whatever the feed's rhythm.
+#
+# 24 hours is CHOSEN, not measured, and the code says so where it reports —
+# v2 is days old and no feed has enough history for a real maximum-gap figure
+# yet. Once a feed has MIN_DAYS_FOR_MEASURED_SILENCE days of arrivals the
+# ceiling is derived from its own worst observed gap instead, and the detail
+# states which of the two is in force. A chosen number presented as a measured
+# one is how a threshold stops being questioned.
+SILENT_AFTER_SECONDS = 24 * 3600
+MIN_DAYS_FOR_MEASURED_SILENCE = 14
+SILENCE_MARGIN = 2.0
+
 # Every job that is supposed to report, and the cadence it reports at.
 #
 # Without this list the watchdog can only check heartbeats that EXIST, and a
@@ -302,6 +328,24 @@ def job_checks() -> list[dict]:
     return sorted(out, key=lambda r: r["name"])
 
 
+def _silence_ceiling(cad: dict | None) -> tuple[float, str]:
+    """How long an unwatchable feed may say nothing before it counts as dead.
+
+    Measured from the feed's own worst observed gap once there is enough
+    history to have seen one; a stated default until then. Returned with its
+    basis so the caller can say which — a chosen number reported as a measured
+    one stops being questioned, and this project has been bitten by exactly
+    that (0.70 "trust" and a 0.95 fuel confidence both wore measurements'
+    clothing).
+    """
+    if cad:
+        span = cad.get("baseline_days") or 0
+        worst = cad.get("max_gap_seconds")
+        if worst and span >= MIN_DAYS_FOR_MEASURED_SILENCE:
+            return max(worst * SILENCE_MARGIN, SILENT_AFTER_SECONDS), "measured"
+    return SILENT_AFTER_SECONDS, "default, too little history to measure"
+
+
 def feed_checks(jobs: list[dict], cadence: dict[str, dict] | None = None) -> list[dict]:
     """Data freshness against each feed's own measured cadence.
 
@@ -341,9 +385,23 @@ def feed_checks(jobs: list[dict], cadence: dict[str, dict] | None = None) -> lis
             why = (f"{row['arrivals']} baseline arrivals is too few for a "
                    f"percentile to mean anything")
             if collector and collector in healthy:
-                row.update(status="collector_only", fault=False,
-                           threshold_minutes=None,
-                           detail=f"{why}; covered by {collector}, which is healthy")
+                # Unwatchable by rhythm is not unwatchable at all. See
+                # SILENT_AFTER_SECONDS: fuel read `collector_only ... ok` for 23
+                # hours while its upstream had stopped publishing entirely.
+                ceiling, basis = _silence_ceiling(cad)
+                if age is not None and age > ceiling:
+                    row.update(status="silent", fault=True,
+                               threshold_minutes=round(ceiling / 60, 1),
+                               detail=f"nothing at all for {age / 3600:.0f}h "
+                                      f"(ceiling {ceiling / 3600:.0f}h, {basis}) "
+                                      f"while {collector} is healthy — the "
+                                      f"upstream has stopped, not the collector")
+                else:
+                    row.update(status="collector_only", fault=False,
+                               threshold_minutes=round(ceiling / 60, 1),
+                               detail=f"{why}; covered by {collector}, which is "
+                                      f"healthy, plus a {ceiling / 3600:.0f}h "
+                                      f"silence ceiling ({basis})")
             else:
                 row.update(status="uncovered", fault=True, threshold_minutes=None,
                            detail=f"{why}, and " + (
