@@ -51,7 +51,8 @@ and cross-tier gate on the way past.
 | `palestine-v2-backup.timer` | nightly 02:30 | encrypted set → `gdrive:palestine-v2-backups` |
 | `palestine-v2-restore-test.timer` | Sun 05:00 | restores the REMOTE copy, asserts it |
 | `palestine-v2-crowd.timer` | 2 min | belief over the 13 crowd-reportable fields |
-| `palestine-v2-watchdog.timer` | 10 min | 25 checks over jobs/capacity/deps/feeds |
+| `palestine-v2-rollup.timer` | nightly 04:40 | freeze yesterday into the databank |
+| `palestine-v2-watchdog.timer` | 10 min | 27 checks over jobs/capacity/deps/feeds |
 | `palestine-v2-alert@.service` | on failure | records alarms to `ops/alerts.ndjson` |
 
 Unit files are copied into `ops/systemd/` — they used to exist only in `/etc`,
@@ -91,19 +92,19 @@ network. `BACKUP_REMOTE` in `.env` is comma-separated if one appears.
 
 ```bash
 cd ~/palestine-v2 && set -a && . .env && set +a
-for f in tests/test_gate1_fuel.sql tests/test_gate2_checkpoints.sql \
-         tests/test_gate3_liveness.sql tests/test_no_data_loss.sql \
+for f in tests/test_gate*.sql tests/test_no_data_loss.sql \
          tests/test_schema.sql; do
   docker exec -i -e PGPASSWORD="$PGPASSWORD" palestine-v2-db \
     psql -tA -U "$PGUSER" -d "$PGDATABASE" -f - < "$f" | grep -c '^PASS'
 done
 .venv/bin/python -m pytest tests/test_news.py tests/test_checkpoint_text.py \
                            tests/test_reliability.py tests/test_watchdog.py \
-                           tests/test_poller.py tests/test_crowd.py -q
+                           tests/test_poller.py tests/test_crowd.py \
+                           tests/test_stream.py tests/test_ratelimit.py -q
 .venv/bin/python tests/test_arabic.py; .venv/bin/python tests/test_ingest.py
 ```
-Expected: 6 / 12 / 10 / 4 / 9 SQL passes, 122 pytest, 29 + 27 standalone.
-**219 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
+Expected: 48 SQL passes (6/12/10/7/4/9), 146 pytest, 29 + 27 standalone.
+**250 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
 rolled-back transactions, because a Python reimplementation of the model would
 only prove the reimplementation safe.
 
@@ -125,6 +126,7 @@ collecting rather than merely still running:
 ```bash
 .venv/bin/python -m ops.watchdog               # exit 1 if anything is late
 curl -s localhost:7870/health | jq '.status, .faults'
+curl -s https://live-api.zaidlab.xyz/v2 | jq '.route_count'   # public, from outside
 ```
 
 ---
