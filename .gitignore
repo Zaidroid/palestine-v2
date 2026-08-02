@@ -6,3 +6,25 @@ ops/audit/pull.log
 __pycache__/
 *.pyc
 .venv/
+
+# ── Secrets. These were NOT covered and would have gone into history ──────────
+# `.env` was ignored; its timestamped backups were not, and they contain the
+# same DB password, Telegram api_hash and FIRMS key in full.
+.env.bak-*
+.env.*.bak
+
+# The Telegram session IS the account's auth key. Committing it would put the
+# scarcest asset in the project into git history, where deleting the file later
+# does not remove it. Two clients sharing one session can also invalidate the
+# account outright.
+data/session/
+
+# Operational output, not source: regenerated every run, grows without bound,
+# and reviewing a diff of it tells you nothing.
+ops/alerts.ndjson
+ops/accuracy.ndjson
+ops/reliability.ndjson
+ops/crowd_independence.ndjson
+ops/backup-status.json
+ops/api.log
+ops/dualrun/
