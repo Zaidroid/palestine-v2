@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141110">
+<title>النبض — آخر التحديثات لحظة بلحظة</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body { background: var(--g0); color: var(--ink); font-family: var(--font-ui);
+         line-height: 1.65; padding-block-end: calc(74px + env(safe-area-inset-bottom)); }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums;
+         unicode-bidi: isolate; direction: ltr; }
+
+  header {
+    position: sticky; inset-block-start: 0; z-index: 5;
+    background: color-mix(in srgb, var(--g0) 90%, transparent);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--hairline);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 0;
+  }
+  .toprow { display: flex; align-items: center; gap: 10px; padding-block-end: 8px; }
+  .brand { font-weight: 700; font-size: 17px; }
+  .live { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--unknown); }
+  @media (prefers-reduced-motion: no-preference) {
+    .live.on { background: var(--ok); animation: pulse 2.2s var(--ease) infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+  }
+  .live.on { background: var(--ok); }
+  .spacer { flex: 1; }
+  .lang { background: none; border: 1px solid var(--hairline); color: var(--ink-muted);
+          border-radius: var(--r-s); padding: 3px 10px; font: inherit; font-size: 13px; }
+
+  .totals { display: flex; gap: 14px; padding-block-end: 8px; overflow-x: auto;
+            font-size: 13.5px; color: var(--ink-muted); white-space: nowrap; }
+  .totals b { color: var(--ink); font-weight: 700; }
+  .tdot { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 50%;
+          margin-inline-end: 5px; vertical-align: baseline; }
+
+  .filters { display: flex; gap: 8px; padding-block: 8px; overflow-x: auto; }
+  .f { background: var(--g1); border: 1px solid var(--hairline); color: var(--ink-muted);
+       border-radius: 999px; padding: 4px 14px; font: inherit; font-size: 13.5px;
+       white-space: nowrap; }
+  .f.on { background: var(--g3); color: var(--accent); border-color: var(--accent); }
+
+  main { max-inline-size: 640px; margin-inline: auto; }
+  .feed { padding: 6px 16px; display: grid; }
+  .row {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: baseline;
+    gap: 10px; padding: 10px 2px; border-block-end: 1px solid var(--hairline);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .row.fresh { animation: arrive var(--t-slow) var(--ease); }
+    @keyframes arrive { from { opacity: 0; transform: translateY(-4px); } }
+  }
+  .when { color: var(--ink-faint); font-size: 12px; min-inline-size: 5.5ch; }
+  .what .name { display: block; font-weight: 700; font-size: 15.5px; }
+  .what .detail { display: block; font-size: 13px; color: var(--ink-muted); }
+  .status { font-weight: 700; font-size: 14px; }
+  .status.open { color: #B8C48A; } .status.closed { color: #E39684; }
+  .status.congested, .status.slow { color: #E8C27A; }
+  .status.unknown { color: var(--ink-faint); font-weight: 500; }
+  .sight { color: var(--warn); }
+
+  .askbar {
+    position: fixed; inset-block-end: 0; inset-inline: 0; z-index: 6;
+    background: color-mix(in srgb, var(--g0) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-block-start: 1px solid var(--hairline);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+  .askbar .inner { max-inline-size: 640px; margin-inline: auto; display: flex; gap: 8px; }
+  .ask { flex: 1; background: var(--g1); border: 1px solid var(--hairline); color: var(--ink);
+         border-radius: 999px; padding: 11px 18px; font: inherit; font-size: 15px; }
+  .ask::placeholder { color: var(--ink-faint); }
+  .answer {
+    position: fixed; inset-block-end: calc(64px + env(safe-area-inset-bottom));
+    inset-inline: 16px; z-index: 6; max-inline-size: 608px; margin-inline: auto;
+    background: var(--g2); border: 1px solid var(--hairline); border-radius: var(--r-l);
+    padding: 12px 16px; display: none;
+  }
+  .answer.show { display: block; }
+  .empty { color: var(--ink-faint); padding: 24px; text-align: center; }
+  footer { padding: 16px; color: var(--ink-faint); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="toprow">
+    <span class="live" id="live"></span>
+    <span class="brand" data-i18n="brand">النبض</span>
+    <span class="spacer"></span>
+    <button class="lang" id="langbtn">EN</button>
+  </div>
+  <div class="totals" id="totals"></div>
+  <div class="filters" id="filters"></div>
+</header>
+
+<main>
+  <div class="feed" id="feed"><div class="empty">…</div></div>
+  <footer id="foot"></footer>
+</main>
+
+<div class="answer" id="answer"></div>
+<div class="askbar"><div class="inner">
+  <input class="ask" id="ask" data-i18n-ph="ask" placeholder="اسأل عن حاجز… حوارة؟" autocomplete="off">
+</div></div>
+
+<script>
+const I18N = {
+  ar: { brand:"النبض", ask:"اسأل عن حاجز… حوارة؟",
+        all:"الكل", closedf:"مغلق", jam:"أزمة", army:"جيش/تفتيش",
+        open:"سالك", closed:"مغلق", congested:"أزمة", slow:"بطيء", unknown:"غير معروف",
+        inbound:"دخول", outbound:"خروج", both:"بالاتجاهين",
+        idf:"جيش", police:"شرطة", settlers:"مستوطنون", inspection:"تفتيش",
+        min:"د", hr:"س", ago:"قبل", lastknown:"آخر معلومة",
+        t_open:"سالك", t_jam:"أزمة", t_closed:"مغلق", t_unknown:"غير معروف",
+        noresult:"لا نتيجة" },
+  en: { brand:"The Pulse", ask:"Ask about a checkpoint…",
+        all:"All", closedf:"Closed", jam:"Jams", army:"Army/Checks",
+        open:"open", closed:"closed", congested:"jammed", slow:"slow", unknown:"unknown",
+        inbound:"in", outbound:"out", both:"both ways",
+        idf:"army", police:"police", settlers:"settlers", inspection:"checks",
+        min:"m", hr:"h", ago:"ago", lastknown:"last known",
+        t_open:"open", t_jam:"jam", t_closed:"closed", t_unknown:"unknown",
+        noresult:"No match" },
+};
+let LANG = localStorage.getItem("lang") || "ar";
+let ROWS = [];     // {name, name_en, dir, flow, present, age_minutes, observed_at, fresh}
+let FILTER = "all";
+let SUMMARY = null;
+const $ = s => document.querySelector(s);
+const t = k => I18N[LANG][k] ?? k;
+
+function ageStr(min) {
+  if (min == null) return "";
+  const m = Math.round(min);
+  const [d, u] = m < 90 ? [m, t("min")] : [(m/60).toFixed(m<600?1:0), t("hr")];
+  return LANG === "ar"
+    ? `${t("ago")} <span class="num">${d}</span>${u}`
+    : `<span class="num">${d}</span>${u} ${t("ago")}`;
+}
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  $("#langbtn").textContent = LANG === "ar" ? "EN" : "ع";
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  render();
+}
+
+function rowHTML(r, fresh) {
+  const name = LANG === "ar" ? (r.name || r.name_en) : (r.name_en || r.name);
+  const stat = r.flow !== "unknown"
+    ? `<span class="status ${r.flow}">${t(r.flow)}</span>`
+    : `<span class="status unknown">${t("unknown")}</span>`;
+  // The detail line carries only what the status column does NOT already
+  // say: per-direction differences and sightings. Repeating the flow word
+  // three times per row was measured noise in the first screenshot pass.
+  const bits = [];
+  if (r.split) bits.push(r.split.map(d => `${t(d.dir)} ${t(d.flow)}`).join(" · "));
+  else if (r.dir && r.dir !== "both") bits.push(t(r.dir));
+  if ((r.present || []).length)
+    bits.push(`<span class="sight">${r.present.map(x => t(x)).join("، ")}</span>`);
+  const detail = bits.length ? `<span class="detail">${bits.join(" · ")}</span>` : "";
+  return `<div class="row ${fresh ? "fresh" : ""}">
+      <span class="when">${ageStr(r.age_minutes)}</span>
+      <span class="what"><span class="name">${name}</span>${detail}</span>
+      ${stat}</div>`;
+}
+
+function keep(r) {
+  if (FILTER === "all") return r.flow !== "unknown" || (r.present || []).length;
+  if (FILTER === "closedf") return r.flow === "closed";
+  if (FILTER === "jam") return r.flow === "congested" || r.flow === "slow";
+  if (FILTER === "army") return (r.present || []).length > 0;
+  return true;
+}
+
+function render() {
+  // totals
+  if (SUMMARY) {
+    const tt = SUMMARY.totals || {};
+    $("#totals").innerHTML = [
+      ["open", "ok", "t_open"], ["congested", "warn", "t_jam"],
+      ["closed", "bad", "t_closed"], ["unknown", "unknown", "t_unknown"],
+    ].map(([k, c, lbl]) =>
+      `<span><span class="tdot" style="background:var(--${c})"></span>` +
+      `<b class="num">${tt[k] ?? 0}</b> ${t(lbl)}</span>`).join("");
+  }
+  // filters
+  $("#filters").innerHTML = ["all", "closedf", "jam", "army"].map(f =>
+    `<button class="f ${FILTER === f ? "on" : ""}" data-f="${f}">${t(f)}</button>`).join("");
+  document.querySelectorAll(".f").forEach(b =>
+    b.onclick = () => { FILTER = b.dataset.f; render(); });
+  // feed
+  const rows = ROWS.filter(keep).slice(0, 80);
+  $("#feed").innerHTML = rows.map(r => rowHTML(r, r._fresh)).join("")
+    || `<div class="empty">${t("noresult")}</div>`;
+  ROWS.forEach(r => r._fresh = false);
+  if (SUMMARY) $("#foot").textContent = SUMMARY.attribution || "";
+}
+
+async function boot() {
+  applyLang();
+  const [gj, sum] = await Promise.all([
+    fetch("/v2/export/checkpoints.geojson").then(r => r.json()),
+    fetch("/v2/checkpoints/summary").then(r => r.json()),
+  ]);
+  SUMMARY = sum;
+  // GROUP the directional siblings: a place whose in/out rows agree is one
+  // fact reported once, not three lines of the same word. When they differ,
+  // the row keeps the worst flow as its verdict and spells the split out.
+  const order = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
+  const byPlace = new Map();
+  for (const f of gj.features) {
+    const p = f.properties;
+    if (p.age_minutes == null) continue;
+    (byPlace.get(p.place_id) ?? byPlace.set(p.place_id, []).get(p.place_id)).push(p);
+  }
+  ROWS = [...byPlace.values()].map(rows => {
+    const worst = rows.slice().sort((a, b) => (order[b.flow] ?? -1) - (order[a.flow] ?? -1))[0];
+    const flows = new Set(rows.filter(r => r.flow !== "unknown").map(r => r.flow));
+    const split = flows.size > 1
+      ? rows.filter(r => r.direction !== "both" && r.flow !== "unknown")
+            .map(r => ({ dir: r.direction, flow: r.flow }))
+      : null;
+    const present = [...new Set(rows.flatMap(r => r.present || []))];
+    return { name: worst.name_ar, name_en: worst.name_en, dir: worst.direction,
+             flow: worst.flow, split, present,
+             age_minutes: Math.min(...rows.map(r => r.age_minutes)) };
+  }).sort((a, b) => a.age_minutes - b.age_minutes);
+  render();
+
+  const es = new EventSource("/v2/stream?snapshot=false");
+  es.onopen = () => $("#live").className = "live on";
+  es.onerror = () => $("#live").className = "live";
+  es.onmessage = ev => {
+    try {
+      const d = JSON.parse(ev.data);
+      if (!d.place || !d.state_kind?.startsWith("checkpoint")) return;
+      ROWS.unshift({ name: d.place, name_en: d.place_en, dir: d.direction || "both",
+                     flow: d.value && d.state_kind === "checkpoint_flow" ? d.value : "unknown",
+                     present: d.state_kind !== "checkpoint_flow" && d.value === "present"
+                              ? [d.state_kind.replace("checkpoint_", "")] : [],
+                     age_minutes: 0, _fresh: true });
+      render();
+    } catch {}
+  };
+}
+
+$("#ask").addEventListener("input", e => {
+  const q = e.target.value.trim();
+  const a = $("#answer");
+  if (!q) { a.className = "answer"; return; }
+  const hit = ROWS.find(r => (r.name || "").includes(q)
+    || (r.name_en || "").toLowerCase().includes(q.toLowerCase()));
+  if (!hit) { a.className = "answer"; return; }
+  const name = LANG === "ar" ? hit.name : (hit.name_en || hit.name);
+  a.innerHTML = `<b>${name}</b> — <span class="status ${hit.flow}">${t(hit.flow)}</span>
+     <span class="when">${ageStr(hit.age_minutes)}</span>`;
+  a.className = "answer show";
+});
+$("#langbtn").addEventListener("click", () => {
+  LANG = LANG === "ar" ? "en" : "ar";
+  localStorage.setItem("lang", LANG); applyLang();
+});
+boot();
+</script>
+</body>
+</html>

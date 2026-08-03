@@ -1,0 +1,32 @@
+/* palestine-v2 design tokens — the single source of truth (docs/DESIGN.md).
+   Doctrine test greps for raw hex outside this file. */
+:root {
+  /* ground ladder — warm dark, never pure black */
+  --g0: #141110;   /* page */
+  --g1: #1c1815;   /* card */
+  --g2: #26211d;   /* raised chip */
+  --g3: #322b25;   /* pressed / hover */
+
+  --ink: #EDE6DD;
+  --ink-muted: #A79A8C;
+  --ink-faint: #6E675F;
+
+  --accent: #E8A33D;
+
+  /* status triad + unknown */
+  --ok: #7C8A4D;
+  --warn: #D9A03F;
+  --bad: #C25E4C;
+  --unknown: #6E675F;
+
+  --hairline: rgba(237, 230, 221, .08);
+
+  --r-s: 4px;  --r-m: 8px;  --r-l: 14px;
+
+  --font-ui: "SF Arabic", "Segoe UI", "Noto Naskh Arabic UI", system-ui, sans-serif;
+  --font-num: "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+
+  --ease: cubic-bezier(.25, .1, .25, 1);
+  --t-fast: 140ms;
+  --t-slow: 380ms;
+}

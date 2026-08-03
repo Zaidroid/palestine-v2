@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141110">
+<title>أحوال الطرق — ثلاثة مفاهيم</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body { background: var(--g0); color: var(--ink); font-family: var(--font-ui);
+         line-height: 1.7; padding: 24px 20px; min-block-size: 100dvh; }
+  main { max-inline-size: 560px; margin-inline: auto; }
+  h1 { font-size: 21px; margin-block-end: 4px; }
+  .sub { color: var(--ink-muted); font-size: 14px; margin-block-end: 20px; }
+  a.opt { display: block; background: var(--g1); border: 1px solid var(--hairline);
+          border-radius: var(--r-l); padding: 16px 18px; margin-block-end: 12px;
+          color: var(--ink); text-decoration: none; }
+  a.opt:active { background: var(--g2); }
+  .name { font-weight: 700; font-size: 17px; color: var(--accent); }
+  .en { color: var(--ink-faint); font-size: 12px; margin-inline-start: 8px; }
+  .desc { font-size: 13.5px; color: var(--ink-muted); }
+  .note { margin-block-start: 20px; color: var(--ink-faint); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>أحوال الطرق — الضفة الغربية</h1>
+  <div class="sub">ثلاثة مفاهيم للصفحة، على البيانات الحية نفسها. افتح كل واحد على الهاتف وقرر.</div>
+
+  <a class="opt" href="road.html">
+    <div><span class="name">١ · الطريق</span><span class="en">answer-first</span></div>
+    <div class="desc">سؤال واحد وجواب كبير: اكتب اسم الحاجز أو اطلب الأقرب لك — بطاقة حكم لكل حاجز، مع العمر والاتجاهات والمشاهدات.</div>
+  </a>
+
+  <a class="opt" href="pulse.html">
+    <div><span class="name">٢ · النبض</span><span class="en">feed-first</span></div>
+    <div class="desc">مثل قنوات التليجرام التي يعرفها الناس، لكن منظّمة: سيل التحديثات لحظة بلحظة، فلاتر سريعة، وشريط سؤال ثابت تحت.</div>
+  </a>
+
+  <a class="opt" href="board.html">
+    <div><span class="name">٣ · اللوحة</span><span class="en">corridor board · light</span></div>
+    <div class="desc">خط واحد من جنين إلى الخليل مثل خريطة مترو: نقطة ملوّنة لكل حاجز معلوم الآن، اضغط للنافذة التفصيلية. فاتحة اللون عمداً.</div>
+  </a>
+
+  <div class="note">المفاهيم الثلاثة تقرأ من نفس الـ API وتحترم نفس القوانين: العمر يغيّر الجواب، غير المعروف لا يُلوَّن، والغياب ليس أماناً.</div>
+</main>
+</body>
+</html>

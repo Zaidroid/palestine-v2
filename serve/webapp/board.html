@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3ECE2">
+<title>اللوحة — خط الطريق من جنين إلى الخليل</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* Light alternative, same token STRUCTURE (docs/DESIGN.md allows a light
+     scope per variant; names shadow the dark set locally). */
+  :root {
+    --g0: #F3ECE2; --g1: #FBF7F0; --g2: #EAE0D2; --g3: #DFD2C0;
+    --ink: #2C2620; --ink-muted: #6E6355; --ink-faint: #A2937F;
+    --hairline: rgba(44, 38, 32, .12);
+    --ok: #6B7A3E; --warn: #B07E1F; --bad: #B04A38; --unknown: #A2937F;
+    --accent: #B07E1F;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body { background: var(--g0); color: var(--ink); font-family: var(--font-ui);
+         line-height: 1.65; padding-block-end: env(safe-area-inset-bottom); }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums;
+         unicode-bidi: isolate; direction: ltr; }
+
+  header {
+    position: sticky; inset-block-start: 0; z-index: 5;
+    background: color-mix(in srgb, var(--g0) 90%, transparent);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--hairline);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand { font-weight: 700; font-size: 17px; }
+  .live { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--unknown); }
+  .live.on { background: var(--ok); }
+  @media (prefers-reduced-motion: no-preference) {
+    .live.on { animation: pulse 2.2s var(--ease) infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+  }
+  .spacer { flex: 1; }
+  .lang { background: none; border: 1px solid var(--hairline); color: var(--ink-muted);
+          border-radius: var(--r-s); padding: 3px 10px; font: inherit; font-size: 13px; }
+
+  main { max-inline-size: 640px; margin-inline: auto; padding: 12px 16px 40px; }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-muted);
+            padding-block-end: 6px; flex-wrap: wrap; }
+  .legend .dot { display: inline-block; inline-size: 9px; block-size: 9px;
+                 border-radius: 50%; margin-inline-end: 4px; }
+
+  .board { inline-size: 100%;
+           /* Anchor semantics, not text semantics: dir=rtl flips what
+              text-anchor start/end MEAN, which is how the labels ended up
+              lying across the spine twice. The svg positions in LTR space;
+              Arabic glyph runs inside each label still shape RTL. */
+           direction: ltr; }
+  .stop { cursor: pointer; }
+  .stop text { font-family: var(--font-ui); }
+
+  .sheet {
+    position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 8;
+    background: var(--g1); border-start-start-radius: var(--r-l);
+    border-start-end-radius: var(--r-l);
+    border-block-start: 1px solid var(--hairline);
+    box-shadow: 0 -12px 40px rgba(44,38,32,.18);
+    padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
+    transform: translateY(105%);
+    transition: transform var(--t-slow) var(--ease);
+    max-inline-size: 640px; margin-inline: auto;
+  }
+  @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+  .sheet.show { transform: none; }
+  .sheet .grab { inline-size: 44px; block-size: 4px; background: var(--g3);
+                 border-radius: 999px; margin: 0 auto 12px; }
+  .sheet h2 { font-size: 19px; }
+  .sheet .sub { color: var(--ink-faint); font-size: 12.5px; }
+  .verdict { display: flex; align-items: center; gap: 10px; margin-block: 10px; }
+  .pill { font-weight: 700; font-size: 15px; padding: 3px 14px; border-radius: 999px;
+          color: #fff; }
+  .pill.open { background: var(--ok); } .pill.closed { background: var(--bad); }
+  .pill.congested, .pill.slow { background: var(--warn); }
+  .pill.unknown { background: none; border: 1px dashed var(--unknown);
+                  color: var(--ink-muted); font-weight: 500; }
+  .meta { font-size: 13px; color: var(--ink-muted); }
+  .close { position: absolute; inset-inline-end: 14px; inset-block-start: 10px;
+           background: none; border: 0; font-size: 20px; color: var(--ink-faint); }
+  footer { color: var(--ink-faint); font-size: 12px; text-align: center;
+           padding-block-start: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="live" id="live"></span>
+  <span class="brand" data-i18n="brand">اللوحة</span>
+  <span class="spacer"></span>
+  <button class="lang" id="langbtn">EN</button>
+</header>
+
+<main>
+  <div class="legend" id="legend"></div>
+  <svg class="board" id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="meta" id="unknowncount" style="padding-block-start:10px"></div>
+  <footer id="foot"></footer>
+</main>
+
+<div class="sheet" id="sheet">
+  <button class="close" id="sheetclose">✕</button>
+  <div class="grab"></div>
+  <div id="sheetbody"></div>
+</div>
+
+<script>
+const I18N = {
+  ar: { brand:"اللوحة", open:"سالك", closed:"مغلق", congested:"أزمة", slow:"بطيء",
+        unknown:"غير معروف", lastknown:"آخر معلومة", min:"د", hr:"س", ago:"قبل",
+        conf:"الثقة", src:"مصدر مستقل", inbound:"دخول", outbound:"خروج",
+        both:"بالاتجاهين", idf:"جيش", police:"شرطة", settlers:"مستوطنون",
+        inspection:"تفتيش", sighted:"شوهد" },
+  en: { brand:"The Board", open:"open", closed:"closed", congested:"jammed",
+        slow:"slow", unknown:"unknown", lastknown:"last known", min:"m", hr:"h",
+        ago:"ago", conf:"confidence", src:"independent source(s)", inbound:"in",
+        outbound:"out", both:"both ways", idf:"army", police:"police",
+        settlers:"settlers", inspection:"checks", sighted:"sighted" },
+};
+let LANG = localStorage.getItem("lang") || "ar";
+let CPS = [];
+const $ = s => document.querySelector(s);
+const t = k => I18N[LANG][k] ?? k;
+const COLORS = { open: "var(--ok)", congested: "var(--warn)", slow: "var(--warn)",
+                 closed: "var(--bad)" };
+
+function ageStr(min) {
+  if (min == null) return "";
+  const m = Math.round(min);
+  const [d, u] = m < 90 ? [m, t("min")] : [(m/60).toFixed(m<600?1:0), t("hr")];
+  return LANG === "ar"
+    ? `${t("ago")} <span class="num">${d}</span>${u}`
+    : `<span class="num">${d}</span>${u} ${t("ago")}`;
+}
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  $("#langbtn").textContent = LANG === "ar" ? "EN" : "ع";
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  $("#legend").innerHTML = ["open", "congested", "closed", "unknown"].map(k =>
+    `<span><span class="dot" style="background:${COLORS[k] || "transparent"};
+      ${k === "unknown" ? "border:1.5px solid var(--unknown)" : ""}"></span>${t(k)}</span>`).join("");
+  draw();
+}
+
+// One row per place: worst directional news wins the dot.
+function collapse() {
+  const order = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
+  const by = new Map();
+  for (const f of CPS) {
+    const p = f.properties;
+    const prev = by.get(p.place_id);
+    if (!prev || (order[p.flow] ?? -1) > (order[prev.flow] ?? -1)) by.set(p.place_id, p);
+  }
+  return [...by.values()].filter(p => p._lat).sort((a, b) => b._lat - a._lat);
+}
+
+let SEL = null;
+function draw() {
+  if (!CPS.length) return;
+  // The board is WHAT WE KNOW NOW: checkpoints with a current reading, north
+  // to south. The unknowns are counted underneath, never hidden — but 160
+  // slate dots would bury the 30 answers people came for.
+  const all = collapse();
+  const stops = all.filter(p => p.flow !== "unknown");
+  const unknowns = all.length - stops.length;
+  const H = stops.length * 46 + 40;
+  const rtl = LANG === "ar";
+  // RTL flips text-anchor's idea of "start": with the spine on the left, the
+  // Arabic labels grew LEFTWARD and lay across the line and its dots — the
+  // first screenshot pass caught it. The spine sits on the reading edge
+  // (right for Arabic) and labels extend into the page, anchored explicitly.
+  // Ages live in the tap sheet, not the label — they were clutter.
+  const lineX = rtl ? 360 : 60;
+  const textX = rtl ? lineX - 22 : lineX + 22;
+  const anchor = rtl ? "end" : "start";
+  const svg = [];
+  svg.push(`<line x1="${lineX}" y1="20" x2="${lineX}" y2="${H - 20}"
+            stroke="var(--g3)" stroke-width="5" stroke-linecap="round"/>`);
+  stops.forEach((p, i) => {
+    const y = 30 + i * 46;
+    const known = p.flow !== "unknown";
+    const fill = known ? COLORS[p.flow] : "var(--g1)";
+    const ring = known ? "var(--g1)" : "var(--unknown)";
+    const name = rtl ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar);
+    svg.push(`<g class="stop" data-pid="${p.place_id}">
+      <circle cx="${lineX}" cy="${y}" r="9" fill="${fill}"
+              stroke="${ring}" stroke-width="2.5"
+              ${known ? "" : 'stroke-dasharray="2.5 2.5"'}/>
+      <text x="${textX}" y="${y + 5}" font-size="14.5" text-anchor="${anchor}"
+            font-weight="${p.flow === "closed" ? 700 : 500}"
+            fill="${p.flow === "closed" ? "var(--bad)" : "var(--ink)"}">${name}</text>
+    </g>`);
+  });
+  const b = $("#board");
+  b.setAttribute("viewBox", `0 0 420 ${H}`);
+  b.style.blockSize = "auto";
+  b.innerHTML = svg.join("");
+  b.querySelectorAll(".stop").forEach(g =>
+    g.addEventListener("click", () => openSheet(+g.dataset.pid)));
+  $("#unknowncount").textContent = LANG === "ar"
+    ? `و${unknowns} حاجزاً آخر بلا معلومة حالية — الغياب ليس أماناً`
+    : `${unknowns} more checkpoints with no current reading — absence is not safety`;
+}
+
+function openSheet(pid) {
+  const rows = CPS.filter(f => f.properties.place_id === pid).map(f => f.properties);
+  if (!rows.length) return;
+  const order = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
+  const bst = rows.slice().sort((a, b) => (order[b.flow] ?? -1) - (order[a.flow] ?? -1))[0];
+  const name = LANG === "ar" ? (bst.name_ar || bst.name_en) : (bst.name_en || bst.name_ar);
+  const last = bst.flow === "unknown" && bst.last_known_flow && bst.last_known_flow !== "unknown"
+    ? `<div class="meta">${t("lastknown")}: ${t(bst.last_known_flow)} · ${ageStr(bst.age_minutes)}</div>` : "";
+  const dirs = rows.map(r =>
+    `<div class="meta">${t(r.direction)} — <b>${t(r.flow)}</b> ${r.age_minutes != null ? "· " + ageStr(r.age_minutes) : ""}</div>`).join("");
+  const sights = (bst.present || []).map(x =>
+    `<div class="meta" style="color:var(--warn)">⚠ ${t(x)} · ${t("sighted")} ${ageStr(bst.presence_age_minutes)}</div>`).join("");
+  const conf = bst.flow !== "unknown"
+    ? `<div class="meta">${t("conf")} <span class="num">${Math.round(bst.confidence * 100)}%</span> · <span class="num">${bst.independent_sources}</span> ${t("src")}</div>` : "";
+  $("#sheetbody").innerHTML = `
+    <h2>${name} <span class="sub">${LANG === "ar" ? (bst.name_en || "") : (bst.name_ar || "")}</span></h2>
+    <div class="verdict"><span class="pill ${bst.flow}">${t(bst.flow)}</span>
+      <span class="meta">${bst.flow !== "unknown" ? ageStr(bst.age_minutes) : ""}</span></div>
+    ${last}${dirs}${sights}${conf}`;
+  $("#sheet").classList.add("show");
+  SEL = pid;
+  history.pushState({ sheet: pid }, "");
+}
+function closeSheet(fromPop) {
+  $("#sheet").classList.remove("show");
+  SEL = null;
+  if (!fromPop && history.state?.sheet) history.back();
+}
+window.addEventListener("popstate", () => { if (SEL != null) closeSheet(true); });
+$("#sheetclose").addEventListener("click", () => closeSheet(false));
+
+async function boot() {
+  applyLang();
+  const gj = await fetch("/v2/export/checkpoints.geojson").then(r => r.json());
+  CPS = gj.features.map(f => {
+    f.properties._lat = f.geometry.coordinates[1];
+    return f;
+  });
+  $("#foot").textContent = gj.attribution || "";
+  draw();
+  const es = new EventSource("/v2/stream?snapshot=false");
+  es.onopen = () => $("#live").className = "live on";
+  es.onerror = () => $("#live").className = "live";
+}
+$("#langbtn").addEventListener("click", () => {
+  LANG = LANG === "ar" ? "en" : "ar";
+  localStorage.setItem("lang", LANG); applyLang();
+});
+boot();
+</script>
+</body>
+</html>

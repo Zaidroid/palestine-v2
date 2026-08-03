@@ -1265,6 +1265,129 @@ def stream_status() -> dict:
     }
 
 
+# ── P4.1: the page — a human can finally look at it ─────────────────────────
+# Static, self-contained (no CDN, no tiles, no fonts — DESIGN.md law 5),
+# reading the same public API as everyone else. Three concept variants for
+# the options loop; /app is the chooser until one is locked.
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+app.mount("/app", StaticFiles(directory=str(Path(__file__).parent / "webapp"),
+                              html=True), name="webapp")
+
+
+# ── P4.2: export — the data walks out the door in standard shapes ───────────
+# CSV for spreadsheets, GeoJSON for maps. Same serving views as the JSON API,
+# same gates, same honesty columns: an export that dropped `staleness_band`
+# would let a week-old "open" travel the world looking fresh.
+
+def _csv_response(rows: list[dict], columns: list[str], filename: str):
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore")
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: r.get(k) for k in columns})
+    from fastapi import Response
+    return Response(buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+def _geojson_response(features: list[dict], attribution: str):
+    # jsonable_encoder first: a bare JSONResponse uses stdlib json, which
+    # cannot serialise the datetimes in observed_at/occurred_at.
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(
+        {"type": "FeatureCollection", "features": features,
+         "attribution": attribution}), media_type="application/geo+json")
+
+
+_EXPORT_CHECKPOINT_SQL = f"""
+    SELECT {CHECKPOINT_COLS}
+    FROM checkpoint_serving c
+    ORDER BY c.name_ar, c.direction"""
+
+_EXPORT_CP_COLUMNS = ["place_id", "name_ar", "name_en", "lat", "lon", "direction",
+                      "flow", "passable", "last_known_flow", "confidence",
+                      "observed_at", "age_minutes", "staleness_band",
+                      "independent_sources", "present", "absent"]
+
+
+@app.get("/v2/export/checkpoints.csv", tags=["export"])
+def export_checkpoints_csv():
+    """Every checkpoint's current serving state, honesty columns included."""
+    rows = [dict(r, present=",".join(r["present"] or []),
+                 absent=",".join(r["absent"] or [])) for r in q(_EXPORT_CHECKPOINT_SQL)]
+    return _csv_response(rows, _EXPORT_CP_COLUMNS, "checkpoints.csv")
+
+
+@app.get("/v2/export/checkpoints.geojson", tags=["export"])
+def export_checkpoints_geojson():
+    feats = [{
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]},
+        "properties": {k: r[k] for k in _EXPORT_CP_COLUMNS
+                       if k not in ("lat", "lon")} | {
+            "present": list(r["present"] or []), "absent": list(r["absent"] or [])},
+    } for r in q(_EXPORT_CHECKPOINT_SQL) if r["lat"] is not None]
+    return _geojson_response(feats, CHECKPOINT_ATTRIBUTION)
+
+
+_EXPORT_INCIDENT_SQL = """
+    SELECT e.event_id, e.event_type, e.occurred_at, e.confidence,
+           e.claim_count, e.independent_sources,
+           p.name_ar, p.name_en,
+           ST_Y(e.geom::geometry) AS lat, ST_X(e.geom::geometry) AS lon
+    FROM event e LEFT JOIN place p ON p.place_id = e.place_id
+    WHERE e.status = 'believed'
+      AND e.occurred_at > now() - make_interval(days => %s)
+    ORDER BY e.occurred_at DESC"""
+
+_EXPORT_INC_COLUMNS = ["event_id", "event_type", "occurred_at", "name_ar",
+                       "name_en", "lat", "lon", "confidence", "claim_count",
+                       "independent_sources"]
+
+
+@app.get("/v2/export/incidents.csv", tags=["export"])
+def export_incidents_csv(days: int = Query(30, ge=1, le=365)):
+    """Believed incidents. occurred_at is the POSTING time, hour precision."""
+    return _csv_response(q(_EXPORT_INCIDENT_SQL, (days,)),
+                         _EXPORT_INC_COLUMNS, f"incidents-{days}d.csv")
+
+
+@app.get("/v2/export/incidents.geojson", tags=["export"])
+def export_incidents_geojson(days: int = Query(30, ge=1, le=365)):
+    feats = [{
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]},
+        "properties": {k: r[k] for k in _EXPORT_INC_COLUMNS if k not in ("lat", "lon")},
+    } for r in q(_EXPORT_INCIDENT_SQL, (days,)) if r["lat"] is not None]
+    return _geojson_response(
+        feats, "West Bank governorate news channels (Telegram) via agent2")
+
+
+@app.get("/v2/export/fuel.csv", tags=["export"])
+def export_fuel_csv():
+    """One row per station and fuel, with region and the staleness the JSON
+    API would have shown. The fuel feed's text source has been drying up since
+    2026-08-01; the staleness_band column is where that shows, honestly."""
+    rows = q("""
+        SELECT s.place_id, s.name_ar, s.name_en, s.state_kind AS fuel,
+               s.value, s.last_known_value, s.confidence, s.observed_at,
+               s.age_minutes, s.staleness_band,
+               p.source_refs->>'palhub_region' AS region,
+               p.source_refs->>'palhub_locality' AS locality
+        FROM state_serving s JOIN place p ON p.place_id = s.place_id
+        WHERE s.state_kind LIKE 'fuel%%'
+        ORDER BY p.source_refs->>'palhub_region', s.name_ar, s.state_kind""")
+    rows = [dict(r, fuel=r["fuel"].replace("fuel_", "")) for r in rows]
+    return _csv_response(rows, ["place_id", "name_ar", "name_en", "region",
+                                "locality", "fuel", "value", "last_known_value",
+                                "confidence", "observed_at", "age_minutes",
+                                "staleness_band"], "fuel-stations.csv")
+
+
 # ── P5.3: one entry point ────────────────────────────────────────────────────
 
 @app.get("/v2", tags=["discovery"])

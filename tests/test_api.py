@@ -70,6 +70,11 @@ CASES: dict[str, list[dict]] = {
     "/v2/stream/status":        [{}],
     "/v2/news/latest":          [{}, {"limit": 3}, {"area": "نابلس"}],
     "/v2/checkpoints/summary":  [{}],
+    "/v2/export/checkpoints.csv":     [{}],
+    "/v2/export/checkpoints.geojson": [{}],
+    "/v2/export/incidents.csv":       [{}, {"days": 7}],
+    "/v2/export/incidents.geojson":   [{}, {"days": 7}],
+    "/v2/export/fuel.csv":            [{}],
     "/v2/incidents/summary":    [{}, {"hours": 6}],
     "/v2/incidents/recent":     [{}, {"hours": 6, "limit": 5},
                                  {"lat": LAT, "lon": LON, "radius_km": 10}],
@@ -129,7 +134,9 @@ def test_route_answers(path: str, params: dict) -> None:
     assert r.status_code == 200, (
         f"{path} {params} -> {r.status_code}: {r.text[:400]}")
     assert r.headers["content-type"].split(";")[0] in (
-        "application/json", "text/event-stream"), r.headers["content-type"]
+        "application/json", "text/event-stream",
+        # P4.2 exports; geo+json for maps, csv for spreadsheets.
+        "text/csv", "application/geo+json"), r.headers["content-type"]
 
 
 @pytest.mark.parametrize("path,params", [
@@ -271,6 +278,11 @@ MCP_EXEMPT = {
     # name themselves so an agent never has to hold a place_id.
     "/v2/history/place", "/v2/history/area", "/v2/patterns/place",
     "/v2/stream/status", "/v2/geo/resolve",
+    # Bulk export is a file-download surface for humans and GIS tools; an
+    # agent reads the same data through the query tools row by row.
+    "/v2/export/checkpoints.csv", "/v2/export/checkpoints.geojson",
+    "/v2/export/incidents.csv", "/v2/export/incidents.geojson",
+    "/v2/export/fuel.csv",
 }
 
 
@@ -344,3 +356,23 @@ def test_stale_states_are_not_served_as_current() -> None:
                         assert (f["age_minutes"] or 0) < stale_hours * 60, (
                             f"{fuel}: serving a {f['age_minutes']}-minute-old "
                             f"'available' as current")
+
+
+def test_exports_carry_the_honesty_columns() -> None:
+    """An export that drops staleness_band lets a week-old "open" travel the
+    world looking fresh. The columns are the contract, so they are asserted."""
+    csv_head = client.get("/v2/export/checkpoints.csv").text.splitlines()[0]
+    for col in ("staleness_band", "age_minutes", "confidence", "last_known_flow"):
+        assert col in csv_head, f"checkpoints.csv lost {col}"
+    fuel_head = client.get("/v2/export/fuel.csv").text.splitlines()[0]
+    assert "staleness_band" in fuel_head
+
+    gj = client.get("/v2/export/checkpoints.geojson").json()
+    assert gj["type"] == "FeatureCollection" and gj["features"], "empty export"
+    props = gj["features"][0]["properties"]
+    assert "staleness_band" in props and "flow" in props
+    assert gj["features"][0]["geometry"]["coordinates"][0] is not None
+
+    inc = client.get("/v2/export/incidents.geojson", params={"days": 30}).json()
+    assert inc["type"] == "FeatureCollection"
+    assert all(f["properties"]["confidence"] is not None for f in inc["features"])

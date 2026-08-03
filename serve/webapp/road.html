@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141110">
+<title>الطريق — أحوال الطرق الآن</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--g0); color: var(--ink);
+    font-family: var(--font-ui);
+    line-height: 1.65;
+    padding-block-end: env(safe-area-inset-bottom);
+  }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums;
+         unicode-bidi: isolate; direction: ltr; }
+
+  header {
+    position: sticky; inset-block-start: 0; z-index: 5;
+    background: color-mix(in srgb, var(--g0) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--hairline);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand { font-weight: 700; font-size: 17px; }
+  .live { inline-size: 8px; block-size: 8px; border-radius: 50%;
+          background: var(--ok); }
+  @media (prefers-reduced-motion: no-preference) {
+    .live.on { animation: pulse 2.2s var(--ease) infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+  }
+  .live.off { background: var(--unknown); }
+  .spacer { flex: 1; }
+  .lang { background: none; border: 1px solid var(--hairline); color: var(--ink-muted);
+          border-radius: var(--r-s); padding: 3px 10px; font: inherit; font-size: 13px; }
+
+  main { padding: 16px; max-inline-size: 640px; margin-inline: auto; }
+
+  .ask { font-size: 22px; font-weight: 700; margin-block-end: 10px; }
+  .searchrow { display: flex; gap: 8px; }
+  .search {
+    flex: 1; background: var(--g1); border: 1px solid var(--hairline);
+    color: var(--ink); border-radius: var(--r-l); padding: 12px 16px;
+    font: inherit; font-size: 16px;
+  }
+  .search::placeholder { color: var(--ink-faint); }
+  .near { background: var(--g2); border: 1px solid var(--hairline); color: var(--accent);
+          border-radius: var(--r-l); padding: 0 14px; font: inherit; font-size: 14px; }
+
+  .cards { margin-block-start: 14px; display: grid; gap: 10px; }
+  .card {
+    background: var(--g1); border: 1px solid var(--hairline);
+    border-radius: var(--r-l); padding: 14px 16px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: arrive var(--t-slow) var(--ease); }
+    @keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
+  }
+  .card .toprow { display: flex; align-items: baseline; gap: 10px; }
+  .cp-name { font-size: 18px; font-weight: 700; }
+  .cp-sub  { color: var(--ink-faint); font-size: 12.5px; }
+  .verdict { display: flex; align-items: center; gap: 10px; margin-block-start: 8px; }
+  .pill {
+    font-weight: 700; font-size: 16px; padding: 4px 14px; border-radius: 999px;
+  }
+  .pill.open      { background: color-mix(in srgb, var(--ok) 22%, transparent); color: #B8C48A; }
+  .pill.congested,
+  .pill.slow      { background: color-mix(in srgb, var(--warn) 20%, transparent); color: #E8C27A; }
+  .pill.closed    { background: color-mix(in srgb, var(--bad) 24%, transparent); color: #E39684; }
+  .pill.unknown   { background: none; border: 1px dashed var(--unknown); color: var(--ink-muted);
+                    font-weight: 500; }
+  .age { color: var(--ink-muted); font-size: 13px; }
+  .lastknown { color: var(--ink-faint); font-size: 13px; margin-block-start: 4px; }
+  .dirs { display: flex; gap: 6px; margin-block-start: 10px; flex-wrap: wrap; }
+  .dirchip {
+    background: var(--g2); border: 1px solid var(--hairline); border-radius: var(--r-m);
+    padding: 4px 10px; font-size: 13px; display: flex; gap: 6px; align-items: center;
+  }
+  .dot { inline-size: 8px; block-size: 8px; border-radius: 50%; }
+  .dot.open { background: var(--ok); } .dot.closed { background: var(--bad); }
+  .dot.congested, .dot.slow { background: var(--warn); }
+  .dot.unknown { background: none; border: 1px solid var(--unknown); }
+  .sight { margin-block-start: 8px; font-size: 13px; color: var(--warn); }
+  .conf { color: var(--ink-faint); font-size: 12px; }
+
+  .section-eyebrow {
+    margin: 22px 0 8px; color: var(--ink-muted); font-size: 13px; font-weight: 600;
+  }
+  [lang="en"] .section-eyebrow { text-transform: uppercase; letter-spacing: .14em;
+                                 font-size: 10.5px; }
+  .closedlist { display: grid; gap: 6px; }
+  .closedrow {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--g1); border-inline-start: 3px solid var(--bad);
+    border-radius: var(--r-m); padding: 8px 12px; font-size: 14.5px;
+  }
+  .closedrow .age { margin-inline-start: auto; }
+
+  footer {
+    margin-block-start: 28px; padding: 14px 16px 24px;
+    border-block-start: 1px solid var(--hairline);
+    color: var(--ink-faint); font-size: 12px; text-align: center;
+  }
+  .empty { color: var(--ink-faint); padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <span class="live off" id="live"></span>
+  <span class="brand" data-i18n="brand">الطريق</span>
+  <span class="spacer"></span>
+  <button class="lang" id="langbtn">EN</button>
+</header>
+
+<main>
+  <div class="ask" data-i18n="ask">وين رايح؟</div>
+  <div class="searchrow">
+    <input class="search" id="q" data-i18n-ph="search" placeholder="اكتب اسم الحاجز… (حوارة، قلنديا، الكونتينر)" autocomplete="off">
+    <button class="near" id="nearbtn" data-i18n="near">الأقرب لي</button>
+  </div>
+
+  <div class="cards" id="cards"><div class="empty" data-i18n="hint">اكتب اسم حاجز، أو اسمح بالموقع لعرض الأقرب.</div></div>
+
+  <div class="section-eyebrow" data-i18n="closednow">المغلق الآن</div>
+  <div class="closedlist" id="closed"><div class="empty">…</div></div>
+
+  <footer id="foot"></footer>
+</main>
+
+<script>
+const I18N = {
+  ar: { brand:"الطريق", ask:"وين رايح؟", near:"الأقرب لي", closednow:"المغلق الآن",
+        search:"اكتب اسم الحاجز… (حوارة، قلنديا، الكونتينر)",
+        hint:"اكتب اسم حاجز، أو اسمح بالموقع لعرض الأقرب.",
+        open:"سالك", closed:"مغلق", congested:"أزمة", slow:"بطيء",
+        unknown:"غير معروف", lastknown:"آخر معلومة", ago:"قبل", min:"د", hr:"س",
+        inbound:"دخول", outbound:"خروج", both:"الاتجاهين",
+        idf:"جيش", police:"شرطة", settlers:"مستوطنون", inspection:"تفتيش",
+        sighted:"شوهد", conf:"الثقة", sources:"مصدر مستقل",
+        foot_cov:"يغطي {n} حاجزاً · معلوم الآن {k}٪", noresult:"لا نتيجة — جرّب اسماً آخر" },
+  en: { brand:"The Road", ask:"Where to?", near:"Nearest", closednow:"CLOSED NOW",
+        search:"Type a checkpoint… (Huwara, Qalandia, Container)",
+        hint:"Type a checkpoint name, or allow location for the nearest ones.",
+        open:"open", closed:"closed", congested:"jammed", slow:"slow",
+        unknown:"unknown", lastknown:"last known", ago:"", min:"m", hr:"h",
+        inbound:"in", outbound:"out", both:"both ways",
+        idf:"army", police:"police", settlers:"settlers", inspection:"checks",
+        sighted:"sighted", conf:"confidence", sources:"independent source(s)",
+        foot_cov:"{n} checkpoints tracked · {k}% known right now", noresult:"No match — try another name" },
+};
+let LANG = localStorage.getItem("lang") || "ar";
+let CPS = [];          // features from the export
+let SUMMARY = null;
+
+const $ = (s) => document.querySelector(s);
+const t = (k) => I18N[LANG][k] ?? k;
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  $("#langbtn").textContent = LANG === "ar" ? "EN" : "ع";
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  render();
+}
+
+function ageStr(min) {
+  if (min == null) return "";
+  const m = Math.round(min);
+  const [d, u] = m < 90 ? [m, t("min")] : [(m/60).toFixed(m<600?1:0), t("hr")];
+  return LANG === "ar"
+    ? `${t("ago")} <span class="num">${d}</span>${u}`
+    : `<span class="num">${d}</span>${u} ${t("ago")}`;
+}
+
+// One checkpoint may have several directional rows; group by place.
+function grouped() {
+  const by = new Map();
+  for (const f of CPS) {
+    const p = f.properties;
+    const g = by.get(p.place_id) || { name: p.name_ar, name_en: p.name_en, dirs: [] };
+    g.dirs.push(p);
+    by.set(p.place_id, g);
+  }
+  return by;
+}
+
+function best(g) {
+  // The row that answers "can I pass" — a directional row beats 'both' only
+  // when it is worse news; the serving layer already applied decay.
+  const order = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
+  return g.dirs.slice().sort((a, b) => (order[b.flow] ?? -1) - (order[a.flow] ?? -1))[0];
+}
+
+function cardHTML(g) {
+  const b = best(g);
+  const name = LANG === "ar" ? (g.name || g.name_en) : (g.name_en || g.name);
+  const pill = `<span class="pill ${b.flow}">${t(b.flow)}</span>`;
+  const age = b.age_minutes != null ? `<span class="age">${ageStr(b.age_minutes)}</span>` : "";
+  const last = b.flow === "unknown" && b.last_known_flow && b.last_known_flow !== "unknown"
+    ? `<div class="lastknown">${t("lastknown")}: ${t(b.last_known_flow)} · ${ageStr(b.age_minutes)}</div>` : "";
+  const dirs = g.dirs.filter(d => d.direction !== "both" || g.dirs.length === 1).map(d =>
+    `<span class="dirchip"><span class="dot ${d.flow}"></span>${t(d.direction)} · ${t(d.flow)}</span>`).join("");
+  const sights = (b.present || []).map(x =>
+    `<div class="sight">⚠ ${t(x)} · ${t("sighted")} ${ageStr(b.presence_age_minutes)}</div>`).join("");
+  const conf = b.flow !== "unknown"
+    ? `<span class="conf">${t("conf")} <span class="num">${Math.round(b.confidence * 100)}%</span> · <span class="num">${b.independent_sources}</span> ${t("sources")}</span>` : "";
+  return `<div class="card">
+      <div class="toprow"><span class="cp-name">${name}</span>
+        <span class="cp-sub">${LANG === "ar" ? (g.name_en || "") : (g.name || "")}</span></div>
+      <div class="verdict">${pill}${age}</div>
+      ${last}
+      <div class="dirs">${dirs}</div>
+      ${sights}
+      <div style="margin-block-start:6px">${conf}</div>
+    </div>`;
+}
+
+let mode = { kind: "hint" };   // hint | search | near
+
+function render() {
+  const cards = $("#cards");
+  if (!CPS.length) return;
+  let list = [];
+  if (mode.kind === "search" && mode.q) {
+    const q = mode.q.trim();
+    list = [...grouped().values()].filter(g =>
+      (g.name || "").includes(q) ||
+      (g.name_en || "").toLowerCase().includes(q.toLowerCase()));
+  } else if (mode.kind === "near" && mode.lat != null) {
+    list = [...grouped().values()].map(g => {
+      const d = g.dirs[0];
+      const km = Math.hypot((d._lat - mode.lat) * 110.6, (d._lon - mode.lon) * 94.9);
+      return { g, km };
+    }).sort((a, b) => a.km - b.km).slice(0, 6).map(x => x.g);
+  }
+  if (mode.kind === "hint") {
+    cards.innerHTML = `<div class="empty">${t("hint")}</div>`;
+  } else if (!list.length) {
+    cards.innerHTML = `<div class="empty">${t("noresult")}</div>`;
+  } else {
+    cards.innerHTML = list.slice(0, 8).map(cardHTML).join("");
+  }
+
+  const closed = $("#closed");
+  if (SUMMARY) {
+    const rows = (SUMMARY.closed_now || []).map(c =>
+      `<div class="closedrow"><span class="dot closed"></span>
+         <span>${LANG === "ar" ? c.name : (c.name_en || c.name)}</span>
+         <span class="age">${ageStr(c.age_minutes)}</span></div>`);
+    closed.innerHTML = rows.join("") || `<div class="empty">—</div>`;
+    const k = Math.round((SUMMARY.known_fraction || 0) * 100);
+    $("#foot").innerHTML =
+      t("foot_cov").replace("{n}", `<span class="num">${SUMMARY.tracked}</span>`)
+                   .replace("{k}", `<span class="num">${k}</span>`) +
+      "<br>" + (SUMMARY.attribution || "");
+  }
+}
+
+async function boot() {
+  applyLang();
+  const [gj, sum] = await Promise.all([
+    fetch("/v2/export/checkpoints.geojson").then(r => r.json()),
+    fetch("/v2/checkpoints/summary").then(r => r.json()),
+  ]);
+  CPS = gj.features.map(f => {
+    f.properties._lat = f.geometry.coordinates[1];
+    f.properties._lon = f.geometry.coordinates[0];
+    return f;
+  });
+  SUMMARY = sum;
+  render();
+
+  const es = new EventSource("/v2/stream?snapshot=false");
+  es.onopen = () => $("#live").className = "live on";
+  es.onerror = () => $("#live").className = "live off";
+  es.onmessage = () => {};   // liveness only in this concept
+}
+
+$("#q").addEventListener("input", e => { mode = { kind: "search", q: e.target.value }; render(); });
+$("#nearbtn").addEventListener("click", () => {
+  navigator.geolocation?.getCurrentPosition(
+    p => { mode = { kind: "near", lat: p.coords.latitude, lon: p.coords.longitude }; render(); },
+    () => { mode = { kind: "hint" }; render(); });
+});
+$("#langbtn").addEventListener("click", () => {
+  LANG = LANG === "ar" ? "en" : "ar";
+  localStorage.setItem("lang", LANG);
+  applyLang();
+});
+boot();
+</script>
+</body>
+</html>
