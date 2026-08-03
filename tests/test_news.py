@@ -330,3 +330,71 @@ def test_fuel_bulletin_is_rejected():
     """مغلقة about a petrol station is fuel data, not a road closure."""
     r = read("احوال المحطات في مدينة قلقيلية للمعنيين : جميع محطات المدينة مغلقة")
     assert r.verdict != "incident"
+
+
+# ── #37: a substring is not a governorate ────────────────────────────────────
+def test_gaza_massacre_is_not_a_nablus_death():
+    """Claim 9516: 118 killed on شارع الرشيد, bodies recovered from دوار
+    النابلسي to مجمع الشفاء — Gaza in every phrase and غزة in none of them.
+
+    Two independent failures stacked: the Gaza reject knew only town names, and
+    the governorate matcher found نابلس INSIDE النابلسي, so the one filter
+    meant to stop exactly this was defeated by the same substring that caused
+    it. Both are asserted here.
+    """
+    r = read("انتشال شهيدين من دوار النابلسي ووصولهم الى مجمع الشفاء الطبي. "
+             "ارتفاع حصيلة مجزرة شارع الرشيد التي ارتكبتها قوات الاحتلال "
+             "الاسرائيلي صباح الخميس الى 118 شهيدا و 760 اصابة")
+    assert r.verdict == "rejected"
+    assert r.reject_reason == "gaza"
+
+
+def test_nabulsi_the_surname_does_not_name_nablus():
+    """النابلسي is also one of the commonest Palestinian surnames. A raid on
+    the Nabulsi family home says nothing about which governorate it is in."""
+    r = read("قوات الاحتلال تداهم منزل عائلة النابلسي في البلدة القديمة")
+    assert r.governorate is None
+
+
+def test_governorate_survives_a_fused_preposition():
+    """Token matching must not cost the fused forms the regex used to catch:
+    بنابلس is بـ+نابلس, والخليل is و+الخليل."""
+    assert read("اصابة شاب برصاص الاحتلال خلال المواجهات بنابلس").governorate == "نابلس"
+    assert read("اعتقالات في مدن الضفة والخليل تشهد مواجهات عنيفة").governorate == "الخليل"
+
+
+def test_khalil_the_first_name_is_not_hebron():
+    """الخليل carries its article; the bare token خليل is a first name."""
+    r = read("اعتقل الاحتلال الشاب خليل عوض خلال اقتحام بلدة قباطية جنوب جنين")
+    assert r.governorate == "جنين"
+
+
+def test_her_fetus_is_not_jenin():
+    """جنينها — "her fetus" — contains جنين whole. Whole-token matching still
+    rejects it because the possessive suffix makes it a different token."""
+    assert read("فقدت سيدة جنينها بعد احتجازها لساعات على حاجز عورتا").governorate is None
+
+
+# ── origin is not site ───────────────────────────────────────────────────────
+def test_the_home_village_of_the_arrested_is_not_the_arrest_site():
+    """Round 3: an arrest at مفرق فصايل was pinned to المغير — the village the
+    arrested man is FROM. A person followed by "من قرية X" states residence;
+    the junction the sentence actually names is the site."""
+    r = read("اعتقلت قوات الاحتلال الشاب محمد صلاح من قرية المغير على مفرق فصايل")
+    assert r.place_text == "فصايل"
+
+
+def test_a_withdrawal_from_a_village_keeps_the_village():
+    """من + place word with no person before it IS the site — a troop
+    withdrawal must not lose its geography to the origin guard."""
+    assert read("انسحبت قوات الاحتلال من بلدة يعبد بعد اقتحام استمر ساعات").place_text == "يعبد"
+
+
+def test_a_checkpoint_closure_is_sited_at_the_checkpoint():
+    """حاجز/مفرق/دوار/معبر are place words now: the infrastructure the incident
+    happened AT was walked straight past while a residence 20km away was
+    captured instead."""
+    r = read("اغلق جيش الاحتلال حاجز حوارة جنوب نابلس امام المركبات")
+    assert r.incident_type == "closure"
+    assert r.place_text == "حواره"
+    assert r.governorate == "نابلس"

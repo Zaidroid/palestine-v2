@@ -95,7 +95,18 @@ CLASSIFIER = "news"
 # NOT MEASURED YET. Round 4's closures were spent diagnosing these three, which
 # makes them tuning data — the same reason round 1 was never reused. `closure`
 # has no held-out precision at 1.4 and must not be quoted one until round 5.
-CLASSIFIER_VERSION = "1.4"
+#
+# 1.5 (#37) — geography, not vocabulary:
+#   * governorates are matched token-wise: نابلس no longer matches inside
+#     النابلسي, which filed a 118-death Gaza massacre under Nablus.
+#   * the Gaza reject knows the LANDMARKS Gaza coverage actually uses (شارع
+#     الرشيد, مجمع الشفاء, دوار النابلسي...), not just town names.
+#   * "الشاب فلان من قرية X" is a residence, not the incident site.
+#   * حاجز/مفرق/دوار/معبر are place words — an arrest at مفرق فصايل now sites
+#     at the junction instead of the arrested man's home village.
+# Incident-type patterns are untouched, so round-2/3 measurements still
+# describe them; the closure caveat above is unchanged.
+CLASSIFIER_VERSION = "1.5"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
@@ -323,7 +334,52 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
               pid, ptext, gov, conf, event_by_claim.get(cid))
              for (cid, verdict, itype, reason, pid, ptext, gov, conf) in verdicts])
         stats["classifications"] = len(verdicts)
-        if stats["closure_states"]:
+
+        # ── a version bump must not leave the previous generation behind ─────
+        # These three sweeps exist because every one of them has already
+        # happened. Bumping CLASSIFIER_VERSION re-reads claims that carry old
+        # classifications; the upsert moves their pointers to freshly-clustered
+        # events and nothing cleaned up what they used to point at. Five bumps
+        # run WITHOUT --rebuild left 982 believed-but-unreferenced events, and
+        # /v2/incidents was serving nearly every incident twice (#37 audit).
+        # Deleting a stale conclusion is not data loss — the claims stay (037).
+        #
+        # (1) A claim whose new verdict is not `incident` keeps its old event
+        # link forever otherwise — 77 fuel-bulletin "closures" survived 037
+        # exactly this way, anchored by claim.event_id alone.
+        demoted = [cid for (cid, verdict, *_rest) in verdicts if verdict != "incident"]
+        if demoted:
+            cur.execute("UPDATE claim SET event_id = NULL "
+                        "WHERE claim_id = ANY(%s) AND event_id IS NOT NULL",
+                        (demoted,))
+            stats["claims_unlinked"] = cur.rowcount
+        # (2) An event of ours that neither a claim nor a classification
+        # references is a conclusion nothing stands behind.
+        cur.execute("""
+            DELETE FROM event e
+             WHERE e.attrs->>'classifier' = %(clf)s
+               AND NOT EXISTS (SELECT 1 FROM claim c WHERE c.event_id = e.event_id)
+               AND NOT EXISTS (SELECT 1 FROM claim_classification cc
+                               WHERE cc.event_id = e.event_id)""",
+            {"clf": CLASSIFIER})
+        stats["stale_events_swept"] = cur.rowcount
+        # (3) Closure observations derived from a now-deleted event follow it.
+        if stats["stale_events_swept"]:
+            cur.execute("""
+                DELETE FROM state_observation so
+                 WHERE so.state_kind = %(closure)s AND so.attrs ? 'from_event'
+                   AND NOT EXISTS (SELECT 1 FROM event e
+                                   WHERE e.event_id = (so.attrs->>'from_event')::bigint)""",
+                {"closure": STATE_KIND_CLOSURE})
+            stats["stale_closure_obs_swept"] = cur.rowcount
+
+        if stats["closure_states"] or stats.get("stale_closure_obs_swept"):
+            # The refresh only ever advances observed_at, so if a sweep removed
+            # the newest observation behind a state_current row, the row must
+            # go before the refresh can rebuild it from what remains.
+            if stats.get("stale_closure_obs_swept"):
+                cur.execute("DELETE FROM state_current WHERE state_kind = %s",
+                            (STATE_KIND_CLOSURE,))
             cur.execute(REFRESH_CLOSURE_SQL, {"closure": STATE_KIND_CLOSURE})
             stats["closure_current"] = cur.rowcount
         conn.commit()
