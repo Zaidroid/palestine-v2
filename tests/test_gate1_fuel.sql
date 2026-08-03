@@ -58,3 +58,46 @@ SELECT state_kind,
        count(*) FILTER (WHERE value='unknown')     AS unknown,
        round(avg(age_minutes))                     AS avg_age_min
 FROM state_serving WHERE state_kind LIKE 'fuel%' GROUP BY 1 ORDER BY 1;
+
+\echo '--- G1.7: image-derived fuel is QUARANTINED, never asserted ---'
+-- Every card in a sweep carries the same "آخر تحديث", so it is the render time
+-- and says nothing about when a station was seen. That is the exact shape of
+-- the palhub ROAD bulletin, which looked live behind a median age of 24 hours
+-- (P6.1). Nothing read from an image may be believed until it has been
+-- measured against the 2026-08-01 overlap, when the channel posted text AND
+-- cards for nine hours. If this ever fails, unmeasured data is being served.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' image-derived rows are modality='
+                 || string_agg(DISTINCT modality, '/') || ', not quarantined'
+       END AS g1_image_quarantined
+FROM state_observation
+WHERE attrs->>'via' = 'image' AND modality <> 'quarantined';
+
+\echo '--- G1.8: the image feed is not a SECOND witness for the same channel ---'
+-- source `telegram_fuel` (the tee-spool loader) and `tg_palhubappfuel` (the
+-- poller) are the SAME Telegram channel read two ways. If image rows landed on
+-- the poller's source, one witness would hold two votes and the belief model
+-- would read a station confirmed by nobody as confirmed by two. Copy-collapse
+-- would eventually catch it, but relying on a downstream defence for a
+-- duplicate we created ourselves is backwards.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' image rows attributed to a source '
+                 || 'other than telegram_fuel — one channel, two votes'
+       END AS g1_one_channel_one_witness
+FROM state_observation o JOIN source s USING (source_id)
+WHERE o.attrs->>'via' = 'image' AND s.key <> 'telegram_fuel';
+
+\echo '--- G1.9: a missing pill never became a caution ---'
+-- The card lists the stations that HAVE fuel and only COUNTS the dry ones. The
+-- single negative it states outright is "لا توجد محطة متوفر فيها وقود ... في
+-- هذه المدينة", which covers a whole region. Any other `unavailable` from an
+-- image means the loader inferred a caution by subtraction — and Bethlehem's
+-- card implies eleven stations where we hold ten, so that subtraction is
+-- already known to be wrong somewhere.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' unavailable rows from an image with '
+                 || 'no region_all_dry basis — a caution was inferred'
+       END AS g1_no_inferred_caution
+FROM state_observation
+WHERE attrs->>'via' = 'image' AND value = 'unavailable'
+  AND COALESCE(attrs->>'basis','') <> 'region_all_dry';

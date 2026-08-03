@@ -84,6 +84,34 @@ _GRACE = 900
 # one, and it produces the failure signal that this outage lacked.
 RECONNECT_ATTEMPTS = 6
 
+# Channels whose PHOTOS are archived, not just their text.
+#
+# @palhubappfuel stopped posting text bulletins on 2026-08-01 at 09:14 and
+# switched to rendered cards, taking 196 fuel stations — the largest source in
+# this system — dark in the same hour. The caption links to
+# palhub.app/fuel-status, which answers 403 behind a Cloudflare challenge while
+# their /road-status returns 200 to the same client in the same second. That
+# page is closed on purpose and is not read. The image is, because it arrives
+# over a channel this account already subscribes to.
+#
+# Kept to an explicit list rather than "download everything with media": the
+# news channels post photos constantly and none of it is machine-readable, so a
+# blanket rule would spend bandwidth and disk on nothing and slow every cycle.
+MEDIA_CHANNELS = {"palhubappfuel"}
+
+# One card is ~15 KB. A cap exists so a channel that starts posting video
+# cannot fill the disk between watchdog runs — the capacity check is the
+# backstop, not the first line of defence.
+MAX_MEDIA_BYTES = 2 * 1024 * 1024
+
+# Downloads PER CYCLE, not per message. Catching up on a new channel returns
+# MAX_PAGES * PAGE = 2,000 messages at once, and palhubappfuel is roughly 40%
+# photos — so a single cycle would fire ~700 sequential media requests at
+# Telegram on an account Zaid described as one "we barely managed to have
+# working". The remainder is not lost: the cursor only advances across messages
+# that were STORED, so the un-downloaded tail arrives on later cycles.
+MEDIA_PER_CYCLE = 150
+
 
 class Deauthorised(Exception):
     """The session is no longer valid. Distinct from a transport failure because
@@ -129,10 +157,82 @@ def _ensure_source(cur, channel: str) -> int:
     return cur.fetchone()[0]
 
 
-def store(channel: str, messages) -> int:
+def _link_urls(m) -> list[str]:
+    """The URLs behind a message's link text.
+
+    Telegram puts a hyperlink's target in a MessageEntityTextUrl, NOT in the
+    text, so a caption reading "🔗 التفاصيل والتحديث اللحظي" carries no URL at
+    all in `message`. v1's tee spool records neither entities nor media, which
+    is why the fuel channel's switch to images looked like it had simply gone
+    quiet: the text was still arriving, it just no longer said anything.
+    """
+    out = []
+    for e in (getattr(m, "entities", None) or []):
+        u = getattr(e, "url", None)
+        if u:
+            out.append(u)
+    return out
+
+
+async def archive_media(client, channel: str, messages) -> tuple[dict, int | None]:
+    """Download photos for MEDIA_CHANNELS into bronze.
+
+    Returns ({msg_id: bronze_ref}, cutoff_id) where `cutoff_id` is the last
+    message id this call is willing to see stored. None means "all of them".
+
+    THE CUTOFF IS THE WHOLE POINT OF RETURNING A TUPLE. `messages` arrives
+    oldest-first and the caller advances its cursor to the newest id it stored.
+    If the per-cycle media cap simply stopped downloading, the caller would
+    still store and skip past the remainder, and those images would be gone
+    permanently with nothing reporting it — the identical failure that
+    `_fetch_since` documents at length for text. So when the cap bites, the
+    batch is TRUNCATED rather than partially enriched, and the cursor stays
+    behind on a contiguous run.
+
+    Separated from store() because downloading is async and storing is not, and
+    because a failed download must never cost the claim: the text row is
+    written either way and the image is an enrichment. bronze is
+    content-addressed, so a card reposted unchanged costs one hash and no disk.
+    """
+    if channel.lower() not in MEDIA_CHANNELS:
+        return {}, None
+    refs: dict[int, str] = {}
+    downloaded = 0
+    for m in messages:
+        # PHOTOS ONLY. `media` is also true for video, documents, stickers and
+        # polls. The first run archived a 926 KB MP4 under a .jpg name, because
+        # this checked `media` and then hardcoded the extension — so the file
+        # was mislabelled AND the bandwidth was spent on something no OCR can
+        # read. `photo` is set only for MessageMediaPhoto, and a Telegram photo
+        # is always JPEG, which makes the extension honest by construction.
+        if not getattr(m, "photo", None):
+            continue
+        if downloaded >= MEDIA_PER_CYCLE:
+            # Stop the batch HERE, one message before the one we refused.
+            print(f"  media cap reached for @{channel} at msg {m.id}; "
+                  f"{downloaded} archived, rest deferred to the next cycle")
+            return refs, m.id - 1
+        try:
+            blob = await client.download_media(m, file=bytes)
+        except Exception as exc:                        # noqa: BLE001
+            print(f"  media download failed for {channel}/{getattr(m,'id','?')}: "
+                  f"{type(exc).__name__}: {exc}")
+            continue
+        if not blob or len(blob) > MAX_MEDIA_BYTES:
+            continue
+        try:
+            refs[m.id] = bronze.put(f"tg_{channel.lower()}", blob, "jpg").ref
+            downloaded += 1
+        except Exception as exc:                        # noqa: BLE001
+            print(f"  media archive failed for {channel}/{m.id}: {exc}")
+    return refs, None
+
+
+def store(channel: str, messages, media_refs: dict | None = None) -> int:
     """Archive raw + insert claims. Idempotent via claim_dedup."""
     if not messages:
         return 0
+    media_refs = media_refs or {}
     written = 0
     with connect() as conn, conn.cursor() as cur:
         source_id = _ensure_source(cur, channel)
@@ -150,6 +250,8 @@ def store(channel: str, messages) -> int:
                 "text": text, "views": getattr(m, "views", None),
                 "fwd_from": _fwd_id(m),
                 "media": type(getattr(m, "media", None)).__name__ if getattr(m, "media", None) else None,
+                "media_ref": media_refs.get(getattr(m, "id", None)),
+                "link_urls": _link_urls(m),
             }, ensure_ascii=False)
             ref = bronze.put(f"tg_{channel.lower()}", payload, "json")
 
@@ -161,7 +263,11 @@ def store(channel: str, messages) -> int:
                 RETURNING claim_id, ingested_at""",
                 (source_id, ext_id, ref.ref, text, reported,
                  json.dumps({"channel": channel, "views": getattr(m, "views", None),
-                             "fwd_from": _fwd_id(m)})))
+                             "fwd_from": _fwd_id(m),
+                             # The image ingester finds its work by this key, so
+                             # it is on the CLAIM rather than only in bronze.
+                             "media_ref": media_refs.get(getattr(m, "id", None)),
+                             "link_urls": _link_urls(m)})))
             claim_id, ingested_at = cur.fetchone()
             cur.execute("""INSERT INTO claim_dedup (source_id,external_id,claim_id,ingested_at)
                            VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
@@ -303,7 +409,9 @@ async def run(once: bool = False, backfill: int = 0) -> int:
         for ch, ent in entities.items():
             try:
                 msgs = await client.get_messages(ent, limit=backfill)
-                n = store(ch, list(reversed(msgs)))
+                ordered = list(reversed(msgs))
+                refs, _ = await archive_media(client, ch, ordered)
+                n = store(ch, ordered, refs)
                 if msgs:
                     state[ch] = max(m.id for m in msgs)
                 print(f"  backfill @{ch}: {n} claim(s)")
@@ -343,8 +451,13 @@ async def run(once: bool = False, backfill: int = 0) -> int:
                 last = state.get(ch, 0)
                 fresh = await _fetch_since(client, ent, last)   # oldest first
                 if fresh:
-                    total += store(ch, fresh)
-                    state[ch] = max(m.id for m in fresh)
+                    refs, cutoff = await archive_media(client, ch, fresh)
+                    if cutoff is not None:
+                        # Truncate to the contiguous run whose media we took.
+                        fresh = [m for m in fresh if m.id <= cutoff]
+                    if fresh:
+                        total += store(ch, fresh, refs)
+                        state[ch] = max(m.id for m in fresh)
             except FloodWaitError as fw:
                 # Respect it exactly. Blind retry is how a new account gets banned.
                 print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")

@@ -1,0 +1,122 @@
+{
+  "measured_at": "2026-08-03T11:45:49.748770+00:00",
+  "window_minutes": 90,
+  "pairs": 924,
+  "agree": 890,
+  "rate": 0.963,
+  "ci95": [
+    0.949,
+    0.974
+  ],
+  "station_fuels": 280,
+  "station_fuels_clean": 268,
+  "station_rate": 0.957,
+  "station_ci95": [
+    0.927,
+    0.975
+  ],
+  "false_available": 34,
+  "false_available_stations": [
+    "محطة البارق - الجلزون",
+    "محطة الخواجا - بيتونيا",
+    "محطة الهدى - الطيرة",
+    "محطة الهدى - الماصيون",
+    "محطة الهدى البالوع",
+    "محطة جابر - اسو - البيرة- ش القدس",
+    "محطة جابر - اسو - البيرة- ش نابلس",
+    "محطة جابر - اسو - رام الله التحتا",
+    "محطة جابر - اسو- الحسبة",
+    "محطة عبوين للمحروقات",
+    "محطة مسير"
+  ],
+  "false_unavailable": 0,
+  "stations_with_image_data": 172,
+  "stations_total": 173,
+  "verdict": "FAIL — 34 pair(s) where the card said `available` and the text said `unavailable`, across 11 station(s): محطة البارق - الجلزون, محطة الخواجا - بيتونيا, محطة الهدى - الطيرة, محطة الهدى - الماصيون, محطة الهدى البالوع. A false all-clear sends somebody to a dry station on a tank they could not spare. Stays quarantined.",
+  "examples": [
+    {
+      "place": "محطة البارق - الجلزون",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": -45.0
+    },
+    {
+      "place": "محطة الهدى - الطيرة",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 64.9
+    },
+    {
+      "place": "محطة الهدى - الماصيون",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": -70.9
+    },
+    {
+      "place": "محطة الهدى البالوع",
+      "kind": "fuel_diesel",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": -70.9
+    },
+    {
+      "place": "محطة الهدى البالوع",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": -70.9
+    },
+    {
+      "place": "محطة جابر - اسو - البيرة- ش القدس",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 34.9
+    },
+    {
+      "place": "محطة جابر - اسو - البيرة- ش نابلس",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 5.9
+    },
+    {
+      "place": "محطة جابر - اسو - رام الله التحتا",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 64.9
+    },
+    {
+      "place": "محطة جابر - اسو- الحسبة",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 34.9
+    },
+    {
+      "place": "محطة عبوين للمحروقات",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 89.7
+    },
+    {
+      "place": "محطة مسير",
+      "kind": "fuel_diesel",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 34.9
+    },
+    {
+      "place": "محطة الخواجا - بيتونيا",
+      "kind": "fuel_gasoline",
+      "card": "available",
+      "text": "unavailable",
+      "gap_minutes": 65.8
+    }
+  ]
+}
