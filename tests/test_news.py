@@ -258,3 +258,75 @@ def test_the_verbal_noun_of_martyrdom_is_a_death():
     wounds as an INJURY, which is the worst direction for the error to run."""
     assert kind("استشهاد الشاب محمود زياد العملة (٣٢ عاماً) متأثراً بجروح حرجة "
                 "أصيب بها برصاص الاحتلال قرب بلدة بيت أولا شمال الخليل") == "death"
+
+
+# ── closure needs a verb AND something that can be closed ────────────────────
+# P1.1 round 3 measured `closure` at 0.167 — one right in six. The corrections
+# came in three waves, each a different way for a CORRECT verb to describe the
+# wrong thing, and the third is why the rule changed shape instead of growing
+# another wordlist.
+
+def _type(text):
+    """The TYPE the patterns assign, independent of whether a place resolved.
+
+    Deliberately not "was it served": read() also requires a resolvable West
+    Bank place, so a fragment with no town in it comes back `unclear` no matter
+    what the patterns did. Asserting on the served verdict would let every
+    negative test below pass for the wrong reason — the string would be
+    rejected for missing geography while the substring bug it exists to catch
+    sat there untouched.
+    """
+    return read(text).incident_type
+
+
+def test_askari_is_not_a_closure():
+    """`سكر` unanchored sits inside `عسكري` — military — and `السكري`, diabetes.
+
+    Four of the six sampled closures were this one substring: a checkpoint
+    described as العسكري, a قرار عسكري, a نقطة عسكرية, and a health-ministry
+    note on labour induction that mentioned diabetes.
+    """
+    for t in ("قرار عسكري اسرائيلي يقضم مزيدا من اراضي البيرة",
+              "حوله الى نقطة عسكرية اثر ضغوط",
+              "وجود السكري او الضغط لدى الحامل"):
+        assert _type(t) != "closure", t
+
+
+def test_sakr_the_surname_is_not_a_closure():
+    """صادق سكر is a man. سُكّر is sugar. Anchoring alone did not save this."""
+    assert _type("مصادر محلية: مصرع المواطن صادق سكر من مدينة قلقيلية بحادث طرق") != "closure"
+
+
+def test_hanging_up_the_phone_is_not_a_closure():
+    """"اغلق المحافظ الهاتف" — the verb is exactly right, the object is a phone.
+
+    No wordlist fixes this. Requiring a road, gate, checkpoint or area does.
+    """
+    assert _type("حيث اغلق المحافظ الهاتف في وجه الطبيب") != "closure"
+
+
+def test_real_closures_still_read():
+    for t in ("بلدية الخليل تعلن عن إغلاق شارع نمرة بسبب اعمال تمديد خط صرف صحي",
+              "إغلاق كامل لجميع الطرق الفرعية على شارع جنين نابلس بحدود دير شرف",
+              "قوات الاحتلال تغلق حاجز الجيب العسكري شمال غرب القدس بالاتجاهين",
+              "إقامة بؤرة استيطانية شرق جنين والاحتلال يغلق المنطقة بالسواتر الترابية",
+              "لم يسمح لسيارة الاسعاف بالمرور عبر الحاجز بعد اغلاق بواباته"):
+        assert _type(t) == "closure", t
+
+
+def test_road_status_bulletin_is_rejected():
+    """`ال?` means "alef then optional lam", NOT "optional article".
+
+    So "احوال طرق اريحا ومحيطها" never matched its own reject pattern, and a
+    bulletin listing eight OPEN checkpoints and one shut one was served as a
+    closure incident — an event manufactured out of a routine status post.
+    """
+    r = read("🔴احوال طرق اريحا ومحيطها ✅كافة حواجز أريحا سالكه 🚫عين شبلي مغلق")
+    assert r.verdict != "incident", r.incident_type
+    assert r.reject_reason == "status bulletin"
+
+
+def test_fuel_bulletin_is_rejected():
+    """مغلقة about a petrol station is fuel data, not a road closure."""
+    r = read("احوال المحطات في مدينة قلقيلية للمعنيين : جميع محطات المدينة مغلقة")
+    assert r.verdict != "incident"

@@ -66,7 +66,36 @@ CLASSIFIER = "news"
 #     died of his wounds was filed as an injury.
 # Held-out precision 0.864 [0.77-0.92] on n=81 measured against 1.1; the only
 # sampled item either fix changed was the one death, taking it to 0.877.
-CLASSIFIER_VERSION = "1.2"
+# 1.3 — P1.1 round 3 measured the five never-measured types and `closure` came
+# back at 0.167, one correct in six. FOUR of the six failures were a single
+# unanchored stem: `سكر` inside `عسكري` (military) and `السكري` (diabetes).
+#   "حاجز عورتا العسكري", "قرار عسكري", "نقطة عسكرية", and a health-ministry
+#   note on labour induction, all served as road closures.
+# The same shape as 1.2's "راي" inside "اسراييلي" — in Arabic a short stem is
+# almost always inside a longer real word — so the third occurrence became a
+# rule rather than another patch: short stems carry \b.
+# Also: the status-bulletin reject required a bare `محطات` and the fuel channel
+# writes `المحطات`, so "جميع محطات المدينة مغلقة" was served as a closure in
+# Qalqilya. The article is optional now.
+# Measured over the whole corpus: closure 420 -> 25, every other type within +4.
+# 1.4 — a fresh held-out draw on the 1.3 output found three MORE ways for a
+# correct verb to describe the wrong thing, so `closure` stopped being a
+# wordlist and became a rule: a closing verb AND something a person could be
+# stopped by, inside one clause.
+#   * `سكر` anchored still matches صادق سكر, a man's SURNAME, and سُكّر, sugar.
+#     The bare stem is gone; a news wire writes أغلق, not سكر.
+#   * "اغلق المحافظ الهاتف" — the governor HUNG UP THE PHONE. No wordlist fixes
+#     that one; only requiring a road, gate, checkpoint or area does.
+#   * `ال?` in the status-bulletin reject means "alef then optional lam", not
+#     "optional article", so "احوال طرق اريحا ومحيطها" never matched and a
+#     bulletin listing eight OPEN checkpoints was served as a closure.
+# 10/10 on every hand-checked case from rounds 3 and 4; corpus-wide closure
+# 420 -> 18 with every other type within +4.
+#
+# NOT MEASURED YET. Round 4's closures were spent diagnosing these three, which
+# makes them tuning data — the same reason round 1 was never reused. `closure`
+# has no held-out precision at 1.4 and must not be quoted one until round 5.
+CLASSIFIER_VERSION = "1.4"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
@@ -140,6 +169,13 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             FROM claim c
             JOIN source s USING (source_id)
             WHERE c.raw_text IS NOT NULL
+              -- NEWS SOURCES ONLY (migration 037). Adding the palhub fuel
+              -- channel to the poller fed 11,730 machine-generated station
+              -- bulletins into this classifier and produced 390 "incidents" —
+              -- more than the busiest real news channel in the system. The
+              -- classifier read what it was given correctly; it was given fuel
+              -- data, in which مغلقة means a petrol station is shut.
+              AND s.feeds_incidents
               AND NOT EXISTS (
                     SELECT 1 FROM claim_classification cc
                     WHERE cc.claim_id = c.claim_id

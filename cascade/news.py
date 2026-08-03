@@ -82,6 +82,36 @@ def _norm_pat(pattern: str) -> str:
 # action and outcome — and one label cannot carry both, which is the same
 # axis-collapse that made an army sighting erase whether a road was passable.
 # The real answer is to record both; see docs/TIER1_COMPLETION_PLAN.md.
+# ── closure needs a VERB *and* something that can be closed ─────────────────
+#
+# `closure` measured 0.167 in P1.1 round 3 — one right in six — and the
+# corrections came in three waves, each a different way for a correct verb to
+# describe the wrong thing.
+#
+#   1. `سكر` unanchored matched inside `عسكري` (military) and `السكري`
+#      (diabetes). Four of six. Anchoring fixed those.
+#   2. `سكر` anchored STILL matches صادق سكر — a man's surname — and سُكّر,
+#      sugar. So the bare stem is gone entirely; only the unambiguous
+#      inflections remain. A news wire writes "أغلق", not "سكر".
+#   3. `اغلق المحافظ الهاتف` — "the governor HUNG UP THE PHONE". The verb is
+#      exactly right and the object is a telephone.
+#
+# Wave 3 is the one no wordlist fixes, so the rule changed shape: a closure
+# requires a closing verb AND something a person could be stopped by, within a
+# clause of each other. That keeps every true positive in the samples — a
+# street closed for paving, a checkpoint shut after a crash, an area sealed
+# with earth berms, gates closed on an ambulance — and drops phones, shops and
+# surnames without naming any of them.
+_CLOSE_VERB = r"(?:[اتين]?غلق\w*|اغلاق|مسكر\w*|سكرت|سكروا|تسكير)"
+_MOVE_OBJECT = (r"(?:شارع|شوارع|طريق|طرق|حاجز|حواجز|بوابه|بوابات|معبر|معابر|"
+                r"مدخل|مداخل|مخرج|منطقه|بلده|قريه|مخيم|مفترق|دوار|جسر|نفق|الحركه)")
+# `[^.،؛]` keeps the two inside one clause: crossing a full stop or a comma is
+# usually crossing into a different sentence about a different thing.
+_CLOSURE_PATTERN = (
+    r"(" + _CLOSE_VERB + r"[^.،؛]{0,40}?" + _MOVE_OBJECT +
+    r"|" + _MOVE_OBJECT + r"[^.،؛]{0,40}?" + _CLOSE_VERB +
+    r"|منع الحركة|قطع الطريق)")
+
 INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # A VERB of killing, never the bare noun "شهيد". The noun is overwhelmingly
     # referential in this corpus — "the grave of martyr Muhammad al-Junaidi",
@@ -149,7 +179,24 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # child Muhammad") rather than reporting an arrest.
     ("arrest",         r"([اتين]عتقل\w*|اعتقالات?)"),
     ("siege",          r"(حصار|طوق|محاصرة|[يت]حاصر)"),
-    ("closure",        r"([اتين]?غلق\w*|اغلاق|إغلاق|سكر\w*|منع الحركة|قطع الطريق)"),
+    # `سكر` IS ANCHORED, and this is the single worst defect P1.1 round 3 found.
+    #
+    # Unanchored `سكر\w*` matches inside `عسكري` — "military" — one of the
+    # commonest words in this corpus. FOUR of the six sampled `closure`
+    # incidents were this one bug:
+    #
+    #   "حاجز عورتا العسكري"      a woman losing her fetus at a checkpoint
+    #   "قرار عسكري اسراييلي"     a land-confiscation order
+    #   "نقطة عسكرية"             a house seized as an army post
+    #   "السكري"                  DIABETES, in a health-ministry note on
+    #                             labour induction
+    #
+    # It also required the leading م of `مسكر`, so the anchored forms are
+    # spelled out. This is the third time the same shape has bitten: "راي"
+    # (opinion) inside "اسراييلي" (Israeli) rejected 142 real claims as
+    # commentary, and "مش سالك" inside "حومش سالك" inverted a checkpoint. In
+    # Arabic a short string is almost always inside a longer real word.
+    ("closure",        _CLOSURE_PATTERN),
 ]
 
 # Any of these and the message is not a report of a discrete local event.
@@ -161,8 +208,19 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # Measured: three of twenty sampled `closure` incidents were these, and one
     # of them was reporting that the roads were OPEN. They duplicate the
     # checkpoint pipeline and misrepresent routine status as an event.
-    ("status bulletin", r"(احوال\s+(الطرق|بعض الطرق|طرق|حواجز|الحواجز|محطات|"
-                        r"محطات الوقود)|احوال\s+\S+\s+ومحيطها)"),
+    # The article is OPTIONAL on every noun here. Without `ال?` the fuel
+    # bulletin "احوال المحطات في مدينة قلقيلية ... جميع محطات المدينة مغلقة"
+    # sailed past — the pattern had `محطات` but the text said `المحطات` — and
+    # was served as a road CLOSURE in Qalqilya. A status bulletin reporting
+    # that fuel stations are shut is the fuel pipeline's data; read as an
+    # incident it becomes an event that never happened.
+    # `(?:ال)?`, NOT `ال?`. The second means "alef, then an optional lam" — it
+    # REQUIRES the alef — so "احوال طرق اريحا ومحيطها" never matched and a road
+    # bulletin listing eight open checkpoints and one shut one was served as a
+    # closure incident. The `\S+\s+ومحيطها` arm did not save it either: that
+    # allows exactly one token between, and this had two.
+    ("status bulletin", r"(احوال\s+(?:ال)?(طرق|بعض الطرق|حواجز|محطات|"
+                        r"محطات الوقود)|احوال(\s+\S+){1,3}\s+ومحيطها)"),
     # A demolition ORDER is not a demolition. Kept out of the incident stream
     # rather than served as one — the act may never follow.
     ("notice not act", r"(اخطار\w*\s+(هدم|بالهدم)|اوامر\s+هدم|انذار\w*\s+بالهدم)"),
