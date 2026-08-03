@@ -213,14 +213,29 @@ WHERE EXCLUDED.observed_at >= state_current.observed_at
 """
 
 
+# Every writer that touches observations-then-belief serializes on this lock.
+#
+# WHY: a --full checkpoint rebuild ran concurrently with the 5-minute sync
+# timer. The timer's refresh executed on a snapshot from BEFORE the rebuild's
+# commit, its upserts then waited out the rebuild's row locks, and its
+# stale-snapshot beliefs landed AFTER the clean ones — 20 rows carrying values
+# the fixed parser no longer produces, with observed_at stamps far enough in
+# the future that the `>=` guard blocked every later correction. Gate G2.5
+# caught it. Serializing refresh against imports makes the interleaving
+# impossible instead of unlikely.
+BELIEF_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext('palestine-v2-belief'))"
+
+
 def refresh(kinds, conn=None) -> int:
     """Recompute belief for `kinds`. Returns rows written."""
     kinds = list(kinds)
     if conn is not None:
         with conn.cursor() as cur:
+            cur.execute(BELIEF_LOCK_SQL)
             cur.execute(REFRESH_SQL, {"kinds": kinds})
             return cur.rowcount
     with connect() as own, own.cursor() as cur:
+        cur.execute(BELIEF_LOCK_SQL)
         cur.execute(REFRESH_SQL, {"kinds": kinds})
         n = cur.rowcount
         own.commit()

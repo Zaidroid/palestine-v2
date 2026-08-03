@@ -115,6 +115,13 @@ def import_updates(full: bool = False) -> dict:
     rows: list[tuple] = []
 
     with connect() as conn, conn.cursor() as cur:
+        # Serialize against belief refreshes and other imports. Without this,
+        # a --full rebuild raced the 5-minute timer: the timer's refresh read
+        # a pre-rebuild snapshot, queued behind the rebuild's locks, and wrote
+        # old-parse beliefs AFTER the clean refresh — which the observed_at
+        # guard then defended against correction. See resolve/belief.py.
+        from resolve.belief import BELIEF_LOCK_SQL
+        cur.execute(BELIEF_LOCK_SQL)
         places = _place_map(cur)
         cache = _channel_sources(cur)
 

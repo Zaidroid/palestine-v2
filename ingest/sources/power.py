@@ -139,8 +139,8 @@ def discover_notices() -> list[tuple[str, str]]:
 
 
 def load(dry_run: bool = False) -> dict:
-    stats = {"notices": 0, "parsed_window": 0, "resolved": 0,
-             "active_now": 0, "written": 0, "items": []}
+    stats = {"notices": 0, "parsed_window": 0, "resolved": 0, "fetch_failed": 0,
+             "announced": 0, "active_now": 0, "written": 0, "items": []}
     notices = discover_notices()
     stats["notices"] = len(notices)
     if not notices:
@@ -153,6 +153,11 @@ def load(dry_run: bool = False) -> dict:
             try:
                 body = _text(_get(f"{BASE}/?newsid={nid}"))
             except Exception:                              # noqa: BLE001
+                # COUNTED, not swallowed. `power` sat at zero observations for
+                # a week while this loop ran every 15 minutes, and a bare
+                # continue meant the difference between "no cuts announced"
+                # and "the site refused every body fetch" was invisible.
+                stats["fetch_failed"] += 1
                 continue
             window = parse_window(body)
             if window:
@@ -172,6 +177,32 @@ def load(dry_run: bool = False) -> dict:
                 "window": [w.isoformat() for w in window] if window else None,
                 "active_now": active,
             })
+
+            # THE ANNOUNCEMENT ITSELF IS RECORDED, once per notice — the
+            # docstring above always promised this and the code kept only the
+            # other half. modality='scheduled' (040) keeps it out of belief
+            # exactly like a question, while making the discovery observable
+            # and "a cut is scheduled for Tuesday morning" servable.
+            if window and not dry_run:
+                cur.execute("""
+                    INSERT INTO state_observation
+                      (place_id,state_kind,value,raw_value,observed_at,source_id,
+                       confidence,direction,direction_explicit,modality,attrs)
+                    SELECT %s,%s,'cut',%s,%s,%s,0.9,'both',false,'scheduled',%s
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM state_observation
+                        WHERE state_kind = %s AND modality = 'scheduled'
+                          AND attrs->>'newsid' = %s)""",
+                    (res.place_id, STATE_KIND, title[:200], now, source_id,
+                     json.dumps({"newsid": nid, "title": title,
+                                 "window_start": window[0].isoformat(),
+                                 "window_end": window[1].isoformat(),
+                                 "scheduled": True,
+                                 "url": f"{BASE}/?newsid={nid}"},
+                                ensure_ascii=False),
+                     STATE_KIND, nid))
+                stats["announced"] += cur.rowcount
+
             if not active:
                 continue
             stats["active_now"] += 1
