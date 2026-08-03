@@ -382,3 +382,83 @@ def test_a_measured_ceiling_never_drops_below_the_default():
     ceiling, _ = watchdog._silence_ceiling(
         _cad_unwatchable(days=30, max_gap=60))
     assert ceiling >= watchdog.SILENT_AFTER_SECONDS
+
+
+# ── restart policy: the seventeen-hour outage ────────────────────────────────
+# On 2026-08-02 at 14:10 the poller's transport failed five times. systemd tried
+# three restarts, logged "Start request repeated too quickly", and STOPPED. The
+# poller was dead for 1,051 minutes.
+#
+# Every detection mechanism worked. The unit exited non-zero rather than idling
+# with a dead transport, OnFailure fired the alarm three times, and the watchdog
+# reported `not_running` throughout. Detection was never what was missing —
+# RECOVERY was, and a start limit is what took it away.
+#
+# These read the unit files in ops/systemd/, which are the source of truth
+# copied to /etc. A unit that can permanently give up must fail here.
+
+import configparser  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+_UNITS = Path(__file__).resolve().parent.parent / "ops" / "systemd"
+
+
+def _long_running_units():
+    """Units with a Restart= policy — the ones a start limit can strand."""
+    out = []
+    for f in sorted(_UNITS.glob("*.service")):
+        if "@" in f.name:                      # templates are one-shot alarms
+            continue
+        cp = configparser.ConfigParser(strict=False)
+        cp.optionxform = str
+        cp.read(f)
+        if cp.has_option("Service", "Restart") and \
+           cp.get("Service", "Restart") in ("always", "on-failure"):
+            out.append((f.name, cp))
+    return out
+
+
+def test_there_are_long_running_units_to_check():
+    """Guard the guard: a glob that matches nothing passes everything."""
+    assert _long_running_units(), "no restarting units found — did the path move?"
+
+
+def test_no_restarting_unit_can_permanently_give_up():
+    for name, cp in _long_running_units():
+        assert cp.has_option("Unit", "StartLimitIntervalSec"), \
+            (f"{name} inherits the manager default start limit (burst 5 in 10s). "
+             f"State StartLimitIntervalSec explicitly — inheriting it is how the "
+             f"poller died for 17 hours.")
+        assert cp.get("Unit", "StartLimitIntervalSec") == "0", \
+            (f"{name} has a start limit and will stop trying after a burst of "
+             f"failures. A transient network fault must not be permanent.")
+
+
+def test_the_poller_backs_off_rather_than_hammering_telegram():
+    """Removing the limit must not turn into a restart storm.
+
+    agent2 is rate-limit fragile and that concern was the reason the limit
+    existed. Backoff is what replaces it: a blip recovers in 30 seconds, a real
+    outage settles to one attempt every 15 minutes — gentler than the poller's
+    own 30-second cycle when it is perfectly healthy.
+    """
+    cp = dict(_long_running_units())["palestine-v2-poller.service"]
+    assert int(cp.get("Service", "RestartSteps")) >= 3, "backoff must be gradual"
+    assert int(cp.get("Service", "RestartMaxDelaySec")) >= 600, \
+        "the ceiling must be patient enough not to hammer a fragile account"
+    assert int(cp.get("Service", "RestartSec")) <= 60, \
+        "the FIRST retry must be quick, or a blip costs minutes for no reason"
+
+
+def test_an_unauthorised_session_still_stops_dead():
+    """The one case where refusing to retry is correct, and it must survive.
+
+    Reconnecting a de-authorised session repeatedly is the single pattern that
+    genuinely endangers the account — unlike a network blip, retrying cannot fix
+    it. Exit 2 means exactly that, and it is set in the watchdog.conf drop-in.
+    """
+    drop = Path("/etc/systemd/system/palestine-v2-poller.service.d/watchdog.conf")
+    if not drop.exists():
+        import pytest
+        pytest.skip("drop-in not installed on this host")
+    assert "RestartPreventExitStatus=2" in drop.read_text()

@@ -2,6 +2,16 @@
 Description=Palestine v2 — serving API (:7870)
 After=docker.service
 
+# Stated rather than inherited. Without this the manager default applies —
+# StartLimitBurst=5 in a 10s window — and the only reason that never bit is
+# that RestartSec=10 spaces the attempts exactly wide enough to stay under it.
+# That is arithmetic working out, not a decision, and it is the same trap that
+# killed the poller for seventeen hours on 2026-08-02 with a tighter limit.
+# A public API that gives up permanently after five quick crashes is worse than
+# one that keeps trying: Postgres coming back a minute later should heal this
+# on its own, with nobody awake.
+StartLimitIntervalSec=0
+
 [Service]
 Type=simple
 User=zaid
