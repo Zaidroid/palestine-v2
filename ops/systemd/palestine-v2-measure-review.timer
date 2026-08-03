@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly measurement review — quarantine is re-checked, or it is just a sentence
+
+[Timer]
+OnCalendar=Mon *-*-* 04:30:00
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

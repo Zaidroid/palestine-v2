@@ -77,6 +77,7 @@ WITH img AS (
   SELECT place_id, state_kind, value, observed_at
     FROM state_observation
    WHERE attrs->>'via' = 'image' AND modality = 'quarantined'
+     AND observed_at > now() - make_interval(days => %s)
 ), txt AS (
   SELECT place_id, state_kind, value, observed_at
     FROM state_observation
@@ -108,9 +109,14 @@ def _wilson(k: int, n: int) -> tuple[float, float]:
     return (c - m) / d, (c + m) / d
 
 
-def measure(window: int = WINDOW_MINUTES) -> dict:
+def measure(window: int = WINDOW_MINUTES, days: int = 36500) -> dict:
+    """`days` bounds the image observations measured. The weekly review gates
+    promotion on the TRAILING window, not the lifetime: a feed that fixes
+    itself should not carry its history as a permanent disqualification —
+    quarantine is a verdict about a feed's present, re-checked, or it is just
+    a sentence."""
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(PAIR_SQL, (window, window))
+        cur.execute(PAIR_SQL, (days, window, window))
         pairs = cur.fetchall()
 
         # Coverage context: a high agreement rate over three stations says
@@ -207,8 +213,10 @@ def measure(window: int = WINDOW_MINUTES) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--window", type=int, default=WINDOW_MINUTES)
+    ap.add_argument("--days", type=int, default=36500,
+                    help="measure only image observations from the last N days")
     a = ap.parse_args()
-    r = measure(a.window)
+    r = measure(a.window, a.days)
     RESULT_FILE.write_text(json.dumps(r, indent=2, ensure_ascii=False, default=str))
 
     print(f"fuel card vs fuel text — ±{r['window_minutes']}min window\n")

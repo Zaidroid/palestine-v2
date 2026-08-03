@@ -151,6 +151,7 @@ EXPECTED_JOBS = {
     "learn-checkpoints": (86400, 10800),
     "backup":            (86400, 10800),
     "restore-test":      (604800, 86400),
+    "measure-review":    (604800, 86400),
 }
 
 # Which collector's heartbeat covers which state kinds. A feed is only judged

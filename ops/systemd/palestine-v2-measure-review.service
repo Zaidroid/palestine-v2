@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — weekly re-measure of quarantined feeds and precision-round age
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/with-heartbeat.sh measure-review 604800 86400 -- /home/zaid/palestine-v2/.venv/bin/python -m ops.measure_review
+TimeoutStartSec=900

@@ -245,6 +245,24 @@ def score() -> dict:
         "pass": result["overall"]["precision"] >= GATE_OVERALL and not failing,
     }
     RESULT_FILE.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+
+    # Append the round to a machine-readable history. RESULT_FILE holds only
+    # the LATEST round, and the scored files hold claim verdicts with no
+    # timestamp or classifier version — so "when was precision last measured,
+    # and of WHICH classifier" was answerable only by a human reconstructing
+    # it from file names. The weekly review (ops/measure_review.py) reads this
+    # ledger to raise the round-is-due alarm.
+    try:
+        from ingest.sources.news_incidents import CLASSIFIER_VERSION
+    except Exception:                                           # noqa: BLE001
+        CLASSIFIER_VERSION = None
+    with (ROOT / "ops" / "incident-rounds.ndjson").open("a") as fh:
+        fh.write(json.dumps({
+            "scored_at": result["measured_at"],
+            "classifier_version": CLASSIFIER_VERSION,
+            "overall": result["overall"], "gate_pass": result["gate"]["pass"],
+            "types_unmeasured": result["gate"]["types_unmeasured"],
+        }, ensure_ascii=False) + "\n")
     return result
 
 
