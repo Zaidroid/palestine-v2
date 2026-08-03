@@ -170,7 +170,10 @@ FEED_COLLECTOR = {
     "road_closure":          "classify-news",
     "weather":               "ingest-external",
     "internet":              "ingest-external",
-    "electricity":           "ingest-external",
+    # "power", not "electricity" — the mapping held a name no state kind has
+    # ever had, so the day power came alive (040) it alarmed as "uncovered"
+    # while its collector was green in the same report.
+    "power":                 "ingest-external",
     "fire":                  "ingest-external",
 }
 
