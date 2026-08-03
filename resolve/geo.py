@@ -61,10 +61,18 @@ class Resolution:
     ambiguous_with: int = 0     # runner-up count when the decision was close
 
 
+# The alias join FOLLOWS MERGES. place_merge collapses v1's sentence-shaped
+# phantom keys ("صره_هسا_اجو_الجيش") into one canonical checkpoint and
+# re-points existing rows — but an alias can still name the merged-away row,
+# and resolving through it handed out the dead place_id. 650 palhub
+# observations landed on four merged-away places exactly this way, written
+# AFTER the merge had supposedly closed those rows.
 _SELECT = """
     SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
            p.admin1_pcode, p.admin2_pcode, p.oslo_area, a.alias_norm, a.confidence
-    FROM place_alias a JOIN place p ON p.place_id = a.place_id
+    FROM place_alias a
+    JOIN place p0 ON p0.place_id = a.place_id
+    JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
 """
 
 
@@ -221,7 +229,9 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
                        p.admin1_pcode, p.admin2_pcode, p.oslo_area,
                        a.alias_norm, a.confidence,
                        similarity(a.alias_norm, %s) AS sim
-                FROM place_alias a JOIN place p ON p.place_id = a.place_id
+                FROM place_alias a
+                JOIN place p0 ON p0.place_id = a.place_id
+                JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
                 WHERE a.alias_norm %% %s
                   AND similarity(a.alias_norm, %s) >= %s
                 ORDER BY sim DESC LIMIT 10""", (fz, fz, fz, FUZZY_MIN))
@@ -387,7 +397,11 @@ class _Place:
 # normalisation, and this project has already been bitten twice by two
 # normalisers disagreeing (`ILIKE` not folding hamza; patterns not folded at
 # import). Under 600 rows per kind, so scanning them costs nothing.
-NAME_SQL = "SELECT place_id, name_ar, name_en FROM place WHERE kind = %s"
+# merged_into IS NULL: a merged-away phantom ("صره هسا اجو الجيش") must not
+# offer its sentence-shaped name to crowd matching — its canonical row is the
+# one with the data.
+NAME_SQL = ("SELECT place_id, name_ar, name_en FROM place "
+            "WHERE kind = %s AND merged_into IS NULL")
 
 
 def resolve_for_state_kind(conn, place: str, state_kind: str):

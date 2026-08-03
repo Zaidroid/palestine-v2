@@ -90,8 +90,9 @@ PRESENCE_WORDS: dict[str, str] = {
     "جيش": "idf", "عسكر": "idf", "مداهمه": "idf", "دبابات": "idf",
     "جنود": "idf", "عسكري": "idf",
     "شرطه": "police", "دوريه": "police", "الشرطه": "police",
+    # مستوطين — the ن dropped — is how it is actually typed mid-incident.
     "مستوطنين": "settlers", "مستوطنون": "settlers", "مستوطن": "settlers",
-    "قطعان": "settlers",
+    "مستوطين": "settlers", "قطعان": "settlers",
     "تفتيش": "inspection", "يفتشو": "inspection", "بفتشو": "inspection",
     "تدقيق": "inspection", "هويات": "inspection",
 }
@@ -125,6 +126,16 @@ PHRASES: list[tuple[str, str, str]] = [
     ("في ازمه", "flow", "congested"), ("كثافه سير", "flow", "congested"),
     ("حركه خفيفه", "flow", "open"), ("سير طبيعي", "flow", "open"),
     ("في حاجز", "presence", "idf"), ("فيه حاجز", "presence", "idf"),
+    # "الجيش تحت جسر اودلا ومنعو المرور في الاتجاهين" — passage FORBIDDEN is a
+    # closure, and none of these words is a flow adjective, so the line
+    # recorded soldiers and lost the fact that nobody can get through.
+    ("منع المرور", "flow", "closed"), ("منعو المرور", "flow", "closed"),
+    ("منعوا المرور", "flow", "closed"), ("ممنوع المرور", "flow", "closed"),
+    ("المرور ممنوع", "flow", "closed"),
+    # The waw-prefixed forms are separate entries because "ومنعو المرور" is one
+    # token and the phrase matcher compares whole tokens.
+    ("ومنع المرور", "flow", "closed"), ("ومنعو المرور", "flow", "closed"),
+    ("ومنعوا المرور", "flow", "closed"),
 ]
 
 # Withdrawal / removal. These CLEAR presence rather than assert it, and usually
@@ -151,11 +162,19 @@ DIRECTION_WORDS: dict[str, str] = {
     "للداخل": "inbound", "الداخل": "inbound", "داخل": "inbound",
     "للدخول": "inbound", "دخول": "inbound", "جوا": "inbound", "لجوا": "inbound",
     "الداخلين": "inbound", "الوارد": "inbound",
+    # Single fused ل, no article: "جبع شرطة لداخل الرام". _ARTICLE strips لل
+    # but not a bare ل, so these missed the table and the report served as
+    # direction=both — overcovering the direction nobody reported on.
+    "لداخل": "inbound", "لخارج": "outbound",
     "للخارج": "outbound", "الخارج": "outbound", "خارج": "outbound",
     "للخروج": "outbound", "خروج": "outbound", "برا": "outbound", "لبرا": "outbound",
     "الخارجين": "outbound", "الصادر": "outbound",
     "بالاتجاهين": "both", "الاتجاهين": "both", "اتجاهين": "both",
     "الاتجاهات": "both", "الطرفين": "both",
+    # "عين شبلي بطيء عالجهتين" — both sides. ع is not in the article class, so
+    # the fused forms need their own entries.
+    "الجهتين": "both", "بالجهتين": "both", "عالجهتين": "both",
+    "للجهتين": "both", "عالاتجاهين": "both",
 }
 
 # Emoji are used by several channels as generic ATTENTION markers, not status:
@@ -171,7 +190,13 @@ QUESTION_OPENERS = frozenset([
     "شومع", "شومعليش", "امتي", "قديش", "بكم",
 ])
 QUESTION_PHRASES = ("شو وضع", "شو اخبار", "شو الوضع", "حدا يعرف", "مين بيعرف",
-                    "حدا بيعرف", "بدنا نعرف", "بدي اعرف", "في حدا", "شو صار")
+                    "حدا بيعرف", "بدنا نعرف", "بدي اعرف", "في حدا", "شو صار",
+                    # A DISPUTE about the status is a request for it, not a
+                    # report of it: "الي بحكي انو عورتا سالك يعطينا دليل" —
+                    # "whoever says Awarta is open, give us proof" — was
+                    # asserting the jam and the inspection it went on to doubt.
+                    "يعطينا دليل", "اعطونا دليل", "مين متاكد", "مش متاكد",
+                    "حدا متاكد")
 
 _QMARK = re.compile(r"[؟?]")
 # Clause boundaries. NOT ":" — "الداخل: سالك" must stay one clause, because the
@@ -201,8 +226,17 @@ _ELONGATED = re.compile(r"(.)\1{2,}")
 
 
 def tokens(clause: str) -> list[str]:
-    """Lexicon-ready tokens: emoji and stray symbols removed, empties dropped."""
-    return [t for t in (_NONWORD.sub("", w) for w in clause.split()) if t]
+    """Lexicon-ready tokens: emoji and stray symbols SPLIT ON, empties dropped.
+
+    Split, not stripped: "سولار❌بنزين❌" is one whitespace-token, and deleting
+    the emoji fused it into سولاربنزين — a word that matches nothing, so the
+    fuel guard below never saw the fuel nouns and the ❌ served a crossing as
+    closed. An emoji between two words separates them exactly as a space does.
+    """
+    out: list[str] = []
+    for w in clause.split():
+        out.extend(p for p in _NONWORD.split(w) if p)
+    return out
 
 
 def _lex(tok: str, table: dict[str, str]) -> str | None:
@@ -335,22 +369,93 @@ def _direction_positions(toks: list[str]) -> list[tuple[int, str]]:
     return out
 
 
-def _bind_direction(pos: int, dirs: list[tuple[int, str]]) -> tuple[str, bool]:
-    """Attach a status at token `pos` to one of the directions in its clause.
+def _collapse_enumerated_both(dirs: list[tuple[int, str]],
+                              status_pos: list[int]) -> list[tuple[int, str]]:
+    """"للي داخل والخارج" — two ADJACENT, opposite direction words are one
+    statement of "both", not two competing anchors. Left as a pair, the status
+    bound to whichever was nearer and the other half of the closure was lost —
+    "جسر اودلا مسكر للي داخل والخارج" served closed-inbound and unknown-outbound.
 
-    Nearest wins; a tie goes to the direction that FOLLOWS the status, because
-    the postfix order ("سالك للداخل") is the common one in these channels. The
-    prefix order ("الداخل: سالك") almost always carries a separator and has
-    been split into its own clause before reaching here.
+    Only when the pair is one-sided, though. In "سالكه للداخل وخارج ازمه" the
+    two direction words are also adjacent and opposite, but statuses stand on
+    BOTH sides — each direction anchors its own status, and collapsing them
+    would average two different lanes into one value. An enumerated pair has
+    all its statuses on one side; a pair of anchors is surrounded.
     """
+    out: list[tuple[int, str]] = []
+    i = 0
+    while i < len(dirs):
+        if (i + 1 < len(dirs)
+                and dirs[i + 1][0] - dirs[i][0] == 1
+                and {dirs[i][1], dirs[i + 1][1]} == {"inbound", "outbound"}
+                and not (any(p < dirs[i][0] for p in status_pos)
+                         and any(p > dirs[i + 1][0] for p in status_pos))):
+            out.append((dirs[i][0], "both"))
+            i += 2
+        else:
+            out.append(dirs[i])
+            i += 1
+    return out
+
+
+def _assign_directions(found: list[tuple[str, str, float, int]],
+                       dirs: list[tuple[int, str]]) -> list[tuple[str, bool]]:
+    """Attach each status in a clause to a direction, clause-wide.
+
+    The old rule bound each status independently — nearest direction, tie to
+    the FOLLOWING one, on the theory that the postfix order ("سالك للداخل") is
+    the common one and the prefix order always carries a separator. It does
+    not: "بيت ايل الداخل سالك الخارج تفتيش" is the bare topic-comment order,
+    and the tie sent سالك to الخارج — serving OPEN for the direction the text
+    says is under inspection, v1's inversion class recreated in v2. Worse, in
+    "العبيدية للداخل سالك للخارج ازمة" the misbound `open` then lost the
+    severity collapse against `congested` and the inbound fact vanished.
+
+    Two passes fix both orders without preferring either: statuses with a
+    UNIQUE nearest direction bind first and claim it; a tied status then takes
+    the tied candidate no other status claimed. "سالك للداخل تفتيش للخارج" and
+    "الداخل سالك الخارج تفتيش" now both come out right, because in each the
+    unambiguous status pins its direction and the ambiguous one takes what
+    remains.
+    """
+    dirs = _collapse_enumerated_both(dirs, [p for (_, _, _, p) in found if p >= 0])
+    n = len(found)
     if not dirs:
-        return "both", False
+        return [("both", False)] * n
     if len({d for _, d in dirs}) == 1:
-        return dirs[0][1], True
-    if pos < 0:
-        return "both", False
-    best = min(dirs, key=lambda pd: (abs(pd[0] - pos), 0 if pd[0] > pos else 1))
-    return best[1], True
+        return [(dirs[0][1], True)] * n
+
+    result: list[tuple[str, bool] | None] = [None] * n
+    claimed: set[int] = set()
+    ties: list[tuple[int, list[int]]] = []          # (fact idx, tied dir idxs)
+
+    for fi, (_axis, _value, _conf, pos) in enumerate(found):
+        if pos < 0:
+            result[fi] = ("both", False)
+            continue
+        ranked = sorted(range(len(dirs)), key=lambda di: abs(dirs[di][0] - pos))
+        best = ranked[0]
+        tied = [di for di in ranked
+                if abs(dirs[di][0] - pos) == abs(dirs[best][0] - pos)]
+        if len(tied) == 1:
+            result[fi] = (dirs[best][1], True)
+            claimed.add(best)
+        else:
+            ties.append((fi, tied))
+
+    for fi, tied in ties:
+        free = [di for di in tied if di not in claimed]
+        if len(free) == 1:
+            pick = free[0]
+        else:
+            # Still ambiguous: keep the old postfix preference as the last
+            # resort — among the tied, the direction that follows the status.
+            pos = found[fi][3]
+            pick = min(tied, key=lambda di: 0 if dirs[di][0] > pos else 1)
+        result[fi] = (dirs[pick][1], True)
+        claimed.add(pick)
+
+    return [r if r is not None else ("both", False) for r in result]
 
 
 def _negated(toks: list[str], i: int) -> bool:
@@ -363,7 +468,14 @@ def _negated(toks: list[str], i: int) -> bool:
     good news twice over. The بدون belongs to جيش, which sits between them.
     """
     for j in range(max(0, i - 2), i):
-        if toks[j] not in NEGATORS:
+        # "لا" stays out of NEGATORS ("لا مسكر" is "no, it's closed") — but
+        # لا/ولا DIRECTLY before an existential في/فيه is the one shape where
+        # it negates: "ولا في مستوطنين" is "and there are NO settlers", and it
+        # was being read as settlers PRESENT — a caution invented from its own
+        # reassurance, the exact inversion P2.4 exists to prevent.
+        la_fi = (toks[j] in ("لا", "ولا") and j + 1 < len(toks)
+                 and toks[j + 1] in ("في", "فيه"))
+        if toks[j] not in NEGATORS and not la_fi:
             continue
         # "ما زال مغلق" — the particle is continuative, not negating.
         if j + 1 < len(toks) and toks[j + 1] in CONTINUATIVES:
@@ -377,6 +489,18 @@ def _negated(toks: list[str], i: int) -> bool:
 
 
 _FLIP = {"open": "closed", "closed": "open", "congested": "open", "slow": "open"}
+
+# A clause about one of these is about FUEL, whatever its emoji say.
+_FUEL_NOUNS = frozenset(["سولار", "بنزين", "وقود", "غاز", "كاز", "ديزل",
+                         "محطه", "محطات", "محروقات"])
+
+
+def _cleared_nearby(toks: list[str], i: int) -> bool:
+    """A clearing verb within two tokens of toks[i], either side."""
+    lo, hi = max(0, i - 2), min(len(toks), i + 3)
+    return any(toks[j] in CLEARING_WORDS
+               or (toks[j][:1] == "و" and toks[j][1:] in CLEARING_WORDS)
+               for j in range(lo, hi) if j != i)
 
 
 def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, float, int]], bool]:
@@ -434,6 +558,15 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             continue
         flow = _lex(t, FLOW_WORDS)
         if flow:
+            # "الجيش واقف على المدخل" — the ARMY is standing there, not the
+            # traffic. واقف is a flow word only when its subject is the road;
+            # with a presence noun immediately before it, the presence reading
+            # (recorded separately from that noun) is the whole content, and
+            # the flow reading manufactured a jam out of a soldier standing
+            # still.
+            if (flow == "congested" and t in ("واقف", "واقفه", "وقفه", "موقوف")
+                    and i > 0 and _lex(toks[i - 1], PRESENCE_WORDS)):
+                continue
             if _negated(toks, i):
                 out.append(("flow", _FLIP.get(flow, flow), 0.80, i))
             else:
@@ -458,9 +591,13 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             # there, which is exactly what a family planning a journey wants.
             if _negated(toks, i):
                 out.append(("absence", pres, 0.86, i))
-            elif cleared:
-                # A withdrawal verb somewhere in the line is weaker evidence:
-                # it may attach to a different entity than this one.
+            elif cleared and _cleared_nearby(toks, i):
+                # A withdrawal verb NEXT TO this noun: "راح الجيش" and
+                # "الجيش انسحب" both clear the army. A clearing verb elsewhere
+                # in the line does not — "راح الجيش اجو المستوطين بكسرو
+                # بالسيارات" is the army leaving AND the settlers arriving,
+                # and the line-wide flag marked the arriving settlers absent,
+                # a false all-clear about the party actively smashing cars.
                 out.append(("absence", pres, 0.78, i))
             else:
                 out.append(("presence", pres, 0.88, i))
@@ -471,15 +608,26 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
     if not out and toks and toks[-1] in ("حاجز", "حواجز"):
         out.append(("presence", "idf", 0.70, len(toks) - 1))
 
-    # Emoji only where the words said nothing.
-    if not out:
+    # Emoji only where the words said nothing — and never on a FUEL line.
+    # "الجلمة :سولار❌بنزين❌" is a fuel-availability report at the Jalama
+    # crossing: none of its words is checkpoint vocabulary, so the ❌ fell
+    # through to here and served the CROSSING as closed. The ❌ is about
+    # diesel. A clause naming a fuel product keeps its words and loses only
+    # the emoji inference.
+    if not out and not any(t in _FUEL_NOUNS for t in toks):
         for ch, v in EMOJI_FLOW.items():
             if ch in raw_clause:
                 out.append(("flow", v, 0.65, -1))
                 break
 
-    # A clearing verb with no other flow signal means the obstacle is gone.
-    if cleared and not any(a == "flow" for a, _, _, _ in out):
+    # A clearing verb with no other flow signal means the obstacle is gone —
+    # unless somebody ELSE is asserted present in the same line. "راح الجيش
+    # اجو المستوطين بكسرو بالسيارات" clears the army and reports settlers
+    # smashing cars; inferring `open` from the departure would be a
+    # reassurance manufactured over an active attack. Same asymmetry as P2.4:
+    # a caution stands on its own, a reassurance must not be inferred past one.
+    if (cleared and not any(a == "flow" for a, _, _, _ in out)
+            and not any(a == "presence" for a, _, _, _ in out)):
         out.append(("flow", "open", 0.72, -1))
     return out, cleared
 
@@ -508,8 +656,8 @@ def read(text: str | None) -> Reading:
         dirs = _direction_positions(tokens(clause))
         found, cleared = _scan_clause(clause, raw_clause)
         any_clear = any_clear or cleared
-        for axis, value, conf, pos in found:
-            direction, explicit = _bind_direction(pos, dirs)
+        bound = _assign_directions(found, dirs)
+        for (axis, value, conf, pos), (direction, explicit) in zip(found, bound):
             facts.append(Fact(direction=direction, axis=axis, value=value,
                               direction_explicit=explicit, confidence=conf,
                               clause=raw_clause.strip()[:160]))

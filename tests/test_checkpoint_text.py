@@ -219,3 +219,117 @@ def test_collapsing_never_overrides_a_direct_hit():
     """Collapse is a LAST resort, after the literal forms have had their turn."""
     assert ("flow", "open") in {(f.axis, f.value) for f in read("سالك").facts}
     assert ("flow", "closed") in {(f.axis, f.value) for f in read("مسكر").facts}
+
+
+# ── the direction audit (2026-08-03): binding is clause-wide, not per-status ─
+def _fd(text):
+    """{(axis, value): (direction, explicit)} for one line."""
+    return {(f.axis, f.value): (f.direction, f.direction_explicit)
+            for f in read(text).facts}
+
+
+def test_topic_comment_order_does_not_invert():
+    """"بيت ايل الداخل سالك الخارج تفتيش" — inbound open, outbound inspection.
+
+    The old tie-break preferred the FOLLOWING direction, on the theory that
+    prefix order always carries a separator. It does not, and سالك went to
+    الخارج — serving OPEN for the direction the text says is under inspection.
+    v1's inversion class, recreated in v2, caught by the hand-scored audit.
+    """
+    f = _fd("بيت ايل الداخل سالك الخارج تفتيش")
+    assert f[("flow", "open")] == ("inbound", True)
+    assert f[("presence", "inspection")] == ("outbound", True)
+
+
+def test_postfix_order_still_binds_forward():
+    f = _fd("سالك للداخل تفتيش للخارج")
+    assert f[("flow", "open")] == ("inbound", True)
+    assert f[("presence", "inspection")] == ("outbound", True)
+
+
+def test_alternating_line_keeps_both_facts():
+    """"العبيدية للداخل سالك للخارج ازمة" — the misbound `open` used to lose
+    the severity collapse against `congested` and the inbound fact VANISHED."""
+    f = _fd("العبيدية للداخل سالك للخارج ازمة")
+    assert f[("flow", "open")] == ("inbound", True)
+    assert f[("flow", "congested")] == ("outbound", True)
+
+
+def test_shared_direction_is_still_shared():
+    f = _fd("حاجز صرة سالكه للداخل وخارج ازمه وتفتيش")
+    assert f[("flow", "open")] == ("inbound", True)
+    assert f[("flow", "congested")] == ("outbound", True)
+    assert f[("presence", "inspection")] == ("outbound", True)
+
+
+def test_enumerated_directions_are_one_both():
+    """"مسكر للي داخل والخارج" is one statement of both, not two anchors —
+    it served closed-inbound and unknown-outbound."""
+    f = _fd("جسر اودلا مسكر للي داخل والخارج")
+    assert f[("flow", "closed")] == ("both", True)
+    f = _fd("الداخل والخارج مغلق")
+    assert f[("flow", "closed")] == ("both", True)
+
+
+def test_both_sides_dialect_forms():
+    f = _fd("عين شبلي بطيء عالجهتين")
+    assert f[("flow", "slow")] == ("both", True)
+    f = _fd("جبع شرطة لداخل الرام")
+    assert f[("presence", "police")] == ("inbound", True)
+
+
+def test_the_army_standing_is_not_a_traffic_jam():
+    """"الجيش واقف على المدخل" — واقف is a flow word only when its subject is
+    the road. A soldier standing still manufactured a jam."""
+    vals = {(f.axis, f.value) for f in read("بيتا فيها اقتحام والجيش واقف على المدخل 🔴").facts}
+    assert ("presence", "idf") in vals
+    assert ("flow", "congested") not in vals
+    # The traffic standing IS a jam.
+    assert ("flow", "congested") in {(f.axis, f.value)
+                                     for f in read("السير واقف على حاجز قلنديا").facts}
+
+
+def test_forbidding_passage_is_a_closure():
+    f = _fd("الجيش تحت جسر اودلا ومنعو المرور في الاتجاهين")
+    assert f[("flow", "closed")] == ("both", True)
+    assert ("presence", "idf") in f
+
+
+def test_a_fuel_line_at_a_crossing_is_not_a_closure():
+    """"الجلمة :سولار❌بنزين❌" — the ❌ is about diesel. Emoji glued to words
+    used to fuse them into one unmatchable token, so the fuel nouns were
+    invisible and the crossing served as closed."""
+    r = read("الجلمة :سولار❌بنزين❌")
+    assert not r.facts
+    # Plain emoji shorthand still reads.
+    assert ("flow", "closed") in {(f.axis, f.value) for f in read("الفحص❌❌❌").facts}
+
+
+def test_a_dispute_about_the_status_is_a_question():
+    r = read("الي بحكي انو عورتا سالك يعطينا دليل لانو في بيحكو أنها ازمه وتفتيش")
+    assert r.modality == "question"
+
+
+def test_wala_fi_negates_the_existential():
+    """"ولا في مستوطنين" — "and there are NO settlers" — recorded settlers
+    PRESENT. لا stays a discourse marker everywhere except directly before
+    the existential في/فيه."""
+    vals = {(f.axis, f.value) for f in read("بس جيش و لا في مستوطنين بضربو عالسيارات").facts}
+    assert ("presence", "idf") in vals
+    assert ("absence", "settlers") in vals
+    assert ("presence", "settlers") not in vals
+    # "لا مسكر" is still "no, it's closed".
+    assert ("flow", "closed") in {(f.axis, f.value) for f in read("لا مسكر").facts}
+
+
+def test_clearing_scopes_to_the_adjacent_noun():
+    """"راح الجيش اجو المستوطين بكسرو بالسيارات" — the army left AND the
+    settlers arrived. The line-wide cleared flag marked the arriving settlers
+    absent, and the departure inferred `open` over an active attack."""
+    vals = {(f.axis, f.value) for f in read("راح الجيش اجو المستوطين بكسرو بالسيارات").facts}
+    assert ("absence", "idf") in vals
+    assert ("presence", "settlers") in vals
+    assert ("flow", "open") not in vals
+    # Verb after the noun still clears it; a lone withdrawal still opens.
+    vals = {(f.axis, f.value) for f in read("تحت جسر اودلا الجيش انسحب").facts}
+    assert ("absence", "idf") in vals and ("flow", "open") in vals

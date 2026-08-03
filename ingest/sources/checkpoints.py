@@ -122,9 +122,17 @@ def import_updates(full: bool = False) -> dict:
             # Rebuild from v1, which is the source of truth and is untouched by
             # this. Not data loss: every row is reconstructed below, with
             # correct attribution and modality that the old import lacked.
+            #
+            # Scoped to THIS importer's rows — the ones carrying its
+            # canonical_key marker. The palhub roads cascade writes 26k
+            # quarantined observations into the same state kinds, and an
+            # unscoped delete would have taken them out with nothing here to
+            # rebuild them: deleting by kind alone assumes one writer per
+            # kind, and that stopped being true at P6.
             cur.execute("DELETE FROM state_current WHERE state_kind = ANY(%s)",
                         (list((LEGACY_KIND, *ALL_KINDS)),))
-            cur.execute("DELETE FROM state_observation WHERE state_kind = ANY(%s)",
+            cur.execute("""DELETE FROM state_observation
+                           WHERE state_kind = ANY(%s) AND attrs ? 'canonical_key'""",
                         (list((LEGACY_KIND, *ALL_KINDS)),))
             since = None
         else:
