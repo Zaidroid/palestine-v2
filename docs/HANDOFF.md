@@ -97,28 +97,22 @@ for f in tests/test_gate*.sql tests/test_no_data_loss.sql \
   docker exec -i -e PGPASSWORD="$PGPASSWORD" palestine-v2-db \
     psql -tA -U "$PGUSER" -d "$PGDATABASE" -f - < "$f" | grep -c '^PASS'
 done
-.venv/bin/python -m pytest tests/test_news.py tests/test_checkpoint_text.py \
-                           tests/test_reliability.py tests/test_watchdog.py \
-                           tests/test_poller.py tests/test_crowd.py \
-                           tests/test_stream.py tests/test_ratelimit.py \
-                           tests/test_palhub_roads.py tests/test_corridor.py \
-                           tests/test_api.py -q
+.venv/bin/python -m pytest -q
 .venv/bin/python tests/test_arabic.py; .venv/bin/python tests/test_ingest.py
 ```
-Expected: 53 SQL passes (6/15/10/9/4/9), 239 pytest, 29 + 27 standalone.
-**348 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
+Expected: 60 SQL passes (9/19/10/9/4/9), 298 pytest, 29 + 27 standalone.
+**414 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
 rolled-back transactions, because a Python reimplementation of the model would
 only prove the reimplementation safe.
 
-This list must name every pytest file, and it has already been wrong once: it
-sat at "250 total" through P6 and P7 while `test_palhub_roads.py` and
-`test_corridor.py` existed and went unrun by anyone following this document.
-Cross-check with `ls tests/*.py` before trusting the number.
-
-Name the pytest files explicitly. Bare `pytest tests/` dies with
-`INTERNALERROR> SystemExit: 0` — `test_arabic.py` and `test_ingest.py` are
-standalone scripts ending in `raise SystemExit(main())`, which fires at
-collection.
+Bare `pytest` is now the whole invocation. This section used to carry an
+explicit 11-file list, because `test_arabic.py` and `test_ingest.py` are
+standalone scripts whose `raise SystemExit(main())` fired at collection and
+killed the run — and the list drifted TWICE, silently omitting first
+`test_palhub_roads.py` and `test_corridor.py`, then `test_fuel_image.py`.
+tests/conftest.py now excludes the two scripts at collection, so new test
+files are picked up by existing, not by remembering. The pytest count above
+still goes stale the ordinary way; trust the run, not this paragraph.
 
 `test_api.py` needs the API's dependencies reachable but NOT the API service
 running — it drives the ASGI app in-process. It does need Valhalla, and it
