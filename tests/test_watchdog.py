@@ -462,3 +462,59 @@ def test_an_unauthorised_session_still_stops_dead():
         import pytest
         pytest.skip("drop-in not installed on this host")
     assert "RestartPreventExitStatus=2" in drop.read_text()
+
+
+# ── alarm DELIVERY ───────────────────────────────────────────────────────────
+# The poller died for 17 hours with every detector working. The alarm reached a
+# file and a journal, which nobody reads. These cover the properties that make
+# a doorbell safe to attach to a monitor.
+
+def test_notify_never_raises_however_broken_the_config(monkeypatch):
+    """Monitoring that can break what it monitors is worse than none.
+
+    `raise_alert` runs inside a systemd OnFailure handler. An exception there
+    is a second outage on top of the one being reported.
+    """
+    from ops import notify
+    for token, chat in ((None, None), ("bad-token", "123"), ("", "")):
+        monkeypatch.setattr(notify, "_env",
+                            lambda n, t=token, c=chat: t if n == notify.TOKEN_VAR else c)
+        r = notify.send("x")
+        assert isinstance(r, dict) and "ok" in r and "reason" in r
+
+
+def test_alert_is_recorded_even_when_delivery_fails(monkeypatch, tmp_path):
+    """The sink is written FIRST and unconditionally.
+
+    A dead network, an expired token or a Telegram outage must not cost the
+    record — delivery is best-effort ON TOP of the log, never instead of it.
+    """
+    from ops import alert
+    monkeypatch.setattr(alert, "ALERTS", tmp_path / "a.ndjson")
+    monkeypatch.setattr(alert, "_notify",
+                        lambda *a, **k: {"ok": False, "reason": "boom"})
+    rec = alert.raise_alert("some-unit", "a reason")
+    assert rec["unit"] == "some-unit"
+    assert rec["delivered"] is False
+    written = (tmp_path / "a.ndjson").read_text()
+    assert "some-unit" in written, "the alarm was lost when delivery failed"
+
+
+def test_recovery_is_delivered_silently():
+    """A channel that only reports failures cannot distinguish "it recovered"
+    from "still broken, gone quiet" — and the second reading is the one that
+    gets ignored. Silent so good news never wakes anybody."""
+    import inspect
+
+    from ops import alert
+    src = inspect.getsource(alert.resolve)
+    assert "_notify" in src, "recoveries are not delivered"
+    assert "silent=True" in src, "recovery notifications must not make a sound"
+
+
+def test_unconfigured_is_a_normal_state_not_a_crash(monkeypatch):
+    from ops import notify
+    monkeypatch.setattr(notify, "_env", lambda n: None)
+    assert notify.configured() is False
+    r = notify.send("x")
+    assert r["ok"] is False and "unconfigured" in r["reason"]

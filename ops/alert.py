@@ -32,6 +32,16 @@ ROOT = Path(__file__).resolve().parent.parent
 ALERTS = ROOT / "ops" / "alerts.ndjson"
 
 
+def _notify(text: str, *, silent: bool = False) -> dict:
+    """Best-effort delivery. Imported lazily and wrapped so this module keeps
+    working — and keeps RECORDING — if ops/notify.py is broken or absent."""
+    try:
+        from ops.notify import send
+        return send(text, silent=silent)
+    except Exception as exc:                                    # noqa: BLE001
+        return {"ok": False, "reason": f"{type(exc).__name__}: {exc}"[:200]}
+
+
 def raise_alert(unit: str, reason: str = "") -> dict:
     detail = reason
     if not detail and unit:
@@ -46,8 +56,18 @@ def raise_alert(unit: str, reason: str = "") -> dict:
     }
     with ALERTS.open("a") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    print(f"ALERT {unit}: {detail.splitlines()[-1] if detail else 'failed'}",
-          file=sys.stderr)
+    line = detail.splitlines()[-1] if detail else "failed"
+    print(f"ALERT {unit}: {line}", file=sys.stderr)
+
+    # THE SINK IS WRITTEN FIRST AND UNCONDITIONALLY. Delivery is best-effort on
+    # top of it, never in place of it: the record must survive a dead network,
+    # an expired token or a Telegram outage. `send` swallows everything and
+    # returns a reason, so nothing here can raise into a systemd OnFailure
+    # handler — an alarm path that can itself fail is a second outage.
+    d = _notify(f"🔴 {unit}\n{line[:600]}")
+    rec["delivered"] = d["ok"]
+    if not d["ok"] and d["reason"] and "unconfigured" not in d["reason"]:
+        print(f"  (alert delivery failed: {d['reason']})", file=sys.stderr)
     return rec
 
 
@@ -73,6 +93,12 @@ def resolve(unit: str, note: str = "") -> dict:
     }
     with ALERTS.open("a") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    # Recoveries are delivered too, and SILENTLY — no notification sound.
+    # An alerting channel that only ever tells you about failures leaves you
+    # unable to tell "it recovered" from "it is still broken and has gone
+    # quiet", and the second reading is the one that gets ignored. Silent so
+    # good news never wakes anybody.
+    _notify(f"🟢 recovered: {unit}\n{note[:300]}", silent=True)
     return rec
 
 
