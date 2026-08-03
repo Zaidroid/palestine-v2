@@ -1,0 +1,1 @@
+{"scored_at": "2026-08-03T17:53:52.501820+00:00", "classifier_version": "1.5", "overall": {"n": 123, "precision": 0.748, "ci95": [0.665, 0.816]}, "gate_pass": false, "types_unmeasured": []}

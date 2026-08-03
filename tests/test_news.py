@@ -398,3 +398,74 @@ def test_a_checkpoint_closure_is_sited_at_the_checkpoint():
     assert r.incident_type == "closure"
     assert r.place_text == "حواره"
     assert r.governorate == "نابلس"
+
+
+# ── round 5 (v1.6): the month-end flood, and four hidden verbs ──────────────
+def test_monthly_statistics_are_not_events():
+    """Round 5 was drawn on Aug 1-3 and `death` measured 0/7 — every sample
+    was a month-end tally. The statistical reject knew "خلال العام" but no
+    month had a name, in either calendar."""
+    for t in ("وثّق مركز فلسطين لدراسات الأسرى تنفيذ سلطات الاحتلال 600 حالة اعتقال في الضفة الغربية والقدس خلال شهر تموز الماضي",
+              "16 شهيدا في الضفة الغربية والقدس خلال يوليو وارتفاع وتيرة الاعتداءات",
+              "نفذ الاحتلال خلال تموز الماضي 80 عملية هدم طالت 165 منشأة في محافظات قلقيلية والخليل",
+              "(265) عملاً مقاوماً في الضفة والقدس خلال شهر 7/2026، أسفر عن مقتل (2) مستوطنين"):
+        r = read(t)
+        assert r.verdict == "rejected", (t[:40], r.incident_type)
+    # آب needs its lookahead: ابو فلاح is not the month of August.
+    assert read("قوات الاحتلال تقتحم قرية ابو فلاح شمال شرق رام الله").verdict == "incident"
+
+
+def test_a_regional_roundup_is_not_one_incident():
+    """"اقتحامات واعتقالات في الضفة" aggregates a Bank-wide night; serving it
+    pins every raid to whichever village is named first."""
+    r = read("اقتحامات واعتقالات في الضفة.. تصعيد ميداني وإغلاق إذاعة في قلقيلية. شنت قوات الاحتلال حملة اقتحامات واسعة طالت مدنا وبلدات ومخيمات")
+    assert r.verdict == "rejected"
+
+
+def test_court_news_is_not_a_field_event():
+    """The high court rejecting demolition petitions was served as a SHOOTING."""
+    r = read("رفضت المحكمة العليا الإسرائيلية 15 التماسًا بشأن المخططات التفصيلية في خربة الديرات شرق يطا")
+    assert r.verdict == "rejected"
+
+
+def test_release_and_retrospective_are_aftermath():
+    assert read("بعد اكثر من عام من الاعتقال بنان أبو الهيجا خارج السجن لتلتقي مع أطفالها الأربعة").verdict == "rejected"
+    assert read("وفاة مواطنة متأثرة بجراحها الخطيرة التي أصيبت بها الأسبوع الماضي جراء حادث سير في بلدة بيت أولا").verdict == "rejected"
+
+
+def test_a_notice_with_any_preposition_is_still_not_an_act():
+    """"إخطارات بهدم" sailed past (هدم|بالهدم), and بهدم then matched the
+    demolition pattern inside itself — a notice served as the act."""
+    for t in ("قوات الاحتلال توزع اليوم إخطارات بهدم عدد من المنشآت التجارية شرق مدينة جنين",
+              "سلطات الاحتلال وزعت 34 إخطارًا لهدم منشآت فلسطينية في محافظات بيت لحم والخليل"):
+        r = read(t)
+        assert r.verdict == "rejected", r.incident_type
+        assert r.reject_reason in ("notice not act", "statistical")
+
+
+def test_the_masdar_hides_its_own_verb_third_time():
+    """اشعال is ا-ش-ع-ا-ل: the stem شعل is not inside it — same trap as
+    اقتحام/اقتحم and استشهاد/استشهد. Plus ضرم, ستول and دشن, all round-5
+    misses at Burqa, 'Urif and Sa'ir."""
+    for t, want in (
+        ("ميليشيات المستوطنين قاموا باشعال النار بالشجر القريب من المقبرة الشمالية لقرية برقة شمال غرب نابلس", "settler_attack"),
+        ("مستوطنون يضرمون النيران بالأشجار قرب المقبرة الشمالية لقرية برقة شمال غرب نابلس", "settler_attack"),
+        ("مستوطنو يتسهار يستولون على منطقة طبيعية تابعة لبلدة عوريف جنوب نابلس", "settler_attack"),
+        ("مستوطنون يدشنون بؤرة استيطانية جديدة في منطقة العديسة في بلدة سعير شمال الخليل", "settler_attack"),
+    ):
+        assert kind(t) == want, t[:40]
+
+
+def test_an_army_beating_is_harm_without_an_injury_noun():
+    r = read("قوات الاحتلال تعتدي بالضرب على صاحب أحد المحلات التجارية في بلدة بيت فجار قبل الانسحاب من البلدة")
+    assert r.verdict == "incident"
+    assert r.incident_type == "injury"
+
+
+def test_censorship_dots_do_not_hide_the_settler():
+    """"مسـ.ـتوطن" — tatweel plus dot — dodges platform filters and dodged
+    this classifier the same way: the dot became a space and split the word.
+    A real attack on a vehicle was rejected as having no incident verb."""
+    r = read("▫️▫️ مسـ.ـتوطن يهاجم مركبة أحد المواطنين بين قريتي المغير وأبو فلاح شرق رام الله")
+    assert r.verdict == "incident"
+    assert r.incident_type == "settler_attack"

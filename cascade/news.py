@@ -150,12 +150,22 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     #    لعصابات المستوطنين" — verb/noun before the actor — never matched.
     #  * seizure verbs were absent entirely: "يسيطرون على آبار المياه" and
     #    "تقوم بالاستيلاء على عين القصعة" were rejected as having no verb.
+    # شعال is the maṣdar: إشعال is ا-ش-ع-ا-ل and does NOT contain the stem
+    # شعل — the third time a verbal noun has hidden its own verb (اقتحام,
+    # استشهاد), found in round 5 when "قاموا باشعال النار" near the Burqa
+    # cemetery read as "no incident verb". ضرم ("يضرمون النيران"), دشن
+    # (founding a new outpost IS the land grab), and ستول (يستولون — the
+    # existing ستولا only matched the noun) are round-5 misses too.
     ("settler_attack", r"(?:(مستوطن\w*|قطعان)(?:\s+\S+){0,5}?\s+\S*"
-                       r"(عتد|هاجم|هجوم|عربد|حرق|شعل|رشق|قتلع|خرب|حطم|دهس|قتح|"
-                       r"سيطر|ستيلا|ستولا)"
-                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع)\w*"
+                       r"(عتد|هاجم|هجوم|عربد|حرق|شعل|شعال|ضرم|رشق|قتلع|خرب|"
+                       r"حطم|دهس|قتح|سيطر|ستيلا|ستول|دشن)"
+                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|ضرم|شعال)\w*"
                        r"(?:\s+\S+){0,3}?\s*\S*(مستوطن|قطعان))"),
-    ("injury",         r"(اصاب\w*|إصاب\w*|جرح\w*|اصيب|أصيب|اختناق)"),
+    # A beating by the army is harm without an injury noun: "تعتدي بالضرب على
+    # صاحب محل" was rejected as having no incident verb (round 5). Settler
+    # beatings keep their actor — settler_attack sits above this entry.
+    ("injury",         r"(اصاب\w*|إصاب\w*|جرح\w*|اصيب|أصيب|اختناق|"
+                       r"[اتين]?عتد\w*\s+بالضرب|اعتداء بالضرب)"),
     # Arabic marks person/tense with a PREFIX, so "تقتحم" / "يقتحم" share no
     # leading letters with "اقتحم". Matching only the perfective missed the
     # commonest headline form in this corpus — "قوات الاحتلال تقتحم بلدة بيت
@@ -236,15 +246,52 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
                         r"محطات الوقود)|احوال(\s+\S+){1,3}\s+ومحيطها)"),
     # A demolition ORDER is not a demolition. Kept out of the incident stream
     # rather than served as one — the act may never follow.
-    ("notice not act", r"(اخطار\w*\s+(هدم|بالهدم)|اوامر\s+هدم|انذار\w*\s+بالهدم)"),
+    # بهدم and لهدم: "إخطارات بهدم" and "34 إخطارًا لهدم" both sailed past the
+    # (هدم|بالهدم) alternation and بهدم then matched the demolition pattern
+    # INSIDE itself — a notice bulletin served as the act it only threatens.
+    ("notice not act", r"(اخطار\w*\s+(هدم|بالهدم|بهدم|لهدم)|اوامر\s+هدم|"
+                       r"انذار\w*\s+بالهدم)"),
     # Follow-ups about an earlier event: a release days later, a family
     # inspecting old damage. Measured as four of seventeen sampled
     # `demolition` incidents — all one story about a woman freed after 8 days,
     # filed as a fresh demolition because the sentence mentions هدم.
-    ("aftermath", r"(الافراج عن|افرجت?\s+\S*\s*عن|بعد\s+[\d٠-٩]+\s+(ايام|يوما|شهر))"),
+    ("aftermath", r"(الافراج عن|افرجت?\s+\S*\s*عن|بعد\s+[\d٠-٩]+\s+(ايام|يوما|شهر)|"
+                  # Round 5: a woman "خارج السجن" after a year served as a
+                  # fresh arrest; a phone that exploded "قبل ايام" as a fresh
+                  # injury; Al Jazeera's reconstruction of a months-old battle
+                  # ("تعيد ... تركيب مشاهد") as a fresh death.
+                  r"خارج السجن|بعد\s+(?:اكثر من\s+)?(?:عام|عامين)|"
+                  r"قبل\s+(?:اشهر|شهور|اسابيع|ايام)|تركيب مشاهد|"
+                  # "died of injuries sustained الأسبوع الماضي" — the event is
+                  # last week's; today's news is its aftermath.
+                  r"الاسبوع الماضي|"
+                  # Testimony ABOUT an event: a shopkeeper narrating his
+                  # eviction is coverage of coverage, not a fresh act.
+                  r"يروي\s+تفاصيل|يتحدثون)"),
     # Period statistics and retrospectives are summaries, not events.
+    #
+    # MONTH NAMES, both calendars. Round 5 was drawn on Aug 1-3 and the
+    # month-end tallies gutted it: every one of the seven sampled `death`
+    # incidents was "16 شهيدا خلال يوليو" or its siblings, because this
+    # pattern knew "خلال العام" but no month had a name. آب is written
+    # with a lookahead because bare اب sits inside ابو.
     ("statistical", r"(خلال النصف الاول|خلال العام|خلال الاسبوع الماضي|"
-                    r"احصائيه|إحصائية|حصيله\s+\S+\s+خلال|منذ\s+بدايه\s+العام)"),
+                    r"خلال الشهر الماضي|احصائيه|إحصائية|حصيله\s+\S+\s+خلال|"
+                    r"منذ\s+بدايه\s+(?:ال)?عام|"
+                    r"خلال\s+(?:شهر\s+)?(?:يناير|فبراير|مارس|ابريل|مايو|يونيو|"
+                    r"يوليو|اغسطس|سبتمبر|اكتوبر|نوفمبر|ديسمبر|"
+                    r"كانون الثاني|شباط|اذار|نيسان|ايار|حزيران|تموز|اب(?!\w)|"
+                    r"ايلول|تشرين الاول|تشرين الثاني|كانون الاول)|"
+                    r"خلال شهر [0-9٠-٩]|وثق\w*\s+مركز|توثيق\s+\S+\s+حال)"),
+    # A regional ROUNDUP aggregates many incursions into one story; serving it
+    # as one incident pins a Bank-wide night to whichever village is named
+    # first. Three of round 5's twenty `shooting` samples were these.
+    ("roundup", r"(اقتحامات واعتقالات|اقتحامات ومواجهات|حمله اقتحامات|"
+                r"تصعيد ميداني|يقتحم مدنا وبلدات|مدن وبلدات الضفه|"
+                r"انحاء متفرقه من الضفه)"),
+    # Court decisions about future demolitions are legal news, not field
+    # events: "the high court rejected 15 petitions" was served as a SHOOTING.
+    ("legal", r"(المحكمه العليا|التماس\w*)"),
     # International / national politics.
     #
     # "الجامعة الأمريكية" is a West Bank university, and matching "امريك" inside
@@ -271,7 +318,7 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # an incident this system exists to record.
     ("commentary", r"(بقلم|\bراي\b|تحليل|\bمقال\b|\bالذكري\b|\bذكري\b|\bرحيل\b|"
                    r"حكاية شهيد|تابعونا|اشترك|قناتنا|هل بات|كيف يحاول|"
-                   r"في مثل هذا اليوم)"),
+                   r"في مثل هذا اليوم|رساله صمود)"),
     # Institutional statements rather than a located happening.
     ("statement", r"(نادي الاسير|نادي الأسير|تصريح|بيان صحفي|وزارة الصحة تعلن|"
                   r"تنعى|تدين|تستنكر|طالب\w* ب|دعا\w* الى|ناشد)"),

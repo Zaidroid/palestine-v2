@@ -24,6 +24,7 @@ import unicodedata
 # ── character classes ────────────────────────────────────────────────────────
 _DIACRITICS = re.compile(r"[ً-ٰٟۖ-ۭ]")   # harakat, superscript alef
 _TATWEEL = re.compile(r"ـ")                                   # kashida
+_INNER_DOT = re.compile(r"(?<=[ء-ي])[.·•]+(?=[ء-ي])")
 _ALEF = re.compile(r"[آأإٱ]")                  # آ أ إ ٱ -> ا
 _ALEF_MAQSURA = re.compile(r"ى")                              # ى -> ي
 _TEH_MARBUTA = re.compile(r"ة")                               # ة -> ه
@@ -67,6 +68,15 @@ def normalize(text: str | None) -> str:
     s = unicodedata.normalize("NFKC", text)
     s = _DIACRITICS.sub("", s)
     s = _TATWEEL.sub("", s)
+    # Censorship-evasion dots: channels write "مسـ.ـتوطن" and "الاحـ.ـتلال" to
+    # dodge platform filters. Stripping the tatweel leaves "مس.توطن", and the
+    # dot then becomes a SPACE at the punctuation step — splitting the word in
+    # half, so neither the settler pattern nor the place matcher ever sees it.
+    # A real settler attack on a vehicle was rejected as "no incident verb"
+    # this way (round 5, claim 12039). A dot BETWEEN two Arabic letters is
+    # never orthography; removing it reunites the word. Applied before the
+    # punctuation pass, which would otherwise destroy the evidence.
+    s = _INNER_DOT.sub("", s)
     s = _ALEF.sub("ا", s)
     s = _ALEF_MAQSURA.sub("ي", s)
     s = _TEH_MARBUTA.sub("ه", s)

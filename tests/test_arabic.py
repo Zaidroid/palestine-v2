@@ -52,6 +52,18 @@ qalandia = ["حاجز قلنديا", "قلنديا", "الحاجز قلنديا"
 keys = {fold(v) for v in qalandia}
 check("all Qalandia spellings share one key", len(keys), 1)
 
+print("--- censorship-evasion dots ---")
+# Channels write مسـ.ـتوطن and الاحـ.ـتلال to dodge platform filters. The
+# tatweel strips, the dot then became a SPACE and split the word in half —
+# a settler attack was rejected as "no incident verb" this way (round 5).
+check("inner dot removed", normalize("مسـ.ـتوطن"), "مستوطن")
+check("inner dot removed (ihtilal)", normalize("الاحـ.ـتلال"), "الاحتلال")
+check("inner dot removed (askari)", normalize("العـ.ـسكري"), "العسكري")
+check("sentence dot still splits", normalize("سالك. جيش"), "سالك جيش")
+# Latin dots were ALREADY punctuation-to-space before the inner-dot rule;
+# the rule must not change that.
+check("latin dot spaces as before", normalize("palhub.app"), "palhub app")
+
 print("--- variants + language detection ---")
 check("variants deduped when equal", variants("قلنديا"), ["قلنديا"])
 check("variants keeps both when differing", variants("حاجز قلنديا"), ["حاجز قلنديا", "قلنديا"])
