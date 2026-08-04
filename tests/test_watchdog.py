@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -462,6 +463,33 @@ def test_an_unauthorised_session_still_stops_dead():
         import pytest
         pytest.skip("drop-in not installed on this host")
     assert "RestartPreventExitStatus=2" in drop.read_text()
+
+
+# ── the maintenance run's own exhaust ────────────────────────────────────────
+
+def test_the_maintenance_runs_own_log_is_not_committable():
+    """`ops/maintain-logs/` must be ignored, and by the DIRECTORY.
+
+    The weekly run is an unattended agent session started with
+    `--dangerously-skip-permissions`, and its log is the whole transcript:
+    every command it ran and everything those commands printed. That file is
+    the same class as `.env.bak-*` — operational exhaust nobody reviews in a
+    diff, which the ignore rules were extended for once already after the
+    timestamped `.env` backups turned out to be uncovered while `.env` itself
+    was fine. The directory arrived on 2026-08-04 with the maintain feature
+    and nothing added it, so the first run's log sat untracked in
+    `git status`, one `git add -A` away from history that cannot be edited.
+
+    Asserted against the path `ops/maintain.sh` actually writes, so renaming
+    the log directory fails here rather than silently un-ignoring it.
+    """
+    logdir = re.search(r"^LOGDIR=(\S+)", (ROOT / "ops" / "maintain.sh").read_text(),
+                       re.M).group(1)
+    probe = f"{logdir}/2026-01-01T00-00-00Z.log"
+    assert subprocess.run(["git", "check-ignore", "-q", probe],
+                          cwd=ROOT).returncode == 0, \
+        (f"{probe} is not git-ignored — an unattended agent's full session "
+         f"transcript can be committed by `git add -A`")
 
 
 # ── alarm DELIVERY ───────────────────────────────────────────────────────────

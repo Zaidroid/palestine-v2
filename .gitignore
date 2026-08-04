@@ -28,3 +28,9 @@ ops/crowd_independence.ndjson
 ops/backup-status.json
 ops/api.log
 ops/dualrun/
+
+# The weekly maintenance run's transcript. Same class as the .env backups
+# above: the file records every command an unattended agent ran and everything
+# those commands printed, it rotates on its own (12 kept), and nobody reviews
+# it in a diff. It arrived with the maintain feature and was uncovered.
+ops/maintain-logs/
