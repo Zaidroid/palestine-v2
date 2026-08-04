@@ -100,8 +100,8 @@ done
 .venv/bin/python -m pytest -q
 .venv/bin/python tests/test_arabic.py; .venv/bin/python tests/test_ingest.py
 ```
-Expected: 60 SQL passes (9/19/10/9/4/9), 298 pytest, 29 + 27 standalone.
-**414 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
+Expected: 60 SQL passes (9/19/10/9/4/9), 315 pytest, 34 + 27 standalone.
+**436 total.** `test_crowd.py` takes ~48s — it exercises the real belief SQL in
 rolled-back transactions, because a Python reimplementation of the model would
 only prove the reimplementation safe.
 
