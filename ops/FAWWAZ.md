@@ -20,11 +20,15 @@ already has — no new bots, no new channels.**
 
 ## The one message Zaid sends Fawwaz to activate this
 
-> فوّاز، عندك أدوات palestine-v2. كل يوم اثنين الساعة ٩ الصبح استدعِ أداة
-> `ops_digest` وابعثلي الملخص العربي منها كما هو، وأي بند فيه **[ZAID]**
-> أبرزه لي كسؤال. وإذا سألتك في أي وقت "شو وضع النظام؟" استخدم
-> `system_health` وجاوبني منها. لا تلخّص أرقام الدقة بتفاؤل — انقلها كما
-> كُتبت، مع ما هو غير مقاس.
+> Fawwaz, you have palestine-v2 tools. Every Monday at 9am, call the
+> `ops_digest` tool and send me its Arabic summary exactly as written.
+> Anything marked **[ZAID]** — highlight it to me as a question needing my
+> answer. If I ever ask you "what's the system status?", use `system_health`
+> and answer from it. Never summarize precision numbers optimistically —
+> relay them as written, including whatever is marked unmeasured.
+
+(The digest itself is Arabic-first — that is how the weekly run writes it
+and how Fawwaz relays it; only this standing instruction is English.)
 
 (If Fawwaz's gateway was started before 2026-08-04, the two tools appear
 after its next restart — `sudo systemctl restart hermes-gateway`.)
