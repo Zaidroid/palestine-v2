@@ -22,8 +22,11 @@ LOG="$LOGDIR/$(date -u +%Y-%m-%dT%H-%M-%SZ).log"
 # Keep 12 logs — three months of Mondays.
 ls -1t "$LOGDIR"/*.log 2>/dev/null | tail -n +13 | xargs -r rm --
 
+# Absolute path: systemd's PATH has no ~/.local/bin, and the first run died
+# with `claude: command not found` — caught by its own OnFailure alarm, which
+# is the loop working.
 exec ./ops/with-heartbeat.sh maintain 604800 172800 -- \
-  claude -p "$(cat ops/maintenance-prompt.md)" \
+  /home/zaid/.local/bin/claude -p "$(cat ops/maintenance-prompt.md)" \
     --model claude-opus-5 \
     --dangerously-skip-permissions \
     > "$LOG" 2>&1
