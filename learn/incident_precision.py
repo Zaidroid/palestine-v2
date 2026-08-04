@@ -147,6 +147,23 @@ def draw_sample() -> int:
     exclude = sorted(already_scored())
     rows = []
     with connect() as conn, conn.cursor() as cur:
+        # KIN OF TUNING DATA ARE TUNING DATA (round 6). The channels repost
+        # each other, so the unscored pool holds COPIES of scored claims under
+        # fresh ids — identical content_hash — and same-story paraphrases that
+        # clustered into the same event. v1.6's rules were tuned on round 5's
+        # claims; scoring a copy of one measures how well the fix fits its own
+        # example, wearing a new claim_id as a disguise. Excluding by id alone
+        # left 466 such kin in the pool.
+        if exclude:
+            cur.execute("""
+                SELECT DISTINCT c.claim_id FROM claim c
+                WHERE c.content_hash IN (SELECT content_hash FROM claim
+                                         WHERE claim_id = ANY(%(ids)s))
+                   OR (c.event_id IS NOT NULL AND c.event_id IN
+                       (SELECT event_id FROM claim
+                        WHERE claim_id = ANY(%(ids)s) AND event_id IS NOT NULL))""",
+                {"ids": exclude})
+            exclude = sorted({*exclude, *(r[0] for r in cur.fetchall())})
         cur.execute(SAMPLE_SQL, {"exclude": exclude, "cap": PER_TYPE_CAP})
         cols = [d[0] for d in cur.description]
         rows += [dict(zip(cols, r)) for r in cur.fetchall()]
