@@ -152,6 +152,7 @@ EXPECTED_JOBS = {
     "backup":            (86400, 10800),
     "restore-test":      (604800, 86400),
     "measure-review":    (604800, 86400),
+    "maintain":          (604800, 172800),
 }
 
 # Which collector's heartbeat covers which state kinds. A feed is only judged

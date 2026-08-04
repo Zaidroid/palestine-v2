@@ -299,7 +299,7 @@ def prune_remote(remote: str) -> list[str]:
 
 # ── driver ──────────────────────────────────────────────────────────────────
 
-def run(dry_run: bool = False) -> dict:
+def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
     started = _now()
     STAGING.mkdir(parents=True, exist_ok=True)
     name = started.strftime("%Y-%m-%dT%H-%M-%SZ")
@@ -331,6 +331,24 @@ def run(dry_run: bool = False) -> dict:
             "keyfile_sha256_prefix": _sha256(KEYFILE)[:16],
         }
         problems = sanity(manifest, previous_manifest())
+
+        # --accept-shrink: a deliberate, ONE-RUN, audited override for the
+        # row-fraction tripwire — and only that tripwire. Migration 038
+        # legitimately deleted 7,330 wrong classifications and the v1.6
+        # rebuild rewrote the ledger; the guard then wedged every future
+        # backup, because a failed run never becomes the comparison baseline.
+        # The reason is recorded in the manifest, so a restore five years from
+        # now can tell an audited cleanup from an unnoticed catastrophe. The
+        # other tripwires (tiny dump, dump halved, table DISAPPEARED) stay
+        # armed even under the flag — no cleanup explains those.
+        if accept_shrink:
+            waived = [p for p in problems if "rows (<" in p]
+            problems = [p for p in problems if "rows (<" not in p]
+            if waived:
+                manifest["accepted_shrink"] = {"reason": accept_shrink,
+                                               "waived": waived}
+                status["accepted_shrink"] = accept_shrink
+
         manifest["sanity"] = problems or ["ok"]
         (set_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
@@ -418,6 +436,10 @@ def main() -> int:
                     help="build and verify a set locally, but do not upload")
     ap.add_argument("--status", action="store_true", help="show the last result")
     ap.add_argument("--show-key-instructions", action="store_true")
+    ap.add_argument("--accept-shrink", metavar="REASON",
+                    help="accept row-count decreases FOR THIS RUN ONLY, recording "
+                         "REASON in the manifest. For audited cleanups (e.g. a "
+                         "migration deleting derived rows); never routine.")
     a = ap.parse_args()
 
     if a.show_key_instructions:
@@ -427,7 +449,7 @@ def main() -> int:
         print(STATUS_FILE.read_text() if STATUS_FILE.exists() else "never run")
         return 0
 
-    s = run(a.dry_run)
+    s = run(a.dry_run, accept_shrink=a.accept_shrink)
     if s["ok"]:
         mb = s["set_bytes"] / 1e6
         print(f"backup ok · {s['set']} · {mb:.1f} MB · "

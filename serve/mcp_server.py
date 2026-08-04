@@ -694,6 +694,19 @@ TOOLS = {
                   {"type": "object", "properties": {
                       "area": {"type": "string",
                                "description": "governorate or region, e.g. غزة"}}}),
+    "system_health": (lambda: _system_health(),
+                      "Operational health of the palestine-v2 system itself: which "
+                      "collector jobs and feeds are green, current faults, and any "
+                      "open operational alarms. For relaying system status to Zaid — "
+                      "this is about the MACHINE, not about roads or checkpoints.",
+                      {"type": "object", "properties": {}}),
+    "ops_digest": (lambda: _ops_digest(),
+                   "The latest weekly maintenance digest: what the automated Opus "
+                   "maintenance run checked, measured, fixed and committed, plus the "
+                   "measurement ledger (classifier precision rounds, quarantined-feed "
+                   "re-measurements). Deliver its summary to Zaid when he asks for the "
+                   "weekly update, or every Monday if he asked for a standing one.",
+                   {"type": "object", "properties": {}}),
     "where_is": (where_is, "Resolve an Arabic or English place name to coordinates. "
                            "Pass state_kind when you mean a checkpoint, fuel station "
                            "or crossing rather than the town of the same name — "
@@ -711,6 +724,69 @@ TOOLS = {
 # An agent that can file reports is the sock-puppet problem P2.4 exists for,
 # running at machine speed and without a person who can be held to a claim. The
 # read surface is at parity; the write surface stays human.
+
+
+# ── ops tools ────────────────────────────────────────────────────────────────
+# This process runs as the HERMES user (the gateways spawn it), which cannot
+# read .env and therefore cannot reach the database. Health comes through the
+# API like every other tool; the ops ledgers are world-readable files.
+
+_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _tail_ndjson(name: str, n: int = 3) -> list[dict]:
+    p = _ROOT / "ops" / name
+    if not p.exists():
+        return []
+    lines = [x for x in p.read_text().splitlines() if x.strip()]
+    return [json.loads(x) for x in lines[-n:]]
+
+
+def _open_alarms() -> list[dict]:
+    """Same open/resolved/cleared semantics as ops/alert.py, over the same
+    file. Reimplemented rather than imported because this process runs from
+    serve/ under another user's venv; the format is three fields and stable."""
+    recs = _tail_ndjson("alerts.ndjson", n=10_000)
+    cleared_at = max((r["ts"] for r in recs if r.get("clear_marker")), default="")
+    resolved: dict[str, str] = {}
+    for r in recs:
+        if r.get("resolves"):
+            resolved[r["resolves"]] = max(resolved.get(r["resolves"], ""), r["ts"])
+    return [{"ts": r["ts"], "unit": r.get("unit"),
+             "detail": (r.get("detail") or "").splitlines()[0][:120] if r.get("detail") else ""}
+            for r in recs
+            if not r.get("clear_marker") and not r.get("resolves")
+            and r["ts"] > cleared_at
+            and r["ts"] > resolved.get(r.get("unit", ""), "")]
+
+
+def _system_health() -> dict:
+    h = api("/health", verbose="true")
+    alarms = _open_alarms()
+    say = ("النظام سليم — كل المهام والمصادر خضراء." if h.get("status") == "ok" and not alarms
+           else "في أعطال تحتاج نظرة: " + "، ".join(h.get("faults", []) or [a.get("unit", "?") for a in alarms]))
+    return {"answer": say, "status": h.get("status"),
+            "faults": h.get("faults", []),
+            "jobs_ok": f"{h.get('jobs_ok')}/{h.get('jobs_total')}",
+            "feeds_ok": f"{h.get('feeds_ok')}/{h.get('feeds_total')}",
+            "open_alarms": alarms,
+            "caveat": "system status, not road status — use checkpoints_summary for roads"}
+
+
+def _ops_digest() -> dict:
+    digest_file = _ROOT / "ops" / "digest-latest.md"
+    digest = digest_file.read_text() if digest_file.exists() else None
+    return {
+        "digest_markdown": digest or "لا يوجد تقرير بعد — أول تشغيل أسبوعي لم يحدث.",
+        "digest_written_at": (datetime.fromtimestamp(digest_file.stat().st_mtime,
+                                                     tz=timezone.utc).isoformat()
+                              if digest_file.exists() else None),
+        "recent_runs": _tail_ndjson("digests.ndjson", 3),
+        "precision_rounds": _tail_ndjson("incident-rounds.ndjson", 3),
+        "quarantine_reviews": _tail_ndjson("measure-review.ndjson", 2),
+        "note": "written by the weekly Opus maintenance run (Mondays); "
+                "system_health has the live picture between runs",
+    }
 
 
 # ── MCP stdio loop ───────────────────────────────────────────────────────────

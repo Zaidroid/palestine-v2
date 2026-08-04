@@ -1,0 +1,13 @@
+[Unit]
+Description=Palestine v2 — weekly Opus maintenance run (audit, measure, fix, digest)
+After=docker.service network-online.target
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/maintain.sh
+# An unattended agent session; generous but bounded. If Opus cannot finish in
+# two hours something is wrong and the OnFailure alarm should say so.
+TimeoutStartSec=7200
