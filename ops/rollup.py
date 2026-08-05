@@ -106,7 +106,7 @@ SELECT %(dataset_id)s, t.place_id, t.indicator, t.value_num, 'count',
        jsonb_build_object('state_kind', t.state_kind, 'grain', 'day')
   FROM totals t
 ON CONFLICT (dataset_id, place_id, indicator, occurred_at)
-  WHERE place_id IS NOT NULL
+  WHERE place_id IS NOT NULL AND v1_stable_id IS NULL
   DO UPDATE SET value_num = EXCLUDED.value_num, reported_at = now()
 """
 
