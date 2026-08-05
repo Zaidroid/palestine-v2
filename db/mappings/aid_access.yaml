@@ -58,7 +58,9 @@ place:
     "Rafah Crossing": {kind: crossing, name_en: "Rafah Crossing"}            # 11,080
     "Erez":          {kind: crossing, name_en: "Erez Crossing (Beit Hanoun)"} # 2,170
     "Kissufim":      {kind: crossing, name_en: "Kissufim Crossing"}          #     72
-    "Western Erez":  null      #  6,304 → fallback (open question below)
+    "Western Erez":  {kind: crossing, name_en: "Zikim Crossing"}          #  6,304
+                               #   VERIFIED 2026-08-05: OCHA SitUpdate #326 —
+                               #   "the Zikim crossing (Erez West/As Siafa)"
     "Gate 96":       null      #  2,297 → fallback (no gazetteer row)
     "JLOTS":         null      #    638 → fallback (offshore pier, not a place)
   fallback: region             # [SPEC EXTENSION] location.region is

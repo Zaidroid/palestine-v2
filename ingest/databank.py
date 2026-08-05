@@ -545,7 +545,14 @@ _UNIT_CANON = {"truck": "truck", "trucks": "truck", "ton": "tonne",
 _CROSSINGS = {"Kerem Shalom": "Kerem Shalom Crossing",
               "Rafah Crossing": "Rafah Crossing",
               "Erez": "Erez Crossing (Beit Hanoun)",
-              "Kissufim": "Kissufim Crossing"}
+              "Kissufim": "Kissufim Crossing",
+              # Verified 2026-08-05: OCHA SitUpdate #326 equates the names —
+              # "the Zikim crossing (Erez West/As Siafa)". UNRWA's dashboard
+              # calls the same northern corridor 'Western Erez'.
+              "Western Erez": "Zikim Crossing"}
+# Gate 96 stays on the region row deliberately: it is a military gate on the
+# Netzarim corridor serving CENTRAL Gaza — not a border terminal, and not in
+# any crossings dictionary. JLOTS (the dismantled pier) likewise.
 
 
 def t_aid_access(rec, spec, places, counts):

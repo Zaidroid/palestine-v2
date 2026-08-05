@@ -1721,10 +1721,10 @@ def databank_category(category: str, indicator: str | None = None,
                 "identified_total": total,
                 "by_age_and_sex": rows,
                 "note": "Named records exist and are public memorial data "
-                        "(Gaza MoH via Tech4Palestine, CC-BY-4.0). Pass "
+                        "(Gaza MoH via Tech4Palestine, public domain/Unlicense). Pass "
                         "memorial=true to read them, deliberately.",
                 "attribution": ["Data: Tech4Palestine "
-                                "(data.techforpalestine.org), CC-BY-4.0."]}
+                                "(data.techforpalestine.org), public domain (Unlicense)."]}
     conds, params = ["d.v1_category = %s"], [category]
     if indicator:
         conds.append("o.indicator LIKE %s")
