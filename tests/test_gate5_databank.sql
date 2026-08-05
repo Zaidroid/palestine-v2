@@ -53,3 +53,39 @@ WHERE commercial_use
   AND (license_spdx LIKE '%-NC-%'
        OR license_spdx LIKE 'fair-use%'
        OR license_spdx LIKE 'copyright-fair-use%');
+
+\echo '--- G5.5: the commercial view can never leak a non-commercial row ---'
+-- The test the whole tier decision rests on: B'Tselem, WHO, every
+-- verify-required source — zero rows reachable through databank_commercial.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' non-commercial rows in the commercial view'
+       END AS g5_commercial_no_leaks
+FROM databank_commercial
+WHERE NOT commercial_use
+   OR license_spdx IN ('verify-required', 'varies', 'unknown')
+   OR license_spdx LIKE '%-NC-%';
+
+\echo '--- G5.6: every served databank row carries its attribution ---'
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' served rows with empty attribution'
+       END AS g5_serving_attribution
+FROM databank_serving
+WHERE btrim(attribution_text) = '';
+
+\echo '--- G5.7: superseded rows are as_of-only, never on the default surface ---'
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' closed-validity rows served as current'
+       END AS g5_superseded_hidden
+FROM databank_serving
+WHERE NOT upper_inf(sys_period);
+
+\echo '--- G5.8: the tiers are real — the commercial view is a strict subset ---'
+-- If these numbers are ever equal, either every source became sellable
+-- (Zaid read 24 licenses) or the filter died. Either way a human looks.
+SELECT CASE
+         WHEN (SELECT count(*) FROM databank_commercial)
+              < (SELECT count(*) FROM databank_serving)
+          AND (SELECT count(*) FROM databank_commercial) > 0
+         THEN 'PASS'
+         ELSE 'FAIL: commercial subset is empty or not a strict subset'
+       END AS g5_strict_subset;
