@@ -1031,9 +1031,32 @@ def run(category: str, dry_run: bool = False) -> dict:
     return report
 
 
+def run_all(dry_run: bool = False) -> int:
+    """The nightly sync: every migrating category, idempotently, after v1's
+    ~02:51 refresh. New upstream records get new stable_ids and land; old
+    rows never change (corrections supersede in T2.4, never overwrite).
+    Returns the number of failed categories — the exit code."""
+    failed = []
+    grew = {}
+    for cat in sorted(TRANSFORMERS):
+        try:
+            rep = run(cat, dry_run=dry_run)
+            if rep["written"] or rep["events_written"]:
+                grew[cat] = rep["written"] + rep["events_written"]
+        except SpecRefused as e:
+            if "migrate=false" in str(e):
+                continue
+            print(f"FAIL {cat}: {e}", file=sys.stderr)
+            failed.append(cat)
+    print(json.dumps({"grew": grew, "failed": failed}, ensure_ascii=False))
+    return len(failed)
+
+
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if "--all" in sys.argv:
+        sys.exit(run_all(dry_run="--dry-run" in sys.argv))
     if not args:
-        sys.exit("usage: python -m ingest.databank <category> [--dry-run]")
+        sys.exit("usage: python -m ingest.databank <category>|--all [--dry-run]")
     out = run(args[0], dry_run="--dry-run" in sys.argv)
     print(json.dumps(out, indent=2, ensure_ascii=False))

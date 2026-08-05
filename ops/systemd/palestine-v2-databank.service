@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — nightly databank sync from v1's refresh (T2.3)
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/databank-sync.sh
+TimeoutStartSec=3600
