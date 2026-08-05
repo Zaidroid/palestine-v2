@@ -1,0 +1,5037 @@
+{
+ "aid_access": {
+  "partitioned": true,
+  "file_mb": 96.1,
+  "has_stable_id_index": true,
+  "metadata_notice": "Discontinued upstream 2025-01-16; records after 2024-05-05 are partial (see source disclaimer).",
+  "records": 50059,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 50059
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.003,
+   "min": "2023-10-21",
+   "max": "2025-01-16",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "crossing": 50059
+   },
+   "region": {
+    "Gaza Strip": 50059
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "aid_consignment": 50059
+  },
+  "units": {
+   "Pallets": 38033,
+   "MT": 6724,
+   "Truck": 3610,
+   "trucks": 1137,
+   "Ton": 364,
+   "Piece": 168
+  },
+  "source_licenses": {
+   "UNRWA Gaza Supply and Logistics dashboard :: CC-BY": 50059
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "metrics.trucks": 1.0,
+   "metrics.quantity": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "source_record_key": 1.0,
+   "cargo_category": 1.0,
+   "cargo_description": 1.0,
+   "crossing": 1.0,
+   "donation_type": 1.0,
+   "stable_id": 1.0,
+   "donor": 0.996,
+   "recipient": 0.86,
+   "location.coordinates": 0.221,
+   "location.admin_levels": 0.221,
+   "location.region_type": 0.221,
+   "location.proximity": 0.221
+  },
+  "samples": [
+   {
+    "id": "unrwa-truck-16412",
+    "date": "2023-12-31",
+    "category": "aid_access",
+    "event_type": "aid_consignment",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Kerem Shalom",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "crossing",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "Pallets",
+     "trucks": 1,
+     "quantity": 34
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 85,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "active-conflict",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNRWA Gaza Supply and Logistics dashboard",
+      "organization": "UNRWA",
+      "url": "https://data.humdata.org/dataset/state-of-palestine-gaza-aid-truck-data",
+      "license": "CC-BY"
+     }
+    ],
+    "source_record_key": "unrwa-truck-16412",
+    "cargo_category": "Food Items",
+    "cargo_description": "Luncheon Meat",
+    "crossing": "Kerem Shalom",
+    "donor": "WFP",
+    "donation_type": "Humanitarian - UN",
+    "recipient": null,
+    "stable_id": "8ba8cb06313f78aebbb184c919413d0f"
+   },
+   {
+    "id": "unrwa-truck-73230",
+    "date": "2025-01-01",
+    "category": "aid_access",
+    "event_type": "aid_consignment",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Western Erez",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "crossing",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "Pallets",
+     "trucks": 1,
+     "quantity": 26
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 452,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNRWA Gaza Supply and Logistics dashboard",
+      "organization": "UNRWA",
+      "url": "https://data.humdata.org/dataset/state-of-palestine-gaza-aid-truck-data",
+      "license": "CC-BY"
+     }
+    ],
+    "source_record_key": "unrwa-truck-73230",
+    "cargo_category": "Non-Food Items",
+    "cargo_description": "Tents",
+    "crossing": "Western Erez",
+    "donor": "JHCO + ANERA",
+    "donation_type": "Humanitarian - INGO",
+    "recipient": "JHCO + ANERA",
+    "stable_id": "68fca87ae88c66074ecc6d6c74512feb"
+   }
+  ]
+ },
+ "casualties": {
+  "partitioned": false,
+  "file_mb": 0.1,
+  "has_stable_id_index": true,
+  "metadata_notice": "B'Tselem-verified Palestinian fatalities 2008+, West Bank + Gaza. Verified individual counts (lower than MoH bulletin totals); annual + region/governorate/demographic/weapon breakdowns.",
+  "records": 49,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 49
+  },
+  "dates": {
+   "present_pct": 0.388,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.388,
+   "min": "2008-12-31",
+   "max": "2026-12-31",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "country": 27,
+    "region": 22
+   },
+   "region": {
+    "Palestine": 46,
+    "Gaza Strip": 1,
+    "West Bank": 1,
+    "Israel": 1
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "fatalities_aggregate": 49
+  },
+  "units": {
+   "fatalities": 49
+  },
+  "source_licenses": {
+   "UN OCHA oPt — Data on Casualties :: verify-required": 49
+  },
+  "field_fill": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "casualty_dimension": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.baseline_date": 0.612,
+   "casualty_breakdown_label": 0.612,
+   "date": 0.388,
+   "temporal_context.days_since_baseline": 0.388,
+   "temporal_context.baseline_period": 0.388,
+   "temporal_context.conflict_phase": 0.388,
+   "temporal_context.season": 0.388,
+   "location.governorate": 0.367,
+   "location.coordinates": 0.02,
+   "location.admin_levels": 0.02,
+   "location.region_type": 0.02,
+   "location.proximity": 0.02
+  },
+  "samples": [
+   {
+    "id": "ocha-casualties-year-2008",
+    "date": "2008-12-31",
+    "category": "casualties",
+    "event_type": "fatalities_aggregate",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "country",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 877,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 877,
+     "value": 0,
+     "unit": "fatalities"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -5393,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA oPt — Data on Casualties",
+      "organization": "UN OCHA (B'Tselem data)",
+      "url": "https://www.ochaopt.org/data/casualties",
+      "license": "verify-required"
+     }
+    ],
+    "casualty_dimension": "annual_total",
+    "casualty_breakdown_label": null,
+    "stable_id": "3477b33baa26f18a00b5ef1a9f715ff0"
+   },
+   {
+    "id": "ocha-casualties-weapon-other",
+    "date": null,
+    "category": "casualties",
+    "event_type": "fatalities_aggregate",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "country",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 1716,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1716,
+     "value": 0,
+     "unit": "fatalities"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": null,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": null
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA oPt — Data on Casualties",
+      "organization": "UN OCHA (B'Tselem data)",
+      "url": "https://www.ochaopt.org/data/casualties",
+      "license": "verify-required"
+     }
+    ],
+    "casualty_dimension": "weapon",
+    "casualty_breakdown_label": "Other",
+    "stable_id": "cc424f7c0994e275bd0ac9c2bd82bf73"
+   }
+  ]
+ },
+ "conflict": {
+  "partitioned": false,
+  "file_mb": 18.0,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 10495,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 10495
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.002,
+   "min": "1935-01-01",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "point": 8223,
+    "region": 2268,
+    "unknown": 4
+   },
+   "region": {
+    "Gaza Strip": 7381,
+    "West Bank": 2270,
+    "Palestine": 811,
+    "East Jerusalem": 33
+   },
+   "latlon_pct": 0.784,
+   "gazetteer_key_pct": 0.676,
+   "admin2_pcode_pct": 0.704,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "state_based": 7071,
+   "daily_casualty_report": 1954,
+   "village_depopulation": 589,
+   "one_sided": 461,
+   "killing of journalist": 262,
+   "non_state": 106,
+   "conflict_report": 44,
+   "aggregate_fatality": 6,
+   "summary": 2
+  },
+  "units": {
+   "persons": 10495
+  },
+  "source_licenses": {
+   "UCDP-GED :: CC-BY-IGO": 7638,
+   "Tech4Palestine :: varies": 2218,
+   "Palestine Open Maps locality registry :: POM compilation, attribution; underlying Survey of Palestine + Village Statistics 1945 are public domain": 589,
+   "Zochrot village page :: None": 526,
+   "Atlas of Palestine :: None": 518,
+   "Palestine Remembered village page :: None": 459,
+   "Wikidata crosswalk :: CC0-1.0": 329,
+   "Good Shepherd :: varies": 44,
+   "B'Tselem :: varies": 6
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "description": 0.995,
+   "severity_index": 0.944,
+   "location.governorate": 0.819,
+   "location.lat": 0.784,
+   "location.lon": 0.784,
+   "actors": 0.753,
+   "deaths_a": 0.728,
+   "deaths_b": 0.728,
+   "deaths_civilians": 0.728,
+   "deaths_unknown": 0.728,
+   "conflict_name": 0.728,
+   "dyad_name": 0.728,
+   "location.admin1": 0.704,
+   "location.admin2": 0.704,
+   "location.admin2_pcode": 0.704,
+   "location.gazetteer_key": 0.676,
+   "temporal_context.days_since_baseline": 0.216,
+   "temporal_context.baseline_period": 0.216,
+   "temporal_context.conflict_phase": 0.216,
+   "temporal_context.season": 0.216,
+   "location.coordinates": 0.119,
+   "location.admin_levels": 0.119,
+   "location.region_type": 0.119,
+   "location.proximity": 0.119,
+   "date_precision": 0.056,
+   "conflict_phase": 0.056,
+   "population_1945": 0.044,
+   "population_1931": 0.033,
+   "population_1922": 0.027,
+   "administrative_detainees": 0.004,
+   "child_prisoners": 0.004,
+   "female_prisoners": 0.004,
+   "arrests": 0.004
+  },
+  "samples": [
+   {
+    "id": "conflict-g0x25b",
+    "date": "2026-06-09",
+    "category": "conflict",
+    "event_type": "summary",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza",
+     "governorate": "Gaza",
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 72988,
+     "injured": 173205,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 246193,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 10,
+    "temporal_context": {
+     "days_since_baseline": 976,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Tech4Palestine",
+      "organization": "Tech for Palestine",
+      "url": "https://data.techforpalestine.org",
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:00:26.769Z"
+     }
+    ],
+    "stable_id": "a84d8d11cb1df762ebfff5c65bd4519b"
+   },
+   {
+    "id": "conflict-u7mkh8",
+    "date": "2021-05-10",
+    "category": "conflict",
+    "event_type": "aggregate_fatality",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza Strip",
+     "governorate": "Gaza",
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 256,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 256,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 10,
+    "temporal_context": {
+     "days_since_baseline": -880,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "spring"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "B'Tselem",
+      "organization": "B'Tselem",
+      "url": "https://www.btselem.org",
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:09.720Z"
+     }
+    ],
+    "stable_id": "c7d5d44faa10f9596db5b2339d3dacfb"
+   }
+  ]
+ },
+ "connectivity": {
+  "partitioned": false,
+  "file_mb": 4.0,
+  "has_stable_id_index": true,
+  "metadata_notice": "Daily web-censorship measurements (anomaly/confirmed-blocked); complements IODA outage events.",
+  "records": 2274,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 2274
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.001,
+   "min": "2017-02-09",
+   "max": "2026-07-24",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "country": 1677,
+    "region": 597
+   },
+   "region": {
+    "Palestine": 1677,
+    "Gaza Strip": 417,
+    "West Bank": 180
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "censorship_measurement": 1276,
+   "internet_outage": 998
+  },
+  "units": {
+   "measurements": 1276,
+   "seconds": 998
+  },
+  "source_licenses": {
+   "OONI :: free-with-attribution": 1276,
+   "IODA :: free-with-attribution": 998
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "metrics.anomaly_count": 0.561,
+   "metrics.confirmed_blocked": 0.561,
+   "anomaly_rate": 0.561,
+   "metrics.duration_seconds": 0.439,
+   "metrics.severity_score": 0.439,
+   "outage_start": 0.439,
+   "outage_datasource": 0.439,
+   "network_entity.type": 0.439,
+   "network_entity.code": 0.439,
+   "location.coordinates": 0.183,
+   "location.admin_levels": 0.183,
+   "location.region_type": 0.183,
+   "location.proximity": 0.183
+  },
+  "samples": [
+   {
+    "id": "ioda-region-1226-1646207400-ping-slash24",
+    "date": "2022-03-02",
+    "category": "connectivity",
+    "event_type": "internet_outage",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza Strip",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "seconds",
+     "duration_seconds": 1200,
+     "severity_score": 1800
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -584,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "spring"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "IODA",
+      "organization": "Internet Intelligence Lab, Georgia Tech",
+      "url": "https://ioda.inetintel.cc.gatech.edu/country/PS",
+      "license": "free-with-attribution"
+     }
+    ],
+    "outage_start": "2022-03-02T07:50:00.000Z",
+    "outage_datasource": "ping-slash24",
+    "network_entity": {
+     "type": "region",
+     "code": "1226"
+    },
+    "stable_id": "2ff9682d6e82bdb31b9b40836db38ffc"
+   },
+   {
+    "id": "ooni-ps-2026-06-09",
+    "date": "2026-06-09",
+    "category": "connectivity",
+    "event_type": "censorship_measurement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "country",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 600,
+     "value": 0.0533,
+     "unit": "measurements",
+     "anomaly_count": 32,
+     "confirmed_blocked": 0
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 976,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "OONI",
+      "organization": "Open Observatory of Network Interference",
+      "url": "https://explorer.ooni.org/country/PS",
+      "license": "free-with-attribution"
+     }
+    ],
+    "anomaly_rate": 0.0533,
+    "stable_id": "6bd23f50081582ad1de6b964862782a9"
+   }
+  ]
+ },
+ "culture": {
+  "partitioned": false,
+  "file_mb": 0.7,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 329,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 329
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 1.0,
+   "year_bucket_pct": 0.0,
+   "min": "2026-08-05",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 329
+   },
+   "region": {
+    "East Jerusalem": 183,
+    "West Bank": 96,
+    "Gaza Strip": 50
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "heritage_site": 329
+  },
+  "units": {
+   "sites": 329
+  },
+  "source_licenses": {
+   "UNESCO, Ministry of Tourism, NGO Reports :: varies": 329
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "site_name": 1.0,
+   "site_type": 1.0,
+   "site_status": 1.0,
+   "historical_period": 1.0,
+   "protection_level": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.708,
+   "location.admin_levels": 0.708,
+   "location.proximity": 0.708,
+   "location.region_type": 0.152,
+   "unesco_status": 0.052
+  },
+  "samples": [
+   {
+    "id": "culture-7u9ach",
+    "date": "2026-08-05",
+    "category": "culture",
+    "event_type": "heritage_site",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "East Jerusalem",
+     "governorate": null,
+     "region": "East Jerusalem",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      35.21,
+      31.76
+     ],
+     "admin_levels": {
+      "level1": "Jerusalem"
+     },
+     "region_type": null,
+     "proximity": {
+      "nearest_city": "Bethlehem",
+      "distance_to_border": 34410.000000000255
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "sites"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNESCO, Ministry of Tourism, NGO Reports",
+      "organization": "Multiple",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:08.081Z"
+     }
+    ],
+    "site_name": "Al-Yaqoubi Mosque",
+    "site_type": "Religious",
+    "site_status": "Intact",
+    "historical_period": "Unknown",
+    "construction_date": null,
+    "significance": null,
+    "unesco_status": null,
+    "protection_level": "National Heritage",
+    "damage": null,
+    "stable_id": "c6ba23b9d39caff5552d7a9d802a09df"
+   },
+   {
+    "id": "culture-8tpt3",
+    "date": "2026-08-05",
+    "category": "culture",
+    "event_type": "heritage_site",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "East Jerusalem",
+     "governorate": null,
+     "region": "East Jerusalem",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      35.21,
+      31.76
+     ],
+     "admin_levels": {
+      "level1": "Jerusalem"
+     },
+     "region_type": null,
+     "proximity": {
+      "nearest_city": "Bethlehem",
+      "distance_to_border": 34410.000000000255
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "sites"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNESCO, Ministry of Tourism, NGO Reports",
+      "organization": "Multiple",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:08.085Z"
+     }
+    ],
+    "site_name": "Khirbet Nisya",
+    "site_type": "Archaeological",
+    "site_status": "Intact",
+    "historical_period": "Unknown",
+    "construction_date": null,
+    "significance": null,
+    "unesco_status": null,
+    "protection_level": "National Heritage",
+    "damage": null,
+    "stable_id": "676540aaa05fd9b692d0cc45ca1eff0c"
+   }
+  ]
+ },
+ "demolitions": {
+  "partitioned": false,
+  "file_mb": 0.9,
+  "has_stable_id_index": true,
+  "metadata_notice": "West Bank + East Jerusalem demolitions 2009+; per-locality totals (geocoded) + annual series.",
+  "records": 534,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 534
+  },
+  "dates": {
+   "present_pct": 0.034,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.034,
+   "min": "2009-12-31",
+   "max": "2026-12-31",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "locality": 516,
+    "region": 18
+   },
+   "region": {
+    "West Bank": 449,
+    "East Jerusalem": 85
+   },
+   "latlon_pct": 0.964,
+   "gazetteer_key_pct": 0.592,
+   "admin2_pcode_pct": 0.964,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "demolition_aggregate": 534
+  },
+  "units": {
+   "structures": 534
+  },
+  "source_licenses": {
+   "UN OCHA oPt — Data on Demolitions :: verify-required": 534
+  },
+  "field_fill": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "demolition_dimension": 1.0,
+   "stable_id": 1.0,
+   "location.governorate": 0.966,
+   "temporal_context.baseline_date": 0.966,
+   "location.lat": 0.964,
+   "location.lon": 0.964,
+   "location.admin1": 0.964,
+   "location.admin2": 0.964,
+   "location.admin2_pcode": 0.964,
+   "location.gazetteer_key": 0.592,
+   "location.coordinates": 0.056,
+   "location.admin_levels": 0.056,
+   "location.proximity": 0.056,
+   "location.region_type": 0.037,
+   "date": 0.034,
+   "temporal_context.days_since_baseline": 0.034,
+   "temporal_context.baseline_period": 0.034,
+   "temporal_context.conflict_phase": 0.034,
+   "temporal_context.season": 0.034
+  },
+  "samples": [
+   {
+    "id": "ocha-demo-loc-jabal-al-mukabbir",
+    "date": null,
+    "category": "demolitions",
+    "event_type": "demolition_aggregate",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Jabal al Mukabbir",
+     "governorate": "Jerusalem",
+     "region": "East Jerusalem",
+     "lat": 31.754483,
+     "lon": 35.246059,
+     "precision": "locality",
+     "gazetteer_key": "jabal_al_mukabbir",
+     "admin1": "West Bank",
+     "admin2": "Jerusalem",
+     "admin2_pcode": "PS0140",
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 1080,
+     "affected": 0,
+     "demolished": 416,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "structures"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": null,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": null
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA oPt — Data on Demolitions",
+      "organization": "UN OCHA oPt",
+      "url": "https://www.ochaopt.org/data/demolition",
+      "license": "verify-required"
+     }
+    ],
+    "demolition_dimension": "locality",
+    "stable_id": "633886ac3cddfb17f0dbcab1ce05f318"
+   },
+   {
+    "id": "ocha-demo-year-2026",
+    "date": "2026-12-31",
+    "category": "demolitions",
+    "event_type": "demolition_aggregate",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank & East Jerusalem",
+     "governorate": null,
+     "region": "West Bank",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      35.21,
+      31.76
+     ],
+     "admin_levels": {
+      "level1": "Jerusalem"
+     },
+     "region_type": null,
+     "proximity": {
+      "nearest_city": "Bethlehem",
+      "distance_to_border": 34410.000000000255
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 952,
+     "affected": 26533,
+     "demolished": 678,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "structures"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1181,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA oPt — Data on Demolitions",
+      "organization": "UN OCHA oPt",
+      "url": "https://www.ochaopt.org/data/demolition",
+      "license": "verify-required"
+     }
+    ],
+    "demolition_dimension": "annual_total",
+    "stable_id": "50c28f82cafb0ff57cbe0710cfa886b1"
+   }
+  ]
+ },
+ "economic": {
+  "partitioned": false,
+  "file_mb": 7.7,
+  "has_stable_id_index": true,
+  "metadata_notice": "PCBS official population / CPI / poverty by region (incl. East Jerusalem); merged into economic alongside World Bank series.",
+  "records": 4152,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 4152
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.034,
+   "min": "1960-01-01",
+   "max": "2026-12-31",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 4152
+   },
+   "region": {
+    "Palestine": 4049,
+    "West Bank": 41,
+    "Gaza Strip": 41,
+    "East Jerusalem": 21
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "indicator_measurement": 4152
+  },
+  "units": {
+   "percentage": 1956,
+   "number": 1162,
+   "currency_usd": 290,
+   "years": 215,
+   "per_1000": 188,
+   "per_100000": 86
+  },
+  "source_licenses": {
+   "World Bank :: CC-BY-4.0": 3536,
+   "IMF :: CC-BY-4.0": 474,
+   "Palestinian Central Bureau of Statistics (PCBS) :: verify-required": 142
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.867,
+   "location.admin_levels": 0.867,
+   "location.proximity": 0.867,
+   "location.region_type": 0.862
+  },
+  "samples": [
+   {
+    "id": "economic-8izf3q",
+    "date": "1960-01-01",
+    "category": "economic",
+    "event_type": "indicator_measurement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank and Gaza",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 44.1830150432117,
+     "unit": "percentage"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -23290,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "World Bank",
+      "organization": "World Bank",
+      "url": null,
+      "license": "CC-BY-4.0",
+      "fetched_at": "2026-08-05T03:00:25.694Z"
+     }
+    ],
+    "indicator_code": "SP.URB.TOTL.IN.ZS",
+    "indicator_name": "Urban population (% of total)",
+    "stable_id": "0e909196a3883a5f9502a806b83a2c87"
+   },
+   {
+    "id": "pcbs-poverty_rate-palestine-2011",
+    "date": "2011-12-31",
+    "category": "economic",
+    "event_type": "indicator_measurement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 16.8,
+     "unit": "percent"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -4298,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Palestinian Central Bureau of Statistics (PCBS)",
+      "organization": "PCBS",
+      "url": "https://www.pcbs.gov.ps",
+      "license": "verify-required"
+     }
+    ],
+    "indicator_code": "pcbs_poverty_rate",
+    "indicator_name": "Poverty rate",
+    "stable_id": "4ecacd24e61898687dbe7a9214306802"
+   }
+  ]
+ },
+ "education": {
+  "partitioned": false,
+  "file_mb": 4.6,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 2359,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 2359
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 1.0,
+   "year_bucket_pct": 0.0,
+   "min": "2026-08-05",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "exact": 2359
+   },
+   "region": {
+    "West Bank": 2359
+   },
+   "latlon_pct": 1.0,
+   "gazetteer_key_pct": 0.001,
+   "admin2_pcode_pct": 0.999,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "school_record": 2359
+  },
+  "units": {
+   "students": 2359
+  },
+  "source_licenses": {
+   "HDX :: varies": 2359
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "school_name": 1.0,
+   "school_id": 1.0,
+   "school_type": 1.0,
+   "school_status": 1.0,
+   "stable_id": 1.0,
+   "location.admin1": 0.999,
+   "location.admin2": 0.999,
+   "location.admin2_pcode": 0.999,
+   "school_name_ar": 0.992,
+   "location.governorate": 0.981,
+   "location.locality": 0.786,
+   "location.coordinates": 0.012,
+   "location.admin_levels": 0.012,
+   "location.proximity": 0.012,
+   "location.region_type": 0.009,
+   "location.gazetteer_key": 0.001
+  },
+  "samples": [
+   {
+    "id": "wb-school-ekcswr",
+    "date": "2026-08-05",
+    "category": "education",
+    "event_type": "school_record",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "jenin sec. girls",
+     "governorate": "Ø¬Ù†ÙŠÙ†",
+     "region": "West Bank",
+     "lat": 32.45975900025752,
+     "lon": 35.295674446184194,
+     "precision": "exact",
+     "gazetteer_key": null,
+     "admin1": "West Bank",
+     "admin2": "Jenin",
+     "admin2_pcode": "PS0101",
+     "locality": "Ø¬Ù†ÙŠÙ†",
+     "coordinates": [
+      35.3,
+      32.45
+     ],
+     "admin_levels": {
+      "level1": "Jenin"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Jenin",
+      "distance_to_border": 16649.999999999844
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "students"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "HDX",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:08.270Z"
+     }
+    ],
+    "school_name": "jenin sec. girls",
+    "school_name_ar": "Ø¨Ù†Ø§Øª Ø¬Ù†ÙŠÙ† Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©",
+    "school_id": 10111007,
+    "school_type": "Unknown",
+    "education_level": null,
+    "school_status": "Active",
+    "stable_id": "c5701db436e257149a8cd4914c533b5e"
+   },
+   {
+    "id": "wb-school-u3jqry",
+    "date": "2026-08-05",
+    "category": "education",
+    "event_type": "school_record",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Kardalah Basic mixed school",
+     "governorate": "Ø·ÙˆØ¨Ø§Ø³",
+     "region": "West Bank",
+     "lat": 32.37856078812894,
+     "lon": 35.49119236299259,
+     "precision": "exact",
+     "gazetteer_key": null,
+     "admin1": "West Bank",
+     "admin2": "Tubas",
+     "admin2_pcode": "PS0105",
+     "locality": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "students"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "HDX",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:08.298Z"
+     }
+    ],
+    "school_name": "Kardalah Basic mixed school",
+    "school_name_ar": "ÙƒØ±Ø¯Ù„Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© Ø§Ù„Ù…Ø®ØªÙ„Ø·Ø©",
+    "school_id": 29112055,
+    "school_type": "Unknown",
+    "education_level": null,
+    "school_status": "Active",
+    "stable_id": "32bcacb541d720c269e92b5b1903348c"
+   }
+  ]
+ },
+ "food": {
+  "partitioned": true,
+  "file_mb": 51.4,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 26814,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 26814
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "2007-01-15",
+   "max": "2026-06-15",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "market": 26814
+   },
+   "region": {
+    "West Bank": 18130,
+    "Gaza Strip": 8684
+   },
+   "latlon_pct": 1.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "food_price": 26814
+  },
+  "units": {
+   "ILS/KG": 19001,
+   "ILS/500 G": 1757,
+   "ILS/25 KG": 1078,
+   "ILS/2 KG": 1058,
+   "ILS/3 L": 1052,
+   "ILS/Cubic meter": 986
+  },
+  "source_licenses": {
+   "WFP Food Prices :: CC-BY-IGO": 26814
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.governorate": 1.0,
+   "location.region": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "metrics.price": 1.0,
+   "metrics.price_usd": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "commodity": 1.0,
+   "commodity_category": 1.0,
+   "price_type": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.785,
+   "location.admin_levels": 0.785,
+   "location.proximity": 0.785,
+   "location.region_type": 0.711
+  },
+  "samples": [
+   {
+    "id": "wfp-price-2007-01-15-rskz7m",
+    "date": "2007-01-15",
+    "category": "food",
+    "event_type": "food_price",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza",
+     "governorate": "Gaza",
+     "region": "Gaza Strip",
+     "lat": 31.51,
+     "lon": 34.46,
+     "precision": "market",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "ILS/KG",
+     "price": 2,
+     "price_usd": 0.47
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -6109,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "WFP Food Prices",
+      "organization": "World Food Programme",
+      "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+      "license": "CC-BY-IGO"
+     }
+    ],
+    "commodity": "Bread",
+    "commodity_category": "cereals and tubers",
+    "price_type": "Retail",
+    "stable_id": "bcae4afad7fb9728c4c905b6ba9d511e"
+   },
+   {
+    "id": "wfp-price-2026-06-15-rwma82",
+    "date": "2026-06-15",
+    "category": "food",
+    "event_type": "food_price",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank",
+     "governorate": "Ramallah and Albireh",
+     "region": "West Bank",
+     "lat": 31.97,
+     "lon": 35.33,
+     "precision": "market",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "ILS/KG",
+     "price": 3.13,
+     "price_usd": 1.08
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 982,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "WFP Food Prices",
+      "organization": "World Food Programme",
+      "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+      "license": "CC-BY-IGO"
+     }
+    ],
+    "commodity": "Tomatoes (greenhouse)",
+    "commodity_category": "vegetables and fruits",
+    "price_type": "Retail",
+    "stable_id": "ff10e0be58f1806d5c7716d6ec5e0019"
+   }
+  ]
+ },
+ "funding": {
+  "partitioned": false,
+  "file_mb": 26.5,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 9986,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 9986
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.005,
+   "min": "2013-05-27",
+   "max": "2026-08-03",
+   "fetch_day": ""
+  },
+  "geo": {
+   "precision": {
+    "country": 9986
+   },
+   "region": {
+    "Palestine": 9982,
+    "West Bank": 4
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "humanitarian_funding": 9986
+  },
+  "units": {
+   "USD": 9986
+  },
+  "source_licenses": {
+   "UN OCHA Financial Tracking Service :: CC-BY-IGO-3.0": 9986
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "actors": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "funding.amount_usd": 1.0,
+   "funding.original_amount": 1.0,
+   "funding.original_currency": 1.0,
+   "funding.status": 1.0,
+   "funding.flow_type": 1.0,
+   "funding.contribution_type": 1.0,
+   "funding.donor": 1.0,
+   "funding.recipient": 1.0,
+   "funding.usage_years": 1.0,
+   "funding.new_money": 1.0,
+   "funding.flow_id": 1.0,
+   "stable_id": 1.0,
+   "funding.method": 1.0,
+   "funding.cluster": 0.831,
+   "funding.ref_code": 0.807,
+   "funding.plan": 0.799,
+   "funding.emergency": 0.455,
+   "funding.keywords": 0.15
+  },
+  "samples": [
+   {
+    "id": "funding-11nqn",
+    "date": "2014-04-23",
+    "category": "funding",
+    "event_type": "humanitarian_funding",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Occupied Palestinian Territory",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "country",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 1397260,
+     "unit": "USD"
+    },
+    "actors": [
+     "European Commission's Humanitarian Aid and Civil Protection Department",
+     "World Food Programme"
+    ],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -3454,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "spring"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA Financial Tracking Service",
+      "organization": "UN OCHA",
+      "url": "https://api.hpc.tools/v1/public/fts/flow?countryISO3=PSE",
+      "license": "CC-BY-IGO-3.0",
+      "fetched_at": "2026-08-05T03:01:05.997Z"
+     }
+    ],
+    "funding": {
+     "amount_usd": 1397260,
+     "original_amount": 1120000,
+     "original_currency": "EUR",
+     "status": "paid",
+     "flow_type": "Standard",
+     "contribution_type": "financial",
+     "method": "Traditional aid",
+     "donor": {
+      "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "type": "Multilateral Organizations"
+     },
+     "recipient": {
+      "name": "World Food Programme",
+      "type": "Multilateral Organizations"
+     },
+     "usage_years": [
+      "2015"
+     ],
+     "cluster": null,
+     "plan": "Occupied Palestinian Territory Strategic Response Plan 2015",
+     "emergency": null,
+     "keywords": [],
+     "new_money": true,
+     "ref_code": "part of ECHO/PSE/BUD/2014/91004",
+     "flow_id": "115148"
+    },
+    "stable_id": "6073cfc0c3e9963cb639e78930ca5e4c"
+   },
+   {
+    "id": "funding-pe25o3",
+    "date": "2026-08-03",
+    "category": "funding",
+    "event_type": "humanitarian_funding",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Occupied Palestinian Territory",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "country",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 100000000,
+     "unit": "USD"
+    },
+    "actors": [
+     "United Arab Emirates, Government of",
+     "UAE Aid"
+    ],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1031,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UN OCHA Financial Tracking Service",
+      "organization": "UN OCHA",
+      "url": "https://api.hpc.tools/v1/public/fts/flow?countryISO3=PSE",
+      "license": "CC-BY-IGO-3.0",
+      "fetched_at": "2026-08-05T03:01:06.362Z"
+     }
+    ],
+    "funding": {
+     "amount_usd": 100000000,
+     "original_amount": 73460000,
+     "original_currency": "AED",
+     "status": "paid",
+     "flow_type": "Standard",
+     "contribution_type": "financial",
+     "method": "Traditional aid",
+     "donor": {
+      "name": "United Arab Emirates, Government of",
+      "type": "Governments"
+     },
+     "recipient": {
+      "name": "UAE Aid",
+      "type": "Governments"
+     },
+     "usage_years": [
+      "2026"
+     ],
+     "cluster": null,
+     "plan": null,
+     "emergency": "oPt Complex Emergency 2023-24",
+     "keywords": [],
+     "new_money": true,
+     "ref_code": "GOV-2026-0018",
+     "flow_id": "397297"
+    },
+    "stable_id": "7faa94e7b86743c29ece9aae054cc95e"
+   }
+  ]
+ },
+ "health": {
+  "partitioned": true,
+  "file_mb": 89.3,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 40559,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 40559
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "1975-01-01",
+   "max": "2025-01-01",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 40559
+   },
+   "region": {
+    "Palestine": 40559
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "health_indicator": 40559
+  },
+  "units": {
+   "percentage": 33368,
+   "number": 6399,
+   "years": 792
+  },
+  "source_licenses": {
+   "WHO :: public-domain": 40559
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "indicator_url": 1.0,
+   "stable_id": 1.0,
+   "dimension.type": 0.92,
+   "dimension.code": 0.92,
+   "dimension.name": 0.92,
+   "value_high": 0.842,
+   "value_low": 0.835
+  },
+  "samples": [
+   {
+    "id": "who-health-MDG_0000000007-1975-2888",
+    "date": "1975-01-01",
+    "category": "health",
+    "event_type": "health_indicator",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "State of Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 107.957159684,
+     "unit": "percentage"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -17811,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "WHO",
+      "organization": "World Health Organization",
+      "url": "https://www.who.int/data/gho/data/indicators/indicator-details/GHO/under-five-mortality-rate-%28probability-of-dying-by-age-5-per-1000-live-births%29",
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:00:50.200Z"
+     }
+    ],
+    "indicator_code": "MDG_0000000007",
+    "indicator_name": "Under-five mortality rate (probability of dying by age 5 per 1000 live births)",
+    "indicator_url": "https://www.who.int/data/gho/data/indicators/indicator-details/GHO/under-five-mortality-rate-%28probability-of-dying-by-age-5-per-1000-live-births%29",
+    "value_low": 89.242198722,
+    "value_high": 131.588769276,
+    "dimension": {
+     "type": "SEX",
+     "code": "SEX_BTSX",
+     "name": "Both sexes"
+    },
+    "stable_id": "85da0234002e06c552780e6e4ddc1a4f"
+   },
+   {
+    "id": "who-health-WHS4_544-2025-30948",
+    "date": "2025-01-01",
+    "category": "health",
+    "event_type": "health_indicator",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "State of Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 98,
+     "unit": "percentage"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 452,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "WHO",
+      "organization": "World Health Organization",
+      "url": "https://www.who.int/data/gho/data/indicators/indicator-details/GHO/polio-%28pol3%29-immunization-coverage-among-1-year-olds-%28-%29",
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:00:50.607Z"
+     }
+    ],
+    "indicator_code": "WHS4_544",
+    "indicator_name": "Polio (Pol3) immunization coverage among 1-year-olds (%)",
+    "indicator_url": "https://www.who.int/data/gho/data/indicators/indicator-details/GHO/polio-%28pol3%29-immunization-coverage-among-1-year-olds-%28-%29",
+    "value_low": null,
+    "value_high": null,
+    "dimension": null,
+    "stable_id": "02e8e7d5eab6f7a9c64855d49a52a8e0"
+   }
+  ]
+ },
+ "historical": {
+  "partitioned": false,
+  "file_mb": 5.2,
+  "has_stable_id_index": true,
+  "metadata_notice": "Mandate-era censuses (1922/1931/1945) + Nakba depopulation status per locality. Attribution-required (Abu Sitta / Zochrot / PalestineRemembered); verify before commercial redistribution.",
+  "records": 2517,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 2517
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.002,
+   "min": "1935-01-01",
+   "max": "2005-08-22",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "locality": 2490,
+    "region": 27
+   },
+   "region": {
+    "Historic Palestine": 2490,
+    "Palestine": 15,
+    "Gaza Strip": 7,
+    "West Bank": 4,
+    "East Jerusalem": 1
+   },
+   "latlon_pct": 0.99,
+   "gazetteer_key_pct": 0.99,
+   "admin2_pcode_pct": 0.326,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "historical_locality": 1872,
+   "locality_depopulated": 618,
+   "political": 13,
+   "uprising": 8,
+   "war": 3,
+   "massacre": 2,
+   "displacement": 1
+  },
+  "units": {
+   "persons": 2517
+  },
+  "source_licenses": {
+   "Palestine Open Maps :: verify-required": 2490,
+   "UNISPAL; Morris, '1948 and After'; IDF archives :: public-domain": 1,
+   "UNRWA; UN Commissioner-General report 1967; Tom Segev 'Israel's 1967' :: public-domain": 1,
+   "UN Security Council Res. 252 (1968); Israeli Knesset records :: public-domain": 1,
+   "B'Tselem settlement database; Peace Now :: public-domain": 1,
+   "UN Security Council; UNISPAL :: public-domain": 1,
+   "PASSIA; Yezid Sayigh 'Armed Struggle and the Search for State' :: public-domain": 1,
+   "Yezid Sayigh; Rashid Khalidi 'The Iron Cage' :: public-domain": 1,
+   "UN; IDF archives; Middle East Institute :: public-domain": 1,
+   "Adalah; Sabri Jiryis 'The Arabs in Israel' :: public-domain": 1
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.lat": 0.99,
+   "location.lon": 0.99,
+   "location.governorate": 0.99,
+   "location.gazetteer_key": 0.99,
+   "location.name_ar": 0.989,
+   "locality_status": 0.989,
+   "locality_group": 0.989,
+   "district_1945": 0.989,
+   "subdistrict_1945": 0.989,
+   "metrics.population_2016": 0.673,
+   "cross_references.palestineremembered_id": 0.41,
+   "metrics.population_1945": 0.401,
+   "cross_references.palestineremembered_url": 0.351,
+   "location.admin1": 0.326,
+   "location.admin2": 0.326,
+   "location.admin2_pcode": 0.326,
+   "metrics.population_1931": 0.28,
+   "metrics.population_1922": 0.259,
+   "cross_references.zochrot_id": 0.212,
+   "location.region_type": 0.02,
+   "location.coordinates": 0.014,
+   "location.admin_levels": 0.014,
+   "location.proximity": 0.014,
+   "timeline_period": 0.011
+  },
+  "samples": [
+   {
+    "id": "historical-c0kbp8",
+    "date": "1967-06-05",
+    "category": "historical",
+    "event_type": "war",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 21000,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 21000,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -20578,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNISPAL; Morris, '1948 and After'; IDF archives",
+      "organization": "Various",
+      "url": null,
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:01:25.682Z"
+     }
+    ],
+    "timeline_period": "1967_war",
+    "stable_id": "da081ee78639ca42bc46e0245b7ad607"
+   },
+   {
+    "id": "pom-zayit-raanan",
+    "date": "1945-04-01",
+    "category": "historical",
+    "event_type": "historical_locality",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Zayit Ra'anan",
+     "governorate": "Jerusalem",
+     "region": "Historic Palestine",
+     "lat": 31.95654,
+     "lon": 35.11603,
+     "precision": "locality",
+     "gazetteer_key": "zayit_raanan",
+     "admin1": "West Bank",
+     "admin2": "Ramallah",
+     "admin2_pcode": "PS0130",
+     "name_ar": "زيت رعنان",
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "persons",
+     "population_1922": null,
+     "population_1931": null,
+     "population_1945": null,
+     "population_2016": null
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -28678,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "spring"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Palestine Open Maps",
+      "organization": "Palestine Open Maps (Visualizing Palestine)",
+      "url": "https://github.com/PalOpenMaps/pom-data",
+      "license": "verify-required"
+     }
+    ],
+    "locality_status": "New locality",
+    "locality_group": "Jewish",
+    "district_1945": "Jerusalem",
+    "subdistrict_1945": "Ramallah",
+    "cross_references": {
+     "zochrot_id": null,
+     "palestineremembered_id": null,
+     "palestineremembered_url": null
+    },
+    "stable_id": "30c29bd996e57d9492decd2535915f20"
+   }
+  ]
+ },
+ "infrastructure": {
+  "partitioned": false,
+  "file_mb": 6.8,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 3537,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 3537
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.17,
+   "year_bucket_pct": 0.002,
+   "min": "2023-10-07",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 2935,
+    "exact": 602
+   },
+   "region": {
+    "Gaza Strip": 2934,
+    "West Bank": 603
+   },
+   "latlon_pct": 0.996,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.922,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "infrastructure_damage": 2920,
+   "locality_record": 342,
+   "barrier_segment": 261,
+   "satellite_damage_assessment": 14
+  },
+  "units": {
+   "units": 1460,
+   "buildings": 1460,
+   "persons": 342,
+   "km": 261,
+   "structures": 14
+  },
+  "source_licenses": {
+   "TechForPalestine :: public-domain": 2920,
+   "HDX :: varies": 603,
+   "UNOSAT Gaza damage assessments :: CC-BY-SA": 14
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.baseline_period": 0.996,
+   "temporal_context.season": 0.996,
+   "location.lat": 0.996,
+   "location.lon": 0.996,
+   "location.admin1": 0.922,
+   "location.admin2": 0.922,
+   "location.admin2_pcode": 0.922,
+   "location.coordinates": 0.826,
+   "location.admin_levels": 0.826,
+   "location.region_type": 0.826,
+   "location.proximity": 0.826,
+   "infrastructure_detail.type": 0.826,
+   "infrastructure_detail.damage_level": 0.826,
+   "locality_name": 0.097,
+   "locality_type": 0.097,
+   "barrier_type": 0.074,
+   "barrier_status": 0.074,
+   "metrics.structures_severely_damaged": 0.004,
+   "metrics.structures_moderately_damaged": 0.004,
+   "metrics.structures_total_affected": 0.004,
+   "temporal_context.baseline_date": 0.004,
+   "assessment_scope": 0.004,
+   "geodatabase_url": 0.004,
+   "metrics.structures_destroyed": 0.004,
+   "metrics.structures_possibly_damaged": 0.002,
+   "metrics.housing_units_damaged": 0.001,
+   "metrics.percent_structures_damaged": 0.001
+  },
+  "samples": [
+   {
+    "id": "infrastructure-2xs9e6",
+    "date": "2023-10-07",
+    "category": "infrastructure",
+    "event_type": "infrastructure_damage",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza Strip",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": 31.5,
+     "lon": 34.466667,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": "Gaza Strip",
+     "admin2": "Gaza",
+     "admin2_pcode": "PS0260",
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "units"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 0,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "active-conflict",
+     "season": "autumn"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "TechForPalestine",
+      "organization": "Government Media Office (Gaza)",
+      "url": "https://data.techforpalestine.org/",
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:00:49.129Z"
+     }
+    ],
+    "infrastructure_detail": {
+     "type": "unknown",
+     "damage_level": "unknown"
+    },
+    "stable_id": "4eb1c1151edc2777543e1660561b9183"
+   },
+   {
+    "id": "unosat-cda-strip-2025-10-11",
+    "date": "2025-10-11",
+    "category": "infrastructure",
+    "event_type": "satellite_damage_assessment",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza Strip",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "structures",
+     "structures_destroyed": 123464,
+     "structures_severely_damaged": 17116,
+     "structures_moderately_damaged": 33857,
+     "structures_possibly_damaged": 23836,
+     "structures_total_affected": 198273,
+     "housing_units_damaged": 320622,
+     "percent_structures_damaged": 81
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 735,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": "ongoing"
+    },
+    "quality": {
+     "score": 1,
+     "completeness": 1,
+     "consistency": 1,
+     "accuracy": 1,
+     "confidence": "high",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNOSAT Gaza damage assessments",
+      "organization": "UNITAR/UNOSAT",
+      "url": "https://data.humdata.org/dataset/unosat-gaza-strip-comprehensive-damage-assessment-11-october-2025",
+      "license": "CC-BY-SA"
+     }
+    ],
+    "assessment_scope": "strip",
+    "geodatabase_url": "https://unosat.org/static/unosat_filesystem/4213/OCHA-CBPF-OPT-031_UNOSAT_Gaza_Strip_CDA_11October2025_GDB.zip",
+    "stable_id": "3e9843d9ff077a4e76a162f576d62383"
+   }
+  ]
+ },
+ "land": {
+  "partitioned": false,
+  "file_mb": 1.3,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 697,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 697
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.66,
+   "year_bucket_pct": 0.0,
+   "min": "2025-06-30",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 697
+   },
+   "region": {
+    "West Bank": 460,
+    "Palestine": 237
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "checkpoint": 261,
+   "demolition": 237,
+   "settlement": 199
+  },
+  "units": {
+   "sites": 460,
+   "structures": 237
+  },
+  "source_licenses": {
+   "OCHA oPt :: CC-BY-IGO-3.0": 261,
+   "Good Shepherd Collective :: CC-BY-NC-SA-4.0": 237,
+   "Peace Now :: CC-BY-NC-4.0": 199
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "land_type": 1.0,
+   "land_name": 1.0,
+   "land_status": 1.0,
+   "stable_id": 1.0,
+   "location.governorate": 0.66,
+   "description": 0.66,
+   "checkpoint.checkpoint_type": 0.374,
+   "checkpoint.operational_status": 0.374,
+   "checkpoint.permits_required": 0.374,
+   "demolition.demolition_date": 0.34,
+   "demolition.structure_type": 0.34,
+   "demolition.structures_demolished": 0.34,
+   "demolition.reason": 0.34,
+   "demolition.notification_given": 0.34,
+   "demolition.owner_type": 0.34,
+   "settlement.settlement_type": 0.286,
+   "settlement.area_dunums": 0.286,
+   "settlement.legal_status": 0.286
+  },
+  "samples": [
+   {
+    "id": "land-9mq5qm",
+    "date": "2026-08-05",
+    "category": "land",
+    "event_type": "settlement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank",
+     "governorate": "Unknown",
+     "region": "West Bank",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "sites"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Peace Now",
+      "organization": "Peace Now (Settlement Watch)",
+      "url": "https://peacenow.org.il/en/settlements-watch",
+      "license": "CC-BY-NC-4.0",
+      "fetched_at": "2026-08-05T03:01:08.126Z"
+     }
+    ],
+    "land_type": "settlement",
+    "land_name": "Ariel",
+    "land_status": "Authorized",
+    "settlement": {
+     "settlement_type": "Settlement",
+     "area_dunums": 2566,
+     "legal_status": "Authorized"
+    },
+    "stable_id": "01f74a18ecf19db2d1bd52b1132ae671"
+   },
+   {
+    "id": "land-8f4yvy",
+    "date": "2026-07-30",
+    "category": "land",
+    "event_type": "demolition",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Multiple locations",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 1,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "structures"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1027,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Good Shepherd Collective",
+      "organization": "Good Shepherd Collective",
+      "url": "https://goodshepherdcollective.org",
+      "license": "CC-BY-NC-SA-4.0",
+      "fetched_at": "2026-08-05T03:01:08.135Z"
+     }
+    ],
+    "land_type": "demolition",
+    "land_name": "Multiple locations",
+    "land_status": "Unknown",
+    "demolition": {
+     "demolition_date": "2026-07-30",
+     "structure_type": "residential",
+     "structures_demolished": 1,
+     "reason": "Administrative demolition",
+     "notification_given": true,
+     "owner_type": "Private"
+    },
+    "stable_id": "449484c1843a540d672424290381d82a"
+   }
+  ]
+ },
+ "martyrs_snapshot_2023": {
+  "partitioned": false,
+  "file_mb": 123.0,
+  "has_stable_id_index": true,
+  "metadata_notice": "Historical baseline only — Tech4Palestine named-martyr identifications lag real casualties by weeks; the cumulative_summary record carries current MoH totals.",
+  "records": 60200,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 60200
+  },
+  "dates": {
+   "present_pct": 0.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "2026-06-09",
+   "max": "2026-06-09",
+   "fetch_day": "2026-06-09"
+  },
+  "geo": {
+   "precision": {
+    "region": 60200
+   },
+   "region": {
+    "Gaza Strip": 60199,
+    "Palestine": 1
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "identified_killed": 60199,
+   "cumulative_summary": 1
+  },
+  "units": {
+   "persons": 60200
+  },
+  "source_licenses": {
+   "Tech4Palestine :: CC-BY-4.0": 60200
+  },
+  "field_fill": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.baseline_date": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 1.0,
+   "location.admin_levels": 1.0,
+   "location.region_type": 1.0,
+   "location.proximity": 1.0,
+   "name": 1.0,
+   "name_ar": 1.0,
+   "name_en": 1.0,
+   "age": 1.0,
+   "sex": 1.0,
+   "dob": 1.0,
+   "t4p_id": 1.0,
+   "t4p_source_marker": 1.0,
+   "date": 0.0,
+   "temporal_context.days_since_baseline": 0.0,
+   "temporal_context.conflict_phase": 0.0,
+   "cumulative.gaza": 0.0,
+   "cumulative.west_bank": 0.0,
+   "cumulative.identified_in_gaza_database": 0.0,
+   "cumulative.press_identified": 0.0
+  },
+  "samples": [
+   {
+    "id": "martyr-summary-df9ovn",
+    "date": "2026-06-09",
+    "category": "martyrs",
+    "event_type": "cumulative_summary",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null
+    },
+    "metrics": {
+     "killed": 74074,
+     "injured": 184337,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 74074,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 976,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": "ongoing"
+    },
+    "quality": {
+     "score": 0.9333333333333332,
+     "completeness": 1,
+     "consistency": 1,
+     "accuracy": 0.8,
+     "confidence": "high",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Tech4Palestine",
+      "organization": "Tech for Palestine",
+      "url": "https://data.techforpalestine.org/api/v3/summary.json",
+      "license": "CC-BY-4.0",
+      "fetched_at": "2026-08-05T03:00:37.281Z"
+     }
+    ],
+    "cumulative": {
+     "gaza": {
+      "killed": 72988,
+      "children": 20179,
+      "women": 12500,
+      "press": 262,
+      "medical": 1701,
+      "civil_defence": 140,
+      "injured": 173205,
+      "massacres": 12000,
+      "famine_total": 463,
+      "famine_children": 157,
+      "aid_seekers_killed": 2615,
+      "aid_seekers_injured": 19182
+     },
+     "west_bank": {
+      "killed": 1086,
+      "children": 228,
+      "injured": 11132,
+      "injured_children": 1877,
+      "settler_attacks": 4051
+     },
+     "identified_in_gaza_database": 60198,
+     "press_identified": 262
+    },
+    "stable_id": "77787591b26edfd9b8b9e25cd03d476a"
+   },
+   {
+    "id": "martyr-u122jl",
+    "date": null,
+    "category": "martyrs",
+    "event_type": "identified_killed",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Gaza",
+     "governorate": null,
+     "region": "Gaza Strip",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 1,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": null,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": null
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Tech4Palestine",
+      "organization": "Tech for Palestine",
+      "url": "https://data.techforpalestine.org",
+      "license": "CC-BY-4.0",
+      "fetched_at": "2026-08-05T03:00:32.786Z"
+     }
+    ],
+    "name": "Mohammed Mukhlis Darwish",
+    "name_ar": "محمد مخلص 0 درويش",
+    "name_en": "Mohammed Mukhlis Darwish",
+    "age": 0,
+    "sex": "male",
+    "dob": "2024-03-01",
+    "t4p_id": "235226",
+    "t4p_source_marker": "tech4palestine",
+    "stable_id": "d8ebdedb9d354933725e0aa7a7b0931d"
+   }
+  ]
+ },
+ "news": {
+  "partitioned": false,
+  "file_mb": 0.7,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 186,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 186
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.038,
+   "year_bucket_pct": 0.0,
+   "min": "2026-07-17",
+   "max": "2026-08-05",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 186
+   },
+   "region": {
+    "Palestine": 106,
+    "Gaza Strip": 59,
+    "West Bank": 20,
+    "East Jerusalem": 1
+   },
+   "latlon_pct": 0.005,
+   "gazetteer_key_pct": 0.005,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "news_report": 186
+  },
+  "units": {
+   "articles": 186
+  },
+  "source_licenses": {
+   "Middle East Monitor :: varies": 50,
+   "Middle East Eye :: varies": 18,
+   "The Electronic Intifada :: varies": 18,
+   "BBC Middle East :: varies": 16,
+   "Times of Israel :: varies": 15,
+   "Haaretz :: varies": 14,
+   "Anadolu Agency (Middle East) :: varies": 14,
+   "Mondoweiss :: varies": 10,
+   "Palestinian Information Center :: varies": 10,
+   "Al Jazeera English :: varies": 7
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "title": 1.0,
+   "link": 1.0,
+   "source": 1.0,
+   "source_category": 1.0,
+   "article_category": 1.0,
+   "language": 1.0,
+   "reliability": 1.0,
+   "stable_id": 1.0,
+   "article_description": 0.995,
+   "location.coordinates": 0.323,
+   "location.admin_levels": 0.323,
+   "location.proximity": 0.323,
+   "location.region_type": 0.317,
+   "location.governorate": 0.005,
+   "location.lat": 0.005,
+   "location.lon": 0.005,
+   "location.gazetteer_key": 0.005
+  },
+  "samples": [
+   {
+    "id": "445527 at https://www.middleeasteye.net/",
+    "date": "2026-08-05",
+    "category": "news",
+    "event_type": "news_report",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "articles"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Middle East Eye",
+      "organization": "Middle East Eye",
+      "url": "https://www.middleeasteye.net/live-blog/live-blog-update/explosions-reportedly-heard-yemeni-capital-sanaa",
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:07.993Z"
+     }
+    ],
+    "title": "Explosions reportedly heard in Yemeni capital of Sanaa",
+    "article_description": "<article data-history-node-id=\"445527\" about=\"https://www.middleeasteye.net/live-blog/live-blog-update/explosions-reportedly-heard-yemeni-capital-sanaa\" class=\"live-blog-update default clearfix\">\n\n  \n      <h2>\n      <a href=\"https://www.middleeasteye.net/live-blog/live-blog-update/explosions-reportedly-heard-yemeni-capital-sanaa\" rel=\"bookmark\">\n<span class=\"field field-title\">Explosions reportedly heard in Yemeni capital of Sanaa</span>\n</a>\n    </h2>\n    \n\n        \n    <div class=\"content\">\n                <div class=\"field field-field-text\"><p>Explosions were heard in Yemen's capital of Sanaa, however reports and footage of the incident remain unverified.&nbsp;</p>\n\n\n</div>\n      \n  </div>\n\n</article>",
+    "link": "https://www.middleeasteye.net/live-blog/live-blog-update/explosions-reportedly-heard-yemeni-capital-sanaa",
+    "source": "Middle East Eye",
+    "source_category": "news",
+    "article_category": "general",
+    "language": "en",
+    "reliability": "high",
+    "stable_id": "e13b4a5dab31242a971f8ec3b4b0d153"
+   },
+   {
+    "id": "51523 at https://electronicintifada.net",
+    "date": "2026-07-17",
+    "category": "news",
+    "event_type": "news_report",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank",
+     "governorate": null,
+     "region": "West Bank",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "articles"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1014,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "The Electronic Intifada",
+      "organization": "The Electronic Intifada",
+      "url": "https://electronicintifada.net/content/west-bank-religious-zionists-are-realizing-long-held-vision/51523",
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:07.997Z"
+     }
+    ],
+    "title": "In the West Bank, Religious Zionists are realizing long-held vision",
+    "article_description": "Today’s aggressive settlement expansion builds on foundations laid since beginning of 1967 occupation.",
+    "link": "https://electronicintifada.net/content/west-bank-religious-zionists-are-realizing-long-held-vision/51523",
+    "source": "The Electronic Intifada",
+    "source_category": "news",
+    "article_category": "humanitarian",
+    "language": "en",
+    "reliability": "medium",
+    "stable_id": "507b30342be628ecc41e80e8a8137fbf"
+   }
+  ]
+ },
+ "pcbs": {
+  "partitioned": false,
+  "file_mb": 4.4,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 2060,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 2060
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "1960-01-01",
+   "max": "2025-01-01",
+   "fetch_day": ""
+  },
+  "geo": {
+   "precision": {
+    "region": 2060
+   },
+   "region": {
+    "Palestine": 2060
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "indicator_measurement": 2060
+  },
+  "units": {
+   "percentage": 1134,
+   "number": 347,
+   "per_1000": 153,
+   "currency_usd": 129,
+   "years": 105,
+   "count": 69
+  },
+  "source_licenses": {
+   "Palestinian Central Bureau of Statistics (PCBS) :: public-domain": 2060
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.baseline_date": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "analysis.trend": 1.0,
+   "analysis.data_points": 1.0,
+   "analysis.date_range": 1.0,
+   "pcbs_metadata.official_source": 1.0,
+   "pcbs_metadata.data_quality": 1.0,
+   "pcbs_metadata.update_frequency": 1.0,
+   "stable_id": 1.0,
+   "demographic_category": 0.468,
+   "analysis.recent_change": 0.033
+  },
+  "samples": [
+   {
+    "id": "pcbs-8izf3q",
+    "date": "1960-01-01",
+    "category": "population",
+    "event_type": "indicator_measurement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 44.1830150432117,
+     "unit": "percentage"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": null,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": null
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Palestinian Central Bureau of Statistics (PCBS)",
+      "organization": "PCBS",
+      "url": "https://api.worldbank.org/v2",
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:00:56.943Z"
+     }
+    ],
+    "indicator_code": "SP.URB.TOTL.IN.ZS",
+    "indicator_name": "Urban population (% of total)",
+    "demographic_category": "urbanization",
+    "analysis": {
+     "trend": {
+      "slope": null,
+      "direction": "stable"
+     },
+     "growth_rate": null,
+     "volatility": null,
+     "recent_change": 0,
+     "baseline_comparison": null,
+     "data_points": 66,
+     "date_range": {
+      "start": "1960-01-01",
+      "end": "2025-01-01"
+     }
+    },
+    "pcbs_metadata": {
+     "official_source": true,
+     "data_quality": "high",
+     "update_frequency": "annual"
+    },
+    "stable_id": "7ce0d90fb8df0b71f210b31ed9246eac"
+   },
+   {
+    "id": "pcbs-rpd3ks",
+    "date": "2025-01-01",
+    "category": "economic",
+    "event_type": "indicator_measurement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 53.5326292734358,
+     "unit": "percentage"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": null,
+     "baseline_date": "2023-10-07",
+     "conflict_phase": null
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Palestinian Central Bureau of Statistics (PCBS)",
+      "organization": "PCBS",
+      "url": "https://api.worldbank.org/v2",
+      "license": "public-domain",
+      "fetched_at": "2026-08-05T03:00:56.967Z"
+     }
+    ],
+    "indicator_code": "NE.IMP.GNFS.ZS",
+    "indicator_name": "Imports of goods and services (% of GDP)",
+    "analysis": {
+     "trend": {
+      "slope": null,
+      "direction": "stable"
+     },
+     "growth_rate": null,
+     "volatility": null,
+     "recent_change": null,
+     "baseline_comparison": null,
+     "data_points": 32,
+     "date_range": {
+      "start": "1994-01-01",
+      "end": "2025-01-01"
+     }
+    },
+    "pcbs_metadata": {
+     "official_source": true,
+     "data_quality": "high",
+     "update_frequency": "annual"
+    },
+    "stable_id": "e5163a94f31480bfc0c43d60a13e717c"
+   }
+  ]
+ },
+ "prisoners": {
+  "partitioned": false,
+  "file_mb": 1.4,
+  "has_stable_id_index": true,
+  "metadata_notice": "Monthly Palestinians-held-by-Israel by detention category (IPS data via HaMoked), 2008+.",
+  "records": 890,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 890
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "2008-05-01",
+   "max": "2026-08-01",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 890
+   },
+   "region": {
+    "Palestine": 890
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "prisoners_count": 890
+  },
+  "units": {
+   "persons": 890
+  },
+  "source_licenses": {
+   "HaMoked :: verify-required": 864,
+   "Addameer Prisoner Support and Human Rights Association :: verify-required": 26
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "prisoner_metric_type": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.029,
+   "location.admin_levels": 0.029,
+   "location.region_type": 0.029,
+   "location.proximity": 0.029
+  },
+  "samples": [
+   {
+    "id": "addameer_child_2026-08-01",
+    "date": "2026-08-01",
+    "category": "prisoners",
+    "event_type": "prisoners_count",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank & Gaza",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "coordinates": [
+      34.45,
+      31.5
+     ],
+     "admin_levels": {
+      "level1": "Gaza"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Gaza City",
+      "distance_to_border": 11100.000000000158
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 350,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1029,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Addameer Prisoner Support and Human Rights Association",
+      "organization": "Addameer Prisoner Support and Human Rights Association",
+      "url": "https://www.addameer.ps/statistics",
+      "license": "verify-required",
+      "fetched_at": "2026-08-05T03:01:05.776Z"
+     }
+    ],
+    "prisoner_metric_type": "child",
+    "stable_id": "3e2ab033831d6fe47e2c35ac932a9238"
+   },
+   {
+    "id": "hamoked_remand_2026-06-01",
+    "date": "2026-06-01",
+    "category": "prisoners",
+    "event_type": "prisoners_count",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 3386,
+     "value": 0,
+     "unit": "persons"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 968,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HaMoked",
+      "organization": "HaMoked — Center for the Defence of the Individual",
+      "url": "https://hamoked.org/prisoners-charts.php",
+      "license": "verify-required"
+     }
+    ],
+    "prisoner_metric_type": "remand",
+    "stable_id": "9c8ab4e1085785283fdba54e369d991f"
+   }
+  ]
+ },
+ "refugees": {
+  "partitioned": false,
+  "file_mb": 2.8,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 1566,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 1566
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.74,
+   "min": "2010-12-31",
+   "max": "2026-06-24",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 1510,
+    "point": 56
+   },
+   "region": {
+    "Palestine": 1224,
+    "West Bank": 274,
+    "Gaza Strip": 68
+   },
+   "latlon_pct": 0.223,
+   "gazetteer_key_pct": 0.089,
+   "admin2_pcode_pct": 0.222,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "refugee_displacement": 1232,
+   "displacement_event": 334
+  },
+  "units": {
+   "people": 1232,
+   "persons": 334
+  },
+  "source_licenses": {
+   "UNHCR Operational Data Portal :: CC-BY-4.0": 1157,
+   "IDMC :: CC-BY-IGO": 334,
+   "UNRWA camp registry :: CC-BY-SA-3.0": 75
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "displacement_type": 0.787,
+   "metrics.demolished": 0.787,
+   "metrics.detained": 0.787,
+   "temporal_context.days_since_baseline": 0.787,
+   "temporal_context.baseline_period": 0.787,
+   "temporal_context.conflict_phase": 0.787,
+   "temporal_context.season": 0.787,
+   "displaced_population": 0.787,
+   "refugees": 0.787,
+   "asylum_seekers": 0.787,
+   "origin": 0.787,
+   "asylum_country": 0.739,
+   "location.lat": 0.223,
+   "location.lon": 0.223,
+   "location.admin1": 0.222,
+   "location.admin2": 0.222,
+   "location.admin2_pcode": 0.222,
+   "event_name": 0.213,
+   "location.gazetteer_key": 0.089,
+   "location.governorate": 0.086,
+   "location.region_type": 0.013,
+   "location.coordinates": 0.004,
+   "location.admin_levels": 0.004,
+   "location.proximity": 0.004,
+   "displacement_category": 0.001,
+   "displacement_subtype": 0.001
+  },
+  "samples": [
+   {
+    "id": "refugee-gob7jo",
+    "date": "2026-06-10",
+    "category": "refugees",
+    "event_type": "refugee_displacement",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Rafah",
+     "governorate": "gz",
+     "region": "Gaza Strip",
+     "lat": 31.29722,
+     "lon": 34.24357,
+     "precision": "region",
+     "gazetteer_key": "rafah",
+     "admin1": "Gaza Strip",
+     "admin2": "Rafah",
+     "admin2_pcode": "PS0275",
+     "coordinates": [
+      34.25,
+      31.3
+     ],
+     "admin_levels": {
+      "level1": "Khan Yunis"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Rafah",
+      "distance_to_border": 5549.999999999684
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 125304,
+     "value": 125304,
+     "unit": "people"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 977,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "UNRWA camp registry",
+      "organization": "UNRWA (via Wikipedia camp registry)",
+      "url": "https://www.unrwa.org/where-we-work",
+      "license": "CC-BY-SA-3.0",
+      "fetched_at": "2026-08-05T03:01:05.526Z"
+     }
+    ],
+    "displaced_population": 0,
+    "refugees": 125304,
+    "asylum_seekers": 0,
+    "displacement_type": "camp_population",
+    "origin": "Palestine",
+    "asylum_country": null,
+    "stable_id": "7a06ffded7cc1c043652546490db5384"
+   },
+   {
+    "id": "idmc-230876",
+    "date": "2025-01-01",
+    "category": "refugees",
+    "event_type": "displacement_event",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Bethlehem",
+     "governorate": "bethlehem",
+     "region": "West Bank",
+     "lat": 31.7053821,
+     "lon": 35.2024425,
+     "precision": "region",
+     "gazetteer_key": "bethlehem",
+     "admin1": "West Bank",
+     "admin2": "Bethlehem",
+     "admin2_pcode": "PS0145"
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 5,
+     "affected": 5,
+     "count": 5,
+     "value": 5,
+     "unit": "persons"
+    },
+    "displacement_category": "",
+    "displacement_type": "",
+    "displacement_subtype": "",
+    "event_name": "Palestine: International armed conflict (IAC) - West Bank - 2025",
+    "actors": [],
+    "severity_index": 1,
+    "quality": {
+     "score": 0.9,
+     "completeness": 1,
+     "consistency": 1,
+     "accuracy": 0.9,
+     "confidence": "high",
+     "verified": true
+    },
+    "sources": [
+     {
+      "name": "IDMC",
+      "organization": "Internal Displacement Monitoring Centre (via HDX)",
+      "url": "https://data.humdata.org/dataset/idmc-event-data-for-pse",
+      "license": "CC-BY-IGO",
+      "fetched_at": "2026-08-05T02:38:03.670Z"
+     }
+    ],
+    "stable_id": "5a143ad49d0551b4342e1ae0508cbc4b"
+   }
+  ]
+ },
+ "settlements": {
+  "partitioned": false,
+  "file_mb": 0.1,
+  "has_stable_id_index": true,
+  "metadata_notice": "West Bank settler population 1967-2023 (excludes East Jerusalem).",
+  "records": 51,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 51
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 1.0,
+   "min": "1967-12-31",
+   "max": "2024-12-31",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 51
+   },
+   "region": {
+    "West Bank": 51
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "settler_population": 51
+  },
+  "units": {
+   "settlers": 51
+  },
+  "source_licenses": {
+   "Peace Now — Settlement Watch :: verify-required": 51
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "year": 1.0,
+   "stable_id": 1.0
+  },
+  "samples": [
+   {
+    "id": "peacenow-settlers-1967",
+    "date": "1967-12-31",
+    "category": "settlements",
+    "event_type": "settler_population",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank",
+     "governorate": null,
+     "region": "West Bank",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 0,
+     "value": 0,
+     "unit": "settlers"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": -20369,
+     "baseline_period": "before_baseline",
+     "conflict_phase": "pre-escalation",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Peace Now — Settlement Watch",
+      "organization": "Peace Now",
+      "url": "https://peacenow.org.il/en/settlements-watch/settlements-data/population",
+      "license": "verify-required"
+     }
+    ],
+    "year": 1967,
+    "stable_id": "61c33b3870139eeedbbe0e83d948334e"
+   },
+   {
+    "id": "peacenow-settlers-2024",
+    "date": "2024-12-31",
+    "category": "settlements",
+    "event_type": "settler_population",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "West Bank",
+     "governorate": null,
+     "region": "West Bank",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 511100,
+     "value": 511100,
+     "unit": "settlers"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 451,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "winter"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "Peace Now — Settlement Watch",
+      "organization": "Peace Now",
+      "url": "https://peacenow.org.il/en/settlements-watch/settlements-data/population",
+      "license": "verify-required"
+     }
+    ],
+    "year": 2024,
+    "stable_id": "ed9cf46172990fb29f2b709db6212c7c"
+   }
+  ]
+ },
+ "water": {
+  "partitioned": false,
+  "file_mb": 42.1,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 25049,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 25049
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "2026-05-08",
+   "max": "2026-08-01",
+   "fetch_day": "2026-08-05"
+  },
+  "geo": {
+   "precision": {
+    "region": 25049
+   },
+   "region": {
+    "Palestine": 25049
+   },
+   "latlon_pct": 0.0,
+   "gazetteer_key_pct": 0.0,
+   "admin2_pcode_pct": 0.0,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "wash_indicator": 25049
+  },
+  "units": {
+   "count": 25042,
+   "dataset": 7
+  },
+  "source_licenses": {
+   "HDX :: varies": 25049
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "wash_status": 1.0,
+   "access_level": 1.0,
+   "stable_id": 1.0
+  },
+  "samples": [
+   {
+    "id": "water-2j9xti",
+    "date": "2026-07-15",
+    "category": "water",
+    "event_type": "wash_indicator",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 56.7,
+     "unit": "count"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1012,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "UN Agencies",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:11.382Z"
+     }
+    ],
+    "indicator_code": "UNKNOWN",
+    "indicator_name": "All Health Indicators for State of Palestine",
+    "wash_status": "Unknown",
+    "access_level": "Unknown",
+    "stable_id": "d015a6d83c0d44bc7caeeca4719198e8"
+   },
+   {
+    "id": "water-q1xx1q",
+    "date": "2026-07-28",
+    "category": "water",
+    "event_type": "wash_indicator",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Palestine",
+     "governorate": null,
+     "region": "Palestine",
+     "lat": null,
+     "lon": null,
+     "precision": "region",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 3.23271629742198,
+     "unit": "count"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1025,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "UN Agencies",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:12.928Z"
+     }
+    ],
+    "indicator_code": "UNKNOWN",
+    "indicator_name": "Infrastructure Indicators for West Bank and Gaza",
+    "wash_status": "Unknown",
+    "access_level": "Unknown",
+    "stable_id": "1683be6730717c59a3cf0383d9ecaae4"
+   }
+  ]
+ },
+ "westbank": {
+  "partitioned": false,
+  "file_mb": 5.6,
+  "has_stable_id_index": true,
+  "metadata_notice": null,
+  "records": 2962,
+  "id_present_pct": 1.0,
+  "schema_versions": {
+   "3.0.0": 2962
+  },
+  "dates": {
+   "present_pct": 1.0,
+   "ingest_masquerade_pct": 0.0,
+   "year_bucket_pct": 0.0,
+   "min": "2026-08-05",
+   "max": "2026-08-05",
+   "fetch_day": ""
+  },
+  "geo": {
+   "precision": {
+    "exact": 2961,
+    "region": 1
+   },
+   "region": {
+    "West Bank": 2962
+   },
+   "latlon_pct": 1.0,
+   "gazetteer_key_pct": 0.001,
+   "admin2_pcode_pct": 0.911,
+   "name_pct": 1.0
+  },
+  "event_types": {
+   "school_record": 2359,
+   "locality_record": 342,
+   "barrier_segment": 261
+  },
+  "units": {
+   "students": 2359,
+   "persons": 342,
+   "km": 261
+  },
+  "source_licenses": {
+   "HDX :: varies": 2962
+  },
+  "field_fill": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.injured": 1.0,
+   "metrics.displaced": 1.0,
+   "metrics.affected": 1.0,
+   "metrics.demolished": 1.0,
+   "metrics.detained": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "severity_index": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.score": 1.0,
+   "quality.completeness": 1.0,
+   "quality.consistency": 1.0,
+   "quality.accuracy": 1.0,
+   "quality.confidence": 1.0,
+   "quality.verified": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.admin1": 0.911,
+   "location.admin2": 0.911,
+   "location.admin2_pcode": 0.911,
+   "school_name": 0.796,
+   "school_id": 0.796,
+   "school_type": 0.796,
+   "school_status": 0.796,
+   "school_name_ar": 0.79,
+   "location.governorate": 0.781,
+   "location.locality": 0.626,
+   "locality_name": 0.115,
+   "locality_type": 0.115,
+   "barrier_type": 0.088,
+   "barrier_status": 0.088,
+   "location.coordinates": 0.009,
+   "location.admin_levels": 0.009,
+   "location.proximity": 0.009,
+   "location.region_type": 0.007,
+   "location.gazetteer_key": 0.001
+  },
+  "samples": [
+   {
+    "id": "wb-school-ekcswr",
+    "date": "2026-08-05",
+    "category": "education",
+    "event_type": "school_record",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "jenin sec. girls",
+     "governorate": "Ø¬Ù†ÙŠÙ†",
+     "region": "West Bank",
+     "lat": 32.45975900025752,
+     "lon": 35.295674446184194,
+     "precision": "exact",
+     "gazetteer_key": null,
+     "admin1": "West Bank",
+     "admin2": "Jenin",
+     "admin2_pcode": "PS0101",
+     "locality": "Ø¬Ù†ÙŠÙ†",
+     "coordinates": [
+      35.3,
+      32.45
+     ],
+     "admin_levels": {
+      "level1": "Jenin"
+     },
+     "region_type": "urban",
+     "proximity": {
+      "nearest_city": "Jenin",
+      "distance_to_border": 16649.999999999844
+     }
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "students"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "HDX",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:08.270Z"
+     }
+    ],
+    "school_name": "jenin sec. girls",
+    "school_name_ar": "Ø¨Ù†Ø§Øª Ø¬Ù†ÙŠÙ† Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©",
+    "school_id": 10111007,
+    "school_type": "Unknown",
+    "education_level": null,
+    "school_status": "Active",
+    "stable_id": "c5701db436e257149a8cd4914c533b5e"
+   },
+   {
+    "id": "wb-barrier-6gatkk",
+    "date": "2026-08-05",
+    "category": "infrastructure",
+    "event_type": "barrier_segment",
+    "schema_version": "3.0.0",
+    "location": {
+     "name": "Separation Barrier Segment",
+     "governorate": null,
+     "region": "West Bank",
+     "lat": 3513089.768100001,
+     "lon": 703565.0557000004,
+     "precision": "exact",
+     "gazetteer_key": null,
+     "admin1": null,
+     "admin2": null,
+     "admin2_pcode": null,
+     "region_type": null
+    },
+    "metrics": {
+     "killed": 0,
+     "injured": 0,
+     "displaced": 0,
+     "affected": 0,
+     "demolished": 0,
+     "detained": 0,
+     "count": 1,
+     "value": 0,
+     "unit": "km"
+    },
+    "actors": [],
+    "severity_index": 0,
+    "temporal_context": {
+     "days_since_baseline": 1033,
+     "baseline_period": "after_baseline",
+     "conflict_phase": "ongoing-conflict",
+     "season": "summer"
+    },
+    "quality": {
+     "score": 0,
+     "completeness": 0,
+     "consistency": 0,
+     "accuracy": 0,
+     "confidence": "low",
+     "verified": false
+    },
+    "sources": [
+     {
+      "name": "HDX",
+      "organization": "HDX",
+      "url": null,
+      "license": "varies",
+      "fetched_at": "2026-08-05T03:01:09.385Z"
+     }
+    ],
+    "barrier_type": "Concrete",
+    "barrier_status": "Under Construction",
+    "length_km": null,
+    "construction_year": null,
+    "stable_id": "642e016683365e1bbd61557c7613d6d0"
+   }
+  ]
+ }
+}
