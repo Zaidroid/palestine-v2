@@ -194,3 +194,12 @@ def test_pilot_dry_runs_reproduce_spec_arithmetic():
     # measured non-zero fills, exactly
     assert r["observations_emitted"] == 904
     assert r["notes"].get("locality_resolution_miss") == 1    # Al Malha
+
+
+@needs_v1
+def test_asof_harness_is_green():
+    # P2.7 / Gate 2: sampled dates × categories against the archived
+    # snapshots — counts exact, same-generation ids exact, served values
+    # present at their as_of. Non-zero return = enumerated failures.
+    from ops import asof_harness
+    assert asof_harness.main() == 0

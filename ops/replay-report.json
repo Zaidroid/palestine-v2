@@ -1,0 +1,341 @@
+{
+ "window": [
+  "2026-06-25",
+  "2026-08-05"
+ ],
+ "categories": {
+  "aid_access": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 50059,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "casualties": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 49,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "conflict": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 1958,
+   "superseded_rows_inserted": 0,
+   "notes": {
+    "vanished_dropped:v1_placeholder_no_payload": 31,
+    "vanished_event_skipped": 2
+   }
+  },
+  "connectivity": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 2274,
+   "superseded_rows_inserted": 15,
+   "notes": {}
+  },
+  "culture": {
+   "generations": [
+    "2026-06-25",
+    "2026-06-26",
+    "2026-06-27",
+    "2026-06-28",
+    "2026-06-29",
+    "2026-07-06",
+    "2026-07-07",
+    "2026-07-08",
+    "2026-07-09",
+    "2026-07-10",
+    "2026-07-11",
+    "2026-07-12",
+    "2026-07-13",
+    "2026-07-14",
+    "2026-07-15",
+    "2026-07-16",
+    "2026-07-17",
+    "2026-07-18",
+    "2026-07-19",
+    "2026-07-20",
+    "2026-07-21",
+    "2026-07-22",
+    "2026-07-23",
+    "2026-07-24",
+    "2026-07-25",
+    "2026-07-26",
+    "2026-07-27",
+    "2026-07-28",
+    "2026-07-29",
+    "2026-07-30",
+    "2026-07-31",
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-08-05",
+   "rows_bounded": 329,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "demolitions": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 904,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "economic": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 4126,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "education": {
+   "generations": [
+    "2026-06-25",
+    "2026-06-26",
+    "2026-06-27",
+    "2026-06-28",
+    "2026-06-29",
+    "2026-07-06",
+    "2026-07-07",
+    "2026-07-08",
+    "2026-07-09",
+    "2026-07-10",
+    "2026-07-11",
+    "2026-07-12",
+    "2026-07-13",
+    "2026-07-14",
+    "2026-07-15",
+    "2026-07-16",
+    "2026-07-17",
+    "2026-07-18",
+    "2026-07-19",
+    "2026-07-20",
+    "2026-07-21",
+    "2026-07-22",
+    "2026-07-23",
+    "2026-07-24",
+    "2026-07-25",
+    "2026-07-26",
+    "2026-07-27",
+    "2026-07-28",
+    "2026-07-29",
+    "2026-07-30",
+    "2026-07-31",
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 2359,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "food": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 26814,
+   "superseded_rows_inserted": 354,
+   "notes": {}
+  },
+  "funding": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 9986,
+   "superseded_rows_inserted": 104,
+   "notes": {}
+  },
+  "health": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 12502,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "historical": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 6548,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "infrastructure": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": true,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 3537,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "land": {
+   "generations": [
+    "2026-06-25",
+    "2026-06-26",
+    "2026-06-27",
+    "2026-06-28",
+    "2026-06-29",
+    "2026-07-06",
+    "2026-07-07",
+    "2026-07-08",
+    "2026-07-09",
+    "2026-07-10",
+    "2026-07-11",
+    "2026-07-12",
+    "2026-07-13",
+    "2026-07-14",
+    "2026-07-15",
+    "2026-07-16",
+    "2026-07-17",
+    "2026-07-18",
+    "2026-07-19",
+    "2026-07-20",
+    "2026-07-21",
+    "2026-07-22",
+    "2026-07-23",
+    "2026-07-24",
+    "2026-07-25",
+    "2026-07-26",
+    "2026-07-27",
+    "2026-07-28",
+    "2026-07-29",
+    "2026-07-30",
+    "2026-07-31",
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-08-05",
+   "rows_bounded": 697,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "martyrs_snapshot_2023": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 60200,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "pcbs": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 2060,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  },
+  "prisoners": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": true,
+   "base_lower": "2026-06-25",
+   "rows_bounded": 890,
+   "superseded_rows_inserted": 2,
+   "notes": {}
+  },
+  "refugees": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 1566,
+   "superseded_rows_inserted": 4,
+   "notes": {}
+  },
+  "settlements": {
+   "generations": [
+    "2026-06-25",
+    "2026-07-21"
+   ],
+   "churning": false,
+   "stable_counts": false,
+   "base_lower": "2026-07-21",
+   "rows_bounded": 51,
+   "superseded_rows_inserted": 0,
+   "notes": {}
+  }
+ }
+}

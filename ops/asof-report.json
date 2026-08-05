@@ -1,0 +1,391 @@
+{
+ "checks": [
+  {
+   "category": "prisoners",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 890,
+   "db": 890,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 890,
+   "db": 890,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 890,
+   "db": 890,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 890,
+   "db": 890,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "casualties",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 49,
+   "db": 49,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "casualties",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 49,
+   "db": 49,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "casualties",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 49,
+   "db": 49,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "casualties",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 49,
+   "db": 49,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 50059,
+   "db": 50059,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 50059,
+   "db": 50059,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 50059,
+   "db": 50059,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 50059,
+   "db": 50059,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 534,
+   "db": 534,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 534,
+   "db": 534,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 534,
+   "db": 534,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 534,
+   "db": 534,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 60200,
+   "db": 60200,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 60200,
+   "db": 60200,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 60200,
+   "db": 60200,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 60200,
+   "db": 60200,
+   "count_ok": true,
+   "ids_ok": true,
+   "ok": true
+  },
+  {
+   "category": "education",
+   "at": "2026-06-28",
+   "claimed": true,
+   "snapshot": 2359,
+   "db": 2359,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "education",
+   "at": "2026-07-15",
+   "claimed": true,
+   "snapshot": 2359,
+   "db": 2359,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "education",
+   "at": "2026-07-25",
+   "claimed": true,
+   "snapshot": 2359,
+   "db": 2359,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  },
+  {
+   "category": "education",
+   "at": "2026-08-02",
+   "claimed": true,
+   "snapshot": 2359,
+   "db": 2359,
+   "count_ok": true,
+   "ids_ok": null,
+   "ok": true
+  }
+ ],
+ "spot_checks": [
+  {
+   "category": "prisoners",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "prisoners",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "casualties",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "casualties",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "casualties",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "casualties",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "aid_access",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "demolitions",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "martyrs_snapshot_2023",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "education",
+   "at": "2026-06-28",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "education",
+   "at": "2026-07-15",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "education",
+   "at": "2026-07-25",
+   "sampled": 5,
+   "value_fail": 0
+  },
+  {
+   "category": "education",
+   "at": "2026-08-02",
+   "sampled": 5,
+   "value_fail": 0
+  }
+ ],
+ "failures": []
+}
