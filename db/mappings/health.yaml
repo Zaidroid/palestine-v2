@@ -1,0 +1,167 @@
+# health — WHO Global Health Observatory annual indicators for Palestine.
+# Audit: 40,559 records, 100% dated, 0% geo (region 'Palestine' on all of
+# them → a country-aggregate category, law 3). Two things the audit's summary
+# numbers hide and this spec is built on:
+#   1. every date is YYYY-01-01 (measured, 40,559/40,559) — these are ANNUAL
+#      values, so precision is `year`, not `day`. The audit's
+#      year_bucket_pct 0.0 only looked for the -12-31 costume; this is the
+#      same defeat wearing the other one (law 2).
+#   2. stable_id has only 12,502 distinct values over 40,559 records —
+#      28,057 rows (69.2%) are byte-identical duplicates of another row.
+# The identity field is indicator_code (184 values) plus dimension.code;
+# event_type is uniformly 'health_indicator' and carries no information.
+category: health
+shape: observation
+status: reviewed
+records_measured: 40559
+
+source_routing:
+  by_name:
+    "WHO": who
+  default: null            # every one of the 40,559 records carries exactly
+                           #   one source named "WHO" (full census of all 51
+                           #   partitions) — see the manifest reconciliation
+                           #   in the notes. An unknown name FAILS the run.
+
+datasets:
+  - key: v1_health_who
+    source: who
+
+indicator:
+  template: "health.{indicator_code}.{dimension.code}"
+  # indicator_code: 184 values, 100% filled (e.g. MDG_0000000007,
+  #   WHS4_544, NUTRITION_ANT_WHZ_NE2).
+  # dimension.code is null on 3,264 rows (8.0%); a brace that resolves to
+  #   null drops its segment, so those render "health.{indicator_code}".
+  #   The loader MUST implement that rule — see notes.
+
+value:
+  num_from: metrics.value
+  text_from: null
+  unit_from: metrics.unit  # 3 values, all honest descriptions of the value:
+                           #   percentage 33,368 · number 6,399 · years 792
+
+occurred_at:
+  from: date
+  precision: year          # every date is YYYY-01-01 — an annual figure, not
+                           #   a 1 January measurement
+  rules:
+    - if: "always"         # masquerade 0%; the date is already Jan 1, so this
+      then: "truncate to year start, precision=year"   # rule only pins the
+                           #   precision — T7 freshness excludes `year`, so
+                           #   health can never report as fresh, which is
+                           #   correct: the newest WHO value here is 2025
+
+place:
+  strategy: region         # location.region == 'Palestine' on 40,559/40,559,
+                           #   location.name == 'State of Palestine'
+                           #   → place_id NULL + attrs.region (law 3)
+  min_resolved_pct: 1.0    # NULL is a resolution for a country aggregate
+
+stable_id: stable_id       # 12,502 distinct over 40,559 — the dedupe key,
+                           #   NOT a per-row identifier. See notes.
+attrs_passthrough:
+  - indicator_code
+  - indicator_name
+  - dimension.type
+  - dimension.code
+  - dimension.name
+  - value_low
+  - value_high
+
+expect:
+  min_records: 11250       # ≈0.9 × 12,502 — the POST-DEDUPE count, not
+                           #   0.9 × 40,559. A run that writes ~40k rows here
+                           #   has failed to dedupe and must be treated as a
+                           #   failure, not a success with more.
+
+notes: |
+  MEASURED by a full census of all 51 quarterly partitions (1975-Q1 …
+  2025-Q1; every partition is a Q1 because every date is 1 January). One
+  key-set across all 51 files — the record shape does not drift between
+  quarters.
+
+  THE 69% DUPLICATE. 40,559 records carry only 12,502 distinct stable_ids,
+  and every one of those 12,502 ids appears more than once (mean 3.24×).
+  v1's stable_id is a SHA-256 of the record content with `id`, `stable_id`,
+  `sources[].fetched_at`, `temporal_context.days_since_baseline` and
+  `.baseline_period` stripped (v1 scripts/utils/stable-id.js), so a collision
+  means the two rows are identical in indicator, date, dimension, value,
+  bounds and place — they differ only in the per-run sequence number inside
+  `id` (e.g. who-health-MDG_0000000007-1975-2888 vs -1975-13017). v1's own
+  served file agrees: today's snapshot all-data.json holds 12,502 WHO records,
+  i.e. exactly the deduped set. So the loader dedupes on stable_id (keep
+  first) and writes ~12,502 rows.
+  [OPEN] `observation` has only an INDEX on v1_stable_id, no unique
+  constraint, so nothing in the schema enforces this. T2.3 must either
+  dedupe in-memory before insert or add UNIQUE (dataset_id, v1_stable_id,
+  occurred_at) — the occurred_at column is required in any unique index on a
+  hypertable. Pick one before status: reviewed.
+
+  THE MANIFEST'S THREE SOURCES, RECONCILED. v1 claims three sources for
+  health in three different places, and all three claims are wrong about the
+  files this migration reads:
+    - health/metadata.json: sources ['WHO','HDX','GoodShepherd'],
+      total_records 40,648. The source list is a hardcoded literal in v1's
+      writer (scripts/populate-unified-data.js), not derived from records.
+    - health/partitions/index.json: 40,559 records — this is what exists on
+      disk, and a full read of it finds exactly one per-record source name,
+      'WHO' (organization 'World Health Organization', license
+      'public-domain'), on 40,559/40,559 rows. Zero HDX, zero GoodShepherd.
+    - unified-manifest.json: count 12,712, regions ['Gaza Strip','Palestine'],
+      dates to 2026-04-08 — a different population again.
+  The 12,712 figure is real but lives elsewhere: the daily snapshot
+  (unified/snapshots/2026-08-05/health/all-data.json) holds 12,712 records =
+  WHO 12,502 + 'Gaza Ministry of Health' 184 (event_type health_impact, Gaza
+  Strip, to 2026-04-08) + 'HDX' 26. GoodShepherd appears in NO record
+  anywhere. metadata.json's 40,648 = 40,559 partitioned WHO rows + the 89
+  non-WHO rows that were merged into the (since removed) all-data.json.
+  Routing above is therefore exhaustive over what the partitions actually
+  carry: WHO only.
+  [OPEN] The 184 Gaza MoH + 26 HDX health rows are NOT in the partitions and
+  would be lost by this migration. They are recoverable from the snapshot
+  path. If they should come across, they need their own pre-declared datasets
+  (v1_health_gaza_moh → source gaza_moh, v1_health_hdx → source hdx) and a
+  second reader, because they are a different shape (event_type
+  health_impact, region Gaza Strip, daily dates). Deliberately not declared
+  here — declaring a dataset no record routes to would break law 5 in the
+  other direction.
+
+  LICENSE. Records stamp themselves 'public-domain'. That is v1's invention:
+  licenses.json and 042 both put WHO GHO at CC-BY-NC-SA-3.0-IGO with
+  commercial_use=false, and licenses.json notes "Paid-tier distribution
+  requires WHO-specific licensing or must exclude WHO-origin records." The
+  license must come from the `source` row, never from the record — a
+  commercial-tier query that trusted the record string would ship 12k
+  non-commercial rows. This is exactly the mix law 5 is about.
+
+  DIMENSION, AND WHAT V1 DROPPED. dimension is present on 92% of rows across
+  18 types (SEX 27,952 · AGEGROUP 2,635 · RESIDENCEAREATYPE 2,224 ·
+  HOUSEHOLDWEALTH 924 · WEALTHQUINTILE 860 · EDUCATIONLEVEL 848 ·
+  TOBACCO_INDICATOR 610 · SEVERITY 400 · WEALTHDECILE 270 · HOUSEHOLD_COMP_BY_AGE
+  238 · WEALTHTERCILE 120 · DEMOGRAPHIC 64 · FINANCIALHARDSHIPCOMPONENT 54 ·
+  CAREPATIENT 48 · BEVERAGETYPE 20 · CALCULATIONTYPE 18 · ROADUSERTYPE 10),
+  null on 3,264. Putting dimension.code in the indicator is not cosmetic:
+  without it, "health.MDG_0000000007" would hold male, female and both-sexes
+  under-five mortality in one series, and any chart over it would be wrong.
+  It still does not make the series single-valued — after dedupe, 1,050 of
+  9,031 (indicator_code, date, dimension.code) groups still hold 2–22
+  different values, because WHO publishes several dimension axes per row and
+  v1 kept only one (e.g. NUTRITION_ANT_WHZ_NE2 / 1996 / SEX_FMLE holds 66
+  raw rows with values 2.7 … 6.7). The full upstream row survives in bronze;
+  raw_ref points there.
+  [OPEN] Should a multi-valued (indicator, date, dimension) group be flagged
+  in the run report? It is not an error, but it is a fact a chart author
+  needs.
+
+  REDUNDANT COLUMNS. indicator_name and indicator_url are 1:1 with
+  indicator_code (184 codes, zero codes with more than one name or url), so
+  carrying them on every one of 12,502 rows is pure repetition.
+  attrs_passthrough keeps indicator_name (it is the only human label) and
+  drops indicator_url.
+  [OPEN] An `indicator` dictionary table (code → name, url, unit) would be
+  the right home for all three; out of scope for T2.3 but worth a ticket.
+
+  value_low / value_high are WHO's uncertainty bounds, present on 83.5% /
+  84.2% of rows; they pass through to attrs rather than becoming their own
+  observations.

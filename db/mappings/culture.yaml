@@ -1,0 +1,128 @@
+# culture — heritage site register (UNESCO / Ministry of Tourism / NGO reports)
+# Audit: 329 records, 100% dated, 100% ingest masquerade, 0% year-bucket,
+# 0% latlon / 0% pcode / 0% gazetteer_key. This is a REGISTER, not a series:
+# one row per heritage site, no event, no measurement, no date. The masquerade
+# is total and there is nothing honest to replace it with — verified below.
+category: culture
+shape: observation
+status: reviewed
+records_measured: 329
+
+source_routing:
+  by_name:
+    # REVIEW VERDICT (2026-08-05): fix (a) adopted — migration 043 creates
+    # `heritage_composite` (spdx 'varies', commercial_use=false) and all 329
+    # rows route there. Only 17 are genuinely UNESCO; granting the composite
+    # UNESCO's commercial CC-BY-SA licence was the blocking hazard.
+    "UNESCO, Ministry of Tourism, NGO Reports": heritage_composite
+  default: null            # measured: 0/329 records have an empty sources[];
+                           #   an unroutable name FAILS the run (law 5)
+
+datasets:
+  - key: v1_culture_heritage_composite
+    source: heritage_composite
+
+indicator:
+  template: "culture.heritage_site.{site_type}"   # Religious 163 / Cultural 106
+                                                  #   / Archaeological 60
+                                                  # loader must slug to lowercase
+
+value:
+  num_from: metrics.count          # 1 on 329/329 — one site per row
+  text_from: site_status           # 'Intact' on 329/329 — constant, see notes
+  unit_from: {literal: "sites"}    # metrics.unit is 'sites' on 329/329 (honest)
+
+occurred_at:
+  from: date
+  precision: unknown
+  rules:
+    - if: "date == fetch_day"      # fires on 329/329 (audit 1.0); date is
+      then: "reported_at-only"     #   2026-08-05 on every record, min == max
+                                   #   == metadata.last_updated day
+
+place:
+  strategy: region                 # location.region ∈ {East Jerusalem 183,
+                                   #   West Bank 96, Gaza Strip 50}
+  min_resolved_pct: 1.0            # region strings always resolve; East
+                                   #   Jerusalem → Jerusalem governorate row
+                                   #   + attrs.region preserved
+
+stable_id: stable_id               # 329 distinct; `id` also 329 distinct
+attrs_passthrough:
+  - site_name
+  - site_type
+  - site_status
+  - protection_level
+  - unesco_status
+  - region                         # keeps 'East Jerusalem' after the
+                                   #   governorate mapping
+
+expect:
+  min_records: 296                 # 0.9 × 329
+
+notes: |
+  NO HONEST DATE EXISTS. Searched every string and numeric field of all 329
+  records for a 4-digit year (1000-2029). Only three fields ever carry one:
+  `date` (329/329, the masquerade), `sources[].fetched_at` (329/329, the fetch
+  timestamp), and `description` (3/329 = 0.9%, free-text blurbs such as
+  "consecrated in 1924"). The dedicated date-shaped fields are all empty:
+  construction_date null on 329/329, significance null on 329/329, damage null
+  on 329/329, historical_period is the literal string 'Unknown' on 329/329.
+  description is bronze under law 6 and 3 records is not a strategy, so the
+  rule is reported_at-only with precision=unknown for the whole category.
+  That is the finding: a heritage register has no event date, and after this
+  spec culture can never report freshness_days_since_latest: 0 again.
+
+  PLACE — the audit's name_pct 1.0 is not a place-name signal. location.name
+  equals location.region verbatim on 329/329 ('East Jerusalem' / 'West Bank' /
+  'Gaza Strip'); there is no locality, no governorate (null on 329/329), and
+  no per-site name in a location field. location.coordinates (filled 70.8%)
+  is a REPEATED REGION CENTROID, not a site position: [35.21, 31.76] on all
+  183 East Jerusalem rows, [34.45, 31.5] on all 50 Gaza rows, null on all 96
+  West Bank rows — 2 distinct values for 233 sites. Using it as latlon would
+  manufacture precision the source never had (law 3), which is also why the
+  audit reports latlon_pct 0.0 despite coordinates being present. The only
+  other geo field is admin_levels.level1: 'Jerusalem' 183 / 'Gaza' 50 /
+  null 96 — governorate-level for two of three buckets and absent for the
+  third, so it cannot carry the category. site_name (329 distinct, e.g.
+  'Al-Yaqoubi Mosque') is a BUILDING, not a place, and law 3 forbids matching
+  it against the gazetteer. Region is the honest ceiling. So: 183 rows →
+  Jerusalem governorate + attrs.region 'East Jerusalem', 96 → place 2
+  (West Bank), 50 → place 1 (Gaza Strip). Nothing lands NULL.
+
+  IDENTITY. site_name is unique across all 329 rows and is the real identity;
+  site_type (3 values) is the only dimension with variance. Everything else is
+  constant or near-constant: site_status 'Intact' 329/329, protection_level
+  'National Heritage' 312 / 'UNESCO Protected' 17, unesco_status
+  'World Heritage Site' 17 / null 312. metrics are byte-identical on all 329
+  rows (count 1, value 0, unit 'sites', every casualty field 0) — metrics.value
+  is 0 and MUST NOT be used; metrics.count is the honest 1-site tally.
+  quality.score is 0 and quality.verified false on 329/329, while
+  metadata.json claims average_score 1 — the metadata lies, ignore it.
+
+  OPEN QUESTION — BLOCKING, do not flip to reviewed until Zaid decides.
+  The routing above is not safe. Every record's sources[0].name is the single
+  composite string "UNESCO, Ministry of Tourism, NGO Reports" with
+  organization 'Multiple' and license 'varies'. That exact string resolves to
+  nothing in licenses.json; the registry instead carries three SEPARATE
+  aliases on the `unesco` entry — 'unesco', 'ministry of tourism', 'ngo
+  reports' — i.e. it expects the composite to be split, and sends all three
+  pieces to `unesco`, which is CC-BY-SA-3.0-IGO with commercial_use=true in
+  both licenses.json and 042. Routing all 329 rows there would grant a
+  commercial, share-alike UNESCO licence to 312 rows that are NOT UNESCO
+  (protection_level 'National Heritage', unesco_status null) and whose own
+  record says license 'varies'. Only 17 rows are genuinely UNESCO World
+  Heritage Sites. Two honest fixes, both needing a human:
+    (a) add a new source row (e.g. key 'heritage_composite', spdx 'varies',
+        commercial_use=false) in a follow-up migration and route all 329 there;
+    (b) split the category by unesco_status — 17 → `unesco`, 312 → the new
+        composite key — which needs `by_name` to become condition-aware.
+  Recommendation: (a). It is one migration row, it keeps routing exhaustive,
+  and it defaults to quarantine, matching 042's stated quarantine-by-default
+  policy. Until then this spec stays draft.
+
+  OPEN QUESTION — indicator normalization. The template interpolates
+  site_type, whose measured values are Title-case ('Religious', 'Cultural',
+  'Archaeological'). Confirm the T2.3 loader lowercases/slugs interpolated
+  values before they become observation.indicator, or the indicator space gets
+  mixed case. No other category in this batch depends on this.

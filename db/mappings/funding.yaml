@@ -1,0 +1,143 @@
+# funding — 9,986 humanitarian funding flows from UN OCHA's Financial Tracking
+# Service, 2013-05-27 → 2026-08-03. One record = one contribution from one
+# donor to one recipient, with an amount in USD. Audit: 100% dated, 0.5%
+# year-bucket, 0% lat/lon, precision='country' on all 9,986, one source, one
+# license, one unit. The hard question here is not dates or geography — it is
+# what the INDICATOR is when every row is a unique transaction.
+category: funding
+shape: observation
+status: reviewed
+records_measured: 9986
+
+source_routing:
+  by_name:
+    "UN OCHA Financial Tracking Service": unfts   # exact licenses.json alias
+  default: null           # measured: 0 records with sources: []
+
+datasets:
+  - key: v1_funding_unfts
+    source: unfts
+
+indicator:
+  template: "funding.{funding.status}"
+  # measured, 100% filled, 3 values: paid 7,374 · commitment 2,575 · pledge 37.
+  # See notes for why status and not donor, cluster, plan or appeal.
+
+value:
+  num_from: funding.amount_usd   # equals metrics.value on 9,986/9,986 (verified)
+  text_from: null
+  unit_from: metrics.unit        # 'USD' on 9,986/9,986 — true, unlike most of
+                                 #   v1's unit fields
+
+occurred_at:
+  from: date
+  precision: day
+  rules: []                      # DELIBERATELY EMPTY — see notes. Neither
+                                 #   law 1 nor law 2 fires here, and the
+                                 #   reasoning is written out rather than
+                                 #   assumed.
+
+place:
+  strategy: region
+  # measured: location.precision == 'country' on 9,986/9,986.
+  # location.region: 'Palestine' 9,982 → place_id NULL + attrs.region
+  #                  'West Bank'     4 → place 2
+  min_resolved_pct: 1.0
+
+stable_id: stable_id             # 9,986 distinct / 9,986; 1:1 with
+                                 #   funding.flow_id (also 9,986 distinct)
+attrs_passthrough:
+  - funding.flow_id              # FTS's own key — the join back to fts.unocha.org
+  - funding.donor                # {name, type}; 330 distinct donors
+  - funding.recipient            # {name, type}; 404 distinct recipients
+  - funding.cluster              # 8,298/9,986 (83%); 23 real values
+  - funding.plan                 # 7,974/9,986 (80%); 16 appeals
+  - funding.emergency            # 4,541/9,986 (45%); 3 emergencies
+  - funding.flow_type            # Standard 8,593 · Parked 730 ·
+                                 #   Pass through 600 · Carryover 63
+  - funding.contribution_type    # financial 9,444 · in kind 542
+  - funding.method               # Traditional aid 9,469 · CTP 514 · null 3
+  - funding.status
+  - funding.new_money            # true 8,181 · false 1,805
+  - funding.original_amount
+  - funding.original_currency    # USD 4,511 · EUR 2,455 · KWD 699 · CHF 339 ·
+                                 #   NOK 308 · SEK 251 · …
+  - funding.usage_years          # 1 year 9,851 · 2 years 76 · 3+ 59
+  - funding.ref_code
+  - location.name                # keeps the 50 non-oPt destinations visible
+
+expect:
+  min_records: 8980              # 0.9 × 9,986
+
+notes: |
+  WHAT THE INDICATOR IS. There is no repeating indicator code in this data:
+  funding.flow_id is unique on 9,986/9,986 rows, so every record is its own
+  event and nothing recurs. The identity has to come from a classifying field
+  that is 100% filled, or the template produces literal 'None' strings. Fill
+  rates, measured:
+    status              9,986/9,986  (paid / commitment / pledge)
+    flow_type           9,986/9,986  (Standard / Parked / Pass through / Carryover)
+    contribution_type   9,986/9,986  (financial / in kind)
+    donor.name          9,986/9,986  (330 distinct)
+    cluster             8,298/9,986  (83% — 1,688 nulls)
+    plan                7,974/9,986  (80% — 2,012 nulls)
+    emergency           4,541/9,986  (45% — 5,445 nulls)
+  status wins: it is complete, it has three values, and the three sum to
+  something a user actually asks for — pledged vs committed vs actually paid,
+  which is the single most-quoted gap in Palestine humanitarian financing.
+  Donor (330 values) would produce 330 indicators and belongs in attrs as a
+  filter dimension, not in the indicator name; cluster and plan are the most
+  useful facets but are 17% and 20% null and would mint 'funding.None'.
+  OPEN QUESTION for review: a flatter alternative — one indicator,
+  'funding.flow', with status in attrs — reads cleaner and makes 'total
+  funding' a single SUM. This spec chose three indicators because summing
+  pledges together with payments is the mistake the FTS data most invites.
+
+  WHY rules IS EMPTY, WRITTEN OUT SO NOBODY RE-ADDS THEM.
+  Law 1 (ingest masquerade): cannot even be evaluated from the audit. There is
+  no metadata.json in the funding directory (verified), so the audit's
+  fetch_day is '' and ingest_masquerade_pct is 0.0 by vacuum, not by
+  measurement — the same blind spot as `pcbs`. Checked directly instead: the
+  dates span 2013-05-27 to 2026-08-03 and cluster on real reporting days
+  (-07-21 on 260 rows, -12-29 on 253, -01-22 on 172, -06-08 on 143). These are
+  FTS decision dates, not a stamp. Law 1 does not fire.
+  Law 2 (year buckets): 54 rows are dated -12-31 (0.5%) and 234 are dated
+  -01-01 (2.3%). Law 2's condition is '-12-31 AND event_type is an aggregate'.
+  event_type is 'humanitarian_funding' on 9,986/9,986 and every row is one
+  transaction, not an annual total — a 31 December disbursement is a real and
+  extremely common thing in donor finance. Truncating them to year precision
+  would destroy true day-level facts to satisfy a rule written for a different
+  shape. Law 2 does not fire.
+  If a reviewer disagrees about the 234 -01-01 rows, the measurement to run is
+  whether their funding.usage_years matches the stamped year; this spec did
+  not run it and does not guess.
+
+  50 FLOWS DO NOT GO TO PALESTINE. location.name is 'Occupied Palestinian
+  Territory' on 9,932 rows, but 50 name somewhere else entirely — Lebanon 13,
+  Jordan 6, Yemen 5, Afghanistan 5, Sudan 3, Ukraine 3, Algeria 2, Nigeria 2,
+  Ethiopia 2, Italy 1, and others — while still carrying
+  location.region = 'Palestine'. They are in a PSE-filtered FTS pull because
+  the donor or the recipient touches the oPt portfolio, not because the money
+  landed in Palestine. Under strategy: region they all get place_id NULL,
+  which is the honest outcome, and location.name is passed through so the 50
+  stay visible rather than silently becoming "Palestine funding". OPEN
+  QUESTION: should they be excluded from the dataset rather than carried with
+  a NULL place? That is a scope call about what "Palestine funding" means.
+  Four other rows carry region='West Bank' and do resolve, to place 2.
+
+  SHAPE: observation, NOT event. Each row is a dated transaction, which reads
+  like an event, but README reserves `shape: event` for conflict and
+  demolitions — things that happen at a place and time and have casualties.
+  A funding flow measures an amount, has no place finer than 'country', and
+  belongs on the observation timeline next to the indicators it pays for.
+
+  LICENSE IS CLEAN AND SELLABLE. One source × license pair on all 9,986 rows:
+  UN OCHA Financial Tracking Service :: CC-BY-IGO-3.0, matching 042's `unfts`
+  (commercial_use=true, authority_rank 4). No verify-required rows, no mixed
+  licenses, no unroutable names. This is the largest unambiguously sellable
+  dataset in the Tier-2 set.
+
+  metrics.count is the literal 1 on essentially every row and metrics.value
+  duplicates funding.amount_usd exactly (9,986/9,986 verified). value_num
+  reads funding.amount_usd because that is the field the FTS API actually
+  populates; metrics.value is v1's copy of it.

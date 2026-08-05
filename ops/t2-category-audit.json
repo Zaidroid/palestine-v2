@@ -12,7 +12,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.003,
+   "monthday_top": {
+    "11-28": 397,
+    "05-03": 340,
+    "12-18": 337,
+    "04-22": 316
+   },
+   "distinct_days": 433,
+   "top3_day_share": 0.019,
    "min": "2023-10-21",
    "max": "2025-01-16",
    "fetch_day": "2026-08-05"
@@ -32,6 +41,7 @@
   "event_types": {
    "aid_consignment": 50059
   },
+  "event_types_distinct": 1,
   "units": {
    "Pallets": 38033,
    "MT": 6724,
@@ -43,6 +53,7 @@
   "source_licenses": {
    "UNRWA Gaza Supply and Logistics dashboard :: CC-BY": 50059
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -83,6 +94,38 @@
    "donation_type": 1.0,
    "stable_id": 1.0,
    "donor": 0.996,
+   "recipient": 0.86,
+   "location.coordinates": 0.221,
+   "location.admin_levels": 0.221,
+   "location.region_type": 0.221,
+   "location.proximity": 0.221
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "metrics.trucks": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "source_record_key": 1.0,
+   "cargo_category": 1.0,
+   "cargo_description": 1.0,
+   "crossing": 1.0,
+   "donation_type": 1.0,
+   "stable_id": 1.0,
+   "metrics.quantity": 0.998,
+   "donor": 0.994,
    "recipient": 0.86,
    "location.coordinates": 0.221,
    "location.admin_levels": 0.221,
@@ -235,7 +278,13 @@
   "dates": {
    "present_pct": 0.388,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.388,
+   "monthday_top": {
+    "12-31": 19
+   },
+   "distinct_days": 19,
+   "top3_day_share": 0.158,
    "min": "2008-12-31",
    "max": "2026-12-31",
    "fetch_day": "2026-08-05"
@@ -259,12 +308,14 @@
   "event_types": {
    "fatalities_aggregate": 49
   },
+  "event_types_distinct": 1,
   "units": {
    "fatalities": 49
   },
   "source_licenses": {
    "UN OCHA oPt — Data on Casualties :: verify-required": 49
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "category": 1.0,
@@ -290,6 +341,35 @@
    "quality.accuracy": 1.0,
    "quality.confidence": 1.0,
    "quality.verified": 1.0,
+   "sources": 1.0,
+   "casualty_dimension": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.baseline_date": 0.612,
+   "casualty_breakdown_label": 0.612,
+   "date": 0.388,
+   "temporal_context.days_since_baseline": 0.388,
+   "temporal_context.baseline_period": 0.388,
+   "temporal_context.conflict_phase": 0.388,
+   "temporal_context.season": 0.388,
+   "location.governorate": 0.367,
+   "location.coordinates": 0.02,
+   "location.admin_levels": 0.02,
+   "location.region_type": 0.02,
+   "location.proximity": 0.02
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "quality.confidence": 1.0,
    "sources": 1.0,
    "casualty_dimension": 1.0,
    "stable_id": 1.0,
@@ -437,7 +517,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.002,
+   "monthday_top": {
+    "10-07": 332,
+    "01-01": 149,
+    "05-01": 101,
+    "07-20": 68
+   },
+   "distinct_days": 2891,
+   "top3_day_share": 0.047,
    "min": "1935-01-01",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -470,6 +559,7 @@
    "aggregate_fatality": 6,
    "summary": 2
   },
+  "event_types_distinct": 9,
   "units": {
    "persons": 10495
   },
@@ -484,6 +574,7 @@
    "Good Shepherd :: varies": 44,
    "B'Tselem :: varies": 6
   },
+  "source_licenses_distinct": 9,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -543,6 +634,60 @@
    "child_prisoners": 0.004,
    "female_prisoners": 0.004,
    "arrests": 0.004
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.region": 1.0,
+   "metrics.unit": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.precision": 1.0,
+   "location.name": 0.999,
+   "description": 0.995,
+   "metrics.count": 0.88,
+   "metrics.killed": 0.824,
+   "severity_index": 0.822,
+   "location.governorate": 0.819,
+   "quality.score": 0.784,
+   "quality.completeness": 0.784,
+   "quality.consistency": 0.784,
+   "quality.accuracy": 0.784,
+   "location.lat": 0.784,
+   "location.lon": 0.784,
+   "actors": 0.753,
+   "metrics.value": 0.75,
+   "conflict_name": 0.728,
+   "dyad_name": 0.728,
+   "quality.verified": 0.728,
+   "location.admin1": 0.704,
+   "location.admin2": 0.704,
+   "location.admin2_pcode": 0.704,
+   "location.gazetteer_key": 0.676,
+   "deaths_unknown": 0.285,
+   "deaths_civilians": 0.271,
+   "temporal_context.baseline_period": 0.216,
+   "temporal_context.conflict_phase": 0.216,
+   "temporal_context.season": 0.216,
+   "deaths_b": 0.209,
+   "temporal_context.days_since_baseline": 0.191,
+   "location.coordinates": 0.119,
+   "location.admin_levels": 0.119,
+   "location.region_type": 0.119,
+   "location.proximity": 0.119,
+   "metrics.injured": 0.093,
+   "date_precision": 0.056,
+   "conflict_phase": 0.056,
+   "deaths_a": 0.046,
+   "metrics.displaced": 0.044,
+   "metrics.affected": 0.044,
+   "population_1945": 0.044,
+   "population_1931": 0.033,
+   "population_1922": 0.027
   },
   "samples": [
    {
@@ -696,7 +841,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.001,
+   "monthday_top": {
+    "01-22": 122,
+    "01-21": 44,
+    "01-23": 41,
+    "11-29": 27
+   },
+   "distinct_days": 1392,
+   "top3_day_share": 0.088,
    "min": "2017-02-09",
    "max": "2026-07-24",
    "fetch_day": "2026-08-05"
@@ -720,6 +874,7 @@
    "censorship_measurement": 1276,
    "internet_outage": 998
   },
+  "event_types_distinct": 2,
   "units": {
    "measurements": 1276,
    "seconds": 998
@@ -728,6 +883,7 @@
    "OONI :: free-with-attribution": 1276,
    "IODA :: free-with-attribution": 998
   },
+  "source_licenses_distinct": 2,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -773,6 +929,40 @@
    "location.admin_levels": 0.183,
    "location.region_type": 0.183,
    "location.proximity": 0.183
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.days_since_baseline": 0.994,
+   "metrics.count": 0.561,
+   "metrics.value": 0.484,
+   "metrics.anomaly_count": 0.484,
+   "anomaly_rate": 0.484,
+   "metrics.duration_seconds": 0.439,
+   "metrics.severity_score": 0.439,
+   "outage_start": 0.439,
+   "outage_datasource": 0.439,
+   "network_entity.type": 0.439,
+   "network_entity.code": 0.439,
+   "location.coordinates": 0.183,
+   "location.admin_levels": 0.183,
+   "location.region_type": 0.183,
+   "location.proximity": 0.183,
+   "metrics.confirmed_blocked": 0.0
   },
   "samples": [
    {
@@ -924,7 +1114,13 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 1.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-05": 329
+   },
+   "distinct_days": 1,
+   "top3_day_share": 1.0,
    "min": "2026-08-05",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -946,12 +1142,14 @@
   "event_types": {
    "heritage_site": 329
   },
+  "event_types_distinct": 1,
   "units": {
    "sites": 329
   },
   "source_licenses": {
    "UNESCO, Ministry of Tourism, NGO Reports :: varies": 329
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -987,6 +1185,35 @@
    "site_type": 1.0,
    "site_status": 1.0,
    "historical_period": 1.0,
+   "protection_level": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.708,
+   "location.admin_levels": 0.708,
+   "location.proximity": 0.708,
+   "location.region_type": 0.152,
+   "unesco_status": 0.052
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "site_name": 1.0,
+   "site_type": 1.0,
+   "site_status": 1.0,
    "protection_level": 1.0,
    "stable_id": 1.0,
    "location.coordinates": 0.708,
@@ -1165,7 +1392,13 @@
   "dates": {
    "present_pct": 0.034,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.034,
+   "monthday_top": {
+    "12-31": 18
+   },
+   "distinct_days": 18,
+   "top3_day_share": 0.167,
    "min": "2009-12-31",
    "max": "2026-12-31",
    "fetch_day": "2026-08-05"
@@ -1187,12 +1420,14 @@
   "event_types": {
    "demolition_aggregate": 534
   },
+  "event_types_distinct": 1,
   "units": {
    "structures": 534
   },
   "source_licenses": {
    "UN OCHA oPt — Data on Demolitions :: verify-required": 534
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "category": 1.0,
@@ -1234,6 +1469,41 @@
    "location.proximity": 0.056,
    "location.region_type": 0.037,
    "date": 0.034,
+   "temporal_context.days_since_baseline": 0.034,
+   "temporal_context.baseline_period": 0.034,
+   "temporal_context.conflict_phase": 0.034,
+   "temporal_context.season": 0.034
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "demolition_dimension": 1.0,
+   "stable_id": 1.0,
+   "metrics.demolished": 0.998,
+   "location.governorate": 0.966,
+   "temporal_context.baseline_date": 0.966,
+   "location.lat": 0.964,
+   "location.lon": 0.964,
+   "location.admin1": 0.964,
+   "location.admin2": 0.964,
+   "location.admin2_pcode": 0.964,
+   "metrics.displaced": 0.659,
+   "location.gazetteer_key": 0.592,
+   "location.coordinates": 0.056,
+   "location.admin_levels": 0.056,
+   "location.proximity": 0.056,
+   "location.region_type": 0.037,
+   "date": 0.034,
+   "metrics.affected": 0.034,
    "temporal_context.days_since_baseline": 0.034,
    "temporal_context.baseline_period": 0.034,
    "temporal_context.conflict_phase": 0.034,
@@ -1379,7 +1649,14 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.034,
+   "monthday_top": {
+    "01-01": 4010,
+    "12-31": 142
+   },
+   "distinct_days": 88,
+   "top3_day_share": 0.099,
    "min": "1960-01-01",
    "max": "2026-12-31",
    "fetch_day": "2026-08-05"
@@ -1402,6 +1679,7 @@
   "event_types": {
    "indicator_measurement": 4152
   },
+  "event_types_distinct": 1,
   "units": {
    "percentage": 1956,
    "number": 1162,
@@ -1415,6 +1693,7 @@
    "IMF :: CC-BY-4.0": 474,
    "Palestinian Central Bureau of Statistics (PCBS) :: verify-required": 142
   },
+  "source_licenses_distinct": 3,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -1453,6 +1732,33 @@
    "location.admin_levels": 0.867,
    "location.proximity": 0.867,
    "location.region_type": 0.862
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "stable_id": 1.0,
+   "metrics.value": 0.993,
+   "location.coordinates": 0.867,
+   "location.admin_levels": 0.867,
+   "location.proximity": 0.867,
+   "location.region_type": 0.862,
+   "metrics.count": 0.007
   },
   "samples": [
    {
@@ -1598,7 +1904,13 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 1.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-05": 2359
+   },
+   "distinct_days": 1,
+   "top3_day_share": 1.0,
    "min": "2026-08-05",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -1618,12 +1930,14 @@
   "event_types": {
    "school_record": 2359
   },
+  "event_types_distinct": 1,
   "units": {
    "students": 2359
   },
   "source_licenses": {
    "HDX :: varies": 2359
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -1660,6 +1974,42 @@
    "school_name": 1.0,
    "school_id": 1.0,
    "school_type": 1.0,
+   "school_status": 1.0,
+   "stable_id": 1.0,
+   "location.admin1": 0.999,
+   "location.admin2": 0.999,
+   "location.admin2_pcode": 0.999,
+   "school_name_ar": 0.992,
+   "location.governorate": 0.981,
+   "location.locality": 0.786,
+   "location.coordinates": 0.012,
+   "location.admin_levels": 0.012,
+   "location.proximity": 0.012,
+   "location.region_type": 0.009,
+   "location.gazetteer_key": 0.001
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "school_name": 1.0,
+   "school_id": 1.0,
    "school_status": 1.0,
    "stable_id": 1.0,
    "location.admin1": 0.999,
@@ -1829,7 +2179,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "05-15": 2314,
+    "06-15": 2305,
+    "10-15": 2255,
+    "12-15": 2252
+   },
+   "distinct_days": 234,
+   "top3_day_share": 0.036,
    "min": "2007-01-15",
    "max": "2026-06-15",
    "fetch_day": "2026-08-05"
@@ -1850,6 +2209,7 @@
   "event_types": {
    "food_price": 26814
   },
+  "event_types_distinct": 1,
   "units": {
    "ILS/KG": 19001,
    "ILS/500 G": 1757,
@@ -1861,6 +2221,7 @@
   "source_licenses": {
    "WFP Food Prices :: CC-BY-IGO": 26814
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -1896,6 +2257,37 @@
    "quality.accuracy": 1.0,
    "quality.confidence": 1.0,
    "quality.verified": 1.0,
+   "sources": 1.0,
+   "commodity": 1.0,
+   "commodity_category": 1.0,
+   "price_type": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 0.785,
+   "location.admin_levels": 0.785,
+   "location.proximity": 0.785,
+   "location.region_type": 0.711
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.governorate": 1.0,
+   "location.region": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "metrics.price": 1.0,
+   "metrics.price_usd": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
    "sources": 1.0,
    "commodity": 1.0,
    "commodity_category": 1.0,
@@ -2054,11 +2446,20 @@
   },
   "dates": {
    "present_pct": 1.0,
-   "ingest_masquerade_pct": 0.0,
+   "ingest_masquerade_pct": null,
+   "masquerade_measurable": false,
    "year_bucket_pct": 0.005,
+   "monthday_top": {
+    "07-21": 260,
+    "12-29": 253,
+    "01-01": 234,
+    "01-22": 172
+   },
+   "distinct_days": 1978,
+   "top3_day_share": 0.065,
    "min": "2013-05-27",
    "max": "2026-08-03",
-   "fetch_day": ""
+   "fetch_day": null
   },
   "geo": {
    "precision": {
@@ -2076,12 +2477,14 @@
   "event_types": {
    "humanitarian_funding": 9986
   },
+  "event_types_distinct": 1,
   "units": {
    "USD": 9986
   },
   "source_licenses": {
    "UN OCHA Financial Tracking Service :: CC-BY-IGO-3.0": 9986
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -2130,6 +2533,45 @@
    "funding.cluster": 0.831,
    "funding.ref_code": 0.807,
    "funding.plan": 0.799,
+   "funding.emergency": 0.455,
+   "funding.keywords": 0.15
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "actors": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "funding.amount_usd": 1.0,
+   "funding.original_currency": 1.0,
+   "funding.status": 1.0,
+   "funding.flow_type": 1.0,
+   "funding.contribution_type": 1.0,
+   "funding.donor": 1.0,
+   "funding.recipient": 1.0,
+   "funding.usage_years": 1.0,
+   "funding.flow_id": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "funding.method": 1.0,
+   "funding.cluster": 0.831,
+   "funding.new_money": 0.819,
+   "funding.ref_code": 0.806,
+   "funding.plan": 0.799,
+   "funding.original_amount": 0.528,
    "funding.emergency": 0.455,
    "funding.keywords": 0.15
   },
@@ -2323,7 +2765,13 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "01-01": 40559
+   },
+   "distinct_days": 51,
+   "top3_day_share": 0.218,
    "min": "1975-01-01",
    "max": "2025-01-01",
    "fetch_day": "2026-08-05"
@@ -2343,6 +2791,7 @@
   "event_types": {
    "health_indicator": 40559
   },
+  "event_types_distinct": 1,
   "units": {
    "percentage": 33368,
    "number": 6399,
@@ -2351,6 +2800,7 @@
   "source_licenses": {
    "WHO :: public-domain": 40559
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -2389,6 +2839,35 @@
    "dimension.type": 0.92,
    "dimension.code": 0.92,
    "dimension.name": 0.92,
+   "value_high": 0.842,
+   "value_low": 0.835
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "indicator_url": 1.0,
+   "stable_id": 1.0,
+   "metrics.value": 0.977,
+   "dimension.type": 0.92,
+   "dimension.code": 0.92,
+   "dimension.name": 0.917,
    "value_high": 0.842,
    "value_low": 0.835
   },
@@ -2538,7 +3017,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.002,
+   "monthday_top": {
+    "04-01": 2016,
+    "05-01": 78,
+    "10-30": 17,
+    "07-18": 15
+   },
+   "distinct_days": 153,
+   "top3_day_share": 0.83,
    "min": "1935-01-01",
    "max": "2005-08-22",
    "fetch_day": "2026-08-05"
@@ -2569,6 +3057,7 @@
    "massacre": 2,
    "displacement": 1
   },
+  "event_types_distinct": 7,
   "units": {
    "persons": 2517
   },
@@ -2582,8 +3071,27 @@
    "PASSIA; Yezid Sayigh 'Armed Struggle and the Search for State' :: public-domain": 1,
    "Yezid Sayigh; Rashid Khalidi 'The Iron Cage' :: public-domain": 1,
    "UN; IDF archives; Middle East Institute :: public-domain": 1,
-   "Adalah; Sabri Jiryis 'The Arabs in Israel' :: public-domain": 1
+   "Adalah; Sabri Jiryis 'The Arabs in Israel' :: public-domain": 1,
+   "Kahan Commission Report 1983; UN General Assembly Res. 37/123 D; Robert Fisk 'Pity the Nation' :: public-domain": 1,
+   "B'Tselem; Al-Haq; Said & Hitchens 'Blaming the Victims' :: public-domain": 1,
+   "B'Tselem fatalities database; Al-Haq annual report 1988 :: public-domain": 1,
+   "B'Tselem; Save the Children 1990 report :: public-domain": 1,
+   "B'Tselem; UN Commission of Inquiry on Haram al-Sharif 1990 :: public-domain": 1,
+   "B'Tselem; World Bank Gulf War report :: public-domain": 1,
+   "US State Department archive; UNISPAL :: public-domain": 1,
+   "UN Security Council Res. 799; Human Rights Watch 1993 report :: public-domain": 1,
+   "B'Tselem fatalities database cumulative; Al-Haq 'Punishing a Nation' :: public-domain": 1,
+   "US State Department; UNISPAL full text :: public-domain": 1,
+   "Shamgar Commission Report 1994; HRW 1994 report :: public-domain": 1,
+   "UNISPAL; Quartet archive :: public-domain": 1,
+   "UNISPAL full text; Annex I–VII :: public-domain": 1,
+   "Shamgar Commission Report 1996 :: public-domain": 1,
+   "B'Tselem; UN SC Res. 1073 :: public-domain": 1,
+   "UNISPAL Hebron Protocol full text :: public-domain": 1,
+   "UNISPAL; US National Archives :: public-domain": 1,
+   "Hussein Agha & Robert Malley 'Camp David: The Tragedy of Errors'; Clinton Parameters (Dec 2000) :: public-domain": 1
   },
+  "source_licenses_distinct": 28,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -2640,6 +3148,53 @@
    "location.admin_levels": 0.014,
    "location.proximity": 0.014,
    "timeline_period": 0.011
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.lat": 0.99,
+   "location.lon": 0.99,
+   "location.governorate": 0.99,
+   "location.gazetteer_key": 0.99,
+   "location.name_ar": 0.989,
+   "locality_status": 0.989,
+   "locality_group": 0.989,
+   "district_1945": 0.989,
+   "subdistrict_1945": 0.989,
+   "metrics.population_2016": 0.673,
+   "cross_references.palestineremembered_id": 0.41,
+   "metrics.population_1945": 0.401,
+   "cross_references.palestineremembered_url": 0.351,
+   "location.admin1": 0.326,
+   "location.admin2": 0.326,
+   "location.admin2_pcode": 0.326,
+   "metrics.population_1931": 0.28,
+   "metrics.population_1922": 0.259,
+   "cross_references.zochrot_id": 0.212,
+   "location.region_type": 0.02,
+   "location.coordinates": 0.014,
+   "location.admin_levels": 0.014,
+   "location.proximity": 0.014,
+   "timeline_period": 0.011,
+   "metrics.killed": 0.006,
+   "metrics.count": 0.006,
+   "metrics.injured": 0.002,
+   "metrics.displaced": 0.001
   },
   "samples": [
    {
@@ -2785,7 +3340,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.17,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.002,
+   "monthday_top": {
+    "08-05": 611,
+    "10-10": 9,
+    "10-11": 9,
+    "10-15": 9
+   },
+   "distinct_days": 732,
+   "top3_day_share": 0.173,
    "min": "2023-10-07",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -2810,6 +3374,7 @@
    "barrier_segment": 261,
    "satellite_damage_assessment": 14
   },
+  "event_types_distinct": 4,
   "units": {
    "units": 1460,
    "buildings": 1460,
@@ -2822,6 +3387,7 @@
    "HDX :: varies": 603,
    "UNOSAT Gaza damage assessments :: CC-BY-SA": 14
   },
+  "source_licenses_distinct": 3,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -2873,6 +3439,57 @@
    "metrics.structures_moderately_damaged": 0.004,
    "metrics.structures_total_affected": 0.004,
    "temporal_context.baseline_date": 0.004,
+   "assessment_scope": 0.004,
+   "geodatabase_url": 0.004,
+   "metrics.structures_destroyed": 0.004,
+   "metrics.structures_possibly_damaged": 0.002,
+   "metrics.housing_units_damaged": 0.001,
+   "metrics.percent_structures_damaged": 0.001
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "temporal_context.days_since_baseline": 0.999,
+   "temporal_context.baseline_period": 0.996,
+   "temporal_context.season": 0.996,
+   "location.lat": 0.996,
+   "location.lon": 0.996,
+   "location.admin1": 0.922,
+   "location.admin2": 0.922,
+   "location.admin2_pcode": 0.922,
+   "location.coordinates": 0.826,
+   "location.admin_levels": 0.826,
+   "location.region_type": 0.826,
+   "location.proximity": 0.826,
+   "metrics.count": 0.79,
+   "metrics.affected": 0.619,
+   "metrics.demolished": 0.619,
+   "infrastructure_detail.type": 0.619,
+   "infrastructure_detail.damage_level": 0.619,
+   "locality_name": 0.097,
+   "locality_type": 0.097,
+   "barrier_status": 0.074,
+   "barrier_type": 0.059,
+   "metrics.structures_severely_damaged": 0.004,
+   "metrics.structures_moderately_damaged": 0.004,
+   "metrics.structures_total_affected": 0.004,
+   "temporal_context.baseline_date": 0.004,
+   "quality.score": 0.004,
+   "quality.completeness": 0.004,
+   "quality.consistency": 0.004,
+   "quality.accuracy": 0.004,
    "assessment_scope": 0.004,
    "geodatabase_url": 0.004,
    "metrics.structures_destroyed": 0.004,
@@ -3031,7 +3648,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.66,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-05": 461,
+    "07-02": 2,
+    "07-06": 2,
+    "07-07": 2
+   },
+   "distinct_days": 238,
+   "top3_day_share": 0.663,
    "min": "2025-06-30",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -3054,6 +3680,7 @@
    "demolition": 237,
    "settlement": 199
   },
+  "event_types_distinct": 3,
   "units": {
    "sites": 460,
    "structures": 237
@@ -3063,6 +3690,7 @@
    "Good Shepherd Collective :: CC-BY-NC-SA-4.0": 237,
    "Peace Now :: CC-BY-NC-4.0": 199
   },
+  "source_licenses_distinct": 3,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -3102,6 +3730,42 @@
    "checkpoint.checkpoint_type": 0.374,
    "checkpoint.operational_status": 0.374,
    "checkpoint.permits_required": 0.374,
+   "demolition.demolition_date": 0.34,
+   "demolition.structure_type": 0.34,
+   "demolition.structures_demolished": 0.34,
+   "demolition.reason": 0.34,
+   "demolition.notification_given": 0.34,
+   "demolition.owner_type": 0.34,
+   "settlement.settlement_type": 0.286,
+   "settlement.area_dunums": 0.286,
+   "settlement.legal_status": 0.286
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "land_type": 1.0,
+   "stable_id": 1.0,
+   "land_name": 0.968,
+   "land_status": 0.66,
+   "description": 0.628,
+   "checkpoint.checkpoint_type": 0.374,
+   "checkpoint.operational_status": 0.374,
+   "checkpoint.permits_required": 0.374,
+   "metrics.demolished": 0.34,
    "demolition.demolition_date": 0.34,
    "demolition.structure_type": 0.34,
    "demolition.structures_demolished": 0.34,
@@ -3261,7 +3925,13 @@
   "dates": {
    "present_pct": 0.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "06-09": 1
+   },
+   "distinct_days": 1,
+   "top3_day_share": 1.0,
    "min": "2026-06-09",
    "max": "2026-06-09",
    "fetch_day": "2026-06-09"
@@ -3283,12 +3953,14 @@
    "identified_killed": 60199,
    "cumulative_summary": 1
   },
+  "event_types_distinct": 2,
   "units": {
    "persons": 60200
   },
   "source_licenses": {
    "Tech4Palestine :: CC-BY-4.0": 60200
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "category": 1.0,
@@ -3332,6 +4004,47 @@
    "date": 0.0,
    "temporal_context.days_since_baseline": 0.0,
    "temporal_context.conflict_phase": 0.0,
+   "cumulative.gaza": 0.0,
+   "cumulative.west_bank": 0.0,
+   "cumulative.identified_in_gaza_database": 0.0,
+   "cumulative.press_identified": 0.0
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.killed": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.baseline_date": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.coordinates": 1.0,
+   "location.admin_levels": 1.0,
+   "location.region_type": 1.0,
+   "location.proximity": 1.0,
+   "name": 1.0,
+   "name_ar": 1.0,
+   "name_en": 1.0,
+   "sex": 1.0,
+   "dob": 1.0,
+   "t4p_id": 1.0,
+   "t4p_source_marker": 1.0,
+   "age": 0.984,
+   "date": 0.0,
+   "metrics.injured": 0.0,
+   "metrics.count": 0.0,
+   "temporal_context.days_since_baseline": 0.0,
+   "temporal_context.conflict_phase": 0.0,
+   "quality.score": 0.0,
+   "quality.completeness": 0.0,
+   "quality.consistency": 0.0,
+   "quality.accuracy": 0.0,
    "cumulative.gaza": 0.0,
    "cumulative.west_bank": 0.0,
    "cumulative.identified_in_gaza_database": 0.0,
@@ -3508,7 +4221,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.038,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-04": 116,
+    "08-03": 18,
+    "07-31": 12,
+    "08-05": 7
+   },
+   "distinct_days": 17,
+   "top3_day_share": 0.785,
    "min": "2026-07-17",
    "max": "2026-08-05",
    "fetch_day": "2026-08-05"
@@ -3531,6 +4253,7 @@
   "event_types": {
    "news_report": 186
   },
+  "event_types_distinct": 1,
   "units": {
    "articles": 186
   },
@@ -3544,8 +4267,12 @@
    "Anadolu Agency (Middle East) :: varies": 14,
    "Mondoweiss :: varies": 10,
    "Palestinian Information Center :: varies": 10,
-   "Al Jazeera English :: varies": 7
+   "Al Jazeera English :: varies": 7,
+   "Human Rights Watch :: varies": 6,
+   "IMEMC News :: varies": 5,
+   "Amnesty International :: varies": 3
   },
+  "source_licenses_distinct": 13,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -3576,6 +4303,42 @@
    "quality.accuracy": 1.0,
    "quality.confidence": 1.0,
    "quality.verified": 1.0,
+   "sources": 1.0,
+   "title": 1.0,
+   "link": 1.0,
+   "source": 1.0,
+   "source_category": 1.0,
+   "article_category": 1.0,
+   "language": 1.0,
+   "reliability": 1.0,
+   "stable_id": 1.0,
+   "article_description": 0.995,
+   "location.coordinates": 0.323,
+   "location.admin_levels": 0.323,
+   "location.proximity": 0.323,
+   "location.region_type": 0.317,
+   "location.governorate": 0.005,
+   "location.lat": 0.005,
+   "location.lon": 0.005,
+   "location.gazetteer_key": 0.005
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
    "sources": 1.0,
    "title": 1.0,
    "link": 1.0,
@@ -3740,11 +4503,17 @@
   },
   "dates": {
    "present_pct": 1.0,
-   "ingest_masquerade_pct": 0.0,
+   "ingest_masquerade_pct": null,
+   "masquerade_measurable": false,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "01-01": 2060
+   },
+   "distinct_days": 66,
+   "top3_day_share": 0.095,
    "min": "1960-01-01",
    "max": "2025-01-01",
-   "fetch_day": ""
+   "fetch_day": null
   },
   "geo": {
    "precision": {
@@ -3761,6 +4530,7 @@
   "event_types": {
    "indicator_measurement": 2060
   },
+  "event_types_distinct": 1,
   "units": {
    "percentage": 1134,
    "number": 347,
@@ -3772,6 +4542,7 @@
   "source_licenses": {
    "Palestinian Central Bureau of Statistics (PCBS) :: public-domain": 2060
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -3811,6 +4582,33 @@
    "stable_id": 1.0,
    "demographic_category": 0.468,
    "analysis.recent_change": 0.033
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.baseline_date": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "indicator_code": 1.0,
+   "indicator_name": 1.0,
+   "analysis.trend": 1.0,
+   "analysis.data_points": 1.0,
+   "analysis.date_range": 1.0,
+   "pcbs_metadata.official_source": 1.0,
+   "pcbs_metadata.data_quality": 1.0,
+   "pcbs_metadata.update_frequency": 1.0,
+   "stable_id": 1.0,
+   "demographic_category": 0.468
   },
   "samples": [
    {
@@ -3983,7 +4781,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-01": 78,
+    "10-01": 78,
+    "09-01": 78,
+    "06-01": 76
+   },
+   "distinct_days": 217,
+   "top3_day_share": 0.02,
    "min": "2008-05-01",
    "max": "2026-08-01",
    "fetch_day": "2026-08-05"
@@ -4003,6 +4810,7 @@
   "event_types": {
    "prisoners_count": 890
   },
+  "event_types_distinct": 1,
   "units": {
    "persons": 890
   },
@@ -4010,6 +4818,7 @@
    "HaMoked :: verify-required": 864,
    "Addameer Prisoner Support and Human Rights Association :: verify-required": 26
   },
+  "source_licenses_distinct": 2,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -4043,6 +4852,32 @@
    "sources": 1.0,
    "prisoner_metric_type": 1.0,
    "stable_id": 1.0,
+   "location.coordinates": 0.029,
+   "location.admin_levels": 0.029,
+   "location.region_type": 0.029,
+   "location.proximity": 0.029
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "prisoner_metric_type": 1.0,
+   "stable_id": 1.0,
+   "metrics.detained": 0.256,
    "location.coordinates": 0.029,
    "location.admin_levels": 0.029,
    "location.region_type": 0.029,
@@ -4190,7 +5025,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.74,
+   "monthday_top": {
+    "12-31": 1159,
+    "06-10": 75,
+    "01-08": 5,
+    "01-29": 4
+   },
+   "distinct_days": 242,
+   "top3_day_share": 0.148,
    "min": "2010-12-31",
    "max": "2026-06-24",
    "fetch_day": "2026-08-05"
@@ -4214,6 +5058,7 @@
    "refugee_displacement": 1232,
    "displacement_event": 334
   },
+  "event_types_distinct": 2,
   "units": {
    "people": 1232,
    "persons": 334
@@ -4223,6 +5068,7 @@
    "IDMC :: CC-BY-IGO": 334,
    "UNRWA camp registry :: CC-BY-SA-3.0": 75
   },
+  "source_licenses_distinct": 3,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -4267,6 +5113,54 @@
    "location.admin2": 0.222,
    "location.admin2_pcode": 0.222,
    "event_name": 0.213,
+   "location.gazetteer_key": 0.089,
+   "location.governorate": 0.086,
+   "location.region_type": 0.013,
+   "location.coordinates": 0.004,
+   "location.admin_levels": 0.004,
+   "location.proximity": 0.004,
+   "displacement_category": 0.001,
+   "displacement_subtype": 0.001
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.value": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "displacement_type": 0.787,
+   "temporal_context.days_since_baseline": 0.787,
+   "temporal_context.baseline_period": 0.787,
+   "temporal_context.conflict_phase": 0.787,
+   "temporal_context.season": 0.787,
+   "origin": 0.787,
+   "asylum_country": 0.739,
+   "refugees": 0.713,
+   "asylum_seekers": 0.499,
+   "location.lat": 0.223,
+   "location.lon": 0.223,
+   "location.admin1": 0.222,
+   "location.admin2": 0.222,
+   "location.admin2_pcode": 0.222,
+   "metrics.displaced": 0.213,
+   "metrics.affected": 0.213,
+   "event_name": 0.213,
+   "severity_index": 0.213,
+   "quality.score": 0.213,
+   "quality.completeness": 0.213,
+   "quality.consistency": 0.213,
+   "quality.accuracy": 0.213,
+   "quality.verified": 0.213,
    "location.gazetteer_key": 0.089,
    "location.governorate": 0.086,
    "location.region_type": 0.013,
@@ -4418,7 +5312,13 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 1.0,
+   "monthday_top": {
+    "12-31": 51
+   },
+   "distinct_days": 51,
+   "top3_day_share": 0.059,
    "min": "1967-12-31",
    "max": "2024-12-31",
    "fetch_day": "2026-08-05"
@@ -4438,12 +5338,14 @@
   "event_types": {
    "settler_population": 51
   },
+  "event_types_distinct": 1,
   "units": {
    "settlers": 51
   },
   "source_licenses": {
    "Peace Now — Settlement Watch :: verify-required": 51
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -4477,6 +5379,28 @@
    "sources": 1.0,
    "year": 1.0,
    "stable_id": 1.0
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "year": 1.0,
+   "stable_id": 1.0,
+   "metrics.count": 0.98,
+   "metrics.value": 0.98
   },
   "samples": [
    {
@@ -4608,7 +5532,16 @@
   "dates": {
    "present_pct": 1.0,
    "ingest_masquerade_pct": 0.0,
+   "masquerade_measurable": true,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "07-15": 9697,
+    "07-28": 7999,
+    "05-08": 7347,
+    "07-03": 4
+   },
+   "distinct_days": 5,
+   "top3_day_share": 1.0,
    "min": "2026-05-08",
    "max": "2026-08-01",
    "fetch_day": "2026-08-05"
@@ -4628,6 +5561,7 @@
   "event_types": {
    "wash_indicator": 25049
   },
+  "event_types_distinct": 1,
   "units": {
    "count": 25042,
    "dataset": 7
@@ -4635,6 +5569,7 @@
   "source_licenses": {
    "HDX :: varies": 25049
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -4671,6 +5606,30 @@
    "wash_status": 1.0,
    "access_level": 1.0,
    "stable_id": 1.0
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "indicator_name": 1.0,
+   "stable_id": 1.0,
+   "metrics.value": 1.0,
+   "wash_status": 0.018,
+   "access_level": 0.018
   },
   "samples": [
    {
@@ -4809,11 +5768,17 @@
   },
   "dates": {
    "present_pct": 1.0,
-   "ingest_masquerade_pct": 0.0,
+   "ingest_masquerade_pct": null,
+   "masquerade_measurable": false,
    "year_bucket_pct": 0.0,
+   "monthday_top": {
+    "08-05": 2962
+   },
+   "distinct_days": 1,
+   "top3_day_share": 1.0,
    "min": "2026-08-05",
    "max": "2026-08-05",
-   "fetch_day": ""
+   "fetch_day": null
   },
   "geo": {
    "precision": {
@@ -4833,6 +5798,7 @@
    "locality_record": 342,
    "barrier_segment": 261
   },
+  "event_types_distinct": 3,
   "units": {
    "students": 2359,
    "persons": 342,
@@ -4841,6 +5807,7 @@
   "source_licenses": {
    "HDX :: varies": 2962
   },
+  "source_licenses_distinct": 1,
   "field_fill": {
    "id": 1.0,
    "date": 1.0,
@@ -4889,6 +5856,46 @@
    "locality_type": 0.115,
    "barrier_type": 0.088,
    "barrier_status": 0.088,
+   "location.coordinates": 0.009,
+   "location.admin_levels": 0.009,
+   "location.proximity": 0.009,
+   "location.region_type": 0.007,
+   "location.gazetteer_key": 0.001
+  },
+  "field_fill_nonzero": {
+   "id": 1.0,
+   "date": 1.0,
+   "category": 1.0,
+   "event_type": 1.0,
+   "schema_version": 1.0,
+   "location.name": 1.0,
+   "location.region": 1.0,
+   "location.precision": 1.0,
+   "metrics.count": 1.0,
+   "metrics.unit": 1.0,
+   "description": 1.0,
+   "temporal_context.days_since_baseline": 1.0,
+   "temporal_context.baseline_period": 1.0,
+   "temporal_context.conflict_phase": 1.0,
+   "temporal_context.season": 1.0,
+   "quality.confidence": 1.0,
+   "sources": 1.0,
+   "stable_id": 1.0,
+   "location.lat": 1.0,
+   "location.lon": 1.0,
+   "location.admin1": 0.911,
+   "location.admin2": 0.911,
+   "location.admin2_pcode": 0.911,
+   "school_name": 0.796,
+   "school_id": 0.796,
+   "school_status": 0.796,
+   "school_name_ar": 0.79,
+   "location.governorate": 0.781,
+   "location.locality": 0.626,
+   "locality_name": 0.115,
+   "locality_type": 0.115,
+   "barrier_status": 0.088,
+   "barrier_type": 0.071,
    "location.coordinates": 0.009,
    "location.admin_levels": 0.009,
    "location.proximity": 0.009,

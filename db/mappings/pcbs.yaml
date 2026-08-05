@@ -1,0 +1,146 @@
+# pcbs — 2,060 annual statistical series filed under PCBS. Audit: 100% dated,
+# 0% geo (region='Palestine' on all 2,060), one event_type, one source name.
+# It looks like the tidiest category in the set. It is not: the records are
+# World Bank API rows wearing PCBS's name, and 90% of them are byte-identical
+# duplicates of rows already in `economic`. Both findings are measured below
+# and both are blocking questions for review.
+category: pcbs
+shape: observation
+status: reviewed
+records_measured: 2060
+
+source_routing:
+  by_name:
+    "Palestinian Central Bureau of Statistics (PCBS)": pcbs
+    # AMBIGUOUS NAME — resolved deliberately, see notes. licenses.json gives
+    # this exact string as an alias of BOTH `pcbs` (public-statistics) and
+    # `pcbs_direct` (verify-required), and 042 seeds both keys. This category
+    # routes to `pcbs`; economic.yaml routes the same name to `pcbs_direct`.
+    # The disambiguator is measured, not guessed: these 2,060 records carry
+    # sources[0].license == 'public-domain' and url == api.worldbank.org/v2,
+    # while economic's 142 PCBS rows carry 'verify-required' and pcbs.gov.ps.
+  default: null           # measured: 0 records with sources: []
+
+datasets:
+  - key: v1_pcbs_pcbs
+    source: pcbs
+
+indicator:
+  template: "pcbs.{indicator_code}"
+  # 67 distinct codes on 2,060/2,060 records, no nulls. They are World Bank
+  # indicator codes: SP.* 688, SL.* 413, SH.* 295, SE.* 263, NY.* 156,
+  # NV.* 93, NE.* 64, SI.* 31, FP.* 29, EG.* 28. See the duplication note —
+  # the choice of prefix is what keeps these rows from silently merging with
+  # economic.{indicator_code}, and a reviewer may well want them merged, or
+  # want this dataset dropped entirely.
+
+value:
+  num_from: metrics.value    # non-null on 2,060/2,060 (0 nulls measured)
+  text_from: null
+  unit_from: metrics.unit    # percentage 1,134 · number 347 · per_1000 153 ·
+                             #   currency_usd 129 · years 105 · count 69 ·
+                             #   ratio 40 · per_100000 39 · births_per_woman 35 ·
+                             #   index 9. Honest enough to keep, unlike water's
+                             #   uniform 'count'; indicator_name carries the
+                             #   full phrasing and goes to attrs.
+
+occurred_at:
+  from: date
+  precision: year            # NOT day — see notes
+  rules:
+    - if: "always"
+      then: "truncate to Jan 1 of that year, precision=year"
+  # measured: 2,060/2,060 dates are -01-01, spanning 1960-01-01 .. 2025-01-01.
+
+place:
+  strategy: region           # location.region = 'Palestine' on 2,060/2,060 →
+                             #   place_id NULL + attrs.region
+  min_resolved_pct: 1.0
+
+stable_id: stable_id         # 2,060 distinct / 2,060 — but see the duplication
+                             #   note: uniqueness here does NOT mean the rows
+                             #   are unique in the databank
+attrs_passthrough:
+  - indicator_code
+  - indicator_name
+  - demographic_category     # 965/2,060 filled (general 277, dependency_ratio
+                             #   108, life_expectancy 105, urbanization 101,
+                             #   age bands 66 each, …)
+  - category                 # v1's per-record topic: population 965,
+                             #   economic 374, education 255, health 221,
+                             #   labor 218, poverty 27
+  - pcbs_metadata.update_frequency
+
+expect:
+  min_records: 1850          # 0.9 × 2,060
+
+notes: |
+  THIS DATA IS NOT FROM PCBS. All 2,060 records carry
+  sources[0] = {name: 'Palestinian Central Bureau of Statistics (PCBS)',
+  organization: 'PCBS', url: 'https://api.worldbank.org/v2',
+  license: 'public-domain'} — measured on 2,060/2,060, one distinct triple for
+  the whole file. The url is the World Bank API. The indicator codes are World
+  Bank codes (SP.URB.TOTL.IN.ZS, NE.IMP.GNFS.ZS, …), 61 of the 67 appearing
+  verbatim in economic's World Bank dataset. The license string 'public-domain'
+  appears nowhere in licenses.json for PCBS (which says 'public-statistics')
+  and is wrong for the actual upstream: World Bank Open Data is CC-BY-4.0.
+  So v1 pulled the World Bank's Palestine series, relabelled them PCBS, and
+  invented a license. Nothing downstream caught it because the license was
+  a JSON file nobody enforced — which is the whole reason 042 exists.
+
+  AND 90% OF IT IS ALREADY IN `economic`. Measured by joining on
+  (indicator_code, date):
+    1,856 of 2,060 pcbs rows (90.1%) have a matching (code, date) in economic
+    1,856 of 1,856 of those have an IDENTICAL metrics.value
+    0 stable_ids are shared between the two categories
+  So the duplication is invisible to any stable_id-based idempotency check.
+  If both categories load, the databank double-counts 1,856 World Bank
+  observations and any "how many sources agree" measure sees one source twice
+  — which would poison the source-independence machinery in 012 with a
+  perfectly correlated fake witness.
+
+  THREE WAYS OUT — a decision only the reviewer can make:
+    (a) Do not migrate this category. Its unique content is the 204 rows whose
+        (code, date) is not in economic; migrate those into economic's World
+        Bank dataset and drop the rest. Smallest, most honest databank.
+    (b) Migrate as written, under indicator prefix `pcbs.` and source key
+        `pcbs` (commercial_use=false), so the duplicates are visibly separate
+        and never merge with economic.{indicator_code}. This spec's current
+        shape. Keeps v1 parity for the dual-run, costs 1,856 duplicate rows.
+    (c) Fix the provenance: route to `worldbank` and use
+        indicator `economic.{indicator_code}`, letting the duplicates collide
+        and dedup on (dataset, indicator, occurred_at). This is the truthful
+        provenance, but it FLIPS THE LICENSE from commercial_use=false to
+        true — 2,060 rows become sellable on the strength of a url string. Do
+        not take this path without confirming the World Bank pull is real.
+  This spec ships (b) because 042's rule is quarantine-by-default: of the two
+  keys the ambiguous name could resolve to, `pcbs` and `pcbs_direct` are both
+  commercial_use=false, and both are on 042's [ZAID] verify-required list, so
+  routing either way is conservative. `pcbs` was chosen because the record's
+  declared license ('public-domain', permissive) matches licenses.json's
+  `pcbs` entry ('public-statistics') far better than `pcbs_direct`
+  ('verify-required'), and because economic.yaml needs `pcbs_direct` for the
+  rows that genuinely come from pcbs.gov.ps.
+
+  WHY precision: year. Every date is -01-01 (2,060/2,060), which the audit's
+  year_bucket test does not catch because it looks for -12-31. These are
+  annual World Bank observations stamped at the start of the year, i.e. law
+  2's case with the other end of the calendar. Day precision would let a 1960
+  census figure claim to be a fact about 1 January 1960 and, worse, would let
+  the most recent row (2025-01-01) count toward T7 freshness.
+  pcbs_metadata.update_frequency claims 'quarterly' on 413 rows and 'monthly'
+  on 29 — measured against the dates, that is unsupported: all 2,060 rows are
+  annual points. The claim goes to attrs as metadata, never to precision.
+
+  THE MASQUERADE TEST NEVER RAN ON THIS CATEGORY. There is no metadata.json
+  in the pcbs directory (verified), so the audit's fetch_day is the empty
+  string and ingest_masquerade_pct is 0.0 by vacuum, not by measurement. The
+  same is true of `funding`. Reading 0% there as "law 1 does not apply" would
+  be exactly the kind of unmeasured trust that produced v1's freshness
+  defeats. Here it does not matter — the dates are 1960..2025 and obviously
+  not ingest stamps — but the reason it does not matter is the date range,
+  not the audit.
+
+  location.coordinates is absent from this category (0% fill), which is the
+  one place v1's enricher did not stamp its synthetic Gaza centroid. Nothing
+  to forbid.

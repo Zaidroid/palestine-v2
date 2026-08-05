@@ -1,0 +1,152 @@
+# land — checkpoints, demolitions and settlements; three sources, three licenses
+# Audit: 697 records, 100% dated, 66% ingest masquerade, 0% year-bucket, 0%
+# latlon / 0% pcode. The 66% is not a category-wide defect: it splits exactly
+# along source lines. Good Shepherd Collective's 237 demolitions carry a real
+# event date; OCHA's 261 checkpoints and Peace Now's 199 settlements are
+# registers with no date at all. Routing is three-way and exhaustive (law 5).
+category: land
+shape: observation
+status: reviewed
+records_measured: 697
+
+source_routing:
+  by_name:
+    "OCHA oPt": ocha                              # 261 records
+    "Good Shepherd Collective": goodshepherd      # 237 records
+    "Peace Now": peace_now                        # 199 records — pin REQUIRED,
+                                                  #   the alias is ambiguous
+  default: null            # measured: 0/697 records have an empty sources[];
+                           #   sources[] has exactly one entry on 697/697
+
+datasets:
+  - key: v1_land_ocha
+    source: ocha
+  - key: v1_land_goodshepherd
+    source: goodshepherd
+  - key: v1_land_peace_now
+    source: peace_now
+
+indicator:
+  template: "land.{event_type}"    # land.checkpoint 261 / land.demolition 237
+                                   #   / land.settlement 199. land_type equals
+                                   #   event_type on 697/697 — either works.
+
+value:
+  num_from: metrics.count          # 1 on checkpoints+settlements; the count of
+                                   #   structures demolished on demolitions
+                                   #   (== metrics.demolished on 237/237,
+                                   #   observed 1..16)
+  text_from: land_status
+  unit_from: metrics.unit          # 'sites' 460 / 'structures' 237 — honest here
+
+occurred_at:
+  from: date
+  precision: day
+  rules:                           # ordered, first match wins
+    - if: "event_type == 'demolition'"
+      then: "occurred_at = demolition.demolition_date, precision=day"
+      # HONEST DATE. Filled on 237/237 demolitions (34.0% of the category) and
+      # equal to `date` on 237/237, range 2025-06-30..2026-07-30. Written as an
+      # explicit rule rather than relying on `date` so the provenance is on the
+      # record: this occurred_at comes from a reported demolition date, not
+      # from an ingest timestamp that happens not to collide.
+    - if: "date == fetch_day"
+      then: "reported_at-only"
+      # Fires on 460/697 = 0.660, matching the audit exactly: all 261 OCHA
+      # checkpoints and all 199 Peace Now settlements. Neither carries any
+      # other date field. 0/237 demolitions reach this rule.
+
+place:
+  strategy: region                 # location.region: West Bank 460 /
+                                   #   Palestine 237
+  min_resolved_pct: 1.0            # West Bank → place 2; 'Palestine' →
+                                   #   place_id NULL + attrs.region (law 3)
+
+stable_id: stable_id               # 697 distinct. DO NOT use `id`: only 673
+                                   #   distinct, 24 rows collide (see notes)
+attrs_passthrough:
+  - land_type
+  - land_name
+  - land_status
+  - checkpoint.checkpoint_type
+  - checkpoint.operational_status
+  - checkpoint.permits_required
+  - demolition.structure_type
+  - demolition.structures_demolished
+  - demolition.reason
+  - demolition.notification_given
+  - demolition.owner_type
+  - settlement.settlement_type
+  - settlement.area_dunums
+  - settlement.legal_status
+
+expect:
+  min_records: 627                 # 0.9 × 697
+
+notes: |
+  THE THREE DATASETS ARE DISJOINT AND SOURCE == EVENT_TYPE, 1:1, measured:
+    OCHA oPt              × checkpoint   261   CC-BY-IGO-3.0    all date==fetch_day
+    Good Shepherd Collective × demolition 237  CC-BY-NC-SA-4.0  0 date==fetch_day
+    Peace Now             × settlement   199   CC-BY-NC-4.0     all date==fetch_day
+  261+237+199 = 697 with no cross-tabulation, so the date rules above can be
+  keyed on event_type and still be exactly source-scoped. The masquerade
+  fraction 460/697 = 0.660 reproduces the audit's 0.66 to the digit.
+
+  HONEST DATE, WHERE IT EXISTS. demolition.demolition_date is the only real
+  event date in the category: present on 237/697 (34.0%), day-precise, spanning
+  2025-06-30..2026-07-30, and identical to `date` on all 237. So one third of
+  land keeps day precision and two thirds go precision=unknown. Checkpoints and
+  settlements were searched field by field for any other date or year: the only
+  4-digit-year matches outside `date` and `sources[].fetched_at` are
+  demolition.demolition_date (237) and a single settlement.area_dunums value of
+  2004 (a dunum area that coincidentally looks like a year — not a date).
+
+  LICENSE — 042 WINS OVER THE RECORD, AND THAT IS DELIBERATE. The records
+  carry license strings that are more permissive than the registry:
+    goodshepherd — record says CC-BY-NC-SA-4.0; 042 and licenses.json say
+      'verify-required', commercial_use false/unknown, verify_required true.
+    peace_now    — record says CC-BY-NC-4.0; 042 and licenses.json say
+      'verify-required', commercial_use false, verify_required true.
+    ocha         — record says CC-BY-IGO-3.0; 042 agrees, commercial_use true.
+  042's quarantine-by-default rule means the source row governs, so 436 of 697
+  rows (goodshepherd + peace_now) are non-commercial and free-tier-only until
+  Zaid verifies. Only the 261 OCHA checkpoint rows are commercially servable.
+  Do not "upgrade" a source row from the record's own license claim — the
+  record's claim is v1's assertion, not the upstream's grant.
+
+  ROUTING HAZARD — the 'peace now' alias is AMBIGUOUS in licenses.json. It
+  appears in the aliases list of BOTH `peace_now` and `historical_archives`
+  (whose alias list is a 50-entry catch-all that also swallows 'middle east
+  eye', 'al-haq', 'un', 'passia', 'adalah'). Alias resolution alone would pick
+  arbitrarily. The by_name pin above is therefore mandatory, not a convenience.
+  'OCHA oPt' → ocha and 'Good Shepherd Collective' → goodshepherd are both
+  unambiguous, but are pinned for symmetry and so a future alias edit cannot
+  silently re-route them.
+
+  PLACE IS REGION AND THAT IS THE CEILING. 0% latlon, 0% pcode, 0%
+  gazetteer_key across all 697. location.governorate is the literal string
+  'Unknown' on all 261 checkpoints and null on all 237 demolitions (filled 66%,
+  which is exactly the 'Unknown'/'Unknown' pair, i.e. zero information).
+  location.name is 'West Bank' on checkpoints and settlements and 'Multiple
+  locations' on all 237 demolitions — never a locality. land_name (437 distinct)
+  is not a place either, per event_type:
+    checkpoint  — 'Concrete - 1', 'Fence - 2', 'Concrete - 3' … type plus a
+                  serial number. 261 distinct, zero place content.
+    demolition  — 'Multiple locations' on all 237.
+    settlement  — real Israeli settlement names (Ariel, Beitar Illit, Bracha;
+                  175 distinct, 24 'Unknown'). Law 3 forbids matching these
+                  against the Palestinian gazetteer, and they are not in it.
+  So region, min_resolved_pct 1.0: 460 → place 2 (West Bank), 237 → place_id
+  NULL with attrs.region 'Palestine'.
+
+  `id` IS NOT UNIQUE. 697 records carry only 673 distinct `id` values: the
+  settlement id 'land-8maah0' is shared by 22 rows and 'land-oiinzd' by 4 (all
+  of them the settlements whose land_name is 'Unknown' — v1's id generator
+  collided on the name). stable_id is distinct on 697/697. Any future spec that
+  is tempted to fall back to `id` when stable_id is missing must not do it here.
+
+  metrics.value is 0 on 697/697 across all three sources and must never be
+  read; metrics.count is the honest number. metadata.json is wrong on two
+  counts — it claims 699 records (actual 697) and names its sources as
+  "OCHA, B'Tselem, Peace Now", but B'Tselem appears in 0 records and the third
+  source is Good Shepherd Collective. Trust the records.

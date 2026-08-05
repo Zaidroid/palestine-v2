@@ -1,0 +1,305 @@
+# conflict — the databank's only genuinely event-shaped category, and its most
+# mixed. Audit: 10,495 records, 100% dated (0% masquerade, 0.2% year-bucket),
+# 78.4% lat/lon, 9 source names across 5 primary sources and 4 licence
+# families. Three things in this file are not events and are handled
+# explicitly: a 977-row CUMULATIVE Gaza casualty series (summing it yields ~35
+# million deaths), 977 all-zero West Bank placeholder rows, and 44 Good
+# Shepherd rows with no payload at all. Everything else — 7,638 UCDP-GED
+# georeferenced events, 589 Nakba village depopulations, 262 journalist
+# killings — is a real thing that happened at a place and a time.
+category: conflict
+shape: event
+shape_overrides:
+  # REVIEW VERDICT (2026-08-05): open question 3 answered — the cumulative
+  # series is a time series, not 977 events. It routes to `observation`:
+  - if: "event_type in (daily_casualty_report, summary)"
+    shape: observation
+    indicator:
+      fan_out:
+        - when: "metrics.killed is not null"
+          indicator: "conflict.gaza_cumulative_killed"
+          value: {num_from: metrics.killed, unit: persons}
+        - when: "metrics.injured is not null and metrics.injured > 0"
+          indicator: "conflict.gaza_cumulative_injured"
+          value: {num_from: metrics.injured, unit: persons}
+    # attrs.cumulative = true on every fanned row; occurred_at/place rules
+    # unchanged from the file-level blocks.
+status: reviewed
+records_measured: 10495
+
+source_routing:
+  route_on: "sources[0].name"      # measured: the 5 primary names below appear
+                                   #   ONLY at index 0, and the 4 provenance
+                                   #   names ONLY at index ≥1 (see notes)
+  by_name:
+    # primary — these pick the dataset
+    "UCDP-GED": ucdp                                        # 7,638 (72.8%)
+    "Tech4Palestine": tech4palestine                        # 2,218 (21.1%)
+    "Palestine Open Maps locality registry": palopenmaps    #   589 ( 5.6%)
+    "Good Shepherd": goodshepherd                           #    44 ( 0.4%)
+    "B'Tselem": btselem                                     #     6 ( 0.1%)
+    # secondary provenance — never at index 0, so they never pick a dataset;
+    # pinned here anyway so routing is exhaustive over every name the audit's
+    # source_licenses lists and an unroutable name still FAILS loudly (law 5).
+    "Zochrot village page": zochrot                         #   526, idx 1
+    "Atlas of Palestine": atlas_of_palestine                #   518, idx 1-3
+    "Palestine Remembered village page": palestine_remembered  # 459, idx 1-2
+    "Wikidata crosswalk": wikidata                          #   329, idx 2-4
+  default: null      # measured: 0 records with sources: [] — empty sources[]
+                     #   is an ERROR, not a default
+  # WARNING, measured: 5 of these 9 names do NOT resolve through
+  # licenses.json aliases — "Palestine Open Maps locality registry",
+  # "Zochrot village page", "Atlas of Palestine", "Palestine Remembered
+  # village page", "Wikidata crosswalk". The last four have no entry in
+  # licenses.json at all; they exist only as 042 rows. Alias resolution alone
+  # would fail this category, which is why by_name is written out in full.
+
+datasets:                       # one per (category, primary source), law 5
+  - key: v1_conflict_ucdp
+    source: ucdp                # CC-BY-IGO, commercial_use=true (042)
+  - key: v1_conflict_tech4palestine
+    source: tech4palestine      # 042: CC-BY-4.0, commercial_use=true
+                                #   — records say license 'varies'; see notes
+  - key: v1_conflict_palopenmaps
+    source: palopenmaps         # verify-required, commercial_use=false
+  - key: v1_conflict_goodshepherd
+    source: goodshepherd        # verify-required; lands 0 rows if the drop
+                                #   below is accepted — see notes
+  - key: v1_conflict_btselem
+    source: btselem             # CC-BY-NC-4.0, commercial_use=false
+
+event_type:
+  template: "conflict.{event_type}"
+  # slug rule: lowercase, runs of non-alphanumerics → '_'. Measured result:
+  #   conflict.state_based            7,071   UCDP
+  #   conflict.daily_casualty_report  1,954   Tech4Palestine  (NOT events, see metrics_rules/drop)
+  #   conflict.village_depopulation     589   Palestine Open Maps
+  #   conflict.one_sided                461   UCDP
+  #   conflict.killing_of_journalist    262   Tech4Palestine  ('killing of journalist')
+  #   conflict.non_state                106   UCDP
+  #   conflict.conflict_report           44   Good Shepherd   (no payload, see drop)
+  #   conflict.aggregate_fatality         6   B'Tselem        (period totals, see occurred_at)
+  #   conflict.summary                    2   Tech4Palestine  (cumulative snapshot)
+
+metrics_from:
+  - metrics.killed        # nonzero on 8,649/10,495
+  - metrics.injured       # nonzero on   979/10,495 (Gaza daily series only)
+  - metrics.displaced     # nonzero on   465/10,495 (village depopulations)
+  - metrics.affected      # nonzero on   465/10,495 (same rows, same values)
+  - metrics.unit          # 'persons' on 10,495/10,495
+  # Dropped: metrics.detained and metrics.demolished (0 on 10,495/10,495);
+  # metrics.count (== metrics.killed on all 7,638 UCDP rows — a duplicate);
+  # metrics.value, which is OVERLOADED and must not be migrated as a number:
+  # for UCDP it is the fatality count, for Palestine Open Maps it is the 1945
+  # village population. A single `value` key meaning two things is the water
+  # category's 'count' unit mistake in numeric form.
+
+metrics_rules:                   # ordered, first match wins
+  - if: "event_type in (daily_casualty_report, summary)"
+    then: "write killed → killed_cumulative, injured → injured_cumulative,
+            and set metrics.cumulative = true"
+    # measured: the Gaza daily series is monotonic non-decreasing across all
+    # 977 rows, 232 killed (2023-10-07) → 72,988 (2026-06-09), and every
+    # description says '(cumulative)'. Under the plain key names, SUM(killed)
+    # over conflict.daily_casualty_report returns ≈35 million. Renaming the
+    # keys makes the mistake impossible to make by accident.
+
+drop:                            # declared, measured, and COUNTED by reason in
+                                 #   the run report (law 4) — not silent
+  - if: "event_type == daily_casualty_report and location.region == 'West Bank'"
+    reason: v1_placeholder_all_metrics_zero
+    measured: 977
+    # Every one of the 977 West Bank daily rows has killed=injured=displaced=
+    # affected=detained=demolished=count=value=0 and the description
+    # "Daily casualty report (West Bank) — <date>." with no payload. These
+    # zeros are missing data, not measured zeros: West Bank fatalities in this
+    # period were not zero on 977 consecutive days. Loading them would assert
+    # 977 false facts.
+  - if: "sources[0].name == 'Good Shepherd'"
+    reason: v1_placeholder_no_payload
+    measured: 44
+    # All 44: every metric 0, description empty on 43 of 44, no lat/lon, no
+    # pcode, no gazetteer_key. Dates are month-firsts (1-2 per month,
+    # 2023-11-01 .. 2026-05-01) plus 2 stamped with the fetch day 2026-08-05.
+    # There is nothing in these rows to load.
+
+occurred_at:
+  from: date                     # 100% present, min 1935-01-01, max 2026-08-05
+  precision: day                 # default; overridden by the rules below
+  rules:                         # ordered, first match wins
+    - if: "record has date_precision"
+      then: "use date_precision verbatim"
+      # measured: present on 589/10,495 (5.6%) — the Palestine Open Maps
+      # village rows and only those. 474 'day', 115 'year'. All 115 'year'
+      # rows are already dated 1948-01-01, so law 2's year handling is
+      # satisfied without a truncation.
+    - if: "event_type in (aggregate_fatality, summary)"
+      then: "precision = unknown"
+      # 8 records. The 6 B'Tselem aggregate_fatality rows are ESCALATION-PERIOD
+      # totals stamped with the first day of the escalation: 3,189 killed on
+      # 2000-09-28 (the whole Second Intifada), 1,391 on 2008-12-27 (Cast
+      # Lead), 167 on 2012-11-14, 2,251 on 2014-07-08 (Protective Edge), 223
+      # on 2018-03-30 (Great March of Return), 256 on 2021-05-10. Day
+      # precision on a multi-year total is the same lie law 2 forbids for
+      # December buckets, so the period start keeps its date and loses its
+      # precision. The 2 Tech4Palestine 'summary' rows are 'as of 2026-06-09'
+      # snapshots of the cumulative series.
+    - if: "date == fetch_day"
+      then: "precision = unknown"                                      # law 1
+      # measured: 2/10,495, both Good Shepherd (already dropped above). The
+      # rule stays so a future refetch of a live source cannot sneak an
+      # ingest-date masquerade back in.
+    - if: "date endswith -12-31"
+      then: "NO year-bucket collapse — keep the day"
+      # Deliberate NON-application of law 2, because law 2 is scoped to
+      # aggregates. Measured: 23/10,495 (0.2%) end in -12-31 and every one is
+      # a genuine single-day record — 16 UCDP georeferenced events with
+      # narrative descriptions ('68 martyrs in Israeli bombing on the
+      # Al-Zaytoun neighborhood', 'Fatah vs Hamas — Khan Younis town (2007)'),
+      # 6 Tech4Palestine daily reports that happen to fall on Dec 31, and 1
+      # POM village that carries date_precision='day'. Collapsing these to
+      # January would move real events by up to a year.
+
+place:
+  strategy: latlon
+  # Ladder, first hit wins:
+  #   1. location.admin2_pcode (7,389 = 70.4%) → governorate place_id. OCHA's
+  #      own admin assignment; it beats point-in-polygon at borders. Measured:
+  #      0 records carry a pcode without a point, so this rung never adds a
+  #      record — it only decides place_id for rows that also get a geom.
+  #   2. location.lat/lon (8,223 = 78.4%) → event.geom point; place_id by
+  #      containment when rung 1 was empty.
+  #   3. location.gazetteer_key (7,095 = 67.6%) → place. The ONLY rung for 4
+  #      Palestine Open Maps village rows whose precision is 'unknown'
+  #      (measured: gazetteer_key present and lat/lon absent = 4).
+  #   4. location.region → 'Gaza Strip' → place 1 (7,381); 'West Bank' →
+  #      place 2 (2,270); 'East Jerusalem' → Jerusalem governorate row +
+  #      attrs.region preserved (33, all UCDP); 'Palestine' → place_id NULL +
+  #      attrs.region (811).
+  min_decided_pct: 1.0     # every retained record reaches a decision (rung 4
+                           #   catches the region-only sources by design)
+  min_located_pct: 0.78
+  # REVIEW VERDICT (2026-08-05): two-key semantics adopted format-wide.
+  # min_located_pct counts POINT or LOCALITY resolution (rungs 1-3). Measured:
+  # 8,223 points + 4 gazetteer-only = 8,227, which is 0.784 of all 10,495
+  # records and 0.868 of the 9,474 retained after the drops above. 0.78 is set
+  # to hold under either reading, so the run fails if geocoding regresses
+  # whichever way the drop question is decided. See the open question in notes.
+
+stable_id: stable_id
+  # NOT `id`: measured, `id` has 10,234 distinct values across 10,495 records
+  # (261 collisions), while `stable_id` is unique 10,495/10,495. Keying
+  # idempotency on `id` would silently merge 261 distinct events.
+
+attrs_passthrough:               # all source-sparse; nothing is on every row
+  - conflict_name                # UCDP, 72.8% — 'Israel: Palestine'
+  - dyad_name                    # UCDP, 72.8% — 'Government of Israel - PFLP'
+  - deaths_a                     # UCDP, 72.8%   the four deaths_* fields sum
+  - deaths_b                     #                to metrics.killed on
+  - deaths_civilians             #                7,638/7,638 — verified, so
+  - deaths_unknown               #                they are a split, not a rival count
+  - actors                       # 75.3% — UCDP dyad actors, and for the 262
+                                 #   journalist rows the victim's NAME
+  - date_precision               # POM, 5.6%
+  - conflict_phase               # 5.6% — nakba-1948 579, naksa-1967 6, displacement 4
+  - population_1922              # POM village censuses, 2.7% / 3.3% / 4.4%
+  - population_1931
+  - population_1945
+  - location.gazetteer_key       # e.g. 'ayn_hawd_1948'
+  - location.region              # keeps 'East Jerusalem' / 'Palestine' visible
+  - provenance                   # DERIVED: the sources[1..] names + urls + refs
+                                 #   for the 570 multi-sourced village rows,
+                                 #   so Zochrot / Atlas / Palestine Remembered
+                                 #   / Wikidata attribution survives routing
+  # NOT description (law 6) — including the 262 journalist obituaries, which
+  # are the longest text in the category. raw_ref points at bronze.
+
+expect:
+  min_records: 8500              # ≈0.9 × 9,474 retained (10,495 − 977 − 44).
+                                 #   If the drops are rejected on review, raise
+                                 #   this to 9,400 (≈0.9 × 10,495).
+
+notes: |
+  Measured from ops/t2-category-audit.json and all 10,495 v1 records.
+
+  THE GEO-LESS 21.6% IS ONE COHERENT SUBGROUP, not scattered gaps. Records
+  without lat/lon: 2,272. Of those, 2,268 are the entire output of the three
+  region-only sources — Tech4Palestine 2,218, Good Shepherd 44, B'Tselem 6 —
+  every one of which has precision='region' and no pcode and no gazetteer_key.
+  The remaining 4 are Palestine Open Maps villages with precision='unknown'
+  that still carry a gazetteer_key. Geo fill by source:
+    UCDP-GED         7,638   latlon 1.000  pcode 0.966  gazetteer 0.852
+    Tech4Palestine   2,218   latlon 0.000  pcode 0.000  gazetteer 0.000
+    Palestine Open Maps 589  latlon 0.993  pcode 0.019  gazetteer 1.000
+    Good Shepherd       44   latlon 0.000  pcode 0.000  gazetteer 0.000
+    B'Tselem             6   latlon 0.000  pcode 0.000  gazetteer 0.000
+  So the ladder is not a hope that some rows will geocode: rungs 1-3 serve
+  UCDP and POM completely, rung 4 serves the three region-only sources
+  completely, and nothing falls between.
+
+  'PALESTINE' IS NOT ALWAYS A COUNTRY AGGREGATE HERE. 811 records carry region
+  'Palestine', and they split three ways: 589 Palestine Open Maps villages
+  (real points in pre-1948 Palestine, inside present-day Israel — geom set,
+  place_id NULL, gazetteer_key in attrs); 178 UCDP events at points inside
+  Israel (Nahal Oz, Kissufim crossing, Kfar Ruppin kibbutz, the Negev — geom
+  set, place_id NULL); and 44 Good Shepherd rows with no geography at all.
+  Law 3's place_id NULL + attrs.region is right for all three, but only the
+  last is a country-wide number — the other 767 have a real location that the
+  Palestinian gazetteer simply does not contain.
+
+  LICENSE MIX, and one disagreement Zaid should settle. By primary source:
+    ucdp            7,638 (72.8%)  CC-BY-IGO, commercial_use=TRUE  (042)
+    tech4palestine  2,218 (21.1%)  042 says CC-BY-4.0, commercial_use=TRUE
+    palopenmaps       589 ( 5.6%)  verify-required, commercial FALSE
+    goodshepherd       44 ( 0.4%)  verify-required, commercial FALSE
+    btselem             6 ( 0.1%)  CC-BY-NC-4.0,   commercial FALSE
+  Every Tech4Palestine record embeds `license: "varies"`, which contradicts
+  042's CC-BY-4.0 / commercial_use=true for the same key. 042 is the serving
+  layer's authority, so as written 2,218 records (21% of the category) become
+  commercially sellable on the strength of a registry row rather than the
+  record's own claim. That is a licence decision, not an ETL one — flagged,
+  not resolved here.
+
+  ROUTING ON sources[0] IS SAFE HERE BY COINCIDENCE, NOT BY CONSTRUCTION. 570
+  records carry 2-5 sources (55 with 2, 89 with 3, 105 with 4, 321 with 5);
+  all are the Nakba village rows, and all of them have Palestine Open Maps at
+  index 0 with Zochrot / Palestine Remembered / Atlas of Palestine / Wikidata
+  behind it. POM is verify-required, i.e. already the strictest of that set, so
+  the dataset's licence is the correct one. But if a future refetch put
+  Wikidata (CC0, commercial_use=true) at index 0 on a row whose content came
+  from Zochrot, the row would be sold. RECOMMENDATION for the T2.3 loader:
+  compute the dataset from sources[0] but assert that no OTHER name in
+  sources[] maps to a source with a stricter commercial_use than the chosen
+  dataset's — and fail the run if one does.
+
+  WHAT IS ACTUALLY IN THE 9,474 RETAINED RECORDS:
+    7,638 UCDP-GED events, 1989-01-16 .. 2024-12-31, all point-precise, day
+          dates, killed nonzero on 7,402 (the 236 zero-fatality rows are real
+          UCDP zero-death events, not gaps). quality.score 0.95 on all 7,638.
+      589 Nakba/Naksa village depopulations, 1935-01-01 .. 1967-06-10, with
+          per-record date_precision, 1922/1931/1945 census populations, and
+          multi-archive provenance.
+      977 Gaza cumulative daily casualty snapshots (renamed metrics).
+      262 named journalist killings, region-precise, victim name in actors[].
+        8 period aggregates / snapshots at precision=unknown.
+
+  OPEN QUESTIONS (a human must settle these; the data cannot):
+  1. The two drops. 1,021 records (9.7%) are declared dropped as payload-free.
+     They are visible in the run report by reason, but if the reviewer would
+     rather have them in the table as zero-valued rows, remove the drop block
+     and raise expect.min_records to 9,400. My reading is that loading 977
+     'zero Palestinians killed in the West Bank today' assertions is worse than
+     dropping them, but it is Zaid's call whether an empty row is data.
+  2. min_resolved_pct semantics. water.yaml uses 1.0 to mean 'every record
+     reaches a place decision, including a deliberate NULL'. Under that
+     reading conflict is also 1.0, and the check becomes toothless because the
+     region rung catches everything. This spec instead sets 0.78 to mean
+     'fraction reaching point or locality precision'. The T2.3 loader must
+     implement ONE of these meanings for every spec — if it implements
+     water's, this file needs a second key (e.g. min_point_resolved_pct: 0.78)
+     rather than a redefined one.
+  3. Whether conflict.daily_casualty_report belongs in `event` at all. It is a
+     977-point cumulative TIME SERIES of one running total — the shape of an
+     observation, not of 977 things that happened. The renamed keys make it
+     safe where it is, but moving it to `observation` as
+     conflict.gaza_cumulative_killed / _injured would make it correct.

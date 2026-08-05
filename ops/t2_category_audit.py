@@ -58,6 +58,19 @@ def _fill(counter: Counter, n: int) -> dict:
     return {k: round(v / n, 3) for k, v in sorted(counter.items(), key=lambda kv: -kv[1])}
 
 
+# Strings that fill a field without informing anyone. water's indicator_code
+# is 'UNKNOWN' on 25,049/25,049 records and the plain fill-rate read 1.0.
+_UNINFORMATIVE = {"unknown", "n/a", "na", "none", "null", "-", "0"}
+
+
+def _informative(v) -> bool:
+    if isinstance(v, (int, float)):
+        return v != 0
+    if isinstance(v, str):
+        return v.strip().lower() not in _UNINFORMATIVE
+    return True
+
+
 def _top(counter: Counter, k: int = 8) -> dict:
     return dict(counter.most_common(k))
 
@@ -69,7 +82,10 @@ def audit_category(cat: str) -> dict:
     meta = {}
     if (d / "metadata.json").exists():
         meta = json.loads((d / "metadata.json").read_text())
-    fetch_day = (meta.get("last_updated") or "")[:10]
+    # Fail closed: with no metadata.json there is no fetch day, and the
+    # masquerade test is UNMEASURABLE — not 0%. westbank measured 0% here
+    # while its true rate was 100%, purely because "" equals nothing.
+    fetch_day = (meta.get("last_updated") or "")[:10] or None
 
     out: dict = {
         "partitioned": not (d / "all-data.json").exists(),
@@ -79,6 +95,9 @@ def audit_category(cat: str) -> dict:
     }
 
     fill: Counter = Counter()
+    fill_nonzero: Counter = Counter()
+    mmdd: Counter = Counter()
+    distinct_days: Counter = Counter()
     n = dates_present = ingest_masquerade = year_bucket = 0
     date_min = date_max = None
     precisions: Counter = Counter()
@@ -109,8 +128,12 @@ def audit_category(cat: str) -> dict:
                 for k2, v2 in v.items():
                     if v2 not in (None, "", [], {}):
                         fill[f"{k}.{k2}"] += 1
+                        if _informative(v2):
+                            fill_nonzero[f"{k}.{k2}"] += 1
             elif v not in (None, "", [], {}):
                 fill[k] += 1
+                if _informative(v):
+                    fill_nonzero[k] += 1
 
         if r.get("id"):
             id_present += 1
@@ -121,10 +144,16 @@ def audit_category(cat: str) -> dict:
         if date:
             dates_present += 1
             day = str(date)[:10]
-            if day == fetch_day:
+            if fetch_day and day == fetch_day:
                 ingest_masquerade += 1
             if day.endswith("-12-31"):
                 year_bucket += 1
+            # Buckets wear more than one costume: health is 100% -01-01
+            # annual values, prisoners 100% first-of-month, food 100%
+            # mid-month. The month-day histogram catches all of them.
+            if len(day) == 10:
+                mmdd[day[5:]] += 1
+            distinct_days[day] += 1
             date_min = day if date_min is None or day < date_min else date_min
             date_max = day if date_max is None or day > date_max else date_max
 
@@ -150,8 +179,19 @@ def audit_category(cat: str) -> dict:
         "schema_versions": _top(schema_versions, 4),
         "dates": {
             "present_pct": round(dates_present / n, 3),
-            "ingest_masquerade_pct": round(ingest_masquerade / n, 3),
+            "ingest_masquerade_pct": (round(ingest_masquerade / n, 3)
+                                      if fetch_day else None),
+            "masquerade_measurable": fetch_day is not None,
             "year_bucket_pct": round(year_bucket / n, 3),
+            "monthday_top": _top(mmdd, 4),
+            # Batch-date detector: 24,043 of water's 25,049 "dated" records
+            # share three days — publication batches, not observations. High
+            # concentration across a large n is the third masquerade costume.
+            "distinct_days": len(distinct_days),
+            "top3_day_share": (round(sum(c for _, c in
+                                         distinct_days.most_common(3))
+                                     / dates_present, 3)
+                               if dates_present else None),
             "min": date_min,
             "max": date_max,
             "fetch_day": fetch_day,
@@ -165,9 +205,14 @@ def audit_category(cat: str) -> dict:
             "name_pct": round(fill.get("location.name", 0) / n, 3),
         },
         "event_types": _top(event_types, 10),
+        "event_types_distinct": len(event_types),
         "units": _top(units, 6),
-        "source_licenses": _top(src_licenses, 10),
+        # distinct counts alongside the truncated top-N: historical has 27
+        # source composites and the top-10 display hid 17 of them.
+        "source_licenses": _top(src_licenses, 30),
+        "source_licenses_distinct": len(src_licenses),
         "field_fill": _fill(fill, n),
+        "field_fill_nonzero": _fill(fill_nonzero, n),
         "samples": [
             {k: v for k, v in rec.items() if k != "description"}
             for rec in (first_rec, last_rec) if rec is not None
@@ -183,9 +228,12 @@ def main() -> None:
         r = report[cat]
         d = r.get("dates", {})
         g = r.get("geo", {})
+        masq = d.get("ingest_masquerade_pct")
+        top_md = next(iter(d.get("monthday_top", {}).items()), ("", 0))
         print(f"{cat:24s} n={r['records']:>6}  dates={d.get('present_pct', 0):>5.0%} "
-              f"masq={d.get('ingest_masquerade_pct', 0):>4.0%} "
-              f"ybkt={d.get('year_bucket_pct', 0):>4.0%}  "
+              f"masq={'  ??' if masq is None else f'{masq:>4.0%}'} "
+              f"ybkt={d.get('year_bucket_pct', 0):>4.0%} "
+              f"md={top_md[0]}:{(top_md[1] / r['records'] if r['records'] else 0):>4.0%}  "
               f"latlon={g.get('latlon_pct', 0):>4.0%} "
               f"pcode={g.get('admin2_pcode_pct', 0):>4.0%} "
               f"gaz={g.get('gazetteer_key_pct', 0):>4.0%}")

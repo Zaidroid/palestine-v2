@@ -1,0 +1,248 @@
+# refugees — three unrelated datasets that v1 merged into one directory:
+# UNHCR's Palestinian-refugees-by-country-of-asylum series (1,157), IDMC's
+# dated displacement events inside the oPt (334), and a 75-row UNRWA camp
+# registry (63 camps + 12 aggregate rows). They share no indicator, no date
+# semantics and no geography, so almost everything here is a per-dataset
+# override. Audit: 1,566 records, 100% dated, 74% year-bucket, 22% lat/lon.
+category: refugees
+shape: observation
+status: reviewed
+records_measured: 1566
+
+source_routing:
+  by_name:
+    "UNHCR Operational Data Portal": unhcr        # licenses.json alias exact match
+    "IDMC": idmc                                  # alias 'idmc'
+    "UNRWA camp registry": unrwa                  # NOT an alias in licenses.json —
+                                                  #   see notes, this mapping is
+                                                  #   asserted by this spec
+  default: null            # measured: 0 records with sources: []
+
+datasets:
+  # ── UNHCR: 1,157 rows = 103 countries of asylum × 16 years ────────────────
+  - key: v1_refugees_unhcr
+    source: unhcr
+    records_measured: 1157
+    overrides:
+      indicator:
+        template: "refugees.cross_border"    # displacement_type is the literal
+                                             #   'cross-border_refugees' on
+                                             #   1,157/1,157 — no variation, so
+                                             #   it is a constant, not identity
+      value:
+        num_from: metrics.count              # = refugees + asylum_seekers
+                                             #   (verified on samples)
+        text_from: null
+        unit_from: metrics.unit              # 'people' 1,157/1,157
+      occurred_at:
+        from: date
+        precision: year
+        rules:
+          - if: "always"                     # 1,157/1,157 dates end -12-31
+            then: "truncate to Jan 1 of that year, precision=year"   # law 2
+      place:
+        strategy: none                       # see notes — the place named by
+                                             #   these rows is a foreign country
+        min_resolved_pct: 1.0                # NULL is the resolution
+      attrs_passthrough:
+        - asylum_country                     # 1,157/1,157; the real dimension
+        - origin                             # literal 'Palestinian' on 1,157
+        - refugees
+        - asylum_seekers
+        - displaced_population
+        - displacement_type
+      expect:
+        min_records: 1040
+
+  # ── IDMC: 334 dated displacement events, the only genuinely geo rows ──────
+  - key: v1_refugees_idmc
+    source: idmc
+    records_measured: 334
+    overrides:
+      indicator:
+        template: "refugees.displacement_event"   # displacement_category is ''
+                                                  #   on 333/334 and 'Mixed
+                                                  #   disasters' on 1 — unusable
+                                                  #   as identity
+      value:
+        num_from: metrics.displaced          # non-zero on 334/334; equals
+                                             #   metrics.value on all of them
+        text_from: null
+        unit_from: metrics.unit              # 'persons' 334/334
+      occurred_at:
+        from: date
+        precision: day                       # real event dates 2025-01-01..2026-06-24
+        rules:
+          - if: "date endswith -12-31"
+            then: "truncate to year start, precision=year"   # law 2; hits 2 of 334
+      place:
+        strategy: latlon                     # 334/334 have location.lat/lon;
+                                             #   347/350 of all refugee points
+                                             #   fall inside a v2 governorate
+                                             #   polygon (measured)
+        fallback: admin2_pcode               # 332/334; all 16 distinct pcodes
+                                             #   join v2 place.admin2_pcode
+        min_resolved_pct: 0.98
+      attrs_passthrough:
+        - event_name                         # 38 distinct, e.g. 'Palestine:
+                                             #   Communal violence - Jericho -
+                                             #   08/01/2026'
+        - displacement_category
+        - location.admin2
+      expect:
+        min_records: 300
+
+  # ── UNRWA camp registry: 63 camps + 12 aggregates, one stamped date ───────
+  - key: v1_refugees_unrwa
+    source: unrwa
+    records_measured: 75
+    overrides:
+      indicator:
+        template: "refugees.camp_population"  # displacement_type = 'camp_population'
+                                              #   on 75/75
+        # REVIEW VERDICT (2026-08-05): the 11 aggregate rows (country totals,
+        # 'Total registered refugees', …) take indicator
+        # refugees.registered_total with the label in attrs.aggregate_label,
+        # so a SUM over camp_population can no longer mix grains; the
+        # '% living within camp borders' row gets unit 'percent'.
+        overrides:
+          aggregate_rows: "refugees.registered_total"
+      value:
+        num_from: metrics.count
+        text_from: null
+        unit_from: metrics.unit               # 'people' 75/75 — WRONG on 1 row,
+                                              #   see notes
+      occurred_at:
+        from: date
+        precision: unknown                    # law 1 by analogy: 2026-06-10 on
+                                              #   75/75, a build-time stamp, not
+                                              #   an as-of date. See notes.
+        rules:
+          - if: "always"
+            then: "reported_at-only (reported_at = sources[].fetched_at), precision=unknown"
+      place:
+        strategy: latlon                      # only 16/75 have lat/lon
+        min_resolved_pct: 0.21                # measured 16/75 = 0.213; the other
+                                              #   59 rows name camps in Jordan,
+                                              #   Lebanon and Syria or are
+                                              #   aggregates — place_id NULL is
+                                              #   the honest answer (law 3)
+      attrs_passthrough:
+        - location.name                       # camp name, or the aggregate label
+        - refugees
+        - displacement_type
+        - origin
+      expect:
+        min_records: 67
+
+indicator:
+  template: "refugees.{displacement_type}"   # default only; every dataset
+                                             #   overrides it above
+
+value:
+  num_from: metrics.value
+  text_from: null
+  unit_from: metrics.unit
+
+occurred_at:
+  from: date
+  precision: day
+  rules:
+    - if: "date endswith -12-31"
+      then: "truncate to year start, precision=year"
+
+place:
+  strategy: latlon
+  min_resolved_pct: 0.22      # whole-category floor: 350 of 1,566 records carry
+                              #   lat/lon (measured 0.223). Per-dataset floors
+                              #   above are the ones that matter.
+
+stable_id: stable_id          # 1,566 distinct / 1,566
+attrs_passthrough:
+  - displacement_type
+  - location.region
+
+expect:
+  min_records: 1400           # 0.9 × 1,566
+
+notes: |
+  FORMAT EXTENSION USED HERE. Law 5 says specs are per (category, source), but
+  the format in README.md has one indicator/value/occurred_at/place block per
+  file. These three sources disagree on all four, so each `datasets[]` entry
+  carries an `overrides:` block that narrows the file-level defaults. The T2.3
+  loader must implement `overrides` before this spec can leave draft. The same
+  extension appears in economic.yaml, prisoners.yaml and historical.yaml. If
+  the reviewer would rather have three files, the content splits cleanly.
+
+  WHICH SOURCE CARRIES THE GEO — the brief guessed the camp registry; the
+  measurement says IDMC. Per-source lat/lon fill, counted over all 1,566:
+    IDMC                 334/334  (100%)
+    UNRWA camp registry   16/75   (21%)
+    UNHCR                  0/1157 (0%)
+  350/1,566 = 22.3%, which is the audit's latlon_pct. Same story for pcodes:
+  IDMC 332/334, UNRWA 15/75, UNHCR 0. Of the 350 points, 347 fall inside a v2
+  governorate polygon (measured with ST_Contains against place.geom), and all
+  16 distinct admin2_pcodes join place.admin2_pcode. So IDMC is the one
+  dataset here that can be mapped.
+
+  UNHCR'S "PLACE" IS NOT IN PALESTINE. Every UNHCR row has
+  location.region = 'Palestine' — and location.name equal to the country of
+  asylum on 1,157/1,157 (verified by equality against asylum_country).
+  The list is Albania, Algeria, Australia, Belgium, Brazil, Canada … 103
+  countries × 16 years (2010–2025). Resolving 'Palestine' to a Palestinian
+  place would say Palestinian refugees in Canada were displaced in Palestine;
+  resolving 'Canada' against the v2 gazetteer would be name-matching an
+  English country name against an Arabic Palestinian gazetteer, which law 3
+  forbids outright. place_id NULL with attrs.asylum_country is the only honest
+  answer, and it means these 1,157 rows will show in dataset_freshness as 0%
+  place-resolved BY DESIGN. Do not "fix" that number later.
+
+  UNRWA'S DATE IS A BUILD STAMP, NOT AN AS-OF DATE. All 75 camp rows carry
+  date = 2026-06-10 — a single value, on a registry that has no dates at all
+  (UNRWA publishes camp populations without a snapshot date; the upstream url
+  is the /where-we-work page). 2026-06-10 is the day the v1 directory was
+  written (mtime of the refugees directory is Jun 10 07:04). The audit reports
+  ingest_masquerade_pct 0.0 for refugees because it compares against
+  metadata.last_updated, which has since moved to 2026-08-05 — so the
+  masquerade test cannot see a stamp that was frozen in an earlier build. This
+  is law 1's failure mode with a stale comparison date, and the remedy is the
+  same: reported_at keeps the fetch time, precision goes unknown.
+
+  UNRWA'S 75 ROWS ARE NOT 75 CAMPS. 63 are camps; 11 are aggregates that v1
+  filed at the same grain — Jordan (929,097), Lebanon (302,049), Syria
+  (280,731), West Bank (414,298), Gaza Strip (496,339), 'Total registered
+  refugees' (2,422,514), 'Registered refugees', 'Other registered people',
+  'Total registered people', 'Refugees living within official camp borders',
+  and '% living within camp borders'. Summing metrics.count over this dataset
+  double-counts everything. Worse: the '% living within camp borders' row has
+  value 41 with unit 'people' — a percentage wearing a headcount's unit.
+  OPEN QUESTION: should the 11 aggregate rows get a distinct indicator
+  (refugees.registered_total) so a naive SUM cannot mix grains, and should the
+  percentage row be excluded or given unit 'percent'? This spec currently
+  passes all 75 through with the same indicator, which is measurable but not
+  safe to sum. Recommend fixing before `reviewed`.
+  Also note: 67 of the 75 rows have region='Palestine' while naming camps in
+  Jordan (Baqa'a, Marka, Jerash, Irbid, Zarqa), Lebanon (Ain al-Hilweh,
+  Rashidieh, Shatila, Nahr al-Bared) and Syria (Jaramana, Latakia, Qabr Essit,
+  Khan al-Shih). Region must NOT be used as a place strategy for this dataset.
+
+  LICENSE ROUTING IS THREE-WAY AND ONE ALIAS IS MISSING. Measured
+  source × license pairs: UNHCR Operational Data Portal :: CC-BY-4.0 (1,157),
+  IDMC :: CC-BY-IGO (334), UNRWA camp registry :: CC-BY-SA-3.0 (75). In 042
+  unhcr and idmc are commercial_use=true; unrwa is UN-attribution,
+  commercial_use=false. So one v1 directory splits into two sellable datasets
+  and one that is not, exactly the mixed-license case law 5 exists for.
+  PROBLEM: 'UNRWA camp registry' is not in licenses.json's alias set for
+  unrwa (which lists only 'unrwa' and 'united nations relief and works
+  agency'), so a strict alias resolver FAILS this name. This spec asserts the
+  mapping in by_name; the alias should also be added to licenses.json so the
+  CI license-coverage check agrees. Second mismatch: the record claims
+  CC-BY-SA-3.0 while 042 records unrwa as UN-attribution — the record's claim
+  comes from the Wikipedia mirror the registry was scraped from
+  (organization: 'UNRWA (via Wikipedia camp registry)'), not from UNRWA. 042
+  wins; commercial_use stays false.
+
+  v1'S metadata.json FOR THIS CATEGORY IS FICTION: it says
+  `total_records: 0` and `sources: ["HDX"]` for a 1,566-record directory whose
+  records name UNHCR, IDMC and UNRWA. The records:null lesson, again. Trust
+  the records; expect.min_records is set from them.

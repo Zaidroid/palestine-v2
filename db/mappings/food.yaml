@@ -1,0 +1,172 @@
+# food — WFP retail food prices for Palestine, one row per
+# (month, market, commodity).
+# Audit: 26,814 records, 100% dated (0% masquerade, 0% year-bucket), 100%
+# lat/lon. Two measured facts drive this spec:
+#   1. every date is the 15th of a month (26,814/26,814) — these are MONTHLY
+#      series stamped mid-month, so precision is `month`, not `day` (law 2's
+#      reasoning, one unit up from years).
+#   2. the 100% lat/lon is only 13 distinct points — one per market name,
+#      repeated identically on every row of that market. They are WFP's
+#      market-town coordinates, not distribution points, and two of the 13
+#      "markets" are literally named 'West Bank' and 'Gaza Strip'. Resolving
+#      them to a nearest gazetteer place would manufacture precision that the
+#      data does not have, so place comes from location.governorate and the
+#      point stays in attrs.
+# The identity field is commodity (41 values); event_type is uniformly
+# 'food_price' and carries no information.
+category: food
+shape: observation
+status: reviewed
+records_measured: 26814
+
+source_routing:
+  by_name:
+    "WFP Food Prices": wfp
+  default: null            # one source name on 26,814/26,814 records
+                           #   (full census); an unknown name FAILS the run
+
+datasets:
+  - key: v1_food_wfp
+    source: wfp
+
+indicator:
+  template: "food.price.{commodity}"
+  # commodity: 41 values, 100% filled (Bread 1,174 · Sugar 1,086 · Rice
+  #   (small grain, imported) 1,078 · Salt 1,073 · Tea 1,066 · Eggs 1,058 …).
+  #   Slugged lower/underscore by the loader, so
+  #   'Rice (small grain, imported)' → food.price.rice_small_grain_imported.
+  # price_type is 'Retail' on 100% and commodity_category is 1:1 with
+  #   commodity (measured: 0 commodities carry two categories), so neither
+  #   belongs in the key — both pass through to attrs.
+
+value:
+  num_from: metrics.price      # ILS, non-zero on 26,814/26,814
+  text_from: null
+  unit_from: metrics.unit      # 'ILS/KG' 19,001 · 'ILS/500 G' 1,757 ·
+                               #   'ILS/25 KG' 1,078 · 'ILS/2 KG' 1,058 ·
+                               #   'ILS/3 L' 1,052 · 'ILS/Cubic meter' 986 ·
+                               #   'ILS/L' 871 · 'ILS/60 KG' 521 ·
+                               #   'ILS/50 KG' 232 · 'ILS/2.5 KG' 166 ·
+                               #   'ILS/380 G' 90 · 'ILS/12 KG' 2
+                               #   (currency-per-quantity; honest, unlike
+                               #   metrics.value which is 0 on every row)
+
+occurred_at:
+  from: date
+  precision: month
+  rules:
+    - if: "always"             # every date is the 15th — WFP's mid-month
+      then: "truncate to month start, precision=month"   # stamp on a monthly
+                               #   average. Keeping day precision would let a
+                               #   monthly figure claim a specific Tuesday.
+
+place:
+  strategy: name
+  name_from: location.governorate   # [SPEC EXTENSION — see notes] 100%
+                                    #   filled, 12 values, WFP's own admin2
+  crosswalk:                        # [SPEC EXTENSION] explicit, because
+                                    #   resolve/geo.py is measurably wrong on
+                                    #   two of these twelve
+    # REVIEW VERDICT (2026-08-05): the two region-wide basket "markets"
+    # override on location.name BEFORE the governorate crosswalk — a WB-wide
+    # basket inside Ramallah's series is a wrong place served confidently.
+    # Keyed on location.name; takes precedence over name_from resolution:
+    "market:West Bank":     {kind: region, name_en: "West Bank"}        # 1,657
+    "market:Gaza Strip":    {kind: region, name_en: "Gaza Strip"}       # 1,654
+    "Gaza":                 {kind: governorate, name_en: "Gaza"}        # 3,355
+    "Bethlehem":            {kind: governorate, name_en: "Bethlehem"}   # 2,086
+    "Hebron":               {kind: governorate, name_en: "Hebron"}      # 2,082
+    "Jenin":                {kind: governorate, name_en: "Jenin"}       # 2,082
+    "North Gaza":           {kind: governorate, name_en: "North Gaza"}  # 2,078
+    "Nablus":               {kind: governorate, name_en: "Nablus"}      # 2,071
+    "Ramallah and Albireh": {kind: governorate, name_en: "Ramallah"}    # 3,717
+    "Tulkarm":              {kind: governorate, name_en: "Tulkarm"}     # 2,050
+    "Qalqilya":             {kind: governorate, name_en: "Qalqilya"}    # 2,047
+    "Jericho":              {kind: governorate, name_en: "Jericho"}     # 1,995
+    "Kan Younis":           {kind: governorate, name_en: "Khan Younis"} # 1,654
+    "Rafah":                {kind: governorate, name_en: "Rafah"}       # 1,597
+  min_resolved_pct: 1.0           # 12 strings cover 26,814/26,814 rows and
+                                  #   all 12 exist in the v2 gazetteer
+
+stable_id: stable_id              # 26,814 distinct over 26,814 — unique
+attrs_passthrough:
+  - commodity
+  - commodity_category
+  - price_type
+  - location.name                 # the WFP market label — see notes
+  - location.lat
+  - location.lon
+  - metrics.price_usd
+
+expect:
+  min_records: 24000              # ≈0.9 × 26,814
+
+notes: |
+  MEASURED by a full census of all 78 quarterly partitions (2007-Q1 …
+  2026-Q2). One key-set across all 78 files — the record shape does not drift
+  between quarters. This is the only one of the four T2 categories in this
+  batch that is still live upstream: max date 2026-06-15 against a fetch day
+  of 2026-08-05.
+
+  WHAT THE LAT/LON ACTUALLY ARE (the question this spec had to answer).
+  13 distinct points over 26,814 rows, exactly one per location.name, byte
+  identical on every row of that market. Cross-checked against v1's raw WFP
+  extract (public/data/static/wfp-food-prices.json, the same 26,814 rows):
+  they are the `latitude`/`longitude` columns of WFP's market list — a town
+  centroid per market, e.g. (31.51, 34.46) for market 'Gaza' on 3,355 rows.
+  They are NOT distribution points, and they are not per-observation. Two of
+  the thirteen markets are region-wide baskets that WFP still gives a point
+  and an admin2 to:
+    market 'West Bank' → admin1 West Bank, admin2 'Ramallah and Albireh',
+                         (31.97, 35.33), 1,657 rows
+    market 'Gaza Strip' → admin1 Gaza Strip, admin2 'Kan Younis',
+                         (31.35, 34.33), 1,654 rows
+  So `latlon` was rejected as the place strategy: a nearest-gazetteer-place
+  lookup over 1,443 localities would snap each of the 13 points to whichever
+  village happens to be closest, invent street-level precision for a
+  governorate-level average, and file a West-Bank-wide basket under a named
+  village. The honest richest field is location.governorate — WFP's own
+  admin2, 100% filled, 12 values, all present in the v2 gazetteer. The point
+  is preserved in attrs.lat/attrs.lon for anyone who wants to map the market.
+  [OPEN] Should the 3,311 rows from the 'West Bank' and 'Gaza Strip' markets
+  (12.3%) sit on their WFP governorate (Ramallah / Khan Younis, as this spec
+  does — following upstream rather than guessing) or on the region rows
+  place 1 / place 2? Following upstream means Ramallah's price series
+  silently contains WB-wide baskets. Both readings are defensible; a human
+  must pick before status: reviewed.
+
+  WHY THE CROSSWALK. resolve/geo.py was run against all 12 governorate
+  strings (learn=False): ten resolve correctly, but 'Kan Younis' → None
+  (1,654 rows, 6.2%) and 'North Gaza' → the Gaza governorate, place 15,
+  not North Gaza, place 14 (2,078 rows, 7.8% — silently WRONG, which law 3
+  forbids). The alias 'north gaza' exists on place 14; it loses the tie-break
+  in resolve/geo.py:_prefer to an exact match on the 'gaza' variant, so this
+  is a resolver hazard, not a missing alias. The market names are worse still
+  ('Tulkarem' → None, 'Qalqiliya' → a locality rather than the governorate,
+  'Gaza Strip' → the Gaza governorate), which is the second reason place is
+  keyed on governorate rather than on location.name. Today's place ids for
+  the crosswalk targets: Jenin 3, Tulkarm 5, Nablus 6, Qalqilya 7, Ramallah 9,
+  Jericho 10, Bethlehem 12, Hebron 13, North Gaza 14, Gaza 15, Khan Younis 17,
+  Rafah 18. Keyed by name_en, not id, so a gazetteer rebuild cannot silently
+  repoint them.
+
+  MIXED UNITS INSIDE A COMMODITY. Two of the 41 commodities change unit
+  mid-series: 'Wheat flour' (ILS/KG 157 rows, ILS/60 KG 521 rows) and
+  'Milk (pasteurized)' (ILS/L 108, ILS/KG 854) — 1,640 rows, 6.1%. Plotting
+  food.price.wheat_flour without grouping by unit produces a 60× step. The
+  unit column exists precisely for this and the loader writes it per row; the
+  serving layer must group by (indicator, unit). No other commodity mixes
+  units, and no commodity mixes commodity_category.
+
+  LICENSE. 'WFP Food Prices :: CC-BY-IGO' on 26,814/26,814; licenses.json
+  aliases it to key `wfp`; 042 gives CC-BY-IGO / commercial_use=true /
+  authority_rank 4. Commercially servable with WFP-via-HDX attribution.
+
+  metrics.value and metrics.count are 0 on every row — the audit's
+  field_fill shows 1.0 for them because it counts a literal 0 as filled. The
+  real measure is metrics.price (ILS, matching metrics.unit); metrics.price_usd
+  is WFP's own conversion and rides along in attrs rather than becoming a
+  second observation.
+
+  SPEC EXTENSIONS used above, which the T2.3 loader must support:
+  `place.name_from` and `place.crosswalk` (see aid_access.yaml, same two).

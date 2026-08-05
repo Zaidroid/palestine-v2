@@ -1,0 +1,212 @@
+# economic — 4,152 statistical series from three sources with three different
+# date conventions and three different license positions: World Bank 3,536
+# (CC-BY-4.0, sellable), IMF 474 (CC-BY-4.0, sellable), PCBS-direct 142
+# (verify-required, not sellable). Audit: 100% dated, 3.4% year-bucket, 0% geo.
+# The 3.4% is entirely the PCBS rows, and they are also the only rows with a
+# real regional breakdown — including the only East Jerusalem rows in the set.
+category: economic
+shape: observation
+status: reviewed
+records_measured: 4152
+
+source_routing:
+  by_name:
+    "World Bank": worldbank                                    # alias 'world bank'
+    "IMF": imf                                                 # alias 'imf'
+    "Palestinian Central Bureau of Statistics (PCBS)": pcbs_direct
+    # AMBIGUOUS NAME, resolved the other way from pcbs.yaml. The same string
+    # aliases both `pcbs` and `pcbs_direct` in licenses.json. These 142
+    # records carry sources[0].license == 'verify-required' and
+    # url == https://www.pcbs.gov.ps (measured on 142/142), which is
+    # `pcbs_direct` exactly. pcbs.yaml's 2,060 records carry 'public-domain'
+    # and api.worldbank.org and route to `pcbs`.
+    # The disambiguator is therefore (name, license, url), not name alone.
+    # The T2.3 router must accept a per-spec by_name mapping that overrides
+    # licenses.json's ambiguous alias set, and must FAIL if two specs in the
+    # same category disagree.
+  default: null           # measured: 0 records with sources: []
+
+datasets:
+  # ── World Bank: 125 codes, 1960 → 2025, annual ────────────────────────────
+  - key: v1_economic_worldbank
+    source: worldbank
+    records_measured: 3536
+    overrides:
+      occurred_at:
+        from: date
+        precision: year
+        rules:
+          - if: "always"
+            then: "truncate to Jan 1 of that year, precision=year"
+        # measured: 3,536/3,536 dates are -01-01
+      place:
+        strategy: region       # region='Palestine' on 3,536/3,536 → place_id NULL
+        min_resolved_pct: 1.0
+      expect:
+        min_records: 3180
+
+  # ── IMF DataMapper: 18 codes, 1993 → 2025, annual ─────────────────────────
+  - key: v1_economic_imf
+    source: imf
+    records_measured: 474
+    overrides:
+      occurred_at:
+        from: date
+        precision: year
+        rules:
+          - if: "always"
+            then: "truncate to Jan 1 of that year, precision=year"
+        # measured: 474/474 dates are -01-01
+      value:
+        num_from: metrics.value
+        text_from: null
+        unit_from: null        # metrics.unit is the literal 'number' on
+                               #   474/474 — measured wrong for GDP in USD,
+                               #   inflation in percent and unemployment in
+                               #   percent alike. indicator_name carries the
+                               #   real unit and goes to attrs. Same defeat
+                               #   water hit with 'count'.
+      place:
+        strategy: region       # region='Palestine' on 474/474
+        min_resolved_pct: 1.0
+      expect:
+        min_records: 420
+
+  # ── PCBS direct: 3 codes, regional splits, -12-31 year buckets ────────────
+  - key: v1_economic_pcbs_direct
+    source: pcbs_direct
+    records_measured: 142
+    overrides:
+      occurred_at:
+        from: date
+        precision: year
+        rules:
+          - if: "always"
+            then: "truncate to Jan 1 of that year, precision=year"   # law 2
+        # measured: 142/142 dates end -12-31, range 2005-12-31 .. 2026-12-31.
+        # Three of them are dated 2026-12-31, i.e. FIVE MONTHS IN THE FUTURE
+        # relative to the audit run (2026-08-05). Law 2's truncation is what
+        # stops that becoming negative freshness — the -154-days defeat, live
+        # in this file right now.
+      place:
+        strategy: region
+        # measured regions: West Bank 41 → place 2, Gaza Strip 41 → place 1,
+        # Palestine 39 → place_id NULL, East Jerusalem 21 → Jerusalem
+        # governorate (place 11, PS0140) with attrs.region = 'East Jerusalem'
+        # preserved, per README's region rules. These 21 rows are the only
+        # East Jerusalem records in the category.
+        min_resolved_pct: 1.0
+      expect:
+        min_records: 128
+
+indicator:
+  template: "economic.{indicator_code}"
+  # 146 distinct codes on 4,152/4,152 records. World Bank 125 (SH.*, SP.*,
+  # SE.*, AG.*, SL.*, EG.*, NY.*, NV.*, BX.*, IT.*, NE.*, SI.*), IMF 18
+  # (NGDPD, PPPGDP, LUR, PCPIPCH, BCA, …), PCBS 3 (pcbs_cpi 84,
+  # pcbs_population 30, pcbs_poverty_rate 28). The three namespaces do not
+  # collide — verified, 125 + 18 + 3 = 146 distinct.
+
+value:
+  num_from: metrics.value
+  text_from: null
+  unit_from: metrics.unit   # percentage 1,956 · number 1,162 · currency_usd 290
+                            #   · years 215 · per_1000 188 · per_100000 86 ·
+                            #   per_100 78 · index 84 · persons 30 · percent 28.
+                            #   Overridden to null for IMF, see above.
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "date endswith -12-31"
+      then: "truncate to year start, precision=year"     # law 2
+    - if: "date endswith -01-01"
+      then: "keep Jan 1, precision=year"
+  # whole-category measurement: 4,010 dates are -01-01 and 142 are -12-31.
+  # There are no other date shapes. Not one record in this category is a
+  # day-precision fact.
+
+place:
+  strategy: region
+  min_resolved_pct: 1.0
+  forbid:
+    - location.coordinates  # 87% fill (3,600 of 4,152) and worthless: the
+                            #   World Bank and IMF rows all carry
+                            #   [34.45, 31.5] with 'nearest_city: Gaza City',
+                            #   the synthetic Gaza centroid, on Palestine-wide
+                            #   national accounts. The audit reports
+                            #   latlon_pct 0.0 (it reads location.lat) — a
+                            #   loader reaching for location.coordinates
+                            #   instead would pin the entire national economy
+                            #   to a point in the Gaza Strip.
+    - location.proximity
+
+drop:
+  # REVIEW VERDICT (2026-08-05): the spec's open question, answered as
+  # quarantine — do not guess which of each contradictory pair is deep
+  # poverty. 0.6% of the category, counted by reason in the run report.
+  - if: "the (source, indicator_code, date, region) key appears more than once"
+    reason: contradictory_duplicate
+    measured: 26
+
+stable_id: stable_id        # 4,152 distinct / 4,152 — verified
+attrs_passthrough:
+  - indicator_code
+  - indicator_name          # the only honest statement of unit for the IMF rows
+  - location.region
+  - location.name           # 'West Bank and Gaza' (World Bank/IMF phrasing) vs
+                            #   'Palestine' / 'East Jerusalem' (PCBS)
+
+expect:
+  min_records: 3730         # 0.9 × 4,152
+
+notes: |
+  FORMAT EXTENSION: per-dataset `overrides` inside datasets[], same as
+  refugees.yaml. Needed because the three sources here differ on unit
+  trustworthiness, date convention and place richness. The T2.3 loader must
+  support it before this leaves draft.
+
+  THE MIXED LICENSE IS THE WHOLE POINT OF LAW 5 HERE. Measured
+  source :: license pairs: World Bank :: CC-BY-4.0 (3,536), IMF :: CC-BY-4.0
+  (474), PCBS :: verify-required (142). In 042 worldbank and imf are
+  commercial_use=true; pcbs_direct is verify-required, commercial_use=false
+  and on the [ZAID] list. So 3.4% of this directory must be filtered out of
+  every commercial response — and it is precisely the 3.4% that carries the
+  regional and East Jerusalem breakdowns, i.e. the most distinctive rows.
+  Routing is exhaustive: three names, three keys, zero records with an empty
+  sources[].
+
+  13 DUPLICATE KEYS WITH CONTRADICTORY VALUES. Measured on
+  (source, indicator_code, date, region): 13 keys appear twice, 26 rows in
+  total, all of them pcbs_poverty_rate for West Bank and Gaza Strip in 2009,
+  2010, 2011, 2017 and 2023. They share the same v1 `id`
+  (e.g. 'pcbs-poverty_rate-west-bank-2009' twice) but different stable_ids,
+  and THE VALUES DISAGREE: 19.4 and 9.1 for West Bank 2009. Almost certainly
+  poverty rate and deep-poverty rate collapsed into one indicator_code
+  upstream. Under this spec both rows load with the same indicator, the same
+  occurred_at and the same place, and any chart of economic.pcbs_poverty_rate
+  will show two lines crossing. OPEN QUESTION: split by value (the lower of
+  each pair is deep poverty) — a guess this spec refuses to make — or
+  quarantine all 26 rows until the PCBS release is re-read? Recommend
+  quarantine; it is 0.6% of the category.
+
+  THREE RECORDS ARE DATED IN THE FUTURE (2026-12-31, five months after the
+  audit run). They are pcbs rows and law 2 turns them into 2026-01-01 at year
+  precision, which is both correct and the exact mechanism that prevents the
+  negative-freshness defeat. Left in deliberately, with this note, so a
+  future reader does not "fix" them into day precision.
+
+  IMF's UNIT FIELD IS A LIE ON EVERY ROW. metrics.unit == 'number' on
+  474/474 IMF records, covering NGDPD (billions USD), LUR (percent),
+  PCPIPCH (percent change), BCA_NGDPD (percent of GDP) and 14 more. This is
+  water's 'count' defeat repeated: a unit column that is uniform is not a
+  unit, it is a placeholder. unit_from is nulled for that dataset and
+  indicator_name is the honest carrier. The World Bank rows are fine —
+  ten distinct units that vary sensibly with the indicator.
+
+  OVERLAP WITH THE `pcbs` CATEGORY. 1,856 (indicator_code, date) pairs in
+  the pcbs category duplicate rows in this one, with identical values and
+  non-overlapping stable_ids. That is documented and decided in pcbs.yaml;
+  economic is the original and should be treated as authoritative for the
+  World Bank series in any deduplication.

@@ -1,0 +1,45 @@
+# water — SKIPPED. 25,049 numbers with no names.
+#
+# This file was the format exemplar, reviewed and "clean" — until the audit
+# instrument learned to distrust filled-but-uninformative fields, at which
+# point the category collapsed under it. Kept as a spec so the decision is
+# reviewable and so the dual-run comparison knows the absence is deliberate.
+category: water
+shape: observation
+status: reviewed
+migrate: false
+skip_reason: no_indicator_identity
+records_measured: 25049
+
+# What measurement established (2026-08-05, ops/t2-category-audit.json +
+# direct census of all-data.json):
+#   - indicator_code is the literal 'UNKNOWN' on 25,049/25,049 records.
+#     wash_status and access_level are 'Unknown' on 98.2%. The audit's
+#     field_fill read 1.0 for all three because a filled string counted as
+#     informative — the instrument gap that hid this.
+#   - indicator_name (38 distinct values) holds HDX DATASET TITLES, not
+#     indicator identities — "Health Indicators for West Bank and Gaza",
+#     "Child mortality Indicators for State of Palestine". Mostly WHO health
+#     datasets: much of "water" is not even water.
+#   - metrics.value is a real, varying number (2,363 distinct in the first
+#     5,000) — but a number of WHAT is unrecoverable: no indicator, no unit,
+#     no reference period, no place (region 'Palestine' on 100%).
+#   - dates: 5 distinct days across 25,049 records, top-3 share 100% —
+#     batch publication days (2026-07-15 / 07-28 / 05-08), not observations.
+#     A third masquerade costume: concentrated batch dates that don't equal
+#     the LATEST fetch day, invisible to the fetch-day test, caught by the
+#     distinct-days/top3_day_share detector added after this finding.
+#
+# Verdict: an observation is (indicator, value, unit, time, place). These
+# records have a value. v1's fetcher flattened HDX dataset rows and threw
+# away the column identity; nothing the ETL can do recovers it. The honest
+# disposition is bronze-only (the snapshots keep every byte) and zero silver
+# rows. If the WASH series matters, the fix is a real HDX fetcher in Phase 4
+# that keeps column identity — not a migration of anonymous numbers.
+#
+# The upstream mistake is v1's, not HDX's: HDX datasets have schemas; the
+# flattener discarded them. Recorded in REVIEW.md; the audit-instrument gaps
+# this exposed (informative fill, batch-date concentration) are fixed in
+# ops/t2_category_audit.py and were re-run over every other category — no
+# second water was found (education/culture registers have identity fields;
+# their defects are dates, handled by law 1).

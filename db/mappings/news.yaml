@@ -1,0 +1,202 @@
+# news — RSS headline metadata from 13 outlets, every one fair-use/copyright
+# Audit: 186 records, 100% dated, 3.8% ingest masquerade, 0% year-bucket,
+# 0.5% latlon, 0% pcode. This is the ONE category in the ingest-masquerade
+# cluster whose `date` is HONEST — it is the RSS pubDate, and law 1's rule is
+# deliberately NOT applied here (reasoned below, and it is the review point).
+# RECOMMENDATION: SKIP THIS CATEGORY. The spec is written in full so the
+# decision is recorded and reviewable, not so the load can proceed.
+category: news
+shape: observation
+status: reviewed
+migrate: false
+skip_reason: rolling_window_superseded_by_tier1
+records_measured: 186
+
+source_routing:
+  by_name:                                        # measured counts, sum = 186
+    "Middle East Monitor": memo                   # 50
+    "The Electronic Intifada": electronic_intifada_rss   # 18
+    "Middle East Eye": middle_east_eye_rss        # 18 — pin REQUIRED, ambiguous
+    "BBC Middle East": bbc                        # 16
+    "Times of Israel": times_of_israel            # 15
+    "Haaretz": haaretz_rss                        # 14
+    "Anadolu Agency (Middle East)": anadolu       # 14
+    "Mondoweiss": mondoweiss_rss                  # 10
+    "Palestinian Information Center": palinfo     # 10
+    "Al Jazeera English": al_jazeera_rss          # 7  — see notes, NOT
+                                                  #      al_jazeera_palestine_rss
+    "Human Rights Watch": hrw                     # 6
+    "IMEMC News": imemc                           # 5
+    "Amnesty International": amnesty              # 3
+  default: null            # measured: 0/186 records have an empty sources[];
+                           #   sources[0].name == the top-level `source` field
+                           #   on 186/186
+
+datasets:                  # one per outlet — 13, not the 10 the audit prints
+  - key: v1_news_memo
+    source: memo
+  - key: v1_news_electronic_intifada_rss
+    source: electronic_intifada_rss
+  - key: v1_news_middle_east_eye_rss
+    source: middle_east_eye_rss
+  - key: v1_news_bbc
+    source: bbc
+  - key: v1_news_times_of_israel
+    source: times_of_israel
+  - key: v1_news_haaretz_rss
+    source: haaretz_rss
+  - key: v1_news_anadolu
+    source: anadolu
+  - key: v1_news_mondoweiss_rss
+    source: mondoweiss_rss
+  - key: v1_news_palinfo
+    source: palinfo
+  - key: v1_news_al_jazeera_rss
+    source: al_jazeera_rss
+  - key: v1_news_hrw
+    source: hrw
+  - key: v1_news_imemc
+    source: imemc
+  - key: v1_news_amnesty
+    source: amnesty
+
+indicator:
+  template: "news.headline"    # literal. event_type is 'news_report' on
+                               #   186/186. article_category could dimension it
+                               #   (conflict 91 / general 47 / humanitarian 33 /
+                               #   political 12 / economic 2 / health 1) but it
+                               #   is v1's own keyword guess, not upstream
+                               #   metadata — it rides in attrs instead.
+
+value:
+  num_from: metrics.count            # 1 on 186/186 — one article per row
+  text_from: title                   # THE payload. NOT `description`: measured
+                                     #   description == title byte-for-byte on
+                                     #   186/186, and description is bronze
+                                     #   under law 6 regardless.
+  unit_from: {literal: "articles"}   # metrics.unit is 'articles' on 186/186
+
+occurred_at:
+  from: date
+  precision: day
+  rules: []
+  # DELIBERATELY EMPTY, and this is the decision to review. `date` here is the
+  # RSS pubDate and it is honest: 179/186 (96.2%) differ from the fetch day and
+  # the span is 2026-07-17..2026-08-05. The audit's ingest_masquerade_pct 0.038
+  # is 7 records, and those 7 are genuinely same-day articles — Middle East Eye
+  # 2, Al Jazeera English 2, Times of Israel 2, Haaretz 1 — not a fetch-time
+  # stamp. The date histogram is an RSS window, not a spike: 08-04 116, 08-03
+  # 18, 07-31 12, 08-05 7, 07-30 5, 07-29 5, 08-02 4, 07-21 4, then a long thin
+  # tail to 07-17. Firing law 1's rule would push seven pieces of real
+  # same-day journalism to precision=unknown and delete the only freshness
+  # signal a news feed has, to defend against a defect that is not present.
+  # Law 1 says a category whose date equals the fetch day does not get an
+  # occurred_at from it; 96.2% of this category's dates do not.
+
+place:
+  strategy: region        # location.region: Palestine 106 / Gaza Strip 59 /
+                          #   West Bank 20 / East Jerusalem 1
+  min_resolved_pct: 1.0   # region strings always resolve; 'Palestine' →
+                          #   place_id NULL + attrs.region (law 3)
+
+stable_id: stable_id      # 186 distinct. `id` is an outlet-local string such as
+                          #   "445527 at https://www.middleeasteye.net/" — 186
+                          #   distinct in this snapshot but not a stable key.
+attrs_passthrough:
+  - source                # == sources[0].name on 186/186
+  - source_category       # news 177 / human_rights 9
+  - article_category
+  - language              # 'en' on 186/186
+  - reliability           # high 93 / medium 93 — v1's own label, not upstream
+  - link                  # the canonical article URL; the attribution target
+
+expect:
+  min_records: 167        # 0.9 × 186
+
+notes: |
+  RECOMMENDATION — SKIP THIS CATEGORY, but keep this spec so the reasoning is
+  reviewable. Four measured reasons:
+    1. It is a 20-day rolling window, not an archive. 186 records span
+       2026-07-17..2026-08-05 and 116 of them (62.4%) are from a single day,
+       2026-08-04. The next v1 fetch replaces most of the file. A one-shot
+       migration therefore captures an arbitrary three-week slice with no
+       historical value and no way to backfill what earlier windows held.
+    2. Nothing here is sellable. All 13 outlets are commercial_use=false in
+       both licenses.json and 042 — 'fair-use-headlines' for memo, bbc,
+       times_of_israel, anadolu, palinfo, hrw, imemc, amnesty, and
+       'copyright-fair-use' for middle_east_eye_rss, electronic_intifada_rss,
+       haaretz_rss, mondoweiss_rss, al_jazeera_rss (five of which are also
+       verify_required). 186 of 186 rows serve the free tier only. That is a
+       correct outcome, but it means the whole category costs 13 dataset rows
+       and 13 licence joins to earn nothing a commercial query can touch.
+    3. Exhaustive routing (law 5) will break on a future run. The outlet roster
+       is not stable: metadata.json names 15 outlets, the records carry 13, and
+       the two dormant ones are both unroutable as written — 'Al Araby English'
+       has NO entry in licenses.json and NO key in 042 at all, and 'ReliefWeb
+       (Palestine)' does not match the `reliefweb` alias exactly. The moment
+       either publishes into the window, the load fails loudly (which is the
+       correct behaviour, and also a recurring operational cost for a dataset
+       with no commercial value).
+    4. Tier 1 already does this, live. 042's own header records that
+       rss_palinfo / rss_qudsn are Tier 1 pollers of outlets that also appear
+       in the databank under their own keys — "same upstream, different
+       acquisition path". Tier 1's news pipeline runs continuously and
+       supersedes a frozen 186-row snapshot.
+  If the answer is nevertheless to migrate: everything above the notes is
+  correct and complete as written. If the answer is to skip, the spec stays
+  draft and the ETL refuses it by default, which is the desired end state.
+
+  THE AUDIT UNDERCOUNTS THE OUTLETS — 13, NOT 10. The audit's source_licenses
+  block lists 10 entries because ops/t2_category_audit.py line 169 applies
+  `_top(src_licenses, 10)`. Its own numbers give it away: the 10 printed
+  entries sum to 172, not 186. The three truncated outlets are Human Rights
+  Watch 6, IMEMC News 5, Amnesty International 3 (= 14, and 172 + 14 = 186).
+  The routing table and dataset list above use the measured 13. Note also that
+  the audit's printed counts for two outlets differ from the measured ones
+  because the truncation interacts with the tie ordering: measured is
+  Middle East Eye 18 and Times of Israel 15, and Electronic Intifada 18.
+  This is a reporting limit in the audit tool, not a disagreement with it —
+  worth raising the `_top` cap for any category whose sources are its datasets.
+
+  ROUTING HAZARDS, both requiring the explicit by_name pins above:
+    'middle east eye' is an alias of BOTH middle_east_eye_rss and
+      historical_archives (whose 50-entry catch-all alias list also swallows
+      'peace now', 'al-haq', 'un', 'passia'). Unpinned, resolution is arbitrary.
+    'Al Jazeera English' matches only al_jazeera_rss ('Al Jazeera (RSS
+      headlines)', aliases include 'al jazeera english'). 042 also carries
+      al_jazeera_palestine_rss, whose alias is the distinct string 'al jazeera
+      palestine'. These are two different feeds of the same outlet; the records
+      here are the general English feed (sample links are
+      aljazeera.com/news/... and /video/newsfeed/...), so al_jazeera_rss is
+      correct. OPEN QUESTION: confirm with Zaid that databank news should route
+      to the generic al_jazeera_rss row rather than being consolidated with
+      Tier 1's Palestine feed — same outlet, same fair-use terms, so the
+      licence filter behaves identically either way, but the attribution string
+      differs ("Headlines: Al Jazeera" vs "News: Al Jazeera Palestine").
+
+  WHAT AN OBSERVATION EVEN MEANS HERE. There is no measurement in a headline.
+  metrics is byte-identical on all 186 rows (count 1, value 0, unit 'articles',
+  every casualty field 0), so the numeric value is a bare tally of 1 article
+  and all the information is in value_text. Hence indicator 'news.headline',
+  value_num 1, unit 'articles', value_text = title. The row asserts "outlet X
+  published headline Y on day Z about region R" — a citation, not a datum.
+  Anything that aggregates these should count rows, never sum values.
+
+  BULK TEXT STAYS IN BRONZE (law 6, twice over). `description` is an exact copy
+  of `title` on 186/186 — zero additional information. `article_description`
+  (filled on 185/186) is far worse: for several outlets it is the raw HTML of
+  the article body, e.g. a full <article> element with the outlet's own markup
+  and paragraph text. That is the outlet's copyrighted content, not metadata,
+  and it must never enter attrs or any served field. raw_ref points at bronze;
+  the served surface is title + link + attribution.
+
+  PLACE IS A GUESS, AND SHOULD BE LABELLED AS ONE. There is essentially no geo:
+  latlon on 1/186, gazetteer_key on 1/186 ('jerusalem'), admin2_pcode on 0/186.
+  location.region is v1's keyword classification of the headline text, not a
+  reported location, and 106/186 (57%) of it is 'Palestine', i.e. "could not
+  tell". Sample evidence that it is unreliable: the first record's region is
+  'Palestine' for a headline about explosions in Sanaa, Yemen. So region
+  resolves cleanly (min_resolved_pct 1.0, with 'Palestine' → place_id NULL) but
+  should carry low confidence downstream. quality.score is 0 and
+  quality.verified false on 186/186; `reliability` (high 93 / medium 93) is
+  likewise v1's own per-outlet label, not an upstream signal.

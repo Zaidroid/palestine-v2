@@ -1,0 +1,128 @@
+# prisoners — Palestinians held by Israel, monthly, by detention category.
+# 890 records: HaMoked 864 (4 series × 216 months, 2008-05 → 2026-06) and
+# Addameer 26 (2022-10 → 2026-08). Audit: 100% dated, 0% masquerade, 0%
+# year-bucket, 0% geo, one event_type, one unit. The cleanest category in the
+# Tier-2 set — and the only one where BOTH sources are verify-required, so
+# nothing here can be sold until Zaid reads the terms.
+category: prisoners
+shape: observation
+status: reviewed
+records_measured: 890
+
+source_routing:
+  by_name:
+    "HaMoked": hamoked                                                   # alias 'hamoked'
+    "Addameer Prisoner Support and Human Rights Association": addameer   # exact alias
+  default: null           # measured: 0 records with sources: []
+
+datasets:
+  - key: v1_prisoners_hamoked
+    source: hamoked
+    records_measured: 864
+    overrides:
+      expect:
+        min_records: 780
+  - key: v1_prisoners_addameer
+    source: addameer
+    records_measured: 26
+    overrides:
+      expect:
+        min_records: 23
+
+indicator:
+  template: "prisoners.{prisoner_metric_type}"
+  # measured values: total 228, administrative 228, sentenced 216, remand 216,
+  #   child 1, female 1 — filled on 890/890, no nulls, no empty strings.
+
+value:
+  num_from: metrics.count   # non-zero on 890/890. NOT metrics.value, which is
+                            #   0 on all 890; NOT metrics.detained, which is
+                            #   non-zero on only 228 (the 'administrative' rows).
+  text_from: null
+  unit_from: metrics.unit   # 'persons' 890/890 — correct here, unlike water
+
+occurred_at:
+  from: date
+  precision: month          # NOT day — see notes
+  rules:
+    - if: "always"
+      then: "keep the date, set precision=month"
+  # measured: 890/890 dates are the 1st of a month (day component == '01' on
+  # every record, both sources). Range 2008-05-01 .. 2026-08-01.
+
+place:
+  strategy: region          # location.region = 'Palestine' on 890/890 →
+                            #   place_id NULL + attrs.region (law 3)
+  min_resolved_pct: 1.0     # NULL is a resolution
+  forbid:
+    - location.coordinates  # [34.45, 31.5] + 'nearest_city: Gaza City' on the
+                            #   26 Addameer rows (2.9% of the file) — the same
+                            #   synthetic Gaza centroid v1 stamps everywhere.
+                            #   These are Israeli-prison headcounts; there is
+                            #   no point geography in this data at all.
+
+stable_id: stable_id        # 890 distinct / 890
+attrs_passthrough:
+  - prisoner_metric_type
+  - location.name           # 'Palestine' (HaMoked 864) / 'West Bank & Gaza'
+                            #   (Addameer 26) — keeps the two phrasings visible
+  - location.region
+
+expect:
+  min_records: 800          # 0.9 × 890
+
+notes: |
+  UNSELLABLE UNTIL ZAID READS THE TERMS. Measured source × license:
+  HaMoked :: verify-required (864) and Addameer :: verify-required (26).
+  042 gives both commercial_use=false and both are on the [ZAID]
+  verify-required list at the foot of that migration. Routing is exhaustive —
+  every one of the 890 records lands on one of these two source keys — so the
+  license filter will hold the whole category off the commercial tier with no
+  leaks. Nothing in this spec should be read as clearing them.
+
+  WHY precision: month AND NOT day. Every date in the file is the 1st of a
+  month: 890/890, verified separately for both sources. HaMoked publishes IPS
+  detention figures as a monthly snapshot; the 1st is a bucket label, not the
+  day a count was taken. Day precision would let 'the number of Palestinians
+  in administrative detention' claim to be a same-day fact and would let this
+  category report freshness the day a monthly bulletin is stamped. Law 2 is
+  written for -12-31 year buckets; this is the same defeat at monthly grain,
+  and T7 already excludes month precision from freshness alongside year and
+  unknown. The audit's year_bucket_pct of 0.0 is therefore true but
+  misleading: 0% year buckets, 100% month buckets.
+
+  HaMoked IS A COMPLETE 4-SERIES PANEL. 864 = 4 × 216: total, administrative,
+  sentenced and remand, each with 216 monthly points from 2008-05-01 to
+  2026-06-01, no gaps and no duplicate (source, metric, month) keys (verified —
+  max count per key is 1). This is the longest clean time series in the whole
+  Tier-2 set and the only one that can carry a real trend.
+
+  ADDAMEER IS A FRAGMENT, NOT A SERIES. 26 records: administrative 12,
+  total 12, child 1, female 1, spanning 2022-10 to 2026-08. The child and
+  female series are single points — one observation each — so
+  prisoners.child and prisoners.female will exist as indicators with one row.
+  That is honest (the machinery will show n=1) but a UI that charts them will
+  draw a dot. Flagging, not hiding.
+
+  TWO SOURCES, SAME INDICATOR — ON PURPOSE. prisoners.total and
+  prisoners.administrative each come from both HaMoked and Addameer, on
+  different dates and via different datasets. Under the v2 schema they land on
+  the same `indicator` string in different `dataset_id`s, which is exactly
+  what the source-independence machinery (012) wants: two organisations
+  measuring the same quantity, comparable by construction. Do not namespace
+  them apart to avoid the "collision" — the collision is the point. Addameer's
+  most recent total (2026-08-01) is also 2 months fresher than HaMoked's
+  (2026-06-01), so the two datasets will legitimately report different
+  freshness.
+
+  ADDAMEER'S FRESHEST ROW IS THE ONE THE AUDIT NOTICED. dates.max for the
+  whole category (2026-08-01) comes from Addameer, not HaMoked. With
+  precision=month, T7 will treat it as a monthly bucket and not as a fresh
+  daily reading — which is correct, and which means this category will
+  never appear "live" even though it updates. Do not add a day-precision
+  override to make the dashboard look better.
+
+  metadata.json credits only HaMoked and carries the notice 'Monthly
+  Palestinians-held-by-Israel by detention category (IPS data via HaMoked),
+  2008+' — accurate for 864 of 890 rows and silent about Addameer. The records
+  are the authority (law: specs cite the audit, not v1's README).

@@ -1,0 +1,150 @@
+# casualties — OCHA oPt's publication of B'Tselem-verified Palestinian
+# fatalities, 2008+. Audit: 49 records, 38.8% dated (all `-12-31`), 61.2%
+# undated, 0% lat/lon. This is NOT a fatality register — it is ONE total
+# (7,459 verified fatalities, 2008-01-01 .. 2026-08-05) published five times
+# over: once as a 19-row annual series, and four times as cross-sectional
+# breakdowns (region, governorate, demographic, weapon). Every one of the five
+# slices sums to exactly 7,459 — measured, see notes. The undated 61% are the
+# four breakdowns; they are not late-arriving data, they have no date because a
+# cross-section of a 19-year total does not have one.
+category: casualties
+shape: observation
+status: reviewed
+records_measured: 49
+
+source_routing:
+  by_name:
+    "UN OCHA oPt — Data on Casualties": ocha_casualties   # licenses.json alias
+                                                          #   'un ocha opt — data on casualties'
+  default: null      # measured: 0 records with sources: [] — empty sources[]
+                     #   is an ERROR, not a default
+
+datasets:
+  - key: v1_casualties_ocha_casualties
+    source: ocha_casualties
+    # One source, one dataset. NOTE the provenance chain: sources[0].organization
+    # is "UN OCHA (B'Tselem data)" — the numbers are B'Tselem's, republished by
+    # OCHA. 042 routes on the publisher (ocha_casualties, verify-required,
+    # commercial_use=false), which is at least as strict as btselem
+    # (CC-BY-NC-4.0, commercial_use=false), so the license filter is safe
+    # either way.
+
+indicator:
+  template: "casualties.{casualty_dimension}.{casualty_breakdown_label}"
+  # casualty_breakdown_label is slugified (lowercase; runs of non-alphanumerics
+  # → '_'). It is NULL on the 19 annual_total rows and on those the trailing
+  # segment is DROPPED, giving "casualties.annual_total".
+  #
+  # Measured result — 5 dimensions, 49 distinct indicators:
+  #   casualties.annual_total                    ×19  (one per year 2008..2026)
+  #   casualties.governorate.<name>              ×18
+  #   casualties.demographic.{men,boys,women,girls,not_available}   ×5
+  #   casualties.region.{gaza_strip,west_bank,israel,not_listed}    ×4
+  #   casualties.weapon.<name>                   ×3
+  # `event_type` is 'fatalities_aggregate' on 49/49 and carries no information
+  # — casualty_dimension is the identity field. The label MUST be in the
+  # indicator: without it the 5 demographic rows collapse to one
+  # (indicator, place, occurred_at) key differing only inside attrs, which no
+  # time-series query can pivot on.
+
+value:
+  num_from: metrics.killed   # == metrics.count on 49/49
+  text_from: null
+  unit_from: metrics.unit    # 'fatalities' on 49/49 — measured correct
+  # metrics.value is 0 on 49/49 and is NOT the value here; every other metric
+  # (injured/displaced/affected/demolished/detained) is 0 on 49/49.
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "casualty_dimension == annual_total"     # 19/49 = 38.8%, date = YYYY-12-31
+      then: "truncate to Jan 1 of that year, precision=year"          # law 2
+    - if: "date is null"                           # 30/49 = 61.2%, ALL four breakdowns
+      then: "occurred_at = 2008-01-01 (series start), precision=unknown;
+              attrs.coverage_start = '2008-01-01',
+              attrs.coverage_end   = <v1 metadata.generated_at date>"
+      # observation.occurred_at is NOT NULL (007), so 'leave it null' is not
+      # available — the row must carry a timestamp, and precision=unknown is
+      # what stops it lying. T7 freshness already ignores unknown.
+      #
+      # It is NOT temporal_context.baseline_date. That field is present on
+      # exactly the 30 undated rows and is the constant '2023-10-07', which
+      # LOOKS like the answer and is measurably wrong: each breakdown sums to
+      # 7,459, and 7,459 is the sum of ALL 19 annual rows from 2008 through
+      # 2026 — not the 1,349 of 2023-2026. The breakdowns cover the whole
+      # 2008+ series; the baseline stamp is boilerplate.
+  # No masquerade rule: measured ingest_masquerade_pct = 0.0.
+
+place:
+  strategy: name        # location.governorate (18/49 = 36.7%), then region
+  # Ladder, first hit wins:
+  #   1. casualty_dimension == 'governorate' → resolve location.governorate
+  #      through resolve/geo.py against the governorate place rows. These are
+  #      English ADMIN names ('Gaza', 'Jenin', 'Deir Al-Balah'), not org names,
+  #      so law 3's ban on name-matching org strings does not apply. 16 of the
+  #      18 are real governorates and MUST resolve; a governorate row that
+  #      falls through to its region is a FAILURE counted by reason, never a
+  #      resolution — otherwise the only rung that can break is also the only
+  #      one that fails silently.
+  #   2. location.region → 'Gaza Strip'→place 1 (1 row), 'West Bank'→place 2
+  #      (1 row), 'Palestine'→place_id NULL + attrs.region (46 rows).
+  #   3. Explicit non-places, place_id NULL + attrs.region / attrs.breakdown
+  #      label preserved: region 'Israel' (1 row, 47 fatalities inside Israel),
+  #      governorate 'Israel' (1), governorate 'Not listed' (1), region
+  #      'Not listed' (1). These are honest NULLs, not resolution misses.
+  min_resolved_pct: 1.0   # every row lands: 16 governorate places, 2 region
+                          #   places, 31 deliberate NULLs. 0% lat/lon measured,
+                          #   so there is no point rung to hold to a number.
+
+stable_id: stable_id      # 49/49 unique
+attrs_passthrough:
+  - casualty_dimension
+  - casualty_breakdown_label
+  - location.region       # keeps 'Israel' / 'Not listed' visible behind a NULL place
+
+expect:
+  min_records: 44         # ≈0.9 × 49
+
+notes: |
+  Measured from ops/t2-category-audit.json and the 49 v1 records:
+
+  DOUBLE COUNT, 5×. sum(metrics.killed) per casualty_dimension:
+    annual_total 7,459 | region 7,459 | governorate 7,459 | demographic 7,459
+    | weapon 7,459.  Total across the category = 37,295 = 5 × 7,459. A
+  consumer that sums `casualties.*` gets five times the truth. The indicator
+  template above is the whole defence: the dimension is the first segment, so
+  a correct query is `WHERE indicator = 'casualties.annual_total'` or
+  `indicator LIKE 'casualties.governorate.%'` — never a bare prefix sum. This
+  should also be stated in the dataset's attrs so the serving layer can warn.
+
+  WHAT THE UNDATED 61% ARE (the audit's open question). All 30 undated records
+  are breakdown cross-sections: governorate 18, demographic 5, region 4,
+  weapon 3. All 30 carry temporal_context.baseline_date = '2023-10-07' and
+  nothing else date-shaped; the 19 dated rows carry no baseline_date at all
+  (30 + 19 = 49, matching the audit's 0.612 / 0.388 fills exactly). The
+  arithmetic above proves the baseline stamp is not the coverage window, so
+  the honest anchor is the series start, 2008-01-01, at precision=unknown.
+
+  PARTIAL CURRENT YEAR. The 2026 annual row (56 fatalities) covers 2026-01-01
+  to the fetch day 2026-08-05, not a full year. Charted against 2025 (242) it
+  reads as a 77% collapse that is really eight months of twelve. The loader
+  must set attrs.partial_year = true on the newest annual row.
+
+  UNDERCOUNT BY DESIGN. The v1 metadata notice: "B'Tselem-verified Palestinian
+  fatalities 2008+ ... Verified individual counts (lower than MoH bulletin
+  totals)". 7,459 verified fatalities 2008-2026 is roughly a tenth of the Gaza
+  MoH figure carried in the conflict category (72,988 as of 2026-06-09) — two
+  different things measured two different ways, both true. Anything that puts
+  them on one axis is wrong; the dataset attrs must say so.
+
+  LICENSE. ocha_casualties is verify-required / commercial_use=false in 042 →
+  free tier with OCHA + B'Tselem attribution, unsellable until Zaid's read.
+
+  OPEN QUESTION: whether the four breakdown dimensions should be loaded at all,
+  or derived at query time from a dated register we do not have. They are
+  loaded here because they carry information the annual series does not (the
+  governorate, demographic and weapon splits), but they are undated by nature
+  and will never be fresh. If the reviewer would rather keep observation
+  free of undated rows, the alternative is to drop all 30 and lose those
+  splits entirely — that is a product decision, not a data one.

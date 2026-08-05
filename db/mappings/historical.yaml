@@ -1,0 +1,303 @@
+# historical — 2,517 records that are really two datasets: Palestine Open Maps'
+# locality gazetteer (2,490 Mandate-era localities with 1922/1931/1945/2016
+# census populations and Nakba depopulation status) and 27 one-off timeline
+# events (1967 → 2000) compiled from books, UN documents and archives.
+# Audit: 100% dated, 99% gazetteer_key, 99% lat/lon, 0.2% year-bucket.
+# The audit's `source_licenses` shows 10 source strings because it truncates to
+# the top 10; the measured count is 28 distinct source names (Palestine Open
+# Maps + 27 one-record composites). Routing below is the full 28.
+category: historical
+shape: observation
+status: reviewed
+records_measured: 2517
+
+source_routing:
+  by_name:
+    "Palestine Open Maps": palopenmaps        # alias 'palestine open maps'
+    # The 27 composites, verbatim, one record each. None of them appears in
+    # licenses.json's alias set — the aliases there are the INDIVIDUAL
+    # components ('unispal', 'idf archives', "morris, '1948 and after'", …),
+    # so a strict alias resolver fails all 27 and, worse, splitting on ';'
+    # would make two of them ambiguous: 'peace now' aliases both
+    # historical_archives and peace_now, and "b'tselem" aliases both
+    # historical_archives and btselem. Enumerated whole, they are exhaustive
+    # and unambiguous.
+    "UNISPAL; Morris, '1948 and After'; IDF archives": historical_archives
+    "UNRWA; UN Commissioner-General report 1967; Tom Segev 'Israel's 1967'": historical_archives
+    "UN Security Council Res. 252 (1968); Israeli Knesset records": historical_archives
+    "B'Tselem settlement database; Peace Now": historical_archives
+    "UN Security Council; UNISPAL": historical_archives
+    "PASSIA; Yezid Sayigh 'Armed Struggle and the Search for State'": historical_archives
+    "Yezid Sayigh; Rashid Khalidi 'The Iron Cage'": historical_archives
+    "UN; IDF archives; Middle East Institute": historical_archives
+    "Adalah; Sabri Jiryis 'The Arabs in Israel'": historical_archives
+    "Kahan Commission Report 1983; UN General Assembly Res. 37/123 D; Robert Fisk 'Pity the Nation'": historical_archives
+    "B'Tselem; Al-Haq; Said & Hitchens 'Blaming the Victims'": historical_archives
+    "B'Tselem fatalities database; Al-Haq annual report 1988": historical_archives
+    "B'Tselem; Save the Children 1990 report": historical_archives
+    "B'Tselem; UN Commission of Inquiry on Haram al-Sharif 1990": historical_archives
+    "B'Tselem; World Bank Gulf War report": historical_archives
+    "US State Department archive; UNISPAL": historical_archives
+    "UN Security Council Res. 799; Human Rights Watch 1993 report": historical_archives
+    "B'Tselem fatalities database cumulative; Al-Haq 'Punishing a Nation'": historical_archives
+    "US State Department; UNISPAL full text": historical_archives
+    "Shamgar Commission Report 1994; HRW 1994 report": historical_archives
+    "UNISPAL; Quartet archive": historical_archives
+    "UNISPAL full text; Annex I–VII": historical_archives
+    "Shamgar Commission Report 1996": historical_archives
+    "B'Tselem; UN SC Res. 1073": historical_archives
+    "UNISPAL Hebron Protocol full text": historical_archives
+    "UNISPAL; US National Archives": historical_archives
+    "Hussein Agha & Robert Malley 'Camp David: The Tragedy of Errors'; Clinton Parameters (Dec 2000)": historical_archives
+  default: null           # measured: 0 records with sources: []
+
+datasets:
+  # ── Palestine Open Maps: 2,490 localities ─────────────────────────────────
+  - key: v1_historical_palopenmaps
+    source: palopenmaps
+    records_measured: 2490
+    overrides:
+      fan_out:
+        # FORMAT EXTENSION — see notes. One locality record becomes up to five
+        # observations, because metrics.value and metrics.count are 0 on
+        # 2,490/2,490 records and the real numbers live in four census fields.
+        - when: "metrics.population_1922 is not null"     # 652 records
+          indicator: "historical.population"
+          value: {num_from: metrics.population_1922, unit: persons}
+          occurred_at: {literal: "1922-01-01", precision: year}
+          attrs: {census: "1922"}
+        - when: "metrics.population_1931 is not null"     # 704 records
+          indicator: "historical.population"
+          value: {num_from: metrics.population_1931, unit: persons}
+          occurred_at: {literal: "1931-01-01", precision: year}
+          attrs: {census: "1931"}
+        - when: "metrics.population_1945 is not null"     # 1,009 records
+          indicator: "historical.population"
+          value: {num_from: metrics.population_1945, unit: persons}
+          occurred_at: {literal: "1945-01-01", precision: year}
+          attrs: {census: "1945"}
+        - when: "metrics.population_2016 is not null"     # 1,693 records
+          indicator: "historical.population"
+          value: {num_from: metrics.population_2016, unit: persons}
+          occurred_at: {literal: "2016-01-01", precision: year}
+          attrs: {census: "2016"}
+        - when: "always"                                  # 2,490 records
+          indicator: "historical.locality_status"
+          value: {text_from: locality_status, num_from: null, unit: null}
+          occurred_at: {from: date, precision: "see rules below"}
+      occurred_at:
+        from: date
+        precision: day
+        rules:
+          - if: "date == 1945-04-01"
+            then: "truncate to 1945-01-01, precision=year"
+            # 1,983 of 2,490 POM records carry this exact date — it is the
+            # 1945 Village Statistics reference, not a day anything happened.
+            # Applies to 1,860 historical_locality and 123
+            # locality_depopulated rows.
+          - if: "otherwise"
+            then: "keep the date, precision=day"
+            # 507 records carry real 1948 depopulation dates (1948-05-01 74,
+            # 1948-04-01 33, 1948-10-30 16, 1948-07-18 15, …). These are the
+            # only true day-precision facts in the category.
+      place:
+        strategy: latlon           # 2,490/2,490 have lat/lon
+        min_resolved_pct: 0.33     # MEASURED, not hoped — see notes
+      attrs_passthrough:
+        - locality_status          # Remaining 971 · New locality 901 ·
+                                   #   Depopulated 464 · Depopulated & built
+                                   #   over 107 · Abandoned 33 ·
+                                   #   Depopulated & appropriated 14
+        - locality_group           # Palestinian 1,268 · Jewish 1,177 · Mixed 45
+        - district_1945
+        - subdistrict_1945
+        - location.name
+        - location.name_ar         # 2,490/2,490 — the Arabic place name is the
+                                   #   memorial content of this dataset
+        - location.gazetteer_key
+        - cross_references         # zochrot_id 534 · palestineremembered_id
+                                   #   1,032 · palestineremembered_url 884
+      expect:
+        min_records: 2240
+
+  # ── 27 timeline events, 1967 → 2000 ───────────────────────────────────────
+  - key: v1_historical_archives
+    source: historical_archives
+    records_measured: 27
+    overrides:
+      indicator:
+        template: "historical.{event_type}"
+        # political 13 · uprising 8 · war 3 · massacre 2 · displacement 1
+      value:
+        num_from: metrics.killed   # first non-zero of killed → displaced;
+                                   #   see notes, 13 of 27 have neither
+        text_from: timeline_period # oslo 9 · naksa_aftermath 8 ·
+                                   #   first_intifada 8 · 1967_war 2 — 27/27
+                                   #   filled, so every row satisfies
+                                   #   observation_has_a_value
+        unit_from: metrics.unit    # 'persons' 27/27
+      occurred_at:
+        from: date
+        precision: day
+        rules:
+          - if: "date endswith -12-31 and event_type == uprising"
+            then: "truncate to year start, precision=year"      # law 2
+            # 4 records: the 1988/1989/1990/1991 annual First-Intifada
+            # fatality totals, which are aggregates wearing a 31 December
+            # date. Exactly the case law 2 was written for. (The audit's
+            # 0.2% year_bucket_pct is these four plus none other.)
+      place:
+        strategy: region
+        # 15 'Palestine' → NULL, 7 'Gaza Strip' → place 1, 4 'West Bank' →
+        # place 2, 1 'East Jerusalem' → Jerusalem governorate (place 11) with
+        # attrs.region preserved. But location.name says Beirut, Jordan,
+        # Madrid, Cairo, Washington DC, Camp David, Tel Aviv, Sinai — see notes.
+        min_resolved_pct: 1.0
+      attrs_passthrough:
+        - timeline_period
+        - location.name
+        - source_citation          # the verbatim composite source string, so
+                                   #   the specific attribution survives the
+                                   #   collapse into historical_archives
+      expect:
+        min_records: 24
+
+indicator:
+  template: "historical.{event_type}"      # default; both datasets override
+
+value:
+  num_from: metrics.value
+  text_from: null
+  unit_from: metrics.unit                  # 'persons' 2,517/2,517
+
+occurred_at:
+  from: date
+  precision: day
+  rules: []
+
+place:
+  strategy: latlon
+  min_resolved_pct: 0.33
+  forbid:
+    - location.coordinates                 # present on only 35 records (1.4%)
+                                           #   and the usual synthetic centroid
+                                           #   where it appears; location.lat /
+                                           #   location.lon are the real values
+
+stable_id: stable_id                       # 2,517 distinct / 2,517
+attrs_passthrough:
+  - location.region
+  - event_type
+
+expect:
+  min_records: 2260                        # 0.9 × 2,517
+
+notes: |
+  CAN v1 GAZETTEER KEYS JOIN v2 PLACES? MOSTLY NO — MEASURED. The v2 place
+  table documents source_refs.v1_canonical_key, and it is populated: 1,817 of
+  2,415 places carry one. But it was loaded from v1's LIVE gazetteer (Gaza and
+  West Bank localities), and this category's keys are 1948-era Historic
+  Palestine localities. Queried directly against the v2 database
+  (resolve/db.py, read-only):
+    distinct gazetteer_keys in historical           2,424
+    of those matching place.source_refs->>'v1_canonical_key'   471  (19.4%)
+    RECORDS whose key joins                          499 of 2,517  (19.8%)
+  Keys like 'hebron', 'jerusalem', 'khan_yunis' join; 'ayn_hawd_1948',
+  'al_tantura_1948', 'tel_aviv', 'kefar_hasidim_alef' do not, because v2 has
+  no place row for a village destroyed in 1948 or for a locality inside the
+  Green Line. So gazetteer_key is NOT the strategy here despite being the
+  99%-filled field the audit highlights — it is the field with the highest
+  fill and the second-lowest yield.
+
+  latlon IS RICHER, AND STILL ONLY RESOLVES A THIRD. 2,493 records carry
+  lat/lon. Tested with ST_Contains against place.geom for all 2,415 v2 places:
+    points falling inside any v2 place polygon      820 of 2,493  (32.9%)
+    of those, inside a governorate polygon          820  (all of them)
+  admin2_pcode agrees exactly: 32.6% fill (820 records), and all 16 distinct
+  pcodes join place.admin2_pcode. The other 1,673 points are in present-day
+  Israel — Haifa, the Galilee, the coastal plain — which v2's place universe
+  (2 regions + 16 governorates + 1,443 localities, all oPt) does not cover.
+  min_resolved_pct is therefore set to 0.33, measured. A run that resolves
+  more than that has found something new; a run that resolves less has broken
+  something.
+  NOTE ALSO: resolve/geo.py has no lat/lon entry point at all — it resolves
+  free text against place_alias and trigram-matched names. `strategy: latlon`
+  needs a point-in-polygon resolver (place.geom is PostGIS and indexed, so
+  the query is trivial) that does not exist yet. Same gap blocks
+  refugees.yaml's IDMC dataset. This is a T2.3 prerequisite, not a spec issue.
+
+  THE HEADLINE OPEN QUESTION: SHOULD THIS DATASET CREATE PLACES? 2,424
+  distinct localities of Mandate Palestine with coordinates, Arabic names,
+  1945 district/subdistrict, depopulation status and Zochrot /
+  PalestineRemembered cross-references is arguably the most valuable single
+  artifact in the whole v1 databank, and it is 67% unmappable only because
+  v2's gazetteer stops at the Green Line. Loading these as
+  place(kind='locality', source_refs={'v1_canonical_key': …, 'source':
+  'palopenmaps'}) would take place resolution here from 33% to ~99% and would
+  give v2 a Nakba gazetteer nothing else has. It would also roughly double the
+  place table and put 1,177 'Jewish' locality_group rows (New locality 901,
+  i.e. post-1948 Israeli settlements recorded by POM for contrast) into a
+  table the rest of the system treats as Palestinian places. That is a
+  product decision, not an ETL decision. This spec assumes NO place creation
+  and accepts 33%.
+
+  FORMAT EXTENSION: fan_out. metrics.value == 0 AND metrics.count == 0 on
+  2,490/2,490 POM records — verified, there is not one non-zero. The numbers
+  are in metrics.population_1922 (652), population_1931 (704),
+  population_1945 (1,009) and population_2016 (1,693). A single-observation
+  mapping would load 2,490 rows whose value is the literal 0 and drop every
+  census figure into attrs where no time series can reach it. So the POM
+  dataset fans out: 4,058 historical.population observations at year
+  precision on the four census years, plus 2,490 historical.locality_status
+  observations carrying the Nakba status as value_text — 6,548 observations
+  from 2,490 records. This needs a `fan_out` construct the README's format
+  does not have, and the T2.3 loader must implement it before this leaves
+  draft. FALLBACK if fan_out is rejected: one observation per record with
+  value_text = locality_status and the four populations in attrs, which
+  preserves the data but makes "population of Palestinian villages in 1945"
+  unaskable. expect.min_records counts RECORDS READ (2,240), not observations
+  written; the run report should also assert ≈6,548 observations for this
+  dataset or the fan-out has silently misfired.
+
+  THE 27 TIMELINE RECORDS ARE THE ONE PLACE LAW 6 BREAKS. Their content IS
+  the description: 'Six-Day War (June 5–10, 1967). Israel seizes the West
+  Bank, East Jerusalem…', 'PLO-Israel mutual recognition and Declaration of
+  Principles…'. Measured metrics: 13 of the 27 have killed == 0, displaced ==
+  0, count == 0 and value == 0 — the Oslo signings, the Madrid conference,
+  Camp David, the Hebron Protocol. For those rows the description is the only
+  information in the record, and law 6 sends it to bronze. This spec keeps
+  them loadable by putting timeline_period in value_text (27/27 filled), but
+  that is a placeholder, not the data. OPEN QUESTION: (a) exempt these 27 from
+  law 6 and pass description into attrs, (b) model them as `shape: event`
+  rather than observation — they are wars, massacres and uprisings, precisely
+  what README reserves `event` for, and only the category name keeps them out,
+  or (c) leave them in bronze and do not migrate them at all. Recommend (b).
+  14 of the 27 do carry a real number (killed 21,000 for 1967, 2,000 for
+  Sabra and Shatila, 1,162 cumulative for the First Intifada, 415 displaced
+  for the 1992 Marj al-Zuhour deportations) and those are worth having.
+
+  THEIR PLACES ARE MOSTLY NOT IN PALESTINE EITHER. location.name for the 27:
+  Beirut (Sabra and Shatila camps), Jordan, Jordan Valley / Karameh, South
+  Lebanon, Madrid, Cairo, Washington DC ×2, Maryland USA, Camp David, Tel
+  Aviv, Sinai / Golan / Israel, Galilee. location.region says 'Palestine' for
+  most of them anyway. strategy: region gives place_id NULL for the 15
+  'Palestine' rows, which is honest, but 'Gaza Strip' → place 1 for a record
+  named 'Gaza Strip (Jabalia)' and 'West Bank' → place 2 are fine. Do not
+  name-match these against the gazetteer (law 3).
+
+  LICENSE: 2,490 of 2,517 rows are Palestine Open Maps :: verify-required,
+  which 042 records as commercial_use=false and puts on the [ZAID] list. The
+  27 composites all declare 'public-domain' in the record, but they cite
+  B'Tselem (CC-BY-NC in 042), Peace Now (verify-required) and Human Rights
+  Watch alongside genuinely public UN documents and out-of-copyright-claim
+  scholarship. Routing all 27 to `historical_archives` (042: 'varies',
+  commercial_use=false) is the quarantine-by-default answer and loses no
+  attribution as long as the verbatim composite string is preserved — hence
+  attrs.source_citation. v1's metadata.json says as much itself:
+  'Attribution-required (Abu Sitta / Zochrot / PalestineRemembered); verify
+  before commercial redistribution.' Net effect: the entire category is
+  unsellable until Zaid reads POM's terms.
+
+  UNITS ARE UNIFORM AND, FOR ONCE, CORRECT: metrics.unit == 'persons' on
+  2,517/2,517, and every number in the file really is a headcount — census
+  populations, death tolls, deportees.

@@ -1,0 +1,147 @@
+# westbank — NOT A SOURCE. A v1 convenience view over education + infrastructure.
+# Audit: 2,962 records, 100% dated, 100% latlon, 91.1% admin2_pcode, and
+# ingest_masquerade_pct 0.0 — which is a FALSE NEGATIVE. The true masquerade is
+# 100%. Every one of these 2,962 records already exists in another category
+# with the same id and the same stable_id. RECOMMENDATION: SKIP THIS CATEGORY.
+# The spec is written in full anyway so the decision is on the record and so
+# that, if it is migrated, it is migrated with its duplication declared.
+category: westbank
+shape: observation
+status: reviewed
+migrate: false
+skip_reason: duplicate_view_zero_unique_records
+records_measured: 2962
+
+source_routing:
+  by_name:
+    "HDX": hdx
+  default: null            # measured: 0/2962 records have an empty sources[]
+
+datasets:
+  - key: v1_westbank_hdx
+    source: hdx
+
+indicator:
+  template: "westbank.{event_type}"   # westbank.school_record 2359 /
+                                      #   westbank.locality_record 342 /
+                                      #   westbank.barrier_segment 261
+
+value:
+  num_from: metrics.count             # 1 on 2962/2962 — one school / locality /
+                                      #   segment per row, never a measurement
+  text_from: null                     # school_status 'Active' and
+                                      #   barrier_status are per-type, not
+                                      #   category-wide; they ride in attrs
+  unit_from: null                     # metrics.unit lies on all 2962 — see notes
+
+occurred_at:
+  from: date
+  precision: unknown
+  rules:
+    - if: "date == fetch_day"
+      then: "reported_at-only"
+      # MUST fire on 2962/2962 even though the audit says 0.0. See the
+      # false-negative note below: the audit could not compute fetch_day for
+      # this category. Measured directly, date == '2026-08-05' on 2962/2962 and
+      # sources[].fetched_at is 2026-08-05T03:01:08Z on 2962/2962.
+    - if: "fetch_day is empty or unavailable"
+      then: "reported_at-only"
+      # Fail-closed guard. A category whose fetch day cannot be determined must
+      # not be granted day precision by default — that is how this one slipped
+      # through the audit. Absence of proof of honesty is not proof of honesty.
+
+place:
+  strategy: pcode                     # location.admin2_pcode, 2698/2962 = 0.911
+  fallback: [latlon, region]          # FORMAT EXTENSION — see education.yaml
+  latlon_exclude: [barrier_segment]   # projected metres, not degrees — see notes
+  min_resolved_pct: 0.911             # measured admin2_pcode rate; a floor
+
+stable_id: stable_id                  # 2962 distinct — but NOT unique across
+                                      #   the databank, see the duplication note
+attrs_passthrough:
+  - event_type
+  - school_id
+  - school_name
+  - school_name_ar                    # MOJIBAKE on ~89% of school rows
+  - school_type
+  - school_status
+  - locality_name
+  - locality_type
+  - barrier_type
+  - barrier_status
+  - admin1
+  - admin2
+  - admin2_pcode
+
+expect:
+  min_records: 2666                   # 0.9 × 2962
+
+notes: |
+  RECOMMENDATION: SKIP. This category contains zero unique records. Measured
+  overlap against the categories already specced in this batch:
+    stable_id overlap with education        2359 / 2359  (100%)
+    stable_id overlap with infrastructure    603 /  603  (100%)
+    `id` overlap with education             2359
+    `id` overlap with infrastructure         603
+    2359 + 603 = 2962 = every record in the file
+  The records' OWN `category` field proves the point: it reads 'education' on
+  2,359 of them and 'infrastructure' on 603 — not 'westbank'. Their `id`
+  prefixes are wb-school (2359), wb-village (342), wb-barrier (261), the same
+  prefixes education and infrastructure carry. v1 built westbank as a
+  geographic cut across two real feeds and wrote it out as a third file.
+  Migrating it creates a second silver row for every West Bank school, locality
+  and barrier segment under a different dataset key, so every count, every
+  freshness figure and every licence filter that touches the West Bank is
+  inflated by up to 2×. There is no upstream to attribute it to that is not
+  already attributed.
+  If Zaid wants a West Bank cut in v2 it should be a QUERY over
+  v1_education_hdx and v1_infrastructure_hdx (place is resolved, region and
+  admin1 are both stored), not a duplicated dataset.
+  OPEN QUESTION: skip entirely, or migrate to a dataset explicitly marked as a
+  view and excluded from every aggregate? Recommendation: skip. This spec stays
+  draft either way.
+
+  THE AUDIT'S 0.0 MASQUERADE IS A FALSE NEGATIVE — AND THE MECHANISM MATTERS.
+  ops/t2_category_audit.py line 72 derives the fetch day as
+  `(meta.get("last_updated") or "")[:10]` from the category's metadata.json.
+  westbank is the ONLY category in this batch with no metadata.json on disk
+  (its directory holds all-data.json and stable-id-index.json and nothing
+  else), so fetch_day resolved to the empty string, no record could ever equal
+  it, and the counter reported 0/2962 = 0.0. The audit's own output shows the
+  tell: `"fetch_day": ""` alongside `"min": "2026-08-05", "max": "2026-08-05"`.
+  Measured from the records instead: date is '2026-08-05' on 2962/2962,
+  sources[].fetched_at is 2026-08-05T03:01:08.270Z on 2962/2962, and the
+  metadata block embedded inside all-data.json says generated_at
+  2026-08-05T03:01:09.561Z. True masquerade = 1.00, the highest in the batch.
+  A year-scan of every string and numeric field in all 2,962 records found a
+  4-digit year in only two places, `date` and `sources[].fetched_at` — there is
+  no honest date here either. This is a bug in the audit, not a disagreement
+  with it: the audit could not run the check, and reported the absence of a
+  detection as the absence of the defect. Worth fixing in
+  ops/t2_category_audit.py (fall back to the embedded metadata.generated_at, or
+  to max(sources[].fetched_at)) before any other category is trusted at 0.0.
+
+  UNIT LIE ON EVERY ROW. metrics.count is 1 on 2962/2962 while metrics.unit
+  says 'students' (2359), 'persons' (342) and 'km' (261). No student count, no
+  population and no segment length exists anywhere: population is null on
+  342/342 localities, length_km is null on 261/261 barrier segments, and
+  construction_year is null on 261/261. The row counts one entity. unit_from is
+  therefore null rather than propagating three different false units — the same
+  call water.yaml made. metrics.value is 0 on 2962/2962 and must never be read.
+
+  BARRIER COORDINATES ARE PROJECTED METRES, same trap as infrastructure.yaml.
+  The 261 barrier_segment rows store lat 3,470,570..3,600,031 and lon
+  679,088..732,995 — UTM-36N northing/easting, not degrees — which the audit
+  counts inside latlon_pct 1.0. They have no pcode (0/261) and location.name is
+  the literal 'Separation Barrier Segment'. They fall through to region.
+  barrier_type is Fence 134 / Concrete 73 / NA 51 / Wall 3; barrier_status is
+  Constructed 181 / Projected 52 / Under Construction 28.
+
+  OTHER MEASURED CONSTANTS. All 342 locality_record rows have locality_name
+  'Unknown Locality' (1 distinct value) and locality_type 'Village' — the
+  entire locality feed is unnamed placeholders with real coordinates and
+  pcodes. school_type is 'Unknown' and school_status 'Active' on all 2,359
+  school rows. Arabic strings carry the same cp1252/UTF-8 double-encoding
+  described in education.yaml (school_name_ar ~89%, location.governorate ~98%,
+  location.locality ~79%) and need the same repair or the same drop.
+  quality.score is 0 and quality.verified false on 2962/2962.

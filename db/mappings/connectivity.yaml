@@ -1,0 +1,175 @@
+# connectivity — internet reachability and web censorship, two upstreams in
+# one v1 file: OONI censorship measurements (1,276) and IODA outage
+# detections (998).
+# Audit: 2,274 records, 100% dated (0% masquerade), 0% lat/lon, region-level
+# only. This is the one category in this batch that mixes licenses in one
+# file, so routing is exhaustive and per-source (law 5), and it is the one
+# that touches live Tier 1 ingestion — see the IODA OVERLAP section in the
+# notes, which is the open question this spec was written to raise.
+# event_type is the only per-record discriminator and here it IS informative:
+# it separates the two upstreams' incompatible measures.
+category: connectivity
+shape: observation
+status: reviewed
+records_measured: 2274
+
+source_routing:
+  by_name:
+    "OONI": ooni
+    "IODA": ioda
+  default: null            # every record carries exactly one source, either
+                           #   'OONI' (1,276) or 'IODA' (998) — full census of
+                           #   all-data.json. An unknown name FAILS the run.
+
+datasets:
+  - key: v1_connectivity_ooni
+    source: ooni
+  - key: v1_connectivity_ioda
+    source: ioda
+
+indicator:
+  template: "connectivity.{event_type}"
+  # → connectivity.censorship_measurement (1,276 OONI rows; value is the
+  #     anomaly rate, a 0–1 fraction)
+  # → connectivity.internet_outage        (998 IODA rows; value is the outage
+  #     duration in seconds)
+  # The two never mix: event_type and source name are 1:1 (measured).
+
+value:
+  num_from: [metrics.duration_seconds, anomaly_rate]   # first non-null wins:
+                           #   duration_seconds on the 998 IODA rows,
+                           #   anomaly_rate on the 1,276 OONI rows
+  text_from: null
+  unit_from: null          # metrics.unit is 'seconds' on IODA (correct) but
+                           #   'measurements' on OONI, where it describes
+                           #   metrics.count (600 measurements), NOT the
+                           #   0.0533 ratio in the value — measured wrong on
+                           #   1,276/1,276 OONI rows. The unit is carried by
+                           #   the indicator instead (seconds / ratio 0–1) and
+                           #   metrics.unit passes through to attrs verbatim.
+                           #   Same call as water.yaml made for its bogus
+                           #   'count'.
+
+occurred_at:
+  from: [outage_start, date]     # first non-null wins
+  precision: day
+  rules:
+    - if: "outage_start is present"          # the 998 IODA rows
+      then: "occurred_at = outage_start, precision = hour"
+                           #   outage_start is a real UTC instant (386 distinct
+                           #   times of day) on IODA's 10–20 minute bins;
+                           #   `hour` is the conservative claim
+    # No masquerade rule: ingest_masquerade_pct is 0% (max date 2026-07-24 vs
+    #   fetch day 2026-08-05).
+    # No year-bucket rule: the audit's year_bucket_pct 0.1% is exactly two
+    #   rows, ooni-ps-2024-12-31 and ooni-ps-2025-12-31 — real daily
+    #   measurements on a real 31 December, not aggregates. Law 2 applies to
+    #   aggregate dates only.
+
+place:
+  strategy: region         # location.region: 'Palestine' 1,677 → place_id
+                           #   NULL + attrs.region; 'Gaza Strip' 417 → place 1;
+                           #   'West Bank' 180 → place 2
+  min_resolved_pct: 1.0    # region strings always resolve; NULL is the honest
+                           #   answer for the country-wide rows
+
+stable_id: stable_id       # 2,274 distinct over 2,274 records — unique
+attrs_passthrough:
+  - network_entity.type
+  - network_entity.code
+  - outage_datasource
+  - metrics.unit
+  - metrics.count
+  - metrics.anomaly_count
+  - metrics.confirmed_blocked
+  - metrics.severity_score
+
+expect:
+  min_records: 2000        # ≈0.9 × 2,274
+
+notes: |
+  MEASURED by a full read of connectivity/all-data.json (not partitioned,
+  4.0 MB, 2,274 records). Per-source date ranges and shapes:
+    OONI  1,276 rows, 2017-02-09 … 2026-06-09, every row location 'Palestine'
+          precision 'country'; fields anomaly_rate (= metrics.value, non-zero
+          on 1,100), metrics.count (measurements run that day),
+          metrics.anomaly_count (non-zero on 1,100),
+          metrics.confirmed_blocked (non-zero on exactly ONE row in nine
+          years — confirmed blocking is rare in this series, anomalies are
+          not).
+    IODA    998 rows, 2022-03-02 … 2026-07-24; metrics.value is 0 on all of
+          them, the real measure is metrics.duration_seconds. Entities:
+            region 1226 'Gaza Strip'   417 rows, 2022-03-02 … 2026-07-24
+            country PS  'Palestine'    245 rows, 2022-03-09 … 2026-06-20
+            region 4581 'West Bank'    180 rows, 2022-03-09 … 2026-06-20
+            asn 12975   'AS12975 PALTEL' 156 rows, 2022-03-02 … 2026-06-20
+          The 156 PALTEL rows name an autonomous system in location.name;
+          their location.region is 'Palestine', so they resolve to place_id
+          NULL and keep the ASN in attrs.network_entity — an AS is not a
+          place and must not be resolved to one.
+
+  IODA OVERLAP WITH TIER 1 — THE QUESTION THIS SPEC RAISES.
+  v2 already ingests IODA live: ingest/sources/connectivity.py polls IODA
+  region 4581 (West Bank) under source key 'ioda'. Checked in the live v2
+  database on 2026-08-05:
+    - Tier 1 writes `state_observation` / `state_current` rows with
+      state_kind='internet' and value ∈ {normal, degraded, outage}, place =
+      the West Bank region row, observed_at = now(). It does NOT write to
+      `observation`. The migrated rows land in `observation`. There is
+      therefore NO row-level duplication — different tables, different
+      questions.
+    - Row counts and ranges: Tier 1 has 420 ioda state_observation rows
+      spanning 2026-07-31 … 2026-08-05, all valued 'normal'. The migrated
+      IODA West Bank rows (region 4581) span 2022-03-09 … 2026-06-20. The
+      two date ranges DO NOT OVERLAP; there is a 41-day gap (2026-06-21 …
+      2026-07-30) that neither covers.
+    - Tier 1 reads the West Bank ONLY and deliberately excludes Gaza region
+      1226 (its own comment explains why). So the 417 Gaza rows, the 245
+      country-PS rows and the 156 PALTEL rows are purely additive — nothing
+      in v2 has ever collected them.
+    - The two also differ in kind: v1 rows are discrete historical outage
+      EVENTS (a start instant and a duration), Tier 1 rows are a periodic
+      verdict about the present with a 7-day rolling baseline and a 2-of-3
+      signal-agreement rule.
+  [OPEN] Both write under one source key, so provenance for 'ioda' becomes
+  two acquisition paths with different methods. If T7 or the serving layer
+  ever unions the historical events with the live verdict, the 2026-06-20 →
+  2026-07-31 seam and the doubled provenance need an explicit answer. Nothing
+  in this spec creates a duplicate today; the risk is downstream.
+  [OPEN] The `source` row for 'ioda' is Tier 1's, not 042's: 042 declares
+  free-with-attribution / rank 3, but it runs ON CONFLICT DO NOTHING and
+  ingest/sources/connectivity.py had already inserted 'IODA (Georgia Tech)
+  internet outage detection' / CC-BY-NC-4.0 / rank 2. licenses.json is a
+  third version (free-with-attribution, verify_required=true). All three
+  agree on commercial_use=false, so the license filter behaves identically
+  whichever wins — but the attribution string served to users is currently
+  Tier 1's, and someone should decide which one is right.
+
+  WHAT AN IODA ROW COUNTS. (entity, outage_start) is unique across all 998
+  rows, but outage_datasource varies (ping-slash24 398 · bgp 319 ·
+  merit-nt 247 · gtr 34) and 388 distinct (entity, day) pairs carry those
+  998 rows — up to 7 rows for one entity on one day. These are PER-SIGNAL
+  detections, not corroborated outages: the same real event is often seen by
+  two or three signals at slightly different start times. Counting rows
+  over-reports outages, which is precisely the failure mode Tier 1's
+  2-of-3-signals rule was built to avoid. outage_datasource is kept in attrs
+  so a consumer can collapse them.
+  Duration distribution: ≤1h 628 · ≤1d 340 · ≤7d 10 · ≤30d 14 · >30d 6. The
+  six long tails are IODA series artifacts, not real outages — the worst
+  claims 119,325,611 s (3.8 years, ioda-asn-12975-1666572000-bgp).
+  [OPEN] Cap or flag durations over some threshold at load time, or migrate
+  them verbatim and let the serving layer filter? This spec migrates them
+  verbatim — silently rewriting an upstream value is not an ETL decision —
+  but a 3.8-year outage will look ridiculous in any chart that does not
+  filter.
+
+  LICENSES IN ONE FILE (law 5). 'OONI :: free-with-attribution' 1,276 and
+  'IODA :: free-with-attribution' 998. Both route through licenses.json
+  aliases to keys `ooni` and `ioda`; both are commercial_use=false in 042, so
+  every row of this category is free-tier-only with attribution. licenses.json
+  additionally marks ioda verify_required=true.
+
+  v1's own metadata is wrong about this file in the usual way: metadata.json
+  lists sources ['OONI'] and its embedded sources[] says
+  '{"name":"OONI","records":2274}', crediting OONI with all 998 IODA rows.
+  The routing above is derived from the records, not from that claim.

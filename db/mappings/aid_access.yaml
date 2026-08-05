@@ -1,0 +1,154 @@
+# aid_access — UNRWA Gaza aid-truck consignment lines, one row per lorry.
+# Audit: 50,059 records, 100% dated (0% masquerade), 100% region 'Gaza Strip',
+# 0% lat/lon. event_type is uniformly 'aid_consignment' and carries no
+# information; the per-record identity is cargo_category (4 values) and the
+# measure is metrics.quantity + metrics.unit. metrics.value and metrics.count
+# are ZERO on all 50,059 rows — the audit's field_fill reads 1.0 for them
+# because it counts a literal 0 as "filled", which is the trap this spec
+# exists to catch. Place is the CROSSING NAME, and only four of the seven
+# named crossings exist in the v2 gazetteer (see place.crosswalk).
+category: aid_access
+shape: observation
+status: reviewed
+records_measured: 50059
+
+source_routing:
+  by_name:
+    "UNRWA Gaza Supply and Logistics dashboard": unrwa_aid_trucks
+  default: null            # sources[] is present with exactly one name on
+                           #   50,059/50,059 records (measured); an absent or
+                           #   unknown name FAILS the run (law 5)
+
+datasets:
+  - key: v1_aid_access_unrwa_aid_trucks
+    source: unrwa_aid_trucks
+
+indicator:
+  template: "aid_access.consignment.{cargo_category}"
+  # cargo_category is filled on 100%, 4 values (measured):
+  #   Food Items 38,390 · Non-Food Items 8,165 · Mixed Items 1,812 ·
+  #   Medical Supplies 1,692.  Slugged lower/underscore by the loader, the
+  #   four indicators are:
+  #   aid_access.consignment.food_items, .non_food_items, .mixed_items,
+  #   .medical_supplies
+
+value:
+  num_from: metrics.quantity   # 0 on 116 rows (0.23%), never null
+  text_from: null
+  unit_from: metrics.unit      # 11 raw tokens, drifting by quarter — see notes
+
+occurred_at:
+  from: date
+  precision: day
+  rules: []                # masquerade 0% (max date 2025-01-16 vs fetch day
+                           #   2026-08-05); the audit's year_bucket_pct 0.3%
+                           #   is ~150 real 31-December deliveries, and law 2
+                           #   applies only to AGGREGATE dates — a single
+                           #   lorry's manifest is not an aggregate, so no
+                           #   truncation rule fires here
+
+place:
+  strategy: name
+  name_from: crossing          # [SPEC EXTENSION — see notes] 7 values, 100%
+                               #   filled; location.name is the same string
+                               #   on every record (measured identical)
+  crosswalk:                   # [SPEC EXTENSION — see notes] explicit, because
+                               #   resolve/geo.py gets every one of these wrong
+    "Kerem Shalom":  {kind: crossing, name_en: "Kerem Shalom Crossing"}      # 27,498
+    "Rafah Crossing": {kind: crossing, name_en: "Rafah Crossing"}            # 11,080
+    "Erez":          {kind: crossing, name_en: "Erez Crossing (Beit Hanoun)"} # 2,170
+    "Kissufim":      {kind: crossing, name_en: "Kissufim Crossing"}          #     72
+    "Western Erez":  null      #  6,304 → fallback (open question below)
+    "Gate 96":       null      #  2,297 → fallback (no gazetteer row)
+    "JLOTS":         null      #    638 → fallback (offshore pier, not a place)
+  fallback: region             # [SPEC EXTENSION] location.region is
+                               #   'Gaza Strip' on 50,059/50,059 → place 1
+  min_resolved_pct: 1.0        # every row lands on a place: 40,820 (81.5%) at
+                               #   crossing precision, 9,239 (18.5%) on the
+                               #   Gaza Strip region row
+
+stable_id: stable_id           # 50,059 distinct over 50,059 records — unique,
+                               #   safe as the idempotency key
+attrs_passthrough:
+  - crossing
+  - cargo_category
+  - cargo_description
+  - donor
+  - recipient
+  - donation_type
+  - metrics.trucks
+
+expect:
+  min_records: 45000           # ≈0.9 × 50,059
+
+notes: |
+  MEASURED (full census of the 6 quarterly partitions, 2023-Q4 … 2025-Q1;
+  50,059 records, one key-set — the record shape does NOT drift between
+  quarters, only the unit vocabulary does).
+
+  THE MEASURE. metrics.trucks == 1 on 100% of rows: each record is one
+  lorry's manifest line, not a daily total. So the canonical UNRWA number,
+  "trucks entering Gaza per day", is COUNT(*) per (day, crossing) and must
+  NEVER be SUM(value_num). value_num is the cargo quantity, whose unit is
+  per-row. metrics.value == 0 and metrics.count == 0 on all 50,059 rows.
+
+  UNIT DRIFT BY QUARTER (the reason two quarters were sampled):
+    2023-Q4  Pallets 5,535 · Ton 362 · Piece 112 · Truck 2
+    2024-Q1  Pallets 11,629 · Truck 574 · trucks 10 · EACH 3 · Piece 17 ·
+             Box 1 · Vehicles 1 · CTN 3
+    2024-Q2  Pallets 9,055 · Truck 2,041 · MT 1,629 · trucks 1,127 ·
+             Piece 34 · Tents 6 · Ton 2
+    2024-Q3  Pallets 7,431 · MT 2,520 · Truck 857 · Piece 5 · Vehicles 9
+    2024-Q4  Pallets 3,836 · Truck 136 · MT 2,502
+    2025-Q1  Pallets 547 · MT 73
+  Three pairs are the same unit spelled twice — Truck/trucks (3,610 + 1,137)
+  and Ton/MT (364 + 6,724, both metric tonnes) — and Piece/EACH/CTN/Box/
+  Vehicles/Tents (191 rows total) are one-off vocabulary. Units also mix
+  INSIDE every cargo_category (Food Items: Pallets 28,181, MT 6,561,
+  Truck 2,343, trucks 1,057, Ton 237, Piece 8, CTN 3), so a chart that sums
+  aid_access.consignment.food_items without grouping by unit is wrong by
+  three orders of magnitude.
+  [OPEN] Normalise the unit vocabulary (Truck≡trucks, Ton≡MT) at load time,
+  or pass it through raw as written here and normalise in serving? This spec
+  passes it through — collapsing units is a data decision, not an ETL side
+  effect. A decision either way must be recorded before status: reviewed.
+
+  PLACE. resolve/geo.py was run against all seven strings (learn=False) and
+  is unusable here: 'Kerem Shalom' → None, 'Kissufim' → None, 'Gate 96' →
+  None, 'JLOTS' → None, 'Rafah Crossing' → Rafah GOVERNORATE (place 18, by
+  containment, conf 0.657), 'Western Erez' → the locality 'Erez' (place 148),
+  'Erez' → the same locality. The five Gaza crossings added by migration 034
+  (place_id 2611–2615) have NO place_alias rows at all, which is why exact
+  matching fails. Hence the literal crosswalk above, keyed on gazetteer
+  name_en rather than place_id so it survives a rebuild. Today's ids:
+  Rafah Crossing 2613, Kerem Shalom Crossing 2614, Erez Crossing
+  (Beit Hanoun) 2612, Kissufim Crossing 2611, Zikim Crossing 2615.
+  [OPEN] 'Western Erez' is 6,304 rows (12.6%) — the second-largest crossing
+  in the file — and is most likely the northern aid corridor that 034 seeded
+  as 'Zikim Crossing' (2615, "Northern aid corridor"). That is an inference,
+  not a measurement, so this spec leaves it on the Gaza Strip region row
+  until a human confirms. Same for 'Gate 96' (2,297) and 'JLOTS' (638, the
+  temporary offshore pier — arguably not a `place` at all): adding gazetteer
+  rows for them is a gazetteer decision, not an ETL one.
+
+  LICENSE. Records carry 'UNRWA Gaza Supply and Logistics dashboard :: CC-BY'
+  on 50,059/50,059. licenses.json aliases it to key `unrwa_aid_trucks`, and
+  042 gives that key CC-BY / commercial_use=true / authority_rank 2 — this is
+  one of the few v1 categories that is sellable as-is, with HDX attribution.
+
+  UPSTREAM PARTIALITY. v1's metadata.json carries the notice "Discontinued
+  upstream 2025-01-16; records after 2024-05-05 are partial (see source
+  disclaimer)." Measured: 24,812 records (49.6%) are dated after 2024-05-05,
+  so half the category is under that disclaimer, and the series simply stops
+  at 2025-01-16 — it will never be fresh again.
+  [OPEN] The disclaimer belongs somewhere a query can see it. Proposals:
+  dataset.attrs.upstream_notice for the whole dataset, plus a derived
+  attrs.upstream_partial=true on the 24,812 post-2024-05-05 rows. The second
+  is a DERIVED field, which attrs_passthrough cannot express — needs a
+  decision before status: reviewed.
+
+  SPEC EXTENSIONS used above, which the T2.3 loader must support:
+  `place.name_from` (which field feeds the name strategy), `place.crosswalk`
+  (literal string → gazetteer entry, `null` meaning "use fallback"), and
+  `place.fallback`. Without them the only in-format option is `strategy:
+  name`, which measurement shows resolves 0 of 7 crossings correctly.

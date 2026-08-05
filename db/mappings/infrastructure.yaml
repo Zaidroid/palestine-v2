@@ -1,0 +1,188 @@
+# infrastructure — Gaza damage time series + West Bank barrier/locality registers
+# Audit: 3,537 records, 100% dated, 17% ingest masquerade, 0.2% year-bucket,
+# 99.6% latlon, 92.2% admin2_pcode. Four event types, three sources, three
+# licenses, and three incompatible geo regimes in one file. The 17% masquerade
+# is entirely the two West Bank registers; the 2,934 Gaza rows are a genuine
+# 730-day daily series with honest dates. The 0.2% year-bucket is a FALSE
+# POSITIVE for law 2 and the spec disarms it explicitly.
+category: infrastructure
+shape: observation
+status: reviewed
+records_measured: 3537
+
+source_routing:
+  by_name:
+    "TechForPalestine": tech4palestine              # 2920 records
+    "HDX": hdx                                      #  603 records
+    "UNOSAT Gaza damage assessments": unosat        #   14 records
+  default: null            # measured: 0/3537 records have an empty sources[]
+
+datasets:
+  - key: v1_infrastructure_tech4palestine
+    source: tech4palestine
+  - key: v1_infrastructure_hdx
+    source: hdx
+  - key: v1_infrastructure_unosat
+    source: unosat
+
+indicator:
+  template: "infrastructure.{event_type}"
+  overrides:                                  # FORMAT EXTENSION — open question
+    infrastructure_damage: "infrastructure.damage.{infrastructure_detail.type}"
+  # Without the override all 2,920 Gaza rows collapse onto one indicator and
+  # four distinct series (residential / educational / religious / unknown)
+  # become indistinguishable. Resulting indicator space:
+  #   infrastructure.damage.residential           730
+  #   infrastructure.damage.educational           730
+  #   infrastructure.damage.religious             730
+  #   infrastructure.damage.unknown               730
+  #   infrastructure.locality_record              342
+  #   infrastructure.barrier_segment              261
+  #   infrastructure.satellite_damage_assessment   14
+
+value:
+  num_from: metrics.count
+  num_from_overrides:                         # FORMAT EXTENSION — open question
+    satellite_damage_assessment: metrics.structures_total_affected
+  text_from: infrastructure_detail.damage_level
+  unit_from: metrics.unit        # 'units' 1460 / 'buildings' 1460 /
+                                 #   'persons' 342 / 'km' 261 / 'structures' 14
+
+occurred_at:
+  from: date
+  precision: day
+  rules:
+    - if: "event_type in ('barrier_segment','locality_record') and date == fetch_day"
+      then: "reported_at-only"
+      # Fires on 603/3537 = 0.1705, matching the audit's 0.17. Both are HDX
+      # West Bank registers with no date field of any kind.
+    - if: "date endswith -12-31 and event_type is an aggregate"
+      then: "NO-OP — this rule must not fire in this category"
+      # Law 2 guard, written down so nobody re-adds it. 8/3537 (0.2%) records
+      # end -12-31: four on 2023-12-31 and four on 2024-12-31. All eight are
+      # infrastructure_damage, i.e. ordinary days inside a complete daily
+      # series (730 distinct consecutive dates × exactly 4 records each, one
+      # per damage type, verified: no (date, type) pair repeats). They are NOT
+      # year aggregates. Truncating them to Jan 1 with precision=year would
+      # corrupt two real days of a real series and create the mirror image of
+      # the -154-day defeat law 2 was written to prevent.
+
+place:
+  strategy: pcode                # location.admin2_pcode, 3261/3537 = 0.922
+  fallback: [latlon, region]     # FORMAT EXTENSION — see open questions
+  latlon_exclude: [barrier_segment]   # barrier lat/lon are PROJECTED METRES,
+                                      #   not degrees — see notes. FORMAT
+                                      #   EXTENSION, and a hard safety rule.
+  min_resolved_pct: 0.92         # the measured pcode rate; a floor, not a
+                                 #   target — the region tier means nothing
+                                 #   should actually land unresolved
+
+stable_id: stable_id             # 3537 distinct; `id` also 3537 distinct
+attrs_passthrough:
+  - event_type
+  - infrastructure_detail.type
+  - infrastructure_detail.damage_level
+  - barrier_type
+  - barrier_status
+  - locality_name
+  - locality_type
+  - assessment_scope
+  - geodatabase_url
+  - metrics.structures_destroyed
+  - metrics.structures_severely_damaged
+  - metrics.structures_moderately_damaged
+  - metrics.structures_possibly_damaged
+  - metrics.structures_total_affected
+  - admin2_pcode
+
+expect:
+  min_records: 3183              # 0.9 × 3537
+
+notes: |
+  FOUR SUB-DATASETS, MEASURED. event_type × source is 1:1 except that HDX
+  supplies two of them:
+    infrastructure_damage       2920  TechForPalestine  Gaza    date honest
+    locality_record              342  HDX               W.Bank  100% masquerade
+    barrier_segment              261  HDX               W.Bank  100% masquerade
+    satellite_damage_assessment   14  UNOSAT            Gaza    date honest
+  Masquerade check: 603/3537 = 0.1705 → audit 0.17. Honest-date range for the
+  other 2,934: 2023-10-07..2025-10-11.
+
+  THE GAZA SERIES IS REAL AND MUST NOT BE FLATTENED. infrastructure_damage is
+  730 consecutive days × 4 damage types = 2,920 rows, exactly one row per
+  (date, type), no duplicates and no gaps in the per-date count. Measured
+  ranges of metrics.count by type: residential 80..416,000 (nonzero on
+  730/730), religious 2..835 (730/730), educational 1..165 (730/730), and
+  `unknown` 0..0 — the fourth series is EMPTY, 730 rows of count 0 with
+  damage_level 'unknown'. Those 730 rows are 20.6% of the category and carry no
+  measurement. They must still land and be counted (law 4), but a consumer
+  reading infrastructure.damage.unknown gets zeros forever; flag it in the run
+  report rather than silently dropping it.
+  OPEN QUESTION: should the 730 all-zero 'unknown' rows be migrated at all, or
+  routed to bronze only? Migrating them is the law-4-honest choice and is what
+  this spec does; skipping them would be a judgement call Zaid should make.
+
+  UNOSAT'S VALUE IS NOT IN metrics.count. All 14 satellite assessments have
+  metrics.count 0 and metrics.value 0; the real numbers live in the extended
+  metrics block — structures_total_affected is non-null on 14/14 (741 …
+  25,050 …), with structures_destroyed / severely_damaged / moderately_damaged
+  partially filled. Hence the num_from override. assessment_scope is 'strip' 11
+  / 'governorate' 3, and geodatabase_url points at the UNOSAT GDB zip, which is
+  worth keeping as provenance.
+
+  metrics.value IS ZERO ON ALL 3,537 RECORDS — every event type, every source.
+  It is a dead field in v1 and must never be read anywhere in this category.
+
+  GEO — THREE REGIMES, AND ONE OF THEM IS A TRAP.
+    infrastructure_damage (2920): admin2_pcode 100% (PS0260 etc.), latlon 100%
+      but it is a repeated Gaza strip/governorate centroid (31.5, 34.466667),
+      and location.precision honestly says 'region' on 2,935 rows. pcode-first
+      is right; the latlon adds nothing and would fake precision.
+    locality_record (342): admin2_pcode 99.7%, latlon real WGS84 per locality
+      (lat 31.368..32.544, lon 34.903..35.535). pcode then latlon.
+    barrier_segment (261): admin2_pcode 0%, and location.lat/lon are NOT
+      degrees — measured lat 3,470,570..3,600,031 and lon 679,088..732,995.
+      Those are UTM-36N / Palestine-Grid northing and easting in METRES, stored
+      in fields named lat/lon. The audit's latlon_pct 0.996 counts them as
+      present, so a naive latlon strategy would hand a resolver a latitude of
+      3.5 million. This is why `latlon_exclude: [barrier_segment]` exists.
+      Those 261 rows fall through to region ('West Bank' on 261/261), which is
+      the honest answer until someone reprojects the source geometry.
+      OPEN QUESTION: reproject the 261 barrier segments (EPSG:28191/32636 →
+      4326) in a later pass and upgrade them to latlon, or leave at region?
+      Region is correct for now; reprojection is a separate, verifiable job.
+    satellite_damage_assessment (14): no latlon, no pcode; location.name is
+      'Gaza Strip' 11 / 'Gaza Governorate' 3 → region tier.
+  min_resolved_pct 0.92 is the measured admin2_pcode rate. With the ladder in
+  place actual resolution should be 1.0, but the floor is set from measurement.
+
+  LICENSE — 042 GOVERNS, AND ONE RECORD CLAIM IS TOO GENEROUS. The 2,920
+  TechForPalestine records carry license 'public-domain' in the record;
+  licenses.json and 042 both say CC-BY-4.0 with commercial_use=true. CC-BY is
+  narrower than public domain (it requires attribution), so 042's row is the
+  one that must reach the serving layer. UNOSAT agrees between record and
+  registry (CC-BY-SA, commercial_use=true). HDX is 'varies' with
+  commercial_use=false and verify_required=true, so the 603 West Bank register
+  rows are free-tier-only. Net: 2,934 of 3,537 rows are commercially servable
+  with attribution, 603 are not — and the mixed licensing inside one v1 file is
+  precisely the situation law 5 exists for.
+
+  OPEN QUESTION — THREE FORMAT EXTENSIONS ARE PROPOSED HERE. `indicator.
+  overrides`, `value.num_from_overrides`, and `place.fallback` +
+  `place.latlon_exclude` are not in the README's spec format. This category
+  genuinely cannot be described without per-event-type behaviour: one file
+  holds a Gaza daily damage series, a satellite assessment series with its own
+  metrics block, and two undated West Bank registers, one of which stores
+  projected coordinates. The alternatives are (a) extend the format and let
+  T2.3 implement it, or (b) split infrastructure into three spec files keyed by
+  source, which breaks the one-file-per-category rule the README states in its
+  first line. Recommendation: (a). This must be settled before reviewed.
+
+  DUPLICATION WITH westbank. 603 of these records — all 342 locality_record and
+  all 261 barrier_segment rows — appear verbatim in the `westbank` category,
+  with identical `id` and identical `stable_id`, and their bodies carry
+  category:'infrastructure'. See westbank.yaml, which recommends skipping.
+
+  metadata.json for this category claims total_records 0 while all-data.json
+  holds 3,537 — the same class of lie as the records:null lesson. The expect{}
+  floor above comes from the measured record count, never from metadata.

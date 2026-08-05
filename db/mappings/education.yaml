@@ -1,0 +1,126 @@
+# education — West Bank school register from HDX
+# Audit: 2,359 records, 100% dated, 100% ingest masquerade, 0% year-bucket,
+# 100% latlon, 99.9% admin2_pcode. Geo-rich and date-poor: the exact opposite
+# of culture. Like culture it is a REGISTER (one row per school, no event),
+# so there is no honest date — verified below — but unlike culture every row
+# resolves to a governorate pcode and a real WGS84 point.
+category: education
+shape: observation
+status: reviewed
+records_measured: 2359
+
+source_routing:
+  by_name:
+    "HDX": hdx
+  default: null            # measured: 0/2359 records have an empty sources[]
+
+datasets:
+  - key: v1_education_hdx
+    source: hdx
+
+indicator:
+  template: "education.school_record"   # literal: event_type is 'school_record'
+                                        #   on 2359/2359 and the two candidate
+                                        #   dimensions are constants (see notes)
+
+value:
+  num_from: metrics.count               # 1 on 2359/2359 — one school per row
+  text_from: school_status              # 'Active' on 2359/2359 — constant
+  unit_from: {literal: "schools"}       # metrics.unit says 'students' on
+                                        #   2359/2359 and is WRONG — see notes
+
+occurred_at:
+  from: date
+  precision: unknown
+  rules:
+    - if: "date == fetch_day"           # fires on 2359/2359 (audit 1.0)
+      then: "reported_at-only"
+
+place:
+  strategy: pcode                       # location.admin2_pcode, 2357/2359
+  fallback: [latlon, region]            # FORMAT EXTENSION — see open questions
+  min_resolved_pct: 0.999               # measured admin2_pcode rate 0.99915;
+                                        #   floor, not target (ladder reaches 1.0)
+
+stable_id: stable_id                    # 2359 distinct; `id` also 2359 distinct
+attrs_passthrough:
+  - school_id                           # int, 2359 distinct — the upstream key
+  - school_name
+  - school_name_ar                      # MOJIBAKE on 89.5% — must be repaired
+  - school_type
+  - school_status
+  - admin1
+  - admin2
+  - admin2_pcode
+  - locality                            # MOJIBAKE on 78.6% — must be repaired
+
+expect:
+  min_records: 2123                     # 0.9 × 2359
+
+notes: |
+  NO HONEST DATE EXISTS. Scanned every string and numeric field of all 2,359
+  records for a 4-digit year (1000-2029). Exactly two fields ever match:
+  `date` (2359/2359, all '2026-08-05') and `sources[].fetched_at` (2359/2359,
+  all 2026-08-05T03:01:08Z). There is no enrolment year, no survey period, no
+  establishment date, no publication date anywhere in the record. So the rule
+  is reported_at-only, precision=unknown, for the whole category — a finding,
+  not a failure. A school register measures a stock, not an event.
+
+  GEO. This is the richest geo in the batch. location.lat/lon are real WGS84
+  and inside Palestine (lat 31.3548..32.5425, lon 34.9110..35.5383) on
+  2359/2359 — unlike infrastructure's barrier segments, these are degrees, not
+  projected metres. admin2_pcode is filled on 2357/2359 with 11 real West Bank
+  governorate codes (PS0150 Hebron 607, PS0115 Nablus 323, PS0101 Jenin 285,
+  PS0140 Jerusalem 282, PS0130 Ramallah 275, PS0145 Bethlehem 177, PS0110
+  Tulkarm 154, PS0120 Qalqilya 96, PS0125 Salfit 75, PS0105 Tubas 50, PS0135
+  Jericho 33) plus 2 rows with everything null. Ladder is pcode-first because
+  a pcode is an authority-issued identifier and the latlon is derived; latlon
+  catches the 2 pcode-less rows; region ('West Bank' on 2359/2359) is the
+  guaranteed floor so nothing lands NULL. min_resolved_pct is set to the
+  measured pcode rate 0.999 rather than to the 1.0 the ladder should achieve —
+  a floor from measurement, not from hope.
+
+  UNIT LIE (same class as water's). metrics.unit is 'students' on 2359/2359,
+  but metrics.count is 1 on 2359/2359 and there is NO student count anywhere
+  in the record. The row counts one school, not students. unit is therefore a
+  literal 'schools' and metrics.unit is not carried. metrics.value is 0 on
+  2359/2359 and must never be read.
+
+  IDENTITY / CONSTANTS. school_id (int, 2359 distinct) is the upstream HDX key
+  and the real per-record identity; school_name has 2333 distinct values over
+  2359 rows (26 collisions). Both candidate indicator dimensions are dead:
+  school_type is the literal 'Unknown' on 2359/2359 and school_status is
+  'Active' on 2359/2359. Hence a flat literal indicator. quality.score 0 and
+  quality.verified false on 2359/2359.
+
+  ARABIC MOJIBAKE — must be handled, do not pass through raw. v1 double-encoded
+  every Arabic string: UTF-8 bytes were read as cp1252 and re-encoded.
+  Measured corruption rates: location.governorate 98.1%, school_name_ar 89.5%,
+  location.locality 78.6%, school_name 15.9%, location.name 15.9%. Example:
+  location.governorate = 'Ø¬Ù†ÙŠÙ†', which is 'جنين' (Jenin) put through that
+  round trip. Verified repair: s.encode('cp1252').decode('utf-8') restores it
+  exactly; latin-1 does NOT (it drops the cp1252 smart-quote code points and
+  truncates to one character). location.governorate is deliberately NOT in
+  attrs_passthrough because admin2 carries the same governorate in clean
+  English on 2357/2359 rows; school_name_ar and locality are kept because
+  there is no English equivalent.
+  OPEN QUESTION: does the T2.3 loader repair mojibake, or does this spec
+  declare the Arabic fields dropped? Passing them through raw would migrate
+  corruption into the silver layer permanently. Recommendation: repair in the
+  loader with the cp1252 round trip, guarded by a try/except that leaves the
+  string untouched when it does not round-trip cleanly.
+
+  DUPLICATION WITH westbank — READ THIS BEFORE LOADING EITHER. All 2,359
+  education records appear verbatim in the `westbank` category: stable_id
+  overlap 2359/2359 and `id` overlap 2359/2359. westbank's own records carry
+  category:'education' in their body. Loading both categories double-counts
+  every school under two different v1_stable_id-bearing datasets. See
+  westbank.yaml, which recommends skipping westbank for exactly this reason.
+
+  OPEN QUESTION — `fallback` is a FORMAT EXTENSION. The README's place block
+  defines a single `strategy`. The pcode-first ladder this category needs
+  cannot be expressed with one key, so `fallback: [latlon, region]` is
+  proposed here (and in infrastructure.yaml and westbank.yaml). Either the
+  README gains the key and T2.3 implements the ladder, or these three specs
+  collapse to `strategy: pcode` with min_resolved_pct 0.999 and the residue
+  reported as unresolved under law 4. Needs a decision before reviewed.

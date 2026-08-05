@@ -1,0 +1,170 @@
+# martyrs_snapshot_2023 — Tech4Palestine's named-martyr roster, one record per
+# person, plus one cumulative-totals record. 60,200 records = 24% of the whole
+# v1 corpus and the single largest category.
+#
+# Audit: 0% dated (1 record of 60,200 carries a `date`), 0% lat/lon, 0%
+# gazetteer_key, region='Gaza Strip' on 60,199 and 'Palestine' on 1. This is
+# NOT a time series and it is not geolocated: it is a memorial list. Every
+# design choice below follows from that.
+category: martyrs_snapshot_2023
+shape: observation
+status: reviewed
+records_measured: 60200
+
+source_routing:
+  by_name:
+    "Tech4Palestine": tech4palestine      # licenses.json alias 'tech4palestine'
+  default: null                           # measured: 0 records with sources: []
+                                          #   an empty sources[] is a run error
+
+datasets:
+  - key: v1_martyrs_snapshot_2023_tech4palestine
+    source: tech4palestine
+    # One dataset, not two, because law 5 is per (category, source) and both
+    # record shapes come from tech4palestine — the roster from
+    # data.techforpalestine.org (60,199) and the totals from
+    # .../api/v3/summary.json (1). They are separated by `indicator`, not by
+    # dataset. OPEN: if the reviewer wants the totals series to have its own
+    # freshness row in dataset_freshness, it needs its own dataset key and
+    # law 5 needs an explicit "per (category, source, endpoint)" amendment.
+
+indicator:
+  template: "martyrs.{event_type}"   # measured: identified_killed 60,199
+                                     #           cumulative_summary 1
+
+value:
+  num_from: metrics.killed   # 1 on all 60,199 person rows (verified: 60,199/60,199
+                             #   have metrics.killed == 1); 74,074 on the summary.
+                             #   NOT metrics.value — that is 0 on every record.
+  text_from: name            # the person's name, 60,199/60,199 filled.
+                             #   This is the observation's content, not decoration.
+  unit_from: metrics.unit    # 'persons' on 60,200/60,200
+
+occurred_at:
+  from: temporal_context.baseline_date   # literal '2023-10-07' on 60,200/60,200
+  precision: unknown                     # NOT year — see notes, this is the
+                                         #   whole design decision of this spec
+  rules:
+    - if: "event_type == cumulative_summary"
+      then: "occurred_at = date, precision = day"
+      # The one summary record's date (2026-06-09) is the Gaza MoH's own
+      # last_update, copied verbatim from T4P summary.json. Law 1's masquerade
+      # test misfires here: v1 DERIVES metadata.last_updated FROM this field
+      # (populate-unified-data.js:867 `lastUpdated = summary?.gaza?.last_update`),
+      # so the audit's fetch_day equals it by construction, not by accident.
+      # It is a real as-of date and keeps day precision.
+
+place:
+  strategy: region        # location.region: 'Gaza Strip' 60,199 → place 1
+                          #                  'Palestine'  1      → place_id NULL
+  min_resolved_pct: 1.0   # region strings always resolve
+  forbid:
+    - location.coordinates  # [34.45, 31.5] byte-identical on all 60,199 person
+                            #   rows — a synthetic Gaza-Strip centroid v1's
+                            #   enricher stamped on everything. Using it would
+                            #   plot 60,199 people at one fabricated point.
+    - location.proximity    # derived from the same fake centroid
+                            #   ('nearest_city: Gaza City', distance 11,100.0m
+                            #   identical on all 60,199)
+
+stable_id: stable_id      # 60,200 distinct / 60,200 — verified unique
+attrs_passthrough:
+  - t4p_id                # 60,199 distinct / 60,199 — the Gaza MoH roster id
+  - name_ar
+  - name_en
+  - age
+  - sex
+  - dob
+  - t4p_source_marker
+  - event_type
+  - cumulative            # summary record only; the Gaza/West Bank breakdown
+
+expect:
+  min_records: 54000      # 0.9 × 60,200
+
+notes: |
+  WHAT AN OBSERVATION IS HERE. One person, one observation: indicator
+  martyrs.identified_killed, value_num = 1 (a life), value_text = the name,
+  unit = persons. Summing value_num over the dataset gives the roster size,
+  which is the only aggregation this data honestly supports. The 60,200th
+  record is a different animal — T4P's cumulative summary — and gets
+  indicator martyrs.cumulative_summary, value_num = 74,074 killed, with the
+  Gaza/West-Bank/children/press breakdown in attrs.cumulative.
+
+  THERE IS NO DATE OF DEATH. Measured over all 60,200 records: `date` is
+  non-null on exactly 1 (the summary). Every person row has `date: null`.
+  T4P's killed-in-gaza roster does not publish per-person dates of death, so
+  v2 cannot have one either. What the person rows DO carry:
+    age  60,199/60,199 non-null (968 are age 0; min 0, p25 15, median 27,
+         p75 39, max 110)
+    dob  60,199/60,199 non-null (years 1914..2025; 236 born 2024, 36 in 2025)
+  dob + age brackets the death to a ±1-year window (dob + age·365.2425 has
+  median 2023-09-28, p95 2025-01-26), and the ETL MUST NOT synthesise a date
+  from it. A derived date would be day-precision-looking, wrong by up to a
+  year, and would immediately re-create the freshness defeats laws 1 and 2
+  exist to kill.
+
+  WHY precision: unknown AND NOT year. occurred_at is NOT NULL in
+  007_observation.sql, so every row needs a timestamp. The honest anchor is
+  temporal_context.baseline_date — literally '2023-10-07' on 60,200/60,200
+  records (verified by exact-string count over the file), i.e. a field the
+  data already carries rather than a constant this spec invents. But
+  precision=year would ASSERT these 60,199 people died in 2023, and they did
+  not: the roster is cumulative and still growing (236 people in it were born
+  in 2024, 36 in 2025 — infants killed after the year the filename claims).
+  precision=unknown says the true instant is unknown, which is the truth, and
+  T7 freshness already excludes unknown, so 24% of the corpus can never fake
+  a fresh databank. OPEN QUESTION for review: 2023-10-07 as the anchor, or
+  the roster's fetch date (sources[].fetched_at = 2026-08-05)? Both are
+  non-claims at precision=unknown; 2023-10-07 was chosen because it is in the
+  record and because it sorts the memorial before, not after, the live feeds.
+
+  v1'S OWN METADATA IS WRONG ABOUT THIS FILE. metadata.json says
+  `active: false, frozen_at: "2023-10-07"` — both hardcoded literals in
+  populate-unified-data.js (lines 875, 906), not measurements. The roster is
+  refetched every run (sources[].fetched_at = 2026-08-05T03:00Z on all
+  60,199) and contains people born in 2025. It is not frozen and the "2023"
+  in the category name is a filename, not a fact. metadata.last_updated
+  (2026-06-09) is the MoH summary's date, not the roster's.
+
+  GEOGRAPHY IS FAKE AND MUST BE DROPPED. location.lat/lon: 0/60,200.
+  location.coordinates: [34.45, 31.5] on 60,199/60,199 person rows — one
+  hardcoded Gaza centroid, with an identical `proximity` block
+  (nearest_city Gaza City, distance_to_border 11100.000000000158) on every
+  one. The audit reports latlon_pct 0.0 because it reads location.lat; a
+  loader reading location.coordinates instead would silently plot the entire
+  memorial on a single fabricated pin. Both fields are on the forbid list.
+  Region is the only true geography: Gaza Strip (place 1) for the roster.
+
+  DUPLICATE NAMES ARE NOT DUPLICATE RECORDS. 'Suleiman Mohammed Suleiman
+  Al-Astal' and 'Mohammed Ahmed Mohammed Abu Warda' each appear 3 times, and
+  several names twice. t4p_id (60,199 distinct) and stable_id (60,200
+  distinct) are both unique, so these are distinct people with the same name —
+  common in Gaza's family-naming patterns. Any future dedup MUST key on
+  t4p_id, never on name.
+
+  PRIVACY AND ETHICS — SAY IT OUT LOUD. These are the names, ages, sexes and
+  dates of birth of 60,199 dead people. They are public memorial data: the
+  Gaza Ministry of Health publishes the identified-killed list, Tech4Palestine
+  republishes it under CC-BY-4.0, and 042 records tech4palestine as
+  commercial_use=true. So the license permits serving them, including on a
+  paid tier. That is a license fact, not an ethics decision, and the two
+  should not be conflated:
+    (a) Person-level rows with name + dob + age are quasi-identifying for
+        surviving relatives even though the subject is deceased. dob is the
+        strongest re-identification key in the file and is the one field with
+        no analytical use that value_num or age does not already serve.
+    (b) A commercial API that sells per-name access to a list of the dead is a
+        decision only Zaid should make. It is not blocked by the license
+        filter, which means nothing in the machinery will stop it.
+    (c) Correction/removal has no path: T4P is the upstream authority, and if
+        a name is wrong or a family asks for removal, v2 has no mechanism.
+  RECOMMENDATION for review, not implemented here: keep the dataset on the
+  free tier with T4P attribution, serve aggregate cuts (by age band, by sex)
+  by default, and gate the per-name rows behind an explicit memorial view.
+  Flagging, not deciding.
+
+  description IS DERIVED, NOT DATA (law 6). Measured: person descriptions are
+  'Rafat Amir Hamdan Abed, male, age 50' — name+sex+age re-concatenated,
+  carrying zero information not already in the structured fields. It stays in
+  bronze.

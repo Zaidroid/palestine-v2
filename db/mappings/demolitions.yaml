@@ -1,0 +1,183 @@
+# demolitions — OCHA oPt's demolition data for the West Bank + East Jerusalem,
+# 2009+. The audit's anomaly (96.4% pcode, 3.4% dated) is REAL and it is not a
+# date-extraction bug: v1's demolitions category contains no individual
+# demolition events at all. It is two aggregate cross-sections of the same
+# OCHA table — 516 per-locality cumulative totals (undated by nature) and 18
+# annual totals (dated `YYYY-12-31`) — and the two describe the SAME 14.4k
+# demolished structures. See notes for the field-by-field search that
+# establishes there is no per-event date anywhere in the file.
+category: demolitions
+shape: observation
+# REVIEW VERDICT (2026-08-05): the spec's own open question, answered as (b).
+# Not one of the 534 records is a thing that happened at a place and a time —
+# they are aggregates, which is the definition of an observation. `event` is
+# reserved for the per-incident OCHA feed if a later phase ingests it. The
+# event_type template below becomes the indicator via fan_out:
+fan_out:
+  - when: "metrics.demolished is not null"
+    indicator: "demolitions.{demolition_dimension}.structures"
+    value: {num_from: metrics.demolished, unit: structures}
+  - when: "metrics.displaced > 0"
+    indicator: "demolitions.{demolition_dimension}.displaced"
+    value: {num_from: metrics.displaced, unit: persons}
+  - when: "metrics.affected > 0"
+    indicator: "demolitions.{demolition_dimension}.affected"
+    value: {num_from: metrics.affected, unit: persons}
+status: reviewed
+records_measured: 534
+
+source_routing:
+  by_name:
+    "UN OCHA oPt — Data on Demolitions": ocha_demolitions   # licenses.json alias
+                                                            #   'un ocha opt — data on demolitions'
+  default: null      # measured: 0 records with sources: [] — empty sources[]
+                     #   is an ERROR, not a default
+
+datasets:
+  - key: v1_demolitions_ocha_demolitions
+    source: ocha_demolitions
+
+event_type:
+  template: "demolitions.{demolition_dimension}"
+  # → demolitions.locality      (516 = 96.6%)
+  #   demolitions.annual_total  (18  =  3.4%)
+  # record.event_type is 'demolition_aggregate' on 534/534 and carries no
+  # information; demolition_dimension is the identity field. The two types MUST
+  # stay separable — they double-count each other (see notes).
+
+metrics_from:
+  - metrics.demolished     # structures; nonzero on 533/534 (the one zero is a
+                           #   real 0 in an annual row's companion field, not a gap)
+  - metrics.displaced      # persons; nonzero on 352/534
+  - metrics.affected       # persons; nonzero on 18/534 — annual rows ONLY, and
+                           #   it is a different quantity from `displaced`
+                           #   (2010: affected 14,229 vs displaced 593)
+  - metrics.unit           # 'structures' on 534/534 → event.metrics.unit
+  # Dropped, measured 0 on 534/534: metrics.killed, metrics.injured,
+  # metrics.detained, metrics.count, metrics.value. severity_index is 0 on
+  # 534/534 and quality.* is all-zero / verified=false on 534/534 — none of it
+  # is a measurement, so none of it is carried.
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "demolition_dimension == annual_total"    # 18/534 = 3.4%, date = YYYY-12-31
+      then: "truncate to Jan 1 of that year, precision=year"          # law 2
+    - if: "date is null"                            # 516/534 = 96.6%
+      then: "occurred_at = 2009-01-01 (series start), precision=unknown;
+              attrs.coverage_start = '2009-01-01',
+              attrs.coverage_end   = <v1 metadata.generated_at date>"
+      # event.occurred_at is nullable, so NULL is legal — but a NULL drops the
+      # row out of every time-range query silently, and law 4 wants records
+      # visible. Anchoring a period aggregate at the START of its period is
+      # exactly what law 2 already does for year buckets; extending it to a
+      # 17-year window means the precision must fall below 'year' → 'unknown',
+      # which T7 freshness ignores. So the row is queryable and cannot lie.
+      #
+      # It is NOT temporal_context.baseline_date. That field is present on all
+      # 516 undated rows, is the constant '2023-10-07', and is the obvious
+      # wrong answer: the locality totals sum to 14,471 structures / 23,097
+      # displaced, and the 2009-2026 annual series sums to 14,447 / 22,814 —
+      # agreement within 0.2%. The locality figures are the FULL 2009+
+      # cumulative, so stamping them 2023-10-07 would discard 14 years.
+  # No masquerade rule: measured ingest_masquerade_pct = 0.0, and sources[]
+  # carries no fetched_at on any of the 534 records.
+
+place:
+  strategy: latlon
+  # Ladder, first hit wins:
+  #   1. location.lat/lon (515/534 = 96.4%) → event.geom point.
+  #   2. location.admin2_pcode (515/534 = 96.4%, the same rows) → place_id.
+  #      pcode decides place_id even when a point is present: it is OCHA's own
+  #      admin assignment and beats point-in-polygon at governorate borders.
+  #   3. location.gazetteer_key (316/534 = 59.2%) — never the only rung here
+  #      (measured: 0 records with a gazetteer_key and no lat/lon), kept for
+  #      the locality-name join and carried into attrs.
+  #   4. location.region → 'West Bank' → place 2 (449 records incl. all 18
+  #      annual rows); 'East Jerusalem' → Jerusalem governorate row +
+  #      attrs.region = 'East Jerusalem' preserved (85 records).
+  min_resolved_pct: 1.0
+  # Every record lands: 515 at locality precision, 18 annual rows at region,
+  # and 'Al Malha' (Bethlehem) at region. 1.0 has teeth here because rung 4 is
+  # only reachable by the 18 annual rows and Al Malha — a locality-dimension
+  # row that reaches rung 4 is a FAILURE counted by reason, not a resolution.
+
+stable_id: stable_id      # 534/534 unique
+attrs_passthrough:
+  - demolition_dimension
+  - location.gazetteer_key
+  - location.region       # keeps 'East Jerusalem' visible behind a Jerusalem place_id
+  - location.governorate  # 516/534
+
+expect:
+  min_records: 480        # ≈0.9 × 534
+
+notes: |
+  Measured from ops/t2-category-audit.json and all 534 v1 records:
+
+  WHERE THE REAL EVENT DATE LIVES: nowhere. Every distinct key path in the
+  file was enumerated across all 534 records (46 paths). Exactly two are
+  date-shaped:
+    * `date`                            — 18/534 = 3.4%, and every one of the
+                                          18 is `YYYY-12-31` for 2009..2026,
+                                          i.e. an annual bucket, not an event.
+    * `temporal_context.baseline_date`  — 516/534 = 96.6%, constant
+                                          '2023-10-07' on every undated row.
+  There is no `date_range`, no `period`, no `reported_at`, no date inside
+  `description` (the 516 locality descriptions are of the form "416 structures
+  demolished in Jabal al Mukabbir (Jerusalem); 1080 displaced." — a count, a
+  place, no time), and `sources[]` carries no `fetched_at`. The audit's "96%
+  pcode, 3% dated" is therefore the correct description of a category that was
+  never an event log: OCHA's per-incident demolition register exists upstream,
+  but v1 ingested only the two summary cross-sections of it.
+
+  THE 2023-10-07 TRAP, disproved by arithmetic:
+    locality rows (516):  14,471 demolished / 23,097 displaced
+    annual rows 2009-26:  14,447 demolished / 22,814 displaced   (Δ 0.17%)
+    annual rows 2023-26:   5,284 demolished /  9,630 displaced
+  The locality totals match the full 2009+ series, not the post-October-2023
+  window. baseline_date is a boilerplate field the v1 schema stamps on every
+  record; using it as occurred_at would misdate 9,163 pre-October-2023
+  demolitions by up to fourteen years. Hence coverage_start 2009-01-01 with
+  precision=unknown.
+
+  DOUBLE COUNT. demolitions.locality and demolitions.annual_total are the same
+  ~14.4k structures sliced two ways. Separate event_types keep them separable,
+  but a query over `event_type LIKE 'demolitions.%'` returns 28.9k. The
+  dataset attrs must carry this warning; the serving layer should never sum
+  across the two dimensions.
+
+  GEO. 515/516 locality rows carry lat/lon AND admin2_pcode; the exception is
+  'ocha-demo-loc-al-malha' (Al Malha, Bethlehem governorate, 11 structures) —
+  no lat/lon, no pcode, no gazetteer_key, so it resolves by region only and is
+  counted as a locality-resolution miss in the run report. 200/516 locality
+  rows lack a gazetteer_key, which is why gazetteer_key is rung 3 and not the
+  strategy. 85 rows are region 'East Jerusalem' (all locality-dimension).
+
+  ANNUAL ROWS UNDER-PLACE THEMSELVES. The 18 annual records have region
+  'West Bank' and location.name "West Bank & East Jerusalem", and their
+  descriptions say "(West Bank + East Jerusalem)". Assigning them place 2
+  (West Bank) is lossy: the number includes East Jerusalem. attrs must carry
+  coverage_area = 'West Bank + East Jerusalem' so the discrepancy against a
+  West-Bank-only sum is explicable rather than mysterious.
+
+  PARTIAL CURRENT YEAR. The 2026 annual row (678 structures) covers
+  2026-01-01 to the fetch day 2026-08-05. attrs.partial_year = true on the
+  newest annual row, or every year-over-year chart lies once a year.
+
+  LICENSE. ocha_demolitions is verify-required / commercial_use=false in 042
+  → free tier with OCHA attribution, unsellable until Zaid's read.
+
+  OPEN QUESTION: whether demolitions should be `shape: event` at all. It is
+  declared event-shaped here per the T2 brief, and the locality rows do have a
+  place and a coverage window, but not one of the 534 records is a thing that
+  happened at a place and a time — they are all aggregates, which is the
+  definition of an observation. Two ways forward, both needing a human:
+    (a) keep the aggregates in `event` with occurred_precision='unknown' and
+        accept that `event` holds some non-events (written above), or
+    (b) move them to `observation` as indicators
+        (demolitions.locality.structures_demolished etc.) and reserve `event`
+        for the per-incident OCHA feed if T3 ever ingests it.
+  Choice (b) is cleaner but changes the T2 category→table map, so it is not a
+  decision this spec can make alone.

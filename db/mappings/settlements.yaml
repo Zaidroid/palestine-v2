@@ -1,0 +1,89 @@
+# settlements — West Bank settler population, an annual stock series from
+# Peace Now (Settlement Watch). Audit: 51 records, 100% dated but 100%
+# year-bucket (`-12-31`), 0% geo, one source, one event_type. This is the
+# purest law-2 category in the databank: every date is a December-31 aggregate
+# stamp and none of them is a day. The `year` field (100% filled) is the real
+# axis; `date` is that year rendered as a fake day.
+category: settlements
+shape: observation
+status: reviewed
+records_measured: 51
+
+source_routing:
+  by_name:
+    "Peace Now — Settlement Watch": peace_now   # licenses.json alias
+                                                #   'peace now — settlement watch'
+  default: null            # measured: 0 records with sources: [] — an empty
+                           #   sources[] is an ERROR here, not a default
+
+datasets:
+  - key: v1_settlements_peace_now
+    source: peace_now
+
+indicator:
+  template: "settlements.{event_type}"   # event_type = 'settler_population'
+                                         #   on 51/51 → one indicator
+
+value:
+  num_from: metrics.count    # == metrics.value on 51/51; the 1967 row is a
+                             #   true measured 0, not a missing value
+  text_from: null
+  unit_from: metrics.unit    # 'settlers' on 51/51 — measured correct, unlike
+                             #   water's 'count'
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "date endswith -12-31"     # measured 51/51 = 100%
+      then: "truncate to Jan 1 of that year, precision=year"   # law 2
+  # No masquerade rule: measured ingest_masquerade_pct = 0.0, and the max date
+  # (2024-12-31) is 19 months before the fetch day (2026-08-05) — this series
+  # cannot fake freshness even before law 2 is applied.
+
+place:
+  strategy: region         # location.region = 'West Bank' on 51/51 → place 2
+  min_resolved_pct: 1.0    # single region string, always resolves
+
+stable_id: stable_id
+attrs_passthrough:
+  - year                   # 1967..2024, the honest axis
+  - event_type             # 'settler_population'
+
+expect:
+  min_records: 46          # ≈0.9 × 51
+
+notes: |
+  Measured from ops/t2-category-audit.json and the v1 file itself:
+
+  - 51 records, one source, one event_type, one region. dates 1967-12-31 ..
+    2024-12-31, year_bucket_pct = 1.0, ingest_masquerade_pct = 0.0.
+  - The series is NOT contiguous: 7 years are missing between 1967 and 2024
+    (1968-1971, 1973-1975). Any consumer drawing a line chart must not
+    interpolate silently — 51 points, not 58.
+  - `metrics.count` == `metrics.value` on 51/51 and both equal the settler
+    count; `metrics.unit` is 'settlers' on 51/51.
+  - COVERAGE CAVEAT, from the v1 metadata notice: "West Bank settler population
+    1967-2023 (excludes East Jerusalem)". East Jerusalem settlers (~230k) are
+    NOT in these numbers, so 2024 = 511,100 is not comparable to the ~730k
+    figure that includes EJ. This belongs in the dataset's `attrs`, not
+    silently in a README, because the serving layer will otherwise answer
+    "how many settlers" with the smaller number.
+  - The same notice says "1967-2023" while the data runs to 2024-12-31 — the
+    notice is stale by one release. The measured data wins.
+  - peace_now is `verify-required` / commercial_use=false in 042: free tier
+    only, with Peace Now attribution, until Zaid's read.
+
+  OPEN QUESTION (needs a human, the data cannot settle it): a settler
+  POPULATION is a stock, and Peace Now publishes it as the count at the END of
+  the year. Law 2 maps `1967-12-31` to `1967-01-01 / precision=year`, which
+  moves a year-end stock 12 months into the past. Law 2 must still hold (a
+  day-precise December record is exactly the `-154 days` defeat), but the
+  reviewer should decide between:
+    (a) occurred_at = Jan 1 of the SAME year (written above — consistent with
+        every other year-bucket category, off by up to a year for a stock), or
+    (b) occurred_at = Jan 1 of the FOLLOWING year, precision=year, with
+        attrs.reference_year kept — correct for an end-of-year stock but
+        inconsistent with the flow categories (demolitions, casualties).
+  Whichever is chosen must be applied identically to every stock series in the
+  databank, so this is a databank-wide decision, not a settlements one.
