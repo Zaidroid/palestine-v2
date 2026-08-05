@@ -96,8 +96,51 @@ class Row:
 
 
 @dataclass
+class EventRow:
+    dataset_key: str            # provenance only — event has no dataset FK
+    event_type: str
+    occurred_at: str
+    precision: str
+    v1_stable_id: str
+    place_id: int | None = None
+    lat: float | None = None
+    lon: float | None = None
+    located: bool = False
+    confidence: float = 0.7
+    independent_sources: int = 1
+    metrics: dict = field(default_factory=dict)
+    raw_ref: str | None = None
+    attrs: dict = field(default_factory=dict)
+
+
+@dataclass
 class Drop:
     reason: str
+
+
+class PointResolver:
+    """lat/lon → governorate place_id by containment (T2.3 prerequisite —
+    resolve/geo.py is text-only). Cached per run; rounding to ~11 m."""
+
+    def __init__(self, conn):
+        self.conn = conn
+        self.cache: dict = {}
+
+    def resolve(self, lat, lon) -> int | None:
+        if lat is None or lon is None:
+            return None
+        key = (round(float(lat), 4), round(float(lon), 4))
+        if key not in self.cache:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    """SELECT place_id FROM place
+                       WHERE kind = 'governorate' AND merged_into IS NULL
+                         AND ST_Contains(geom::geometry,
+                             ST_SetSRID(ST_MakePoint(%s, %s), 4326))
+                       LIMIT 1""", (key[1], key[0]))
+                row = cur.fetchone()
+            self.cache[key] = row[0] if row else None
+        return self.cache[key]
 
 
 def slug(s: str) -> str:
@@ -111,7 +154,7 @@ def load_places(conn) -> dict:
     with conn.cursor() as cur:
         cur.execute("""SELECT place_id, kind, name_en, admin2_pcode
                        FROM place WHERE merged_into IS NULL
-                         AND kind IN ('region', 'governorate')""")
+                         AND kind IN ('region', 'governorate', 'crossing')""")
         rows = cur.fetchall()
     by_name = {(k, n): pid for pid, k, n, _ in rows}
     by_pcode = {pc: pid for pid, k, n, pc in rows if k == "governorate" and pc}
@@ -119,8 +162,31 @@ def load_places(conn) -> dict:
         "region": {n: pid for (k, n), pid in by_name.items() if k == "region"},
         "governorate": {n: pid for (k, n), pid in by_name.items()
                         if k == "governorate"},
+        "crossing": {n: pid for (k, n), pid in by_name.items()
+                     if k == "crossing"},
         "pcode": by_pcode,
     }
+
+
+# ── mojibake repair (README loader convention) ──────────────────────────────
+# v1 double-encoded Arabic: UTF-8 bytes read as cp1252. The round trip
+# restores it exactly; anything that does not round-trip cleanly passes
+# through unchanged and is NOT counted as repaired.
+
+_ARABIC = re.compile(r"[؀-ۿ]")
+
+
+def demojibake(s, counts: Counter):
+    if not isinstance(s, str) or _ARABIC.search(s):
+        return s
+    try:
+        fixed = s.encode("cp1252").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return s
+    if _ARABIC.search(fixed):
+        counts["mojibake_repaired"] += 1
+        return fixed
+    return s
 
 
 def region_place(places: dict, region: str, attrs: dict) -> tuple[int | None, bool]:
@@ -277,10 +343,500 @@ def t_demolitions(rec, spec, places, counts):
     return rows
 
 
+def t_settlements(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    year = str(rec["date"])[:4]                                   # 100% -12-31
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    attrs["reference"] = "period-end stock"                       # REVIEW.md 2
+    attrs["coverage"] = "West Bank, excludes East Jerusalem"      # spec caveat
+    return [Row(ds, "settlements.settler_population", f"{year}-01-01", "year",
+                rec["stable_id"], value_num=rec["metrics"]["count"],
+                unit="settlers", place_id=places["region"]["West Bank"],
+                attrs=attrs)]
+
+
+def t_land(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    etype = rec.get("event_type")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
+    if etype == "demolition":
+        # the one honest date in the category: demolition.demolition_date
+        occurred = str((rec.get("demolition") or {}).get("demolition_date")
+                       or rec["date"])[:10]
+        precision = "day"
+    else:
+        occurred, precision = str(rec["date"])[:10], "unknown"    # law 1
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    m = rec.get("metrics") or {}
+    return [Row(ds, f"land.{slug(etype)}", occurred, precision,
+                rec["stable_id"], value_num=m.get("count"),
+                value_text=rec.get("land_status"), unit=m.get("unit"),
+                place_id=place_id, located=located,
+                reported_at=fetched, attrs=attrs)]
+
+
+def t_culture(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    return [Row(ds, f"culture.heritage_site.{slug(rec['site_type'])}",
+                str(rec["date"])[:10], "unknown",                 # law 1: 100%
+                rec["stable_id"], value_num=rec["metrics"]["count"],
+                value_text=rec.get("site_status"), unit="sites",
+                place_id=place_id, located=located,
+                reported_at=fetched, attrs=attrs)]
+
+
+def t_education(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = {k: demojibake(v, counts)
+             for k, v in passthrough(rec, spec.get("attrs_passthrough")).items()}
+    fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
+    loc = rec.get("location") or {}
+    pid = places["pcode"].get(loc.get("admin2_pcode"))
+    if pid is not None:
+        place_id, located = pid, True
+    else:
+        place_id, located = region_place(places, "West Bank", attrs)
+    return [Row(ds, "education.school_record", str(rec["date"])[:10],
+                "unknown",                                        # law 1: 100%
+                rec["stable_id"], value_num=1,
+                value_text=rec.get("school_status"), unit="schools",
+                place_id=place_id, located=located,
+                reported_at=fetched, attrs=attrs)]
+
+
+def t_connectivity(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    m = rec.get("metrics") or {}
+    if rec.get("outage_start"):                                   # IODA
+        occurred, precision = str(rec["outage_start"]), "hour"
+        value = m.get("duration_seconds")
+    else:                                                         # OONI
+        occurred, precision = str(rec["date"])[:10], "day"
+        value = rec.get("anomaly_rate", m.get("value"))
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    return [Row(ds, f"connectivity.{slug(rec['event_type'])}", occurred,
+                precision, rec["stable_id"], value_num=value,
+                place_id=place_id, located=located, attrs=attrs)]
+
+
+def t_funding(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    f = rec.get("funding") or {}
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    return [Row(ds, f"funding.{slug(f['status'])}", str(rec["date"])[:10],
+                "day", rec["stable_id"], value_num=f.get("amount_usd"),
+                unit="USD", place_id=place_id, located=located, attrs=attrs)]
+
+
+def t_pcbs(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    year = str(rec["date"])[:4]                                   # 100% -01-01
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    return [Row(ds, f"pcbs.{slug(rec['indicator_code'])}", f"{year}-01-01",
+                "year", rec["stable_id"], value_num=rec["metrics"]["value"],
+                unit=rec["metrics"].get("unit"),
+                place_id=place_id, located=located, attrs=attrs)]
+
+
+def t_economic(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    key = (ds, rec.get("indicator_code"), str(rec.get("date"))[:10],
+           (rec.get("location") or {}).get("region"))
+    if key in t_economic.dup_keys:                                # REVIEW.md 4
+        return Drop("contradictory_duplicate")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    year = str(rec["date"])[:4]              # -01-01 kept, -12-31 truncated:
+    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    unit = None if ds == "v1_economic_imf" else rec["metrics"].get("unit")
+    return [Row(ds, f"economic.{slug(rec['indicator_code'])}", f"{year}-01-01",
+                "year", rec["stable_id"], value_num=rec["metrics"]["value"],
+                unit=unit, place_id=place_id, located=located, attrs=attrs)]
+
+
+def _economic_prepass(records, spec, counts):
+    seen, dups = set(), set()
+    for rec in records:
+        key = ("v1_economic_pcbs_direct" if "pcbs.gov.ps"
+               in str((rec.get("sources") or [{}])[0].get("url")) else "",
+               rec.get("indicator_code"), str(rec.get("date"))[:10],
+               (rec.get("location") or {}).get("region"))
+        if key[0]:
+            if key in seen:
+                dups.add(key)
+            seen.add(key)
+    t_economic.dup_keys = {k for k in dups}
+
+
+t_economic.prepass = _economic_prepass
+t_economic.dup_keys = set()
+
+
+def t_health(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    dim = (rec.get("dimension") or {}).get("code")
+    indicator = f"health.{slug(rec['indicator_code'])}" + \
+                (f".{slug(dim)}" if dim else "")                  # null-brace
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    year = str(rec["date"])[:4]                                   # 100% -01-01
+    attrs["region"] = "Palestine"
+    return [Row(ds, indicator, f"{year}-01-01", "year", rec["stable_id"],
+                value_num=rec["metrics"]["value"],
+                unit=rec["metrics"].get("unit"), attrs=attrs)]
+
+
+_FOOD_GOV = {"Ramallah and Albireh": "Ramallah", "Kan Younis": "Khan Younis"}
+
+
+def t_food(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    day = str(rec["date"])[:10]                                   # 100% the 15th
+    occurred = day[:8] + "01"                                     # month start
+    loc = rec.get("location") or {}
+    market = loc.get("name")
+    if market in ("West Bank", "Gaza Strip"):                     # REVIEW.md 8
+        place_id, located = region_place(places, market, attrs)
+        attrs["basket"] = "region-wide"
+    else:
+        gov = _FOOD_GOV.get(loc.get("governorate"), loc.get("governorate"))
+        pid = places["governorate"].get(gov)
+        if pid is None:
+            counts[f"governorate_unresolved:{gov}"] += 1
+            place_id, located = None, False
+        else:
+            place_id, located = pid, True
+    return [Row(ds, f"food.price.{slug(rec['commodity'])}", occurred, "month",
+                rec["stable_id"], value_num=rec["metrics"]["price"],
+                unit=rec["metrics"].get("unit"),
+                place_id=place_id, located=located, attrs=attrs)]
+
+
+_UNIT_CANON = {"truck": "truck", "trucks": "truck", "ton": "tonne",
+               "mt": "tonne", "pallets": "pallet", "piece": "piece",
+               "each": "piece", "ctn": "box", "box": "box",
+               "vehicles": "vehicle", "tents": "tent"}
+_CROSSINGS = {"Kerem Shalom": "Kerem Shalom Crossing",
+              "Rafah Crossing": "Rafah Crossing",
+              "Erez": "Erez Crossing (Beit Hanoun)",
+              "Kissufim": "Kissufim Crossing"}
+
+
+def t_aid_access(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    day = str(rec["date"])[:10]
+    if day > "2024-05-05":
+        attrs["upstream_partial"] = True          # source disclaimer, derived
+    raw_unit = (rec.get("metrics") or {}).get("unit")
+    unit = _UNIT_CANON.get(str(raw_unit).lower(), raw_unit)
+    if unit != raw_unit:
+        attrs["unit_raw"] = raw_unit
+    crossing = rec.get("crossing")
+    name_en = _CROSSINGS.get(crossing)
+    if name_en:
+        place_id, located = places["crossing"][name_en], True
+    else:                                          # Western Erez / Gate 96 / JLOTS
+        place_id, located = places["region"]["Gaza Strip"], False
+    return [Row(ds, f"aid_access.consignment.{slug(rec['cargo_category'])}",
+                day, "day", rec["stable_id"],
+                value_num=(rec.get("metrics") or {}).get("quantity"),
+                unit=unit, place_id=place_id, located=located, attrs=attrs)]
+
+
+def t_martyrs(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    if rec.get("event_type") == "cumulative_summary":
+        return [Row(ds, "martyrs.cumulative_summary", str(rec["date"])[:10],
+                    "day", rec["stable_id"],
+                    value_num=rec["metrics"]["killed"], unit="persons",
+                    attrs=attrs)]
+    place_id, located = region_place(places,
+                                     rec["location"]["region"], attrs)
+    return [Row(ds, "martyrs.identified_killed", "2023-10-07", "unknown",
+                rec["stable_id"], value_num=rec["metrics"]["killed"],
+                value_text=rec.get("name"), unit="persons",
+                place_id=place_id, located=located, attrs=attrs)]
+
+
+def t_infrastructure(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    etype = rec.get("event_type")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    m = rec.get("metrics") or {}
+    loc = rec.get("location") or {}
+    fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
+    detail = rec.get("infrastructure_detail") or {}
+    if etype == "infrastructure_damage":
+        indicator = f"infrastructure.damage.{slug(detail.get('type'))}"
+        value, occurred, precision = m.get("count"), str(rec["date"])[:10], "day"
+    elif etype == "satellite_damage_assessment":
+        indicator = "infrastructure.satellite_damage_assessment"
+        value = m.get("structures_total_affected")
+        occurred, precision = str(rec["date"])[:10], "day"
+    else:                                       # locality_record / barrier_segment
+        indicator = f"infrastructure.{slug(etype)}"
+        value = m.get("count")
+        occurred, precision = str(rec["date"])[:10], "unknown"    # law 1: 100%
+    if etype != "barrier_segment":                                # latlon_exclude
+        pid = places["pcode"].get(loc.get("admin2_pcode"))
+    else:
+        pid = None
+    if pid is not None:
+        place_id, located = pid, True
+    else:
+        region = loc.get("region") or ("West Bank" if etype in
+                                       ("barrier_segment", "locality_record")
+                                       else "Gaza Strip")
+        place_id, located = region_place(places, region, attrs)
+    return [Row(ds, indicator, occurred, precision, rec["stable_id"],
+                value_num=value, value_text=detail.get("damage_level"),
+                unit=m.get("unit"), place_id=place_id, located=located,
+                reported_at=fetched, attrs=attrs)]
+
+
+def _ds_over(spec, ds_key, *path, default=None):
+    """datasets[].overrides lookup: _ds_over(spec, key, 'attrs_passthrough')."""
+    for ds in spec["datasets"]:
+        if ds["key"] == ds_key:
+            cur = ds.get("overrides", {})
+            for p in path:
+                cur = cur.get(p, {}) if isinstance(cur, dict) else {}
+            return cur or default
+    return default
+
+
+def t_conflict(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    etype = slug(rec.get("event_type"))
+    loc = rec.get("location") or {}
+    m = rec.get("metrics") or {}
+    sources = rec.get("sources") or []
+
+    # declared, measured, counted drops (spec drop blocks)
+    if etype == "daily_casualty_report" and loc.get("region") == "West Bank":
+        return Drop("v1_placeholder_all_metrics_zero")
+    if sources and sources[0].get("name") == "Good Shepherd":
+        return Drop("v1_placeholder_no_payload")
+
+    # strictest-license-wins assertion for multi-source rows (REVIEW.md 7)
+    if len(sources) > 1:
+        by_name = spec["source_routing"]["by_name"]
+        routed_commercial = places["_commercial"].get(by_name.get(
+            sources[0].get("name")))
+        for s in sources[1:]:
+            other = places["_commercial"].get(by_name.get(s.get("name")))
+            if routed_commercial is True and other is False:
+                counts["license_order_violation"] += 1
+
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    if len(sources) > 1:
+        attrs["provenance"] = [
+            {"name": s.get("name"), "url": s.get("url")} for s in sources[1:]]
+
+    # shape override: the cumulative Gaza series is a time series
+    if etype in ("daily_casualty_report", "summary"):
+        attrs["cumulative"] = True
+        gaza = places["region"]["Gaza Strip"]
+        day = str(rec["date"])[:10]
+        sid = rec["stable_id"]
+        rows = [Row(ds, "conflict.gaza_cumulative_killed", day, "day",
+                    f"{sid}:killed", value_num=m.get("killed"),
+                    unit="persons", place_id=gaza, attrs=attrs)]
+        if (m.get("injured") or 0) > 0:
+            rows.append(Row(ds, "conflict.gaza_cumulative_injured", day, "day",
+                            f"{sid}:injured", value_num=m.get("injured"),
+                            unit="persons", place_id=gaza, attrs=attrs))
+        return rows
+
+    # events
+    if rec.get("date_precision"):                      # POM villages, verbatim
+        precision = rec["date_precision"]
+    elif etype == "aggregate_fatality":                # B'Tselem period totals
+        precision = "unknown"
+    else:
+        precision = "day"
+    lat, lon = loc.get("lat"), loc.get("lon")
+    pid = places["pcode"].get(loc.get("admin2_pcode"))
+    located = False
+    if pid is not None:
+        located = True
+    elif lat is not None:
+        pid = places["_pip"].resolve(lat, lon)
+        located = True                                  # point-grade geometry
+    elif loc.get("gazetteer_key") in places["_v1key"]:
+        pid = places["_v1key"][loc["gazetteer_key"]]
+        located = True
+    else:
+        pid, located = region_place(places, loc.get("region"), attrs)
+    metrics = {k: m.get(k) for k in ("killed", "injured", "displaced",
+                                     "affected", "unit")
+               if m.get(k) not in (None, 0)}
+    q = (rec.get("quality") or {}).get("score") or 0.7
+    return [EventRow(ds, f"conflict.{etype}", str(rec["date"])[:10],
+                     precision, rec["stable_id"], place_id=pid,
+                     lat=lat, lon=lon, located=located, confidence=q,
+                     independent_sources=max(len(sources), 1),
+                     metrics=metrics, attrs=attrs)]
+
+
+_CENSUSES = (("population_1922", "1922"), ("population_1931", "1931"),
+             ("population_1945", "1945"), ("population_2016", "2016"))
+
+
+def t_historical(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    loc = rec.get("location") or {}
+    m = rec.get("metrics") or {}
+
+    if ds == "v1_historical_archives":                 # 27 timeline → events
+        attrs = passthrough(rec, _ds_over(spec, ds, "attrs_passthrough",
+                                          default=[]))
+        attrs["summary"] = rec.get("description")      # sanctioned law-6 exemption
+        attrs["source_citation"] = (rec.get("sources") or [{}])[0].get("name")
+        day = str(rec["date"])[:10]
+        etype = slug(rec.get("event_type"))
+        if day.endswith("-12-31") and etype == "uprising":       # law 2
+            occurred, precision = f"{day[:4]}-01-01", "year"
+        else:
+            occurred, precision = day, "day"
+        pid, located = region_place(places, loc.get("region"), attrs)
+        metrics = {k: m.get(k) for k in ("killed", "displaced")
+                   if m.get(k) not in (None, 0)}
+        return [EventRow(ds, f"historical.{etype}", occurred, precision,
+                         rec["stable_id"], place_id=pid, located=located,
+                         independent_sources=1, metrics=metrics, attrs=attrs)]
+
+    # POM localities: fan out censuses + status (REVIEW.md / spec fan_out)
+    attrs = passthrough(rec, _ds_over(spec, ds, "attrs_passthrough",
+                                      default=[]))
+    pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
+    located = pid is not None
+    sid = rec["stable_id"]
+    rows = []
+    for field_, year in _CENSUSES:
+        v = m.get(field_)
+        if v is not None and v > 0:
+            rows.append(Row(ds, "historical.population", f"{year}-01-01",
+                            "year", f"{sid}:c{year}", value_num=v,
+                            unit="persons", place_id=pid, located=located,
+                            attrs={**attrs, "census": year}))
+    day = str(rec["date"])[:10]
+    if day == "1945-04-01":                # Village Statistics reference date
+        occurred, precision = "1945-01-01", "year"
+    else:
+        occurred, precision = day, "day"   # real 1948 depopulation dates
+    rows.append(Row(ds, "historical.locality_status", occurred, precision,
+                    f"{sid}:status", value_text=rec.get("locality_status"),
+                    place_id=pid, located=located, attrs=attrs))
+    return rows
+
+
+_UNRWA_AGG = {"Jordan", "Lebanon", "Syria", "West Bank", "Gaza Strip",
+              "Total registered refugees", "Registered refugees",
+              "Other registered people", "Total registered people",
+              "Refugees living within official camp borders",
+              "% living within camp borders"}
+
+
+def t_refugees(rec, spec, places, counts):
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+    loc = rec.get("location") or {}
+    m = rec.get("metrics") or {}
+    attrs = passthrough(rec, _ds_over(spec, ds, "attrs_passthrough",
+                                      default=[]))
+    if ds == "v1_refugees_unhcr":
+        year = str(rec["date"])[:4]                    # 100% -12-31, law 2
+        return [Row(ds, "refugees.cross_border", f"{year}-01-01", "year",
+                    rec["stable_id"], value_num=m.get("count"), unit="people",
+                    attrs=attrs)]
+    if ds == "v1_refugees_idmc":
+        day = str(rec["date"])[:10]
+        if day.endswith("-12-31"):                     # law 2, hits 2 of 334
+            occurred, precision = f"{day[:4]}-01-01", "year"
+        else:
+            occurred, precision = day, "day"
+        pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon")) \
+            or places["pcode"].get(loc.get("admin2_pcode"))
+        return [Row(ds, "refugees.displacement_event", occurred, precision,
+                    rec["stable_id"], value_num=m.get("displaced"),
+                    unit="persons", place_id=pid, located=pid is not None,
+                    attrs=attrs)]
+    # UNRWA camp registry: build-stamp date → unknown (law 1 by analogy)
+    name = loc.get("name")
+    fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
+    if name in _UNRWA_AGG:                             # REVIEW.md 9
+        attrs["aggregate_label"] = name
+        unit = "percent" if str(name).startswith("%") else "people"
+        return [Row(ds, "refugees.registered_total", str(rec["date"])[:10],
+                    "unknown", rec["stable_id"], value_num=m.get("count"),
+                    unit=unit, reported_at=fetched, attrs=attrs)]
+    pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
+    return [Row(ds, "refugees.camp_population", str(rec["date"])[:10],
+                "unknown", rec["stable_id"], value_num=m.get("count"),
+                unit="people", place_id=pid, located=pid is not None,
+                reported_at=fetched, attrs=attrs)]
+
+
 TRANSFORMERS = {
+    "conflict": t_conflict,
+    "historical": t_historical,
+    "refugees": t_refugees,
     "prisoners": t_prisoners,
     "casualties": t_casualties,
     "demolitions": t_demolitions,
+    "settlements": t_settlements,
+    "land": t_land,
+    "culture": t_culture,
+    "education": t_education,
+    "connectivity": t_connectivity,
+    "funding": t_funding,
+    "pcbs": t_pcbs,
+    "economic": t_economic,
+    "health": t_health,
+    "food": t_food,
+    "aid_access": t_aid_access,
+    "martyrs_snapshot_2023": t_martyrs,
+    "infrastructure": t_infrastructure,
 }
 
 
@@ -321,6 +877,20 @@ ON CONFLICT (dataset_id, v1_stable_id, occurred_at)
 DO NOTHING
 """
 
+EVENT_INSERT_SQL = """
+INSERT INTO event (event_type, place_id, geom, occurred_at,
+                   occurred_precision, status, confidence, claim_count,
+                   independent_sources, contradicted_by, metrics, attrs)
+VALUES (%(event_type)s, %(place_id)s,
+        CASE WHEN %(lon)s::float8 IS NULL THEN NULL
+             ELSE ST_SetSRID(ST_MakePoint(%(lon)s, %(lat)s), 4326)::geography
+        END,
+        %(occurred_at)s, %(precision)s, 'believed', %(confidence)s, 0,
+        %(independent_sources)s, 0, %(metrics)s, %(attrs)s)
+ON CONFLICT ((attrs->>'v1_stable_id')) WHERE attrs ? 'v1_stable_id'
+DO NOTHING
+"""
+
 
 def run(category: str, dry_run: bool = False) -> dict:
     spec = load_spec(category)
@@ -335,8 +905,24 @@ def run(category: str, dry_run: bool = False) -> dict:
     refs: dict[Path, str] = {}
     seen_stable: set[str] = set()
 
+    event_rows: list[EventRow] = []
     with connect() as conn:
         places = load_places(conn)
+        places["_pip"] = PointResolver(conn)
+        with conn.cursor() as cur:
+            cur.execute("""SELECT source_refs->>'v1_canonical_key', place_id
+                           FROM place WHERE source_refs ? 'v1_canonical_key'
+                             AND merged_into IS NULL""")
+            places["_v1key"] = dict(cur.fetchall())
+            cur.execute("SELECT key, commercial_use FROM source")
+            places["_commercial"] = dict(cur.fetchall())
+        if hasattr(transformer, "prepass"):
+            # cross-record state (e.g. economic's contradictory-duplicate
+            # detection) needs the whole category before the first transform
+            all_recs = []
+            for f in iter_v1_files(category):
+                all_recs.extend(_records(json.loads(f.read_bytes())))
+            transformer.prepass(all_recs, spec, counts)
         for f in iter_v1_files(category):
             payload = f.read_bytes()
             refs[f] = bronze.put(f"v1_{category}", payload,
@@ -356,7 +942,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                         continue
                     seen_stable.add(r.v1_stable_id)
                     r.raw_ref = refs[f]
-                    rows.append(r)
+                    (event_rows if isinstance(r, EventRow) else rows).append(r)
 
         # ── enforcement, before any write ────────────────────────────────────
         n = counts["records_read"]
@@ -364,29 +950,35 @@ def run(category: str, dry_run: bool = False) -> dict:
         if n < spec["expect"]["min_records"]:
             problems.append(f"records_read {n} < expect.min_records "
                             f"{spec['expect']['min_records']}")
+        max_obs = spec["expect"].get("max_observations")
+        if max_obs and len(rows) > max_obs:
+            # health's failure mode: a run that "succeeds with more" has
+            # failed to dedupe and must say so
+            problems.append(f"emitted {len(rows)} > expect.max_observations "
+                            f"{max_obs}")
         for k in counts:
             if k.startswith(("unroutable:", "no_dataset_for_source:",
-                             "governorate_unresolved:")):
+                             "governorate_unresolved:",
+                             "license_order_violation")):
                 problems.append(f"{k} × {counts[k]}")
         declared = {d["reason"] for d in spec.get("drop", [])} | {"unroutable"}
         for reason in drops:
             if reason not in declared:
                 problems.append(f"undeclared drop reason: {reason}")
-        retained = [r for r in rows]
-        decided = len(retained)             # every Row reached a decision
-        located = sum(1 for r in retained if r.located)
+        # `decided` is enforced by the explicit failure counters above — an
+        # unroutable name or unresolved governorate already fails the run.
+        # Deduped rows reached a decision; they are duplicates, not failures.
+        decided = len(rows) + len(event_rows)
+        located = sum(1 for r in rows if r.located) + \
+            sum(1 for r in event_rows if r.located)
         place_spec = spec.get("place", {})
-        min_decided = place_spec.get("min_decided_pct", 1.0)
-        emitted_basis = max(len(rows) + counts["deduped"], 1)
-        if decided / emitted_basis < min_decided:
-            problems.append(f"decided {decided}/{emitted_basis} < {min_decided}")
         min_located = place_spec.get("min_located_pct")
         if min_located and located / max(decided, 1) < min_located:
             problems.append(f"located {located}/{decided} < {min_located}")
         if problems:
             raise SpecRefused(f"{category}: run FAILED — " + "; ".join(problems))
 
-        written = 0
+        written = events_written = 0
         if not dry_run:
             dataset_ids = ensure_datasets(conn, spec, category)
             with conn.cursor() as cur:
@@ -402,6 +994,23 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "attrs": json.dumps(r.attrs, ensure_ascii=False),
                     })
                     written += cur.rowcount
+                for e in event_rows:
+                    attrs = dict(e.attrs)
+                    attrs["v1_stable_id"] = e.v1_stable_id
+                    attrs["dataset_key"] = e.dataset_key
+                    if e.raw_ref:
+                        attrs["raw_ref"] = e.raw_ref
+                    cur.execute(EVENT_INSERT_SQL, {
+                        "event_type": e.event_type, "place_id": e.place_id,
+                        "lat": e.lat, "lon": e.lon,
+                        "occurred_at": e.occurred_at,
+                        "precision": e.precision,
+                        "confidence": e.confidence,
+                        "independent_sources": e.independent_sources,
+                        "metrics": json.dumps(e.metrics, ensure_ascii=False),
+                        "attrs": json.dumps(attrs, ensure_ascii=False),
+                    })
+                    events_written += cur.rowcount
             conn.commit()
 
     report = {
@@ -409,7 +1018,9 @@ def run(category: str, dry_run: bool = False) -> dict:
         "category": category, "dry_run": dry_run,
         "records_read": counts["records_read"],
         "observations_emitted": len(rows),
-        "written": written, "deduped": counts["deduped"],
+        "events_emitted": len(event_rows),
+        "written": written, "events_written": events_written,
+        "deduped": counts["deduped"],
         "drops": dict(drops),
         "located_pct": round(located / max(decided, 1), 3),
         "notes": {k: v for k, v in counts.items()

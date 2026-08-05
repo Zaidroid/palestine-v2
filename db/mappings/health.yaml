@@ -70,7 +70,8 @@ attrs_passthrough:
   - value_high
 
 expect:
-  min_records: 11250       # ≈0.9 × 12,502 — the POST-DEDUPE count, not
+  min_records: 11250
+  max_observations: 13000   # a run that writes ~40k has FAILED to dedupe
                            #   0.9 × 40,559. A run that writes ~40k rows here
                            #   has failed to dedupe and must be treated as a
                            #   failure, not a success with more.

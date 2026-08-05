@@ -35,11 +35,12 @@ def test_unknown_category_is_refused():
         load_spec("definitely_not_a_category")
 
 
-def test_reviewed_spec_without_transformer_is_refused_not_improvised():
-    # historical is reviewed but its transformer is not implemented yet;
-    # running it must refuse loudly rather than guess.
+def test_reviewed_spec_without_transformer_is_refused_not_improvised(monkeypatch):
+    # every migrating category has a transformer now; simulate the gap to
+    # prove a reviewed spec without one refuses rather than improvising.
+    monkeypatch.delitem(databank.TRANSFORMERS, "funding")
     with pytest.raises(SpecRefused, match="no transformer"):
-        databank.run("historical", dry_run=True)
+        databank.run("funding", dry_run=True)
 
 
 def test_slug_is_the_global_convention():
