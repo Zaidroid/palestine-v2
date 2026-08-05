@@ -413,3 +413,20 @@ def test_databank_categories_carry_licenses() -> None:
     assert all(d["attribution"] and d["license"] for d in ds)
     # the tier decision, visible: sellable is a real partition
     assert {d["sellable"] for d in ds} == {True, False}
+
+
+def test_martyrs_serves_aggregates_by_default_names_by_intent() -> None:
+    """Serving posture (2026-08-05): the license permits per-name serving of
+    60,199 dead; decency defaults to aggregates and makes reading names a
+    deliberate act, not a row dump."""
+    r = client.get("/v2/databank/martyrs_snapshot_2023")
+    body = r.json()
+    assert body["memorial"] is False
+    assert body["identified_total"] > 60000
+    assert "items" not in body                      # no names by default
+    r = client.get("/v2/databank/martyrs_snapshot_2023",
+                   params={"memorial": "true",
+                           "indicator": "martyrs.identified_killed",
+                           "limit": 2})
+    names = [i["value_text"] for i in r.json()["items"]]
+    assert all(names), names                        # real names, deliberately

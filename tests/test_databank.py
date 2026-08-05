@@ -214,3 +214,24 @@ def test_snapshot_tree_intact_zero_days_deleted():
                   (V1 / "snapshots").iterdir() if p.is_dir())
     assert len(days) >= 35
     assert days[0] == "2026-06-25"
+
+
+@needs_v1
+def test_nakba_places_never_capture_live_resolution():
+    """The Nakba gazetteer's contract: 1,900+ historic localities exist as
+    servable=false rows for historical joins, and the live name resolver
+    can never return one."""
+    from resolve.db import connect
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT count(*) FROM place
+                       WHERE NOT servable AND merged_into IS NULL
+                         AND attrs->>'historic' = 'mandate-palestine'""")
+        assert cur.fetchone()[0] >= 1900
+        # historical resolution reached 100% through them
+        cur.execute("""SELECT count(*) - count(place_id) FROM observation o
+                       JOIN dataset d ON d.dataset_id = o.dataset_id
+                       WHERE d.v1_category = 'historical'""")
+        assert cur.fetchone()[0] == 0
+        # and the live resolver's name path structurally excludes them
+        from resolve import geo
+        assert "AND servable" in geo.NAME_SQL

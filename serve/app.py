@@ -1696,11 +1696,35 @@ def databank_categories() -> dict:
 
 @app.get("/v2/databank/{category}", tags=["databank"])
 def databank_category(category: str, indicator: str | None = None,
-                      as_of: str | None = None,
+                      as_of: str | None = None, memorial: bool = False,
                       limit: int = Query(200, ge=1, le=2000)) -> dict:
     """Rows from one category. `as_of=YYYY-MM-DD` reconstructs what v1's
     archive served on that day (validity-tracked; superseded values appear
     at their own time and never at the present)."""
+    if category == "martyrs_snapshot_2023" and not memorial:
+        # Serving posture (decided 2026-08-05): the license permits per-name
+        # serving; decency defaults to aggregates. `memorial=true` opens the
+        # per-name view as a deliberate act, never as a default row dump.
+        rows = q("""
+            SELECT CASE WHEN (attrs->>'age')::int < 13 THEN 'children_under_13'
+                        WHEN (attrs->>'age')::int < 18 THEN 'ages_13_17'
+                        WHEN (attrs->>'age')::int < 40 THEN 'ages_18_39'
+                        WHEN (attrs->>'age')::int < 65 THEN 'ages_40_64'
+                        ELSE 'ages_65_plus' END AS age_band,
+                   attrs->>'sex' AS sex, COUNT(*) AS n
+            FROM databank_serving
+            WHERE v1_category = 'martyrs_snapshot_2023'
+              AND indicator = 'martyrs.identified_killed'
+            GROUP BY 1, 2 ORDER BY 1, 2""")
+        total = sum(r["n"] for r in rows)
+        return {"category": category, "memorial": False,
+                "identified_total": total,
+                "by_age_and_sex": rows,
+                "note": "Named records exist and are public memorial data "
+                        "(Gaza MoH via Tech4Palestine, CC-BY-4.0). Pass "
+                        "memorial=true to read them, deliberately.",
+                "attribution": ["Data: Tech4Palestine "
+                                "(data.techforpalestine.org), CC-BY-4.0."]}
     conds, params = ["d.v1_category = %s"], [category]
     if indicator:
         conds.append("o.indicator LIKE %s")

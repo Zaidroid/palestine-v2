@@ -401,7 +401,11 @@ class _Place:
 # offer its sentence-shaped name to crowd matching — its canonical row is the
 # one with the data.
 NAME_SQL = ("SELECT place_id, name_ar, name_en FROM place "
-            "WHERE kind = %s AND merged_into IS NULL")
+            "WHERE kind = %s AND merged_into IS NULL AND servable")
+# `AND servable` (T2 close): the Nakba gazetteer adds 2,000+ historic
+# localities as servable=false reference rows. A live report naming طنطورة
+# must not resolve to a village destroyed in 1948 — unservable rows are for
+# historical joins, never live capture.
 
 
 def resolve_for_state_kind(conn, place: str, state_kind: str):
