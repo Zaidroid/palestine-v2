@@ -578,7 +578,46 @@ def can_i_travel(origin: str, destination: str) -> dict:
                       "never block and are always named"}
 
 
+def databank(category: str | None = None, indicator: str | None = None,
+             as_of: str | None = None, limit: int = 10) -> dict:
+    """The historical databank: 186k observations from 19 categories
+    (prisoners, demolitions, food prices, funding, the martyrs roster…),
+    each row carrying its source's license and attribution. `as_of`
+    reconstructs what the archive served on a past day."""
+    if not category:
+        d = api("/v2/databank/categories")
+        cats: dict[str, int] = {}
+        for ds in d["datasets"]:
+            cats[ds["category"]] = cats.get(ds["category"], 0) + ds["rows"]
+        top = sorted(cats.items(), key=lambda kv: -kv[1])
+        answer = ("بنك المعلومات التاريخي — أكبر الفئات: " +
+                  "، ".join(f"{c} ({n:,})" for c, n in top[:6]) +
+                  f". المجموع {sum(cats.values()):,} سجلاً من "
+                  f"{len(d['datasets'])} مصدراً.")
+        return {"answer": answer, "categories": cats,
+                "datasets": d["datasets"]}
+    d = api(f"/v2/databank/{category}", indicator=indicator,
+            as_of=as_of, limit=limit)
+    when = f" كما كانت بتاريخ {as_of}" if as_of else ""
+    answer = (f"{d['count']} سجلاً من {category}{when}."
+              if d["count"] else f"لا سجلات مطابقة في {category}{when}.")
+    return {"answer": answer, **d}
+
+
 TOOLS = {
+    "databank": (databank,
+                 "Historical databank (186k+ rows, 19 categories: prisoners, "
+                 "demolitions, food prices, funding, martyrs roster…) with "
+                 "per-source licensing. No `category` lists what exists; "
+                 "`as_of` (YYYY-MM-DD) reconstructs a past day's answer.",
+                 {"type": "object", "properties": {
+                     "category": {"type": "string",
+                                  "description": "e.g. prisoners, demolitions"},
+                     "indicator": {"type": "string",
+                                   "description": "prefix filter, e.g. prisoners.child"},
+                     "as_of": {"type": "string",
+                               "description": "YYYY-MM-DD — answer as of that day"},
+                     "limit": {"type": "integer"}}}),
     "can_i_travel": (can_i_travel,
                      "Can I get from A to B right now? Returns every reasonable route scored by "
                      "the checkpoints ON it — in travel order, each with its age — plus "

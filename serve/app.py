@@ -1668,3 +1668,62 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
                  "No source reports crossing status yet, so these read "
                  "`unknown`; that is the truth rather than a gap."),
     }
+
+
+# ── T2: the databank goes public — free tier, attribution on every row ───────
+
+@app.get("/v2/databank/categories", tags=["databank"])
+def databank_categories() -> dict:
+    """What the databank holds: per-dataset counts, ranges, and licenses.
+    Serving is the free tier by decision (2026-08-05): everything
+    redistributable, credited; `sellable` marks the commercial subset."""
+    rows = q("""
+        SELECT v1_category, dataset_key, source_name, license_spdx,
+               commercial_use, attribution_text,
+               COUNT(*) AS n, MIN(occurred_at)::date AS from_date,
+               MAX(occurred_at)::date AS to_date
+        FROM databank_serving
+        GROUP BY 1,2,3,4,5,6 ORDER BY 1,7 DESC""")
+    return {"datasets": [
+        {"category": r["v1_category"], "dataset": r["dataset_key"],
+         "source": r["source_name"], "license": r["license_spdx"],
+         "sellable": r["commercial_use"], "rows": r["n"],
+         "from": r["from_date"], "to": r["to_date"],
+         "attribution": r["attribution_text"]} for r in rows],
+        "note": "occurred_precision governs how much a date claims; "
+                "year/month/unknown rows are periods or registers, not days."}
+
+
+@app.get("/v2/databank/{category}", tags=["databank"])
+def databank_category(category: str, indicator: str | None = None,
+                      as_of: str | None = None,
+                      limit: int = Query(200, ge=1, le=2000)) -> dict:
+    """Rows from one category. `as_of=YYYY-MM-DD` reconstructs what v1's
+    archive served on that day (validity-tracked; superseded values appear
+    at their own time and never at the present)."""
+    conds, params = ["d.v1_category = %s"], [category]
+    if indicator:
+        conds.append("o.indicator LIKE %s")
+        params.append(indicator + "%")
+    if as_of:
+        conds.append("o.sys_period @> %s::date::timestamptz")
+    else:
+        conds.append("upper_inf(o.sys_period)")
+    sql = f"""
+        SELECT o.indicator, o.occurred_at, o.occurred_precision::text,
+               o.value_num, o.value_text, o.unit, o.attrs,
+               p.name_en AS place_en, p.name_ar AS place_ar,
+               s.attribution_text, s.license_spdx
+        FROM observation o
+        JOIN dataset d ON d.dataset_id = o.dataset_id
+        JOIN source s ON s.source_id = d.source_id
+        LEFT JOIN place p ON p.place_id = o.place_id
+        WHERE o.v1_stable_id IS NOT NULL AND {' AND '.join(conds)}
+        ORDER BY o.occurred_at DESC LIMIT %s"""
+    rows = q(sql, tuple(params + ([as_of] if as_of else []) + [limit]))
+    return {"category": category, "as_of": as_of, "count": len(rows),
+            "items": [{k: r[k] for k in
+                       ("indicator", "occurred_at", "occurred_precision",
+                        "value_num", "value_text", "unit", "place_en",
+                        "place_ar", "attrs")} for r in rows],
+            "attribution": sorted({r["attribution_text"] for r in rows})}

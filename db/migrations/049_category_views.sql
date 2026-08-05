@@ -1,0 +1,80 @@
+-- 049 — category views (P2.5): one per migrated category, over the
+-- license-carrying serving surface. These are the dual-run comparison
+-- targets and the shape a legacy v1 consumer would query; skipped
+-- categories (water, westbank, news) deliberately have none.
+CREATE OR REPLACE VIEW v_aid_access AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'aid_access';
+CREATE OR REPLACE VIEW v_casualties AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'casualties';
+CREATE OR REPLACE VIEW v_conflict AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'conflict';
+CREATE OR REPLACE VIEW v_connectivity AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'connectivity';
+CREATE OR REPLACE VIEW v_culture AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'culture';
+CREATE OR REPLACE VIEW v_demolitions AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'demolitions';
+CREATE OR REPLACE VIEW v_economic AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'economic';
+CREATE OR REPLACE VIEW v_education AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'education';
+CREATE OR REPLACE VIEW v_food AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'food';
+CREATE OR REPLACE VIEW v_funding AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'funding';
+CREATE OR REPLACE VIEW v_health AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'health';
+CREATE OR REPLACE VIEW v_historical AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'historical';
+CREATE OR REPLACE VIEW v_infrastructure AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'infrastructure';
+CREATE OR REPLACE VIEW v_land AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'land';
+CREATE OR REPLACE VIEW v_martyrs_snapshot_2023 AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'martyrs_snapshot_2023';
+CREATE OR REPLACE VIEW v_pcbs AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'pcbs';
+CREATE OR REPLACE VIEW v_prisoners AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'prisoners';
+CREATE OR REPLACE VIEW v_refugees AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'refugees';
+CREATE OR REPLACE VIEW v_settlements AS
+SELECT occurred_at, occurred_precision, indicator, value_num, value_text,
+       unit, place_id, attrs, source_name, license_spdx, attribution_text
+FROM databank_serving WHERE v1_category = 'settlements';

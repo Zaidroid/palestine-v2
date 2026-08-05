@@ -203,3 +203,14 @@ def test_asof_harness_is_green():
     # present at their as_of. Non-zero return = enumerated failures.
     from ops import asof_harness
     assert asof_harness.main() == 0
+
+
+@needs_v1
+def test_snapshot_tree_intact_zero_days_deleted():
+    # Gate 2's no-data-loss bullet: v1's snapshot tree is read-only input;
+    # the replay must never have consumed a day. 35 days existed when Tier 2
+    # started (2026-06-25 onward); the count only grows.
+    days = sorted(p.name for p in
+                  (V1 / "snapshots").iterdir() if p.is_dir())
+    assert len(days) >= 35
+    assert days[0] == "2026-06-25"

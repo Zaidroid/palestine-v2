@@ -70,6 +70,14 @@ CASES: dict[str, list[dict]] = {
     "/v2/stream/status":        [{}],
     "/v2/news/latest":          [{}, {"limit": 3}, {"area": "نابلس"}],
     "/v2/checkpoints/summary":  [{}],
+    "/v2/databank/categories":  [{}],
+    # as_of exercises the sys_period path — the value it returns for July is
+    # asserted exactly in test_databank_asof_serves_superseded_value.
+    "/v2/databank/{category}":  [{"category": "prisoners"},
+                                 {"category": "prisoners",
+                                  "indicator": "prisoners.child",
+                                  "as_of": "2026-07-15"},
+                                 {"category": "no_such_category"}],
     "/v2/export/checkpoints.csv":     [{}],
     "/v2/export/checkpoints.geojson": [{}],
     "/v2/export/incidents.csv":       [{}, {"days": 7}],
@@ -302,6 +310,8 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/incidents/summary": "incidents_summary",
         "/v2/checkpoints/summary": "checkpoints_summary",
         "/v2/fuel/summary": "fuel_summary",
+        "/v2/databank/categories": "databank",
+        "/v2/databank/{category}": "databank",
     }
     missing = _routes() - MCP_EXEMPT - set(covered)
     assert not missing, f"REST routes with no MCP tool and no exemption: {sorted(missing)}"
@@ -376,3 +386,30 @@ def test_exports_carry_the_honesty_columns() -> None:
     inc = client.get("/v2/export/incidents.geojson", params={"days": 30}).json()
     assert inc["type"] == "FeatureCollection"
     assert all(f["properties"]["confidence"] is not None for f in inc["features"])
+
+
+def test_databank_asof_serves_superseded_value() -> None:
+    """T2.4's whole point, through the public surface: what did Addameer
+    report for children in detention as of 15 July? 350 — a value revised
+    upstream on 1 August, absent from the current surface at that date+value,
+    reachable only at its own time."""
+    r = client.get("/v2/databank/prisoners",
+                   params={"indicator": "prisoners.child",
+                           "as_of": "2026-07-15"})
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert any(i["value_num"] == 350 for i in items), items
+    r = client.get("/v2/databank/prisoners",
+                   params={"indicator": "prisoners.child"})
+    current = [(i["occurred_at"][:10], i["value_num"]) for i in r.json()["items"]]
+    assert ("2026-07-01", 350.0) not in current, current
+
+
+def test_databank_categories_carry_licenses() -> None:
+    r = client.get("/v2/databank/categories")
+    assert r.status_code == 200
+    ds = r.json()["datasets"]
+    assert len(ds) >= 25
+    assert all(d["attribution"] and d["license"] for d in ds)
+    # the tier decision, visible: sellable is a real partition
+    assert {d["sellable"] for d in ds} == {True, False}
