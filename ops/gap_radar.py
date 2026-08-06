@@ -54,7 +54,7 @@ DEAD_UPSTREAM = {
 # Closed corpora: history, not feeds. Age is meaningless; only HOLES and the
 # era grid speak for them.
 CLOSED_CORPUS = {
-    "v1_historical_palopenmaps", "v1_martyrs_snapshot_2023_tech4palestine",
+    "v1_historical_palopenmaps",
 }
 
 # Rhythm overrides where the learned median would mislead (annual releases
@@ -67,8 +67,9 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "v1_health_who": 730,
     "v1_pcbs_pcbs": 730,
     "v1_settlements_peacenow": 730,
-    "v1_casualties_ocha": 730,
-    "who_gho_wash": 900,              # JMP publishes roughly biennially
+    "v1_casualties_ocha_casualties": 730,
+    "who_gho_wash": 1200,             # JMP labels are biennial: 2024-label
+                                      #   data ages ~1100d before the next
     "v1_martyrs_snapshot_2023_tech4palestine": 90,  # roster update cadence
     "v1_conflict_t4p_westbank": 30,   # OCHA flash updates: ~weekly-biweekly;
                                       #   learned 1d rhythm is the kept-run
@@ -117,10 +118,10 @@ REGISTER_BASIS = "register (occurred_at disclaimed; age = last ingest)"
 # Fill paths for gaps the project has already scoped. Everything else gets
 # honest "unscoped".
 FILL_PATHS = {
-    "v1_casualties_ocha": "v1's ocha-casualties scraper FAILs nightly; no HDX "
+    "v1_casualties_ocha_casualties": "v1's ocha-casualties scraper FAILs nightly; no HDX "
                           "mirror exists (measured 2026-08-06). Fix the "
                           "scraper in v1 or accept annual staleness.",
-    "v1_demolitions_ocha": "same as casualties: scraper down, no open mirror "
+    "v1_demolitions_ocha_demolitions": "same as casualties: scraper down, no open mirror "
                            "anywhere (Peace Now unlicensed, B'Tselem "
                            "consent-gated).",
     "v1_food_wfp": "WFP price data usually lands monthly; check the HDX "
