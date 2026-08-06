@@ -43,3 +43,14 @@ records_measured: 25049
 # ops/t2_category_audit.py and were re-run over every other category — no
 # second water was found (education/culture registers have identity fields;
 # their defects are dates, handled by law 1).
+
+# RESOLVED 2026-08-06 (the water recovery — this skip STAYS, its meaning
+# changed): the 25,049 anonymous rows were measured against their true
+# sources and found to be NO LOSS. ~23k are WHO GHO bundles v1_health_who
+# already serves WITH identity (184 codes; JMP WASH access series at exact
+# GHO row parity, 75=75); ~2k are World Bank WDI subsets (economic's
+# domain); 6 are MPI/SDG strays. GHO's whole WSH_* universe was diffed:
+# ONE code with PSE data was missing (WSH_SANITATION_OD) → water_gho.yaml,
+# fetched by v2 itself. The water CATEGORY now serves as a domain (051 +
+# serve/app.py): its own datasets + health's wsh_* series. This file
+# remains the reason the 25,049 rows themselves have no silver.

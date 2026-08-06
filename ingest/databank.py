@@ -903,9 +903,45 @@ def _wb_prepass(all_recs, spec, counts):
 t_conflict_westbank.prepass = _wb_prepass
 
 
+# ── water_gho — WHO GHO WASH indicators, v2's own fetch ──────────────────────
+# The one code with PSE data the databank lacked (WSH_SANITATION_OD; the
+# whole diff is in water_gho.yaml). Conventions mirror v1_health_who exactly
+# so the water domain reads as one system.
+
+_GHO_DIM_NAMES = {
+    "RESIDENCEAREATYPE_RUR": "Rural",
+    "RESIDENCEAREATYPE_URB": "Urban",
+    "RESIDENCEAREATYPE_TOTL": "Total",
+}
+
+
+def t_water_gho(rec, spec, places, counts):
+    ds = "who_gho_wash"
+    code, year = rec.get("IndicatorCode"), rec.get("TimeDim")
+    if not code or not year:
+        return Drop("missing_identity")
+    value, basis = rec.get("NumericValue"), "numeric"
+    if value is None:
+        # measured: GHO publishes this series as integer-rounded display
+        # strings (Value "0"/"1"/"2") with NumericValue null — disclosed
+        try:
+            value = float(rec.get("Value"))
+            basis = "gho_display_value"
+        except (TypeError, ValueError):
+            return Drop("no_value")
+    dim = rec.get("Dim1") or "TOTAL"
+    attrs = {"code": dim, "name": _GHO_DIM_NAMES.get(dim, dim),
+             "type": rec.get("Dim1Type") or "", "region": "Palestine",
+             "indicator_code": code, "value_basis": basis}
+    return [Row(ds, f"water.{slug(code)}.{slug(dim)}", f"{year}-01-01",
+                "year", f"gho-{code}-{year}-{dim}", value_num=value,
+                unit="percentage", place_id=None, attrs=attrs)]
+
+
 TRANSFORMERS = {
     "conflict": t_conflict,
     "conflict_westbank": t_conflict_westbank,
+    "water_gho": t_water_gho,
     "historical": t_historical,
     "refugees": t_refugees,
     "prisoners": t_prisoners,

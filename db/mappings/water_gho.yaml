@@ -1,0 +1,72 @@
+# water_gho — the water category's own feed: WHO GHO WASH indicators for
+# Palestine that the databank does not already hold, fetched directly with
+# full identity (Format v2 `input:` over v2's OWN data dir — the first
+# fully v2-native dataset; ops/fetch_gho_wash.py writes the file nightly).
+#
+# WHY THIS IS 75 ROWS AND NOT 25,049 (2026-08-06, the water recovery):
+# v1's "water" category (25,049 anonymous rows, skipped by water.yaml) was
+# measured against its true sources and found to be NO LOSS AT ALL:
+#   - ~23k rows are WHO GHO health bundles with identity stripped — the SAME
+#     data v1_health_who already serves WITH identity (184 GHO codes; the six
+#     JMP WASH access codes at EXACT row parity with the GHO API: 75=75).
+#   - ~2k rows are World Bank WDI subsets — economic's domain.
+#   - 6 rows are MPI/SDG-slums strays (bronze keeps every byte).
+# The entire GHO WSH_* universe (27 codes) was then diffed against health:
+# WHO publishes NO WASH burden estimates for PSE (WSH_1/3/10... all empty);
+# exactly ONE code with PSE data was missing — WSH_SANITATION_OD. That is
+# this dataset. The serving-layer recovery (water as a DOMAIN over its own
+# datasets + health's wsh_* series) lives in serve/app.py and 051's v_water.
+category: water_gho
+v1_category: water               # joins the water category (051 view + API)
+shape: observation
+status: reviewed
+records_measured: 75             # 2026-08-06: 25 years × 3 residence dims
+
+input:                           # v2-native: our own fetcher's output
+  root: /home/zaid/palestine-v2/data/gho
+  glob: "wash_pse.json"
+
+datasets:
+  - key: who_gho_wash
+    source: who                  # CC-BY-NC-SA-3.0-IGO, commercial_use=false
+                                 #   — same source row as v1_health_who; the
+                                 #   water category serves with attribution
+                                 #   and stays out of the commercial tier.
+
+# Value rule, measured: ALL 75 rows carry NumericValue=null with the value
+# in the display string (Value: "0"×42, "1"×30, "2"×3 — integer-rounded
+# percentages; open defecation in Palestine is 0–2%). The transformer
+# prefers NumericValue, falls back to parsing Value, and DISCLOSES the
+# basis in attrs.value_basis. Unparseable → counted drop (no_value).
+#
+# Conventions mirror v1_health_who exactly so the category reads as one
+# system: indicator water.{code}.{dim} (water.wsh_sanitation_od.
+# residenceareatype_totl), unit 'percentage', year precision (law 2:
+# TimeDim year → YYYY-01-01), place NULL (national aggregate — law 3
+# honest NULL), attrs {code, name, type, region, indicator_code}.
+# Identity: synthetic stable ids gho-<code>-<year>-<dim> (044 idempotency;
+# GHO revises estimates in place — first-write-wins, re-measured if the
+# maintenance run ever flags value drift).
+
+indicators:
+  - water.wsh_sanitation_od.residenceareatype_rur
+  - water.wsh_sanitation_od.residenceareatype_urb
+  - water.wsh_sanitation_od.residenceareatype_totl
+
+drop:
+  - reason: missing_identity     # defensive; measured 0
+  - reason: no_value             # defensive; measured 0 (all 75 parse)
+
+expect:
+  min_records: 50                # 75 at spec time; the fetcher refuses to
+                                 #   write below this too (double floor)
+  max_observations: 300          # dedupe tripwire; grows ~3 rows/year. If
+                                 #   CODES gains a future PSE burden series,
+                                 #   re-measure and raise deliberately.
+
+notes: |
+  The fetcher's CODES list is the expansion point: if WHO ever publishes
+  WASH burden estimates for PSE (probed empty 2026-08-06), one edit adds
+  them and this spec's arithmetic gets re-measured. water.yaml (the v1
+  corpus skip) STAYS as the record of why 25,049 anonymous rows have no
+  silver — this spec is the recovery, not a reversal.

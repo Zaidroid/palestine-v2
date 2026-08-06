@@ -142,3 +142,39 @@ What fulfilled the intent instead: T4P's raw West Bank cumulative series
 5. Single-reviewer note: drafted and reviewed by the same session (Opus
    agents not warranted for one spec); the measured arithmetic (1,035 →
    283 kept → 2,255 obs) is pinned in the spec and reproduced by the run.
+
+---
+
+## Addendum 2026-08-06 — the water recovery (water_gho; the skip vindicated)
+
+Zaid's directive: recover the skipped water category by fetching the true
+source with indicator identity. Measurement resolved it almost to nothing —
+the best possible outcome:
+
+1. **The 25,049 anonymous rows were never a loss.** Census by title: ~23k
+   are WHO GHO health bundles whose identity-true content v1_health_who
+   already serves (184 GHO codes); the six JMP WASH access codes sit at
+   EXACT row parity with the GHO API (75=75 each; hygiene 33=33). ~2k are
+   World Bank WDI subsets (economic's domain). 6 rows are MPI/SDG strays.
+   v1's "water" category was a fetcher artifact — a grab-bag mirror with
+   columns stripped — not a data asset.
+2. **The entire GHO WSH_* universe (27 codes) was diffed against health:**
+   WHO publishes NO WASH burden estimates for PSE (WSH_1/3/10/20/30 series
+   all empty — probed directly); exactly ONE code with PSE data was
+   missing: WSH_SANITATION_OD (75 rows, 2000–2024, 0–2%). That is the
+   whole recoverable delta, now dataset who_gho_wash — the first fully
+   v2-native dataset (ops/fetch_gho_wash.py, atomic, floor-guarded,
+   nightly in databank-sync before the loader).
+3. **Value rule measured, not assumed:** GHO ships the series with
+   NumericValue null and integer-rounded display strings ("0"/"1"/"2") —
+   parsed with attrs.value_basis disclosing it per row.
+4. **The real gap was the serving surface**: /v2/databank/water served
+   nothing while the complete access series sat inside health. Decision:
+   water is a DOMAIN — the category serves its own datasets plus health's
+   wsh_* series (app.py + 051's v_water). One fact, one storage row, two
+   category doors; indicator names keep their home namespace so provenance
+   stays visible; the API test asserts no fact is served twice.
+5. License honesty: who source row is CC-BY-NC-SA-3.0-IGO — the water
+   category serves with attribution and stays OUT of the commercial tier.
+6. Single-reviewer note: same-session author+review, arithmetic pinned in
+   the spec (75 records → 75 observations) and reproduced by the run.

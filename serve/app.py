@@ -1725,7 +1725,16 @@ def databank_category(category: str, indicator: str | None = None,
                         "memorial=true to read them, deliberately.",
                 "attribution": ["Data: Tech4Palestine "
                                 "(data.techforpalestine.org), public domain (Unlicense)."]}
-    conds, params = ["d.v1_category = %s"], [category]
+    if category == "water":
+        # water is a DOMAIN, not just a dataset bucket (decided 2026-08-06):
+        # its own datasets PLUS the JMP WASH access series that lives — with
+        # full GHO identity — inside v1_health_who. One fact, served once,
+        # reachable from both the water and health categories; indicator
+        # names keep their home namespace so provenance stays visible.
+        conds, params = ["(d.v1_category = 'water' OR o.indicator LIKE %s)"], \
+            ["health.wsh%"]
+    else:
+        conds, params = ["d.v1_category = %s"], [category]
     if indicator:
         conds.append("o.indicator LIKE %s")
         params.append(indicator + "%")

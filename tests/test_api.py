@@ -80,6 +80,7 @@ CASES: dict[str, list[dict]] = {
                                  {"category": "conflict",
                                   "indicator":
                                   "conflict.westbank_cumulative_killed"},
+                                 {"category": "water"},
                                  {"category": "no_such_category"}],
     "/v2/export/checkpoints.csv":     [{}],
     "/v2/export/checkpoints.geojson": [{}],
@@ -453,3 +454,20 @@ def test_westbank_cumulative_series_is_served_and_sellable() -> None:
     assert any("Tech4Palestine" in a for a in r.json()["attribution"])
     assert all(i["attrs"].get("flash_source") in ("un", "fill")
                for i in items[:20])
+
+def test_water_is_a_domain_one_fact_served_once() -> None:
+    """The water recovery (2026-08-06): the category serves its own dataset
+    plus health's JMP WASH access series — both namespaces visible, no fact
+    duplicated (each indicator+date+dim appears exactly once)."""
+    r = client.get("/v2/databank/water", params={"limit": 2000})
+    assert r.status_code == 200
+    items = r.json()["items"]
+    spaces = {i["indicator"].split(".")[0] for i in items}
+    assert spaces == {"water", "health"}, spaces
+    keys = [(i["indicator"], i["occurred_at"], i["attrs"].get("code"))
+            for i in items]
+    assert len(keys) == len(set(keys)), "a fact is served twice"
+    assert any(i["indicator"].startswith("water.wsh_sanitation_od")
+               for i in items)
+    assert any(i["indicator"] == "health.wsh_water_basic.residenceareatype_totl"
+               for i in items)

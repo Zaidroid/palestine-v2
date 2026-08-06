@@ -8,5 +8,11 @@
 # growth is verified, not assumed.
 set -uo pipefail
 cd /home/zaid/palestine-v2
+
+# v2-native pre-fetches (Phase 4): sources v2 pulls for itself, before the
+# loader runs. Non-fatal by design — a failed fetch leaves yesterday's file
+# and the spec's expect floor still guards the load.
+.venv/bin/python -m ops.fetch_gho_wash || echo "gho-wash fetch failed — loading yesterday's file" >&2
+
 exec ./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all

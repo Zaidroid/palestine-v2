@@ -294,3 +294,37 @@ def test_westbank_missing_displaced_fields_shrink_the_fan():
     databank.t_conflict_westbank.prepass([rec], spec, Counter())
     rows = databank.t_conflict_westbank(rec, spec, PLACES, Counter())
     assert len(rows) == 5
+
+
+# ── water_gho: the water recovery's one genuinely-missing code ───────────────
+
+def _gho_rec(**over):
+    rec = {"IndicatorCode": "WSH_SANITATION_OD", "SpatialDim": "PSE",
+           "TimeDim": 2020, "Dim1": "RESIDENCEAREATYPE_RUR",
+           "Dim1Type": "RESIDENCEAREATYPE",
+           "NumericValue": None, "Value": "1"}
+    rec.update(over)
+    return rec
+
+
+def test_water_gho_parses_display_value_and_discloses_basis():
+    """Measured: GHO ships this series with NumericValue null and the value
+    in the display string — parsed, and the basis disclosed per row."""
+    spec = spec_for("water_gho")
+    [row] = databank.t_water_gho(_gho_rec(), spec, PLACES, Counter())
+    assert row.indicator == "water.wsh_sanitation_od.residenceareatype_rur"
+    assert row.value_num == 1.0 and row.unit == "percentage"
+    assert row.attrs["value_basis"] == "gho_display_value"
+    assert row.precision == "year" and row.occurred_at == "2020-01-01"
+    assert row.place_id is None                      # law 3 honest NULL
+    assert row.v1_stable_id == "gho-WSH_SANITATION_OD-2020-RESIDENCEAREATYPE_RUR"
+
+
+def test_water_gho_prefers_numeric_and_drops_unparseable():
+    spec = spec_for("water_gho")
+    [row] = databank.t_water_gho(_gho_rec(NumericValue=0.73), spec, PLACES,
+                                 Counter())
+    assert row.value_num == 0.73 and row.attrs["value_basis"] == "numeric"
+    out = databank.t_water_gho(_gho_rec(Value="No data"), spec, PLACES,
+                               Counter())
+    assert isinstance(out, Drop) and out.reason == "no_value"
