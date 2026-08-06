@@ -34,3 +34,4 @@ ops/dualrun/
 # those commands printed, it rotates on its own (12 kept), and nobody reviews
 # it in a diff. It arrived with the maintain feature and was uncovered.
 ops/maintain-logs/
+data/gap-radar.json

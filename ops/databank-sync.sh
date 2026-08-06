@@ -14,5 +14,13 @@ cd /home/zaid/palestine-v2
 # and the spec's expect floor still guards the load.
 .venv/bin/python -m ops.fetch_gho_wash || echo "gho-wash fetch failed — loading yesterday's file" >&2
 
-exec ./ops/with-heartbeat.sh databank 86400 21600 -- \
+./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all
+rc=$?
+
+# The gap radar re-measures after every sync: freshness on the data's own
+# dates, holes, era coverage, fetch-layer health → data/gap-radar.json
+# (served at /v2/databank/radar; Monday's maintenance run reads it).
+.venv/bin/python -m ops.gap_radar || echo "gap radar failed — yesterday's radar stands" >&2
+
+exit $rc

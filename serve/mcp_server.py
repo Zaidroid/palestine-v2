@@ -604,7 +604,33 @@ def databank(category: str | None = None, indicator: str | None = None,
     return {"answer": answer, **d}
 
 
+def data_gaps() -> dict:
+    """The gap radar: where the record thins — stalled series, dead
+    upstreams, timeline holes, failing supply lines — measured nightly on
+    the data's own dates, never on file timestamps."""
+    d = api("/v2/databank/radar")
+    c = d["counts"]
+    top = [g for g in d["gaps"] if g["severity"] >= 3][:5]
+    answer = (f"رادار الفجوات: من أصل {c['datasets']} سلسلة بيانات — "
+              f"{c['fresh']} حديثة، {c['late']} متأخرة، "
+              f"{c['stalled']} متوقفة، {c['dead_upstream']} مصدرها توقف. ")
+    if top:
+        answer += "أهم الفجوات: " + "؛ ".join(
+            f"{g['subject']} ({g['measure'][:60]})" for g in top)
+    else:
+        answer += "لا فجوات حرجة اليوم."
+    return {"answer": answer, "counts": c, "gaps": d["gaps"],
+            "measured_at": d["measured_at"]}
+
+
 TOOLS = {
+    "data_gaps": (data_gaps,
+                  "The gap radar: which datasets are stalled/late/dead, "
+                  "where the timeline has holes, which supply lines are "
+                  "failing — freshness measured on the data's own dates, "
+                  "re-measured after every nightly sync. Use for 'what data "
+                  "is missing/stale?' and before trusting a quiet series.",
+                  {"type": "object", "properties": {}}),
     "databank": (databank,
                  "Historical databank (186k+ rows, 19 categories: prisoners, "
                  "demolitions, food prices, funding, martyrs roster…) with "

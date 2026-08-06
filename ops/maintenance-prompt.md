@@ -39,6 +39,12 @@ lines first; it is the memory of every mistake already made once.
    ops.watchdog`, tail of `ops/measure-review.ndjson`,
    `ops/incident-rounds.ndjson`, `ops/backup-status.json`, and
    `git log --oneline -15`.
+   Then **read the gap radar** — `data/gap-radar.json` (or re-measure with
+   `.venv/bin/python -m ops.gap_radar`): every severity ≥ 3 gap either gets
+   chased to a root cause this run or restated in the digest with why not.
+   A dataset newly STALLED since last Monday is the June-9 failure class —
+   treat it as a fault, not a curiosity. Surface the top gaps in the digest
+   (Fawwaz also answers "أين الفجوات؟" from the same radar via `data_gaps`).
 2. **Chase every fault to a root cause** before touching anything. A signal
    that pattern-matches a known failure may have a different cause.
 3. **If the measure-review says a precision round is due** and the unscored,

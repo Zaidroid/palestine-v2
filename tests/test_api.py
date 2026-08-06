@@ -71,6 +71,7 @@ CASES: dict[str, list[dict]] = {
     "/v2/news/latest":          [{}, {"limit": 3}, {"area": "نابلس"}],
     "/v2/checkpoints/summary":  [{}],
     "/v2/databank/categories":  [{}],
+    "/v2/databank/radar":       [{}],
     # as_of exercises the sys_period path — the value it returns for July is
     # asserted exactly in test_databank_asof_serves_superseded_value.
     "/v2/databank/{category}":  [{"category": "prisoners"},
@@ -316,6 +317,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/fuel/summary": "fuel_summary",
         "/v2/databank/categories": "databank",
         "/v2/databank/{category}": "databank",
+        "/v2/databank/radar": "data_gaps",
     }
     missing = _routes() - MCP_EXEMPT - set(covered)
     assert not missing, f"REST routes with no MCP tool and no exemption: {sorted(missing)}"
@@ -471,3 +473,23 @@ def test_water_is_a_domain_one_fact_served_once() -> None:
                for i in items)
     assert any(i["indicator"] == "health.wsh_water_basic.residenceareatype_totl"
                for i in items)
+
+def test_gap_radar_measures_on_data_dates_not_mtimes() -> None:
+    """The June-9 lesson as a contract: the radar reports per-dataset
+    freshness from the data's own dates against a learned rhythm, declares
+    dead upstreams with evidence, and ranks open gaps."""
+    r = client.get("/v2/databank/radar")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["counts"]["datasets"] >= 25
+    by_status = {x["dataset"]: x for x in d["datasets"]}
+    dead = by_status["v1_aid_access_unrwa_aid_trucks"]
+    assert dead["status"] == "dead_upstream" and dead["dead_reason"]
+    for x in d["datasets"]:
+        assert x["status"] in ("fresh", "late", "stalled", "dead_upstream",
+                               "closed_corpus", "unmeasured")
+        if x["status"] in ("fresh", "late", "stalled"):
+            assert x["age_days"] is not None and x["allowance_days"] > 0
+    assert all(g["severity"] >= g2["severity"]
+               for g, g2 in zip(d["gaps"], d["gaps"][1:])), "gaps unranked"
+    assert "era_grid" in d and "1922–1947" in next(iter(d["era_grid"].values()))

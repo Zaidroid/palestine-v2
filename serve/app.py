@@ -18,6 +18,7 @@ Reads ONLY from the `state_serving` view, never `state_current`.
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -1692,6 +1693,20 @@ def databank_categories() -> dict:
          "attribution": r["attribution_text"]} for r in rows],
         "note": "occurred_precision governs how much a date claims; "
                 "year/month/unknown rows are periods or registers, not days."}
+
+
+@app.get("/v2/databank/radar", tags=["databank"])
+def databank_radar() -> dict:
+    """The gap radar: where the record thins — per-dataset freshness
+    measured on the data's OWN dates against each series' learned rhythm,
+    internal holes, era coverage, and fetch-layer health. Re-measured after
+    every nightly sync (ops/gap_radar.py); born from the June-9 lesson,
+    where file mtimes said 'fresh' through a 57-day freeze."""
+    p = Path(__file__).resolve().parent.parent / "data" / "gap-radar.json"
+    if not p.exists():
+        raise HTTPException(503, "radar has not been measured yet — "
+                                 "run ops.gap_radar")
+    return json.loads(p.read_text())
 
 
 @app.get("/v2/databank/{category}", tags=["databank"])
