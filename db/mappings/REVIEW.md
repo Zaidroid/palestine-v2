@@ -112,3 +112,33 @@ publishes the arithmetic per category.
   corridor 034 seeded as Zikim Crossing.
 - The standing 24-source verify-required list from 042 (includes everything
   above the pcbs/prisoners/historical categories serve).
+
+---
+
+## Addendum 2026-08-06 — conflict_westbank (reviewed same-day, author+reviewer noted)
+
+Zaid's directive: re-source OCHA casualties+demolitions from HDX (the Phase-4
+filing). **The premise failed measurement**: OCHA oPt's casualties and
+demolitions databases are NOT on HDX under any name, org, or topic query —
+the org's 33 datasets are boundaries/schools/barriers; the "21 CC-BY
+datasets" claim from the license research pass was true of the org but false
+of these two databases. Recorded here so nobody chases that ghost again.
+
+What fulfilled the intent instead: T4P's raw West Bank cumulative series
+(healed by the June-9 stall fix), spec conflict_westbank.yaml. Review calls:
+
+1. conflict.yaml's drop of the 977 unified WB rows STANDS — those rows are
+   genuinely value-free (v1's transform maps only the never-filled daily
+   fields). The raw series is a different input, not a reversal.
+2. fill-day law: 'un' days are observations even when values hold (a flash
+   update confirming a value is a claim); unchanged fill days are padding
+   (752 dropped, counted); moved fill days carry information and stay, with
+   attrs.flash_source disclosing the date's provenance.
+3. Revisions: first-write-wins per (day, field); measured 0 cumulative
+   decreases across 1,035 days; the next kept day self-corrects the series.
+4. Provenance for lawyer-before-ads: T4P compiles OCHA-origin WB figures;
+   we rely on T4P's Unlicense over their compilation, same posture as
+   gaza_moh-via-T4P. The commercial tier carries the rows on that basis.
+5. Single-reviewer note: drafted and reviewed by the same session (Opus
+   agents not warranted for one spec); the measured arithmetic (1,035 →
+   283 kept → 2,255 obs) is pinned in the spec and reproduced by the run.

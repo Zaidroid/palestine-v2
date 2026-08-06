@@ -57,7 +57,16 @@ def load_spec(category: str) -> dict:
     return spec
 
 
-def iter_v1_files(category: str):
+def iter_v1_files(category: str, spec: dict | None = None):
+    # Format v2 `input:` — a spec may read a v1 RAW tree instead of the
+    # unified category (first user: conflict_westbank, whose cumulative
+    # fields v1's unified transform destroys). Still strictly read-only.
+    if spec and spec.get("input"):
+        root = Path(spec["input"]["root"])
+        for f in sorted(root.glob(spec["input"]["glob"])):
+            if f.name not in ("index.json", "recent.json"):
+                yield f
+        return
     d = V1_UNIFIED / category
     if (d / "all-data.json").exists():
         yield d / "all-data.json"
@@ -824,8 +833,79 @@ def t_refugees(rec, spec, places, counts):
                 reported_at=fetched, attrs=attrs)]
 
 
+# ── conflict_westbank — T4P's RAW West Bank cumulative series ────────────────
+# v1's unified transform maps only the daily killed/injured fields (always 0
+# for WB — the very rows conflict.yaml drops) and destroys the cumulative
+# fields, so this spec reads the RAW quarterlies the healed nightly fetch
+# refreshes. Law 1 applied to T4P's padding: flash_source='fill' days repeat
+# yesterday's numbers on a date nothing was observed — the prepass keeps only
+# 'un' days (real OCHA flash updates, even when values held) and fill days
+# where a value actually moved.
+
+_WB_CUMS = [
+    ("killed_cum", "conflict.westbank_cumulative_killed", "persons"),
+    ("injured_cum", "conflict.westbank_cumulative_injured", "persons"),
+    ("killed_children_cum",
+     "conflict.westbank_cumulative_killed_children", "persons"),
+    ("injured_children_cum",
+     "conflict.westbank_cumulative_injured_children", "persons"),
+    ("settler_attacks_cum",
+     "conflict.westbank_cumulative_settler_attacks", "attacks"),
+    ("displaced_households_cum",
+     "conflict.westbank_cumulative_displaced_households", "households"),
+    ("displaced_persons_cum",
+     "conflict.westbank_cumulative_displaced_persons", "persons"),
+    ("displaced_children_cum",
+     "conflict.westbank_cumulative_displaced_children", "persons"),
+]
+
+
+def _wb_day(rec):
+    return str(rec.get("report_date") or rec.get("date") or "")[:10]
+
+
+def t_conflict_westbank(rec, spec, places, counts):
+    ds = "v1_conflict_t4p_westbank"
+    day = _wb_day(rec)
+    if not day:
+        return Drop("missing_date")
+    if day not in t_conflict_westbank.keep:
+        return Drop("fill_padding")
+    wb = places["region"]["West Bank"]
+    attrs = {"cumulative": True, "flash_source": rec.get("flash_source")}
+    rows = []
+    for field_name, indicator, unit in _WB_CUMS:
+        v = rec.get(field_name)
+        if v is None:
+            continue
+        rows.append(Row(ds, indicator, day, "day",
+                        f"t4praw-wb-{day}:{field_name}", value_num=v,
+                        unit=unit, place_id=wb, attrs=attrs))
+    return rows or Drop("no_metrics")
+
+
+def _wb_prepass(all_recs, spec, counts):
+    """Chronological change-detection over the whole series before any
+    per-record transform: the keep-set is every 'un' day plus every fill
+    day whose value tuple moved; everything else is carried-forward
+    padding, dropped and counted."""
+    recs = sorted((r for r in all_recs if isinstance(r, dict) and _wb_day(r)),
+                  key=_wb_day)
+    keep, prev = set(), None
+    for r in recs:
+        tup = tuple(r.get(k) for k, _, _ in _WB_CUMS)
+        if r.get("flash_source") == "un" or prev is None or tup != prev:
+            keep.add(_wb_day(r))
+        prev = tup
+    t_conflict_westbank.keep = keep
+
+
+t_conflict_westbank.prepass = _wb_prepass
+
+
 TRANSFORMERS = {
     "conflict": t_conflict,
+    "conflict_westbank": t_conflict_westbank,
     "historical": t_historical,
     "refugees": t_refugees,
     "prisoners": t_prisoners,
@@ -860,6 +940,10 @@ def ensure_datasets(conn, spec, category) -> dict:
             if row is None:
                 raise SpecRefused(f"dataset {ds['key']}: source {ds['source']!r}"
                                   " not in `source` — run migrations first")
+            # Format v2 `v1_category:` — a spec whose file name is not the
+            # serving category (conflict_westbank → conflict) declares which
+            # category views its datasets join.
+            cat_label = spec.get("v1_category", category)
             cur.execute("""
                 INSERT INTO dataset (key, name, source_id, v1_category,
                                      cadence, active)
@@ -867,7 +951,7 @@ def ensure_datasets(conn, spec, category) -> dict:
                 ON CONFLICT (key) DO UPDATE SET v1_category = EXCLUDED.v1_category
                 RETURNING dataset_id""",
                 (ds["key"], f"v1 {category} — {ds['source']}",
-                 row[0], category))
+                 row[0], cat_label))
             out[ds["key"]] = cur.fetchone()[0]
     return out
 
@@ -927,10 +1011,10 @@ def run(category: str, dry_run: bool = False) -> dict:
             # cross-record state (e.g. economic's contradictory-duplicate
             # detection) needs the whole category before the first transform
             all_recs = []
-            for f in iter_v1_files(category):
+            for f in iter_v1_files(category, spec):
                 all_recs.extend(_records(json.loads(f.read_bytes())))
             transformer.prepass(all_recs, spec, counts)
-        for f in iter_v1_files(category):
+        for f in iter_v1_files(category, spec):
             payload = f.read_bytes()
             refs[f] = bronze.put(f"v1_{category}", payload,
                                  url=f"file://{f}").ref

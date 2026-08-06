@@ -1,0 +1,86 @@
+# conflict_westbank — T4P's West Bank cumulative casualty/displacement series,
+# read from v1's RAW tech4palestine/westbank quarterlies (Format v2 `input:`).
+#
+# WHY THIS SPEC EXISTS (2026-08-06, the day after the June-9 stall fix):
+# conflict.yaml drops 977 unified WB rows as "all-zero placeholders" — that
+# drop is CORRECT and stays: v1's unified transform maps only the daily
+# killed/injured fields, which T4P never fills for the West Bank (measured:
+# 0/1,035 nonzero), and destroys the cumulative fields where the real data
+# lives. The healed raw tree carries a rich, current, PUBLIC-DOMAIN series
+# v2 was serving nothing of: killed 3 → 1,108, injured 23 → 11,399, settler
+# attacks 3 → 4,401, children and displacement breakdowns, daily grain,
+# Oct 7 2023 → today.
+#
+# Sought first as OCHA-on-HDX per the Phase-4 filing — MEASURED DEAD: OCHA
+# oPt's casualties and demolitions databases are NOT on HDX under any name,
+# org, or topic (the org's 33 datasets are boundaries/schools/barriers).
+# T4P's compilation (Unlicense, verified 050) is the clean route. Provenance
+# nuance ON THE RECORD for lawyer-before-ads: T4P's WB figures compile
+# OCHA-origin protection-of-civilians data; we rely on T4P's public-domain
+# grant over their compilation, exactly as we do for gaza_moh-via-T4P.
+category: conflict_westbank
+v1_category: conflict            # datasets join the conflict serving views
+shape: observation
+status: reviewed
+records_measured: 1035           # 2026-08-06, quarterlies 2023-Q4 → 2026-Q3
+
+input:                           # Format v2: RAW tree, not unified (read-only)
+  root: /opt/stacks/palestine/public/data/tech4palestine/westbank
+  glob: "2*.json"                # quarter files only; index/recent excluded
+
+datasets:                        # law 5: one per (category, source)
+  - key: v1_conflict_t4p_westbank
+    source: tech4palestine       # Unlicense — public domain (050, verified)
+
+# Law 1 (no date trusted twice), applied to T4P's padding. Every record
+# carries flash_source: 'un' = a real OCHA flash update published that day
+# (254 measured); 'fill' = T4P carried yesterday's numbers forward (781
+# measured, of which 754 change nothing). The keep-set is:
+#   'un' days                      254   real observations, even when values hold
+#   fill days whose values MOVED    29   information arrived; date is T4P's,
+#                                        disclosed via attrs.flash_source
+#   = kept records                 283   → 2,255 observations (283×8 − 9
+#                                        displaced fields missing on the first
+#                                        3 days, 2023-10-07..09)
+# Revisions: killed_cum is monotonic across all 1,035 days (0 decreases
+# measured). Idempotency is first-write-wins per (day, field) via synthetic
+# stable ids 't4praw-wb-<date>:<field>' (044); a past-day revision is not
+# re-captured, but the next kept day's cumulative carries the correction —
+# supersedence for this series rides with the T2.4 machinery if ever needed.
+
+indicators:                      # all cumulative-to-date, region-grade, day
+  - conflict.westbank_cumulative_killed              # persons
+  - conflict.westbank_cumulative_injured             # persons
+  - conflict.westbank_cumulative_killed_children     # persons
+  - conflict.westbank_cumulative_injured_children    # persons
+  - conflict.westbank_cumulative_settler_attacks     # attacks
+  - conflict.westbank_cumulative_displaced_households  # households
+  - conflict.westbank_cumulative_displaced_persons   # persons
+  - conflict.westbank_cumulative_displaced_children  # persons
+
+place:
+  # Every row is the West Bank region aggregate — the region place row IS the
+  # honest resolution (T2.0 law), so no located floor applies here.
+  fixed: "West Bank"
+
+drop:
+  - reason: fill_padding         # measured 752 at spec time; grows ~daily
+  - reason: missing_date         # defensive; measured 0
+  - reason: no_metrics           # defensive; measured 0
+
+expect:
+  min_records: 1000              # 1,035 at spec time, grows daily; shrinkage
+                                 #   below this means the raw tree broke again
+  max_observations: 4000         # dedupe tripwire: 2,255 at spec time; the
+                                 #   keep-set grows ~8-10 rows per flash day,
+                                 #   so ~2 years of headroom. If this trips
+                                 #   sooner, fill days are flooding in —
+                                 #   investigate, then re-measure and raise.
+
+notes: |
+  Freshness truth: the series' last INFORMATION day is the last 'un'/moved
+  day (2026-07-27 at spec time), not the last fill date — consumers should
+  read max(occurred_at) of kept rows, which this spec makes the only rows.
+  Daily deltas are derivable in SQL (value - lag(value)); we serve the
+  cumulative exactly as published and never synthesise a daily series T4P
+  does not publish (conflict.yaml's ~35-million-dead lesson).

@@ -235,3 +235,62 @@ def test_nakba_places_never_capture_live_resolution():
         # and the live resolver's name path structurally excludes them
         from resolve import geo
         assert "AND servable" in geo.NAME_SQL
+
+
+# ── conflict_westbank: the raw WB cumulative series (Phase 4 brick 1) ────────
+
+def _wb_rec(day, fs="un", **over):
+    rec = {
+        "report_date": day, "flash_source": fs,
+        "killed_cum": 100, "injured_cum": 900,
+        "killed_children_cum": 20, "injured_children_cum": 150,
+        "settler_attacks_cum": 400,
+        "displaced_households_cum": 50, "displaced_persons_cum": 300,
+        "displaced_children_cum": 120,
+    }
+    rec.update(over)
+    return rec
+
+
+def test_westbank_fill_padding_dropped_moved_and_un_kept():
+    """Law 1 on T4P's padding: a fill day repeating yesterday's numbers is
+    not an observation; an 'un' day is one even when values hold; a fill
+    day whose value moved carries information and stays."""
+    spec = spec_for("conflict_westbank")
+    recs = [
+        _wb_rec("2026-01-01", "un"),
+        _wb_rec("2026-01-02", "fill"),                    # unchanged → padding
+        _wb_rec("2026-01-03", "fill", killed_cum=101),    # moved → kept
+        _wb_rec("2026-01-04", "un", killed_cum=101),      # un, unchanged → kept
+    ]
+    databank.t_conflict_westbank.prepass(recs, spec, Counter())
+    out = [databank.t_conflict_westbank(r, spec, PLACES, Counter())
+           for r in recs]
+    assert isinstance(out[1], Drop) and out[1].reason == "fill_padding"
+    assert all(isinstance(o, list) for o in (out[0], out[2], out[3]))
+
+
+def test_westbank_fan_is_region_grade_day_precision_suffixed_ids():
+    spec = spec_for("conflict_westbank")
+    rec = _wb_rec("2026-01-01")
+    databank.t_conflict_westbank.prepass([rec], spec, Counter())
+    rows = databank.t_conflict_westbank(rec, spec, PLACES, Counter())
+    assert len(rows) == 8
+    assert len({r.v1_stable_id for r in rows}) == 8   # 044-unique per field
+    assert all(r.place_id == 2 and r.precision == "day" for r in rows)
+    assert all(r.attrs["cumulative"] and r.attrs["flash_source"] == "un"
+               for r in rows)
+    by_ind = {r.indicator: r for r in rows}
+    assert by_ind["conflict.westbank_cumulative_killed"].value_num == 100
+    assert by_ind["conflict.westbank_cumulative_settler_attacks"].unit == \
+        "attacks"
+
+
+def test_westbank_missing_displaced_fields_shrink_the_fan():
+    # the first three days of the real series predate displacement tracking
+    spec = spec_for("conflict_westbank")
+    rec = _wb_rec("2023-10-07", displaced_households_cum=None,
+                  displaced_persons_cum=None, displaced_children_cum=None)
+    databank.t_conflict_westbank.prepass([rec], spec, Counter())
+    rows = databank.t_conflict_westbank(rec, spec, PLACES, Counter())
+    assert len(rows) == 5

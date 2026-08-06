@@ -77,6 +77,9 @@ CASES: dict[str, list[dict]] = {
                                  {"category": "prisoners",
                                   "indicator": "prisoners.child",
                                   "as_of": "2026-07-15"},
+                                 {"category": "conflict",
+                                  "indicator":
+                                  "conflict.westbank_cumulative_killed"},
                                  {"category": "no_such_category"}],
     "/v2/export/checkpoints.csv":     [{}],
     "/v2/export/checkpoints.geojson": [{}],
@@ -430,3 +433,23 @@ def test_martyrs_serves_aggregates_by_default_names_by_intent() -> None:
                            "limit": 2})
     names = [i["value_text"] for i in r.json()["items"]]
     assert all(names), names                        # real names, deliberately
+
+def test_westbank_cumulative_series_is_served_and_sellable() -> None:
+    """Phase 4 brick 1: the WB series v1's unified transform destroys is
+    served from the raw tree — region-grade, day precision, public domain."""
+    r = client.get("/v2/databank/conflict",
+                   params={"indicator": "conflict.westbank_cumulative_killed"})
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert items, "WB cumulative series missing from serving surface"
+    # the indicator param is a PREFIX filter, so _killed also returns
+    # _killed_children — assert on the exact series
+    killed = [i for i in items
+              if i["indicator"] == "conflict.westbank_cumulative_killed"]
+    assert killed, "exact killed series absent"
+    latest = max(killed, key=lambda i: i["occurred_at"])
+    assert latest["value_num"] >= 1108          # monotonic cumulative
+    # attribution is response-level (the set of source credits), not per row
+    assert any("Tech4Palestine" in a for a in r.json()["attribution"])
+    assert all(i["attrs"].get("flash_source") in ("un", "fill")
+               for i in items[:20])

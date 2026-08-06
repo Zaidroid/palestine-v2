@@ -141,3 +141,16 @@ all of them; a spec using one the loader lacks must FAIL, not skip:
   against the routed dataset; stock series anchor at the START of their
   labeled period with `attrs.reference = 'period-end stock'`; canonical unit
   normalization keeps the original in `attrs.unit_raw`.
+
+Extensions adopted 2026-08-06 (first user: conflict_westbank, the raw WB
+cumulative series v1's unified transform destroys):
+
+- `input: {root, glob}` — a spec may read a v1 RAW tree instead of the
+  unified category directory (still strictly read-only; index/recent files
+  excluded). Records without v1 stable_ids use synthetic natural keys with a
+  distinguishing prefix (`t4praw-wb-<date>:<field>`) so 044 idempotency
+  holds and replay machinery — which keys on real v1 hash generations —
+  never confuses them for v1 ids.
+- `v1_category:` — when the spec's file name is not the serving category
+  (conflict_westbank → conflict), this declares which category views its
+  datasets join. Absent, the file name is the category, as before.
