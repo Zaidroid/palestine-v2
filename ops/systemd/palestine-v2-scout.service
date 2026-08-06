@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — weekly source scout: sweep catalogs for gap-filling candidates
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/with-heartbeat.sh scout 604800 259200 -- /home/zaid/palestine-v2/.venv/bin/python -m ops.source_scout
+TimeoutStartSec=1800

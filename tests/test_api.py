@@ -72,6 +72,7 @@ CASES: dict[str, list[dict]] = {
     "/v2/checkpoints/summary":  [{}],
     "/v2/databank/categories":  [{}],
     "/v2/databank/radar":       [{}],
+    "/v2/databank/scout":       [{}],
     # as_of exercises the sys_period path — the value it returns for July is
     # asserted exactly in test_databank_asof_serves_superseded_value.
     "/v2/databank/{category}":  [{"category": "prisoners"},
@@ -318,6 +319,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/databank/categories": "databank",
         "/v2/databank/{category}": "databank",
         "/v2/databank/radar": "data_gaps",
+        "/v2/databank/scout": "data_gaps",
     }
     missing = _routes() - MCP_EXEMPT - set(covered)
     assert not missing, f"REST routes with no MCP tool and no exemption: {sorted(missing)}"
@@ -493,3 +495,18 @@ def test_gap_radar_measures_on_data_dates_not_mtimes() -> None:
     assert all(g["severity"] >= g2["severity"]
                for g, g2 in zip(d["gaps"], d["gaps"][1:])), "gaps unranked"
     assert "era_grid" in d and "1922–1947" in next(iter(d["era_grid"].values()))
+
+def test_scout_discovers_but_never_ingests() -> None:
+    """The source scout surfaces scored, never-seen-flagged candidates from
+    catalog sweeps — and its contract says discovery only: the reviewed-spec
+    door is the only way into the databank."""
+    r = client.get("/v2/databank/scout")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["packages_in_catalog"] > 100          # HDX carries 250+ for PSE
+    assert d["candidates"], "sweep produced no candidates at all"
+    top = d["candidates"][0]
+    assert {"id", "title", "org", "url", "license", "score",
+            "new", "why"} <= set(top)
+    assert all(c["score"] >= 5 for c in d["candidates"])
+    assert "reviewed spec" in d["verdicts_note"]

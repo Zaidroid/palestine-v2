@@ -154,6 +154,7 @@ EXPECTED_JOBS = {
     "measure-review":    (604800, 86400),
     "maintain":          (604800, 172800),
     "databank":          (86400, 21600),
+    "scout":             (604800, 259200),
 }
 
 # Which collector's heartbeat covers which state kinds. A feed is only judged

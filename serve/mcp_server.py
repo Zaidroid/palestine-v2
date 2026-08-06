@@ -619,8 +619,20 @@ def data_gaps() -> dict:
             f"{g['subject']} ({g['measure'][:60]})" for g in top)
     else:
         answer += "لا فجوات حرجة اليوم."
+    scout = {}
+    try:
+        s = api("/v2/databank/scout")
+        scout = {"swept_at": s["swept_at"],
+                 "top_candidates": s["candidates"][:8]}
+        if s["candidates"]:
+            answer += (f" الكشّاف وجد {len(s['candidates'])} مصدراً مرشحاً "
+                       f"لسدّ الفجوات، أبرزها: "
+                       + "؛ ".join(x["title"][:50]
+                                   for x in s["candidates"][:3]) + ".")
+    except Exception:
+        pass                              # radar answers even if scout hasn't swept
     return {"answer": answer, "counts": c, "gaps": d["gaps"],
-            "measured_at": d["measured_at"]}
+            "measured_at": d["measured_at"], "scout": scout}
 
 
 TOOLS = {

@@ -35,3 +35,5 @@ ops/dualrun/
 # it in a diff. It arrived with the maintain feature and was uncovered.
 ops/maintain-logs/
 data/gap-radar.json
+data/source-scout.json
+data/scout-state.json

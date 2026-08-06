@@ -1,0 +1,84 @@
+# The scout's reviewed memory — every verdict the project has already earned,
+# so discovery never re-proposes a settled question. ops/source_scout.py
+# reads this before surfacing anything; the weekly Opus maintenance run and
+# Zaid are the only writers. A candidate leaves this file in exactly one of
+# three ways: adopted (a reviewed spec exists), rejected (with the reason on
+# the record), or debunked (measured not to exist / not to be what it claims).
+
+adopted:
+  # sources with reviewed specs and rows in the databank — never re-pitch
+  tech4palestine: Unlicense (public domain, verified 2026-08-06); Gaza+WB
+    casualties, roster, infra-until-2025-10
+  ucdp: CC-BY-IGO; GED annual through 2024
+  ocha_casualties: UN ToU personal-use-only — held, quarantined from
+    commercial, annual
+  ocha_demolitions: same terms; cumulative tables
+  wfp: food prices, monthly
+  unfts: funding flows, daily
+  imf: annual macro
+  worldbank: WDI annual
+  who: GHO, 184 indicator codes incl. JMP WASH access (CC-BY-NC-SA-3.0-IGO)
+  who_gho_wash: v2-native GHO fetch (open-defecation + expansion point)
+  pcbs: CC-BY-4.0 verified 2026-08-06; aggregates only per Statistics Law
+  pcbs_direct: same
+  unrwa: aid trucks — DEAD upstream 2025-01-16
+  unhcr: refugee stocks, annual
+  idmc: displacement events (event-driven series)
+  ioda: connectivity outages (CC-BY-NC)
+  ooni: censorship measurements (stalled in v1 — fetcher never scheduled;
+    revival is a one-line v1 fix awaiting Zaid)
+  palopenmaps: ODbL-1.0 — share-alike obligations on derived databases
+  addameer: monthly detention stats (no license found; org at addameer.ps)
+  hamoked: detention stats (site fetch broken in v1)
+  peace_now: settlements annual (no license statement found)
+  unosat: Gaza damage assessments through 2025-10
+  goodshepherd: Liberation License — revocable; held for serving, never
+    commercial
+  btselem: bespoke license; bulk use requires express written consent;
+    exposure kept to 6 event rows
+  gaza_moh: no license statement; consumed via T4P's public-domain
+    compilation (tier-1 live telegram feed is separate machinery)
+  acled: held raw via v1; ToU restrictive — serving posture unreviewed
+  insecurity_insight: CC-BY-SA
+  awsd: aid worker security DB
+  fao_diem: FAO DIEM monitoring
+  healthsites: global healthsites extract
+  hdx_hapi: baseline HAPI pull
+  reliefweb: report metadata only
+
+debunked:
+  ocha-hdx-mirror:
+    measured: 2026-08-06
+    finding: OCHA oPt's casualties and demolitions databases are NOT on HDX
+      under any name, org, or topic query. The org's 33 datasets are
+      boundaries/schools/barriers. Do not send anyone to look again;
+      re-check only if OCHA announces an HDX publication.
+  gho-wash-burden-pse:
+    measured: 2026-08-06
+    finding: WHO publishes NO WASH disease-burden estimates for PSE
+      (WSH_1/3/10/20/30 series all empty at the GHO API).
+
+rejected:
+  goodshepherd-commercial:
+    date: 2026-08-06
+    reason: license is purpose-conditional AND revocable — can never anchor
+      commercial serving
+  btselem-bulk:
+    date: 2026-08-06
+    reason: bulk ingestion is "expansive use" requiring express written
+      consent; revisit only by asking B'Tselem in writing
+
+dead_upstream:
+  unrwa-aid-trucks: {date: 2025-01-16, note: operational ban}
+  t4p-infrastructure: {date: 2025-10-05, note: verified against live API
+      2026-08-06; UNOSAT + unified infra carry the category}
+
+# Org-level assessment watermarks: the mechanical sweep surfaces only
+# datasets CREATED or MODIFIED after these dates for orgs already assessed.
+assessed_orgs:
+  ocha-opt: 2026-08-06        # all 33 datasets read during the HDX-mirror hunt
+
+# Candidates under review land here (written by the maintenance run or by
+# hand after reading a scout report). Empty at birth — the first deep sweep
+# (4 Opus scouts, 2026-08-06) will populate it after review.
+candidates: {}

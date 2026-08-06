@@ -45,6 +45,13 @@ lines first; it is the memory of every mistake already made once.
    A dataset newly STALLED since last Monday is the June-9 failure class —
    treat it as a fault, not a curiosity. Surface the top gaps in the digest
    (Fawwaz also answers "أين الفجوات؟" from the same radar via `data_gaps`).
+   Then **read the source scout** — `data/source-scout.json` (swept Sunday
+   04:30; `db/scout/verdicts.yaml` is its reviewed memory). For each
+   `new: true` candidate scoring ≥ 7: read its license AT THE SOURCE, and
+   either file it into verdicts.yaml `candidates:` with your reading, or
+   record why it's noise. Candidates worth a spec go in the digest as
+   [ZAID]-or-build items. NEVER ingest from here directly — a reviewed
+   spec in db/mappings/ is the only door into the databank.
 2. **Chase every fault to a root cause** before touching anything. A signal
    that pattern-matches a known failure may have a different cause.
 3. **If the measure-review says a precision round is due** and the unscored,

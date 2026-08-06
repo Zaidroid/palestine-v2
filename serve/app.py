@@ -1709,6 +1709,19 @@ def databank_radar() -> dict:
     return json.loads(p.read_text())
 
 
+@app.get("/v2/databank/scout", tags=["databank"])
+def databank_scout() -> dict:
+    """The source scout: what the open-data world currently offers to fill
+    the radar's gaps — swept weekly from structured catalogs, scored against
+    open gaps, with never-seen-before flagged. Discovery only: nothing here
+    enters the databank without a reviewed spec."""
+    p = Path(__file__).resolve().parent.parent / "data" / "source-scout.json"
+    if not p.exists():
+        raise HTTPException(503, "scout has not swept yet — "
+                                 "run ops.source_scout")
+    return json.loads(p.read_text())
+
+
 @app.get("/v2/databank/{category}", tags=["databank"])
 def databank_category(category: str, indicator: str | None = None,
                       as_of: str | None = None, memorial: bool = False,
