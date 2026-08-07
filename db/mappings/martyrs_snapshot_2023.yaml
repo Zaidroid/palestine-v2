@@ -168,3 +168,11 @@ notes: |
   'Rafat Amir Hamdan Abed, male, age 50' — name+sex+age re-concatenated,
   carrying zero information not already in the structured fields. It stays in
   bronze.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: [indicator, occurred_at]
+  attrs: [t4p_id]

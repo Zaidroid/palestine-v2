@@ -301,3 +301,11 @@ notes: |
   UNITS ARE UNIFORM AND, FOR ONCE, CORRECT: metrics.unit == 'persons' on
   2,517/2,517, and every number in the file really is a headcount — census
   populations, death tolls, deportees.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: [indicator, occurred_at]
+  attrs: [name]

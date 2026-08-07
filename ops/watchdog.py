@@ -68,7 +68,7 @@ import psycopg                                          # noqa: E402
 from psycopg.rows import dict_row                       # noqa: E402
 
 from ops.alert import open_alerts, raise_alert, resolve  # noqa: E402
-from resolve.db import dsn                              # noqa: E402
+from resolve.db import dsn, env_value                   # noqa: E402
 
 # Cadence is measured over three weeks ending six hours ago; the last six hours
 # are what gets judged. Long enough that a weekly rhythm is visible, short
@@ -522,7 +522,7 @@ def routing_check() -> list[dict]:
     shell that sourced .env got the stranger. That is precisely the kind of
     divergence a monitor is supposed to close.
     """
-    url = os.environ.get("VALHALLA_URL", "http://172.22.0.2:8002")
+    url = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
     row = {"check": "dep", "name": "valhalla", "age_minutes": None,
            "threshold_minutes": None}
     try:

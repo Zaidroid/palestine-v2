@@ -181,3 +181,21 @@ notes: |
         for the per-incident OCHA feed if T3 ever ingests it.
   Choice (b) is cleaner but changes the T2 category→table map, so it is not a
   decision this spec can make alone.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  # SPEC DEFECT, found 2026-08-07 and deliberately contained: locality rows
+  # do NOT preserve the locality NAME in attrs — only gazetteer_key (often
+  # NULL) and governorate — so identity cannot separate two localities in one
+  # governorate. Adding value_num would separate them but would then treat a
+  # REVISED count as a new fact (measured: 271 phantom rows). The value-free
+  # key is chosen: it holds this dataset at its complete, correct 904 rows.
+  # That is safe precisely because OCHA's upstream is frozen (fetcher dead
+  # since June, 217d stale) — nothing new can legitimately arrive. FIX FIRST
+  # if the fetcher is ever revived: preserve the locality name in attrs, then
+  # key on it and let revisions supersede.
+  fields: [indicator, occurred_at]
+  attrs: [gazetteer_key, governorate, coverage_area, demolition_dimension]

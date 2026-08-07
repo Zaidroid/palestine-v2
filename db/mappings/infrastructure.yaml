@@ -186,3 +186,11 @@ notes: |
   metadata.json for this category claims total_records 0 while all-data.json
   holds 3,537 — the same class of lie as the records:null lesson. The expect{}
   floor above comes from the measured record count, never from metadata.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: [indicator]
+  attrs: [locality_name, event_type]

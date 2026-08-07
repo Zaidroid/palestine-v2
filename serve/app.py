@@ -33,9 +33,11 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 
-from resolve.db import dsn
+from resolve.db import dsn, env_value
 
-VALHALLA = os.environ.get("VALHALLA_URL", "http://172.22.0.2:8002")
+# .env is the source of truth (ops/sync-valhalla-ip.sh keeps it current);
+# no hardcoded IP fallback — a wrong default is worse than a loud miss.
+VALHALLA = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
 FUEL_KINDS = {"diesel": "fuel_diesel", "gasoline": "fuel_gasoline",
               "benzine": "fuel_gasoline", "gas": "cooking_gas"}
 

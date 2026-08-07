@@ -1,0 +1,9 @@
+[Unit]
+Description=Palestine v2 — keep VALHALLA_URL pointing at the routing container
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/sync-valhalla-ip.sh
+TimeoutStartSec=120

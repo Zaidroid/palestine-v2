@@ -124,3 +124,11 @@ notes: |
   README gains the key and T2.3 implements the ladder, or these three specs
   collapse to `strategy: pcode` with min_resolved_pct 0.999 and the residue
   reported as unresolved under law 4. Needs a decision before reviewed.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: []
+  attrs: [school_id]

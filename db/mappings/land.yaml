@@ -150,3 +150,11 @@ notes: |
   counts — it claims 699 records (actual 697) and names its sources as
   "OCHA, B'Tselem, Peace Now", but B'Tselem appears in 0 records and the third
   source is Good Shepherd Collective. Trust the records.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: [indicator]
+  attrs: [land_name, checkpoint_type]

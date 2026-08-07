@@ -18,14 +18,31 @@ records_measured: 40559
 source_routing:
   by_name:
     "WHO": who
-  default: null            # every one of the 40,559 records carries exactly
-                           #   one source named "WHO" (full census of all 51
-                           #   partitions) — see the manifest reconciliation
-                           #   in the notes. An unknown name FAILS the run.
+    # Added 2026-08-07, closing the filed "health snapshot rescue": v1's
+    # rebuild began emitting 184 Gaza-MoH and 26 HDX rows into health. The
+    # run FAILED on them (unroutable), exactly as law 5 requires — an
+    # unknown source must never be silently folded into WHO's dataset and
+    # inherit WHO's licence. They get their own datasets and their own
+    # (quarantined) licences.
+    "Gaza Ministry of Health": gaza_moh
+    "HDX": hdx
+  default: null            # an unknown name still FAILS the run.
+  # ...but routing alone is not migration: MEASURED 2026-08-07, these 210
+  # records carry NO indicator_code (WHO's rows all do), so they cannot form
+  # an observation under this spec's indicator template. They are DROPPED
+  # with a counted reason until they get a spec of their own — the same
+  # verdict water.yaml records, at row scale. Filed as the health snapshot
+  # rescue; the datasets below exist so that spec has somewhere to land.
 
 datasets:
   - key: v1_health_who
     source: who
+  - key: v1_health_gaza_moh
+    source: gaza_moh       # no-license-found (050) — served with credit,
+                           #   never in the commercial tier
+  - key: v1_health_hdx
+    source: hdx            # 'varies' — quarantined until the exact HDX
+                           #   dataset behind these 26 rows is identified
 
 indicator:
   template: "health.{indicator_code}.{dimension.code}"
@@ -166,3 +183,7 @@ notes: |
   value_low / value_high are WHO's uncertainty bounds, present on 83.5% /
   84.2% of rows; they pass through to attrs rather than becoming their own
   observations.
+
+drop:
+  - reason: no_indicator_identity   # measured 2026-08-07: 210 rows (184 Gaza
+                                    #   MoH + 26 HDX) with no indicator_code

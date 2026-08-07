@@ -48,9 +48,9 @@ from dataclasses import asdict, dataclass, field
 
 import httpx
 
-from resolve.db import connect
+from resolve.db import connect, env_value
 
-VALHALLA = os.environ.get("VALHALLA_URL", "http://172.22.0.2:8002")
+VALHALLA = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
 
 # How near a checkpoint must be to count as "on this route".
 #

@@ -27,6 +27,14 @@ def _env() -> dict[str, str]:
     return env
 
 
+def env_value(key: str, default: str | None = None) -> str | None:
+    """Read a setting the way the DB layer does: .env first, then the real
+    environment. Added 2026-08-07 after /v2/route ran eleven hours on a
+    hardcoded fallback IP because serve/app.py consulted os.environ only,
+    and .env — where VALHALLA_URL actually lives — was never read."""
+    return os.environ.get(key) or _env().get(key) or default
+
+
 def dsn() -> str:
     e = _env()
     db = e.get("PGDATABASE", GUARD_DB)

@@ -507,6 +507,12 @@ def t_health(rec, spec, places, counts):
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
+    if not rec.get("indicator_code"):
+        # measured 2026-08-07: v1's rebuild began emitting 184 Gaza-MoH and
+        # 26 HDX rows into health with no indicator_code. An observation is
+        # (indicator, value, unit, time, place); these have no indicator, so
+        # they are dropped and counted — never guessed into WHO's namespace.
+        return Drop("no_indicator_identity")
     dim = (rec.get("dimension") or {}).get("code")
     indicator = f"health.{slug(rec['indicator_code'])}" + \
                 (f".{slug(dim)}" if dim else "")                  # null-brace
@@ -670,13 +676,20 @@ def t_conflict(rec, spec, places, counts):
     if sources and sources[0].get("name") == "Good Shepherd":
         return Drop("v1_placeholder_no_payload")
 
-    # strictest-license-wins assertion for multi-source rows (REVIEW.md 7)
+    # strictest-license-wins assertion for multi-source rows (REVIEW.md 7),
+    # skipping declared provenance-only credits — a citation is not a
+    # licence conflict (spec `provenance_only`, added 2026-08-07)
     if len(sources) > 1:
         by_name = spec["source_routing"]["by_name"]
+        prov_only = set(spec.get("provenance_only") or [])
         routed_commercial = places["_commercial"].get(by_name.get(
             sources[0].get("name")))
         for s in sources[1:]:
-            other = places["_commercial"].get(by_name.get(s.get("name")))
+            key = by_name.get(s.get("name"))
+            if key in prov_only:
+                counts["provenance_credit"] += 1
+                continue
+            other = places["_commercial"].get(key)
             if routed_commercial is True and other is False:
                 counts["license_order_violation"] += 1
 
@@ -1032,6 +1045,41 @@ def run(category: str, dry_run: bool = False) -> dict:
     refs: dict[Path, str] = {}
     seen_stable: set[str] = set()
 
+    # Format v2 `identity:` — cross-run natural-key idempotency for datasets
+    # whose v1 stable_ids are unstable (2026-08-07: v1 re-hashed after the
+    # T4P heal and every floor-less register re-inserted its whole
+    # generation). 044's unique index cannot see this: new hash = new row.
+    # Declared identity is what the row IS, independent of v1's hashing.
+    identity_spec = spec.get("identity")
+    known_identities: set[str] = set()
+
+    # Events need the same protection as observations: 046's index keys on
+    # v1_stable_id, so a re-hashed upstream re-inserts the whole history
+    # (measured 2026-08-07: conflict re-added 8,282 events). An event's
+    # natural identity is what happened, where, when, at what scale.
+    known_events: set[str] = set()
+
+    def _event_identity(e) -> str:
+        return "|".join([e.event_type, str(e.occurred_at)[:10],
+                         str(e.place_id), str(e.lat), str(e.lon),
+                         json.dumps(e.metrics, sort_keys=True)])
+
+    def _identity_of(r) -> str | None:
+        if isinstance(r, EventRow):
+            return None                 # handled by _event_identity below
+        if not identity_spec:
+            return None
+        parts = []
+        for f in identity_spec.get("fields", []):
+            v = {"indicator": r.indicator,
+                 "occurred_at": str(r.occurred_at)[:10],
+                 "place_id": r.place_id,
+                 "value_num": r.value_num}.get(f)
+            parts.append("" if v is None else str(v))
+        for a in identity_spec.get("attrs", []):
+            parts.append(str(r.attrs.get(a, "")))
+        return "|".join(parts)
+
     event_rows: list[EventRow] = []
     with connect() as conn:
         places = load_places(conn)
@@ -1043,6 +1091,43 @@ def run(category: str, dry_run: bool = False) -> dict:
             places["_v1key"] = dict(cur.fetchall())
             cur.execute("SELECT key, commercial_use FROM source")
             places["_commercial"] = dict(cur.fetchall())
+            if identity_spec:
+                # what this dataset already holds, by declared identity
+                fields = identity_spec.get("fields", [])
+                attrs_k = identity_spec.get("attrs", [])
+                exprs = []
+                for f in fields:
+                    col = {"indicator": "o.indicator",
+                           "occurred_at": "o.occurred_at::date::text",
+                           "place_id": "coalesce(o.place_id::text,'')",
+                           "value_num": "coalesce(o.value_num::text,'')"}[f]
+                    exprs.append(col)
+                for a in attrs_k:
+                    exprs.append(f"coalesce(o.attrs->>'{a}','')")
+                key_sql = " || '|' || ".join(exprs) if exprs else "''"
+                cur.execute(f"""
+                    SELECT DISTINCT {key_sql}
+                    FROM observation o JOIN dataset d
+                      ON d.dataset_id = o.dataset_id
+                    WHERE d.key = ANY(%s) AND upper_inf(o.sys_period)""",
+                    ([ds["key"] for ds in spec["datasets"]],))
+                known_identities = {r[0] for r in cur.fetchall()}
+            if spec.get("shape") == "event" or spec.get("shape_overrides"):
+                cur.execute(
+                    "SELECT event_type, occurred_at::date::text, "
+                    "       place_id::text, "
+                    "       ST_Y(geom::geometry)::text, "
+                    "       ST_X(geom::geometry)::text, metrics "
+                    "FROM event "
+                    "WHERE attrs->>'dataset_key' = ANY(%s) "
+                    "  AND upper_inf(sys_period)",
+                    ([ds["key"] for ds in spec["datasets"]],))
+                for et, oc, pid, lat, lon, met in cur.fetchall():
+                    known_events.add("|".join([
+                        et, oc, "None" if pid is None else pid,
+                        "None" if lat is None else lat,
+                        "None" if lon is None else lon,
+                        json.dumps(met, sort_keys=True)]))
         if hasattr(transformer, "prepass"):
             # cross-record state (e.g. economic's contradictory-duplicate
             # detection) needs the whole category before the first transform
@@ -1067,6 +1152,34 @@ def run(category: str, dry_run: bool = False) -> dict:
                     if r.v1_stable_id in seen_stable:
                         counts["deduped"] += 1
                         continue
+                    # resolution floors judge what the TRANSFORM produced, not
+                    # what happened to be new this run — otherwise a healthy
+                    # no-op sync fails on a handful of unresolved stragglers
+                    counts["decided_total"] += 1
+                    if r.located:
+                        counts["located_total"] += 1
+                    ident = _identity_of(r)
+                    if ident is not None:
+                        if ident in known_identities:
+                            # already in the databank under an older v1 hash —
+                            # the 2026-08-07 doubling, prevented at the source
+                            counts["identity_already_held"] += 1
+                            # a DRY RUN reports what the spec PRODUCES (the
+                            # arithmetic under test); only a real run drops
+                            # the already-held rows. emitted − already_held
+                            # is what a write would insert.
+                            if not dry_run:
+                                continue
+                        else:
+                            known_identities.add(ident)
+                    if isinstance(r, EventRow):
+                        ek = _event_identity(r)
+                        if ek in known_events:
+                            counts["event_already_held"] += 1
+                            if not dry_run:
+                                continue
+                        else:
+                            known_events.add(ek)
                     seen_stable.add(r.v1_stable_id)
                     r.raw_ref = refs[f]
                     (event_rows if isinstance(r, EventRow) else rows).append(r)
@@ -1095,9 +1208,10 @@ def run(category: str, dry_run: bool = False) -> dict:
         # `decided` is enforced by the explicit failure counters above — an
         # unroutable name or unresolved governorate already fails the run.
         # Deduped rows reached a decision; they are duplicates, not failures.
-        decided = len(rows) + len(event_rows)
-        located = sum(1 for r in rows if r.located) + \
-            sum(1 for r in event_rows if r.located)
+        decided = counts["decided_total"] or (len(rows) + len(event_rows))
+        located = counts["located_total"] or (
+            sum(1 for r in rows if r.located) +
+            sum(1 for r in event_rows if r.located))
         place_spec = spec.get("place", {})
         min_located = place_spec.get("min_located_pct")
         if min_located and located / max(decided, 1) < min_located:

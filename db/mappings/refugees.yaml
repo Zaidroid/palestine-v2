@@ -246,3 +246,11 @@ notes: |
   `total_records: 0` and `sources: ["HDX"]` for a 1,566-record directory whose
   records name UNHCR, IDMC and UNRWA. The records:null lesson, again. Trust
   the records; expect.min_records is set from them.
+
+# Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
+# after v1 re-hashed every stable_id and this dataset silently re-inserted its
+# whole generation). This is what a row IS, independent of v1's hashing; the
+# loader refuses to write a row whose identity the databank already holds.
+identity:
+  fields: [indicator, occurred_at, place_id, value_num]
+  attrs: [event_name, aggregate_label, name, asylum_country]

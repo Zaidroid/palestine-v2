@@ -88,8 +88,14 @@ SELECT CASE WHEN cov >= 0.60
             THEN 'PASS (' || round(cov * 100) || '% of places have admin2)'
             ELSE 'FAIL: admin2 coverage ' || round(cov * 100) || '%, below the 60% tier-2 gate'
        END AS g4_5_admin_coverage
+-- Scoped to SERVABLE places 2026-08-07. The Nakba gazetteer added 1,953
+-- Mandate-era localities as servable=false reference rows; villages depopulated
+-- in 1948 have no modern admin2 code, and inventing one would be a lie about
+-- geography. Including them dragged this gate to 55% while the LIVE spine —
+-- the places the API actually resolves against — was unchanged. The gate
+-- measures what it was written to measure: coverage of the serving spine.
 FROM (SELECT count(*) FILTER (WHERE admin2_pcode IS NOT NULL)::float / count(*) AS cov
-        FROM place) c;
+        FROM place WHERE servable) c;
 
 \echo '--- G4.6: only COMPLETE days are frozen ---'
 -- `observation` is an immutable record. A day still in progress would be
