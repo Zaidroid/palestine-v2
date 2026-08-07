@@ -45,22 +45,21 @@ from ingest import bronze
 from ingest.databank import (Drop, EventRow, INSERT_SQL, PointResolver,
                              TRANSFORMERS, SpecRefused, ensure_datasets,
                              load_places, load_spec)
+from ops import evidence
 from resolve.db import connect
 
-SNAPS = Path("/opt/stacks/palestine/public/data/unified/snapshots")
+# The evidence base now resolves vault-first (ops/evidence.py). v1's path is
+# still reachable through it while the tree exists; this module no longer
+# knows where the bytes live.
 OUT = Path(__file__).resolve().parent / "replay-report.json"
 
 
 def snapshot_days() -> list[str]:
-    return sorted(p.name for p in SNAPS.iterdir()
-                  if p.is_dir() and len(p.name) == 10)
+    return evidence.snapshot_days()
 
 
 def index_ids(day: str, category: str) -> dict[str, int]:
-    p = SNAPS / day / category / "stable-id-index.json"
-    if not p.exists():
-        return {}
-    return json.loads(p.read_text()).get("index", {})
+    return evidence.index_ids(day, category)
 
 
 def _day_after(d: str) -> str:
@@ -186,15 +185,13 @@ def replay(dry_run: bool = False) -> dict:
                 if not dry_run and by_last:
                     dataset_ids = ensure_datasets(conn, spec, category)
                 for lst, entries in sorted(by_last.items()):
-                    f = SNAPS / lst / category / "all-data.json"
-                    if not f.exists():
+                    recs = evidence.open_snapshot(lst, category)
+                    if not recs:
                         counts["missing_snapshot_file"] += len(entries)
                         continue
-                    payload = f.read_bytes()
-                    ref = bronze.put(f"v1_{category}", payload,
-                                     url=f"file://{f}").ref
-                    data = json.loads(payload)
-                    recs = _recs(data)
+                    # the vault already holds these bytes content-addressed;
+                    # the ref is recorded on the row for provenance
+                    ref = evidence.snapshot_ref(lst, category)
                     for sid, frst, pos in entries:
                         if not (0 <= pos < len(recs)) or \
                                 recs[pos].get("stable_id") != sid:

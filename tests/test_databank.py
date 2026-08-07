@@ -220,6 +220,16 @@ def test_snapshot_tree_intact_zero_days_deleted():
     assert len(days) >= 35
     assert days[0] == "2026-06-25"
 
+    # ...and since 2026-08-07 the vault must hold at least as many, because
+    # v1 prunes its own archive and we do not. A vault that falls behind is
+    # the evidence base quietly shrinking — see tests/test_evidence.py.
+    man = Path(__file__).resolve().parent.parent / "data/evidence/manifest.json"
+    if man.exists():
+        import json as _json
+        vaulted = _json.loads(man.read_text())["days"]
+        assert len(vaulted) >= len(days), \
+            f"vault has {len(vaulted)} days, v1 still has {len(days)}"
+
 
 @needs_v1
 def test_nakba_places_never_capture_live_resolution():

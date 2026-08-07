@@ -18,10 +18,12 @@ import sys
 from pathlib import Path
 
 from ingest.databank import TRANSFORMERS, load_places, load_spec, PointResolver
-from ops.replay_snapshots import index_ids, snapshot_days, _recs
+from ops import evidence
+from ops.replay_snapshots import index_ids, snapshot_days
 from resolve.db import connect
 
-SNAPS = Path("/opt/stacks/palestine/public/data/unified/snapshots")
+# The evidence base resolves vault-first (ops/evidence.py); this harness no
+# longer knows or cares whether v1's tree still exists.
 OUT = Path(__file__).resolve().parent / "asof-report.json"
 
 # Six categories with exact expectations (no rescue populations, no
@@ -97,8 +99,7 @@ def main() -> int:
 
                 # VALUES: transform a sample of what v1 actually served that
                 # day and require each row's content to exist at that as_of.
-                f = SNAPS / at / category / "all-data.json"
-                recs = _recs(json.loads(f.read_bytes())) if f.exists() else []
+                recs = evidence.open_snapshot(at, category)
                 value_fail = 0
                 for rec in rng.sample(recs, min(SPOT_CHECKS, len(recs))):
                     result = transformer(rec, spec, places, _C())

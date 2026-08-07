@@ -288,6 +288,13 @@ def measure_fetch_health(today: date) -> list[dict]:
         ("t4p raw casualties (v1 tree, fed by the healed fetch)",
          V1_T4P_RAW / "casualties", 3),
         ("gho wash (v2-native fetch)", ROOT / "data" / "gho" / "wash_pse.json", 3),
+        # The as_of evidence base. If this stops growing, the history layer
+        # keeps answering and quietly stops being provable — the exact class
+        # of silent failure this radar exists to catch.
+        ("as_of evidence: v2 loader inputs",
+         ROOT / "data" / "evidence" / "v2-manifest.json", 2),
+        ("as_of evidence: vaulted v1 snapshots",
+         ROOT / "data" / "evidence" / "manifest.json", 400),
     ]:
         try:
             if path.is_dir():

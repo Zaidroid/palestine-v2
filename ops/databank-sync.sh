@@ -18,6 +18,12 @@ cd /home/zaid/palestine-v2
   .venv/bin/python -m ingest.databank --all
 rc=$?
 
+# Archive tonight's loader inputs as as_of evidence, in v1's snapshot shape.
+# Non-fatal: a failed snapshot must never fail the night's ingest — but the
+# gap radar watches the vault's age, so it cannot go quiet unnoticed. Without
+# this the as_of proof would freeze at v1's last 38 days forever.
+.venv/bin/python -m ops.snapshot_inputs || echo "snapshot-inputs failed — as_of evidence did not grow tonight" >&2
+
 # The gap radar re-measures after every sync: freshness on the data's own
 # dates, holes, era coverage, fetch-layer health → data/gap-radar.json
 # (served at /v2/databank/radar; Monday's maintenance run reads it).

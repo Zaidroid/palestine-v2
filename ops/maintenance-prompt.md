@@ -45,6 +45,11 @@ lines first; it is the memory of every mistake already made once.
    A dataset newly STALLED since last Monday is the June-9 failure class —
    treat it as a fault, not a curiosity. Surface the top gaps in the digest
    (Fawwaz also answers "أين الفجوات؟" from the same radar via `data_gaps`).
+   Then **check the as_of evidence base** — `.venv/bin/python -m
+   ops.vault_snapshots --verify` must return 0, and `data/evidence/v2-manifest.json`
+   must have grown since last Monday. This is the proof that the history layer
+   is honest; if it stops growing, queries keep answering and quietly stop being
+   provable. A verify failure is a fault, not a chore.
    Then **read the source scout** — `data/source-scout.json` (swept Sunday
    04:30; `db/scout/verdicts.yaml` is its reviewed memory). For each
    `new: true` candidate scoring ≥ 7: read its license AT THE SOURCE, and

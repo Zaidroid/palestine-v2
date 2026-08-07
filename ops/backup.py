@@ -173,13 +173,52 @@ def dump_database(out_dir: Path) -> dict[str, int]:
 
 # ── the files ───────────────────────────────────────────────────────────────
 
-def archive_bronze(out_dir: Path) -> None:
-    """Raw source payloads. Silver and gold are re-derivable from these."""
+BRONZE_FULL_DAY = 1          # a full set on the 1st; increments in between
+
+
+def archive_bronze(out_dir: Path) -> str:
+    """Raw source payloads. Silver and gold are re-derivable from these.
+
+    INCREMENTAL since 2026-08-07. Bronze was 572 MB and tarred whole every
+    night against a 15 GiB remote with REMOTE_KEEP=30. Vaulting v1's snapshot
+    archive as as_of evidence roughly triples it, and 30 × 2 GB does not fit.
+
+    Bronze is content-addressed and append-only — an object never changes once
+    written — so "everything newer than the last full set" is a complete
+    description of the delta. A full set on the 1st of each month bounds how
+    many increments a restore must replay; the manifest records which kind this
+    is, and ops/restore_test.py reads that rather than guessing.
+    """
     src = ROOT / "data" / "bronze"
     if not src.exists():
-        return
-    _run(["tar", "-C", str(ROOT / "data"), "--use-compress-program=zstd -19 -T0",
-          "-cf", str(out_dir / "bronze.tar.zst"), "bronze"])
+        return "absent"
+    ref = _last_full_bronze()
+    full = ref is None or _now().day == BRONZE_FULL_DAY
+    cmd = ["tar", "-C", str(ROOT / "data"),
+           "--use-compress-program=zstd -19 -T0",
+           "-cf", str(out_dir / "bronze.tar.zst")]
+    if not full:
+        cmd += [f"--newer-mtime=@{int(ref)}"]
+    cmd.append("bronze")
+    _run(cmd)
+    return "full" if full else "incremental"
+
+
+def _last_full_bronze() -> float | None:
+    """mtime of the most recent FULL bronze set, read from the manifests —
+    which are deliberately unencrypted, so this needs no marker file of its
+    own and cannot disagree with what the set actually contains."""
+    best = None
+    for mf in sorted(STAGING.glob("20*/manifest.json")) if STAGING.exists() else []:
+        try:
+            if json.loads(mf.read_text()).get("bronze_kind") != "full":
+                continue
+        except (ValueError, OSError):
+            continue
+        blob = mf.parent / "bronze.tar.zst.gpg"
+        if blob.exists():
+            best = max(best or 0.0, blob.stat().st_mtime)
+    return best
 
 
 def archive_secrets(out_dir: Path) -> None:
@@ -312,7 +351,7 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
     try:
         rows = dump_database(set_dir)
         dump_bytes = (set_dir / "db.dump").stat().st_size
-        archive_bronze(set_dir)
+        bronze_kind = archive_bronze(set_dir)
         archive_secrets(set_dir)
 
         files = {}
@@ -327,6 +366,7 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
             "db": {"rows": rows, "dump_bytes": dump_bytes,
                    "total_rows": sum(rows.values())},
             "files": files,
+            "bronze_kind": bronze_kind,   # full | incremental | absent
             "encryption": "gpg symmetric AES256",
             "keyfile_sha256_prefix": _sha256(KEYFILE)[:16],
         }

@@ -322,6 +322,16 @@ different claims.
 - `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_PLAN.md` — original design.
 - `cascade/` — text → structure (`checkpoint_text.py`, `news.py`, `palhub_fuel.py`)
 - `ingest/sources/` — one module per source
+- `data/evidence/` — **the as_of evidence base, and it is load-bearing.**
+  `ops/asof_harness.py` is the only proof `observation.sys_period` tells the
+  truth, and until 2026-08-07 that proof lived only inside v1's snapshot tree.
+  `ops/vault_snapshots.py` copied it here (indexes hot, payloads
+  content-addressed in bronze, sha256 per entry, `--verify` re-reads every
+  byte); `ops/snapshot_inputs.py` keeps it growing nightly from v2's own
+  loader inputs; `ops/evidence.py` is the seam both harnesses read through,
+  vault first. Run with `PALESTINE_V1_ROOT=/nonexistent` to prove the cut is
+  survivable. If this stops growing, history keeps answering and quietly
+  stops being provable.
 - `learn/` — everything that measures the system:
   - `accuracy.py` — precision backtest, replays the real serving gates.
     Imports `SINGLE_SOURCE_TRUST` from the serving path so it cannot drift.
