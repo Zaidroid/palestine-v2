@@ -91,9 +91,32 @@ def fetch_hdx_pse() -> list[dict]:
     return rows
 
 
+def load_verdicts() -> dict:
+    """The reviewed memory, or a loud refusal.
+
+    A hand-edit broke this file on 2026-08-07 (a `word:` inside a plain
+    scalar) and the Sunday sweep died on line 2 of main() with a bare
+    ScannerError. It is NOT swallowed: a scout with no verdict memory
+    re-proposes settled questions and re-chases debunked ghosts, which is
+    worse than not sweeping at all. It is re-raised naming the file and the
+    exact position so the OnFailure alert says where to look.
+    """
+    try:
+        return yaml.safe_load(VERDICTS.read_text())
+    except yaml.YAMLError as e:
+        where = ""
+        mark = getattr(e, "problem_mark", None)
+        if mark is not None:
+            where = f" at line {mark.line + 1}, column {mark.column + 1}"
+        raise SystemExit(
+            f"scout REFUSED: {VERDICTS} is not valid YAML{where} — "
+            f"{getattr(e, 'problem', e)}. The reviewed memory must parse "
+            "before any sweep runs; fix the file, do not bypass this.")
+
+
 def main() -> int:
     now = datetime.now(timezone.utc)
-    verdicts = yaml.safe_load(VERDICTS.read_text())
+    verdicts = load_verdicts()
     gaps = {}
     if RADAR.exists():
         radar = json.loads(RADAR.read_text())

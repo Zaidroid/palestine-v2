@@ -7,10 +7,12 @@
 
 adopted:
   # sources with reviewed specs and rows in the databank — never re-pitch
-  tech4palestine: Unlicense (public domain, verified 2026-08-06); Gaza+WB
+  tech4palestine: >-
+    Unlicense (public domain, verified 2026-08-06); Gaza+WB
     casualties, roster, infra-until-2025-10
   ucdp: CC-BY-IGO; GED annual through 2024
-  ocha_casualties: UN ToU personal-use-only — held, quarantined from
+  ocha_casualties: >-
+    UN ToU personal-use-only — held, quarantined from
     commercial, annual
   ocha_demolitions: same terms; cumulative tables
   wfp: food prices, monthly
@@ -25,18 +27,22 @@ adopted:
   unhcr: refugee stocks, annual
   idmc: displacement events (event-driven series)
   ioda: connectivity outages (CC-BY-NC)
-  ooni: censorship measurements (stalled in v1 — fetcher never scheduled;
+  ooni: >-
+    censorship measurements (stalled in v1 — fetcher never scheduled;
     revival is a one-line v1 fix awaiting Zaid)
   palopenmaps: ODbL-1.0 — share-alike obligations on derived databases
   addameer: monthly detention stats (no license found; org at addameer.ps)
   hamoked: detention stats (site fetch broken in v1)
   peace_now: settlements annual (no license statement found)
   unosat: Gaza damage assessments through 2025-10
-  goodshepherd: Liberation License — revocable; held for serving, never
+  goodshepherd: >-
+    Liberation License — revocable; held for serving, never
     commercial
-  btselem: bespoke license; bulk use requires express written consent;
+  btselem: >-
+    bespoke license; bulk use requires express written consent;
     exposure kept to 6 event rows
-  gaza_moh: no license statement; consumed via T4P's public-domain
+  gaza_moh: >-
+    no license statement; consumed via T4P's public-domain
     compilation (tier-1 live telegram feed is separate machinery)
   acled: held raw via v1; ToU restrictive — serving posture unreviewed
   insecurity_insight: CC-BY-SA
@@ -49,31 +55,36 @@ adopted:
 debunked:
   gdelt:
     measured: 2026-08-07
-    finding: measured negative on a live slice — zero Gaza/WB events, 5/9
+    finding: >-
+      measured negative on a live slice — zero Gaza/WB events, 5/9
       Israel rows country-centroid, unrelated foreign stories coded as
       military force INSIDE Gaza's coordinates. A media-attention signal,
       not a conflict record. Do not re-propose.
   unrwa-escalations-key-figures:
     measured: 2026-08-07
-    finding: the HDX resource is HTTP 410 Gone; advertised coverage ended
+    finding: >-
+      the HDX resource is HTTP 410 Gone; advertised coverage ended
       2024-03 anyway. Surfaces near the top of every HDX casualties search —
       that is why it is filed. General trap it teaches — HDX last_modified
       reflects metadata touches, not data reality; fetch before believing.
   ocha-hdx-mirror:
     measured: 2026-08-06
-    finding: OCHA oPt's casualties and demolitions databases are NOT on HDX
+    finding: >-
+      OCHA oPt's casualties and demolitions databases are NOT on HDX
       under any name, org, or topic query. The org's 33 datasets are
       boundaries/schools/barriers. Do not send anyone to look again;
       re-check only if OCHA announces an HDX publication.
   gho-wash-burden-pse:
     measured: 2026-08-06
-    finding: WHO publishes NO WASH disease-burden estimates for PSE
+    finding: >-
+      WHO publishes NO WASH disease-burden estimates for PSE
       (WSH_1/3/10/20/30 series all empty at the GHO API).
 
 rejected:
   acled-serving:
     date: 2026-08-07
-    reason: EULA read at source — no direct access to Licensed Content;
+    reason: >-
+      EULA read at source — no direct access to Licensed Content;
       reorganizing or dashboarding is explicitly insufficient; building a
       functional substitute prohibited; ML/AI use prohibited regardless of
       intent. ACLED must never be served from the databank in any form.
@@ -82,11 +93,13 @@ rejected:
       to serving is a paid corporate license.
   goodshepherd-commercial:
     date: 2026-08-06
-    reason: license is purpose-conditional AND revocable — can never anchor
+    reason: >-
+      license is purpose-conditional AND revocable — can never anchor
       commercial serving
   btselem-bulk:
     date: 2026-08-06
-    reason: bulk ingestion is "expansive use" requiring express written
+    reason: >-
+      bulk ingestion is "expansive use" requiring express written
       consent; revisit only by asking B'Tselem in writing
 
 dead_upstream:
@@ -140,34 +153,43 @@ candidates:
     verdict: GOOD — vegetation-stress baseline 2012→2026-07, WB+Gaza, updating
     license: CC-BY (commercial)
   unosat_roads:
-    verdict: CHECK OVERLAP with held UNOSAT before speccing; CC-BY-SA;
+    verdict: >-
+      CHECK OVERLAP with held UNOSAT before speccing; CC-BY-SA;
       does not extend past 2025-10
   ookla_open_data:
-    verdict: HOLD — quality-not-outage data, but CC-BY-NC-SA + Green Line
+    verdict: >-
+      HOLD — quality-not-outage data, but CC-BY-NC-SA + Green Line
       clipping politics; revisit when connectivity category grows
   cloudflare_radar:
-    verdict: HOLD — per-operator grain is unique; needs API token + CC-BY-NC;
+    verdict: >-
+      HOLD — per-operator grain is unique; needs API token + CC-BY-NC;
       verify PS coverage with a token before committing
   peace_now_gis:
-    verdict: BLOCKED on permission — no license stated anywhere (all rights
+    verdict: >-
+      BLOCKED on permission — no license stated anywhere (all rights
       reserved by default); written permission from Peace Now required
   # ── deep sweep 2026-08-06, UN/intergov scout (10 found, all filed) ────────
   un2720_aid:
     verdict: STRONG — THE live successor to the dead UNRWA aid-truck series
-    what: daily Gaza aid verification since 2025-05-21 (trucks/pallets/tonnes
+    what: >-
+      daily Gaza aid verification since 2025-05-21 (trucks/pallets/tonnes
       delivered + looted, by org and category); verified 368 days pulled
-    license: UN ToU floor (personal/non-commercial) — same posture as OCHA;
+    license: >-
+      UN ToU floor (personal/non-commercial) — same posture as OCHA;
       serve-with-attribution, never commercial
-    effort: low, BUT undocumented dashboard endpoints — snapshot daily, diff
+    effort: >-
+      low, BUT undocumented dashboard endpoints — snapshot daily, diff
       snapshots (date params silently ignored)
   unsd_energy:
     verdict: STRONG — energy backbone 1990-2024, OPEN attribution-only
     what: 4,567 verified observations, full commodity balances incl. imports
-    license: UNdata ToU "may be copied freely ... provided UNdata is cited"
+    license: >-
+      UNdata ToU "may be copied freely ... provided UNdata is cited"
       (commercial YES) — pairs with Ember (2000-2024) and Black Marble (live)
     trap: numeric M49 code 275 only; opaque codelists; UNIT_MULT
   ipc_food_severity:
-    verdict: STRONG — CC0 public domain, subnational famine phases,
+    verdict: >-
+      STRONG — CC0 public domain, subnational famine phases,
       2023-11→2026-07, admin2 grain; enriches food immediately
     trap: filter ipc_type + admin_level or you multi-count
   ilostat_quarterly:
@@ -178,98 +200,120 @@ candidates:
     license: CC-BY-SA-4.0 (share-alike on derived tables)
   wpp_demographics:
     verdict: GOOD for the 1950-1966 era hole — the only annual numbers found
-    trap: modelled back-cast, label as estimates; license unclear (UN ToU
+    trap: >-
+      modelled back-cast, label as estimates; license unclear (UN ToU
       floor) → treat non-commercial until read
   un_comtrade:
-    verdict: HOLD — trade data verified real but re-dissemination restricted
+    verdict: >-
+      HOLD — trade data verified real but re-dissemination restricted
       to paid subscribers per policy; licence unreadable at source. Ask
       before any ingest.
   unicef_sdmx:
-    verdict: HOLD — licence pages 403 programmatic clients; needs a manual
+    verdict: >-
+      HOLD — licence pages 403 programmatic clients; needs a manual
       browser read; heavy overlap with held WHO/UIS/WPP (dedupe on
       DATA_SOURCE)
   un_sdg_api:
-    verdict: LOW — republication layer over agencies already held; only
+    verdict: >-
+      LOW — republication layer over agencies already held; only
       disaster-risk/governance series new
   rdna_2026_corroborated:
-    verdict: (see rdna_2026 above) — independently found by both scouts;
+    verdict: >-
+      (see rdna_2026 above) — independently found by both scouts;
       infra scout successfully parsed the PDF tables with pdftotext
   # ── deep sweep 2026-08-06/07, conflict scout (10 filed) ───────────────────
   ucdp_ged_v261:
-    verdict: STRONG, do first — version bump adds ALL of 2025 (3,190 events,
+    verdict: >-
+      STRONG, do first — version bump adds ALL of 2025 (3,190 events,
       14,563 deaths, Gaza 3,055); identical schema, held license, one file
       swap. RE-LOAD not append (ids/estimates revised between versions).
   ucdp_candidate_monthly:
-    verdict: STRONG — monthly GED kills the annual lag; CC-BY-4.0 verified;
+    verdict: >-
+      STRONG — monthly GED kills the annual lag; CC-BY-4.0 verified;
       2026-01→06 already downloadable. Provisional rows (code_status) must
       carry their status and be reconciled on each annual release.
   masafer_yatta_violence:
-    verdict: GOOD — open incident-grained settler violence with the police-
+    verdict: >-
+      GOOD — open incident-grained settler violence with the police-
       response dimension held nowhere else; narrow (South Hebron Hills, one
       year); dedupe on id_event; never present as WB-wide.
   pcbs_education_violations:
-    verdict: GOOD — CC-BY cumulative as-of snapshots = exactly our
+    verdict: >-
+      GOOD — CC-BY cumulative as-of snapshots = exactly our
       sys_period shape; PCBS as casualty authority; snapshot the Google
       Sheet on ingest.
   insecurity_explosive_weapons:
-    verdict: CHECK — 6,743 PSE incidents CC-BY-SA, but verify (a) overlap
+    verdict: >-
+      CHECK — 6,743 PSE incidents CC-BY-SA, but verify (a) overlap
       with held II ingest, (b) whether PSE coordinates are 'censored'
       (observed literal token); re-parse with a real xlsx reader first.
   airwars:
-    verdict: BLOCKED on license — NO statement anywhere (checked
+    verdict: >-
+      BLOCKED on license — NO statement anywhere (checked
       exhaustively); the richest strike-level record of the war otherwise.
       Ask Airwars in writing; ingest = parsing ~2,700 HTML pages (API is a
       partial mirror with emptied Gaza fields).
   cpj_journalists:
-    verdict: BLOCKED by NoDerivatives — reshaping into our schema is a
+    verdict: >-
+      BLOCKED by NoDerivatives — reshaping into our schema is a
       derivative work; NC too. Written permission, or internal
       cross-checking only, never serving.
   # ── deep sweep 2026-08-07, Palestinian-institutions scout (10 filed) ──────
   pwa_water:
-    verdict: STRATEGIC — the ONLY affirmative data-reuse grant found from any
+    verdict: >-
+      STRATEGIC — the ONLY affirmative data-reuse grant found from any
       Palestinian institution (attribution-with-link, no commercial bar), and
       the authoritative source for the 39%-purchased-from-Israel share. But
       the data is published as BITMAPS and carries NO reference year — write
       to PWA for the year before ingesting anything as a time series.
   perc_electricity:
-    verdict: STRONG content, license-limited — best-structured Palestinian
+    verdict: >-
+      STRONG content, license-limited — best-structured Palestinian
       electricity data (consumers, renewables, SAIDI/SAIFI, tariffs, debt,
       2015-2024, per distribution company). Bare all-rights-reserved →
       ingest extracted FACTS with attribution, never republish tables.
       TLS: valid leaf, mismatched intermediate — pin the leaf, never
       blanket-disable verification.
   wsrc_water_providers:
-    verdict: STRONG content, no license — ~150 providers, real m3/NRW/tariff/
+    verdict: >-
+      STRONG content, no license — ~150 providers, real m3/NRW/tariff/
       collection-efficiency data. Gaza absent from 2024 (WSRC says it could
       not collect). Mixed reference years inside one edition — never assume
       the cover year. No terms anywhere; ask.
   pcbs_press_releases:
-    verdict: GOOD — sub-annual CPI + quarterly LFS under the SAME CC-BY-4.0
+    verdict: >-
+      GOOD — sub-annual CPI + quarterly LFS under the SAME CC-BY-4.0
       already verified for PCBS; no new license work. NEGATIVE FINDING
       recorded - PCBS PXWeb API is DEAD (all documented paths 404).
   pchr_archive:
-    verdict: BLOCKED on permission — 11,777 posts, 30 years, real REST API,
+    verdict: >-
+      BLOCKED on permission — 11,777 posts, 30 years, real REST API,
       but the terms page is an EMPTY STUB (advertised, never written) and no
       structured tables exist anywhere. Ask PCHR in writing.
   mezan:
-    verdict: BLOCKED + STALE — demographic breakdowns held nowhere else, but
+    verdict: >-
+      BLOCKED + STALE — demographic breakdowns held nowhere else, but
       statistics froze March 2023 and the named archive covers only 2014;
       terms-of-service page is a live placeholder titled 'test'.
   jdeco:
-    verdict: BLOCKED, hardest license in the set — expressly forbids copying
+    verdict: >-
+      BLOCKED, hardest license in the set — expressly forbids copying
       or distributing any content without prior written permission. Valuable
       (East Jerusalem coverage, 2011-2024); derived facts with attribution at
       most, or ask.
   dcip_children:
-    verdict: UNVERIFIED — pages and license confirmed, but zero figures in
+    verdict: >-
+      UNVERIFIED — pages and license confirmed, but zero figures in
       served HTML (client-rendered, no API). Needs a headless-browser pass
       before it can be judged. All-rights-reserved.
   moh_ramallah:
-    verdict: UNVERIFIED, one fetch away — the only candidate for the WEST
+    verdict: >-
+      UNVERIFIED, one fetch away — the only candidate for the WEST
       BANK health-system gap. Critical dedup: its Gaza page is the same
       upstream already held via T4P.
   pma_monetary:
-    verdict: LEAD ONLY — DO NOT PURSUE AS SCOUTED. The scout reached PMA's
+    verdict: >-
+      LEAD ONLY — DO NOT PURSUE AS SCOUTED. The scout reached PMA's
       backend by extracting an API key from the site's JS bundle and
       enumerating the database schema. That is credential-derived
       reconnaissance, not public-page scraping, and this project does not
