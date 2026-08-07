@@ -79,6 +79,97 @@ assessed_orgs:
   ocha-opt: 2026-08-06        # all 33 datasets read during the HDX-mirror hunt
 
 # Candidates under review land here (written by the maintenance run or by
-# hand after reading a scout report). Empty at birth — the first deep sweep
-# (4 Opus scouts, 2026-08-06) will populate it after review.
-candidates: {}
+# hand after reading a scout report). Full evidence for the deep sweep lives
+# in db/scout/deep-2026-08-06/*.json — these are the reviewed one-liners.
+candidates:
+  # ── deep sweep 2026-08-06, infra/environment scout (12 found, all filed) ──
+  ember_electricity:
+    verdict: STRONG — the energy category's historical backbone
+    what: 25y PSE generation/capacity/demand/net-imports/solar, annual
+    license: CC-BY-4.0 (commercial), verified quote on file
+    effort: low (one CSV, filter ISO3=PSE)
+    trap: no WB/Gaza split; ends 2024
+  nasa_black_marble:
+    verdict: STRONG — the live "are the lights on" layer, public domain
+    what: daily 500m nighttime radiance 2012→today; monthly composites for trend
+    license: NASA public domain (commercial)
+    effort: high (Earthdata token, HDF5, QA bands, FIRMS subtraction)
+  rdna_2026:
+    verdict: STRONG but NC — the authoritative post-2025-10 damage record
+    what: WB/EU/UN final RDNA 2026-04; 17 sub-sectors, hard physical quantities
+    license: attribution + NON-COMMERCIAL (quote on file)
+    effort: high (PDF table extraction; re-key values, never reproduce tables)
+    trap: point-in-time, not a series; IRDNA not comparable without adjustment
+  climate_trace:
+    verdict: GOOD — monthly-fresh asset-level energy/emissions proxy
+    license: CC-BY (commercial); modelled estimates, carry confidence values
+    trap: check East Jerusalem / Area C asset attribution before national totals
+  insecurity_insight_water:
+    verdict: GOOD — water-system attack events 2008→live, fills water's event side
+    license: CC-BY-IGO 3.0 (commercial; arbitration clause — read before selling)
+    effort: low
+  wash_cluster_joint:
+    verdict: GOOD — governorate WASH quantities with stated MoE, semi-annual
+    license: CC-BY (commercial)
+    trap: sample excludes worst-access areas — caveat must ride every figure
+  unosat_fao_cropland:
+    verdict: GOOD — cropland destruction geodata series 2024→2025-07
+    license: CC-BY-SA (share-alike is viral on derived geodata)
+  copernicus_fapar:
+    verdict: GOOD — vegetation-stress baseline 2012→2026-07, WB+Gaza, updating
+    license: CC-BY (commercial)
+  unosat_roads:
+    verdict: CHECK OVERLAP with held UNOSAT before speccing; CC-BY-SA;
+      does not extend past 2025-10
+  ookla_open_data:
+    verdict: HOLD — quality-not-outage data, but CC-BY-NC-SA + Green Line
+      clipping politics; revisit when connectivity category grows
+  cloudflare_radar:
+    verdict: HOLD — per-operator grain is unique; needs API token + CC-BY-NC;
+      verify PS coverage with a token before committing
+  peace_now_gis:
+    verdict: BLOCKED on permission — no license stated anywhere (all rights
+      reserved by default); written permission from Peace Now required
+  # ── deep sweep 2026-08-06, UN/intergov scout (10 found, all filed) ────────
+  un2720_aid:
+    verdict: STRONG — THE live successor to the dead UNRWA aid-truck series
+    what: daily Gaza aid verification since 2025-05-21 (trucks/pallets/tonnes
+      delivered + looted, by org and category); verified 368 days pulled
+    license: UN ToU floor (personal/non-commercial) — same posture as OCHA;
+      serve-with-attribution, never commercial
+    effort: low, BUT undocumented dashboard endpoints — snapshot daily, diff
+      snapshots (date params silently ignored)
+  unsd_energy:
+    verdict: STRONG — energy backbone 1990-2024, OPEN attribution-only
+    what: 4,567 verified observations, full commodity balances incl. imports
+    license: UNdata ToU "may be copied freely ... provided UNdata is cited"
+      (commercial YES) — pairs with Ember (2000-2024) and Black Marble (live)
+    trap: numeric M49 code 275 only; opaque codelists; UNIT_MULT
+  ipc_food_severity:
+    verdict: STRONG — CC0 public domain, subnational famine phases,
+      2023-11→2026-07, admin2 grain; enriches food immediately
+    trap: filter ipc_type + admin_level or you multi-count
+  ilostat_quarterly:
+    verdict: GOOD — CC-BY-4.0 quarterly labour through 2025-Q1
+    trap: MUST carry "Excluding Gaza Strip" note on every post-2023 row
+  unesco_uis:
+    verdict: GOOD — education category + 1970-1999 era fill, 38k observations
+    license: CC-BY-SA-4.0 (share-alike on derived tables)
+  wpp_demographics:
+    verdict: GOOD for the 1950-1966 era hole — the only annual numbers found
+    trap: modelled back-cast, label as estimates; license unclear (UN ToU
+      floor) → treat non-commercial until read
+  un_comtrade:
+    verdict: HOLD — trade data verified real but re-dissemination restricted
+      to paid subscribers per policy; licence unreadable at source. Ask
+      before any ingest.
+  unicef_sdmx:
+    verdict: HOLD — licence pages 403 programmatic clients; needs a manual
+      browser read; heavy overlap with held WHO/UIS/WPP (dedupe on
+      DATA_SOURCE)
+  un_sdg_api:
+    verdict: LOW — republication layer over agencies already held; only
+      disaster-risk/governance series new
+  rdna_2026_corroborated:
+    verdict: (see rdna_2026 above) — independently found by both scouts;
+      infra scout successfully parsed the PDF tables with pdftotext

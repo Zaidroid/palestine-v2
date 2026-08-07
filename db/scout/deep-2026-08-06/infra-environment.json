@@ -1,0 +1,254 @@
+[
+  {
+    "name": "Gaza Strip Rapid Damage and Needs Assessment (RDNA), April 2026 — final edition",
+    "publisher": "World Bank Group + European Union + United Nations (UNSCO)",
+    "landing_url": "https://www.un.org/unispal/document/report-gaza-strip-rapid-damage-20apr26/",
+    "data_url_or_api": "https://unsco.unmissions.org/sites/default/files/2026-04/full_report-_gaza_strip_rapid_damage_and_needs_assessment_rdna_2026_1.pdf",
+    "contents": "87-page final RDNA superseding the Feb-2025 IRDNA. Table 1 gives Damages / Losses / Needs in US$bn for 17 sub-sectors across 4 groups: PRODUCTIVE (agriculture+food 1.44/1.46/10.49; commerce+industry 6.35/2.48/8.99; finance 0.02/0.93/0.61), SOCIAL (cultural heritage, education, social protection, health, housing 18.01/1.06/16.21), INFRASTRUCTURE (ICT 0.20/0.35/0.50; energy 0.57/0.16/2.73; municipal services 0.62/0.38/0.86; WASH 1.70/0.68/4.24; transport 3.21/1.18/1.54), CROSS-CUTTING (environment 0.15/0.22/2.65; land; employment; governance). Table 3 phases needs over time; Table 4 lists priority actions. Sector narratives carry hard physical quantities: 371,888 housing units destroyed/damaged; >90% of electricity infrastructure destroyed; 73 MW of 80 MW installed solar PV damaged; pre-war GPP 70 MW avg vs 140 MW nominal, 120 MW IEC imports, ~700 MW demand, ~8 h/day household supply; 62% of rehabilitation facilities non-functional. Totals: US$35.2bn damages, US$22.7bn losses, US$71.4bn needs.",
+    "categories": ["infrastructure", "damage", "NEW:energy", "NEW:housing", "NEW:environment", "water", "connectivity", "economy"],
+    "grain": {"place": "Gaza Strip (whole); some figures by governorate", "time": "single cross-section covering 2023-10 to 2025-10, plus time-phased need tranches"},
+    "span": "2023-10 → 2025-10 (published 2026-04-20)",
+    "cadence": "one-off / episodic — 2nd edition after the Feb-2025 IRDNA; no committed refresh",
+    "license": {
+      "name": "Custom World Bank/EU/UN rights statement — attribution, non-commercial",
+      "quote": "The material in this work is subject to copyright. Because the World Bank, the EU, and the UN encourage dissemination of their knowledge, this work may be reproduced, in whole or in part, for non-commercial purposes as long as full attribution to this work is given and all further permissions that may be required for such use (as noted herein) are acquired.",
+      "quote_url": "https://unsco.unmissions.org/sites/default/files/2026-04/full_report-_gaza_strip_rapid_damage_and_needs_assessment_rdna_2026_1.pdf",
+      "commercial": false
+    },
+    "fills_gap": "Gap 1 primary answer — the authoritative post-2025-10 damage successor, and it is the ONLY source found that closes gaps 1, 2, 4 and 5 simultaneously with one consistent sectoral frame. UNOSAT has published nothing for Gaza after 2025-10-11 (confirmed: HDX org:unosat has zero PSE datasets created in 2026), and Copernicus EMS has never re-activated for Gaza since EMSR103 in 2014. This is the successor.",
+    "effort": "high",
+    "traps": "PDF only — no CSV, no API, no data annex; Tables 1/3/4 need `pdftotext -layout` extraction (verified working, tables parse cleanly). Non-commercial clause is the hard blocker if the databank is commercially licensed — the numbers are facts and not themselves copyrightable, but the table selection/arrangement is, so re-key values rather than reproducing tables. It is a point-in-time estimate, NOT a time series — do not chart it against the Feb-2025 IRDNA naively: the report states the energy losses figure 'incorporat[es] a correction to the February 2025 IRDNA, which mistakenly reported 243 million NIS as US$', so the two editions are not comparable without adjustment. Damages/losses/needs are three distinct concepts and must not be summed.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Ember Yearly Electricity Data — full release, long format",
+    "publisher": "Ember (Ember Energy Research CIC)",
+    "landing_url": "https://ember-energy.org/data/yearly-electricity-data/",
+    "data_url_or_api": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv",
+    "contents": "Verified by download: 1,650 rows for Area='Palestine, State of', ISO3=PSE, years 2000–2024 continuous. Variables span five categories — Electricity generation (Total Generation, and by Fuel: gas, coal, hydro, solar, wind, bioenergy, nuclear, other fossil, other renewables; plus Aggregate fuel rollups Clean/Fossil/Renewables/Wind and Solar), Capacity (GW, same fuel breakdown), Electricity demand (Demand TWh, Demand per capita), Electricity imports (Net Imports), and Power sector emissions. Each variable ships in both absolute units (TWh/GW) and % share, with YoY absolute and YoY % change columns pre-computed. Sample 2024 values: Clean 39.39% / 0.39 TWh, Fossil 60.61% / 0.60 TWh.",
+    "categories": ["NEW:energy"],
+    "grain": {"place": "country (PSE, whole of Palestine)", "time": "annual"},
+    "span": "2000 → 2024",
+    "cadence": "annual full release (plus a separate monthly series)",
+    "license": {
+      "name": "CC BY 4.0",
+      "quote": "All content is released under a Creative Commons Attribution Licence (CC-BY-4.0).",
+      "quote_url": "https://ember-energy.org/creative-commons-license/",
+      "commercial": true
+    },
+    "fills_gap": "Gap 2 — the historical backbone for a new energy category. Gives 25 years of generation, capacity, demand, net imports and solar build-out on one licence that permits commercial use, which the RDNA does not. Ember's Net Imports variable is the only clean long-run series found for Palestine's electricity import dependence.",
+    "effort": "low",
+    "traps": "The bulk CSV is 49 MB global — filter on ISO3=PSE before loading. Values are aggregated for the whole State of Palestine: there is NO West Bank vs Gaza split, so it cannot show the Gaza collapse separately (RDNA or Black Marble must carry that). Ends 2024, so the war's second year is not yet in it. Ember's own API (api.ember-energy.org) requires a key — the GCS bulk CSV needs none and is the reliable path. Ember data for small territories is modelled/compiled from official statistics, so early-2000s zeros for Capacity are likely 'no data' rather than true zero — check before plotting.",
+    "confidence": "verified"
+  },
+  {
+    "name": "UNOSAT–FAO Gaza Strip Cropland & Greenhouse Damage Assessments",
+    "publisher": "UNOSAT / UNITAR with FAO",
+    "landing_url": "https://data.humdata.org/dataset/unosat-fao-gaza-strip-cropland-damage-assessment-july-2025",
+    "data_url_or_api": "https://unosat.org/static/unosat_filesystem/4160/FAO-PAL-015_UNOSAT_Cropland_DA_GDB_July2025.zip",
+    "contents": "Geodatabase of satellite-detected cropland degradation across the Gaza Strip. UNOSAT code CE20231007PSE. Method: Sentinel-2 imagery from July 2017 through 2025, NDVI analysis plus multi-temporal classification, with damage evaluated as decline in crop health and density. Five releases exist as a comparable series: cropland June 2024, July 2024, September 2024, December 2024, July 2025; plus a separate greenhouse comprehensive damage assessment (December 2024). Distinct product line from the building-damage assessments already held.",
+    "categories": ["NEW:environment", "agriculture", "damage"],
+    "grain": {"place": "cropland polygons, Gaza Strip, sub-governorate", "time": "irregular assessment snapshots"},
+    "span": "2017-07 → 2025-07 (baseline 2017; assessments 2024-06 → 2025-07)",
+    "cadence": "irregular, roughly 2–3 per year; HDX update frequency is set to 'never' (-1), i.e. as-needed",
+    "license": {
+      "name": "CC BY-SA",
+      "quote": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+      "quote_url": "https://data.humdata.org/dataset/unosat-fao-gaza-strip-cropland-damage-assessment-july-2025",
+      "commercial": true
+    },
+    "fills_gap": "Gap 4 — agricultural land loss and tree/grove destruction as measured geodata rather than a headline percentage. Different UNOSAT product family from the building damage already held; five dated releases make it a real time series.",
+    "effort": "medium",
+    "traps": "ESRI File Geodatabase inside a ZIP — needs GDAL/OpenFileGDB. Share-Alike is viral: derived geodata must also be CC BY-SA. NDVI decline conflates conflict destruction with drought, irrigation collapse and abandonment. Successive releases are re-assessments on shifting baselines — differencing two vintages does not cleanly give new damage. Hosted on unosat.org static filesystem — mirror on ingest.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Climate TRACE — State of Palestine greenhouse gas and air pollutant emissions",
+    "publisher": "Climate TRACE coalition",
+    "landing_url": "https://data.humdata.org/dataset/pse-climate-trace",
+    "data_url_or_api": "https://data.humdata.org/dataset/2502fee4-4484-4239-b936-f19eaf335e48/resource/4e8cab90-2448-4da8-bea3-796fd3cab792/download/pse_co2e_20yr_source.csv",
+    "contents": "Asset-level and aggregated emissions inventory for Palestine. Three nested grains as separate CSVs: admin_0 (national), city, and source (individual emitting asset with coordinates). Two gas families per grain: CO2e 20-year GWP and CH4. Annual country-level emissions by sub-sector and gas from 2015; monthly source-level emissions from 2021, with confidence values; emissions source ownership where available. Sub-sectors include power generation, transport, buildings, waste and fossil-fuel operations.",
+    "categories": ["NEW:environment", "NEW:energy"],
+    "grain": {"place": "national, city, and individual asset (point coordinates)", "time": "annual from 2015; monthly at source level from 2021"},
+    "span": "2015 → 2026-08 (HDX dataset date range runs to 2026-08-03)",
+    "cadence": "every 30 days (HDX data_update_frequency = 30); last modified 2026-08-03",
+    "license": {
+      "name": "CC BY",
+      "quote": "Creative Commons Attribution International (CC BY)",
+      "quote_url": "https://data.humdata.org/dataset/pse-climate-trace",
+      "commercial": true
+    },
+    "fills_gap": "Gaps 2 and 4 together — the only candidate that is BOTH monthly-fresh through 2026 AND commercially licensed AND asset-level. Power-generation sub-sector at source grain is an independent monthly read on whether Gaza generation assets are operating.",
+    "effort": "low",
+    "traps": "MODELLED estimates, not metered readings — confidence values must be carried through. Emissions are a proxy for generation. Territorial attribution contested — check whether East Jerusalem / Area C settlement assets are assigned to PSE or ISR before publishing national totals. CO2e file uses 20-year GWP — not comparable to 100-year GWP figures.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Speedtest by Ookla Global Fixed and Mobile Network Performance Maps",
+    "publisher": "Ookla LLC (via AWS Open Data)",
+    "landing_url": "https://github.com/teamookla/ookla-open-data",
+    "data_url_or_api": "https://ookla-open-data.s3.amazonaws.com/parquet/performance/type=mobile/year=2026/quarter=1/2026-01-01_performance_mobile_tiles.parquet",
+    "contents": "Quarterly global web-Mercator zoom-16 tiles (~610 m) of aggregated Speedtest results, mobile and fixed. Per tile: avg_d_kbps, avg_u_kbps, avg_lat_ms, loaded-latency fields, tests, devices, tile centroid. Verified live: mobile quarters 2025 Q1–Q4 and 2026 Q1 present; 2026 Q2 prefix exists but empty.",
+    "categories": ["connectivity"],
+    "grain": {"place": "zoom-16 quadkey tile (~610 m)", "time": "quarterly"},
+    "span": "2019 Q1 → 2026 Q1",
+    "cadence": "quarterly, ~one quarter in arrears",
+    "license": {
+      "name": "CC BY-NC-SA 4.0",
+      "quote": "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)",
+      "quote_url": "https://raw.githubusercontent.com/teamookla/ookla-open-data/master/README.md",
+      "commercial": false
+    },
+    "fills_gap": "Gap 6 — network quality, not just outage: sub-kilometre grain with a 7-year pre-war baseline. Nothing currently held measures quality.",
+    "effort": "medium",
+    "traps": "NO country column — Palestine must be extracted by spatial clip against COD-AB, and tiles straddle the Green Line/settlements/East Jerusalem, mixing Israeli and Palestinian operators unless handled deliberately. NC + SA double constraint. Ookla requires a specific attribution string. Severe sample bias in a war zone. Use DuckDB/pyarrow with quadkey prefix pushdown.",
+    "confidence": "verified"
+  },
+  {
+    "name": "NASA Black Marble VNP46A2 — Gap-Filled Lunar BRDF-Adjusted Daily Nighttime Lights",
+    "publisher": "NASA LAADS DAAC / VIIRS Land Team (Suomi-NPP)",
+    "landing_url": "https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VNP46A2/",
+    "data_url_or_api": "https://ladsweb.modaps.eosdis.nasa.gov/api/v2/content/archives/allData/5000/VNP46A2/ (DOI 10.5067/VIIRS/VNP46A2.002); also GEE asset NASA/VIIRS/002/VNP46A2",
+    "contents": "Daily moonlight- and atmosphere-corrected nighttime radiance at ~500 m resolution, cloud removal and lunar BRDF adjustment applied. Coverage 2012-01-19 → ongoing. Companion products VNP46A3 (monthly) and VNP46A4 (annual) give lower-noise composites. Gaza and the West Bank fall in a single tile pair.",
+    "categories": ["NEW:energy", "infrastructure", "damage"],
+    "grain": {"place": "500 m raster pixel", "time": "daily"},
+    "span": "2012-01-19 → present (ongoing, ~1-day latency)",
+    "cadence": "daily",
+    "license": {
+      "name": "NASA open data / public domain (not copyrighted), citation requested",
+      "quote": "NASA material may be reproduced and distributed without further permission",
+      "quote_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-policy",
+      "commercial": true
+    },
+    "fills_gap": "Gap 2's live half and the strongest post-2025-10 answer to gap 1: the ONLY daily, ongoing, commercially usable, sub-kilometre measure of whether the lights are on in Gaza — spatially resolved enough to show recovery neighbourhood by neighbourhood.",
+    "effort": "high",
+    "traps": "Needs free NASA Earthdata Login + token; HDF5 tiles need conversion and QA bands must be applied or cloud artefacts read as light. Signal confounded in Gaza: fires (subtract FIRMS, already held), military illumination, flares. Generator/solar-lit households emit far less than grid lighting — recovery understated. Use monthly A3 for trend, daily A2 for events.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Copernicus GDO Vegetation Index Anomaly (FAPAR anomaly) — State of Palestine",
+    "publisher": "Copernicus / EC Joint Research Centre Global Drought Observatory",
+    "landing_url": "https://data.humdata.org/dataset/pse-anomalies-fapar-viirs",
+    "data_url_or_api": "https://data.humdata.org/dataset/389c0d19-ed4f-41fa-b8a4-a6b3c03d5df2/resource/82454b15-d0b1-40ab-ad84-0ccda677503d/download/pse_fpanv_m_gdo_20260101_20260711_t.zip",
+    "contents": "GeoTIFF rasters of FAPAR anomaly clipped to Palestine, 10-day composites from VIIRS, one ZIP per year 2012–2026. Vegetation greenness/health anomalies indicating drought or productivity loss.",
+    "categories": ["NEW:environment", "agriculture"],
+    "grain": {"place": "raster pixel, national clip", "time": "10-day composite"},
+    "span": "2012-01-21 → 2026-07-20",
+    "cadence": "every 30 days on HDX; last modified 2026-08-03",
+    "license": {
+      "name": "CC BY",
+      "quote": "Creative Commons Attribution International (CC BY)",
+      "quote_url": "https://data.humdata.org/dataset/pse-anomalies-fapar-viirs",
+      "commercial": true
+    },
+    "fills_gap": "Gap 4 — the CC-BY, still-updating counterpart to the UNOSAT–FAO cropland product; continuous 14-year vegetation-stress baseline covering the West Bank as well as Gaza.",
+    "effort": "medium",
+    "traps": "Anomaly vs climatological mean — chronically degraded areas read as zero anomaly. Cannot distinguish drought from conflict destruction. ~500 m pixels — olive-grove parcels are sub-pixel. 2026 file is partial and will be replaced — re-fetch, don't append.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Cloudflare Radar API — Palestine (PS) internet traffic, quality and outage data",
+    "publisher": "Cloudflare",
+    "landing_url": "https://developers.cloudflare.com/radar/",
+    "data_url_or_api": "https://api.cloudflare.com/client/v4/radar/http/timeseries?location=PS ; /radar/quality/speed/summary?location=PS ; /radar/annotations/outages ; /radar/bgp/*",
+    "contents": "Free REST API: HTTP request timeseries by location/ASN/device/protocol; internet quality (bandwidth, latency, jitter); curated outage annotations with cause; BGP routing data; DNS trends. All accept location=PS and arbitrary date ranges, JSON.",
+    "categories": ["connectivity"],
+    "grain": {"place": "country (PS) and ASN — per-operator (Paltel, Jawwal, Ooredoo)", "time": "sub-daily to daily"},
+    "span": "~2022 → present, varies by endpoint",
+    "cadence": "continuous / near-real-time",
+    "license": {
+      "name": "CC BY-NC 4.0",
+      "quote": "Data available via Radar API endpoints is made available under the CC BY-NC 4.0 license.",
+      "quote_url": "https://developers.cloudflare.com/radar/",
+      "commercial": false
+    },
+    "fills_gap": "Gap 6 — the ASN dimension nothing held provides: per-operator collapse separable, plus curated outage annotations that explain cause.",
+    "effort": "medium",
+    "traps": "Requires free API token (probed: anonymous access refused). NC license. Figures are normalised shares, not absolute bytes. Coverage biased to Cloudflare-fronted sites. PS coverage inferred from documented contract, not directly observed — verify with a token first.",
+    "confidence": "probable"
+  },
+  {
+    "name": "Conflict-Related Incidents Affecting Water Systems — oPt",
+    "publisher": "Insecurity Insight",
+    "landing_url": "https://data.humdata.org/dataset/conflict-related-incidents-affecting-water-systems",
+    "data_url_or_api": "https://data.humdata.org/dataset/4486b11e-d753-4949-b485-16fb81b87f87/resource/f2a93182-09df-416a-946d-98a9ab60bd87/download/2026-conflict-related-incidents-affecting-water-systems-incident-data.xlsx",
+    "contents": "Event-level records of conflict incidents affecting water systems, compiled from agency reporting and open sources; oPt is one of eleven covered countries. Paired Incident Data (one row per event: date, location, description, actor, asset) and Overview Data (aggregates); 2026 file plus rolling 2025–2026 file.",
+    "categories": ["water", "infrastructure", "damage"],
+    "grain": {"place": "incident point / named locality", "time": "event date"},
+    "span": "2008-01-01 → 2026-08-03",
+    "cadence": "live / continuously updated (HDX frequency -2); last modified 2026-08-03",
+    "license": {
+      "name": "CC BY-IGO 3.0",
+      "quote": "Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO)",
+      "quote_url": "https://data.humdata.org/dataset/conflict-related-incidents-affecting-water-systems",
+      "commercial": true
+    },
+    "fills_gap": "Gap 3 from the damage side — the only water-sector source found that reaches back to 2008 AND updates live in 2026: attacks on wells, pipelines, desalination and wastewater plants as discrete events.",
+    "effort": "low",
+    "traps": "Open-source-reporting-dependent — war period almost certainly undercounted. Incidents, not volumes. Multi-country file — filter to oPt. XLSX only. CC BY-IGO 3.0 carries an arbitration clause plain CC BY does not — read before commercial redistribution.",
+    "confidence": "verified"
+  },
+  {
+    "name": "UNOSAT Gaza Strip Road Network Comprehensive Damage Assessment (July 2025)",
+    "publisher": "UNOSAT / UNITAR",
+    "landing_url": "https://data.humdata.org/dataset/unosat-gaza-strip-road-network-comprehensive-damage-assessment-july-2025",
+    "data_url_or_api": "https://data.humdata.org/api/3/action/package_show?id=unosat-gaza-strip-road-network-comprehensive-damage-assessment-july-2025",
+    "contents": "Damage classification on road-segment geometry across Gaza, distinct from building-footprint assessments. Three dated releases: June 2024, August 2024, July 2025 (posted 2025-09-12). Segments carry damage class → destroyed/severely damaged/passable road-km by governorate.",
+    "categories": ["infrastructure", "damage", "transport"],
+    "grain": {"place": "road segment (line geometry), Gaza Strip", "time": "assessment snapshot"},
+    "span": "2024-06 → 2025-07 (three releases)",
+    "cadence": "irregular, roughly annual",
+    "license": {
+      "name": "CC BY-SA",
+      "quote": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+      "quote_url": "https://data.humdata.org/dataset/unosat-gaza-strip-road-network-comprehensive-damage-assessment-july-2025",
+      "commercial": true
+    },
+    "fills_gap": "Gap 1 partially — separate UNOSAT product line; pairs with the OSM PSE extract already held to compute impassable network fraction. Supplies the geometry behind the RDNA's US$3.21bn transport figure.",
+    "effort": "medium",
+    "traps": "OVERLAP RISK with held UNOSAT building damage — verify road-segment geometry specifically before building. Share-Alike viral; do not merge with ODbL POM data (incompatible) — keep separate layers. Satellite passability, not ground truth; rubble clearance after 2025-07 not reflected. Does NOT extend past the 2025-10 horizon.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Gaza Strip Joint WASH Assessment Findings",
+    "publisher": "WASH Cluster — State of Palestine",
+    "landing_url": "https://data.humdata.org/dataset/gaza-strip-joint-wash-assessment-findings",
+    "data_url_or_api": "https://data.humdata.org/dataset/42d003b6-f00f-4671-87ec-006a9052624c/resource/b7f61c95-0fbe-44ba-b869-832571157f5c/download/joint-wash-assessment_r3_hdx_governorate.xlsx",
+    "contents": "Household-survey WASH indicators aggregated to governorate. Random sampling within accessible areas, representative by shelter type, 95% confidence, 3% MoE at governorate level, 2% Gaza-wide. Round 3 tabulations on HDX; Rounds 1–3 narrative reports linked.",
+    "categories": ["water", "NEW:housing"],
+    "grain": {"place": "governorate (5 Gaza governorates)", "time": "assessment round"},
+    "span": "Round 3 dated 2025-08-31; Rounds 1–2 earlier",
+    "cadence": "every 180 days (semi-annual rounds)",
+    "license": {
+      "name": "CC BY",
+      "quote": "Creative Commons Attribution International (CC BY)",
+      "quote_url": "https://data.humdata.org/dataset/gaza-strip-joint-wash-assessment-findings",
+      "commercial": true
+    },
+    "fills_gap": "Gap 3 — the measured-quantities layer at governorate grain with a stated margin of error, vs WHO JMP's national percentages. Commercially licensed, unlike the RDNA.",
+    "effort": "low",
+    "traps": "Only Round 3 is structured data — Rounds 1-2 are PDFs behind Google Drive links; round definitions may not be comparable. Sample covers ONLY areas accessible without HNS-coordinated movement — worst-access areas systematically excluded, biased optimistic; caveat must ride with every figure.",
+    "confidence": "verified"
+  },
+  {
+    "name": "Peace Now Settlement Watch GIS layers",
+    "publisher": "Peace Now (Shalom Achshav), Settlement Watch team",
+    "landing_url": "https://peacenow.org.il/en/gis-layers-peace-now-maps",
+    "data_url_or_api": "https://www.arcgis.com/sharing/rest/content/items/e3848dc0a04c44cc9ad9f7db228cd3a3?f=json",
+    "contents": "ArcGIS Map Package (.mpk, 2.41 MB) with shapefile feature classes: Israeli settlements and outposts in the West Bank, the Green Line, Areas A and B, Palestinian localities. Created/modified 2024-12-02. Separate tabular Settlement Watch series exist (construction starts, housing units, settlement population by year).",
+    "categories": ["geography", "NEW:settlements"],
+    "grain": {"place": "settlement / outpost polygon and point, West Bank", "time": "single snapshot"},
+    "span": "snapshot as of 2024-12",
+    "cadence": "irregular; layers published once (2024-12)",
+    "license": {
+      "name": "Not stated",
+      "quote": "ArcGIS item field licenseInfo is empty; accessInformation reads only: www.peacenow.org.il",
+      "quote_url": "https://www.arcgis.com/sharing/rest/content/items/e3848dc0a04c44cc9ad9f7db228cd3a3?f=json",
+      "commercial": "unclear"
+    },
+    "fills_gap": "Gap 7 — settlement footprint as geodata; the only source located for that gap.",
+    "effort": "medium",
+    "traps": "LICENSE IS THE BLOCKER — licenseInfo empty = all rights reserved by default; written permission required before ingest. Legacy .mpk container — extract with GDAL. Single snapshot — the time dimension lives in Peace Now's separate tabular series (scraping). Boundary definitions differ sharply between sources — do not merge with ARIJ/OCHA layers without reconciling.",
+    "confidence": "probable"
+  }
+]
