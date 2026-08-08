@@ -158,3 +158,73 @@ FROM (
            WHERE ds.key='gaza_moh_daily' GROUP BY 1) x
   ) y WHERE daily IS NOT NULL AND prev IS NOT NULL AND gap = 1
 ) z;
+
+-- ═══ Added 2026-08-08 (Stage 5): the Mandate spine and the closure table.
+-- ═══ 4,351 pre-1948 observations could be mapped as dots and aggregated by
+-- ═══ nothing, because the geography they were collected under did not exist
+-- ═══ in the schema.
+
+\echo '--- G4.10: the 1945 sub-districts exist and are NOT servable ---'
+-- servable=false is the whole safety property. resolve/geo.py's live capture
+-- path filters on it, so a checkpoint report naming Safad today must resolve
+-- exactly as it did before these rows existed.
+SELECT CASE
+         WHEN count(*) >= 16 AND count(*) FILTER (WHERE servable) = 0
+         THEN 'PASS (' || count(*) || ' Mandate sub-districts, none servable)'
+         ELSE 'FAIL: ' || count(*) || ' sub-districts, '
+              || count(*) FILTER (WHERE servable) || ' of them SERVABLE — '
+              || 'historical reference geography must never enter live capture'
+       END AS g4_10_mandate_spine
+FROM place WHERE kind = 'district_mandate';
+
+\echo '--- G4.11: no place is contained in both geographies at one depth ---'
+-- Mandate sub-districts and modern governorates are different administrative
+-- geographies over overlapping ground. A locality summed into both would be
+-- double-counted by any rollup that forgot to filter `relation`.
+SELECT CASE WHEN count(*) = 0
+            THEN 'PASS (the two geographies never mix in one rollup)'
+            ELSE 'FAIL: ' || count(*) || ' place(s) have both a modern and a '
+                 || 'Mandate parent at depth 1 — a rollup that forgets to '
+                 || 'filter `relation` double-counts them'
+       END AS g4_11_geographies_disjoint
+FROM (SELECT descendant_id FROM place_closure WHERE depth = 1
+      GROUP BY 1 HAVING count(DISTINCT relation) > 1) x;
+
+\echo '--- G4.12: containment says how it was proven ---'
+-- 'this locality is in Hebron because its pcode says so' and '…because its
+-- point falls inside Hebron''s polygon' are different strengths of claim.
+SELECT CASE WHEN count(*) = 0
+            THEN 'PASS (every edge records its evidence)'
+            ELSE 'FAIL: ' || count(*) || ' closure edges with no method'
+       END AS g4_12_closure_evidence
+FROM place_closure
+WHERE established_by NOT IN ('pcode', 'st_contains', 'mandate_gazetteer');
+
+\echo '--- G4.13: the pre-1948 record has a spatial axis ---'
+-- The measurement this stage exists for. 0 before 062; a fall back to 0 means
+-- the Mandate spine has been dropped or the gazetteer''s subdistrict_1945
+-- field has gone the way of its gazetteer_key.
+SELECT CASE WHEN n >= 2000
+            THEN 'PASS (' || n || ' pre-1948 observations roll up to a 1945 '
+                 || 'sub-district)'
+            ELSE 'FAIL: only ' || n || ' pre-1948 observations reach a '
+                 || 'Mandate container; the spine or the source field is gone'
+       END AS g4_13_pre48_has_geography
+FROM (SELECT count(*) AS n FROM observation o
+      JOIN dataset d USING (dataset_id)
+      JOIN place_closure c ON c.descendant_id = o.place_id
+                          AND c.relation = 'mandate'
+      WHERE d.v1_category = 'historical' AND upper_inf(o.sys_period)
+        AND o.occurred_at < '1948-01-01') x;
+
+\echo '--- G4.14: a derived geometry never claims to be a boundary ---'
+-- The sub-district centroids are computed from member localities. Recording
+-- that on the row is what stops one being drawn as a 1945 border.
+SELECT CASE WHEN count(*) = 0
+            THEN 'PASS (every derived geometry states its basis)'
+            ELSE 'FAIL: ' || count(*) || ' Mandate sub-district(s) carry a '
+                 || 'geometry with no geom_basis — an unlabelled derived '
+                 || 'shape gets drawn as a boundary'
+       END AS g4_14_derived_geometry_labelled
+FROM place
+WHERE kind = 'district_mandate' AND attrs->>'geom_basis' IS NULL;
