@@ -191,6 +191,7 @@ attrs_passthrough:
 
 expect:
   min_records: 2260                        # 0.9 × 2,517
+  max_observations: 7550    # 1.15 x measured emission
 
 notes: |
   CAN v1 GAZETTEER KEYS JOIN v2 PLACES? MOSTLY NO — MEASURED. The v2 place
@@ -307,5 +308,13 @@ notes: |
 # whole generation). This is what a row IS, independent of v1's hashing; the
 # loader refuses to write a row whose identity the databank already holds.
 identity:
+  # MEASURED 2026-08-07: name alone collides 131 times because Mandate
+  # Palestine had FIVE villages called al-Tira, three called Jaba', and so on.
+  # The 1945 district is what tells them apart — it is identity, not metadata.
   fields: [indicator, occurred_at]
-  attrs: [name]
+  attrs: [name, district_1945, subdistrict_1945, locality_group, geo_key]
+  # locality_group is the last discriminator, and a meaningful one: eight
+  # names recur within one 1945 district because a post-1948 Jewish locality
+  # was established beside (or on) the Palestinian village of the same name —
+  # al-Nahr, Alma, Silwad, Nabi Musa and four more. They are different places
+  # with different coordinates, and the record must not merge them.

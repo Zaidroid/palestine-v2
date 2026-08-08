@@ -187,3 +187,10 @@ notes: |
 drop:
   - reason: no_indicator_identity   # measured 2026-08-07: 210 rows (184 Gaza
                                     #   MoH + 26 HDX) with no indicator_code
+
+identity:
+  # 12,502 GHO rows: indicator already encodes code+dimension, but the same
+  # code/dimension recurs per year with confidence bounds, so the bounds are
+  # part of what makes a row itself. MEASURED 12,502 / 12,502 injective.
+  fields: [indicator, occurred_at, place_id, value_num]
+  attrs: [value_high, value_low]

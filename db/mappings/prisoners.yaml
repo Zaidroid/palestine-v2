@@ -70,6 +70,7 @@ attrs_passthrough:
 
 expect:
   min_records: 800          # 0.9 × 890
+  max_observations: 1040
 
 notes: |
   UNSELLABLE UNTIL ZAID READS THE TERMS. Measured source × license:
@@ -126,3 +127,8 @@ notes: |
   Palestinians-held-by-Israel by detention category (IPS data via HaMoked),
   2008+' — accurate for 864 of 890 rows and silent about Addameer. The records
   are the authority (law: specs cite the audit, not v1's README).
+
+identity:
+  # Month-bucket stock series per metric type, both sources. MEASURED
+  # injective (hamoked 864/864, addameer 26/26).
+  fields: [indicator, occurred_at]

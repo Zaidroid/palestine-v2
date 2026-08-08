@@ -18,12 +18,31 @@ source_routing:
   default: null            # measured: 0/3537 records have an empty sources[]
 
 datasets:
+  # PER-DATASET IDENTITY, and this file is why the concept exists. One
+  # identity was declared for all three on 2026-08-06; it omitted occurred_at,
+  # and T4P's 730-day daily series collapsed onto 4 keys. The dataset could
+  # never write another row and every run still reported success. Each key
+  # below was MEASURED injective against the live rows (2026-08-07).
   - key: v1_infrastructure_tech4palestine
     source: tech4palestine
+    overrides:
+      identity:                       # 4 indicators × 730 days × 2 places
+        fields: [indicator, occurred_at, place_id]   # = 5,840 / 5,840 ✓
   - key: v1_infrastructure_hdx
     source: hdx
+    overrides:
+      identity:
+        # 603 West Bank barrier segments whose location.name is the literal
+        # "Unknown Locality" or "Separation Barrier Segment" — the SOURCE has
+        # no usable name, so the only real identity is where the thing is.
+        # Coordinates measured perfectly distinct: 603 / 603 ✓
+        fields: [indicator]
+        attrs: [geo_key]
   - key: v1_infrastructure_unosat
     source: unosat
+    overrides:
+      identity:                       # one assessment series, 14 dates
+        fields: [indicator, occurred_at]             # = 14 / 14 ✓
 
 indicator:
   template: "infrastructure.{event_type}"
@@ -97,6 +116,10 @@ attrs_passthrough:
 
 expect:
   min_records: 3183              # 0.9 × 3537
+  max_observations: 7500         # 1.15 × 6,457 measured. The tripwire for an
+                                 #   identity too FINE — a revision read as a
+                                 #   new fact — which the injectivity check
+                                 #   structurally cannot see.
 
 notes: |
   FOUR SUB-DATASETS, MEASURED. event_type × source is 1:1 except that HDX
@@ -191,6 +214,9 @@ notes: |
 # after v1 re-hashed every stable_id and this dataset silently re-inserted its
 # whole generation). This is what a row IS, independent of v1's hashing; the
 # loader refuses to write a row whose identity the databank already holds.
+# Spec-level default for any dataset that does not override it. All three
+# DO override (see datasets:), because one key provably cannot describe a
+# daily time series, a coordinate register and an assessment series at once.
 identity:
-  fields: [indicator]
+  fields: [indicator, occurred_at]
   attrs: [locality_name, event_type]

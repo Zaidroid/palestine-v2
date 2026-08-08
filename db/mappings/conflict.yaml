@@ -238,6 +238,7 @@ expect:
   min_records: 8500              # ≈0.9 × 9,474 retained (10,495 − 977 − 44).
                                  #   If the drops are rejected on review, raise
                                  #   this to 9,400 (≈0.9 × 10,495).
+  max_observations: 5000
 
 notes: |
   Measured from ops/t2-category-audit.json and all 10,495 v1 records.
@@ -323,3 +324,16 @@ notes: |
      observation, not of 977 things that happened. The renamed keys make it
      safe where it is, but moving it to `observation` as
      conflict.gaza_cumulative_killed / _injured would make it correct.
+
+identity:
+  # The cumulative Gaza series (the observation half of this event-shaped
+  # spec). MEASURED 2,074 distinct of 2,078: v1 publishes the SAME daily
+  # cumulative under two event_types (daily_casualty_report and summary) on
+  # 2026-06-09 and 2026-08-06, so four rows are the same fact twice.
+  # Collapsing them is CORRECT — this is one figure, not two — and the
+  # allowance is the measured count, never a round number.
+  fields: [indicator, occurred_at, value_num]
+  allow_collisions: 4
+  collision_kind: duplicate_fact
+  # The same daily cumulative published under two event_types on two days.
+  # One figure, so one row: the duplicate is superseded, not kept.

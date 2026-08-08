@@ -59,6 +59,24 @@ datasets:
     source: idmc
     records_measured: 334
     overrides:
+      identity:
+        # MEASURED 2026-08-07: exactly one collision, and it is UPSTREAM —
+        # IDMC publishes the Nur Shams camp displacement of 2025-09-01 (106
+        # people) TWICE in the same file. Collapsing them is correct;
+        # inventing a key to separate a source's own duplicate would be
+        # worse. Verified in refugees/all-data.json, not assumed.
+        # Declared HERE and not spec-level: an allowance at spec level
+        # silently exempts UNHCR and UNRWA — which key perfectly — from
+        # carrying a stored key at all.
+        fields: [indicator, occurred_at, place_id, value_num]
+        attrs: [event_name, aggregate_label, name, asylum_country]
+        allow_collisions: 1
+        collision_kind: duplicate_fact
+        # The two Nur Shams rows are ONE displacement published twice, so
+        # collapsing them is the correct answer and the second copy is
+        # superseded. Contrast aid_access, whose duplicates are DIFFERENT
+        # lorries that happen to look identical — those must never collapse,
+        # which is why it is `indistinguishable` and keeps no stored key.
       indicator:
         template: "refugees.displacement_event"   # displacement_category is ''
                                                   #   on 333/334 and 'Mixed
@@ -164,6 +182,7 @@ attrs_passthrough:
 
 expect:
   min_records: 1400           # 0.9 × 1,566
+  max_observations: 1830    # 1.15 x measured emission
 
 notes: |
   FORMAT EXTENSION USED HERE. Law 5 says specs are per (category, source), but
@@ -254,3 +273,8 @@ notes: |
 identity:
   fields: [indicator, occurred_at, place_id, value_num]
   attrs: [event_name, aggregate_label, name, asylum_country]
+  # NO spec-level allow_collisions. IDMC's single upstream duplicate is
+  # declared on IDMC's own dataset override; putting it here would silently
+  # exempt UNHCR (1,157/1,157) and UNRWA (90/90) — which key perfectly —
+  # from carrying a stored identity at all. An allowance is a statement
+  # about ONE source's data, never a category-wide relaxation.

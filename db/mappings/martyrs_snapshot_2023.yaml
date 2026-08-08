@@ -81,6 +81,7 @@ attrs_passthrough:
 
 expect:
   min_records: 54000      # 0.9 × 60,200
+  max_observations: 84100    # 1.15 x measured emission
 
 notes: |
   WHAT AN OBSERVATION IS HERE. One person, one observation: indicator

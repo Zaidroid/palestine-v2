@@ -23,7 +23,7 @@ import gzip
 import json
 import re
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,7 +54,51 @@ def load_spec(category: str) -> dict:
         raise SpecRefused(f"{category}: status={spec.get('status')!r}, not reviewed")
     if spec.get("migrate") is False:
         raise SpecRefused(f"{category}: migrate=false ({spec.get('skip_reason')})")
+
+    # A migrating spec MUST declare how a row is identified and how many rows
+    # are too many. Both were optional until 2026-08-07, and the eleven specs
+    # that declared neither are exactly the ones that doubled overnight when
+    # v1 re-hashed its corpus. Optional guards protect the datasets that
+    # happened to be remembered.
+    if not (spec.get("identity") or any(
+            (d.get("overrides") or {}).get("identity")
+            for d in spec.get("datasets", []))):
+        raise SpecRefused(
+            f"{category}: no `identity:` — declare what makes a row THIS row "
+            "(per dataset via datasets[].overrides.identity where one key "
+            "cannot describe them all), or v1 re-hashing its ids silently "
+            "re-inserts the whole corpus")
+    if not (spec.get("expect") or {}).get("max_observations"):
+        raise SpecRefused(
+            f"{category}: no `expect.max_observations` — the tripwire that "
+            "catches an identity too FINE (a revision read as a new fact). "
+            "Set it at ~1.15x the measured emission.")
     return spec
+
+
+def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
+                     place_id, value_num, attrs) -> str:
+    """The ONE renderer for a row's declared identity.
+
+    Both the loader (on a Row it just built) and the backfill (on a row read
+    back from the database) call this. That is the whole point: the first
+    version of the guard compared a Python-rendered key against a SQL-rendered
+    one, and 106.0 != 106 made it fail OPEN — re-inserting rows it already
+    held, which is the doubling it existed to prevent (measured: 998 of 1,000
+    connectivity rows). One function, one rendering, no second opinion.
+    """
+    parts = [dataset_key]
+    for f in ident.get("fields", []):
+        v = {"indicator": indicator,
+             "occurred_at": str(occurred_at)[:10],
+             "occurred_at_exact": str(occurred_at),
+             "place_id": place_id,
+             "value_num": value_num}[f]
+        parts.append("" if v is None else str(v))
+    for a in ident.get("attrs", []):
+        v = (attrs or {}).get(a)
+        parts.append("" if v is None else str(v))
+    return "|".join(parts)
 
 
 def iter_v1_files(category: str, spec: dict | None = None):
@@ -101,6 +145,7 @@ class Row:
     located: bool = False       # point/locality/governorate-grade resolution
     reported_at: str | None = None
     raw_ref: str | None = None
+    identity_key: str | None = None     # 052: the declared natural key
     attrs: dict = field(default_factory=dict)
 
 
@@ -323,6 +368,15 @@ def t_demolitions(rec, spec, places, counts):
         attrs["coverage_start"] = "2009-01-01"
         attrs["coverage_end"] = "2026-08-05"
     loc = rec.get("location") or {}
+    if (rec.get("demolition_dimension") or "") == "locality":
+        # THE FIX-FIRST NOTE, discharged (2026-08-07). The locality name was
+        # in the source all along (location.name, 511 distinct of 516) and
+        # this transformer dropped it, leaving these rows with no identity
+        # but a governorate — which is why 828 of them collided and why the
+        # dataset was frozen holding a superseded generation. governorate
+        # rides along because five names repeat across governorates.
+        attrs["locality_name"] = loc.get("name")
+        attrs["governorate"] = loc.get("governorate")
     pid = places["pcode"].get(loc.get("admin2_pcode"))
     if pid is not None:
         place_id, located = pid, True                             # rung 1-2
@@ -633,6 +687,14 @@ def t_infrastructure(rec, spec, places, counts):
         indicator = f"infrastructure.{slug(etype)}"
         value = m.get("count")
         occurred, precision = str(rec["date"])[:10], "unknown"    # law 1: 100%
+        # The 603 HDX registers name every row "Unknown Locality" or
+        # "Separation Barrier Segment": the source carries NO usable name, so
+        # the only thing that makes a row THIS row is where it is. Measured
+        # 603/603 distinct. Discarding it (as this transformer did until
+        # 2026-08-07) left the dataset with no identity at all — and the
+        # identity guard then froze it at 2 keys.
+        if loc.get("lat") is not None and loc.get("lon") is not None:
+            attrs["geo_key"] = f"{loc['lat']:.6f},{loc['lon']:.6f}"
     if etype != "barrier_segment":                                # latlon_exclude
         pid = places["pcode"].get(loc.get("admin2_pcode"))
     else:
@@ -776,7 +838,22 @@ def t_historical(rec, spec, places, counts):
     # POM localities: fan out censuses + status (REVIEW.md / spec fan_out)
     attrs = passthrough(rec, _ds_over(spec, ds, "attrs_passthrough",
                                       default=[]))
-    pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
+    # Mandate Palestine reused names heavily: five villages called al-Tira,
+    # and eight cases where a post-1948 Jewish locality took the name of the
+    # Palestinian village beside it, inside the same 1945 district. Two
+    # localities called En HaHoresh sit in Tulkarem. Where the name, district
+    # and group all match, the coordinates are what remain — and they are the
+    # honest answer, because these ARE different places.
+    if loc.get("lat") is not None and loc.get("lon") is not None:
+        attrs["geo_key"] = f"{loc['lat']:.5f},{loc['lon']:.5f}"
+    # the historic locality itself first — most Mandate villages sit inside
+    # 1948 Israel, where no modern governorate polygon contains them, so the
+    # point-in-polygon test alone leaves 4,141 rows unplaced
+    pid = places["_historic_geo"].get(
+        (f"{loc['lat']:.5f}", f"{loc['lon']:.5f}")
+    ) if loc.get("lat") is not None and loc.get("lon") is not None else None
+    if pid is None:
+        pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
     located = pid is not None
     sid = rec["stable_id"]
     rows = []
@@ -1008,10 +1085,12 @@ def ensure_datasets(conn, spec, category) -> dict:
 INSERT_SQL = """
 INSERT INTO observation (dataset_id, place_id, indicator, value_num,
                          value_text, unit, occurred_at, occurred_precision,
-                         reported_at, raw_ref, v1_stable_id, attrs)
+                         reported_at, raw_ref, v1_stable_id, identity_key,
+                         attrs)
 VALUES (%(dataset_id)s, %(place_id)s, %(indicator)s, %(value_num)s,
         %(value_text)s, %(unit)s, %(occurred_at)s, %(precision)s,
-        %(reported_at)s, %(raw_ref)s, %(v1_stable_id)s, %(attrs)s)
+        %(reported_at)s, %(raw_ref)s, %(v1_stable_id)s, %(identity_key)s,
+        %(attrs)s)
 ON CONFLICT (dataset_id, v1_stable_id, occurred_at)
     WHERE v1_stable_id IS NOT NULL
 DO NOTHING
@@ -1059,26 +1138,39 @@ def run(category: str, dry_run: bool = False) -> dict:
     # natural identity is what happened, where, when, at what scale.
     known_events: set[str] = set()
 
+    # Injectivity bookkeeping for the invariant below.
+    emitted_identities: set[str] = set()
+    identity_collisions: Counter = Counter()
+    collision_samples: dict[str, list[str]] = defaultdict(list)
+
     def _event_identity(e) -> str:
         return "|".join([e.event_type, str(e.occurred_at)[:10],
                          str(e.place_id), str(e.lat), str(e.lon),
                          json.dumps(e.metrics, sort_keys=True)])
 
+    # Identity is per DATASET, not per spec. That distinction is the whole
+    # 2026-08-07 freeze: infrastructure.yaml holds a 730-day Gaza daily
+    # series, a West Bank barrier register and a UNOSAT assessment series
+    # under one identity that omitted occurred_at, so 5,840 rows collapsed to
+    # 4 keys and the dataset could never write again — while the run
+    # reported success. A spec may declare `identity:` once and override it
+    # per dataset through the existing datasets[].overrides mechanism.
+    identity_by_ds: dict[str, dict] = {}
+    for _ds in spec.get("datasets", []):
+        _id = ((_ds.get("overrides") or {}).get("identity")) or identity_spec
+        if _id:
+            identity_by_ds[_ds["key"]] = _id
+
     def _identity_of(r) -> str | None:
         if isinstance(r, EventRow):
             return None                 # handled by _event_identity below
-        if not identity_spec:
+        ident = identity_by_ds.get(r.dataset_key)
+        if not ident:
             return None
-        parts = []
-        for f in identity_spec.get("fields", []):
-            v = {"indicator": r.indicator,
-                 "occurred_at": str(r.occurred_at)[:10],
-                 "place_id": r.place_id,
-                 "value_num": r.value_num}.get(f)
-            parts.append("" if v is None else str(v))
-        for a in identity_spec.get("attrs", []):
-            parts.append(str(r.attrs.get(a, "")))
-        return "|".join(parts)
+        return identity_key_for(ident, r.dataset_key, indicator=r.indicator,
+                                occurred_at=r.occurred_at,
+                                place_id=r.place_id, value_num=r.value_num,
+                                attrs=r.attrs)
 
     event_rows: list[EventRow] = []
     with connect() as conn:
@@ -1091,26 +1183,37 @@ def run(category: str, dry_run: bool = False) -> dict:
             places["_v1key"] = dict(cur.fetchall())
             cur.execute("SELECT key, commercial_use FROM source")
             places["_commercial"] = dict(cur.fetchall())
-            if identity_spec:
-                # what this dataset already holds, by declared identity
-                fields = identity_spec.get("fields", [])
-                attrs_k = identity_spec.get("attrs", [])
-                exprs = []
-                for f in fields:
-                    col = {"indicator": "o.indicator",
-                           "occurred_at": "o.occurred_at::date::text",
-                           "place_id": "coalesce(o.place_id::text,'')",
-                           "value_num": "coalesce(o.value_num::text,'')"}[f]
-                    exprs.append(col)
-                for a in attrs_k:
-                    exprs.append(f"coalesce(o.attrs->>'{a}','')")
-                key_sql = " || '|' || ".join(exprs) if exprs else "''"
-                cur.execute(f"""
-                    SELECT DISTINCT {key_sql}
+            # Mandate-era localities, indexed by coordinate. v1 USED to carry
+            # location.gazetteer_key and the Nakba gazetteer was re-pointed
+            # against it by a one-off script; v1's rebuild has since dropped
+            # that key from all 2,490 historical records (the same regression
+            # that hit demolitions). Both sides came from Palestine Open Maps,
+            # so the coordinates still agree — and resolving on them means a
+            # reload lands correctly by itself instead of depending on a
+            # follow-up script somebody has to remember.
+            cur.execute("""SELECT ST_Y(geom::geometry), ST_X(geom::geometry),
+                                  place_id
+                           FROM place
+                           WHERE geom IS NOT NULL AND merged_into IS NULL
+                             AND ST_GeometryType(geom::geometry) = 'ST_Point'
+                             AND (attrs->>'historic' = 'mandate-palestine'
+                                  OR source_refs ? 'v1_canonical_key')""")
+            # formatted in Python, exactly as the transformer formats the
+            # record's own coordinates — one renderer, same lesson as
+            # identity_key_for
+            places["_historic_geo"] = {(f"{a:.5f}", f"{b:.5f}"): pid
+                                       for a, b, pid in cur.fetchall()}
+            # what each dataset already holds, read from the STORED key
+            # (052). Recomputing it in SQL is what made the first guard fail
+            # open — see identity_key_for's docstring.
+            if identity_by_ds:
+                cur.execute("""
+                    SELECT DISTINCT o.identity_key
                     FROM observation o JOIN dataset d
                       ON d.dataset_id = o.dataset_id
-                    WHERE d.key = ANY(%s) AND upper_inf(o.sys_period)""",
-                    ([ds["key"] for ds in spec["datasets"]],))
+                    WHERE d.key = ANY(%s) AND o.identity_key IS NOT NULL
+                      AND upper_inf(o.sys_period)""",
+                    (list(identity_by_ds),))
                 known_identities = {r[0] for r in cur.fetchall()}
             if spec.get("shape") == "event" or spec.get("shape_overrides"):
                 cur.execute(
@@ -1160,6 +1263,15 @@ def run(category: str, dry_run: bool = False) -> dict:
                         counts["located_total"] += 1
                     ident = _identity_of(r)
                     if ident is not None:
+                        # THE INVARIANT: an identity that cannot tell two rows
+                        # of THIS run apart cannot tell them apart across runs
+                        # either — it silently freezes the dataset. Recorded
+                        # per dataset here and enforced before any write.
+                        if ident in emitted_identities:
+                            identity_collisions[r.dataset_key] += 1
+                            if len(collision_samples[r.dataset_key]) < 3:
+                                collision_samples[r.dataset_key].append(ident)
+                        emitted_identities.add(ident)
                         if ident in known_identities:
                             # already in the databank under an older v1 hash —
                             # the 2026-08-07 doubling, prevented at the source
@@ -1180,6 +1292,17 @@ def run(category: str, dry_run: bool = False) -> dict:
                                 continue
                         else:
                             known_events.add(ek)
+                    if ident is not None and (
+                            identity_by_ds.get(r.dataset_key, {})
+                            .get("collision_kind") != "indistinguishable"):
+                        # Only `indistinguishable` datasets go keyless — their
+                        # duplicates are DIFFERENT things the source records
+                        # identically (aid_access lorries), so collapsing them
+                        # would delete real data. A `duplicate_fact` dataset
+                        # keeps its key and lets 052 refuse the second copy,
+                        # which is the dedup we want. Getting this backwards
+                        # cost IDMC a silent doubling on 2026-08-07.
+                        r.identity_key = ident
                     seen_stable.add(r.v1_stable_id)
                     r.raw_ref = refs[f]
                     (event_rows if isinstance(r, EventRow) else rows).append(r)
@@ -1196,6 +1319,24 @@ def run(category: str, dry_run: bool = False) -> dict:
             # failed to dedupe and must say so
             problems.append(f"emitted {len(rows)} > expect.max_observations "
                             f"{max_obs}")
+        # THE INJECTIVITY INVARIANT (added 2026-08-07 after the freeze).
+        # An identity that maps two distinct rows to one key does not
+        # de-duplicate — it DELETES. The failure is silent by construction:
+        # the second row is skipped as "already held", the run reports
+        # success, and the dataset can never grow again. infrastructure sat
+        # at 5,840 rows / 4 keys for a day looking perfectly healthy.
+        # A spec may declare `identity.allow_collisions: <measured N>`, and
+        # only a measured number — the same posture `drop:` already requires.
+        for ds_key, n_coll in identity_collisions.items():
+            allowed = (identity_by_ds.get(ds_key, {}) or {}).get(
+                "allow_collisions", 0)
+            if n_coll > allowed:
+                sample = "; ".join(collision_samples[ds_key])
+                problems.append(
+                    f"identity is not injective for {ds_key}: {n_coll} "
+                    f"collisions (allowed {allowed}) — two different rows "
+                    f"share one identity, so the second can never be "
+                    f"written. Samples: {sample}")
         for k in counts:
             if k.startswith(("unroutable:", "no_dataset_for_source:",
                              "governorate_unresolved:",
@@ -1232,6 +1373,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "precision": r.precision, "reported_at": r.reported_at,
                         "raw_ref": getattr(r, "raw_ref", None),
                         "v1_stable_id": r.v1_stable_id,
+                        "identity_key": r.identity_key,
                         "attrs": json.dumps(r.attrs, ensure_ascii=False),
                     })
                     written += cur.rowcount

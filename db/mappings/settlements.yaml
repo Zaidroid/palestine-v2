@@ -52,6 +52,7 @@ attrs_passthrough:
 
 expect:
   min_records: 46          # ≈0.9 × 51
+  max_observations: 68
 
 notes: |
   Measured from ops/t2-category-audit.json and the v1 file itself:
@@ -87,3 +88,7 @@ notes: |
         inconsistent with the flow categories (demolitions, casualties).
   Whichever is chosen must be applied identically to every stock series in the
   databank, so this is a databank-wide decision, not a settlements one.
+
+identity:
+  # 51 annual settler-population rows. MEASURED injective.
+  fields: [indicator, occurred_at]

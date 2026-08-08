@@ -70,3 +70,8 @@ notes: |
   them and this spec's arithmetic gets re-measured. water.yaml (the v1
   corpus skip) STAYS as the record of why 25,049 anonymous rows have no
   silver — this spec is the recovery, not a reversal.
+
+# gho-<code>-<year>-<dim> is deterministic, but declared explicitly so the
+# invariant covers it.
+identity:
+  fields: [indicator, occurred_at]                     # = 75 / 75 ✓

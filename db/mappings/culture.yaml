@@ -59,6 +59,7 @@ attrs_passthrough:
 
 expect:
   min_records: 296                 # 0.9 × 329
+  max_observations: 390    # 1.15 x measured emission
 
 notes: |
   NO HONEST DATE EXISTS. Searched every string and numeric field of all 329

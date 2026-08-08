@@ -105,6 +105,7 @@ attrs_passthrough:
 
 expect:
   min_records: 44         # ≈0.9 × 49
+  max_observations: 66
 
 notes: |
   Measured from ops/t2-category-audit.json and the 49 v1 records:
@@ -148,3 +149,7 @@ notes: |
   and will never be fresh. If the reviewer would rather keep observation
   free of undated rows, the alternative is to drop all 30 and lose those
   splits entirely — that is a product decision, not a data one.
+
+identity:
+  # 49 rows: one indicator per (dimension, year). MEASURED 49/49 injective.
+  fields: [indicator, occurred_at]

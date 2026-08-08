@@ -1,0 +1,226 @@
+{
+ "apply": true,
+ "datasets": {
+  "v1_aid_access_unrwa_aid_trucks": {
+   "allowed": 24550,
+   "collisions": 24550,
+   "keys": 25509,
+   "rows": 50059,
+   "verdict": "clean"
+  },
+  "v1_casualties_ocha_casualties": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 49,
+   "rows": 49,
+   "verdict": "clean"
+  },
+  "v1_conflict_t4p_westbank": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 2255,
+   "rows": 2255,
+   "verdict": "clean"
+  },
+  "v1_conflict_tech4palestine": {
+   "allowed": 4,
+   "collisions": 4,
+   "keys": 2074,
+   "rows": 2078,
+   "verdict": "clean"
+  },
+  "v1_connectivity_ioda": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 1000,
+   "rows": 1000,
+   "verdict": "clean"
+  },
+  "v1_connectivity_ooni": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 1276,
+   "rows": 1276,
+   "verdict": "clean"
+  },
+  "v1_culture_heritage_composite": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 329,
+   "rows": 329,
+   "verdict": "clean"
+  },
+  "v1_demolitions_ocha_demolitions": {
+   "allowed": 0,
+   "collisions": 830,
+   "keys": 76,
+   "rows": 906,
+   "superseded": 906,
+   "verdict": "supersede the current generation"
+  },
+  "v1_economic_imf": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 474,
+   "rows": 474,
+   "verdict": "clean"
+  },
+  "v1_economic_pcbs_direct": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 116,
+   "rows": 116,
+   "verdict": "clean"
+  },
+  "v1_economic_worldbank": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 3536,
+   "rows": 3536,
+   "verdict": "clean"
+  },
+  "v1_education_hdx": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 2359,
+   "rows": 2359,
+   "verdict": "clean"
+  },
+  "v1_food_wfp": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 26814,
+   "rows": 26814,
+   "verdict": "clean"
+  },
+  "v1_funding_unfts": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 9991,
+   "rows": 9991,
+   "verdict": "clean"
+  },
+  "v1_health_who": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 12502,
+   "rows": 12502,
+   "verdict": "clean"
+  },
+  "v1_historical_palopenmaps": {
+   "allowed": 0,
+   "collisions": 4,
+   "keys": 6544,
+   "rows": 6548,
+   "superseded": 6548,
+   "verdict": "supersede the current generation"
+  },
+  "v1_infrastructure_hdx": {
+   "allowed": 0,
+   "collisions": 601,
+   "keys": 2,
+   "rows": 603,
+   "superseded": 603,
+   "verdict": "supersede the current generation"
+  },
+  "v1_infrastructure_tech4palestine": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 5840,
+   "rows": 5840,
+   "verdict": "clean"
+  },
+  "v1_infrastructure_unosat": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 14,
+   "rows": 14,
+   "verdict": "clean"
+  },
+  "v1_land_goodshepherd": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 237,
+   "rows": 237,
+   "verdict": "clean"
+  },
+  "v1_land_ocha": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 261,
+   "rows": 261,
+   "verdict": "clean"
+  },
+  "v1_land_peace_now": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 199,
+   "rows": 199,
+   "verdict": "clean"
+  },
+  "v1_martyrs_snapshot_2023_tech4palestine": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 73079,
+   "rows": 73079,
+   "verdict": "clean"
+  },
+  "v1_pcbs_pcbs": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 2060,
+   "rows": 2060,
+   "verdict": "clean"
+  },
+  "v1_prisoners_addameer": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 26,
+   "rows": 26,
+   "verdict": "clean"
+  },
+  "v1_prisoners_hamoked": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 864,
+   "rows": 864,
+   "verdict": "clean"
+  },
+  "v1_refugees_idmc": {
+   "allowed": 1,
+   "collisions": 1,
+   "keys": 333,
+   "rows": 334,
+   "verdict": "clean"
+  },
+  "v1_refugees_unhcr": {
+   "allowed": 1,
+   "collisions": 0,
+   "keys": 1157,
+   "rows": 1157,
+   "verdict": "clean"
+  },
+  "v1_refugees_unrwa": {
+   "allowed": 1,
+   "collisions": 0,
+   "keys": 90,
+   "rows": 90,
+   "verdict": "clean"
+  },
+  "v1_settlements_peace_now": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 51,
+   "rows": 51,
+   "verdict": "clean"
+  },
+  "who_gho_wash": {
+   "allowed": 0,
+   "collisions": 0,
+   "keys": 75,
+   "rows": 75,
+   "verdict": "clean"
+  }
+ },
+ "ts": "2026-08-07T15:21:34.893342+00:00"
+}

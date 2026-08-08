@@ -111,17 +111,45 @@ def _resolve_station(cur, conn, name: str, locality: str | None, region: str):
     return pid, precision, how
 
 
+#. A torn line is tolerated; a torn SPOOL is not. 2026-08-08: the host lost
+#  power mid-write and v1's spool gained one NUL-padded line — 1 of 40,014 —
+#  which crashed json.loads and took the whole fuel vertical down for hours.
+#  One unreadable line must not silence a live feed, and a spool that is
+#  mostly unreadable must not be quietly half-ingested either.
+MAX_MALFORMED_FRACTION = 0.01
+
+
 def load(spool_files=None) -> dict:
     files = spool_files or sorted(SPOOL_DIR.glob("*.ndjson"))
     rows = []
+    malformed: list[str] = []
     for f in files:
-        for line in Path(f).read_text(encoding="utf-8").splitlines():
-            if line.strip():
+        # errors="replace": a torn write can also leave invalid UTF-8, and
+        # failing to DECODE the file would lose every good line in it
+        for i, line in enumerate(
+                Path(f).read_text(encoding="utf-8",
+                                  errors="replace").splitlines(), 1):
+            if not line.strip() or not line.strip("\x00"):
+                continue
+            try:
                 rows.append(json.loads(line))
+            except ValueError:
+                malformed.append(f"{Path(f).name}:{i}")
+
+    if malformed and len(malformed) > MAX_MALFORMED_FRACTION * max(
+            len(rows) + len(malformed), 1):
+        raise RuntimeError(
+            f"palhub spool is {len(malformed)}/{len(rows) + len(malformed)} "
+            f"unreadable — that is corruption, not a torn write. "
+            f"First: {malformed[:3]}")
 
     sweeps = parse_spool(rows)
     stats = {"sweeps": len(sweeps), "readings": 0, "observations": 0,
              "stations_created": 0, "unresolved": 0,
+             # counted by reason, never silently swallowed (law 4): a torn
+             # line is survivable but it is still a fact about the feed
+             "malformed_lines": len(malformed),
+             "malformed_at": malformed[:5],
              "by_precision": {}, "by_how": {}}
     if not sweeps:
         return stats

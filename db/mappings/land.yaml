@@ -19,12 +19,29 @@ source_routing:
                            #   sources[] has exactly one entry on 697/697
 
 datasets:
+  # Three registers, three shapes, three identities — MEASURED injective
+  # against live rows 2026-08-07. The single spec-level key below described
+  # only OCHA's; it froze the other two (goodshepherd 237 rows → 1 key,
+  # peace_now 199 → 175) and both silently stopped accepting data.
   - key: v1_land_ocha
-    source: ocha
+    source: ocha                    # 261 named checkpoints = 261 / 261 ✓
   - key: v1_land_goodshepherd
     source: goodshepherd
+    overrides:
+      identity:
+        # A daily confiscation-watch feed: land_name/type/status are the SAME
+        # string on all 237 rows (measured cardinality 1). The date is the
+        # only thing that distinguishes one report from the next.
+        fields: [indicator, occurred_at]             # = 237 / 237 ✓
   - key: v1_land_peace_now
     source: peace_now
+    overrides:
+      identity:
+        # A settlement register on one ingest date: the name alone collides
+        # on 24 rows (175 distinct of 199), because Peace Now lists several
+        # parcels per settlement. Area separates them.
+        fields: [indicator]
+        attrs: [land_name, area_dunums]              # = 199 / 199 ✓
 
 indicator:
   template: "land.{event_type}"    # land.checkpoint 261 / land.demolition 237
@@ -82,6 +99,7 @@ attrs_passthrough:
 
 expect:
   min_records: 627                 # 0.9 × 697
+  max_observations: 810            # 1.15 × 697 measured
 
 notes: |
   THE THREE DATASETS ARE DISJOINT AND SOURCE == EVENT_TYPE, 1:1, measured:
@@ -155,6 +173,8 @@ notes: |
 # after v1 re-hashed every stable_id and this dataset silently re-inserted its
 # whole generation). This is what a row IS, independent of v1's hashing; the
 # loader refuses to write a row whose identity the databank already holds.
+# Spec-level default: OCHA's named-checkpoint register. The other two
+# datasets override it above — see why there.
 identity:
   fields: [indicator]
   attrs: [land_name, checkpoint_type]

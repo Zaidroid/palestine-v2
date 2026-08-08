@@ -1,0 +1,196 @@
+{
+ "v1_aid_access_unrwa_aid_trucks": {
+  "collisions": 24550,
+  "distinct_keys": 25509,
+  "rows": 50059,
+  "stored": false
+ },
+ "v1_casualties_ocha_casualties": {
+  "collisions": 0,
+  "distinct_keys": 49,
+  "rows": 49
+ },
+ "v1_conflict_btselem": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_conflict_goodshepherd": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_conflict_palopenmaps": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_conflict_t4p_westbank": {
+  "collisions": 0,
+  "distinct_keys": 2255,
+  "rows": 2255
+ },
+ "v1_conflict_tech4palestine": {
+  "collisions": 4,
+  "distinct_keys": 2074,
+  "rows": 2078,
+  "superseded_duplicates": 4
+ },
+ "v1_conflict_ucdp": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_connectivity_ioda": {
+  "collisions": 0,
+  "distinct_keys": 1000,
+  "rows": 1000
+ },
+ "v1_connectivity_ooni": {
+  "collisions": 0,
+  "distinct_keys": 1276,
+  "rows": 1276
+ },
+ "v1_culture_heritage_composite": {
+  "collisions": 0,
+  "distinct_keys": 329,
+  "rows": 329
+ },
+ "v1_demolitions_ocha_demolitions": {
+  "collisions": 0,
+  "distinct_keys": 847,
+  "rows": 847
+ },
+ "v1_economic_imf": {
+  "collisions": 0,
+  "distinct_keys": 474,
+  "rows": 474
+ },
+ "v1_economic_pcbs_direct": {
+  "collisions": 0,
+  "distinct_keys": 116,
+  "rows": 116
+ },
+ "v1_economic_worldbank": {
+  "collisions": 0,
+  "distinct_keys": 3536,
+  "rows": 3536
+ },
+ "v1_education_hdx": {
+  "collisions": 0,
+  "distinct_keys": 2359,
+  "rows": 2359
+ },
+ "v1_food_wfp": {
+  "collisions": 0,
+  "distinct_keys": 26814,
+  "rows": 26814
+ },
+ "v1_funding_unfts": {
+  "collisions": 0,
+  "distinct_keys": 9991,
+  "rows": 9991
+ },
+ "v1_health_gaza_moh": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_health_hdx": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_health_who": {
+  "collisions": 0,
+  "distinct_keys": 12502,
+  "rows": 12502
+ },
+ "v1_historical_archives": {
+  "collisions": 0,
+  "distinct_keys": 0,
+  "rows": 0
+ },
+ "v1_historical_palopenmaps": {
+  "collisions": 0,
+  "distinct_keys": 6548,
+  "rows": 6548
+ },
+ "v1_infrastructure_hdx": {
+  "collisions": 0,
+  "distinct_keys": 603,
+  "rows": 603
+ },
+ "v1_infrastructure_tech4palestine": {
+  "collisions": 0,
+  "distinct_keys": 5840,
+  "rows": 5840
+ },
+ "v1_infrastructure_unosat": {
+  "collisions": 0,
+  "distinct_keys": 14,
+  "rows": 14
+ },
+ "v1_land_goodshepherd": {
+  "collisions": 0,
+  "distinct_keys": 237,
+  "rows": 237
+ },
+ "v1_land_ocha": {
+  "collisions": 0,
+  "distinct_keys": 261,
+  "rows": 261
+ },
+ "v1_land_peace_now": {
+  "collisions": 0,
+  "distinct_keys": 199,
+  "rows": 199
+ },
+ "v1_martyrs_snapshot_2023_tech4palestine": {
+  "collisions": 0,
+  "distinct_keys": 73079,
+  "rows": 73079
+ },
+ "v1_pcbs_pcbs": {
+  "collisions": 0,
+  "distinct_keys": 2060,
+  "rows": 2060
+ },
+ "v1_prisoners_addameer": {
+  "collisions": 0,
+  "distinct_keys": 26,
+  "rows": 26
+ },
+ "v1_prisoners_hamoked": {
+  "collisions": 0,
+  "distinct_keys": 864,
+  "rows": 864
+ },
+ "v1_refugees_idmc": {
+  "collisions": 332,
+  "distinct_keys": 333,
+  "rows": 665,
+  "superseded_duplicates": 332
+ },
+ "v1_refugees_unhcr": {
+  "collisions": 0,
+  "distinct_keys": 1157,
+  "rows": 1157
+ },
+ "v1_refugees_unrwa": {
+  "collisions": 1,
+  "distinct_keys": 90,
+  "rows": 91,
+  "superseded_duplicates": 1
+ },
+ "v1_settlements_peace_now": {
+  "collisions": 0,
+  "distinct_keys": 51,
+  "rows": 51
+ },
+ "who_gho_wash": {
+  "collisions": 0,
+  "distinct_keys": 75,
+  "rows": 75
+ }
+}

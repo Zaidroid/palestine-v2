@@ -82,6 +82,7 @@ attrs_passthrough:
 
 expect:
   min_records: 45000           # ≈0.9 × 50,059
+  max_observations: 57600
 
 notes: |
   MEASURED (full census of the 6 quarterly partitions, 2023-Q4 … 2025-Q1;
@@ -154,3 +155,24 @@ notes: |
   (literal string → gazetteer entry, `null` meaning "use fallback"), and
   `place.fallback`. Without them the only in-format option is `strategy:
   name`, which measurement shows resolves 0 of 7 crossings correctly.
+
+identity:
+  # 50,059 UNRWA consignment rows with NO per-consignment id anywhere in the
+  # source: 24,550 are byte-identical to another row (same day, crossing,
+  # donor, cargo and truck count) and genuinely represent separate lorries.
+  # There is no honest key that separates them, so the collisions are
+  # DECLARED with their measured count rather than invented away.
+  #
+  # This is safe for exactly one reason: the upstream is DEAD (UNRWA ceased
+  # publishing 2025-01-16, recorded in gap_radar.DEAD_UPSTREAM), so no new
+  # row can ever arrive to be wrongly suppressed. The successor series —
+  # the UN 2720 mechanism dashboard — gets its OWN spec with its own key.
+  # FIX FIRST if this dataset ever becomes live again.
+  fields: [indicator, occurred_at, place_id, value_num]
+  attrs: [cargo_description, donor, crossing]
+  allow_collisions: 24550
+  collision_kind: indistinguishable
+  # These are DIFFERENT consignments that the source records identically.
+  # Collapsing them would delete real lorries, so they keep no stored key
+  # and are guarded by 044 (v1_stable_id) + expect.max_observations. Safe
+  # only because the upstream is dead; a live successor gets its own spec.

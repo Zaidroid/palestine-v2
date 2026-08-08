@@ -68,6 +68,7 @@ attrs_passthrough:
 
 expect:
   min_records: 8980              # 0.9 × 9,986
+  max_observations: 11500
 
 notes: |
   WHAT THE INDICATOR IS. There is no repeating indicator code in this data:
@@ -141,3 +142,9 @@ notes: |
   duplicates funding.amount_usd exactly (9,986/9,986 verified). value_num
   reads funding.amount_usd because that is the field the FTS API actually
   populates; metrics.value is v1's copy of it.
+
+identity:
+  # UN FTS flows carry their own flow_id, which is the honest key — two
+  # grants to the same recipient on the same day are two grants.
+  fields: [indicator, occurred_at, place_id]
+  attrs: [flow_id]                                     # = 9,991 / 9,991 ✓

@@ -112,6 +112,7 @@ attrs_passthrough:
 
 expect:
   min_records: 480        # ≈0.9 × 534
+  max_observations: 1060    # 1.15 x measured emission
 
 notes: |
   Measured from ops/t2-category-audit.json and all 534 v1 records:
@@ -187,15 +188,10 @@ notes: |
 # whole generation). This is what a row IS, independent of v1's hashing; the
 # loader refuses to write a row whose identity the databank already holds.
 identity:
-  # SPEC DEFECT, found 2026-08-07 and deliberately contained: locality rows
-  # do NOT preserve the locality NAME in attrs — only gazetteer_key (often
-  # NULL) and governorate — so identity cannot separate two localities in one
-  # governorate. Adding value_num would separate them but would then treat a
-  # REVISED count as a new fact (measured: 271 phantom rows). The value-free
-  # key is chosen: it holds this dataset at its complete, correct 904 rows.
-  # That is safe precisely because OCHA's upstream is frozen (fetcher dead
-  # since June, 217d stale) — nothing new can legitimately arrive. FIX FIRST
-  # if the fetcher is ever revived: preserve the locality name in attrs, then
-  # key on it and let revisions supersede.
+  # RESOLVED 2026-08-07 (the FIX-FIRST note below is discharged): the locality
+  # NAME was in the source all along — location.name, 511 distinct of 516 —
+  # and the transformer dropped it. It is now carried into attrs, so identity
+  # is what it should always have been. governorate rides along because five
+  # names repeat across governorates.
   fields: [indicator, occurred_at]
-  attrs: [gazetteer_key, governorate, coverage_area, demolition_dimension]
+  attrs: [locality_name, governorate, coverage_area, demolition_dimension]

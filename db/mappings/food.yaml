@@ -100,6 +100,7 @@ attrs_passthrough:
 
 expect:
   min_records: 24000              # ≈0.9 × 26,814
+  max_observations: 30900
 
 notes: |
   MEASURED by a full census of all 78 quarterly partitions (2007-Q1 …
@@ -170,3 +171,8 @@ notes: |
 
   SPEC EXTENSIONS used above, which the T2.3 loader must support:
   `place.name_from` and `place.crosswalk` (see aid_access.yaml, same two).
+
+identity:
+  # 26,814 WFP market prices: one per (commodity indicator, day, market).
+  # MEASURED 26,814 / 26,814 injective.
+  fields: [indicator, occurred_at, place_id]

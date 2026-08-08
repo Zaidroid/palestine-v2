@@ -26,6 +26,10 @@ datasets:
     source: ooni
   - key: v1_connectivity_ioda
     source: ioda
+    overrides:
+      identity:
+        fields: [indicator, occurred_at_exact, place_id, value_num]
+        attrs: [outage_datasource, severity_score]     # = 1,000 / 1,000 ✓
 
 indicator:
   template: "connectivity.{event_type}"
@@ -86,6 +90,7 @@ attrs_passthrough:
 
 expect:
   min_records: 2000        # ≈0.9 × 2,274
+  max_observations: 2650
 
 notes: |
   MEASURED by a full read of connectivity/all-data.json (not partitioned,
@@ -173,3 +178,9 @@ notes: |
   lists sources ['OONI'] and its embedded sources[] says
   '{"name":"OONI","records":2274}', crediting OONI with all 998 IODA rows.
   The routing above is derived from the records, not from that claim.
+
+identity:
+  # OONI resolves on (indicator, day); IODA publishes several detections per
+  # day at the same place, so it needs the whole timestamp plus the measuring
+  # source and severity. Both MEASURED injective 2026-08-07.
+  fields: [indicator, occurred_at]

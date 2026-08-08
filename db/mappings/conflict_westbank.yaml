@@ -84,3 +84,9 @@ notes: |
   Daily deltas are derivable in SQL (value - lag(value)); we serve the
   cumulative exactly as published and never synthesise a daily series T4P
   does not publish (conflict.yaml's ~35-million-dead lesson).
+
+# Synthetic-but-deterministic ids (t4praw-wb-<date>:<field>) already act as a
+# natural key, but the identity is declared explicitly so the injectivity
+# invariant covers this dataset like every other.
+identity:
+  fields: [indicator, occurred_at]                     # = 2,255 / 2,255 ✓

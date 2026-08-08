@@ -160,6 +160,7 @@ attrs_passthrough:
 
 expect:
   min_records: 3730         # 0.9 × 4,152
+  max_observations: 4760
 
 notes: |
   FORMAT EXTENSION: per-dataset `overrides` inside datasets[], same as
@@ -210,3 +211,8 @@ notes: |
   non-overlapping stable_ids. That is documented and decided in pcbs.yaml;
   economic is the original and should be treated as authoritative for the
   World Bank series in any deduplication.
+
+identity:
+  # World Bank and IMF are annual national series; PCBS-direct splits by
+  # place. MEASURED injective on all three datasets.
+  fields: [indicator, occurred_at, place_id]
