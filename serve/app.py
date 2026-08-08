@@ -1757,8 +1757,23 @@ def databank_licenses() -> dict:
     pending = q("""SELECT source_key, status, scope, asked_at, expires_at
                    FROM source_permission WHERE status <> 'granted'
                    ORDER BY source_key""")
+    withheld = q("""SELECT v1_category, source_name, license_spdx, rows_held,
+                           from_date, to_date, reason, permission_status,
+                           terms_url
+                    FROM v_withheld ORDER BY rows_held DESC""")
+    bulk = q("""SELECT (SELECT count(*) FROM databank_serving) AS queryable,
+                       (SELECT count(*) FROM databank_bulk)    AS exportable""")[0]
     return {
         "tiers": {r["tier"]: r["n"] for r in tiers},
+        "surfaces": {
+            **bulk,
+            "note": "Every row here answers a QUERY with its source credited. "
+                    "A narrower set may leave as a DATABASE — a bulk export, "
+                    "a dump, an open-data release — because that is what a "
+                    "licence governs. The difference is listed in `withheld`, "
+                    "never silently short.",
+        },
+        "withheld_from_bulk": withheld,
         "licenses": rows,
         "share_alike_note":
             "Rows whose share_alike is true may be used commercially, but a "

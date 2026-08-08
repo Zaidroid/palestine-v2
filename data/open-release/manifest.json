@@ -1,0 +1,188 @@
+{
+ "shape": "collection",
+ "generated": "2026-08-08",
+ "rows": 202516,
+ "note": "Each file carries its own source's licence. Nothing is relicensed and no derived database is formed — three incompatible copylefts (ODbL, CC-BY-SA, CC-BY-NC-SA) live here and no single aggregate licence can hold them.",
+ "files": [
+  {
+   "file": "by-source/hdx.csv.gz",
+   "rows": 2962,
+   "source_key": "hdx",
+   "source_name": "Humanitarian Data Exchange",
+   "license_spdx": "CC-BY-4.0",
+   "attribution": "School register: OCHA occupied Palestinian territory (source UNICEF Jerusalem) via HDX, CC-BY.",
+   "terms_url": "https://data.humdata.org/dataset/state-of-palestine-west-bank-schools",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/idmc.csv.gz",
+   "rows": 333,
+   "source_key": "idmc",
+   "source_name": "IDMC",
+   "license_spdx": "CC-BY-IGO",
+   "attribution": "Displacement events: IDMC (idmc.ch) via HDX, CC-BY-IGO.",
+   "terms_url": "https://data.humdata.org/dataset/pse-idmc-idu-events",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/imf.csv.gz",
+   "rows": 474,
+   "source_key": "imf",
+   "source_name": "IMF DataMapper",
+   "license_spdx": "LicenseRef-IMF-Data-Terms-2024-10-11",
+   "attribution": "Source: International Monetary Fund, World Economic Outlook database, https://www.imf.org/en/Publications/WEO/weo-database. © IMF.",
+   "terms_url": "https://www.imf.org/en/About/copyright-and-terms",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/ioda.csv.gz",
+   "rows": 1000,
+   "source_key": "ioda",
+   "source_name": "IODA (Georgia Tech) internet outage detection",
+   "license_spdx": "CC-BY-NC-4.0",
+   "attribution": "Internet measurement by IODA, Georgia Tech",
+   "terms_url": null,
+   "share_alike": false
+  },
+  {
+   "file": "by-source/ocha.csv.gz",
+   "rows": 261,
+   "source_key": "ocha",
+   "source_name": "UN OCHA oPt",
+   "license_spdx": "CC-BY-IGO-3.0",
+   "attribution": "Data: UN OCHA oPt (ochaopt.org), licensed CC-BY 3.0 IGO.",
+   "terms_url": "https://data.humdata.org/dataset/state-of-palestine-humanitarian-access",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/ooni.csv.gz",
+   "rows": 1276,
+   "source_key": "ooni",
+   "source_name": "OONI",
+   "license_spdx": "free-with-attribution",
+   "attribution": "Censorship measurements: OONI (ooni.org), CC-BY-SA.",
+   "terms_url": null,
+   "share_alike": false
+  },
+  {
+   "file": "by-source/palopenmaps.csv.gz",
+   "rows": 6548,
+   "source_key": "palopenmaps",
+   "source_name": "Palestine Open Maps",
+   "license_spdx": "ODbL-1.0",
+   "attribution": "Locality data: Palestine Open Maps (palopenmaps.org) and contributors, ODbL 1.0 — derived databases must remain ODbL.",
+   "terms_url": "https://data.palopenmaps.org/copyright",
+   "share_alike": true
+  },
+  {
+   "file": "by-source/pcbs.csv.gz",
+   "rows": 2060,
+   "source_key": "pcbs",
+   "source_name": "Palestinian Central Bureau of Statistics",
+   "license_spdx": "CC-BY-4.0",
+   "attribution": "Data: Palestinian Central Bureau of Statistics (pcbs.gov.ps), CC-BY-4.0.",
+   "terms_url": "https://www.pcbs.gov.ps/en/reference/terms-of-use",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/pcbs_direct.csv.gz",
+   "rows": 116,
+   "source_key": "pcbs_direct",
+   "source_name": "Palestinian Central Bureau of Statistics (PCBS)",
+   "license_spdx": "CC-BY-4.0",
+   "attribution": "Data: Palestinian Central Bureau of Statistics (pcbs.gov.ps), CC-BY-4.0.",
+   "terms_url": "https://www.pcbs.gov.ps/en/reference/terms-of-use",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/tech4palestine.csv.gz",
+   "rows": 83248,
+   "source_key": "tech4palestine",
+   "source_name": "Tech4Palestine",
+   "license_spdx": "Unlicense",
+   "attribution": "Data: Tech4Palestine (data.techforpalestine.org), public domain (Unlicense); credited by choice.",
+   "terms_url": "https://github.com/TechForPalestine/palestine-datasets/blob/main/LICENSE",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/unfts.csv.gz",
+   "rows": 9991,
+   "source_key": "unfts",
+   "source_name": "UN OCHA Financial Tracking Service",
+   "license_spdx": "CC-BY-IGO-3.0",
+   "attribution": "Funding flows: UN OCHA Financial Tracking Service (fts.unocha.org), licensed CC-BY-IGO-3.0.",
+   "terms_url": "https://data.humdata.org/dataset/pse-requirements-and-funding-data",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/unhcr.csv.gz",
+   "rows": 1157,
+   "source_key": "unhcr",
+   "source_name": "UNHCR Operational Data Portal",
+   "license_spdx": "CC-BY-4.0",
+   "attribution": "Data: UNHCR Operational Data Portal (unhcr.org), licensed CC-BY-4.0.",
+   "terms_url": "https://data.unhcr.org/en/about",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/unosat.csv.gz",
+   "rows": 14,
+   "source_key": "unosat",
+   "source_name": "UNOSAT (UNITAR)",
+   "license_spdx": "CC-BY-SA",
+   "attribution": "Satellite damage assessments: UNOSAT (UNITAR) via HDX (CC-BY-SA).",
+   "terms_url": "https://data.humdata.org/dataset/unosat-gaza-governorate-damage-assessment-gaza-strip",
+   "share_alike": true
+  },
+  {
+   "file": "by-source/unrwa.csv.gz",
+   "rows": 90,
+   "source_key": "unrwa",
+   "source_name": "UNRWA",
+   "license_spdx": "UN-attribution",
+   "attribution": "Data: UNRWA (unrwa.org).",
+   "terms_url": null,
+   "share_alike": false
+  },
+  {
+   "file": "by-source/unrwa_aid_trucks.csv.gz",
+   "rows": 50059,
+   "source_key": "unrwa_aid_trucks",
+   "source_name": "UNRWA Gaza Supply and Logistics dashboard",
+   "license_spdx": "CC-BY",
+   "attribution": "Gaza aid truck data: UNRWA via HDX (CC-BY).",
+   "terms_url": "https://data.humdata.org/dataset/state-of-palestine-gaza-aid-truck-data",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/wfp.csv.gz",
+   "rows": 26814,
+   "source_key": "wfp",
+   "source_name": "WFP Food Prices",
+   "license_spdx": "CC-BY-IGO",
+   "attribution": "Food prices: World Food Programme (WFP) via HDX (CC-BY-IGO).",
+   "terms_url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+   "share_alike": false
+  },
+  {
+   "file": "by-source/who.csv.gz",
+   "rows": 12577,
+   "source_key": "who",
+   "source_name": "WHO Global Health Observatory",
+   "license_spdx": "CC-BY-NC-SA-3.0-IGO",
+   "attribution": "Data: WHO Global Health Observatory, licensed CC-BY-NC-SA 3.0 IGO.",
+   "terms_url": null,
+   "share_alike": true
+  },
+  {
+   "file": "by-source/worldbank.csv.gz",
+   "rows": 3536,
+   "source_key": "worldbank",
+   "source_name": "World Bank Open Data",
+   "license_spdx": "CC-BY-4.0",
+   "attribution": "Data: The World Bank (data.worldbank.org), licensed CC-BY-4.0.",
+   "terms_url": "https://datacatalog.worldbank.org/public-licenses",
+   "share_alike": false
+  }
+ ]
+}

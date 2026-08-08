@@ -256,3 +256,50 @@ def test_a_domain_rule_may_not_name_an_unknown_column():
     assert "unknown identifier" in (validate_rule("secret_column = 1") or "")
     assert validate_rule("v1_category = 'x'; DROP TABLE source") is not None
     assert validate_rule("v1_category = 'x' -- comment") is not None
+
+
+def test_bulk_is_narrower_than_query_and_never_wider(conn):
+    """066's distinction. A query returning credited facts is reporting; a
+    file is a database, and a licence governs the second. If bulk ever equals
+    serving, either every source became redistributable or the filter died."""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT (SELECT count(*) FROM databank_serving),
+                              (SELECT count(*) FROM databank_bulk)""")
+        served, bulk = cur.fetchone()
+        assert 0 < bulk < served
+
+
+def test_nothing_ungranted_can_reach_a_bulk_export(conn):
+    with conn.cursor() as cur:
+        cur.execute("""SELECT count(*) FROM databank_bulk
+                       WHERE redistribution NOT IN
+                             ('open', 'attribution', 'share-alike')""")
+        assert cur.fetchone()[0] == 0
+
+
+def test_what_bulk_withholds_is_enumerated_not_absent(conn):
+    """An export that is quietly short reads as 'this is everything'. Every
+    withheld row must appear in v_withheld with a reason."""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT (SELECT count(*) FROM databank_serving)
+                            - (SELECT count(*) FROM databank_bulk),
+                              (SELECT COALESCE(sum(rows_held), 0)
+                               FROM v_withheld)""")
+        missing, enumerated = cur.fetchone()
+        assert missing == enumerated
+        cur.execute("SELECT count(*) FROM v_withheld WHERE reason IS NULL")
+        assert cur.fetchone()[0] == 0
+
+
+def test_the_release_builder_refuses_an_incompatible_aggregate():
+    """Three incompatible copylefts live in this databank — ODbL-1.0,
+    CC-BY-SA and WHO's CC-BY-NC-SA-3.0-IGO — so no single relicensed
+    aggregate can hold them. The builder must say so rather than produce one.
+    Going open source TRIGGERS share-alike; it does not avoid it."""
+    import subprocess
+    import sys as _s
+    r = subprocess.run([_s.executable, "-m", "ops.export_open_data",
+                        "--license", "CC-BY-4.0"],
+                       capture_output=True, text=True)
+    assert r.returncode != 0
+    assert "share-alike" in (r.stdout + r.stderr)

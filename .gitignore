@@ -41,3 +41,7 @@ data/evidence/
 
 # equivalence row dumps: the debugging aid, not the reviewed claim (manifest.json is)
 ops/equivalence/*.json.gz
+
+# open-data release payload: regenerate with ops/export_open_data.py
+data/open-release/by-source/
+data/open-release/*.csv.gz
