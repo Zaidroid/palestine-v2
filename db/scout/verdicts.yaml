@@ -69,11 +69,23 @@ debunked:
       reflects metadata touches, not data reality; fetch before believing.
   ocha-hdx-mirror:
     measured: 2026-08-06
+    rechecked: 2026-08-08
     finding: >-
       OCHA oPt's casualties and demolitions databases are NOT on HDX
       under any name, org, or topic query. The org's 33 datasets are
       boundaries/schools/barriers. Do not send anyone to look again;
       re-check only if OCHA announces an HDX publication.
+      NUANCE ADDED 2026-08-08, and it matters for how this verdict is
+      generalised: OCHA oPt DOES publish on HDX, openly, just not those
+      two databases. "State of Palestine - Humanitarian Access"
+      (closures, crossing points, buffer zones — the source of our 261
+      land.checkpoint rows) is there at CC-BY, as are schools and
+      health facilities. So the correct reading is NOT "OCHA is closed"
+      but "OCHA publishes some oPt data openly and some under UN-ToU
+      non-commercial terms, and which is which must be checked per
+      dataset." That is exactly why licence lives at the dataset grain
+      from migration 054 onward. The humanitarian-access record was
+      last updated 2023-10-19 — a live licence over stale data.
   gho-wash-burden-pse:
     measured: 2026-08-06
     finding: >-

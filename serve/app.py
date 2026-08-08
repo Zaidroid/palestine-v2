@@ -1724,6 +1724,56 @@ def databank_scout() -> dict:
     return json.loads(p.read_text())
 
 
+@app.get("/v2/databank/licenses", tags=["databank"])
+def databank_licenses() -> dict:
+    """Every licence governing the databank, and what each one obliges.
+
+    Published because a consumer cannot comply with terms they cannot see.
+    `commercial_use` alone was never enough: ODbL and CC-BY-SA permit
+    commercial use AND require a derived DATABASE to carry the same licence,
+    and a buyer who learns that after shipping learns it too late. The
+    `redistribution` grade and `share_alike` flag are the missing half.
+
+    Licence resolves at the DATASET grain and falls back to the source (054),
+    because a portal is not a licence-holder — the three datasets we take
+    through HDX carry three different publishers' terms.
+    """
+    rows = q("""
+        SELECT source_key, source_name, license_spdx, commercial_use,
+               share_alike, attribution_required, redistribution,
+               terms_url, terms_verified_at::date AS verified_on,
+               attribution_text,
+               COUNT(*) AS rows_served,
+               COUNT(DISTINCT dataset_key) AS datasets
+        FROM databank_serving
+        GROUP BY 1,2,3,4,5,6,7,8,9,10
+        ORDER BY 11 DESC""")
+    tiers = q("""
+        SELECT 'open'                  AS tier, COUNT(*) AS n FROM v_tier_open
+        UNION ALL SELECT 'commercial_permissive', COUNT(*)
+          FROM v_tier_commercial_permissive
+        UNION ALL SELECT 'commercial_sharealike', COUNT(*)
+          FROM v_tier_commercial_sharealike""")
+    pending = q("""SELECT source_key, status, scope, asked_at, expires_at
+                   FROM source_permission WHERE status <> 'granted'
+                   ORDER BY source_key""")
+    return {
+        "tiers": {r["tier"]: r["n"] for r in tiers},
+        "licenses": rows,
+        "share_alike_note":
+            "Rows whose share_alike is true may be used commercially, but a "
+            "DERIVED DATABASE built on them must be released under the same "
+            "licence (ODbL-1.0, CC-BY-SA). They are served through "
+            "v_tier_commercial_sharealike, never through the permissive tier.",
+        "unverified_note":
+            "A null verified_on means nobody has read that publisher's terms "
+            "at the publisher; the licence shown was inherited from an "
+            "earlier registry. Gate G5.11 fails while any commercial source "
+            "is in that state.",
+        "permissions_pending": pending,
+    }
+
+
 @app.get("/v2/databank/{category}", tags=["databank"])
 def databank_category(category: str, indicator: str | None = None,
                       as_of: str | None = None, memorial: bool = False,
