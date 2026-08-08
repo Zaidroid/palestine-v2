@@ -48,9 +48,9 @@ Redistributable, commercially or otherwise, provided the credit below travels wi
   <br>Data: UNHCR Operational Data Portal (unhcr.org), licensed CC-BY-4.0.
   <br><sub>[terms](https://data.unhcr.org/en/about) · terms read 2026-08-08</sub>
 
-**IMF DataMapper** — CC-BY-4.0 · 474 rows
-  <br>Economic indicators: IMF DataMapper.
-  <br><sub>[terms](https://www.imf.org/en/About/copyright-and-terms) · **terms not yet read at the publisher**</sub>
+**IMF DataMapper** — LicenseRef-IMF-Data-Terms-2024-10-11 · 474 rows
+  <br>Source: International Monetary Fund, World Economic Outlook database, https://www.imf.org/en/Publications/WEO/weo-database. © IMF.
+  <br><sub>[terms](https://www.imf.org/en/About/copyright-and-terms) · terms read 2026-08-08</sub>
 
 **IDMC** — CC-BY-IGO · 333 rows
   <br>Displacement events: IDMC (idmc.ch) via HDX, CC-BY-IGO.
@@ -132,6 +132,7 @@ Data we would like to include and have no permission for. Nothing from these pub
 - **al_mezan** — not asked: Violation database extracts with attribution.
 - **btselem_bulk** — not asked: Bulk access to the fatalities database, which their licence calls "expansive use, which requires express written consent".
 - **dcip** — not asked: Child-fatality records with attribution.
+- **imf** — not asked: Permission for commercial reuse of World Economic Outlook figures for the State of Palestine, and confirmation that an automated nightly fetch of those series is within the bulk-download rule.
 - **jdeco** — not asked: Electricity supply and outage series for the West Bank — the only first-party source for the proposed energy category.
 - **moh_ramallah** — not asked: West Bank health facility and service data — the counterpart to the Gaza MoH series we already consume via Tech4Palestine.
 - **pchr** — not asked: Weekly report data as structured records rather than PDFs, with attribution.

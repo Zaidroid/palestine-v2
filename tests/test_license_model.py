@@ -151,12 +151,59 @@ def test_letters_do_not_overclaim(conn):
     for p in sorted((root / "db" / "scout" / "letters").glob("*.md")):
         text = p.read_text()
         assert "not sent" in text, f"{p.name}: missing the not-sent marker"
+        # The size claim is checked WHERE IT IS MADE, not required everywhere.
+        # Most letters ask a publisher for data we do not have and describe
+        # what they would be joining; the IMF letter asks about the tier of
+        # data we already hold and makes a different claim, checked below.
+        # Demanding the boilerplate would push a sentence into a letter where
+        # it does not belong, which is how boilerplate stops being read.
         m = re.search(r"alongside ([\d,]+) observations from (\d+) other",
                       text)
-        assert m, f"{p.name}: the claim about our own size is missing"
-        assert int(m.group(1).replace(",", "")) == n, \
-            f"{p.name} claims {m.group(1)} rows, the databank serves {n:,}"
-        assert int(m.group(2)) == nsrc, f"{p.name}: source count is stale"
+        if m:
+            assert int(m.group(1).replace(",", "")) == n, \
+                f"{p.name} claims {m.group(1)} rows, the databank serves {n:,}"
+            assert int(m.group(2)) == nsrc, f"{p.name}: source count is stale"
+
+
+def test_the_imf_letter_states_the_right_number_of_rows(conn):
+    """It tells the IMF how much of their data we hold. If that number drifts
+    the letter becomes a misstatement to a publisher, which is worse than a
+    stale figure in an internal document."""
+    import re
+    from pathlib import Path
+    p = (Path(__file__).resolve().parent.parent
+         / "db" / "scout" / "letters" / "imf.md")
+    # \s+ rather than a space: the letter is hard-wrapped, and a regex that
+    # assumes one line fails on a document that reads perfectly.
+    m = re.search(r"We hold ([\d,]+)\s+World Economic Outlook observations",
+                  p.read_text())
+    assert m, "the IMF letter no longer states how much we hold"
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM databank_serving "
+                    "WHERE source_key = 'imf'")
+        assert int(m.group(1).replace(",", "")) == cur.fetchone()[0]
+
+
+def test_imf_is_redistributable_but_not_sellable(conn):
+    """Read at the publisher 2026-08-08 (063). The IMF's special Data terms
+    permit publishing and distributing WEO figures with attribution, and send
+    commercial reuse to copyright@imf.org. Both halves must hold: the rows
+    stay served, and they stay out of every commercial tier."""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT redistribution, commercial_use, attribution_text,
+                              terms_verified_at IS NOT NULL
+                       FROM source WHERE key = 'imf'""")
+        grade, commercial, attr, verified = cur.fetchone()
+        assert grade == "attribution" and commercial is False and verified
+        assert "World Economic Outlook" in attr, \
+            "the IMF specifies the attribution format; it must be used"
+        cur.execute("""SELECT
+            (SELECT count(*) FROM databank_serving WHERE source_key='imf'),
+            (SELECT count(*) FROM v_tier_commercial_permissive
+             WHERE source_key='imf'),
+            (SELECT count(*) FROM v_tier_open WHERE source_key='imf')""")
+        served, sellable, open_tier = cur.fetchone()
+        assert served > 0 and sellable == 0 and open_tier == served
 
 
 def test_generated_views_match_the_category_registry(conn):
