@@ -28,6 +28,10 @@ Redistributable, commercially or otherwise, provided the credit below travels wi
   <br>Food prices: World Food Programme (WFP) via HDX (CC-BY-IGO).
   <br><sub>[terms](https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine) · terms read 2026-08-08</sub>
 
+**WHO Global Health Observatory** — CC-BY-NC-SA-3.0-IGO · 12,577 rows
+  <br>Data: WHO Global Health Observatory, licensed CC-BY-NC-SA 3.0 IGO.
+  <br><sub>**terms not yet read at the publisher**</sub>
+
 **UN OCHA Financial Tracking Service** — CC-BY-IGO-3.0 · 9,991 rows
   <br>Funding flows: UN OCHA Financial Tracking Service (fts.unocha.org), licensed CC-BY-IGO-3.0.
   <br><sub>[terms](https://data.humdata.org/dataset/pse-requirements-and-funding-data) · terms read 2026-08-08</sub>
@@ -47,6 +51,10 @@ Redistributable, commercially or otherwise, provided the credit below travels wi
 **UNHCR Operational Data Portal** — CC-BY-4.0 · 1,157 rows
   <br>Data: UNHCR Operational Data Portal (unhcr.org), licensed CC-BY-4.0.
   <br><sub>[terms](https://data.unhcr.org/en/about) · terms read 2026-08-08</sub>
+
+**IODA (Georgia Tech) internet outage detection** — CC-BY-NC-4.0 · 1,000 rows
+  <br>Internet measurement by IODA, Georgia Tech
+  <br><sub>**terms not yet read at the publisher**</sub>
 
 **IMF DataMapper** — LicenseRef-IMF-Data-Terms-2024-10-11 · 474 rows
   <br>Source: International Monetary Fund, World Economic Outlook database, https://www.imf.org/en/Publications/WEO/weo-database. © IMF.
@@ -79,14 +87,6 @@ No attribution is required. It is given anyway, because a source that put its wo
 ## Not redistributed
 
 Held for internal analysis, corroboration, or display under fair dealing. These rows are **not** served through the databank's public surface and are not for sale. Listed so the omission is visible.
-
-**WHO Global Health Observatory** — CC-BY-NC-SA-3.0-IGO · 12,577 rows
-  <br>Data: WHO Global Health Observatory, licensed CC-BY-NC-SA 3.0 IGO.
-  <br><sub>**terms not yet read at the publisher**</sub>
-
-**IODA (Georgia Tech) internet outage detection** — CC-BY-NC-4.0 · 1,000 rows
-  <br>Internet measurement by IODA, Georgia Tech
-  <br><sub>**terms not yet read at the publisher**</sub>
 
 **HaMoked** — no-license-found · 864 rows
   <br>Detention figures: HaMoked, sourced from IPS.

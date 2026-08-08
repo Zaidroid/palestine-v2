@@ -38,18 +38,50 @@ def test_share_alike_matches_the_licence_string(conn):
             assert sa == expect, f"{key}: {spdx} share_alike={sa}"
 
 
-def test_non_commercial_always_wins_over_share_alike(conn):
-    """CC-BY-NC-SA is both. The -NC half is the binding one, and a naive
-    grader that checks -SA first would call WHO's data share-alike-
-    redistributable when it may not be redistributed at all."""
+def test_non_commercial_is_never_sellable(conn):
+    """CC-BY-NC-SA is both NC and SA, and the NC half binds on the SELLING
+    question. `commercial_use` is where that lives."""
     with conn.cursor() as cur:
-        cur.execute("""SELECT key, license_spdx, redistribution FROM source
+        cur.execute("""SELECT key, license_spdx, commercial_use FROM source
                        WHERE license_spdx LIKE '%-NC-%'
                           OR license_spdx LIKE '%-NC'""")
         rows = cur.fetchall()
         assert rows, "no NC sources — the fixture this guards is gone"
-        for key, spdx, grade in rows:
-            assert grade == "no-redistribution", f"{key} ({spdx}) → {grade}"
+        for key, spdx, commercial in rows:
+            assert commercial is False, f"{key} ({spdx}) is marked sellable"
+
+
+def test_non_commercial_is_still_redistributable(conn):
+    """053 got this backwards and 064 fixed it. CC-BY-NC does not forbid
+    redistribution — it forbids COMMERCIAL redistribution, and expressly
+    permits the non-commercial kind with attribution, which is exactly what
+    this databank is. The bug mislabelled 13,577 perfectly servable rows
+    (WHO 12,577, IODA 1,000) as forbidden.
+
+    Two columns, two questions, and one must not answer the other:
+        commercial_use = false   may we SELL it?         no
+        redistribution           may we SHARE it at all? yes, with credit"""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT key, redistribution FROM source
+                       WHERE license_spdx LIKE 'CC-BY-NC%'""")
+        for key, grade in cur.fetchall():
+            assert grade == "attribution", f"{key} → {grade}"
+
+
+def test_un_tou_is_genuinely_not_redistributable(conn):
+    """The distinction a family-wide rule cannot see. OCHA's terms do not
+    merely say non-commercial — they say "without any right to resell or
+    redistribute", in those words. Only reading the terms catches that, which
+    is the argument for terms_evidence being a column rather than a comment."""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT key, redistribution, terms_evidence FROM source
+                       WHERE license_spdx = 'UN-ToU-NC'""")
+        rows = cur.fetchall()
+        assert rows
+        for key, grade, evidence in rows:
+            assert grade == "no-redistribution", f"{key} → {grade}"
+            assert "redistribute" in (evidence or ""), \
+                f"{key}: the operative sentence is not on the row"
 
 
 def test_the_permissive_tier_never_carries_a_copyleft_obligation(conn):
