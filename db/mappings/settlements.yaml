@@ -6,6 +6,9 @@
 # axis; `date` is that year rendered as a fake day.
 category: settlements
 shape: observation
+transform: engine        # spec-driven (ingest/engine.py), not a hand-written transformer.
+                         #   Proven identical to t_settlements over all 51
+                         #   records by ops/spec_equivalence.py, 2026-08-08.
 status: reviewed
 records_measured: 51
 
@@ -36,19 +39,30 @@ occurred_at:
   precision: year
   rules:
     - if: "date endswith -12-31"     # measured 51/51 = 100%
-      then: "truncate to Jan 1 of that year, precision=year"   # law 2
+      when: {field: date, op: endswith, value: "-12-31"}
+      then: {truncate_to: year, precision: year}               # law 2
   # No masquerade rule: measured ingest_masquerade_pct = 0.0, and the max date
   # (2024-12-31) is 19 months before the fetch day (2026-08-05) — this series
   # cannot fake freshness even before law 2 is applied.
 
 place:
   strategy: region         # location.region = 'West Bank' on 51/51 → place 2
-  min_resolved_pct: 1.0    # single region string, always resolves
+  min_decided_pct: 1.0    # single region string, always resolves
 
 stable_id: stable_id
 attrs_passthrough:
   - year                   # 1967..2024, the honest axis
   - event_type             # 'settler_population'
+
+attrs_literal:
+  # Two claims this series makes about itself. Both were hardcoded in the
+  # transformer until 2026-08-08, where no reviewer of this spec could see
+  # them — and the second is a real caveat about what the number excludes,
+  # not a formatting detail.
+  reference: "period-end stock"                # REVIEW.md 2: a stock is
+                                               #   anchored at the START of
+                                               #   the period it labels
+  coverage: "West Bank, excludes East Jerusalem"
 
 expect:
   min_records: 46          # ≈0.9 × 51

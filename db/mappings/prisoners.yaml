@@ -5,6 +5,7 @@
 # Tier-2 set — and the only one where BOTH sources are verify-required, so
 # nothing here can be sold until Zaid reads the terms.
 category: prisoners
+transform: python:t_prisoners
 shape: observation
 status: reviewed
 records_measured: 890
@@ -53,7 +54,7 @@ occurred_at:
 place:
   strategy: region          # location.region = 'Palestine' on 890/890 →
                             #   place_id NULL + attrs.region (law 3)
-  min_resolved_pct: 1.0     # NULL is a resolution
+  min_decided_pct: 1.0     # NULL is a resolution
   forbid:
     - location.coordinates  # [34.45, 31.5] + 'nearest_city: Gaza City' on the
                             #   26 Addameer rows (2.9% of the file) — the same

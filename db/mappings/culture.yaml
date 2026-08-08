@@ -4,6 +4,7 @@
 # one row per heritage site, no event, no measurement, no date. The masquerade
 # is total and there is nothing honest to replace it with — verified below.
 category: culture
+transform: engine
 shape: observation
 status: reviewed
 records_measured: 329
@@ -35,15 +36,21 @@ value:
 occurred_at:
   from: date
   precision: unknown
+  keep_reported_at: true         # the fetch stamp is real provenance even
+                                 #   though it is not an event date
   rules:
     - if: "date == fetch_day"      # fires on 329/329 (audit 1.0); date is
-      then: "reported_at-only"     #   2026-08-05 on every record, min == max
-                                   #   == metadata.last_updated day
+      when: {field: date, op: equals_fetch_day}
+      then: {reported_at_only: true}
+      rationale: >-
+        2026-08-05 on every record, min == max == metadata.last_updated day.
+        Law 1: this is an ingest stamp, not an event date, and T7 excludes
+        unknown precision from freshness so it cannot fake being current.
 
 place:
   strategy: region                 # location.region ∈ {East Jerusalem 183,
                                    #   West Bank 96, Gaza Strip 50}
-  min_resolved_pct: 1.0            # region strings always resolve; East
+  min_decided_pct: 1.0            # region strings always resolve; East
                                    #   Jerusalem → Jerusalem governorate row
                                    #   + attrs.region preserved
 

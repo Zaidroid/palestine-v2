@@ -5,6 +5,7 @@
 # point the category collapsed under it. Kept as a spec so the decision is
 # reviewable and so the dual-run comparison knows the absence is deliberate.
 category: water
+transform: none            # no transformer; migrate is false
 shape: observation
 status: reviewed
 migrate: false

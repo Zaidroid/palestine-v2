@@ -30,7 +30,8 @@ from pathlib import Path
 
 import yaml
 
-from ingest import bronze
+from ingest import bronze, engine
+from ingest.spec import SpecInvalid, SpecRefused, validate_or_raise
 from resolve.db import connect
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,15 +42,19 @@ RUNS = ROOT / "ops" / "databank-runs.ndjson"
 
 # ── spec loading ─────────────────────────────────────────────────────────────
 
-class SpecRefused(RuntimeError):
-    pass
-
-
 def load_spec(category: str) -> dict:
     p = SPECS / f"{category}.yaml"
     if not p.exists():
         raise SpecRefused(f"no spec for {category!r}")
     spec = yaml.safe_load(p.read_text())
+    # Format v2 is a registry now (ingest/spec.py), and the loader refuses a
+    # spec that does not conform BEFORE it reads a single record. An unknown
+    # key, a value of the wrong shape, or a key no code implements all stop
+    # the run here. Three keys were declared-and-dead when this was written —
+    # place.min_resolved_pct in 20 specs, source_routing.default in 21, the
+    # latlon rung of place.fallback in 4 — and the only reason anyone found
+    # out is that someone went looking. Now the machine looks, every run.
+    validate_or_raise(spec, category)
     if spec.get("status") != "reviewed":
         raise SpecRefused(f"{category}: status={spec.get('status')!r}, not reviewed")
     if spec.get("migrate") is False:
@@ -256,15 +261,93 @@ def region_place(places: dict, region: str, attrs: dict) -> tuple[int | None, bo
     return None, False
 
 
+def place_ladder(loc: dict, spec: dict, places: dict, attrs: dict,
+                 counts: Counter, *, ds_key: str | None = None,
+                 event_type: str | None = None,
+                 default_region: str | None = None) -> tuple[int | None, bool]:
+    """`place.strategy` + `place.fallback`, executed rung by rung.
+
+    THE FIRST CONSTRUCT THE SPEC ACTUALLY DRIVES. Until 2026-08-08 the ladder
+    was prose: education and infrastructure both declared
+    `fallback: [latlon, region]`, and both transformers went pcode → region,
+    skipping the middle rung entirely. That was invisible while v1 supplied
+    pcodes. Then v1's rebuild dropped `location.admin2_pcode` from all 2,359
+    education and all 3,537 infrastructure records — measured 2026-08-08, the
+    same regression that took the demolition and historical gazetteer keys —
+    and 5,881 rows fell to region grade while holding a perfectly good lat/lon.
+    The floor that existed to catch it (`min_resolved_pct`) was read by
+    nothing. Three dead keys in a row is not bad luck; it is what happens when
+    a document is allowed to describe behaviour no code performs.
+
+    Returns (place_id, located). `located` means point/locality/governorate
+    grade — a region row is a true answer, not a located one.
+    """
+    place_spec = spec.get("place", {})
+    if ds_key:
+        place_spec = {**place_spec, **(_ds_over(spec, ds_key, "place") or {})}
+    rungs = [place_spec.get("strategy")]
+    fb = place_spec.get("fallback")
+    rungs += (fb if isinstance(fb, list) else [fb] if fb else [])
+    # `latlon_exclude` names event types whose lat/lon are fabricated —
+    # barrier segments carry PROJECTED METRES, not degrees. A hard safety rule
+    # (README Format v2), and the reason the rung is skipped rather than the
+    # record dropped: the row is fine, only that one field is a lie.
+    excluded = event_type in (place_spec.get("latlon_exclude") or [])
+
+    # The source's own region label is data. region_place() preserves the
+    # informative ones in attrs ('East Jerusalem', 'Palestine', 'Israel') —
+    # but only when the region rung is the one that fires. A ladder that
+    # resolves finer would otherwise DELETE the label as a side effect of
+    # doing better, which is a strange way to improve. Measured harmless for
+    # education and infrastructure (their regions are only the two plain
+    # ones); recorded here so it stays harmless as the ladder spreads.
+    label = loc.get("region")
+    if label and label not in ("Gaza Strip", "West Bank"):
+        attrs.setdefault("region", label)
+
+    for rung in [r for r in rungs if r]:
+        if rung in ("pcode", "admin2_pcode"):
+            pid = places["pcode"].get(loc.get("admin2_pcode"))
+            if pid is not None:
+                counts["place_rung:pcode"] += 1
+                return pid, True
+        elif rung == "latlon":
+            if excluded:
+                counts["place_rung:latlon_excluded"] += 1
+                continue
+            pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
+            if pid is not None:
+                counts["place_rung:latlon"] += 1
+                return pid, True
+        elif rung == "region":
+            region = loc.get("region") or default_region
+            if region:
+                counts["place_rung:region"] += 1
+                return region_place(places, region, attrs)
+        elif rung == "none":
+            return None, False
+    counts["place_rung:exhausted"] += 1
+    return None, False
+
+
 def route(rec: dict, spec: dict, counts: Counter) -> str | None:
     """sources[0].name → dataset key via the spec's by_name. None = unroutable."""
     sources = rec.get("sources") or []
     name = sources[0].get("name") if sources and isinstance(sources[0], dict) else None
-    by_name = spec["source_routing"]["by_name"]
-    if name not in by_name or by_name[name] is None:
+    routing = spec["source_routing"]
+    by_name = routing["by_name"]
+    if name is None and routing.get("default"):
+        # `source_routing.default` — declared in 21 reviewed specs and read by
+        # nothing until 2026-08-08. Its absence was not neutral: a record with
+        # sources: [] routed to None, which FAILS the whole run. Twenty-one
+        # documents promised a graceful path that did not exist.
+        counts["routed_by_default"] += 1
+        src_key = routing["default"]
+    elif name not in by_name or by_name[name] is None:
         counts[f"unroutable:{name}"] += 1
         return None
-    src_key = by_name[name]
+    else:
+        src_key = by_name[name]
     for ds in spec["datasets"]:
         if ds["source"] == src_key:
             return ds["key"]
@@ -466,11 +549,10 @@ def t_education(rec, spec, places, counts):
              for k, v in passthrough(rec, spec.get("attrs_passthrough")).items()}
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
     loc = rec.get("location") or {}
-    pid = places["pcode"].get(loc.get("admin2_pcode"))
-    if pid is not None:
-        place_id, located = pid, True
-    else:
-        place_id, located = region_place(places, "West Bank", attrs)
+    # pcode → latlon → region, as the spec has always said. 'West Bank' is the
+    # declared floor: location.region is 'West Bank' on 2,359/2,359.
+    place_id, located = place_ladder(loc, spec, places, attrs, counts,
+                                     default_region="West Bank")
     return [Row(ds, "education.school_record", str(rec["date"])[:10],
                 "unknown",                                        # law 1: 100%
                 rec["stable_id"], value_num=1,
@@ -695,21 +777,79 @@ def t_infrastructure(rec, spec, places, counts):
         # identity guard then froze it at 2 keys.
         if loc.get("lat") is not None and loc.get("lon") is not None:
             attrs["geo_key"] = f"{loc['lat']:.6f},{loc['lon']:.6f}"
-    if etype != "barrier_segment":                                # latlon_exclude
-        pid = places["pcode"].get(loc.get("admin2_pcode"))
-    else:
-        pid = None
-    if pid is not None:
-        place_id, located = pid, True
-    else:
-        region = loc.get("region") or ("West Bank" if etype in
-                                       ("barrier_segment", "locality_record")
-                                       else "Gaza Strip")
-        place_id, located = region_place(places, region, attrs)
+    # pcode → latlon → region. barrier_segment lat/lon are projected metres,
+    # not degrees (place.latlon_exclude), so that rung is skipped for them and
+    # only for them — the record is sound, one field is not.
+    place_id, located = place_ladder(
+        loc, spec, places, attrs, counts, event_type=etype,
+        default_region=("West Bank" if etype in ("barrier_segment",
+                                                 "locality_record")
+                        else "Gaza Strip"))
     return [Row(ds, indicator, occurred, precision, rec["stable_id"],
                 value_num=value, value_text=detail.get("damage_level"),
                 unit=m.get("unit"), place_id=place_id, located=located,
                 reported_at=fetched, attrs=attrs)]
+
+
+def t_engine(rec, spec, places, counts):
+    """The spec-driven transformer — no category knowledge, none possible.
+
+    A category using this one has `transform: engine` in its spec, and every
+    decision it makes is a key a reviewer can read. What it CANNOT express, it
+    refuses at build time rather than improvising at row time: see
+    engine.EngineRefused.
+
+    Migrating a category here is gated on ops/spec_equivalence.py proving the
+    emitted tuples identical, field by field, over every record. The point is
+    not that the engine is nicer; it is that the document becomes true.
+    """
+    ds = route(rec, spec, counts)
+    if ds is None:
+        return Drop("unroutable")
+
+    for d in spec.get("drop") or []:
+        when = d.get("when")
+        if when and engine.check(when, rec):
+            return Drop(d["reason"])
+
+    attrs = passthrough(rec, _ds_over(spec, ds, "attrs_passthrough",
+                                      default=spec.get("attrs_passthrough")))
+    # Constants the spec ASSERTS about every row of a dataset — a stock's
+    # reference point, a coverage caveat. These were hardcoded in the
+    # transformers, which is exactly the wrong place for a sentence like
+    # 'West Bank, excludes East Jerusalem': it is a claim about the data that
+    # a reader of the spec deserves to see and a reviewer deserves to check.
+    for k, v in ((spec.get("attrs_literal") or {}) |
+                 (_ds_over(spec, ds, "attrs_literal") or {})).items():
+        attrs[k] = v
+    for k in list(attrs):
+        attrs[k] = demojibake(attrs[k], counts)
+
+    oa = {**(spec.get("occurred_at") or {}),
+          **(_ds_over(spec, ds, "occurred_at") or {})}
+    occurred, precision, reported = engine.resolve_date(oa, rec, attrs)
+
+    ind = {**(spec.get("indicator") or {}),
+           **(_ds_over(spec, ds, "indicator") or {})}
+    indicator = engine.render(ind["template"], rec, slug)
+
+    val = {**(spec.get("value") or {}), **(_ds_over(spec, ds, "value") or {})}
+    place_id, located = place_ladder(rec.get("location") or {}, spec, places,
+                                     attrs, counts, ds_key=ds,
+                                     event_type=rec.get("event_type"))
+
+    stable = get_in(rec, spec.get("stable_id", "stable_id"))
+    return [Row(ds, indicator, occurred, precision, stable,
+                value_num=engine.first_non_null(rec, val.get("num_from")),
+                value_text=engine.first_non_null(rec, val.get("text_from")),
+                unit=engine.resolve_unit(val, rec),
+                place_id=place_id, located=located,
+                reported_at=reported if oa.get("keep_reported_at") else None,
+                attrs=attrs)]
+
+
+def get_in(rec, path):
+    return engine.get_path(rec, path)
 
 
 def _ds_over(spec, ds_key, *path, default=None):
@@ -1037,13 +1177,13 @@ TRANSFORMERS = {
     "prisoners": t_prisoners,
     "casualties": t_casualties,
     "demolitions": t_demolitions,
-    "settlements": t_settlements,
+    "settlements": t_engine,
     "land": t_land,
-    "culture": t_culture,
+    "culture": t_engine,
     "education": t_education,
     "connectivity": t_connectivity,
-    "funding": t_funding,
-    "pcbs": t_pcbs,
+    "funding": t_engine,
+    "pcbs": t_engine,
     "economic": t_economic,
     "health": t_health,
     "food": t_food,
@@ -1111,12 +1251,56 @@ DO NOTHING
 """
 
 
+def transform_all(category: str, spec: dict, places: dict, counts: Counter,
+                  drops: Counter):
+    """Read every record and run it through the transformer. No identity, no
+    dedupe, no enforcement, no writes — just what the spec PRODUCES.
+
+    Extracted so ops/spec_equivalence.py can compare emissions across a
+    refactor without reproducing the read loop. A harness that re-implements
+    the thing it verifies proves only that two copies agree.
+    """
+    transformer = TRANSFORMERS[category]
+    if hasattr(transformer, "prepass"):
+        # cross-record state (e.g. economic's contradictory-duplicate
+        # detection) needs the whole category before the first transform
+        all_recs = []
+        for f in iter_v1_files(category, spec):
+            all_recs.extend(_records(json.loads(f.read_bytes())))
+        transformer.prepass(all_recs, spec, counts)
+    for f in iter_v1_files(category, spec):
+        payload = f.read_bytes()
+        for rec in _records(json.loads(payload)):
+            if not isinstance(rec, dict):
+                counts["not_a_dict"] += 1
+                continue
+            counts["records_read"] += 1
+            result = transformer(rec, spec, places, counts)
+            if isinstance(result, Drop):
+                drops[result.reason] += 1
+                continue
+            for r in result:
+                yield f, r
+
+
 def run(category: str, dry_run: bool = False) -> dict:
     spec = load_spec(category)
     if category not in TRANSFORMERS:
         raise SpecRefused(f"{category}: spec is reviewed but no transformer "
                           "implements it yet — implement, do not improvise")
     transformer = TRANSFORMERS[category]
+    # `transform:` is a CHECKED declaration, not a label. A half-migrated
+    # format where the document says `engine` and a hand-written transformer
+    # actually runs is worse than an unmigrated one: the reader is now
+    # confidently wrong instead of uninformed.
+    declared = spec.get("transform")
+    actual = ("engine" if transformer is t_engine
+              else f"python:{transformer.__name__}")
+    if declared and declared != actual:
+        raise SpecRefused(
+            f"{category}: spec declares `transform: {declared}` but "
+            f"{actual} is what runs. The declaration is the promise that "
+            "nothing is hidden; a wrong one is worse than none")
 
     counts: Counter = Counter()
     drops: Counter = Counter()
@@ -1137,6 +1321,12 @@ def run(category: str, dry_run: bool = False) -> dict:
     # (measured 2026-08-07: conflict re-added 8,282 events). An event's
     # natural identity is what happened, where, when, at what scale.
     known_events: set[str] = set()
+
+    # [emitted, located] per dataset — a whole-category floor cannot see one
+    # dataset going dark inside a healthy average, and refugees declares three
+    # different floors precisely because its three datasets are three
+    # different kinds of thing.
+    per_ds: dict[str, list[int]] = defaultdict(lambda: [0, 0])
 
     # Injectivity bookkeeping for the invariant below.
     emitted_identities: set[str] = set()
@@ -1231,81 +1421,66 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "None" if lat is None else lat,
                         "None" if lon is None else lon,
                         json.dumps(met, sort_keys=True)]))
-        if hasattr(transformer, "prepass"):
-            # cross-record state (e.g. economic's contradictory-duplicate
-            # detection) needs the whole category before the first transform
-            all_recs = []
-            for f in iter_v1_files(category, spec):
-                all_recs.extend(_records(json.loads(f.read_bytes())))
-            transformer.prepass(all_recs, spec, counts)
-        for f in iter_v1_files(category, spec):
-            payload = f.read_bytes()
-            refs[f] = bronze.put(f"v1_{category}", payload,
-                                 url=f"file://{f}").ref
-            for rec in _records(json.loads(payload)):
-                if not isinstance(rec, dict):
-                    counts["not_a_dict"] += 1
-                    continue
-                counts["records_read"] += 1
-                result = transformer(rec, spec, places, counts)
-                if isinstance(result, Drop):
-                    drops[result.reason] += 1
-                    continue
-                for r in result:
-                    if r.v1_stable_id in seen_stable:
-                        counts["deduped"] += 1
+        for f, r in transform_all(category, spec, places, counts, drops):
+            if f not in refs:
+                refs[f] = bronze.put(f"v1_{category}", f.read_bytes(),
+                                     url=f"file://{f}").ref
+            if r.v1_stable_id in seen_stable:
+                counts["deduped"] += 1
+                continue
+            # resolution floors judge what the TRANSFORM produced, not
+            # what happened to be new this run — otherwise a healthy
+            # no-op sync fails on a handful of unresolved stragglers
+            counts["decided_total"] += 1
+            if r.located:
+                counts["located_total"] += 1
+            ident = _identity_of(r)
+            if ident is not None:
+                # THE INVARIANT: an identity that cannot tell two rows
+                # of THIS run apart cannot tell them apart across runs
+                # either — it silently freezes the dataset. Recorded
+                # per dataset here and enforced before any write.
+                if ident in emitted_identities:
+                    identity_collisions[r.dataset_key] += 1
+                    if len(collision_samples[r.dataset_key]) < 3:
+                        collision_samples[r.dataset_key].append(ident)
+                emitted_identities.add(ident)
+                if ident in known_identities:
+                    # already in the databank under an older v1 hash —
+                    # the 2026-08-07 doubling, prevented at the source
+                    counts["identity_already_held"] += 1
+                    # a DRY RUN reports what the spec PRODUCES (the
+                    # arithmetic under test); only a real run drops
+                    # the already-held rows. emitted − already_held
+                    # is what a write would insert.
+                    if not dry_run:
                         continue
-                    # resolution floors judge what the TRANSFORM produced, not
-                    # what happened to be new this run — otherwise a healthy
-                    # no-op sync fails on a handful of unresolved stragglers
-                    counts["decided_total"] += 1
-                    if r.located:
-                        counts["located_total"] += 1
-                    ident = _identity_of(r)
-                    if ident is not None:
-                        # THE INVARIANT: an identity that cannot tell two rows
-                        # of THIS run apart cannot tell them apart across runs
-                        # either — it silently freezes the dataset. Recorded
-                        # per dataset here and enforced before any write.
-                        if ident in emitted_identities:
-                            identity_collisions[r.dataset_key] += 1
-                            if len(collision_samples[r.dataset_key]) < 3:
-                                collision_samples[r.dataset_key].append(ident)
-                        emitted_identities.add(ident)
-                        if ident in known_identities:
-                            # already in the databank under an older v1 hash —
-                            # the 2026-08-07 doubling, prevented at the source
-                            counts["identity_already_held"] += 1
-                            # a DRY RUN reports what the spec PRODUCES (the
-                            # arithmetic under test); only a real run drops
-                            # the already-held rows. emitted − already_held
-                            # is what a write would insert.
-                            if not dry_run:
-                                continue
-                        else:
-                            known_identities.add(ident)
-                    if isinstance(r, EventRow):
-                        ek = _event_identity(r)
-                        if ek in known_events:
-                            counts["event_already_held"] += 1
-                            if not dry_run:
-                                continue
-                        else:
-                            known_events.add(ek)
-                    if ident is not None and (
-                            identity_by_ds.get(r.dataset_key, {})
-                            .get("collision_kind") != "indistinguishable"):
-                        # Only `indistinguishable` datasets go keyless — their
-                        # duplicates are DIFFERENT things the source records
-                        # identically (aid_access lorries), so collapsing them
-                        # would delete real data. A `duplicate_fact` dataset
-                        # keeps its key and lets 052 refuse the second copy,
-                        # which is the dedup we want. Getting this backwards
-                        # cost IDMC a silent doubling on 2026-08-07.
-                        r.identity_key = ident
-                    seen_stable.add(r.v1_stable_id)
-                    r.raw_ref = refs[f]
-                    (event_rows if isinstance(r, EventRow) else rows).append(r)
+                else:
+                    known_identities.add(ident)
+            if isinstance(r, EventRow):
+                ek = _event_identity(r)
+                if ek in known_events:
+                    counts["event_already_held"] += 1
+                    if not dry_run:
+                        continue
+                else:
+                    known_events.add(ek)
+            if ident is not None and (
+                    identity_by_ds.get(r.dataset_key, {})
+                    .get("collision_kind") != "indistinguishable"):
+                # Only `indistinguishable` datasets go keyless — their
+                # duplicates are DIFFERENT things the source records
+                # identically (aid_access lorries), so collapsing them
+                # would delete real data. A `duplicate_fact` dataset
+                # keeps its key and lets 052 refuse the second copy,
+                # which is the dedup we want. Getting this backwards
+                # cost IDMC a silent doubling on 2026-08-07.
+                r.identity_key = ident
+            seen_stable.add(r.v1_stable_id)
+            r.raw_ref = refs[f]
+            per_ds[r.dataset_key][0] += 1
+            per_ds[r.dataset_key][1] += bool(r.located)
+            (event_rows if isinstance(r, EventRow) else rows).append(r)
 
         # ── enforcement, before any write ────────────────────────────────────
         n = counts["records_read"]
@@ -1354,9 +1529,36 @@ def run(category: str, dry_run: bool = False) -> dict:
             sum(1 for r in rows if r.located) +
             sum(1 for r in event_rows if r.located))
         place_spec = spec.get("place", {})
+        # `min_decided_pct` (default 1.0) — every record the transform RETAINS
+        # must reach an error-free place decision, and a deliberate NULL is a
+        # decision. It is deliberately hard to violate: an unroutable name or
+        # an unresolved governorate already fails above. What it catches is the
+        # ladder falling off its last rung — place_rung:exhausted, a record
+        # with geo the ladder could not use and no declared floor to land on.
+        # This is the key README and REVIEW have declared since 2026-08-05,
+        # while all 20 specs carried `min_resolved_pct`, which nothing read.
+        min_decided = place_spec.get("min_decided_pct", 1.0)
+        undecided = counts.get("place_rung:exhausted", 0)
+        if decided and (decided - undecided) / decided < min_decided:
+            problems.append(
+                f"decided {decided - undecided}/{decided} < min_decided_pct "
+                f"{min_decided} — {undecided} record(s) fell off the end of "
+                "the place ladder with no rung left to land on")
         min_located = place_spec.get("min_located_pct")
         if min_located and located / max(decided, 1) < min_located:
             problems.append(f"located {located}/{decided} < {min_located}")
+        # PER-DATASET floors. Declared in refugees' three datasets since the
+        # spec was written and read by nothing until 2026-08-08 — the same
+        # dead-key shape as min_resolved_pct, one level down, which is where
+        # a registry that only knew top-level keys would never have looked.
+        for ds in spec.get("datasets", []):
+            floor = ((ds.get("overrides") or {}).get("place") or {}).get(
+                "min_located_pct")
+            n_ds, loc_ds = per_ds.get(ds["key"], [0, 0])
+            if floor and n_ds and loc_ds / n_ds < floor:
+                problems.append(
+                    f"{ds['key']}: located {loc_ds}/{n_ds} = "
+                    f"{loc_ds / n_ds:.3f} < min_located_pct {floor}")
         if problems:
             raise SpecRefused(f"{category}: run FAILED — " + "; ".join(problems))
 

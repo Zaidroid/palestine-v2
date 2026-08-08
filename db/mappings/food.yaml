@@ -15,6 +15,7 @@
 # The identity field is commodity (41 values); event_type is uniformly
 # 'food_price' and carries no information.
 category: food
+transform: python:t_food
 shape: observation
 status: reviewed
 records_measured: 26814
@@ -85,7 +86,7 @@ place:
     "Jericho":              {kind: governorate, name_en: "Jericho"}     # 1,995
     "Kan Younis":           {kind: governorate, name_en: "Khan Younis"} # 1,654
     "Rafah":                {kind: governorate, name_en: "Rafah"}       # 1,597
-  min_resolved_pct: 1.0           # 12 strings cover 26,814/26,814 rows and
+  min_decided_pct: 1.0           # 12 strings cover 26,814/26,814 rows and
                                   #   all 12 exist in the v2 gazetteer
 
 stable_id: stable_id              # 26,814 distinct over 26,814 — unique

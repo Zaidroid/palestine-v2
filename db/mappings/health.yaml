@@ -11,6 +11,7 @@
 # The identity field is indicator_code (184 values) plus dimension.code;
 # event_type is uniformly 'health_indicator' and carries no information.
 category: health
+transform: python:t_health
 shape: observation
 status: reviewed
 records_measured: 40559
@@ -73,7 +74,7 @@ place:
   strategy: region         # location.region == 'Palestine' on 40,559/40,559,
                            #   location.name == 'State of Palestine'
                            #   → place_id NULL + attrs.region (law 3)
-  min_resolved_pct: 1.0    # NULL is a resolution for a country aggregate
+  min_decided_pct: 1.0    # NULL is a resolution for a country aggregate
 
 stable_id: stable_id       # 12,502 distinct over 40,559 — the dedupe key,
                            #   NOT a per-row identifier. See notes.
@@ -185,7 +186,8 @@ notes: |
   observations.
 
 drop:
-  - reason: no_indicator_identity   # measured 2026-08-07: 210 rows (184 Gaza
+  - measured: 210                # measured 2026-08-08
+    reason: no_indicator_identity   # measured 2026-08-07: 210 rows (184 Gaza
                                     #   MoH + 26 HDX) with no indicator_code
 
 identity:

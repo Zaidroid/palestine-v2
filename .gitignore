@@ -38,3 +38,6 @@ data/gap-radar.json
 data/source-scout.json
 data/scout-state.json
 data/evidence/
+
+# equivalence row dumps: the debugging aid, not the reviewed claim (manifest.json is)
+ops/equivalence/*.json.gz

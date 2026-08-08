@@ -17,6 +17,7 @@
 # this dataset. The serving-layer recovery (water as a DOMAIN over its own
 # datasets + health's wsh_* series) lives in serve/app.py and 051's v_water.
 category: water_gho
+transform: python:t_water_gho
 v1_category: water               # joins the water category (051 view + API)
 shape: observation
 status: reviewed
@@ -54,8 +55,10 @@ indicators:
   - water.wsh_sanitation_od.residenceareatype_totl
 
 drop:
-  - reason: missing_identity     # defensive; measured 0
-  - reason: no_value             # defensive; measured 0 (all 75 parse)
+  - reason: missing_identity
+    measured: 0                  # defensive; has never fired
+  - reason: no_value
+    measured: 0                  # defensive; all 75 parse
 
 expect:
   min_records: 50                # 75 at spec time; the fetcher refuses to

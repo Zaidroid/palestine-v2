@@ -8,6 +8,7 @@
 # exists to catch. Place is the CROSSING NAME, and only four of the seven
 # named crossings exist in the v2 gazetteer (see place.crosswalk).
 category: aid_access
+transform: python:t_aid_access
 shape: observation
 status: reviewed
 records_measured: 50059
@@ -65,7 +66,7 @@ place:
     "JLOTS":         null      #    638 → fallback (offshore pier, not a place)
   fallback: region             # [SPEC EXTENSION] location.region is
                                #   'Gaza Strip' on 50,059/50,059 → place 1
-  min_resolved_pct: 1.0        # every row lands on a place: 40,820 (81.5%) at
+  min_decided_pct: 1.0        # every row lands on a place: 40,820 (81.5%) at
                                #   crossing precision, 9,239 (18.5%) on the
                                #   Gaza Strip region row
 

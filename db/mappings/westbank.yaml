@@ -6,6 +6,7 @@
 # The spec is written in full anyway so the decision is on the record and so
 # that, if it is migrated, it is migrated with its duplication declared.
 category: westbank
+transform: none            # no transformer; migrate is false
 shape: observation
 status: reviewed
 migrate: false
@@ -54,7 +55,7 @@ place:
   strategy: pcode                     # location.admin2_pcode, 2698/2962 = 0.911
   fallback: [latlon, region]          # FORMAT EXTENSION — see education.yaml
   latlon_exclude: [barrier_segment]   # projected metres, not degrees — see notes
-  min_resolved_pct: 0.911             # measured admin2_pcode rate; a floor
+  min_located_pct: 0.911             # measured admin2_pcode rate; a floor
 
 stable_id: stable_id                  # 2962 distinct — but NOT unique across
                                       #   the databank, see the duplication note

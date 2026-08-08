@@ -8,6 +8,7 @@
 # four breakdowns; they are not late-arriving data, they have no date because a
 # cross-section of a 19-year total does not have one.
 category: casualties
+transform: python:t_casualties
 shape: observation
 status: reviewed
 records_measured: 49
@@ -93,7 +94,7 @@ place:
   #      label preserved: region 'Israel' (1 row, 47 fatalities inside Israel),
   #      governorate 'Israel' (1), governorate 'Not listed' (1), region
   #      'Not listed' (1). These are honest NULLs, not resolution misses.
-  min_resolved_pct: 1.0   # every row lands: 16 governorate places, 2 region
+  min_decided_pct: 1.0   # every row lands: 16 governorate places, 2 region
                           #   places, 31 deliberate NULLs. 0% lat/lon measured,
                           #   so there is no point rung to hold to a number.
 

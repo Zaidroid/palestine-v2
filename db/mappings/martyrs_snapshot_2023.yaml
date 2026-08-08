@@ -7,6 +7,7 @@
 # NOT a time series and it is not geolocated: it is a memorial list. Every
 # design choice below follows from that.
 category: martyrs_snapshot_2023
+transform: python:t_martyrs
 shape: observation
 status: reviewed
 records_measured: 60200
@@ -57,7 +58,7 @@ occurred_at:
 place:
   strategy: region        # location.region: 'Gaza Strip' 60,199 → place 1
                           #                  'Palestine'  1      → place_id NULL
-  min_resolved_pct: 1.0   # region strings always resolve
+  min_decided_pct: 1.0   # region strings always resolve
   forbid:
     - location.coordinates  # [34.45, 31.5] byte-identical on all 60,199 person
                             #   rows — a synthetic Gaza-Strip centroid v1's

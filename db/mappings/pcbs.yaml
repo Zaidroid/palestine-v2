@@ -5,6 +5,7 @@
 # duplicates of rows already in `economic`. Both findings are measured below
 # and both are blocking questions for review.
 category: pcbs
+transform: engine
 shape: observation
 status: reviewed
 records_measured: 2060
@@ -49,13 +50,14 @@ occurred_at:
   precision: year            # NOT day — see notes
   rules:
     - if: "always"
-      then: "truncate to Jan 1 of that year, precision=year"
+      when: {op: always}
+      then: {truncate_to: year, precision: year}       # law 2
   # measured: 2,060/2,060 dates are -01-01, spanning 1960-01-01 .. 2025-01-01.
 
 place:
   strategy: region           # location.region = 'Palestine' on 2,060/2,060 →
                              #   place_id NULL + attrs.region
-  min_resolved_pct: 1.0
+  min_decided_pct: 1.0
 
 stable_id: stable_id         # 2,060 distinct / 2,060 — but see the duplication
                              #   note: uniqueness here does NOT mean the rows

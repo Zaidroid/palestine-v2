@@ -6,6 +6,7 @@
 # RECOMMENDATION: SKIP THIS CATEGORY. The spec is written in full so the
 # decision is recorded and reviewable, not so the load can proceed.
 category: news
+transform: none            # no transformer; migrate is false
 shape: observation
 status: reviewed
 migrate: false
@@ -96,7 +97,7 @@ occurred_at:
 place:
   strategy: region        # location.region: Palestine 106 / Gaza Strip 59 /
                           #   West Bank 20 / East Jerusalem 1
-  min_resolved_pct: 1.0   # region strings always resolve; 'Palestine' →
+  min_decided_pct: 1.0   # region strings always resolve; 'Palestine' →
                           #   place_id NULL + attrs.region (law 3)
 
 stable_id: stable_id      # 186 distinct. `id` is an outlet-local string such as
@@ -196,7 +197,7 @@ notes: |
   reported location, and 106/186 (57%) of it is 'Palestine', i.e. "could not
   tell". Sample evidence that it is unreliable: the first record's region is
   'Palestine' for a headline about explosions in Sanaa, Yemen. So region
-  resolves cleanly (min_resolved_pct 1.0, with 'Palestine' → place_id NULL) but
+  resolves cleanly (min_decided_pct 1.0, with 'Palestine' → place_id NULL) but
   should carry low confidence downstream. quality.score is 0 and
   quality.verified false on 186/186; `reliability` (high 93 / medium 93) is
   likewise v1's own per-outlet label, not an upstream signal.

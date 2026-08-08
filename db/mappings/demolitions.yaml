@@ -7,6 +7,7 @@
 # demolished structures. See notes for the field-by-field search that
 # establishes there is no per-event date anywhere in the file.
 category: demolitions
+transform: python:t_demolitions
 shape: observation
 # REVIEW VERDICT (2026-08-05): the spec's own open question, answered as (b).
 # Not one of the 534 records is a thing that happened at a place and a time —
@@ -97,7 +98,7 @@ place:
   #   4. location.region → 'West Bank' → place 2 (449 records incl. all 18
   #      annual rows); 'East Jerusalem' → Jerusalem governorate row +
   #      attrs.region = 'East Jerusalem' preserved (85 records).
-  min_resolved_pct: 1.0
+  min_decided_pct: 1.0
   # Every record lands: 515 at locality precision, 18 annual rows at region,
   # and 'Al Malha' (Bethlehem) at region. 1.0 has teeth here because rung 4 is
   # only reachable by the 18 annual rows and Al Malha — a locality-dimension

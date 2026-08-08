@@ -6,6 +6,7 @@
 # 730-day daily series with honest dates. The 0.2% year-bucket is a FALSE
 # POSITIVE for law 2 and the spec disarms it explicitly.
 category: infrastructure
+transform: python:t_infrastructure
 shape: observation
 status: reviewed
 records_measured: 3537
@@ -92,7 +93,7 @@ place:
   latlon_exclude: [barrier_segment]   # barrier lat/lon are PROJECTED METRES,
                                       #   not degrees — see notes. FORMAT
                                       #   EXTENSION, and a hard safety rule.
-  min_resolved_pct: 0.92         # the measured pcode rate; a floor, not a
+  min_located_pct: 0.92         # the measured pcode rate; a floor, not a
                                  #   target — the region tier means nothing
                                  #   should actually land unresolved
 
@@ -176,8 +177,14 @@ notes: |
       Region is correct for now; reprojection is a separate, verifiable job.
     satellite_damage_assessment (14): no latlon, no pcode; location.name is
       'Gaza Strip' 11 / 'Gaza Governorate' 3 → region tier.
-  min_resolved_pct 0.92 is the measured admin2_pcode rate. With the ladder in
-  place actual resolution should be 1.0, but the floor is set from measurement.
+  min_located_pct 0.92 is the measured admin2_pcode rate, and as of
+  2026-08-08 it is the LATLON rung that delivers it: v1 has dropped
+  location.admin2_pcode from all 3,537 records, and the ladder resolves
+  3,261 by coordinate — the same 0.922 the pcodes used to give. 261 barrier
+  segments skip the latlon rung by design (projected metres, see above) and
+  land at region with the other 15. The floor did not move because the
+  ladder did its job; before 2026-08-08 the ladder was prose and every one
+  of these 3,537 rows sat at region grade.
 
   LICENSE — 042 GOVERNS, AND ONE RECORD CLAIM IS TOO GENEROUS. The 2,920
   TechForPalestine records carry license 'public-domain' in the record;

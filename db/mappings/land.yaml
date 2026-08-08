@@ -5,6 +5,7 @@
 # event date; OCHA's 261 checkpoints and Peace Now's 199 settlements are
 # registers with no date at all. Routing is three-way and exhaustive (law 5).
 category: land
+transform: python:t_land
 shape: observation
 status: reviewed
 records_measured: 697
@@ -76,7 +77,7 @@ occurred_at:
 place:
   strategy: region                 # location.region: West Bank 460 /
                                    #   Palestine 237
-  min_resolved_pct: 1.0            # West Bank → place 2; 'Palestine' →
+  min_decided_pct: 1.0            # West Bank → place 2; 'Palestine' →
                                    #   place_id NULL + attrs.region (law 3)
 
 stable_id: stable_id               # 697 distinct. DO NOT use `id`: only 673
@@ -154,7 +155,7 @@ notes: |
     settlement  — real Israeli settlement names (Ariel, Beitar Illit, Bracha;
                   175 distinct, 24 'Unknown'). Law 3 forbids matching these
                   against the Palestinian gazetteer, and they are not in it.
-  So region, min_resolved_pct 1.0: 460 → place 2 (West Bank), 237 → place_id
+  So region, min_decided_pct 1.0: 460 → place 2 (West Bank), 237 → place_id
   NULL with attrs.region 'Palestine'.
 
   `id` IS NOT UNIQUE. 697 records carry only 673 distinct `id` values: the

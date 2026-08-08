@@ -19,6 +19,7 @@
 # OCHA-origin protection-of-civilians data; we rely on T4P's public-domain
 # grant over their compilation, exactly as we do for gaza_moh-via-T4P.
 category: conflict_westbank
+transform: python:t_conflict_westbank
 v1_category: conflict            # datasets join the conflict serving views
 shape: observation
 status: reviewed
@@ -64,9 +65,12 @@ place:
   fixed: "West Bank"
 
 drop:
-  - reason: fill_padding         # measured 752 at spec time; grows ~daily
-  - reason: missing_date         # defensive; measured 0
-  - reason: no_metrics           # defensive; measured 0
+  - reason: fill_padding
+    measured: 752                # re-measured 2026-08-08: still 752
+  - reason: missing_date
+    measured: 0                  # defensive; has never fired
+  - reason: no_metrics
+    measured: 0                  # defensive; has never fired
 
 expect:
   min_records: 1000              # 1,035 at spec time, grows daily; shrinkage

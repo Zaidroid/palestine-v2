@@ -5,6 +5,7 @@
 # license, one unit. The hard question here is not dates or geography — it is
 # what the INDICATOR is when every row is a unique transaction.
 category: funding
+transform: engine
 shape: observation
 status: reviewed
 records_measured: 9986
@@ -42,7 +43,7 @@ place:
   # measured: location.precision == 'country' on 9,986/9,986.
   # location.region: 'Palestine' 9,982 → place_id NULL + attrs.region
   #                  'West Bank'     4 → place 2
-  min_resolved_pct: 1.0
+  min_decided_pct: 1.0
 
 stable_id: stable_id             # 9,986 distinct / 9,986; 1:1 with
                                  #   funding.flow_id (also 9,986 distinct)

@@ -1,0 +1,137 @@
+{
+ "aid_access": {
+  "drops": {},
+  "emitted": 50059,
+  "records_read": 50059,
+  "sha256": "05c1d8861a6ce071b9b653cb91814d8609804894c2c55fa0ac19b70743364206"
+ },
+ "casualties": {
+  "drops": {},
+  "emitted": 49,
+  "records_read": 49,
+  "sha256": "8aada86392cf301d38db0b03bfa4143c9208f22f85f7623c038d4a8a80cb3379"
+ },
+ "conflict": {
+  "drops": {
+   "v1_placeholder_all_metrics_zero": 1035,
+   "v1_placeholder_no_payload": 44
+  },
+  "emitted": 10569,
+  "records_read": 10611,
+  "sha256": "de8dbdce671931647bbced2cd531fec3087d727b78903155ea769f4f7029d84e"
+ },
+ "conflict_westbank": {
+  "drops": {
+   "fill_padding": 752
+  },
+  "emitted": 2255,
+  "records_read": 1035,
+  "sha256": "1bcbc0f42c49f1347ef3a316ba10a19186b5d8a8f09f2830c8b8721f038b96f8"
+ },
+ "connectivity": {
+  "drops": {},
+  "emitted": 2274,
+  "records_read": 2274,
+  "sha256": "9c64d3f231fbb9afd1c9020b92cc990eb52439bb72ccfc1e3dcccd0a3686836d"
+ },
+ "culture": {
+  "drops": {},
+  "emitted": 329,
+  "records_read": 329,
+  "sha256": "674a7c3d55cf855402859c9170f6e63095477e276a16155b3cc19416e3482731"
+ },
+ "demolitions": {
+  "drops": {},
+  "emitted": 904,
+  "records_read": 534,
+  "sha256": "ecf274d03d1a4811ed03eaff92b473795b9760bd10676d3b95217043f7acd470"
+ },
+ "economic": {
+  "drops": {
+   "contradictory_duplicate": 26
+  },
+  "emitted": 4126,
+  "records_read": 4152,
+  "sha256": "3c5299fcc4018b233ffd15452168b893c115fa4d2bb605e29362c20ab382c09f"
+ },
+ "education": {
+  "drops": {},
+  "emitted": 2359,
+  "records_read": 2359,
+  "sha256": "ad10ae309d589139b75b2509b9f92c95009d53132ba11e4685f0b8af68050e57"
+ },
+ "food": {
+  "drops": {},
+  "emitted": 26814,
+  "records_read": 26814,
+  "sha256": "2549f3eb1262ba154f72882d01168783f4ffe5c2b440fc9d9f5db4022f7b2eb7"
+ },
+ "funding": {
+  "drops": {},
+  "emitted": 9990,
+  "records_read": 9990,
+  "sha256": "00e134ccebf265a610599034e6f6880aaee260d9cc6bfcf27571c3c1e159780e"
+ },
+ "health": {
+  "drops": {
+   "no_indicator_identity": 210
+  },
+  "emitted": 12502,
+  "records_read": 12712,
+  "sha256": "501b0963d08bde3760574aad1aaca22ec3e9799533b8a85db433fcd9791854d5"
+ },
+ "historical": {
+  "drops": {},
+  "emitted": 6575,
+  "records_read": 2517,
+  "sha256": "8d4d063b908b582fc62736ef7cce418b654feee8bd153de265e02d79236915a7"
+ },
+ "infrastructure": {
+  "drops": {},
+  "emitted": 3537,
+  "records_read": 3537,
+  "sha256": "4b37a4786d441fa0646aa7f831aba429e5c853a7b79a53a4e92b40581128aa3e"
+ },
+ "land": {
+  "drops": {},
+  "emitted": 697,
+  "records_read": 697,
+  "sha256": "e649eb01482b4284f2b7e70dd9274123319547e6ab8e308bb4fae8af976b0853"
+ },
+ "martyrs_snapshot_2023": {
+  "drops": {},
+  "emitted": 72836,
+  "records_read": 72836,
+  "sha256": "216e8636385c8faaa8c85722bd3720ec83cda916eab5e2b684a88279d651ba60"
+ },
+ "pcbs": {
+  "drops": {},
+  "emitted": 2060,
+  "records_read": 2060,
+  "sha256": "9c78b1747ecb42dbe9cf474b0b1b09e6aa292086f1c8a1f77541b7028a3b5ae2"
+ },
+ "prisoners": {
+  "drops": {},
+  "emitted": 890,
+  "records_read": 890,
+  "sha256": "f18c3b8cc934d1071632e20f6eedcf17d16e4cd39b2dad8518365c2394480876"
+ },
+ "refugees": {
+  "drops": {},
+  "emitted": 1566,
+  "records_read": 1566,
+  "sha256": "cdd5404f48e3e931fd10e31f33ccfc9c9f78433d689a6cc979eb2914e12266c8"
+ },
+ "settlements": {
+  "drops": {},
+  "emitted": 51,
+  "records_read": 51,
+  "sha256": "c3490f7222738faad9fcc326db0e284d8af44eb27c3abc1af893b1ef38e117c9"
+ },
+ "water_gho": {
+  "drops": {},
+  "emitted": 75,
+  "records_read": 75,
+  "sha256": "9bb7cce44d84a900dbd8dbb59e4dca877820dc527e2698a6aeaf7be161adc9ea"
+ }
+}

@@ -5,6 +5,7 @@
 # so there is no honest date — verified below — but unlike culture every row
 # resolves to a governorate pcode and a real WGS84 point.
 category: education
+transform: python:t_education
 shape: observation
 status: reviewed
 records_measured: 2359
@@ -39,7 +40,7 @@ occurred_at:
 place:
   strategy: pcode                       # location.admin2_pcode, 2357/2359
   fallback: [latlon, region]            # FORMAT EXTENSION — see open questions
-  min_resolved_pct: 0.999               # measured admin2_pcode rate 0.99915;
+  min_located_pct: 0.999               # measured admin2_pcode rate 0.99915;
                                         #   floor, not target (ladder reaches 1.0)
 
 stable_id: stable_id                    # 2359 distinct; `id` also 2359 distinct
@@ -77,9 +78,23 @@ notes: |
   Jericho 33) plus 2 rows with everything null. Ladder is pcode-first because
   a pcode is an authority-issued identifier and the latlon is derived; latlon
   catches the 2 pcode-less rows; region ('West Bank' on 2359/2359) is the
-  guaranteed floor so nothing lands NULL. min_resolved_pct is set to the
+  guaranteed floor so nothing lands NULL. min_located_pct is set to the
   measured pcode rate 0.999 rather than to the 1.0 the ladder should achieve —
   a floor from measurement, not from hope.
+
+  AND THE LADDER IS WHY THIS CATEGORY STILL HAS GEO. Measured 2026-08-08: v1
+  has dropped location.admin2_pcode from all 2,359 records — the same rebuild
+  regression that took the demolition and historical gazetteer keys. The
+  pcode rung now returns nothing at all. The latlon rung catches 2,357 of
+  2,359, which is the identical count the pcode rung used to deliver, and the
+  2 all-null rows fall to region exactly as described above. The floor holds
+  at 0.999 without being touched.
+
+  Until 2026-08-08 that ladder was prose: the transformer went pcode → region
+  and skipped latlon entirely, so for as long as the pcodes were missing every
+  school sat on the West Bank region row with a perfectly good coordinate in
+  hand. Nothing reported it, because the floor that would have — the old
+  min_resolved_pct — was read by no code at all.
 
   UNIT LIE (same class as water's). metrics.unit is 'students' on 2359/2359,
   but metrics.count is 1 on 2359/2359 and there is NO student count anywhere
@@ -118,13 +133,16 @@ notes: |
   every school under two different v1_stable_id-bearing datasets. See
   westbank.yaml, which recommends skipping westbank for exactly this reason.
 
-  OPEN QUESTION — `fallback` is a FORMAT EXTENSION. The README's place block
-  defines a single `strategy`. The pcode-first ladder this category needs
-  cannot be expressed with one key, so `fallback: [latlon, region]` is
-  proposed here (and in infrastructure.yaml and westbank.yaml). Either the
-  README gains the key and T2.3 implements the ladder, or these three specs
-  collapse to `strategy: pcode` with min_resolved_pct 0.999 and the residue
-  reported as unresolved under law 4. Needs a decision before reviewed.
+  SETTLED 2026-08-08 — `fallback` was an open question for three days and a
+  dead key for three days more. It asked whether the README should gain the
+  ladder or these three specs should collapse to `strategy: pcode`. The spec
+  was reviewed while the question was still open, which is how a key came to
+  be declared, reviewed, and unimplemented at the same time.
+  Resolution: the README gains it and the loader executes it
+  (ingest/databank.py place_ladder). The rungs are tried in order and the one
+  that fires is counted in the run report as place_rung:<name>, so which rung
+  is carrying a category is now a measured fact rather than an assumption —
+  which is exactly how the vanished pcodes were found.
 
 # Format v2 `identity:` — cross-run natural-key idempotency (added 2026-08-07
 # after v1 re-hashed every stable_id and this dataset silently re-inserted its

@@ -9,6 +9,7 @@
 # event_type is the only per-record discriminator and here it IS informative:
 # it separates the two upstreams' incompatible measures.
 category: connectivity
+transform: python:t_connectivity
 shape: observation
 status: reviewed
 records_measured: 2274
@@ -74,7 +75,7 @@ place:
   strategy: region         # location.region: 'Palestine' 1,677 → place_id
                            #   NULL + attrs.region; 'Gaza Strip' 417 → place 1;
                            #   'West Bank' 180 → place 2
-  min_resolved_pct: 1.0    # region strings always resolve; NULL is the honest
+  min_decided_pct: 1.0    # region strings always resolve; NULL is the honest
                            #   answer for the country-wide rows
 
 stable_id: stable_id       # 2,274 distinct over 2,274 records — unique

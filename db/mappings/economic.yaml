@@ -5,6 +5,7 @@
 # The 3.4% is entirely the PCBS rows, and they are also the only rows with a
 # real regional breakdown — including the only East Jerusalem rows in the set.
 category: economic
+transform: python:t_economic
 shape: observation
 status: reviewed
 records_measured: 4152
@@ -41,7 +42,7 @@ datasets:
         # measured: 3,536/3,536 dates are -01-01
       place:
         strategy: region       # region='Palestine' on 3,536/3,536 → place_id NULL
-        min_resolved_pct: 1.0
+        min_decided_pct: 1.0
       expect:
         min_records: 3180
 
@@ -68,7 +69,7 @@ datasets:
                                #   water hit with 'count'.
       place:
         strategy: region       # region='Palestine' on 474/474
-        min_resolved_pct: 1.0
+        min_decided_pct: 1.0
       expect:
         min_records: 420
 
@@ -95,7 +96,7 @@ datasets:
         # governorate (place 11, PS0140) with attrs.region = 'East Jerusalem'
         # preserved, per README's region rules. These 21 rows are the only
         # East Jerusalem records in the category.
-        min_resolved_pct: 1.0
+        min_decided_pct: 1.0
       expect:
         min_records: 128
 
@@ -129,7 +130,7 @@ occurred_at:
 
 place:
   strategy: region
-  min_resolved_pct: 1.0
+  min_decided_pct: 1.0
   forbid:
     - location.coordinates  # 87% fill (3,600 of 4,152) and worthless: the
                             #   World Bank and IMF rows all carry

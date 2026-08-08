@@ -100,7 +100,9 @@ def test_loader_refuses_a_spec_with_no_identity(tmp_path, monkeypatch) -> None:
     spec.write_text("category: phantom\nstatus: reviewed\n"
                     "expect: {min_records: 1, max_observations: 10}\n")
     monkeypatch.setattr(databank, "SPECS", tmp_path)
-    with pytest.raises(SpecRefused, match="no `identity:`"):
+    # The validator (Stage 3) now catches this one key earlier and says it
+    # better; SpecInvalid IS a SpecRefused so the refusal contract is intact.
+    with pytest.raises(SpecRefused, match="must declare what makes a row"):
         load_spec("phantom")
 
 

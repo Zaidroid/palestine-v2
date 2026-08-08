@@ -8,6 +8,7 @@
 # georeferenced events, 589 Nakba village depopulations, 262 journalist
 # killings — is a real thing that happened at a place and a time.
 category: conflict
+transform: python:t_conflict
 shape: event
 shape_overrides:
   # REVIEW VERDICT (2026-08-05): open question 3 answered — the cumulative
@@ -311,14 +312,14 @@ notes: |
      and raise expect.min_records to 9,400. My reading is that loading 977
      'zero Palestinians killed in the West Bank today' assertions is worse than
      dropping them, but it is Zaid's call whether an empty row is data.
-  2. min_resolved_pct semantics. water.yaml uses 1.0 to mean 'every record
-     reaches a place decision, including a deliberate NULL'. Under that
-     reading conflict is also 1.0, and the check becomes toothless because the
-     region rung catches everything. This spec instead sets 0.78 to mean
-     'fraction reaching point or locality precision'. The T2.3 loader must
-     implement ONE of these meanings for every spec — if it implements
-     water's, this file needs a second key (e.g. min_point_resolved_pct: 0.78)
-     rather than a redefined one.
+  2. Resolution floor semantics — SETTLED 2026-08-08, the way this spec
+     proposed. One key could not carry two meanings, so there are two:
+     min_decided_pct (default 1.0) is 'every retained record reaches a place
+     decision, a deliberate NULL included', and min_located_pct is 'fraction
+     reaching point/locality/governorate grade'. This file's 0.78 is the
+     latter and always was. The other twenty specs spent three days carrying
+     min_resolved_pct, which meant whichever of the two the reader assumed
+     and which the loader never read at all.
   3. Whether conflict.daily_casualty_report belongs in `event` at all. It is a
      977-point cumulative TIME SERIES of one running total — the shape of an
      observation, not of 977 things that happened. The renamed keys make it

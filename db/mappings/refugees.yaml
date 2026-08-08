@@ -5,6 +5,7 @@
 # semantics and no geography, so almost everything here is a per-dataset
 # override. Audit: 1,566 records, 100% dated, 74% year-bucket, 22% lat/lon.
 category: refugees
+transform: python:t_refugees
 shape: observation
 status: reviewed
 records_measured: 1566
@@ -43,7 +44,7 @@ datasets:
       place:
         strategy: none                       # see notes — the place named by
                                              #   these rows is a foreign country
-        min_resolved_pct: 1.0                # NULL is the resolution
+        min_decided_pct: 1.0                # NULL is the resolution
       attrs_passthrough:
         - asylum_country                     # 1,157/1,157; the real dimension
         - origin                             # literal 'Palestinian' on 1,157
@@ -100,7 +101,7 @@ datasets:
                                              #   polygon (measured)
         fallback: admin2_pcode               # 332/334; all 16 distinct pcodes
                                              #   join v2 place.admin2_pcode
-        min_resolved_pct: 0.98
+        min_located_pct: 0.98
       attrs_passthrough:
         - event_name                         # 38 distinct, e.g. 'Palestine:
                                              #   Communal violence - Jericho -
@@ -139,12 +140,21 @@ datasets:
           - if: "always"
             then: "reported_at-only (reported_at = sources[].fetched_at), precision=unknown"
       place:
-        strategy: latlon                      # only 16/75 have lat/lon
-        min_resolved_pct: 0.21                # measured 16/75 = 0.213; the other
-                                              #   59 rows name camps in Jordan,
-                                              #   Lebanon and Syria or are
-                                              #   aggregates — place_id NULL is
-                                              #   the honest answer (law 3)
+        strategy: latlon
+        min_located_pct: 0.0                  # WAS 0.21, from 16/75 measured
+                                              #   2026-08-05. Re-measured
+                                              #   2026-08-08: 0/75. v1 is not
+                                              #   sending these coordinates any
+                                              #   more — see the V1 GEO FLAP
+                                              #   note. The floor states what
+                                              #   v1 reliably supplies, which
+                                              #   for this dataset is nothing;
+                                              #   the 59 rows that never had
+                                              #   coordinates name camps in
+                                              #   Jordan, Lebanon and Syria or
+                                              #   are aggregates, and place_id
+                                              #   NULL was always the honest
+                                              #   answer for them (law 3).
       attrs_passthrough:
         - location.name                       # camp name, or the aggregate label
         - refugees
@@ -171,9 +181,12 @@ occurred_at:
 
 place:
   strategy: latlon
-  min_resolved_pct: 0.22      # whole-category floor: 350 of 1,566 records carry
-                              #   lat/lon (measured 0.223). Per-dataset floors
-                              #   above are the ones that matter.
+  min_located_pct: 0.21      # whole-category floor. 334 of 1,566 records carry
+                             #   lat/lon today (0.213); 350 did on 2026-08-05.
+                             #   Per-dataset floors above are the ones that
+                             #   matter — this one cannot see a single dataset
+                             #   going dark inside a healthy average, which is
+                             #   exactly what happened to unrwa.
 
 stable_id: stable_id          # 1,566 distinct / 1,566
 attrs_passthrough:
