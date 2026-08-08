@@ -1,7 +1,7 @@
 {
  "shape": "collection",
  "generated": "2026-08-08",
- "rows": 202516,
+ "rows": 128448,
  "note": "Each file carries its own source's licence. Nothing is relicensed and no derived database is formed — three incompatible copylefts (ODbL, CC-BY-SA, CC-BY-NC-SA) live here and no single aggregate licence can hold them.",
  "files": [
   {
@@ -35,16 +35,6 @@
    "share_alike": false
   },
   {
-   "file": "by-source/ioda.csv.gz",
-   "rows": 1000,
-   "source_key": "ioda",
-   "source_name": "IODA (Georgia Tech) internet outage detection",
-   "license_spdx": "CC-BY-NC-4.0",
-   "attribution": "Internet measurement by IODA, Georgia Tech",
-   "terms_url": null,
-   "share_alike": false
-  },
-  {
    "file": "by-source/ocha.csv.gz",
    "rows": 261,
    "source_key": "ocha",
@@ -59,10 +49,10 @@
    "rows": 1276,
    "source_key": "ooni",
    "source_name": "OONI",
-   "license_spdx": "free-with-attribution",
-   "attribution": "Censorship measurements: OONI (ooni.org), CC-BY-SA.",
-   "terms_url": null,
-   "share_alike": false
+   "license_spdx": "CC-BY-NC-SA-4.0",
+   "attribution": "Censorship measurements: OONI (ooni.org), CC-BY-NC-SA-4.0.",
+   "terms_url": "https://github.com/ooni/license/blob/master/data/LICENSE.md",
+   "share_alike": true
   },
   {
    "file": "by-source/palopenmaps.csv.gz",
@@ -96,7 +86,7 @@
   },
   {
    "file": "by-source/tech4palestine.csv.gz",
-   "rows": 83248,
+   "rows": 10180,
    "source_key": "tech4palestine",
    "source_name": "Tech4Palestine",
    "license_spdx": "Unlicense",

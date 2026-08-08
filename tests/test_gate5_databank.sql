@@ -28,15 +28,21 @@ FROM source
 WHERE btrim(attribution_text) = '';
 
 \echo '--- G5.3: the 042 port landed and DO NOTHING protected Tier 1 ---'
--- ioda existed before the port with a STRICTER reading of its terms
--- (CC-BY-NC-4.0, non-commercial) than v1's registry carried; the port must
--- not have relaxed it. And the port itself must be present — spot keys from
--- each class: a UN portal, a non-commercial NGO, and an audit-discovered
--- source licenses.json never registered.
+-- ioda existed before the port with a STRICTER reading of its terms than v1's
+-- registry carried; the port must not have relaxed it. This pinned the exact
+-- string CC-BY-NC-4.0 until 2026-08-08, when the terms were actually read and
+-- turned out to be stricter again — IODA's API answers every request with
+-- "All Rights Reserved" (067). Pinning a specific licence made a CORRECTION
+-- look like a regression, so the gate now checks the property it always
+-- meant: ioda stays non-commercial, is never graded more permissively than
+-- `ask`, and carries the evidence for whatever it does say. A licence may
+-- tighten freely; loosening one needs a reading on the record.
 SELECT CASE
          WHEN (SELECT count(*) FROM source
                WHERE key IN ('worldbank', 'btselem', 'zochrot')) = 3
-          AND (SELECT license_spdx = 'CC-BY-NC-4.0' AND NOT commercial_use
+          AND (SELECT NOT commercial_use
+                  AND redistribution IN ('ask', 'no-redistribution')
+                  AND terms_evidence IS NOT NULL
                FROM source WHERE key = 'ioda')
          THEN 'PASS'
          ELSE 'FAIL: port incomplete or ioda relaxed'

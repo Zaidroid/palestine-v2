@@ -60,12 +60,24 @@ def test_non_commercial_is_still_redistributable(conn):
 
     Two columns, two questions, and one must not answer the other:
         commercial_use = false   may we SELL it?         no
-        redistribution           may we SHARE it at all? yes, with credit"""
+        redistribution           may we SHARE it at all? yes, with credit
+
+    NC is not the only thing an NC licence can say, though: CC-BY-NC-SA adds a
+    copyleft, and grading that as plain `attribution` understates it. So the
+    rule is the shape of the licence, not a single answer for the family —
+    which is what 067 found, with WHO's CC-BY-NC-SA-3.0-IGO graded
+    `attribution` while its own share_alike flag said TRUE.
+    """
     with conn.cursor() as cur:
-        cur.execute("""SELECT key, redistribution FROM source
-                       WHERE license_spdx LIKE 'CC-BY-NC%'""")
-        for key, grade in cur.fetchall():
-            assert grade == "attribution", f"{key} → {grade}"
+        cur.execute("""SELECT key, license_spdx, redistribution, share_alike
+                       FROM source WHERE license_spdx LIKE 'CC-BY-NC%'""")
+        for key, spdx, grade, sa in cur.fetchall():
+            assert grade != "no-redistribution", \
+                f"{key}: NC graded no-redistribution — that is 053's bug"
+            want = "share-alike" if "-SA" in spdx else "attribution"
+            assert grade == want, f"{key} ({spdx}) → {grade}, expected {want}"
+            assert sa == (want == "share-alike"), \
+                f"{key}: share_alike flag and redistribution grade disagree"
 
 
 def test_un_tou_is_genuinely_not_redistributable(conn):
