@@ -72,6 +72,7 @@ CASES: dict[str, list[dict]] = {
     "/v2/checkpoints/summary":  [{}],
     "/v2/databank/categories":  [{}],
     "/v2/databank/radar":       [{}],
+    "/v2/databank/licenses":    [{}],
     "/v2/databank/scout":       [{}],
     # as_of exercises the sys_period path — the value it returns for July is
     # asserted exactly in test_databank_asof_serves_superseded_value.
@@ -318,6 +319,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/fuel/summary": "fuel_summary",
         "/v2/databank/categories": "databank",
         "/v2/databank/{category}": "databank",
+        "/v2/databank/licenses": "licenses",
         "/v2/databank/radar": "data_gaps",
         "/v2/databank/scout": "data_gaps",
     }

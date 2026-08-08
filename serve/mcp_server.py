@@ -578,6 +578,56 @@ def can_i_travel(origin: str, destination: str) -> dict:
                       "never block and are always named"}
 
 
+def licenses(source: str | None = None) -> dict:
+    """Who owns the data, and what each licence obliges.
+
+    Exists because the single most consequential thing an agent can get wrong
+    about this databank is telling someone they may sell a row they may only
+    share. `commercial_use` alone was never the whole answer: ODbL and
+    CC-BY-SA permit commercial use AND require a derived database to carry
+    the same licence, and 6,562 rows are in that position.
+    """
+    d = api("/v2/databank/licenses")
+    rows = d["licenses"]
+    if source:
+        rows = [r for r in rows
+                if source.lower() in (r["source_key"] or "").lower()
+                or source.lower() in (r["source_name"] or "").lower()]
+        if not rows:
+            return {"answer": f"No source matching {source!r} is served.",
+                    "licenses": []}
+    t = d["tiers"]
+    # A share-alike licence that is ALSO non-commercial (WHO's
+    # CC-BY-NC-SA-3.0-IGO) is not in any commercial tier, so listing it beside
+    # the tier counts would suggest it is sellable-with-strings when it is not
+    # sellable at all. The copyleft flag and the commercial grant are separate
+    # facts and only their intersection belongs here.
+    sa = [r for r in rows if r["share_alike"] and r["commercial_use"]]
+    # Likewise: an unread licence only endangers something if we are SELLING
+    # under it. The rest are quarantined already, and mixing the two turns a
+    # one-source problem into a seven-source shrug.
+    unread = [r["source_key"] for r in rows
+              if not r["verified_on"] and r["commercial_use"]]
+    unread_nc = [r["source_key"] for r in rows
+                 if not r["verified_on"] and not r["commercial_use"]]
+    answer = (f"{t['open']:,} صفاً قابلاً لإعادة النشر مع الإسناد، "
+              f"{t['commercial_permissive']:,} قابلاً للبيع بلا التزام إضافي، "
+              f"و{t['commercial_sharealike']:,} صفاً بترخيص المشاركة بالمثل "
+              f"(ODbL / CC-BY-SA): يجوز بيعها، لكن أي قاعدة بيانات مشتقة "
+              f"منها يجب أن تحمل الترخيص نفسه.")
+    if sa:
+        answer += (" المصادر ذات المشاركة بالمثل: "
+                   + "، ".join(r["source_name"] for r in sa) + ".")
+    return {"answer": answer, "tiers": t, "licenses": rows,
+            "share_alike_sources": [r["source_key"] for r in sa],
+            "terms_never_read_and_sold": unread,
+            "terms_never_read_not_sold": unread_nc,
+            "caveat": "A derived DATABASE built on a share_alike row inherits "
+                      "that licence. A null verified_on means nobody has read "
+                      "that publisher's terms at the publisher.",
+            "permissions_pending": d["permissions_pending"]}
+
+
 def databank(category: str | None = None, indicator: str | None = None,
              as_of: str | None = None, limit: int = 10) -> dict:
     """The historical databank: 186k observations from 19 categories
@@ -636,6 +686,18 @@ def data_gaps() -> dict:
 
 
 TOOLS = {
+    "licenses": (licenses,
+                 "Who owns the databank's data and what each licence "
+                 "obliges: the open / commercial-permissive / "
+                 "commercial-share-alike tiers, per-source attribution "
+                 "text, and which publishers' terms nobody has read yet. "
+                 "Use BEFORE telling anyone they may reuse or sell a "
+                 "figure — 6,562 rows may be sold but oblige a derived "
+                 "database to carry the same licence.",
+                 {"type": "object", "properties": {
+                     "source": {"type": "string",
+                                "description": "optional: filter to one "
+                                               "source key or name"}}}),
     "data_gaps": (data_gaps,
                   "The gap radar: which datasets are stalled/late/dead, "
                   "where the timeline has holes, which supply lines are "
