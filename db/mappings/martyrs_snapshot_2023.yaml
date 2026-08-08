@@ -7,81 +7,140 @@
 # NOT a time series and it is not geolocated: it is a memorial list. Every
 # design choice below follows from that.
 category: martyrs_snapshot_2023
-transform: python:t_martyrs
+transform: python:t_martyrs_t4p
 shape: observation
 status: reviewed
-records_measured: 60200
+records_measured: 72836
+
+# CUT FROM v1 2026-08-08. This spec now reads Tech4Palestine's own endpoints,
+# fetched by ops/fetch_t4p.py, instead of v1's unified martyrs file.
+#
+# The cut was safe to make because v1's file was measured to be a PURE RELABEL:
+# all 72,835 roster records matched by t4p_id with zero differences in name,
+# name_ar, name_en, age, dob or killed. ops/cut_equivalence.py proves it row by
+# row, keyed on this spec's own `identity:` rather than on v1's content hash —
+# which no v2 fetcher can or should reproduce.
+#
+# WHAT THE CUT GAINS, beyond one fewer dependency: v1's summary was two days
+# behind the publisher (74,490 killed as of 2026-08-06 against T4P's 74,492 as
+# of 2026-08-08), and v1's own `databank-martyrs` step has failed 30 nights
+# running. The roster this memorial holds was being refreshed by a machine that
+# had already stopped.
+cut_from_v1: 2026-08-08
+  # The day this category stopped reading v1. ops/asof_harness.py claims the
+  # vault's evidence only for days BEFORE it, and replays them through
+  # ingest.databank.t_martyrs_v1 — the transformer that actually produced the
+  # stored rows. The cut changes what we read tomorrow; it must not erase how
+  # we check yesterday.
+input:
+  root: data/raw/tech4palestine
+  glob:
+    - killed_in_gaza.json     # the named roster, a JSON array
+    - summary.json            # the cumulative snapshot, a single JSON object
+  object_as_record: true      # ...which is why: summary.json IS one record
 
 source_routing:
   by_name:
     "Tech4Palestine": tech4palestine      # licenses.json alias 'tech4palestine'
-  default: null                           # measured: 0 records with sources: []
-                                          #   an empty sources[] is a run error
+  default: tech4palestine
+  # A raw T4P file carries no sources[] — it IS the source. v1 stamped that
+  # block on during its own transform. Every record in these two files is
+  # T4P's by construction, so the default is a fact about the input, not a
+  # fallback for unlabelled records.
 
 datasets:
   - key: v1_martyrs_snapshot_2023_tech4palestine
     source: tech4palestine
+    # THE KEY KEEPS ITS `v1_` PREFIX ON PURPOSE. It names 72,836 rows already
+    # in the databank; renaming it would orphan them and re-insert the whole
+    # memorial under a new name. The prefix is now a piece of history — where
+    # these rows first came from — not a statement about where they come from.
+    #
     # One dataset, not two, because law 5 is per (category, source) and both
     # record shapes come from tech4palestine — the roster from
-    # data.techforpalestine.org (60,199) and the totals from
-    # .../api/v3/summary.json (1). They are separated by `indicator`, not by
+    # /v2/killed-in-gaza.min.json (72,835) and the totals from
+    # /v3/summary.min.json (1). They are separated by `indicator`, not by
     # dataset. OPEN: if the reviewer wants the totals series to have its own
     # freshness row in dataset_freshness, it needs its own dataset key and
     # law 5 needs an explicit "per (category, source, endpoint)" amendment.
 
 indicator:
-  template: "martyrs.{event_type}"   # measured: identified_killed 60,199
-                                     #           cumulative_summary 1
+  template: "martyrs.{event_type}"   # identified_killed 72,835 (a roster
+                                     #   record) + cumulative_summary 1 (the
+                                     #   summary document). event_type is
+                                     #   assigned by shape, not read: a record
+                                     #   with `known_killed_in_gaza` is the
+                                     #   summary, anything with `id` is a person.
 
 value:
-  num_from: metrics.killed   # 1 on all 60,199 person rows (verified: 60,199/60,199
-                             #   have metrics.killed == 1); 74,074 on the summary.
-                             #   NOT metrics.value — that is 0 on every record.
-  text_from: name            # the person's name, 60,199/60,199 filled.
+  num_from: literal 1        # one person, one life. v1 carried this as
+                             #   metrics.killed == 1 on every roster record;
+                             #   T4P does not publish a per-person count
+                             #   because there is nothing to count.
+  text_from: en_name         # the person's name, 72,835/72,835 filled.
                              #   This is the observation's content, not decoration.
-  unit_from: metrics.unit    # 'persons' on 60,200/60,200
+  unit_from: literal persons
+                             # THE SUMMARY ROW's value is
+                             #   gaza.killed.total + west_bank.killed.total.
+                             #   v1 published that sum as metrics.killed and
+                             #   the arithmetic is reproduced exactly
+                             #   (measured 2026-08-08: 73,384 + 1,108 = 74,492).
 
 occurred_at:
-  from: temporal_context.baseline_date   # literal '2023-10-07' on 60,200/60,200
+  from: literal 2023-10-07               # v1 carried this as
+                                         #   temporal_context.baseline_date on
+                                         #   60,200/60,200; T4P publishes no
+                                         #   per-person date at all, which is
+                                         #   the same fact stated plainly.
   precision: unknown                     # NOT year — see notes, this is the
                                          #   whole design decision of this spec
   rules:
-    - if: "event_type == cumulative_summary"
-      then: "occurred_at = date, precision = day"
-      # The one summary record's date (2026-06-09) is the Gaza MoH's own
-      # last_update, copied verbatim from T4P summary.json. Law 1's masquerade
-      # test misfires here: v1 DERIVES metadata.last_updated FROM this field
+    - if: "record is the summary document"
+      then: "occurred_at = gaza.last_update, precision = day"
+      # T4P's own as-of date for the Gaza figures. v1 derived its
+      # metadata.last_updated FROM this same field
       # (populate-unified-data.js:867 `lastUpdated = summary?.gaza?.last_update`),
-      # so the audit's fetch_day equals it by construction, not by accident.
-      # It is a real as-of date and keeps day precision.
+      # so law 1's masquerade test misfires here by construction, not by
+      # accident. It is a real as-of date and keeps day precision.
 
 place:
-  strategy: region        # location.region: 'Gaza Strip' 60,199 → place 1
-                          #                  'Palestine'  1      → place_id NULL
-  min_decided_pct: 1.0   # region strings always resolve
+  strategy: region        # ...with the region supplied as a constant, because
+                          #   the raw file has no geography at all. This is the
+                          #   Gaza identified-killed list by definition, and v1
+                          #   stamped location.region 'Gaza Strip' on all
+                          #   72,835 records for exactly that reason. Resolves
+                          #   to place 1 with located=false — a region is not
+                          #   a location.
+  min_decided_pct: 1.0
   forbid:
-    - location.coordinates  # [34.45, 31.5] byte-identical on all 60,199 person
-                            #   rows — a synthetic Gaza-Strip centroid v1's
-                            #   enricher stamped on everything. Using it would
-                            #   plot 60,199 people at one fabricated point.
-    - location.proximity    # derived from the same fake centroid
-                            #   ('nearest_city: Gaza City', distance 11,100.0m
-                            #   identical on all 60,199)
+    - any per-person coordinate
+      # v1 stamped location.coordinates [34.45, 31.5] — one synthetic Gaza
+      # centroid — on all 72,835 person rows, with an identical proximity
+      # block (nearest_city Gaza City, distance 11,100.000000000158m). Reading
+      # it would have plotted the entire memorial on one fabricated pin. The
+      # raw file does not carry it, so the cut removes the temptation as well
+      # as the field.
 
-stable_id: stable_id      # 60,200 distinct / 60,200 — verified unique
-attrs_passthrough:
-  - t4p_id                # 60,199 distinct / 60,199 — the Gaza MoH roster id
-  - name_ar
-  - name_en
+stable_id: 't4p:killed_in_gaza:{id}  |  t4p:summary:{gaza.last_update}'
+  # DETERMINISTIC, not a content hash. v1's stable_id was re-derived from each
+  # record's bytes, so a corrected age minted a new id and re-inserted the
+  # person — the 2026-08-07 generation doubling, 19,451 observations. The
+  # publisher's own key cannot do that.
+attrs_passthrough:      # built by the transformer from the raw record; the
+  - t4p_id              #   omit-empty rule matches passthrough()'s
+  - name_ar             #   raw `name`    (Arabic)
+  - name_en             #   raw `en_name`
   - age
-  - sex
+  - sex                 #   raw m|f expanded to male|female, as v1 had it
   - dob
-  - t4p_source_marker
+  - t4p_source_marker   #   constant 'tech4palestine', as v1 had it — see the
+                        #   transformer on why the raw provenance letter is
+                        #   NOT carried
   - event_type
-  - cumulative            # summary record only; the Gaza/West Bank breakdown
+  - cumulative          # summary record only; the Gaza/West Bank breakdown
 
 expect:
-  min_records: 54000      # 0.9 × 60,200
+  min_records: 65000      # ~0.9 × 72,836
   max_observations: 84100    # 1.15 x measured emission
 
 notes: |

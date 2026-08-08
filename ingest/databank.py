@@ -127,9 +127,16 @@ def iter_v1_files(category: str, spec: dict | None = None):
         root = Path(spec["input"]["root"])
         if not root.is_absolute():
             root = ROOT / root
-        for f in sorted(root.glob(spec["input"]["glob"])):
-            if f.name not in ("index.json", "recent.json"):
-                yield f
+        # `glob:` may be a list. A publisher's own API is not one file per
+        # category the way v1's unified tree was — T4P publishes the named
+        # roster and the cumulative summary at two endpoints, and the spec
+        # that reads them should name both rather than sweep a directory and
+        # hope. Order is the spec's, not the filesystem's.
+        globs = spec["input"]["glob"]
+        for g in ([globs] if isinstance(globs, str) else globs):
+            for f in sorted(root.glob(g)):
+                if f.name not in ("index.json", "recent.json"):
+                    yield f
         return
     d = V1_UNIFIED / category
     if (d / "all-data.json").exists():
@@ -140,12 +147,20 @@ def iter_v1_files(category: str, spec: dict | None = None):
             yield f
 
 
-def _records(payload):
+def _records(payload, spec: dict | None = None):
     if isinstance(payload, list):
         return payload
     for key in ("data", "records"):
         if isinstance(payload.get(key), list):
             return payload[key]
+    # `input.object_as_record` — a document that IS one record. T4P's
+    # /v3/summary.json is a single JSON object holding one cumulative
+    # snapshot; without this it reads as zero records and the summary row
+    # disappears silently, which is precisely the class of failure the floors
+    # exist to catch one layer later. Declared, never guessed: every other
+    # payload keeps returning [] so a genuinely empty file stays empty.
+    if payload and ((spec or {}).get("input") or {}).get("object_as_record"):
+        return [payload]
     return []
 
 
@@ -745,7 +760,17 @@ def t_aid_access(rec, spec, places, counts):
                 unit=unit, place_id=place_id, located=located, attrs=attrs)]
 
 
-def t_martyrs(rec, spec, places, counts):
+def t_martyrs_v1(rec, spec, places, counts):
+    """v1's shape, kept for REPLAY ONLY — never registered in TRANSFORMERS.
+
+    martyrs_snapshot_2023 was cut from v1 on 2026-08-08 and now reads T4P's
+    own endpoints. But the evidence vault holds 38 days of v1-SHAPED snapshots,
+    and ops/asof_harness.py proves the databank's sys_period against them by
+    re-transforming what v1 served that day. Deleting this function would not
+    change one stored row; it would destroy the ability to prove those rows
+    were right — the cut must change what we read tomorrow without erasing how
+    we check yesterday.
+    """
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
@@ -760,6 +785,111 @@ def t_martyrs(rec, spec, places, counts):
     return [Row(ds, "martyrs.identified_killed", "2023-10-07", "unknown",
                 rec["stable_id"], value_num=rec["metrics"]["killed"],
                 value_text=rec.get("name"), unit="persons",
+                place_id=place_id, located=located, attrs=attrs)]
+
+
+# T4P publishes sex as a one-letter code; v1 spelled it out, and 72,835 rows
+# in the databank already say 'male'/'female'. Same fact, and changing the
+# spelling now would leave the stored rows saying one thing and the spec
+# another — the identity guard means those rows can never be rewritten.
+_T4P_SEX = {"m": "male", "f": "female"}
+
+
+def t_martyrs_t4p(rec, spec, places, counts):
+    """The named roster and the cumulative summary, from T4P's own endpoints.
+
+    Replaces t_martyrs, which read v1's `martyrs_snapshot_2023` unified file.
+    That file was measured (2026-08-08) to be a PURE RELABEL of T4P's
+    killed-in-gaza.json — all 72,835 records matched by t4p_id with zero
+    differences in name, name_ar, name_en, age, dob or killed. Every field
+    below is that relabel, reproduced, so the cut moves no data:
+
+        raw            v1 / here
+        id          →  t4p_id, and the row's stable id
+        en_name     →  value_text, name_en
+        name        →  name_ar
+        sex m|f     →  male|female
+        age, dob    →  verbatim
+        (constant)  →  metrics.killed 1, region 'Gaza Strip', 2023-10-07
+
+    THE RAW `source` FIELD IS DELIBERATELY NOT CARRIED. T4P marks each record
+    with a provenance letter; measured today it is 'u' on all 72,835, and v1
+    replaced it with the constant string 'tech4palestine'. Adding the real
+    letter would change attrs on 72,835 rows the identity guard can never
+    rewrite, so the stored corpus would disagree with the spec. If that letter
+    ever becomes informative it needs a deliberate supersede pass, not a quiet
+    attribute.
+    """
+    ds = route(rec, spec, counts)          # no sources[] in a raw file →
+    if ds is None:                         #   source_routing.default
+        return Drop("unroutable")
+
+    if "known_killed_in_gaza" in rec:      # /v3/summary.json, one object
+        g, wb = rec.get("gaza") or {}, rec.get("west_bank") or {}
+        gk, wk = g.get("killed") or {}, wb.get("killed") or {}
+        day = str(g.get("last_update") or "")[:10]
+        if not day or gk.get("total") is None:
+            return Drop("summary_incomplete")
+        attrs = {"event_type": "cumulative_summary", "cumulative": {
+            "gaza": {
+                "killed": gk.get("total"), "children": gk.get("children"),
+                "women": gk.get("women"), "press": gk.get("press"),
+                "medical": gk.get("medical"),
+                "civil_defence": gk.get("civil_defence"),
+                "injured": (g.get("injured") or {}).get("total"),
+                "massacres": g.get("massacres"),
+                # famine{} and aid_seeker{} are published EMPTY today. 0 would
+                # assert 'measured zero'; null says 'not published', which is
+                # the truth and is what law 6's spirit requires of a gap.
+                "famine_total": (g.get("famine") or {}).get("total"),
+                "famine_children": (g.get("famine") or {}).get("children"),
+                "aid_seekers_killed": (g.get("aid_seeker") or {}).get("killed"),
+                "aid_seekers_injured": (g.get("aid_seeker") or {}).get("injured"),
+            },
+            "west_bank": {
+                "killed": wk.get("total"), "children": wk.get("children"),
+                "injured": (wb.get("injured") or {}).get("total"),
+                "injured_children": (wb.get("injured") or {}).get("children"),
+                "settler_attacks": wb.get("settler_attacks"),
+            },
+            "identified_in_gaza_database":
+                (rec.get("known_killed_in_gaza") or {}).get("records"),
+            "press_identified":
+                (rec.get("known_press_killed_in_gaza") or {}).get("records"),
+            # T4P's own two dates for the roster, which v1 never carried and
+            # which are the honest answer to 'how current is this list':
+            # last_update is when T4P refreshed it, includes_until is how far
+            # the MoH's identification had reached.
+            "roster_last_update":
+                (rec.get("known_killed_in_gaza") or {}).get("last_update"),
+            "roster_includes_until":
+                (rec.get("known_killed_in_gaza") or {}).get("includes_until"),
+        }}
+        return [Row(ds, "martyrs.cumulative_summary", day, "day",
+                    f"t4p:summary:{day}",
+                    value_num=(gk.get("total") or 0) + (wk.get("total") or 0),
+                    unit="persons", attrs=attrs)]
+
+    t4p_id = rec.get("id")
+    if t4p_id in (None, ""):
+        return Drop("no_t4p_id")           # identity is t4p_id; without it
+    name_en = rec.get("en_name")           #   there is no row
+    attrs = {"t4p_id": str(t4p_id), "event_type": "identified_killed",
+             "t4p_source_marker": "tech4palestine"}
+    for k, v in (("name_ar", rec.get("name")), ("name_en", name_en),
+                 ("age", rec.get("age")),
+                 ("sex", _T4P_SEX.get(rec.get("sex"), rec.get("sex"))),
+                 ("dob", rec.get("dob"))):
+        if v not in (None, "", [], {}):    # same omit-empty rule as
+            attrs[k] = v                   #   passthrough(), so attrs match
+    place_id, located = region_place(places, "Gaza Strip", attrs)
+    return [Row(ds, "martyrs.identified_killed", "2023-10-07", "unknown",
+                # A DETERMINISTIC id, not a content hash. v1's stable_id was
+                # re-derived from the record's bytes, so a corrected age
+                # minted a new id and re-inserted the person — the 2026-08-07
+                # generation doubling. This one is the publisher's own key.
+                f"t4p:killed_in_gaza:{t4p_id}", value_num=1,
+                value_text=name_en, unit="persons",
                 place_id=place_id, located=located, attrs=attrs)]
 
 
@@ -1220,8 +1350,16 @@ TRANSFORMERS = {
     "health": t_health,
     "food": t_food,
     "aid_access": t_aid_access,
-    "martyrs_snapshot_2023": t_martyrs,
+    "martyrs_snapshot_2023": t_martyrs_t4p,
     "infrastructure": t_infrastructure,
+}
+
+# A category cut from v1 keeps its old transformer HERE, and only here. It is
+# never part of a run — ops/asof_harness.py uses it to replay the vault's
+# v1-shaped snapshots for dates before the cut, which is the only way the
+# historical as-of proof survives the cut. Twelve more of these are coming.
+REPLAY_TRANSFORMERS = {
+    "martyrs_snapshot_2023": t_martyrs_v1,
 }
 
 
@@ -1304,11 +1442,11 @@ def transform_all(category: str, spec: dict, places: dict, counts: Counter,
         # detection) needs the whole category before the first transform
         all_recs = []
         for f in iter_v1_files(category, spec):
-            all_recs.extend(_records(json.loads(read_payload(f))))
+            all_recs.extend(_records(json.loads(read_payload(f)), spec))
         transformer.prepass(all_recs, spec, counts)
     for f in iter_v1_files(category, spec):
         payload = read_payload(f)
-        for rec in _records(json.loads(payload)):
+        for rec in _records(json.loads(payload), spec):
             if not isinstance(rec, dict):
                 counts["not_a_dict"] += 1
                 continue

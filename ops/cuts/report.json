@@ -1,0 +1,23 @@
+{
+ "martyrs_snapshot_2023": {
+  "arrived": 1,
+  "changed": 0,
+  "changed_samples": [],
+  "departed": 1,
+  "emitted": [
+   72836,
+   72836
+  ],
+  "identity_collisions": [
+   0,
+   0
+  ],
+  "matched": 72835,
+  "provenance_only": 72835,
+  "records_read": [
+   72836,
+   72836
+  ],
+  "same": 0
+ }
+}

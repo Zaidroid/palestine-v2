@@ -189,11 +189,23 @@ def test_letters_do_not_overclaim(conn):
         # data we already hold and makes a different claim, checked below.
         # Demanding the boilerplate would push a sentence into a letter where
         # it does not belong, which is how boilerplate stops being read.
-        m = re.search(r"alongside ([\d,]+) observations from (\d+) other",
-                      text)
+        # A FLOOR, not an exact count. These letters quoted an exact figure
+        # until 2026-08-08, when Stage 7 put categories on live upstreams and
+        # the databank started growing most nights — so the number was wrong
+        # by morning and the test failed daily, which trains people to ignore
+        # it. "More than 205,000" stays true as the databank grows and is
+        # still a checkable claim: it must be a real floor, and it must not
+        # have drifted so far below the truth that it undersells by a tenth.
+        m = re.search(r"alongside more than ([\d,]+) observations "
+                      r"from (\d+) other", text)
         if m:
-            assert int(m.group(1).replace(",", "")) == n, \
-                f"{p.name} claims {m.group(1)} rows, the databank serves {n:,}"
+            claimed = int(m.group(1).replace(",", ""))
+            assert claimed <= n, \
+                f"{p.name} claims more than {claimed:,}; the databank " \
+                f"serves {n:,} — an overclaim to a publisher"
+            assert n < claimed * 1.10, \
+                f"{p.name} claims more than {claimed:,} but the databank " \
+                f"serves {n:,}; round the letter up"
             assert int(m.group(2)) == nsrc, f"{p.name}: source count is stale"
 
 
@@ -307,28 +319,51 @@ def test_the_release_builder_refuses_an_incompatible_aggregate():
 
 def test_the_readme_does_not_overstate_the_databank(conn):
     """A README with numbers in it goes stale silently, and this one is the
-    first thing anyone reads. The EXACT claims are checked; the live Tier-1
-    counters are deliberately rounded there because they grow every few
-    minutes and quoting them precisely guarantees a lie within the hour."""
+    first thing anyone reads.
+
+    Until 2026-08-08 these were checked as EXACT figures, on the premise that
+    databank counts move only when a human ships a migration. Stage 7 ended
+    that premise: several categories now read live upstreams, so the counts
+    move most nights and an exact README was guaranteed to be wrong by
+    morning — failing this test daily, which is how a test stops being read.
+
+    So every figure is a FLOOR, written `205,000+`, and two things are
+    checked: it must be true (never claim more than the database holds), and
+    it must not undersell by more than a tenth (a floor so old it is
+    misleading in the other direction). The Tier-1 counters stay rounded for
+    the original reason — they grow every few minutes."""
     import re
     from pathlib import Path
     r = (Path(__file__).resolve().parent.parent / "README.md").read_text()
     with conn.cursor() as cur:
-        for sql, label in [
+        for sql, label, pattern in [
             ("SELECT count(*) FROM observation WHERE upper_inf(sys_period)",
-             "current observations"),
-            ("SELECT count(*) FROM source", "sources"),
-            ("SELECT count(*) FROM databank_serving", "queryable"),
-            ("SELECT count(*) FROM databank_bulk", "exportable"),
-            ("SELECT COALESCE(sum(rows_held),0) FROM v_withheld", "withheld"),
+             "current observations", r"([\d,]+)\+ observations"),
+            ("SELECT count(*) FROM source", "sources",
+             r"(\d+) sources"),
+            ("SELECT count(*) FROM databank_serving", "queryable",
+             r"queryable through the API, credited \| ([\d,]+)\+"),
+            ("SELECT count(*) FROM databank_bulk", "exportable",
+             r"exportable as a file \| ([\d,]+)\+"),
+            ("SELECT COALESCE(sum(rows_held),0) FROM v_withheld", "withheld",
+             r"not exportable[^|]*\| ([\d,]+)\+"),
             ("SELECT count(*) FROM databank_bulk WHERE share_alike",
-             "share-alike"),
+             "share-alike", r"share-alike obligation \| ([\d,]+)\+"),
             ("SELECT count(*) FROM databank_internal "
-             "WHERE indicator='martyrs.identified_killed'", "memorial"),
+             "WHERE indicator='martyrs.identified_killed'", "memorial",
+             r"([\d,]+)\+ identified people"),
         ]:
             cur.execute(sql)
-            assert f"{cur.fetchone()[0]:,}" in r, \
-                f"README's {label} figure is stale"
+            actual = cur.fetchone()[0]
+            m = re.search(pattern, r)
+            assert m, f"README no longer states its {label} figure"
+            claimed = int(m.group(1).replace(",", ""))
+            assert claimed <= actual, \
+                f"README claims {claimed:,} {label}, the database has " \
+                f"{actual:,} — an overclaim"
+            assert actual < claimed * 1.10 or actual - claimed < 100, \
+                f"README's {label} floor ({claimed:,}) is far below the " \
+                f"real {actual:,}; raise it"
     # and the live counters must NOT be quoted exactly
     assert not re.search(r"1,0\d\d,\d\d\d state observations", r), \
         "a live-growing counter is quoted exactly; round it"

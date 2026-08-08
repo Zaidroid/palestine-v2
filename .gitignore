@@ -41,6 +41,8 @@ data/evidence/
 
 # equivalence row dumps: the debugging aid, not the reviewed claim (manifest.json is)
 ops/equivalence/*.json.gz
+# same split for the v1 cuts: the before-state is scratch, report.json is the record
+ops/cuts/*.json.gz
 
 # open-data release payload: regenerate with ops/export_open_data.py
 data/open-release/by-source/

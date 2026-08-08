@@ -22,7 +22,7 @@ If there is a public-affairs or data contact who would be the right person, I wo
 be glad to be pointed at them.
 
 **What we would do with it**
-- Store it alongside 205,118 observations from 25 other sources, each row carrying
+- Store it alongside more than 205,000 observations from 25 other sources, each row carrying
   its origin and licence, queryable back to 1922.
 - Credit you on every row the API returns, in a public ATTRIBUTION file, and on
   any page that shows your figures.

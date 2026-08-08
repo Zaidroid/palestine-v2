@@ -405,6 +405,75 @@ def test_conflict_westbank_reads_our_own_fetch_not_v1() -> None:
     assert root == "data/raw/tech4palestine/westbank"
 
 
+def test_martyrs_reads_the_publisher_not_v1s_relabel_of_it() -> None:
+    """The memorial — 24% of the corpus — off v1. v1's file was measured to be
+    a pure relabel of T4P's roster (72,835 matched by t4p_id, zero field
+    differences), while v1's own martyrs step had failed 30 nights running."""
+    from ingest.databank import load_spec
+    inp = load_spec("martyrs_snapshot_2023")["input"]
+    assert not inp["root"].startswith("/opt/stacks"), inp["root"]
+    assert inp["glob"] == ["killed_in_gaza.json", "summary.json"]
+    assert inp["object_as_record"] is True     # summary.json IS one record
+
+
+def test_a_martyr_row_carries_the_publishers_key_not_a_content_hash() -> None:
+    """v1's stable_id was re-derived from each record's bytes, so a corrected
+    age minted a new id and re-inserted the person — 19,451 observations on
+    2026-08-07. The publisher's own key cannot do that."""
+    from collections import Counter
+    from ingest.databank import t_martyrs_t4p, load_spec
+    spec = load_spec("martyrs_snapshot_2023")
+    places = {"region": {"Gaza Strip": 1, "West Bank": 2}}
+    raw = {"id": "999783350", "en_name": "Rafat Amir Hamdan Abed",
+           "name": "رأفت امير حمدان عابد", "age": 50, "sex": "m",
+           "dob": "1973-03-23", "source": "u"}
+    (row,) = t_martyrs_t4p(raw, spec, places, Counter())
+    assert row.v1_stable_id == "t4p:killed_in_gaza:999783350"
+    assert row.indicator == "martyrs.identified_killed"
+    assert (row.occurred_at, row.precision) == ("2023-10-07", "unknown")
+    assert (row.value_num, row.unit) == (1, "persons")
+    assert row.value_text == "Rafat Amir Hamdan Abed"
+    assert (row.place_id, row.located) == (1, False)   # a region is not a place
+    assert row.attrs["sex"] == "male", "v1 spelled it out; 72,835 stored rows do"
+    assert row.attrs["t4p_id"] == "999783350"
+    assert "source" not in row.attrs, "the raw provenance letter is not carried"
+
+
+def test_the_martyrs_summary_sums_gaza_and_the_west_bank() -> None:
+    """One number, two publishers' figures, and an as-of date that is T4P's
+    own — not the day we happened to fetch it."""
+    from collections import Counter
+    from ingest.databank import t_martyrs_t4p, load_spec
+    spec = load_spec("martyrs_snapshot_2023")
+    raw = {"gaza": {"last_update": "2026-08-08", "killed": {"total": 73384},
+                    "injured": {"total": 174242}, "famine": {},
+                    "aid_seeker": {}},
+           "west_bank": {"killed": {"total": 1108}, "injured": {"total": 11436}},
+           "known_killed_in_gaza": {"records": 72835},
+           "known_press_killed_in_gaza": {"records": 262}}
+    (row,) = t_martyrs_t4p(raw, spec, {}, Counter())
+    assert row.indicator == "martyrs.cumulative_summary"
+    assert (row.occurred_at, row.precision) == ("2026-08-08", "day")
+    assert row.value_num == 74492                      # 73,384 + 1,108
+    assert row.v1_stable_id == "t4p:summary:2026-08-08"
+    # famine{} and aid_seeker{} are published EMPTY. null says 'not published';
+    # 0 would assert a measured zero, which is a different and false claim.
+    assert row.attrs["cumulative"]["gaza"]["famine_total"] is None
+    assert row.attrs["cumulative"]["identified_in_gaza_database"] == 72835
+
+
+def test_a_bare_object_is_one_record_only_when_the_spec_says_so() -> None:
+    """T4P's summary is a single JSON object. Without the declaration it reads
+    as zero records and the row vanishes silently — so the declaration is
+    required, and every other payload keeps reading empty as empty."""
+    from ingest.databank import _records
+    doc = {"gaza": {"killed": {"total": 1}}}
+    assert _records(doc, {"input": {"object_as_record": True}}) == [doc]
+    assert _records(doc, {"input": {}}) == []
+    assert _records(doc) == []
+    assert _records({}, {"input": {"object_as_record": True}}) == []
+
+
 def test_the_t4p_fetcher_refuses_a_truncated_feed(monkeypatch, tmp_path) -> None:
     """The floor is the point. A short fetch that overwrites a good file is
     how a series silently loses its history, and no downstream check can tell

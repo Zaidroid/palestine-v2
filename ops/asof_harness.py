@@ -17,7 +17,8 @@ import random
 import sys
 from pathlib import Path
 
-from ingest.databank import TRANSFORMERS, load_places, load_spec, PointResolver
+from ingest.databank import (REPLAY_TRANSFORMERS, TRANSFORMERS, load_places,
+                             load_spec, PointResolver)
 from ops import evidence
 from ops.replay_snapshots import index_ids, snapshot_days
 from resolve.db import connect
@@ -70,11 +71,25 @@ def main() -> int:
             gen_start = gens[-1]           # ids in the DB are this generation's
             churning = len(gens) > 3       # daily re-hashers: content-only
             spec = load_spec(category)
-            transformer = TRANSFORMERS[category]
+            # A category cut from v1 is proved from the vault only for days
+            # BEFORE the cut, and with the transformer that actually produced
+            # those rows. After the cut, v1's snapshot is no longer what v2
+            # read, so claiming against it would be comparing this database to
+            # someone else's — ops/snapshot_inputs.py is what proves the days
+            # after. Neither half is skipped silently: both are in the report.
+            cut = spec.get("cut_from_v1")
+            transformer = (REPLAY_TRANSFORMERS[category] if cut
+                           else TRANSFORMERS[category])
             rng = random.Random(47)
 
             for at in SAMPLE_DATES:
                 if at not in days:
+                    continue
+                if cut and at >= str(cut):
+                    report["checks"].append(
+                        {"category": category, "at": at, "claimed": False,
+                         "reason": f"cut from v1 on {cut}; v1's snapshot is "
+                                   "no longer what v2 reads"})
                     continue
                 claimed = at >= base
                 snap = set(index_ids(at, category))

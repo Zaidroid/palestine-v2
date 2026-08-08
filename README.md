@@ -9,7 +9,7 @@ Over a million state observations across 35,000+ claims and 359 checkpoints,
 and growing every few minutes — which is why those three are rounded here and
 exact only in the API.
 
-**Tier 2 — what has happened.** 275,124 observations and 10,400+ events from
+**Tier 2 — what has happened.** 275,000+ observations and 10,400+ events from
 **1922 to today**, across 21 categories and 101 sources, each row carrying
 its origin, its licence and the window it was true in.
 
@@ -57,15 +57,17 @@ sees fewer records than expected fails; it does not succeed with less.
 101 sources disagree about what may be done with their data, so the answer is
 per source and sometimes per dataset:
 
-Measured 2026-08-08 — the databank counts below change only when the nightly
-loader writes, so they are exact rather than rounded.
+Measured 2026-08-08. These are lower bounds, not exact counts: Stage 7 put
+several categories on live upstreams, so the databank grows most nights now.
+A figure here is a floor the API is checked against — never a number that
+was true once and quietly stopped being true.
 
 | | |
 |---|---:|
-| queryable through the API, credited | 205,118 |
-| exportable as a file | 202,516 |
-| held but not exportable — see `WITHHELD.md` | 2,602 |
-| carrying a share-alike obligation | 19,139 |
+| queryable through the API, credited | 205,000+ |
+| exportable as a file | 202,000+ |
+| held but not exportable — see `WITHHELD.md` | 2,600+ |
+| carrying a share-alike obligation | 19,000+ |
 
 **Query and bulk are different acts.** A query returning twenty credited
 demolition records is reporting a fact. A CSV of the whole table is
@@ -83,7 +85,7 @@ formed.
 .venv/bin/python -m ops.export_open_data      # 18 files + WITHHELD.md
 ```
 
-**Named memorial records are gated.** 73,077 identified people are held with
+**Named memorial records are gated.** 73,000+ identified people are held with
 name, date of birth, age and sex. The licence permits publishing them, and
 reducing the dead to a number is the erasure this record exists against — but
 reading the names should be a deliberate act, so the API needs

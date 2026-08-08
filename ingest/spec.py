@@ -43,6 +43,7 @@ from __future__ import annotations
 import difflib
 import sys
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any, Callable
 
@@ -227,13 +228,25 @@ _k("input", "enforced",
    "read somewhere other than v1's unified category: a v1 RAW tree, or a "
    "FROZEN corpus in this repository. A relative root resolves against the "
    "repo, so a frozen spec works on any machine", types=(dict,))
+_k("cut_from_v1", "enforced",
+   "the day this category stopped reading v1. ops/asof_harness.py claims the "
+   "vault's evidence only for days before it, and replays those through "
+   "ingest.databank.REPLAY_TRANSFORMERS[category] — the transformer that "
+   "actually produced the stored rows", types=(str, date))
 _k("cadence", "enforced",
    "`frozen` means the corpus is finished and read locally — measured by "
    "ops/v1_liveness.py, not assumed", types=(str,),
    values=("frozen", "daily", "weekly", "monthly", "annual", "irregular"))
 _k("input.root", "enforced", "absolute path, strictly read-only", types=(str,))
-_k("input.glob", "enforced", "index.json/recent.json always excluded",
-   types=(str,))
+_k("input.glob", "enforced",
+   "one pattern or a list of them; index.json/recent.json always excluded. A "
+   "list is how a spec names the publisher's own endpoints (T4P's roster and "
+   "summary) instead of sweeping a directory and hoping",
+   types=(str, list))
+_k("input.object_as_record", "enforced",
+   "a payload that is one JSON object IS one record (T4P /v3/summary.json). "
+   "Off by default so a genuinely empty file still reads as empty",
+   types=(bool,))
 
 # -- routing -----------------------------------------------------------------
 _k("source_routing", "enforced", "record.sources[0].name → dataset", types=(dict,))
