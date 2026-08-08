@@ -100,6 +100,21 @@ def main() -> int:
                 # executemany over ~197k rows took longer than a session and
                 # committed nothing; this is seconds. The temp table is
                 # dropped on commit, so a failed run leaves no residue.
+                if extras:
+                    # SUPERSEDE FIRST, THEN ASSIGN — the order matters and it
+                    # took a UniqueViolation to see why. 052's index forbids
+                    # two CURRENT rows sharing a key, so writing the key onto
+                    # the survivor while its duplicate is still current is
+                    # refused mid-statement, and the whole transaction rolls
+                    # back: the run then prints its table as if it had worked
+                    # while nothing was committed. One fact, one current row —
+                    # the copies are superseded, never deleted, so they stay
+                    # readable at their own as_of.
+                    cur.execute(
+                        "UPDATE observation "
+                        "SET sys_period = tstzrange(lower(sys_period), now()) "
+                        "WHERE observation_id = ANY(%s)", (extras,))
+                    report[ds_key]["superseded_duplicates"] = len(extras)
                 cur.execute("CREATE TEMP TABLE _ik (k TEXT, oid BIGINT) "
                             "ON COMMIT DROP")
                 with cur.copy("COPY _ik (k, oid) FROM STDIN") as cp:
@@ -108,14 +123,6 @@ def main() -> int:
                 cur.execute("UPDATE observation o SET identity_key = _ik.k "
                             "FROM _ik WHERE o.observation_id = _ik.oid")
                 cur.execute("DROP TABLE _ik")
-                if extras:
-                    # one fact, one current row — the copies are superseded,
-                    # never deleted, so they stay readable at their own as_of
-                    cur.execute(
-                        "UPDATE observation "
-                        "SET sys_period = tstzrange(lower(sys_period), now()) "
-                        "WHERE observation_id = ANY(%s)", (extras,))
-                    report[ds_key]["superseded_duplicates"] = len(extras)
             if declares_collisions:
                 report[ds_key]["stored"] = False
             flag = ("  (declared collisions — no stored key, 044 + "

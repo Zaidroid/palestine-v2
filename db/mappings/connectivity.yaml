@@ -9,18 +9,46 @@
 # event_type is the only per-record discriminator and here it IS informative:
 # it separates the two upstreams' incompatible measures.
 category: connectivity
-transform: python:t_connectivity
+transform: python:t_connectivity_v2
 shape: observation
 status: reviewed
-records_measured: 2274
+records_measured: 2320
+
+# CUT FROM v1 2026-08-08, and this one RESTARTS a dead series rather than
+# merely changing where it is read. v1's OONI half stopped on 2026-06-09 and
+# gap_radar has printed it as a severity-4 freshness alert against a seven-day
+# allowance ever since; the cut brings back 47 missing days and keeps them
+# coming. IODA came back 998 for 998 with a single difference — one outage
+# that has never closed, so its duration grows with the clock.
+#
+# WHAT THE FETCHERS PROVED BEFORE THE SWITCH (ops/cut_equivalence.py):
+#   OONI  1,275 overlapping days, 1,267 reproduce v1 exactly; the 8 that do
+#         not are OONI itself revising a day's measurement count upward after
+#         v1 fetched it (2026-04-10: 503 → 704). 47 days v1 never got. One
+#         day v1 has that OONI no longer reports, kept, never deleted.
+#   IODA  998 for 998, one growing outage.
+cut_from_v1: 2026-08-08
+input:
+  root: data/raw
+  glob:
+    - ooni/ps_daily.json    # ops/fetch_ooni.py  — a JSON array of days
+    - ioda/outages.json     # ops/fetch_ioda.py  — a JSON array of outages
 
 source_routing:
-  by_name:
+  by_name:                 # read by the REPLAY transformer only (see below)
     "OONI": ooni
     "IODA": ioda
-  default: null            # every record carries exactly one source, either
-                           #   'OONI' (1,276) or 'IODA' (998) — full census of
-                           #   all-data.json. An unknown name FAILS the run.
+  default: null
+  # ROUTING IS BY SHAPE NOW, not by name. A raw file has no `sources[]` — v1
+  # stamped that on during its own transform — and this is the one category
+  # holding two publishers, so a single `default` cannot pick between them.
+  # The two records are unmistakable: an IODA outage carries
+  # `outage_datasource`, an OONI day carries `measurement_count`. Anything
+  # else drops loudly as `unrecognised_shape` rather than guessing.
+  #
+  # by_name stays because ingest.databank.t_connectivity — the pre-cut
+  # transformer — still reads it when ops/asof_harness.py replays the vault's
+  # v1-shaped snapshots for days before the cut.
 
 datasets:
   - key: v1_connectivity_ooni
@@ -29,21 +57,51 @@ datasets:
     source: ioda
     overrides:
       identity:
-        fields: [indicator, occurred_at_exact, place_id, value_num]
-        attrs: [outage_datasource, severity_score]     # = 1,000 / 1,000 ✓
+        fields: [indicator, occurred_at_exact]
+        attrs: [type, code, outage_datasource]     # = 998 / 998 ✓
+        # WHAT AN OUTAGE IS: which entity, when it began, which measurement
+        # layer saw it. Duration and severity are MEASUREMENTS of that outage,
+        # not part of what it is.
+        #
+        # They were in this key until 2026-08-08, added to reach injectivity
+        # (start + datasource + region collides 18 times, because country/PS
+        # and asn/12975 both resolve to region 'Palestine' and therefore to
+        # the same NULL place_id). Carrying the entity code instead reaches
+        # 998/998 without them — and that matters, because an outage that has
+        # not ended gets a LONGER duration and a higher score on every fetch.
+        # With those in the key, IODA's one never-closed detection
+        # (asn/12975, bgp, open since 2022-10-24, now 1,385 days) minted a
+        # brand-new identity every single night: 365 rows a year for one
+        # event, each looking like a separate outage.
+        #
+        # OPEN, and deliberately not solved here: with the growth out of the
+        # key, the loader now recognises that outage and SKIPS it, so its
+        # stored duration stays at the value first recorded. A still-open
+        # outage should really SUPERSEDE its earlier reading rather than
+        # freeze or duplicate. One row understated is far better than a row
+        # per night, and it is visible — it is the only row whose
+        # outage_start is years before the last fetch — but it wants the
+        # supersede pass, not a third identity.
 
 indicator:
   template: "connectivity.{event_type}"
-  # → connectivity.censorship_measurement (1,276 OONI rows; value is the
+  # → connectivity.censorship_measurement (1,322 OONI rows; value is the
   #     anomaly rate, a 0–1 fraction)
   # → connectivity.internet_outage        (998 IODA rows; value is the outage
   #     duration in seconds)
-  # The two never mix: event_type and source name are 1:1 (measured).
+  # The two never mix, and after the cut they cannot: the indicator is chosen
+  # by which FILE the record came from, not by a field either could carry.
 
 value:
-  num_from: [metrics.duration_seconds, anomaly_rate]   # first non-null wins:
+  num_from: [duration_seconds, anomaly_rate]   # first non-null wins:
                            #   duration_seconds on the 998 IODA rows,
-                           #   anomaly_rate on the 1,276 OONI rows
+                           #   anomaly_rate on the 1,322 OONI rows.
+                           # anomaly_rate is DERIVED in ops/fetch_ooni.py —
+                           #   anomaly_count / measurement_count, rounded the
+                           #   way v1's Node toFixed(4) rounded, which is not
+                           #   what Python's round() does. Six overlapping
+                           #   days land on an exact binary half and would
+                           #   otherwise have shifted in the 4th decimal.
   text_from: null
   unit_from: null          # metrics.unit is 'seconds' on IODA (correct) but
                            #   'measurements' on OONI, where it describes
@@ -72,25 +130,42 @@ occurred_at:
     #   aggregate dates only.
 
 place:
-  strategy: region         # location.region: 'Palestine' 1,677 → place_id
-                           #   NULL + attrs.region; 'Gaza Strip' 417 → place 1;
-                           #   'West Bank' 180 → place 2
+  strategy: region         # 'Palestine' → place_id NULL + attrs.region;
+                           #   'Gaza Strip' 417 → place 1;
+                           #   'West Bank'  180 → place 2.
+                           # The region comes from the IODA ENTITY the outage
+                           #   was detected on (region/1226 → Gaza Strip,
+                           #   asn/12975 → Paltel, country-wide), and is
+                           #   constant 'Palestine' for OONI, which measures
+                           #   at country level only.
   min_decided_pct: 1.0    # region strings always resolve; NULL is the honest
                            #   answer for the country-wide rows
 
-stable_id: stable_id       # 2,274 distinct over 2,274 records — unique
-attrs_passthrough:
-  - network_entity.type
-  - network_entity.code
-  - outage_datasource
-  - metrics.unit
-  - metrics.count
-  - metrics.anomaly_count
-  - metrics.confirmed_blocked
-  - metrics.severity_score
+stable_id: "{id}"          # the publisher's own key, deterministic:
+  #   ooni-ps-2026-08-07                        (OONI: one row per day)
+  #   ioda-region-1226-1784895900-bgp           (IODA: entity, start, source)
+  # This is the good half of v1's identity. v1 ALSO computed these ids and
+  # they were stable — but it then keyed the databank on `stable_id`, a
+  # CONTENT HASH, which re-minted itself whenever IODA revised a severity
+  # score. That is the 2026-08-07 generation doubling in miniature.
+attrs_passthrough:       # built by the transformer from the raw record, in
+  - type                 #   the same keys v1 produced, so the 2,274 rows
+  - code                 #   already stored stay coherent with the spec:
+  - outage_datasource    #   IODA → {code, type, unit, count, severity_score,
+  - unit                 #           outage_datasource}
+  - count                #   OONI → {unit, count, region, anomaly_count,
+  - anomaly_count        #           confirmed_blocked}
+  - confirmed_blocked
+  - severity_score
+  - region               # added by place resolution when the region is not a
+                         #   place we hold — 'Palestine' is a country, and a
+                         #   NULL place_id with the name in attrs is the
+                         #   honest form of that
 
 expect:
-  min_records: 2000        # ≈0.9 × 2,274
+  min_records: 2000        # ≈0.9 × 2,274; the cut RAISED the count to 2,320
+                           #   and the floor stays where it was measured, so
+                           #   a fetcher losing OONI's history still trips it
   max_observations: 2650
 
 notes: |

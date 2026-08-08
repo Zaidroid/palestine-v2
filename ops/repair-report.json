@@ -18,29 +18,31 @@
   "v1_conflict_t4p_westbank": {
    "allowed": 0,
    "collisions": 0,
-   "keys": 2255,
-   "rows": 2255,
+   "keys": 2263,
+   "rows": 2263,
    "verdict": "clean"
   },
   "v1_conflict_tech4palestine": {
    "allowed": 4,
-   "collisions": 4,
-   "keys": 2074,
-   "rows": 2078,
+   "collisions": 2,
+   "keys": 2072,
+   "rows": 2074,
    "verdict": "clean"
   },
   "v1_connectivity_ioda": {
    "allowed": 0,
-   "collisions": 0,
-   "keys": 1000,
-   "rows": 1000,
-   "verdict": "clean"
+   "collisions": 998,
+   "keys": 998,
+   "rows": 1996,
+   "superseded": 998,
+   "verdict": "supersede the current generation",
+   "would_supersede": 998
   },
   "v1_connectivity_ooni": {
    "allowed": 0,
    "collisions": 0,
-   "keys": 1276,
-   "rows": 1276,
+   "keys": 1323,
+   "rows": 1323,
    "verdict": "clean"
   },
   "v1_culture_heritage_composite": {
@@ -52,11 +54,10 @@
   },
   "v1_demolitions_ocha_demolitions": {
    "allowed": 0,
-   "collisions": 830,
-   "keys": 76,
-   "rows": 906,
-   "superseded": 906,
-   "verdict": "supersede the current generation"
+   "collisions": 0,
+   "keys": 847,
+   "rows": 847,
+   "verdict": "clean"
   },
   "v1_economic_imf": {
    "allowed": 0,
@@ -109,19 +110,17 @@
   },
   "v1_historical_palopenmaps": {
    "allowed": 0,
-   "collisions": 4,
-   "keys": 6544,
+   "collisions": 0,
+   "keys": 6548,
    "rows": 6548,
-   "superseded": 6548,
-   "verdict": "supersede the current generation"
+   "verdict": "clean"
   },
   "v1_infrastructure_hdx": {
    "allowed": 0,
-   "collisions": 601,
-   "keys": 2,
+   "collisions": 0,
+   "keys": 603,
    "rows": 603,
-   "superseded": 603,
-   "verdict": "supersede the current generation"
+   "verdict": "clean"
   },
   "v1_infrastructure_tech4palestine": {
    "allowed": 0,
@@ -161,8 +160,8 @@
   "v1_martyrs_snapshot_2023_tech4palestine": {
    "allowed": 0,
    "collisions": 0,
-   "keys": 73079,
-   "rows": 73079,
+   "keys": 73080,
+   "rows": 73080,
    "verdict": "clean"
   },
   "v1_pcbs_pcbs": {
@@ -188,20 +187,20 @@
   },
   "v1_refugees_idmc": {
    "allowed": 1,
-   "collisions": 1,
+   "collisions": 0,
    "keys": 333,
-   "rows": 334,
+   "rows": 333,
    "verdict": "clean"
   },
   "v1_refugees_unhcr": {
-   "allowed": 1,
+   "allowed": 0,
    "collisions": 0,
    "keys": 1157,
    "rows": 1157,
    "verdict": "clean"
   },
   "v1_refugees_unrwa": {
-   "allowed": 1,
+   "allowed": 0,
    "collisions": 0,
    "keys": 90,
    "rows": 90,
@@ -222,5 +221,5 @@
    "verdict": "clean"
   }
  },
- "ts": "2026-08-07T15:21:34.893342+00:00"
+ "ts": "2026-08-08T21:44:58.029576+00:00"
 }

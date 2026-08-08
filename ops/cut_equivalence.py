@@ -45,7 +45,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ingest.databank import load_spec                              # noqa: E402
+from ingest.databank import (identity_key_for,                     # noqa: E402
+                             load_spec)
 from ops.spec_equivalence import capture                           # noqa: E402
 
 BASE = Path(__file__).resolve().parent / "cuts"
@@ -78,13 +79,19 @@ def _identity(row: dict, ident: dict | None) -> str:
         # provenance. Weaker, and the report says so.
         return "|".join(f"{k}={row[k]}" for k in sorted(row)
                         if k not in PROVENANCE)
-    parts = [row["dataset_key"]]
     attrs = json.loads(row["attrs"]) if row.get("attrs") else {}
-    for f in ident.get("fields", []):
-        parts.append("" if row.get(f) is None else str(row[f]))
-    for a in ident.get("attrs", []):
-        parts.append("" if attrs.get(a) is None else str(attrs[a]))
-    return "|".join(parts)
+    # Render EXACTLY as ingest.databank.identity_key_for does, including its
+    # two spellings of the timestamp — `occurred_at` is the day, and
+    # `occurred_at_exact` is the instant, which is what connectivity's IODA
+    # dataset keys on because four datasources can flag the same region on
+    # the same day. Getting this wrong does not fail loudly: every IODA row
+    # rendered a blank there, thousands collapsed onto a handful of keys, and
+    # the comparison reported 77 changes and 274 arrivals that were purely an
+    # artefact of the comparator.
+    return identity_key_for(
+        ident, row["dataset_key"], indicator=row.get("indicator"),
+        occurred_at=row.get("occurred_at"), place_id=row.get("place_id"),
+        value_num=row.get("value_num"), attrs=attrs)
 
 
 def _identities(cap: dict, spec: dict) -> dict[str, dict]:

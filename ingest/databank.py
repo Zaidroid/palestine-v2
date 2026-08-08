@@ -81,6 +81,38 @@ def load_spec(category: str) -> dict:
     return spec
 
 
+def _instant(v) -> str | None:
+    """One spelling of a moment, whatever type it arrives as.
+
+    `occurred_at_exact` renders the instant rather than the day, and the two
+    callers of identity_key_for hand it two different types: the loader passes
+    the transformer's ISO string '2026-07-24T12:25:00.000Z', and the backfill
+    passes a datetime read back from Postgres, whose str() is
+    '2026-07-24 12:25:00+00:00'. Same moment, different text, so the guard
+    compared a key against itself and lost — 998 IODA rows re-inserted on
+    2026-08-08 as a brand-new generation.
+
+    This is the SAME failure the docstring below already describes for numbers
+    (106.0 against 106), in a field nobody had keyed on until connectivity's
+    outages needed sub-day resolution. One renderer means one rendering, and
+    a renderer that trusts str() of whatever it is given is not one.
+    """
+    if v is None:
+        return None
+    if isinstance(v, datetime):
+        return v.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    s = str(v)
+    if len(s) == 10:                 # a plain date, already unambiguous
+        return s
+    try:
+        d = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return s                     # not a timestamp we recognise; verbatim
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
 def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
                      place_id, value_num, attrs) -> str:
     """The ONE renderer for a row's declared identity.
@@ -96,7 +128,7 @@ def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
     for f in ident.get("fields", []):
         v = {"indicator": indicator,
              "occurred_at": str(occurred_at)[:10],
-             "occurred_at_exact": str(occurred_at),
+             "occurred_at_exact": _instant(occurred_at),
              "place_id": place_id,
              "value_num": value_num}[f]
         parts.append("" if v is None else str(v))
@@ -591,7 +623,58 @@ def t_education(rec, spec, places, counts):
                 reported_at=fetched, attrs=attrs)]
 
 
+def t_connectivity_v2(rec, spec, places, counts):
+    """OONI's daily anomaly rate and IODA's outages, from their own APIs.
+
+    Replaces t_connectivity, which read v1's unified connectivity file. That
+    file mixed both upstreams and v1 stopped updating the OONI half on
+    2026-06-09 — gap_radar has been printing a sixty-day freshness alert
+    against a seven-day allowance ever since, so this cut is the only way the
+    series continues at all.
+
+    ROUTING IS BY SHAPE, NOT BY NAME. A raw file has no `sources[]` block —
+    v1 stamped that on during its own transform — and this category is the one
+    that holds two publishers, so `source_routing.default` cannot pick between
+    them. The two records are unmistakable: an IODA outage carries a
+    datasource, an OONI day carries a measurement count. Anything else is a
+    drop, loudly, rather than a guess.
+    """
+    if rec.get("outage_datasource"):                              # IODA
+        counts["routed_by_shape:ioda"] += 1
+        attrs = {"code": rec["entity_code"], "type": rec["entity_type"],
+                 "unit": "seconds", "count": 0,
+                 "severity_score": rec.get("severity_score"),
+                 "outage_datasource": rec["outage_datasource"]}
+        place_id, located = region_place(places, rec["region"], attrs)
+        return [Row("v1_connectivity_ioda", "connectivity.internet_outage",
+                    str(rec["outage_start"]), "hour",
+                    # v1's `id`, which was already deterministic and built
+                    # from IODA's own key — the good half of v1's identity.
+                    # Its `stable_id` was a content hash and re-minted itself
+                    # whenever IODA revised a score, which is the 2026-08-07
+                    # generation-doubling bug in miniature.
+                    rec["id"], value_num=rec.get("duration_seconds"),
+                    place_id=place_id, located=located, attrs=attrs)]
+
+    if rec.get("measurement_count"):                              # OONI
+        counts["routed_by_shape:ooni"] += 1
+        attrs = {"unit": "measurements", "count": rec["measurement_count"],
+                 "anomaly_count": rec["anomaly_count"],
+                 "confirmed_blocked": rec["confirmed_count"]}
+        # region 'Palestine' → place_id NULL + attrs.region, which is the
+        # honest answer for a country-wide measurement.
+        place_id, located = region_place(places, "Palestine", attrs)
+        return [Row("v1_connectivity_ooni",
+                    "connectivity.censorship_measurement",
+                    str(rec["date"])[:10], "day", rec["id"],
+                    value_num=rec.get("anomaly_rate"),
+                    place_id=place_id, located=located, attrs=attrs)]
+
+    return Drop("unrecognised_shape")
+
+
 def t_connectivity(rec, spec, places, counts):
+    """v1's shape, kept for REPLAY ONLY — see t_martyrs_v1 for why."""
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
@@ -1343,7 +1426,7 @@ TRANSFORMERS = {
     "land": t_land,
     "culture": t_engine,
     "education": t_education,
-    "connectivity": t_connectivity,
+    "connectivity": t_connectivity_v2,
     "funding": t_engine,
     "pcbs": t_engine,
     "economic": t_economic,
@@ -1360,6 +1443,7 @@ TRANSFORMERS = {
 # historical as-of proof survives the cut. Twelve more of these are coming.
 REPLAY_TRANSFORMERS = {
     "martyrs_snapshot_2023": t_martyrs_v1,
+    "connectivity": t_connectivity,
 }
 
 

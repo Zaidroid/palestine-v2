@@ -20,6 +20,13 @@ cd /home/zaid/palestine-v2
 # is strictly better than a truncated overwrite.
 .venv/bin/python -m ops.fetch_t4p || echo "t4p fetch failed — loading yesterday's tree" >&2
 
+# Connectivity, cut from v1 2026-08-08. Same non-fatal posture, and the same
+# reason: both fetchers are atomic and floored. OONI is the one that MATTERS
+# to run — v1's copy of it died on 2026-06-09 and nobody noticed for sixty
+# days, so a silent failure here is the exact thing being fixed.
+.venv/bin/python -m ops.fetch_ooni || echo "ooni fetch failed — loading yesterday's file" >&2
+.venv/bin/python -m ops.fetch_ioda || echo "ioda fetch failed — loading yesterday's file" >&2
+
 ./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all
 rc=$?

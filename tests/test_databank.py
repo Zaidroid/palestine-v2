@@ -474,6 +474,107 @@ def test_a_bare_object_is_one_record_only_when_the_spec_says_so() -> None:
     assert _records({}, {"input": {"object_as_record": True}}) == []
 
 
+def test_an_instant_renders_the_same_whatever_type_it_arrives_as() -> None:
+    """The identity guard has ONE renderer so it cannot compare a key against
+    itself and lose. That promise was broken for `occurred_at_exact`: the
+    loader passes the transformer's ISO string, the backfill passes a datetime
+    read back from Postgres, and str() spells those differently. 998 IODA rows
+    were re-inserted as a fresh generation on 2026-08-08 because of it."""
+    from datetime import datetime, timezone
+    from ingest.databank import _instant
+    want = "2026-07-24T12:25:00.000Z"
+    assert _instant("2026-07-24T12:25:00.000Z") == want
+    assert _instant(datetime(2026, 7, 24, 12, 25, tzinfo=timezone.utc)) == want
+    assert _instant("2026-07-24 12:25:00+00:00") == want
+    assert _instant("2026-07-24") == "2026-07-24"       # a day stays a day
+    assert _instant(None) is None
+
+
+def test_the_identity_of_an_outage_is_not_its_duration() -> None:
+    """An outage IS: which entity, when it began, which datasource saw it.
+    Duration and severity are measurements of it — and they GROW while it is
+    still open, so keying on them minted a new identity every night for
+    IODA's one never-closed detection."""
+    from ingest.databank import identity_key_for, load_spec
+    ds = next(d for d in load_spec("connectivity")["datasets"]
+              if d["key"] == "v1_connectivity_ioda")
+    ident = ds["overrides"]["identity"]
+    assert "value_num" not in ident["fields"]
+    assert "severity_score" not in ident["attrs"]
+    base = dict(indicator="connectivity.internet_outage",
+                occurred_at="2022-10-24T00:40:00.000Z", place_id=None,
+                attrs={"type": "asn", "code": "12975",
+                       "outage_datasource": "bgp"})
+    grew = identity_key_for(ident, "v1_connectivity_ioda",
+                            value_num=119653059, **base)
+    was = identity_key_for(ident, "v1_connectivity_ioda",
+                           value_num=119498353, **base)
+    assert grew == was, "a still-open outage must stay one row, not become two"
+
+
+def test_ooni_is_web_measurements_only() -> None:
+    """The filter is the correctness of the series, not a detail. Without it
+    the aggregation endpoint sums every OONI test — whatsapp, telegram,
+    signal — and reports messaging reachability as web censorship: 2,542 days
+    instead of 1,276, with 1,218 of the overlapping days carrying different
+    counts. A different measure wearing the same indicator name."""
+    import ops.fetch_ooni as f
+    assert f.TEST_NAME == "web_connectivity"
+
+
+def test_the_ooni_rate_rounds_the_way_v1_rounded() -> None:
+    """Both cases measured against v1's own output. 1/32 is exactly
+    representable so it rounds up; 9/800 is not, and its double sits below the
+    half, so it rounds down. round() gets the first wrong and rounding the
+    exact fraction gets the second wrong."""
+    from ops.fetch_ooni import _rate
+    assert _rate(1, 32) == 0.0313          # round() would give 0.0312
+    assert _rate(9, 800) == 0.0112         # exact-rational half-up: 0.0113
+    assert _rate(32, 600) == 0.0533        # the ordinary case
+
+
+def test_connectivity_reads_its_own_fetchers_not_v1() -> None:
+    """And this cut RESTARTS a series: v1's OONI half stopped 2026-06-09 and
+    gap_radar has flagged it as sixty days stale against a seven-day
+    allowance ever since."""
+    from ingest.databank import load_spec
+    inp = load_spec("connectivity")["input"]
+    assert not inp["root"].startswith("/opt/stacks"), inp["root"]
+    assert inp["glob"] == ["ooni/ps_daily.json", "ioda/outages.json"]
+
+
+def test_connectivity_routes_by_shape_and_refuses_a_stranger() -> None:
+    """A raw file has no sources[] and this category holds two publishers, so
+    one `default` cannot choose. The shapes are unmistakable — and anything
+    else drops loudly rather than being guessed into one of them."""
+    from collections import Counter
+    from ingest.databank import Drop, t_connectivity_v2, load_spec
+    spec = load_spec("connectivity")
+    places = {"region": {"Gaza Strip": 1, "West Bank": 2}}
+    (out,) = t_connectivity_v2(
+        {"id": "ioda-region-1226-1784895900-bgp", "entity_type": "region",
+         "entity_code": "1226", "region": "Gaza Strip",
+         "outage_start": "2026-07-24T12:25:00.000Z", "duration_seconds": 1500,
+         "outage_datasource": "bgp", "severity_score": 69.93},
+        spec, places, Counter())
+    assert out.dataset_key == "v1_connectivity_ioda"
+    assert (out.value_num, out.occurred_at, out.precision) == (
+        1500, "2026-07-24T12:25:00.000Z", "hour")
+    assert out.place_id == 1
+
+    (out,) = t_connectivity_v2(
+        {"id": "ooni-ps-2026-08-07", "date": "2026-08-07",
+         "measurement_count": 600, "anomaly_count": 32,
+         "confirmed_count": 0, "anomaly_rate": 0.0533},
+        spec, {"region": {}}, Counter())
+    assert out.dataset_key == "v1_connectivity_ooni"
+    assert (out.value_num, out.precision) == (0.0533, "day")
+    assert out.place_id is None and out.attrs["region"] == "Palestine"
+
+    assert isinstance(t_connectivity_v2({"nonsense": 1}, spec, places,
+                                        Counter()), Drop)
+
+
 def test_the_t4p_fetcher_refuses_a_truncated_feed(monkeypatch, tmp_path) -> None:
     """The floor is the point. A short fetch that overwrites a good file is
     how a series silently loses its history, and no downstream check can tell

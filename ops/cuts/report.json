@@ -1,4 +1,34 @@
 {
+ "connectivity": {
+  "arrived": 47,
+  "changed": 9,
+  "changed_samples": [
+   "attrs: '{\"anomaly_count\": 30, \"confirmed_blocked\": 0, \"count\": 500, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 30, \"confirmed_blocked\": 0, \"count\": 501, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.06 \u2192 0.0599   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-13]",
+   "attrs: '{\"anomaly_count\": 50, \"confirmed_blocked\": 0, \"count\": 240, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 54, \"confirmed_blocked\": 0, \"count\": 283, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.2083 \u2192 0.1908   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-11]",
+   "attrs: '{\"anomaly_count\": 11, \"confirmed_blocked\": 0, \"count\": 300, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 11, \"confirmed_blocked\": 0, \"count\": 301, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.0367 \u2192 0.0365   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-14]",
+   "attrs: '{\"anomaly_count\": 55, \"confirmed_blocked\": 0, \"count\": 430, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 58, \"confirmed_blocked\": 0, \"count\": 454, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.1279 \u2192 0.1278   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-16]",
+   "attrs: '{\"anomaly_count\": 15, \"confirmed_blocked\": 0, \"count\": 600, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 15, \"confirmed_blocked\": 0, \"count\": 607, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.025 \u2192 0.0247   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-15]",
+   "attrs: '{\"anomaly_count\": 23, \"confirmed_blocked\": 0, \"count\": 503, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 43, \"confirmed_blocked\": 0, \"count\": 704, \"region\": \"Palestine\", \"unit\": \"measurements\"}'; value_num: 0.0457 \u2192 0.0611   [v1_connectivity_ooni|connectivity.censorship_measurement|2026-04-10]",
+   "attrs: '{\"anomaly_count\": 27, \"confirmed_blocked\": 0, \"count\": 1299, \"region\": \"Palestine\", \"unit\": \"measurements\"}' \u2192 '{\"anomaly_count\": 27, \"confirmed_blocked\": 0, \"count\": 1300, \"region\": \"Palestine\", \"unit\": \"measurements\"}'   [v1_connectivity_ooni|connectivity.censorship_measurement|2025-09-29]",
+   "attrs: '{\"code\": \"12975\", \"count\": 0, \"outage_datasource\": \"bgp\", \"region\": \"Palestine\", \"severity_score\": 2503317.2657952067, \"type\": \"asn\", \"unit\": \"seconds\"}' \u2192 '{\"code\": \"12975\", \"count\": 0, \"outage_datasource\": \"bgp\", \"region\": \"Palestine\", \"severity_score\": 2506558.13222725, \"type\": \"asn\", \"unit\": \"seconds\"}'; value_num: 119498353 \u2192 119653059   [v1_connectivity_ioda|connectivity.internet_outage|2022-10-24T00:40:00.]"
+  ],
+  "departed": 1,
+  "emitted": [
+   2274,
+   2320
+  ],
+  "identity_collisions": [
+   0,
+   0
+  ],
+  "matched": 2273,
+  "provenance_only": 2264,
+  "records_read": [
+   2274,
+   2320
+  ],
+  "same": 0
+ },
  "martyrs_snapshot_2023": {
   "arrived": 1,
   "changed": 0,

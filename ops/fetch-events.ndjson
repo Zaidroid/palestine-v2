@@ -2,3 +2,6 @@
 {"label": "t4p:westbank_daily", "at": "2026-08-08T13:33:58.107499+00:00", "outcome": "ok", "rows": 1037}
 {"label": "t4p:killed_in_gaza", "at": "2026-08-08T13:33:59.503074+00:00", "outcome": "ok", "rows": 72835}
 {"label": "t4p:summary", "at": "2026-08-08T13:33:59.721173+00:00", "outcome": "ok", "rows": 1}
+{"label": "ooni:ps_daily", "at": "2026-08-08T21:31:09.769678+00:00", "outcome": "ok", "rows": 2542}
+{"label": "ooni:ps_daily", "at": "2026-08-08T21:34:24.439346+00:00", "outcome": "ok", "rows": 1322}
+{"label": "ioda:outages", "at": "2026-08-08T21:37:46.998202+00:00", "outcome": "ok", "rows": 998}
