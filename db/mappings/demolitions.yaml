@@ -196,3 +196,21 @@ identity:
   # names repeat across governorates.
   fields: [indicator, occurred_at]
   attrs: [locality_name, governorate, coverage_area, demolition_dimension]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "demolitions.locality.displaced"}
+      concept: displacement.internal
+      measure_kind: flow
+      polarity: -1
+      grain: event
+      place_grain: locality
+      canonical_unit: persons
+    - when: {prefix: "demolitions."}
+      concept: demolition
+      measure_kind: flow
+      polarity: -1
+      grain: event
+      place_grain: locality
+      canonical_unit: structures

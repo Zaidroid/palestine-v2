@@ -178,3 +178,21 @@ notes: |
 identity:
   fields: [indicator, occurred_at]
   attrs: [t4p_id]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "martyrs.cumulative_summary"}
+      concept: mortality.conflict
+      measure_kind: cumulative
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: persons
+    - when: {prefix: "martyrs."}
+      concept: mortality.conflict
+      measure_kind: flow         # one row is one named person, summable
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: persons

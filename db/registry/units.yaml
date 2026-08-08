@@ -1,0 +1,155 @@
+# Units — a reviewed document, loaded by ops/load_registry.py into unit_def
+# and unit_alias. Measured from live rows on 2026-08-08: 45 distinct unit
+# strings across 275,124 observations.
+#
+# THE PACK-SIZE PROBLEM is why this file exists. Twelve of those 45 strings
+# are prices with a package baked in — ILS/KG, ILS/500 G, ILS/25 KG, ILS/2 KG,
+# ILS/3 L, ILS/Cubic meter, ILS/L, ILS/60 KG, ILS/50 KG, ILS/2.5 KG,
+# ILS/380 G, ILS/12 KG. A flour price per 25 kg and a rice price per kilo are
+# both "a food price in shekels" and are not comparable numbers, and nothing
+# in the databank said so.
+#
+# FACTORS ARE EXACT RATIONALS. canonical = value * factor_num / factor_den.
+# 1000/380 and 1/12 and 1/3 do not terminate in decimal; writing 2.6315789
+# puts a rounding error into every converted price forever. Same lesson as
+# the identity renderer, where Python's 106.0 and SQL's 106 disagreed.
+#
+# An alias missing from this file is NOT an error and NOT silently dropped:
+# v_observation_canonical leaves value_canonical NULL, and the loader counts
+# how many rows are in that state.
+
+units:
+  persons:
+    name_en: persons
+    name_ar: أشخاص
+    dimension: count
+    notes: >-
+      People. Distinct from `count` because a count of anything is not a
+      count of people, and a correlation between "persons displaced" and
+      "count of buildings" should not silently share a unit.
+    aliases:
+      persons: {}
+      people: {}
+      fatalities:
+        note: >-
+          A fatality count is a count of persons. The word carries the
+          concept, not the unit; the concept lives in indicator_def.
+      settlers: {note: persons, specifically settler population}
+      households:
+        note: >-
+          NOT persons. A household is a distinct unit and converting one to
+          the other needs a household-size assumption we do not have.
+        unit: households
+
+  households:
+    name_en: households
+    name_ar: أسر
+    dimension: count
+
+  count:
+    name_en: count
+    name_ar: عدد
+    dimension: count
+    notes: >-
+      A dimensionless count of things the indicator names. Deliberately
+      broad: v1 used it for everything, and narrowing it per indicator is
+      indicator_def's job, not this table's.
+    aliases:
+      count: {}
+      number: {}
+      units: {}
+      buildings: {unit: structures}
+      structures: {unit: structures}
+      sites: {unit: sites}
+      schools: {unit: facilities}
+      attacks: {unit: events}
+      vehicle: {unit: vehicles}
+      tent: {unit: tents}
+      box: {unit: packages}
+      piece: {unit: packages}
+      pallet: {unit: packages}
+      truck: {unit: vehicles}
+
+  structures:  {name_en: structures,  name_ar: مبانٍ,   dimension: count}
+  sites:       {name_en: sites,       name_ar: مواقع,   dimension: count}
+  facilities:  {name_en: facilities,  name_ar: منشآت,   dimension: count}
+  events:      {name_en: events,      name_ar: حوادث,   dimension: count}
+  vehicles:    {name_en: vehicles,    name_ar: مركبات,  dimension: count}
+  tents:       {name_en: tents,       name_ar: خيام,    dimension: count}
+  packages:
+    name_en: packages
+    dimension: count
+    notes: >-
+      Pallets, boxes and pieces are all "one consignment item" and the
+      source uses them interchangeably. Kept as one unit with the original
+      word preserved in attrs.unit_raw, because collapsing them loses
+      nothing measurable and separating them implies a precision the
+      consignment records do not have.
+
+  tonne:
+    name_en: tonnes
+    name_ar: أطنان
+    dimension: mass
+    aliases:
+      tonne: {}
+      mt: {}
+
+  percent:
+    name_en: percent
+    name_ar: نسبة مئوية
+    dimension: ratio
+    aliases:
+      percentage: {}
+      percent: {}
+      per_100: {}
+    notes: >-
+      per_100 is percent by definition. per_1000 and per_100000 are NOT —
+      they are their own rates and converting them here would change what
+      the publisher said.
+
+  per_1000:    {name_en: per 1,000,   dimension: rate}
+  per_100000:  {name_en: per 100,000, dimension: rate}
+  births_per_woman: {name_en: births per woman, dimension: rate}
+  ratio:       {name_en: ratio,       dimension: ratio}
+  index:       {name_en: index,       dimension: index}
+  years:       {name_en: years,       name_ar: سنوات, dimension: time}
+  km:          {name_en: kilometres,  name_ar: كيلومتر, dimension: length}
+
+  USD:
+    name_en: US dollars
+    name_ar: دولار أمريكي
+    dimension: currency
+    aliases:
+      USD: {}
+      currency_usd: {}
+
+  ILS_per_kg:
+    name_en: shekels per kilogram
+    name_ar: شيكل للكيلوغرام
+    dimension: price_per_mass
+    notes: >-
+      The canonical food price. Every pack size below converts to it
+      exactly, so two commodities can finally be compared.
+    aliases:
+      "ILS/KG":     {factor_num: 1,    factor_den: 1}
+      "ILS/500 G":  {factor_num: 1000, factor_den: 500}
+      "ILS/380 G":  {factor_num: 1000, factor_den: 380}
+      "ILS/2 KG":   {factor_num: 1,    factor_den: 2}
+      "ILS/2.5 KG": {factor_num: 1,    factor_den: 2.5}
+      "ILS/12 KG":  {factor_num: 1,    factor_den: 12}
+      "ILS/25 KG":  {factor_num: 1,    factor_den: 25}
+      "ILS/50 KG":  {factor_num: 1,    factor_den: 50}
+      "ILS/60 KG":  {factor_num: 1,    factor_den: 60}
+
+  ILS_per_litre:
+    name_en: shekels per litre
+    name_ar: شيكل لليتر
+    dimension: price_per_volume
+    notes: >-
+      SEPARATE from ILS_per_kg on purpose. Converting a volume price to a
+      mass price needs a density we do not have, and guessing one for
+      cooking oil would be inventing data.
+    aliases:
+      "ILS/L":            {factor_num: 1, factor_den: 1}
+      "ILS/3 L":          {factor_num: 1, factor_den: 3}
+      "ILS/Cubic meter":  {factor_num: 1, factor_den: 1000}

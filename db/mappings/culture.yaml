@@ -142,3 +142,13 @@ notes: |
 identity:
   fields: [indicator]
   attrs: [site_name]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "culture.heritage_site."}
+      concept: heritage
+      measure_kind: stock
+      grain: register
+      place_grain: region
+      canonical_unit: sites

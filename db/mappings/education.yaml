@@ -151,3 +151,13 @@ notes: |
 identity:
   fields: []
   attrs: [school_id]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "education.school_record"}
+      concept: education.facility
+      measure_kind: stock
+      grain: register
+      place_grain: governorate
+      canonical_unit: facilities

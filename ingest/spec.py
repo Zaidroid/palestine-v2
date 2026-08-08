@@ -428,6 +428,39 @@ _k("drop[].if", "rationale", "the condition, for the reviewer", types=(str,))
 _k("drop[].measured", "enforced",
    "the count at spec time. A drop without one is invalid (README law)",
    types=(int, str))
+_k("registry", "enforced",
+   "how this category's indicators map onto the concept/unit registry "
+   "(059). Ordered rules, first match wins — 1,011 WHO GHO codes are "
+   "classified by three of them, which is the only way 1,408 indicators get "
+   "meaning without being typed by hand", types=(dict,))
+_k("registry.max_unclassified", "enforced",
+   "how many of this category's indicators may go unclassified. Above it, "
+   "ops/load_registry.py refuses — law 4 applied to meaning", types=(int,))
+_k("registry.rules", "enforced", "ordered; first match wins", types=(list,))
+_k("registry.rules[].when", "enforced",
+   "{prefix|regex|equals|not_prefix|unit}. `unit` matches the RAW unit "
+   "string: health's 1,011 GHO codes cannot have their measure_kind read "
+   "off their names, but their units say it exactly", types=(dict,),
+   cls_children="value")
+_k("registry.rules[].notes", "rationale", "", types=(str,))
+_k("registry.rules[].concept", "enforced", "a key in the concept table",
+   types=(str,))
+_k("registry.rules[].measure_kind", "enforced",
+   "stock | flow | cumulative | rate | index | ratio | status. The "
+   "distinction that makes comparison possible", types=(str,),
+   values=("stock", "flow", "cumulative", "rate", "index", "ratio",
+           "status", "unclassified"))
+_k("registry.rules[].polarity", "enforced",
+   "+1 a rise is better, -1 a rise is worse, null neither", types=(int,),
+   values=(-1, 1))
+_k("registry.rules[].grain", "enforced", "the period one row covers",
+   types=(str,))
+_k("registry.rules[].place_grain", "enforced", "", types=(str,))
+_k("registry.rules[].canonical_unit", "enforced", "a key in unit_def",
+   types=(str,))
+_k("registry.rules[].name_en", "rationale", "", types=(str,))
+_k("registry.rules[].name_ar", "rationale", "", types=(str,))
+_k("registry.rules[].note", "rationale", "why this rule", types=(str,))
 _k("expect", "enforced", "the tripwires", types=(dict,))
 _k("expect.min_records", "enforced",
    "a run seeing fewer FAILS; it does not succeed with less", types=(int,))

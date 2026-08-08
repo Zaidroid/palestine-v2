@@ -177,3 +177,19 @@ identity:
   # 26,814 WFP market prices: one per (commodity indicator, day, market).
   # MEASURED 26,814 / 26,814 injective.
   fields: [indicator, occurred_at, place_id]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "food.price."}
+      concept: food.price
+      measure_kind: stock        # a price is a LEVEL at a moment, not a flow:
+                                 #   you take the last or the mean over a
+                                 #   period, you never sum prices
+      polarity: -1               # a rise in a staple price is a harm
+      grain: month
+      place_grain: governorate
+      canonical_unit: ILS_per_kg # twelve pack sizes converge here; the three
+                                 #   ILS/litre commodities resolve to
+                                 #   ILS_per_litre per row and are NOT
+                                 #   converted to mass — that needs a density

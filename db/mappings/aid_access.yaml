@@ -177,3 +177,17 @@ identity:
   # Collapsing them would delete real lorries, so they keep no stored key
   # and are guarded by 044 (v1_stable_id) + expect.max_observations. Safe
   # only because the upstream is dead; a live successor gets its own spec.
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "aid_access."}
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: point
+      # NO canonical_unit: this indicator family is counted in pallets,
+      # tonnes AND lorries, and there is no honest conversion between them.
+      # Each row keeps its own resolved unit; the loader records the
+      # disagreement rather than picking a winner and hiding it.

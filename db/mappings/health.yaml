@@ -196,3 +196,162 @@ identity:
   # part of what makes a row itself. MEASURED 12,502 / 12,502 injective.
   fields: [indicator, occurred_at, place_id, value_num]
   attrs: [value_high, value_low]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "^health\\.wsh_sanitation", unit: [percentage, percent, per_100]}
+      concept: sanitation.access
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^health\\.wsh_sanitation", unit: [per_1000, per_100000, births_per_woman]}
+      concept: sanitation.access
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh_sanitation", unit: [index, ratio]}
+      concept: sanitation.access
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh_sanitation", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: sanitation.access
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh_sanitation"}
+      concept: sanitation.access
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        WHO WASH sanitation series. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^health\\.wsh", unit: [percentage, percent, per_100]}
+      concept: water.access
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^health\\.wsh", unit: [per_1000, per_100000, births_per_woman]}
+      concept: water.access
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh", unit: [index, ratio]}
+      concept: water.access
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: water.access
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.wsh"}
+      concept: water.access
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        WHO WASH water series. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^health\\.(nut|nutrition)", unit: [percentage, percent, per_100]}
+      concept: health.outcome
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^health\\.(nut|nutrition)", unit: [per_1000, per_100000, births_per_woman]}
+      concept: health.outcome
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(nut|nutrition)", unit: [index, ratio]}
+      concept: health.outcome
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(nut|nutrition)", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: health.outcome
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(nut|nutrition)"}
+      concept: health.outcome
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        GHO nutrition series. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^health\\.(ghed|finprotection|financialhardship)", unit: [percentage, percent, per_100]}
+      concept: health.service
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^health\\.(ghed|finprotection|financialhardship)", unit: [per_1000, per_100000, births_per_woman]}
+      concept: health.service
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(ghed|finprotection|financialhardship)", unit: [index, ratio]}
+      concept: health.service
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(ghed|finprotection|financialhardship)", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: health.service
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.(ghed|finprotection|financialhardship)"}
+      concept: health.service
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        GHO health financing. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^health\\.", unit: [percentage, percent, per_100]}
+      concept: health.outcome
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^health\\.", unit: [per_1000, per_100000, births_per_woman]}
+      concept: health.outcome
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.", unit: [index, ratio]}
+      concept: health.outcome
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\.", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: health.outcome
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^health\\."}
+      concept: health.outcome
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        The GHO residue. A WHO code name says nothing about the kind of number it holds; the unit does. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.

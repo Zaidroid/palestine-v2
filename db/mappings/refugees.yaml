@@ -291,3 +291,20 @@ identity:
   # exempt UNHCR (1,157/1,157) and UNRWA (90/90) — which key perfectly —
   # from carrying a stored identity at all. An allowance is a statement
   # about ONE source's data, never a category-wide relaxation.
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "refugees.displacement_event"}
+      concept: displacement.internal
+      measure_kind: flow
+      polarity: -1
+      grain: event
+      place_grain: governorate
+      canonical_unit: persons
+    - when: {prefix: "refugees."}
+      concept: displacement.refugee
+      measure_kind: stock        # a registered population, a level
+      grain: year
+      place_grain: region
+      canonical_unit: persons

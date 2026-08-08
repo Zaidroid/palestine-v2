@@ -154,3 +154,22 @@ notes: |
 identity:
   # 49 rows: one indicator per (dimension, year). MEASURED 49/49 injective.
   fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "casualties.annual_total"}
+      concept: mortality.conflict
+      measure_kind: flow         # a year's deaths, not a running total
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {prefix: "casualties."}
+      concept: mortality.conflict
+      measure_kind: cumulative   # the breakdowns are 2008-to-date totals —
+                                 #   see the spec's coverage_start attr
+      polarity: -1
+      grain: period
+      place_grain: governorate
+      canonical_unit: persons

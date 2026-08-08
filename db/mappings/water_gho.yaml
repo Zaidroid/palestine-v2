@@ -78,3 +78,22 @@ notes: |
 # invariant covers it.
 identity:
   fields: [indicator, occurred_at]                     # = 75 / 75 ✓
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "water.wsh_sanitation"}
+      concept: sanitation.access
+      measure_kind: ratio
+      polarity: -1               # this series is open defecation: a rise is
+                                 #   a harm, unlike most WASH access series
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {prefix: "water."}
+      concept: water.access
+      measure_kind: ratio
+      polarity: 1
+      grain: year
+      place_grain: region
+      canonical_unit: percent

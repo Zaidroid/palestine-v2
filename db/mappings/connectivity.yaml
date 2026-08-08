@@ -185,3 +185,19 @@ identity:
   # day at the same place, so it needs the whole timestamp plus the measuring
   # source and severity. Both MEASURED injective 2026-08-07.
   fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "connectivity.internet_outage"}
+      concept: connectivity.outage
+      measure_kind: flow
+      polarity: -1
+      grain: event
+      place_grain: region
+    - when: {prefix: "connectivity."}
+      concept: connectivity.censorship
+      measure_kind: ratio
+      polarity: -1
+      grain: day
+      place_grain: region

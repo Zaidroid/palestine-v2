@@ -133,3 +133,14 @@ identity:
   # Month-bucket stock series per metric type, both sources. MEASURED
   # injective (hamoked 864/864, addameer 26/26).
   fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "prisoners."}
+      concept: detention
+      measure_kind: stock        # how many are held ON that date — a level
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons

@@ -106,3 +106,15 @@ notes: |
 identity:
   # 51 annual settler-population rows. MEASURED injective.
   fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "settlements."}
+      concept: settlement
+      measure_kind: stock        # period-end population, anchored at the
+                                 #   START of the year it labels (REVIEW.md 2)
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: persons

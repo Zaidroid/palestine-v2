@@ -179,3 +179,28 @@ notes: |
 identity:
   fields: [indicator]
   attrs: [land_name, checkpoint_type]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "land.checkpoint"}
+      concept: movement.checkpoint
+      measure_kind: stock
+      polarity: -1
+      grain: register
+      place_grain: region
+      canonical_unit: sites
+    - when: {equals: "land.settlement"}
+      concept: settlement
+      measure_kind: stock
+      polarity: -1
+      grain: register
+      place_grain: region
+      canonical_unit: sites
+    - when: {equals: "land.demolition"}
+      concept: demolition
+      measure_kind: flow
+      polarity: -1
+      grain: event
+      place_grain: region
+      canonical_unit: structures

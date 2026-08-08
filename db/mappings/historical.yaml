@@ -319,3 +319,19 @@ identity:
   # was established beside (or on) the Palestinian village of the same name —
   # al-Nahr, Alma, Silwad, Nabi Musa and four more. They are different places
   # with different coordinates, and the record must not merge them.
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "historical.population"}
+      concept: population.count
+      measure_kind: stock
+      grain: census
+      place_grain: locality
+      canonical_unit: persons
+    - when: {equals: "historical.locality_status"}
+      concept: reference.locality
+      measure_kind: status       # 'Depopulated', 'Remaining' — categorical,
+                                 #   and nothing may plot or average it
+      grain: register
+      place_grain: locality

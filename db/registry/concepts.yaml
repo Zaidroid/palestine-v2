@@ -1,0 +1,204 @@
+# Concepts — what the databank measures, as a reviewed taxonomy.
+#
+# Loaded by ops/load_registry.py into the `concept` table. This is a
+# DOCUMENT: it is read and argued with before it is data, the same posture as
+# db/mappings/*.yaml.
+#
+# Deliberately shallow — two levels, no more. A deep ontology is a research
+# project; what /compare and /correlate actually need is enough structure to
+# answer "show me everything about water in Khan Younis" and to refuse
+# "correlate this cumulative toll against that daily count".
+#
+# Names are English and Arabic where the Arabic is settled. Where it is not,
+# name_ar is absent rather than machine-translated: a wrong Arabic label on a
+# memorial category is worse than none, and those are Zaid's to write.
+
+concepts:
+
+  # ── people harmed ────────────────────────────────────────────────────────
+  mortality:
+    name_en: Mortality
+    name_ar: الوفيات
+    definition: Deaths, from any cause.
+  mortality.conflict:
+    parent: mortality
+    name_en: Conflict deaths
+    name_ar: القتلى
+    definition: >-
+      Deaths attributed to armed violence, occupation forces, settler
+      violence or their direct consequences. Counted by several sources with
+      different definitions and different inclusion rules; the source is
+      always part of the answer.
+  mortality.general:
+    parent: mortality
+    name_en: General mortality
+    definition: Death rates from all causes, as health statistics report them.
+  injury:
+    name_en: Injury
+    name_ar: الإصابات
+    definition: People wounded, by any cause.
+  injury.conflict:
+    parent: injury
+    name_en: Conflict injuries
+    definition: People wounded in armed violence.
+
+  # ── people moved and held ────────────────────────────────────────────────
+  displacement:
+    name_en: Displacement
+    name_ar: النزوح
+    definition: People forced from where they lived.
+  displacement.internal:
+    parent: displacement
+    name_en: Internal displacement
+    definition: >-
+      Displacement within the territory. Note that a STOCK (people currently
+      displaced) and a FLOW (new displacements this month) are different
+      series that both live here; measure_kind separates them.
+  displacement.refugee:
+    parent: displacement
+    name_en: Refugees
+    name_ar: اللاجئون
+    definition: Registered refugees, including those outside the territory.
+  displacement.depopulation:
+    parent: displacement
+    name_en: Depopulation
+    definition: >-
+      Localities emptied of their inhabitants. The 1948 record and its
+      Mandate-era gazetteer live here.
+  detention:
+    name_en: Detention
+    name_ar: الاعتقال
+    definition: People held by the occupying power, by category of detention.
+
+  # ── homes, land, buildings ───────────────────────────────────────────────
+  demolition:
+    name_en: Demolition
+    name_ar: الهدم
+    definition: Structures destroyed by administrative or military order.
+  land.confiscation:
+    name_en: Land confiscation
+    name_ar: مصادرة الأراضي
+    definition: Land declared state land, seized, or placed beyond reach.
+  settlement:
+    name_en: Settlements
+    name_ar: المستوطنات
+    definition: Israeli civilian settlement in occupied territory.
+  infrastructure.damage:
+    name_en: Infrastructure damage
+    definition: Damage to buildings, roads, utilities and public facilities.
+  infrastructure.stock:
+    name_en: Infrastructure stock
+    definition: What exists — facilities, segments, installations — and where.
+  heritage:
+    name_en: Cultural heritage
+    name_ar: التراث الثقافي
+    definition: Heritage sites, their status and their damage.
+
+  # ── movement ─────────────────────────────────────────────────────────────
+  movement:
+    name_en: Movement and access
+    name_ar: الحركة والوصول
+    definition: Whether people and goods can get from one place to another.
+  movement.checkpoint:
+    parent: movement
+    name_en: Checkpoint status
+    definition: The state of a specific crossing point at a moment.
+  movement.closure:
+    parent: movement
+    name_en: Closures
+    definition: Roads and areas closed, and for how long.
+  aid.access:
+    name_en: Aid access
+    name_ar: وصول المساعدات
+    definition: >-
+      Whether humanitarian supplies reach people — consignments, lorries,
+      crossings used, quantities delivered.
+
+  # ── the things people need ───────────────────────────────────────────────
+  water.access:
+    name_en: Water access
+    name_ar: الوصول إلى المياه
+    definition: Access to drinking water, by service level.
+  water.quality:
+    name_en: Water quality
+    definition: Whether available water is safe.
+  sanitation.access:
+    name_en: Sanitation access
+    name_ar: الصرف الصحي
+    definition: Access to sanitation, by service level.
+  food.price:
+    name_en: Food prices
+    name_ar: أسعار الغذاء
+    definition: >-
+      Market prices of food commodities. Canonically shekels per kilogram —
+      the source publishes twelve different pack sizes.
+  food.security:
+    name_en: Food security
+    definition: Whether people can reliably obtain enough food.
+  energy.supply:
+    name_en: Electricity supply
+    name_ar: إمدادات الكهرباء
+    definition: >-
+      Generation, import, and hours of supply. NO SERIES YET — declared here
+      because the gap is the point: this is the category the source scout
+      found nothing open for, and the JDECO and PENRA letters exist to fill.
+  health.service:
+    name_en: Health services
+    name_ar: الخدمات الصحية
+    definition: Facilities, workforce, coverage and service delivery.
+  health.outcome:
+    name_en: Health outcomes
+    definition: Life expectancy, disease burden, mortality rates.
+  education.facility:
+    name_en: Schools
+    name_ar: المدارس
+    definition: Educational facilities and their operating status.
+
+  # ── money and the economy ────────────────────────────────────────────────
+  economy.output:
+    name_en: Economic output
+    name_ar: الناتج الاقتصادي
+    definition: GDP, production, and national accounts aggregates.
+  economy.prices:
+    name_en: Prices and inflation
+    definition: Price levels and their change, excluding food market prices.
+  economy.labour:
+    name_en: Labour
+    name_ar: العمل
+    definition: Employment, unemployment and participation.
+  funding.humanitarian:
+    name_en: Humanitarian funding
+    name_ar: التمويل الإنساني
+    definition: Money requested, pledged, committed and paid for response.
+
+  # ── people, counted ──────────────────────────────────────────────────────
+  population.count:
+    name_en: Population
+    name_ar: السكان
+    definition: How many people live somewhere.
+  population.structure:
+    name_en: Population structure
+    definition: Age, sex and household composition.
+
+  # ── the network ──────────────────────────────────────────────────────────
+  connectivity.outage:
+    name_en: Internet outages
+    name_ar: انقطاع الإنترنت
+    definition: Loss of internet reachability, measured from outside.
+  connectivity.censorship:
+    name_en: Network interference
+    definition: Blocking and interference, measured by probe.
+
+  # ── the record itself ────────────────────────────────────────────────────
+  reference.locality:
+    name_en: Locality reference
+    definition: >-
+      Gazetteer rows rather than measurements — a locality's existence,
+      status and identity. Kept as a concept so these never enter a
+      correlation by accident.
+  media.report:
+    name_en: Media reports
+    definition: >-
+      News items. Held for corroboration and context; explicitly NOT a
+      measurement of anything, and the polarity and measure_kind stay unset
+      so nothing tries to plot them.

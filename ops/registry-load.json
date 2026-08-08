@@ -1,0 +1,207 @@
+{
+ "specs": {
+  "aid_access": {
+   "classified": 4,
+   "indicators": 4,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "casualties": {
+   "classified": 31,
+   "indicators": 31,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "conflict": {
+   "classified": 10,
+   "indicators": 10,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "conflict_westbank": {
+   "classified": 0,
+   "indicators": 10,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "connectivity": {
+   "classified": 2,
+   "indicators": 2,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "culture": {
+   "classified": 3,
+   "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "demolitions": {
+   "classified": 2,
+   "indicators": 2,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "economic": {
+   "classified": 146,
+   "indicators": 146,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "education": {
+   "classified": 1,
+   "indicators": 1,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "food": {
+   "classified": 41,
+   "indicators": 41,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "funding": {
+   "classified": 3,
+   "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "health": {
+   "classified": 1011,
+   "indicators": 1011,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": [
+    "health.air_41.sex_btsx",
+    "health.air_41.sex_fmle",
+    "health.air_41.sex_mle",
+    "health.air_90.sex_btsx",
+    "health.air_90.sex_fmle",
+    "health.air_90.sex_mle",
+    "health.ghed_gghe_d_pc_us_sha2011",
+    "health.ghed_oop_pc_us_sha2011",
+    "health.ghed_pvt_d_pc_us_sha2011",
+    "health.lbw_number",
+    "health.nut_bf_cbf.householdwealth_wealth_bottom40",
+    "health.nut_bf_cbf.wealthquintile_wq2",
+    "health.nut_bf_ebf.educationlevel_shlm",
+    "health.nut_bf_ebf.householdwealth_wealth_bottom40",
+    "health.nut_bf_ebf.householdwealth_wealth_top60",
+    "health.nut_bf_ebf2d.educationlevel_educ_higher",
+    "health.nut_bf_ebf2d.educationlevel_educ_secondary",
+    "health.nut_bf_ebf2d.educationlevel_shlm",
+    "health.nut_bf_eibf.householdwealth_wealth_bottom40",
+    "health.nut_bf_eibf.householdwealth_wealth_bottom60",
+    "health.nut_bf_eibf.residenceareatype_rur",
+    "health.nut_bf_eibf.wealthquintile_wq2",
+    "health.nut_bf_eibf.wealthquintile_wq3",
+    "health.nut_bf_eibf.wealthquintile_wq4",
+    "health.nut_bf_evbf.householdwealth_wealth_bottom60",
+    "health.nut_bf_evbf.residenceareatype_rur",
+    "health.nut_cf_eff.wealthquintile_wq3",
+    "health.nut_cf_isssf.educationlevel_shlm",
+    "health.nut_cf_isssf.householdwealth_wealth_bottom80",
+    "health.nut_cf_isssf.householdwealth_wealth_top40",
+    "health.nut_cf_isssf.sex_fmle",
+    "health.nut_cf_isssf.wealthquintile_wq4",
+    "health.nut_cf_mad.householdwealth_wealth_bottom80",
+    "health.nut_cf_mdd.agegroup_months12_23",
+    "health.nut_cf_mdd.householdwealth_wealth_top40",
+    "health.nut_cf_mdd.householdwealth_wealth_top60",
+    "health.nut_cf_mdd.residenceareatype_rur",
+    "health.nut_cf_mdd.residenceareatype_urb",
+    "health.nut_cf_mdd.wealthquintile_wq3",
+    "health.nut_cf_mmf.agegroup_months20_23",
+    "health.nut_cf_mmf.householdwealth_wealth_bottom60",
+    "health.nut_cf_mmf.sex_mle",
+    "health.nutoverweightnum.sex_fmle",
+    "health.nutoverweightnum.sex_mle",
+    "health.nutrition_anaemia_children_num.severity_moderate",
+    "health.nutrition_anaemia_children_num.severity_severe",
+    "health.nutrition_anaemia_reproductiveage_num.sex_fmle",
+    "health.nutstuntingnum.sex_btsx",
+    "health.nutstuntingnum.sex_mle",
+    "health.sdgodaws",
+    "health.tobacco_mpower_r_price.tobacco_indicator_price_in_usd",
+    "health.tobacco_mpower_r_tax.tobacco_indicator_tax_excisepropprice",
+    "health.tobacco_mpower_r_tax.tobacco_indicator_tax_totaltax",
+    "health.whs6_102"
+   ]
+  },
+  "historical": {
+   "classified": 2,
+   "indicators": 2,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "infrastructure": {
+   "classified": 7,
+   "indicators": 7,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "land": {
+   "classified": 3,
+   "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "martyrs_snapshot_2023": {
+   "classified": 2,
+   "indicators": 2,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "pcbs": {
+   "classified": 67,
+   "indicators": 67,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "prisoners": {
+   "classified": 6,
+   "indicators": 6,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "refugees": {
+   "classified": 4,
+   "indicators": 4,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "settlements": {
+   "classified": 1,
+   "indicators": 1,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "water_gho": {
+   "classified": 3,
+   "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  }
+ },
+ "unclassified": []
+}

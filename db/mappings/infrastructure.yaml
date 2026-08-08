@@ -227,3 +227,24 @@ notes: |
 identity:
   fields: [indicator, occurred_at]
   attrs: [locality_name, event_type]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "infrastructure.damage."}
+      concept: infrastructure.damage
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: governorate
+    - when: {equals: "infrastructure.locality_record"}
+      concept: population.count
+      measure_kind: stock
+      grain: register
+      place_grain: locality
+      canonical_unit: persons
+    - when: {prefix: "infrastructure."}
+      concept: infrastructure.stock
+      measure_kind: stock
+      grain: register
+      place_grain: governorate

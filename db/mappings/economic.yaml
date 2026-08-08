@@ -217,3 +217,317 @@ identity:
   # World Bank and IMF are annual national series; PCBS-direct splits by
   # place. MEASURED injective on all three datasets.
   fields: [indicator, occurred_at, place_id]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_", unit: [percentage, percent, per_100]}
+      concept: health.outcome
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: health.outcome
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_", unit: [index, ratio]}
+      concept: health.outcome
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: health.outcome
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_"}
+      concept: health.outcome
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        SH.* health outcomes. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.se_", unit: [percentage, percent, per_100]}
+      concept: education.facility
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.se_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: education.facility
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.se_", unit: [index, ratio]}
+      concept: education.facility
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.se_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: education.facility
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.se_"}
+      concept: education.facility
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        SE.* education. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.sl_", unit: [percentage, percent, per_100]}
+      concept: economy.labour
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.sl_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: economy.labour
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sl_", unit: [index, ratio]}
+      concept: economy.labour
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sl_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: economy.labour
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sl_"}
+      concept: economy.labour
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        SL.* labour force. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.sp_", unit: [percentage, percent, per_100]}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.sp_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sp_", unit: [index, ratio]}
+      concept: population.structure
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sp_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: population.structure
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.sp_"}
+      concept: population.structure
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        SP.* population. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.(ny|nv|ne|si|bx|bca|bn|gc)_", unit: [percentage, percent, per_100]}
+      concept: economy.output
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.(ny|nv|ne|si|bx|bca|bn|gc)_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: economy.output
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ny|nv|ne|si|bx|bca|bn|gc)_", unit: [index, ratio]}
+      concept: economy.output
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ny|nv|ne|si|bx|bca|bn|gc)_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: economy.output
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ny|nv|ne|si|bx|bca|bn|gc)_"}
+      concept: economy.output
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        National accounts. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.(fp|fr|cpi|pcbs_cpi)", unit: [percentage, percent, per_100]}
+      concept: economy.prices
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.(fp|fr|cpi|pcbs_cpi)", unit: [per_1000, per_100000, births_per_woman]}
+      concept: economy.prices
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(fp|fr|cpi|pcbs_cpi)", unit: [index, ratio]}
+      concept: economy.prices
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(fp|fr|cpi|pcbs_cpi)", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: economy.prices
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(fp|fr|cpi|pcbs_cpi)"}
+      concept: economy.prices
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        FP.* prices. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.eg_", unit: [percentage, percent, per_100]}
+      concept: energy.supply
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.eg_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: energy.supply
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.eg_", unit: [index, ratio]}
+      concept: energy.supply
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.eg_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: energy.supply
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.eg_"}
+      concept: energy.supply
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        EG.* energy — the only energy rows in the databank, and annual World Bank aggregates rather than a supply series. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.(ag|er|en)_", unit: [percentage, percent, per_100]}
+      concept: economy.output
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.(ag|er|en)_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: economy.output
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ag|er|en)_", unit: [index, ratio]}
+      concept: economy.output
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ag|er|en)_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: economy.output
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(ag|er|en)_"}
+      concept: economy.output
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        Agriculture, land, environment. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.(it|is)_", unit: [percentage, percent, per_100]}
+      concept: connectivity.outage
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.(it|is)_", unit: [per_1000, per_100000, births_per_woman]}
+      concept: connectivity.outage
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(it|is)_", unit: [index, ratio]}
+      concept: connectivity.outage
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(it|is)_", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: connectivity.outage
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.(it|is)_"}
+      concept: connectivity.outage
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        IT.* technology access. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.
+    - when: {regex: "^economic\\.", unit: [percentage, percent, per_100]}
+      concept: economy.output
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^economic\\.", unit: [per_1000, per_100000, births_per_woman]}
+      concept: economy.output
+      measure_kind: rate
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.", unit: [index, ratio]}
+      concept: economy.output
+      measure_kind: index
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\.", unit: [number, count, persons, years, currency_usd, USD]}
+      concept: economy.output
+      measure_kind: stock
+      grain: year
+      place_grain: region
+    - when: {regex: "^economic\\."}
+      concept: economy.output
+      measure_kind: unclassified
+      grain: year
+      place_grain: region
+      note: >-
+        The residue: every one is a World Bank macro series. Concept is known; the unit is absent or unrecognised so the
+        KIND of number is not. /correlate refuses an unclassified kind by
+        design — a series nobody has established the kind of is one nobody
+        should plot against another.

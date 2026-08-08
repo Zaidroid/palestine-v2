@@ -338,3 +338,35 @@ identity:
   collision_kind: duplicate_fact
   # The same daily cumulative published under two event_types on two days.
   # One figure, so one row: the duplicate is superseded, not kept.
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "cumulative_(killed|injured)"}
+      concept: mortality.conflict
+      measure_kind: cumulative   # a running toll. v_flow may difference it;
+                                 #   NOTHING may sum it
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "cumulative_settler_attacks"}
+      concept: movement.closure
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: events
+    - when: {regex: "cumulative_displaced"}
+      concept: displacement.internal
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: households
+    - when: {prefix: "conflict."}
+      concept: mortality.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: region

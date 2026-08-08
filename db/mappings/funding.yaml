@@ -149,3 +149,14 @@ identity:
   # grants to the same recipient on the same day are two grants.
   fields: [indicator, occurred_at, place_id]
   attrs: [flow_id]                                     # = 9,991 / 9,991 ✓
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "funding."}
+      concept: funding.humanitarian
+      measure_kind: flow         # money moving, summable over a period
+      polarity: 1
+      grain: event
+      place_grain: region
+      canonical_unit: USD

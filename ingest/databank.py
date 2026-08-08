@@ -903,16 +903,33 @@ def t_conflict(rec, spec, places, counts):
     # shape override: the cumulative Gaza series is a time series
     if etype in ("daily_casualty_report", "summary"):
         attrs["cumulative"] = True
-        gaza = places["region"]["Gaza Strip"]
         day = str(rec["date"])[:10]
         sid = rec["stable_id"]
-        rows = [Row(ds, "conflict.gaza_cumulative_killed", day, "day",
+        # THE REGION COMES FROM THE RECORD, not from a constant. Until
+        # 2026-08-08 this branch hardcoded the Gaza indicator and the Gaza
+        # place row for every daily report, and the spec's drop rule removes
+        # only the all-zero West Bank ones — so four real West Bank figures
+        # (killed 1,086 and 1,108; injured 11,132 and 11,399) were stored
+        # inside the Gaza cumulative series, where the Gaza figure is 73,382.
+        #
+        # Found by building v_flow, which is exactly what conflict.yaml
+        # predicted: the series read 73,381 → 1,108 → 73,382 and the first
+        # difference came out as 72,274 killed in a single day. The same
+        # arithmetic that produced this spec's famous ~35-million-dead
+        # artifact, in miniature and for the same reason.
+        region = (loc.get("region") or "Gaza Strip")
+        slug_region = "westbank" if region == "West Bank" else "gaza"
+        place_id = places["region"].get(region, places["region"]["Gaza Strip"])
+        if region not in ("Gaza Strip", "West Bank"):
+            counts[f"cumulative_unexpected_region:{region}"] += 1
+        rows = [Row(ds, f"conflict.{slug_region}_cumulative_killed", day, "day",
                     f"{sid}:killed", value_num=m.get("killed"),
-                    unit="persons", place_id=gaza, attrs=attrs)]
+                    unit="persons", place_id=place_id, attrs=attrs)]
         if (m.get("injured") or 0) > 0:
-            rows.append(Row(ds, "conflict.gaza_cumulative_injured", day, "day",
-                            f"{sid}:injured", value_num=m.get("injured"),
-                            unit="persons", place_id=gaza, attrs=attrs))
+            rows.append(Row(ds, f"conflict.{slug_region}_cumulative_injured",
+                            day, "day", f"{sid}:injured",
+                            value_num=m.get("injured"),
+                            unit="persons", place_id=place_id, attrs=attrs))
         return rows
 
     # events
@@ -1231,8 +1248,13 @@ VALUES (%(dataset_id)s, %(place_id)s, %(indicator)s, %(value_num)s,
         %(value_text)s, %(unit)s, %(occurred_at)s, %(precision)s,
         %(reported_at)s, %(raw_ref)s, %(v1_stable_id)s, %(identity_key)s,
         %(attrs)s)
+-- The inference clause must reproduce the index's FULL predicate, including
+-- 061's `upper(sys_period) IS NULL`. Postgres matches a partial unique index
+-- only on an exact predicate match; with the old two-thirds version it found
+-- no index at all and raised InvalidColumnReference on the first insert
+-- after 061 — loudly, which is the right way for this to go wrong.
 ON CONFLICT (dataset_id, v1_stable_id, occurred_at)
-    WHERE v1_stable_id IS NOT NULL
+    WHERE v1_stable_id IS NOT NULL AND upper(sys_period) IS NULL
 DO NOTHING
 """
 
@@ -1246,7 +1268,8 @@ VALUES (%(event_type)s, %(place_id)s,
         END,
         %(occurred_at)s, %(precision)s, 'believed', %(confidence)s, 0,
         %(independent_sources)s, 0, %(metrics)s, %(attrs)s)
-ON CONFLICT ((attrs->>'v1_stable_id')) WHERE attrs ? 'v1_stable_id'
+ON CONFLICT ((attrs->>'v1_stable_id'))
+    WHERE attrs ? 'v1_stable_id' AND upper(sys_period) IS NULL
 DO NOTHING
 """
 
