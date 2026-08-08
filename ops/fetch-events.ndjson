@@ -1,0 +1,4 @@
+{"label": "t4p:gaza_daily", "at": "2026-08-08T13:33:57.760587+00:00", "outcome": "ok", "rows": 1037}
+{"label": "t4p:westbank_daily", "at": "2026-08-08T13:33:58.107499+00:00", "outcome": "ok", "rows": 1037}
+{"label": "t4p:killed_in_gaza", "at": "2026-08-08T13:33:59.503074+00:00", "outcome": "ok", "rows": 72835}
+{"label": "t4p:summary", "at": "2026-08-08T13:33:59.721173+00:00", "outcome": "ok", "rows": 1}

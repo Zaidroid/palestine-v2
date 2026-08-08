@@ -392,3 +392,30 @@ def test_every_frozen_corpus_matches_its_recorded_hash() -> None:
         assert hashlib.sha256(raw).hexdigest() == m["sha256_uncompressed"], cat
         assert len(json.loads(raw)["data"]) == m["records"], cat
         assert m["evidence"], f"{cat}: frozen with no evidence recorded"
+
+
+def test_conflict_westbank_reads_our_own_fetch_not_v1() -> None:
+    """The first LIVE category cut from v1. T4P is Unlicense with a real API,
+    so there was never a reason to read it second-hand — and the switch found
+    v1's copy had gone stale: T4P had revised 2026-08-03..06 upward and held
+    two days v1 did not have."""
+    from ingest.databank import load_spec
+    root = load_spec("conflict_westbank")["input"]["root"]
+    assert not root.startswith("/opt/stacks"), f"still reading v1: {root}"
+    assert root == "data/raw/tech4palestine/westbank"
+
+
+def test_the_t4p_fetcher_refuses_a_truncated_feed(monkeypatch, tmp_path) -> None:
+    """The floor is the point. A short fetch that overwrites a good file is
+    how a series silently loses its history, and no downstream check can tell
+    that from the source itself shrinking."""
+    import json
+    import ops.fetch_t4p as f
+    monkeypatch.setattr(f, "RAW", tmp_path)
+    monkeypatch.setattr(f, "EVENTS", tmp_path / "events.ndjson")
+    monkeypatch.setattr(f, "FEEDS", {"tiny": ("http://x", 900)})
+    monkeypatch.setattr(f, "_get", lambda url: json.dumps([{"a": 1}]).encode())
+    assert f.main([]) == 1                     # refused, non-zero exit
+    assert not (tmp_path / "tiny.json").exists(), "a short feed overwrote"
+    ev = (tmp_path / "events.ndjson").read_text()
+    assert '"outcome": "refused"' in ev, "the refusal was not recorded"

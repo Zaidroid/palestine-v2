@@ -14,6 +14,12 @@ cd /home/zaid/palestine-v2
 # and the spec's expect floor still guards the load.
 .venv/bin/python -m ops.fetch_gho_wash || echo "gho-wash fetch failed — loading yesterday's file" >&2
 
+# Tech4Palestine, fetched straight from the publisher (Unlicense) rather than
+# through v1. Non-fatal by design: the fetcher is atomic and floored, so a bad
+# night leaves yesterday's tree and the loader's expect floors intact — which
+# is strictly better than a truncated overwrite.
+.venv/bin/python -m ops.fetch_t4p || echo "t4p fetch failed — loading yesterday's tree" >&2
+
 ./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all
 rc=$?

@@ -45,3 +45,6 @@ ops/equivalence/*.json.gz
 # open-data release payload: regenerate with ops/export_open_data.py
 data/open-release/by-source/
 data/open-release/*.csv.gz
+
+# fetched corpora: regenerate with ops/fetch_t4p.py (14 MB, changes daily)
+data/raw/tech4palestine/

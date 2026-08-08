@@ -25,9 +25,25 @@ shape: observation
 status: reviewed
 records_measured: 1035           # 2026-08-06, quarterlies 2023-Q4 → 2026-Q3
 
-input:                           # Format v2: RAW tree, not unified (read-only)
-  root: /opt/stacks/palestine/public/data/tech4palestine/westbank
+input:                           # Format v2: RAW tree. CUT FROM v1 2026-08-08
+  root: data/raw/tech4palestine/westbank
   glob: "2*.json"                # quarter files only; index/recent excluded
+# Fetched by ops/fetch_t4p.py straight from data.techforpalestine.org, which
+# is Unlicense (public domain, verified at the publisher 2026-08-05) and has
+# a real API — so there was never a reason to read it through v1.
+#
+# AND v1'S COPY HAD GONE STALE, found by the switch. Compared field by field
+# on 2026-08-08 across 1,035 matched days: T4P has revised 2026-08-03..06
+# upward (injured_cum 11,399 → 11,436, settler_attacks_cum 4,401 → 4,436,
+# displaced_persons_cum 9,420 → 9,442) and carries two days v1 does not have
+# at all. v1 stopped updating this tree around 2026-08-06 — the same class of
+# silent stall as the 57-day casualties freeze, caught this time because
+# fetching directly makes the comparison possible.
+#
+# The three fields v1 added and the transformer never read (`killed`,
+# `injured` — daily deltas it derived — and its own `source` string) are
+# written too, so the tree that replaced it does not read as a different
+# thing.
 
 datasets:                        # law 5: one per (category, source)
   - key: v1_conflict_t4p_westbank
