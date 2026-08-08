@@ -303,3 +303,32 @@ def test_the_release_builder_refuses_an_incompatible_aggregate():
                        capture_output=True, text=True)
     assert r.returncode != 0
     assert "share-alike" in (r.stdout + r.stderr)
+
+
+def test_the_readme_does_not_overstate_the_databank(conn):
+    """A README with numbers in it goes stale silently, and this one is the
+    first thing anyone reads. The EXACT claims are checked; the live Tier-1
+    counters are deliberately rounded there because they grow every few
+    minutes and quoting them precisely guarantees a lie within the hour."""
+    import re
+    from pathlib import Path
+    r = (Path(__file__).resolve().parent.parent / "README.md").read_text()
+    with conn.cursor() as cur:
+        for sql, label in [
+            ("SELECT count(*) FROM observation WHERE upper_inf(sys_period)",
+             "current observations"),
+            ("SELECT count(*) FROM source", "sources"),
+            ("SELECT count(*) FROM databank_serving", "queryable"),
+            ("SELECT count(*) FROM databank_bulk", "exportable"),
+            ("SELECT COALESCE(sum(rows_held),0) FROM v_withheld", "withheld"),
+            ("SELECT count(*) FROM databank_bulk WHERE share_alike",
+             "share-alike"),
+            ("SELECT count(*) FROM databank_internal "
+             "WHERE indicator='martyrs.identified_killed'", "memorial"),
+        ]:
+            cur.execute(sql)
+            assert f"{cur.fetchone()[0]:,}" in r, \
+                f"README's {label} figure is stale"
+    # and the live counters must NOT be quoted exactly
+    assert not re.search(r"1,0\d\d,\d\d\d state observations", r), \
+        "a live-growing counter is quoted exactly; round it"

@@ -58,6 +58,26 @@ from resolve.db import connect                                   # noqa: E402
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "open-release"
 
+# THE MEMORIAL GATE, and why an export needs one the API already has.
+#
+# 73,077 rows are named people: name_ar, name_en, date of birth, age, sex.
+# The licence permits it — Tech4Palestine publishes the roster as public
+# domain precisely so the names are known, and reducing the dead to a number
+# is the erasure this databank exists against.
+#
+# But serve/app.py already decided (2026-08-05) that READING those names
+# should be a deliberate act: /v2/databank/martyrs_snapshot_2023 returns
+# aggregates unless you pass memorial=true, and says so in the response. A
+# bulk CSV in a public repository is a different act from an API that makes
+# you ask — it is scraped, mirrored, indexed, and cannot be withdrawn.
+#
+# So the export honours the same gate. Not because the data is secret, but
+# because the platform made a decision and an export that silently overrides
+# it is the platform disagreeing with itself. --include-memorial is how you
+# make the same deliberate choice the API asks for.
+MEMORIAL_FILTER = ("NOT (v1_category = 'martyrs_snapshot_2023' "
+                   "AND indicator = 'martyrs.identified_killed')")
+
 # A release licence is compatible with the share-alike rows inside it only if
 # it carries the same copyleft. This is deliberately a short, conservative
 # list: guessing that two copyleft licences are compatible is how a project
@@ -73,7 +93,7 @@ COLUMNS = ("occurred_at", "occurred_precision", "indicator", "value_num",
            "share_alike", "redistribution", "attrs")
 
 
-def export_collection() -> int:
+def export_collection(include_memorial: bool = False) -> int:
     """One file per source, each under its own licence. Nothing relicensed.
 
     This is the default because it is the only shape that can hold all of it:
@@ -82,6 +102,7 @@ def export_collection() -> int:
     description of the thing — other people's measurements, kept together
     and credited, rather than a new work claiming a licence of its own.
     """
+    mem_sql = "true" if include_memorial else MEMORIAL_FILTER
     OUT.mkdir(parents=True, exist_ok=True)
     for stale in OUT.glob("by-source/*.csv.gz"):
         stale.unlink()
@@ -91,7 +112,7 @@ def export_collection() -> int:
         cur.execute("SELECT DISTINCT source_key FROM databank_bulk ORDER BY 1")
         for (key,) in cur.fetchall():
             cur.execute(f"SELECT {', '.join(COLUMNS)} FROM databank_bulk "
-                        "WHERE source_key = %s "
+                        f"WHERE source_key = %s AND {mem_sql} "
                         "ORDER BY v1_category, indicator, occurred_at", (key,))
             rows = cur.fetchall()
             buf = io.StringIO()
@@ -124,7 +145,7 @@ def export_collection() -> int:
                  "incompatible copylefts (ODbL, CC-BY-SA, CC-BY-NC-SA) live "
                  "here and no single aggregate licence can hold them.",
          "files": manifest}, indent=1, ensure_ascii=False))
-    _write_withheld(withheld, total)
+    _write_withheld(withheld, total, include_memorial)
     sa = [m for m in manifest if m["share_alike"]]
     print(f"  by-source/            {len(manifest)} files, {total:,} rows")
     print(f"  manifest.json         each file under its own licence")
@@ -137,7 +158,8 @@ def export_collection() -> int:
     return 0
 
 
-def _write_withheld(withheld, n_released: int) -> None:
+def _write_withheld(withheld, n_released: int,
+                    include_memorial: bool = False) -> None:
     stamp = f"{datetime.now(timezone.utc):%Y-%m-%d}"
     (OUT / "WITHHELD.md").write_text("\n".join([
         "# What this release does not contain", "",
@@ -157,6 +179,22 @@ def _write_withheld(withheld, n_released: int) -> None:
         "Generated from the database, not maintained by hand. If a permission "
         "arrives the rows appear in the next release and leave this page "
         "automatically.", "",
+        *([] if include_memorial else [
+            "## The memorial roster", "",
+            "**73,077 named records are also absent** — every identified "
+            "person killed, with name, date of birth, age and sex. The "
+            "licence permits publishing them: Tech4Palestine releases the "
+            "roster as public domain precisely so the names are known, and "
+            "reducing the dead to a number is the erasure this record exists "
+            "against.", "",
+            "They are held back from the FILE because the API already "
+            "decided that reading them should be a deliberate act — "
+            "`/v2/databank/martyrs_snapshot_2023` returns aggregates unless "
+            "you pass `memorial=true`. A bulk CSV in a public repository is "
+            "a different act from an API that makes you ask: it is scraped, "
+            "mirrored, indexed, and cannot be withdrawn. The aggregate "
+            "totals are included; `--include-memorial` includes the names, "
+            "and is meant to be the same deliberate choice.", ""]),
     ]))
 
 
@@ -165,10 +203,11 @@ def main(argv: list[str]) -> int:
     if "--license" in argv:
         lic = argv[argv.index("--license") + 1]
     drop_sa = "--exclude-share-alike" in argv
+    include_memorial = "--include-memorial" in argv
     collection = not lic
 
     if collection:
-        return export_collection()
+        return export_collection(include_memorial)
 
     with connect() as conn, conn.cursor() as cur:
         cur.execute("""SELECT license_spdx, count(*) FROM databank_bulk
@@ -192,7 +231,9 @@ def main(argv: list[str]) -> int:
                     ", or pass --exclude-share-alike to leave those rows out "
                     "(and lose the entire Mandate-era gazetteer).")
 
-        where = "WHERE NOT share_alike" if drop_sa else ""
+        clauses = ([] if include_memorial else [MEMORIAL_FILTER]) \
+            + (["NOT share_alike"] if drop_sa else [])
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
         cur.execute(f"SELECT {', '.join(COLUMNS)} FROM databank_bulk {where} "
                     "ORDER BY v1_category, indicator, occurred_at")
         rows = cur.fetchall()
@@ -247,6 +288,9 @@ def main(argv: list[str]) -> int:
         "Every row carries its source and that source's licence. See "
         "`WITHHELD.md` for what is deliberately absent and why — the export "
         "is never quietly short.", "",
+        ("" if include_memorial else
+         "The 73,077 named memorial records are NOT in this release; see "
+         "`WITHHELD.md`. Their aggregate totals are."), "",
         "## Credit where it is owed", "",
         *[f"- **{n}** — `{l}`  \n  {a}" + (f"  \n  <{u}>" if u else "")
           for n, l, a, u in credits],
