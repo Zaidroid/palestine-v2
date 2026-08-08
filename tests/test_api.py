@@ -73,6 +73,13 @@ CASES: dict[str, list[dict]] = {
     "/v2/databank/categories":  [{}],
     "/v2/databank/radar":       [{}],
     "/v2/databank/licenses":    [{}],
+    "/v2/databank/concepts":    [{}],
+    "/v2/databank/indicators":  [{}, {"concept": "food.price"}],
+    "/v2/databank/compare":     [{"indicators":
+                                  "food.price.bread,food.price.sugar"}],
+    "/v2/databank/correlate":   [{"a": "food.price.bread",
+                                  "b": "food.price.oil_olive",
+                                  "allow_same_concept": "true"}],
     "/v2/databank/scout":       [{}],
     # as_of exercises the sys_period path — the value it returns for July is
     # asserted exactly in test_databank_asof_serves_superseded_value.
@@ -320,6 +327,10 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/databank/categories": "databank",
         "/v2/databank/{category}": "databank",
         "/v2/databank/licenses": "licenses",
+        "/v2/databank/concepts": "correlate",
+        "/v2/databank/indicators": "correlate",
+        "/v2/databank/compare": "correlate",
+        "/v2/databank/correlate": "correlate",
         "/v2/databank/radar": "data_gaps",
         "/v2/databank/scout": "data_gaps",
     }
@@ -458,8 +469,17 @@ def test_westbank_cumulative_series_is_served_and_sellable() -> None:
     assert latest["value_num"] >= 1108          # monotonic cumulative
     # attribution is response-level (the set of source credits), not per row
     assert any("Tech4Palestine" in a for a in r.json()["attribution"])
-    assert all(i["attrs"].get("flash_source") in ("un", "fill")
-               for i in items[:20])
+    # `flash_source` is a property of the conflict_westbank spec's rows (the
+    # raw T4P tree), NOT of the indicator. Since 2026-08-08 this series has a
+    # second feeder: t_conflict used to file West Bank daily figures under the
+    # Gaza indicator, and now files them here where they belong — those rows
+    # come from the unified corpus and carry no flash_source. Two datasets
+    # contributing one indicator is correct and is exactly what
+    # v_flow partitions by, so the assertion is scoped to the dataset that
+    # makes the claim rather than to every row of the series.
+    flash = [i for i in items if "flash_source" in (i["attrs"] or {})]
+    assert flash, "the raw-tree feeder is gone"
+    assert all(i["attrs"]["flash_source"] in ("un", "fill") for i in flash)
 
 def test_water_is_a_domain_one_fact_served_once() -> None:
     """The water recovery (2026-08-06): the category serves its own dataset

@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -1771,6 +1771,201 @@ def databank_licenses() -> dict:
             "earlier registry. Gate G5.11 fails while any commercial source "
             "is in that state.",
         "permissions_pending": pending,
+    }
+
+
+@app.get("/v2/databank/concepts", tags=["databank"])
+def databank_concepts() -> dict:
+    """What the databank measures, as a reviewed taxonomy rather than 1,408
+    free-text strings. Start here when you do not know what exists."""
+    rows = q("""
+        SELECT c.key, c.parent, c.name_en, c.name_ar, c.definition,
+               count(DISTINCT i.indicator) AS indicators,
+               COALESCE(sum(x.n), 0)       AS rows_served
+        FROM concept c
+        LEFT JOIN indicator_def i ON i.concept_key = c.key
+        LEFT JOIN (SELECT indicator, count(*) AS n FROM databank_serving
+                   GROUP BY 1) x ON x.indicator = i.indicator
+        GROUP BY 1,2,3,4,5 ORDER BY 7 DESC, 1""")
+    return {"concepts": rows,
+            "note": "A concept with 0 rows is a declared gap, not an error — "
+                    "energy.supply is there because the absence is the point."}
+
+
+@app.get("/v2/databank/indicators", tags=["databank"])
+def databank_indicators(concept: str | None = None, q_: str | None = None,
+                        measure_kind: str | None = None,
+                        limit: int = 100) -> dict:
+    """Find a series without knowing its string.
+
+    THE endpoint for "I don't know the indicator name". 1,408 of them exist
+    and most are WHO or World Bank codes that nobody can guess.
+    """
+    where, params = ["1=1"], {}
+    if concept:
+        where.append("(i.concept_key = %(c)s OR c.parent = %(c)s)")
+        params["c"] = concept
+    if q_:
+        where.append("(i.indicator ILIKE %(q)s OR i.name_en ILIKE %(q)s)")
+        params["q"] = f"%{q_}%"
+    if measure_kind:
+        where.append("i.measure_kind = %(k)s")
+        params["k"] = measure_kind
+    params["lim"] = min(limit, 500)
+    rows = q(f"""
+        SELECT i.indicator, i.concept_key, i.measure_kind, i.polarity,
+               i.canonical_unit, i.grain, i.place_grain, i.notes,
+               x.n AS rows_served, x.from_date, x.to_date
+        FROM indicator_def i
+        LEFT JOIN concept c ON c.key = i.concept_key
+        JOIN (SELECT indicator, count(*) n, min(occurred_at)::date from_date,
+                     max(occurred_at)::date to_date
+              FROM databank_serving GROUP BY 1) x ON x.indicator = i.indicator
+        WHERE {' AND '.join(where)}
+        ORDER BY x.n DESC LIMIT %(lim)s""", params)
+    return {"indicators": rows, "count": len(rows),
+            "note": "measure_kind governs what may be done with a series: a "
+                    "cumulative one must be differenced through /v2/databank/"
+                    "flow before it is compared to anything."}
+
+
+def _series(indicator: str, place_id: int | None, frm: str | None,
+            to: str | None) -> dict:
+    where = ["v.indicator = %(i)s"]
+    params: dict = {"i": indicator}
+    if place_id is not None:
+        where.append("v.place_id = %(p)s")
+        params["p"] = place_id
+    if frm:
+        where.append("v.occurred_at >= %(f)s")
+        params["f"] = frm
+    if to:
+        where.append("v.occurred_at <= %(t)s")
+        params["t"] = to
+    pts = q(f"""SELECT v.occurred_at::date AS at, v.occurred_precision AS prec,
+                       COALESCE(v.value_canonical, v.value_num) AS value,
+                       COALESCE(v.canonical_unit, v.unit) AS unit,
+                       v.source_name, v.attribution_text
+                FROM v_observation_canonical v
+                WHERE {' AND '.join(where)} ORDER BY 1""", params)
+    meta = q("""SELECT concept_key, measure_kind, polarity, grain, place_grain,
+                       canonical_unit
+                FROM indicator_def WHERE indicator = %(i)s""",
+             {"i": indicator})
+    m = meta[0] if meta else {"concept_key": None, "measure_kind": None,
+                              "polarity": None, "grain": None,
+                              "place_grain": None, "canonical_unit": None}
+    return {**m, "known": bool(meta), "indicator": indicator,
+            "points": pts, "n": len(pts),
+            "source_names": {p["source_name"] for p in pts},
+            "attribution": sorted({p["attribution_text"] for p in pts
+                                   if p["attribution_text"]})}
+
+
+@app.get("/v2/databank/compare", tags=["databank"])
+def databank_compare(indicators: str, place_id: int | None = None,
+                     frm: str | None = None, to: str | None = None) -> dict:
+    """N series side by side, each keeping its own unit and attribution.
+
+    Deliberately does NOT rescale anything to a common axis. Two series with
+    different units on one axis is a chart that lies; the caller gets the
+    numbers, the units, the native grain and the overlap window, and decides.
+    """
+    keys = [s.strip() for s in indicators.split(",") if s.strip()][:6]
+    if len(keys) < 2:
+        raise HTTPException(422, "pass at least two indicators, comma-separated")
+    series = [_series(k, place_id, frm, to) for k in keys]
+    dated = [{p["at"] for p in s["points"]} for s in series if s["points"]]
+    overlap = set.intersection(*dated) if len(dated) == len(series) else set()
+    return {
+        "series": [{k: v for k, v in s.items() if k != "source_names"}
+                   for s in series],
+        "overlap": {"from": min(overlap).isoformat() if overlap else None,
+                    "to": max(overlap).isoformat() if overlap else None,
+                    "n": len(overlap)},
+        "note": "Nothing here is rescaled to a shared axis. Each series keeps "
+                "its own unit, its own grain and its own attribution — "
+                "plotting two units on one axis is a chart that lies.",
+    }
+
+
+@app.get("/v2/databank/correlate", tags=["databank"])
+def databank_correlate(a: str, b: str, place_id: int | None = None,
+                       frm: str | None = None, to: str | None = None,
+                       method: str = "spearman", max_lag: int = 0,
+                       allow_same_concept: bool = False) -> dict:
+    """Whether two series move together — or an explanation of why asking is
+    the wrong question.
+
+    Every refusal below returns a REASON and no number. A coefficient with a
+    warning stapled to it gets quoted without the warning.
+    """
+    from serve import correlate as C
+    sa, sb = _series(a, place_id, frm, to), _series(b, place_id, frm, to)
+    # Three different absences, three different answers. Conflating them
+    # sends the caller to fix a spec when they made a typo, or to widen a
+    # date range when the series was never there.
+    unknown = [k for k, s in ((a, sa), (b, sb)) if not s["known"]]
+    if unknown:
+        return {"refused": True, "a": a, "b": b, "reasons": [
+            f"no series named {k!r} — search /v2/databank/indicators?q= to "
+            "find the right string." for k in unknown]}
+    empty = [k for k, s in ((a, sa), (b, sb)) if not s["points"]]
+    if empty:
+        window = " in the requested window" if (frm or to) else ""
+        where = f" at place_id {place_id}" if place_id else ""
+        return {"refused": True, "a": a, "b": b, "reasons": [
+            f"{k} exists but has no points{where}{window}." for k in empty]}
+    stop = C.check_comparable(sa, sb)
+    if allow_same_concept:
+        stop = [s for s in stop if "both series are" not in s]
+    if stop:
+        return {"refused": True, "reasons": stop,
+                "a": a, "b": b,
+                "note": "No coefficient is returned. These refusals are hard "
+                        "by design — a number with a caveat attached gets "
+                        "quoted without the caveat."}
+    by_a = {p["at"]: p for p in sa["points"]}
+    by_b = {p["at"]: p for p in sb["points"]}
+    best = None
+    for lag in range(-abs(max_lag), abs(max_lag) + 1):
+        pairs = []
+        for at, pa in by_a.items():
+            shifted = at + timedelta(days=lag) if lag else at
+            pb = by_b.get(shifted)
+            if pb and pa["value"] is not None and pb["value"] is not None \
+                    and pa["prec"] not in C.UNUSABLE_PRECISION \
+                    and pb["prec"] not in C.UNUSABLE_PRECISION:
+                pairs.append((pa["value"], pb["value"], at, pa["prec"],
+                              pb["prec"]))
+        if len(pairs) < C.MIN_N:
+            continue
+        xs = [p[0] for p in pairs]
+        ys = [p[1] for p in pairs]
+        rho = (C.spearman(xs, ys) if method == "spearman"
+               else C.pearson(xs, ys))
+        if rho is not None and (best is None or abs(rho) > abs(best[0])):
+            best = (rho, lag, pairs)
+    if best is None:
+        usable = sum(1 for at in by_a
+                     if at in by_b
+                     and by_a[at]["prec"] not in C.UNUSABLE_PRECISION)
+        return {"refused": True, "a": a, "b": b, "reasons": [
+            f"only {usable} usable overlapping point(s); {C.MIN_N} are "
+            "required. Points are excluded when either side carries "
+            "'unknown' precision — that date is v1's fetch stamp, not an "
+            "event date (law 1)."]}
+    rho, lag, pairs = best
+    ci = C.fisher_ci(rho, len(pairs))
+    return {
+        "refused": False, "a": a, "b": b, "method": method,
+        "rho": round(rho, 4), "n": len(pairs), "lag_days": lag,
+        "ci95": [round(ci[0], 4), round(ci[1], 4)] if ci else None,
+        "overlap": {"from": min(p[2] for p in pairs).isoformat(),
+                    "to": max(p[2] for p in pairs).isoformat()},
+        "plain_english": C.describe(rho, sa, sb),
+        "caveats": C.caveats(sa, sb, pairs, lag),
+        "attribution": sorted(set(sa["attribution"]) | set(sb["attribution"])),
     }
 
 

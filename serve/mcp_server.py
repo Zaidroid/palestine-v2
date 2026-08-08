@@ -578,6 +578,52 @@ def can_i_travel(origin: str, destination: str) -> dict:
                       "never block and are always named"}
 
 
+def correlate(a: str | None = None, b: str | None = None,
+              concept: str | None = None, search: str | None = None,
+              place_id: int | None = None, max_lag: int = 0,
+              allow_same_concept: bool = False) -> dict:
+    """Do two series move together — or why that is the wrong question.
+
+    Three modes in one tool, because an agent almost never knows the
+    indicator string it needs:
+      no arguments        → the concept taxonomy
+      `search` / `concept`→ find the series
+      `a` and `b`         → the correlation, or a REFUSAL with reasons
+
+    The refusals are the valuable part. Correlating two cumulative tolls
+    returns ~1.0 and measures the passage of time; the tool declines rather
+    than handing an agent a number it will quote.
+    """
+    if a and b:
+        d = api("/v2/databank/correlate", a=a, b=b, place_id=place_id,
+                max_lag=max_lag,
+                allow_same_concept="true" if allow_same_concept else "false")
+        if d.get("refused"):
+            return {"answer": "لا يمكن حساب الارتباط: " + " ".join(
+                        r.split("—")[0] for r in d["reasons"])[:300],
+                    "refused": True, "reasons": d["reasons"],
+                    "caveat": "This is a hard refusal, not a warning. Do not "
+                              "report a coefficient for this pair."}
+        return {"answer": (f"{d['plain_english']} — n={d['n']}"
+                           + (f", lag {d['lag_days']}d" if d["lag_days"] else "")
+                           + f", 95% CI {d['ci95']}."),
+                **d}
+    if search or concept:
+        d = api("/v2/databank/indicators", q_=search, concept=concept, limit=25)
+        inds = d["indicators"]
+        return {"answer": (f"{len(inds)} series matched: "
+                           + "، ".join(i["indicator"] for i in inds[:6])),
+                "indicators": inds}
+    d = api("/v2/databank/concepts")
+    top = [c for c in d["concepts"] if c["rows_served"]][:8]
+    return {"answer": "أكبر المفاهيم في بنك المعلومات: " + "، ".join(
+                f"{c['name_ar'] or c['name_en']} ({int(c['rows_served']):,})"
+                for c in top),
+            "concepts": d["concepts"],
+            "how_to_use": "Pass `search` or `concept` to find indicator "
+                          "strings, then `a` and `b` to correlate them."}
+
+
 def licenses(source: str | None = None) -> dict:
     """Who owns the data, and what each licence obliges.
 
@@ -686,6 +732,26 @@ def data_gaps() -> dict:
 
 
 TOOLS = {
+    "correlate": (correlate,
+                  "Concepts, indicator search, and correlation between two "
+                  "series. Call with nothing to see what the databank "
+                  "measures; with `search`/`concept` to find an indicator "
+                  "string; with `a` and `b` to correlate. REFUSES rather "
+                  "than returning a misleading number — two cumulative "
+                  "tolls correlate at ~1.0 and that measures time, not a "
+                  "relationship.",
+                  {"type": "object", "properties": {
+                      "a": {"type": "string", "description": "first indicator"},
+                      "b": {"type": "string", "description": "second indicator"},
+                      "concept": {"type": "string",
+                                  "description": "filter the search by concept"},
+                      "search": {"type": "string",
+                                 "description": "substring of an indicator"},
+                      "place_id": {"type": "integer"},
+                      "max_lag": {"type": "integer",
+                                  "description": "days to scan for a lagged "
+                                                 "fit; adds a caveat"},
+                      "allow_same_concept": {"type": "boolean"}}}),
     "licenses": (licenses,
                  "Who owns the databank's data and what each licence "
                  "obliges: the open / commercial-permissive / "
