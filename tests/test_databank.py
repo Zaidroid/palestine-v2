@@ -343,3 +343,52 @@ def test_water_gho_prefers_numeric_and_drops_unparseable():
     out = databank.t_water_gho(_gho_rec(Value="No data"), spec, PLACES,
                                Counter())
     assert isinstance(out, Drop) and out.reason == "no_value"
+
+
+# ── Stage 7: the frozen corpora ──────────────────────────────────────────────
+
+FROZEN_CATEGORIES = ("aid_access", "casualties", "demolitions", "education",
+                     "historical", "infrastructure")
+
+
+def test_frozen_specs_read_this_repository_not_v1() -> None:
+    """The first half of the v1 cut. These corpora are finished — measured by
+    ops/v1_liveness.py as content-identical across all 38 vaulted days once
+    v1's own churn is removed — so they are carried here and v1 is never
+    consulted for them again."""
+    from ingest.databank import load_spec
+    for cat in FROZEN_CATEGORIES:
+        spec = load_spec(cat)
+        assert spec.get("cadence") == "frozen", f"{cat}: not marked frozen"
+        assert spec["input"]["root"] == "data/frozen", f"{cat}: {spec['input']}"
+
+
+def test_the_unplug_test_frozen_categories_survive_v1_disappearing(
+        monkeypatch) -> None:
+    """The criterion the plan set for the cut, run for real: rename v1's tree
+    and see what still works. A frozen category that still reaches for
+    /opt/stacks/palestine is not frozen, it is merely quiet."""
+    from pathlib import Path
+    import ingest.databank as db
+    monkeypatch.setattr(db, "V1_UNIFIED", Path("/nonexistent/v1-is-gone"))
+    for cat in FROZEN_CATEGORIES:
+        report = db.run(cat, dry_run=True)
+        assert report["records_read"] > 0, f"{cat} read nothing without v1"
+
+
+def test_every_frozen_corpus_matches_its_recorded_hash() -> None:
+    """A frozen corpus that changes is a contradiction, and a copy nobody
+    can audit is just a stale file. The manifest carries a sha256 of the
+    uncompressed bytes and the row count that produced it."""
+    import gzip
+    import hashlib
+    import json
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "data" / "frozen"
+    manifest = json.loads((root / "manifest.json").read_text())
+    assert manifest, "no frozen corpora recorded"
+    for cat, m in manifest.items():
+        raw = gzip.decompress((root / m["file"]).read_bytes())
+        assert hashlib.sha256(raw).hexdigest() == m["sha256_uncompressed"], cat
+        assert len(json.loads(raw)["data"]) == m["records"], cat
+        assert m["evidence"], f"{cat}: frozen with no evidence recorded"

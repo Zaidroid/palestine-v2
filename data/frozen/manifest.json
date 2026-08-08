@@ -1,0 +1,79 @@
+{
+ "aid_access": {
+  "bytes_gzipped": 2338448,
+  "bytes_uncompressed": 96051562,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "aid_access.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 50059,
+  "sha256_uncompressed": "5ac74d660955fc7059735c22456756ad8b01879ed872fc4b0ec6f853ff955384",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/aid_access/all-data.json",
+  "why": "UNRWA Gaza aid-truck consignments. Upstream stopped; un2720 is the live successor (see verdicts.yaml)."
+ },
+ "casualties": {
+  "bytes_gzipped": 4224,
+  "bytes_uncompressed": 81338,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "casualties.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 49,
+  "sha256_uncompressed": "6228c714e9e61fbdb0e0d31344193cc17ee0aba6ff1f2e72b64dc88c68dc3efd",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/casualties/all-data.json",
+  "why": "OCHA oPt casualty aggregates. Static since 2026-01."
+ },
+ "demolitions": {
+  "bytes_gzipped": 40538,
+  "bytes_uncompressed": 847726,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "demolitions.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 534,
+  "sha256_uncompressed": "53f9bac470b0f5272d174dea748f5489668ec6c9439fdc9b88ac0491a805b0ba",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/demolitions/all-data.json",
+  "why": "OCHA oPt demolition register. Static."
+ },
+ "education": {
+  "bytes_gzipped": 238527,
+  "bytes_uncompressed": 4533829,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "education.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 2359,
+  "sha256_uncompressed": "a0fe751f55c0fa565441d2fafa6765a6dbdba19097bb8b69472e386241722634",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/education/all-data.json",
+  "why": "West Bank school register (OCHA oPt via HDX). A register, not a series \u2014 2,359 rows, unchanged."
+ },
+ "historical": {
+  "bytes_gzipped": 234349,
+  "bytes_uncompressed": 5150215,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "historical.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 2517,
+  "sha256_uncompressed": "396f3a6e7ad85814bed1bd1aa1177d38e3b436281f522610c4a747734300fc68",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/historical/all-data.json",
+  "why": "Palestine Open Maps Mandate-era gazetteer and the 1922-1947 record. Closed by definition."
+ },
+ "infrastructure": {
+  "bytes_gzipped": 170369,
+  "bytes_uncompressed": 6766354,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "infrastructure.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 3537,
+  "sha256_uncompressed": "9bdc253b69dd3a15fddfa1caa64c086edc0505378aa29e23e1d74ae4648dfec2",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/infrastructure/all-data.json",
+  "why": "Barrier segments, locality records and UNOSAT damage assessments. Static."
+ },
+ "westbank": {
+  "bytes_gzipped": 272778,
+  "bytes_uncompressed": 5514553,
+  "evidence": "ops/v1_liveness.py, 2026-08-08: content identical across all 38 vaulted days with v1's own churn fields removed (stable_id, sources, date, temporal_context, location).",
+  "file": "westbank.json.gz",
+  "frozen_at": "2026-08-08",
+  "records": 2962,
+  "sha256_uncompressed": "f875f571ed8f39646445f6c5361ce4a85c1c6240e37a2af393d379db12a6a8e6",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/westbank/all-data.json",
+  "why": "migrate:false (duplicates education), frozen for completeness so no category still reads v1 by accident."
+ }
+}

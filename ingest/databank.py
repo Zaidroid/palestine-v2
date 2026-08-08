@@ -106,12 +106,27 @@ def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
     return "|".join(parts)
 
 
+def read_payload(f: Path) -> bytes:
+    """A frozen corpus is gzipped; a v1 file is not. One reader for both.
+
+    Stage 7 freezes finished categories into data/frozen/<cat>.json.gz — 92 MB
+    of aid_access becomes 2.5 MB, which is the difference between a corpus
+    this repository can carry and one only its author can reach.
+    """
+    b = f.read_bytes()
+    return gzip.decompress(b) if b[:2] == b"\x1f\x8b" else b
+
+
 def iter_v1_files(category: str, spec: dict | None = None):
     # Format v2 `input:` — a spec may read a v1 RAW tree instead of the
     # unified category (first user: conflict_westbank, whose cumulative
-    # fields v1's unified transform destroys). Still strictly read-only.
+    # fields v1's unified transform destroys), or a FROZEN corpus in this
+    # repository (Stage 7). Relative roots resolve against the repo, so a
+    # frozen spec works from any working directory and on any machine.
     if spec and spec.get("input"):
         root = Path(spec["input"]["root"])
+        if not root.is_absolute():
+            root = ROOT / root
         for f in sorted(root.glob(spec["input"]["glob"])):
             if f.name not in ("index.json", "recent.json"):
                 yield f
@@ -1289,10 +1304,10 @@ def transform_all(category: str, spec: dict, places: dict, counts: Counter,
         # detection) needs the whole category before the first transform
         all_recs = []
         for f in iter_v1_files(category, spec):
-            all_recs.extend(_records(json.loads(f.read_bytes())))
+            all_recs.extend(_records(json.loads(read_payload(f))))
         transformer.prepass(all_recs, spec, counts)
     for f in iter_v1_files(category, spec):
-        payload = f.read_bytes()
+        payload = read_payload(f)
         for rec in _records(json.loads(payload)):
             if not isinstance(rec, dict):
                 counts["not_a_dict"] += 1
@@ -1446,7 +1461,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                         json.dumps(met, sort_keys=True)]))
         for f, r in transform_all(category, spec, places, counts, drops):
             if f not in refs:
-                refs[f] = bronze.put(f"v1_{category}", f.read_bytes(),
+                refs[f] = bronze.put(f"v1_{category}", read_payload(f),
                                      url=f"file://{f}").ref
             if r.v1_stable_id in seen_stable:
                 counts["deduped"] += 1

@@ -223,8 +223,14 @@ _k("v1_category", "enforced",
    "conflict), which category's views its datasets join", types=(str,))
 
 # -- input -------------------------------------------------------------------
-_k("input", "enforced", "read a v1 RAW tree instead of the unified category",
-   types=(dict,))
+_k("input", "enforced",
+   "read somewhere other than v1's unified category: a v1 RAW tree, or a "
+   "FROZEN corpus in this repository. A relative root resolves against the "
+   "repo, so a frozen spec works on any machine", types=(dict,))
+_k("cadence", "enforced",
+   "`frozen` means the corpus is finished and read locally — measured by "
+   "ops/v1_liveness.py, not assumed", types=(str,),
+   values=("frozen", "daily", "weekly", "monthly", "annual", "irregular"))
 _k("input.root", "enforced", "absolute path, strictly read-only", types=(str,))
 _k("input.glob", "enforced", "index.json/recent.json always excluded",
    types=(str,))

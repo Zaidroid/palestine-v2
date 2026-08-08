@@ -122,6 +122,26 @@ expect:
                                  #   new fact — which the injectivity check
                                  #   structurally cannot see.
 
+# ── FROZEN 2026-08-08 (Stage 7, the v1 cut) ─────────────────────────────────
+# This corpus is finished. ops/v1_liveness.py measured its content unchanged
+# across all 38 vaulted days — identical at both ends and every sample
+# between — once v1's own churn is removed (its re-derived stable_id, its
+# ingest stamp, its flapping geo enrichment). v1 rewrote the file nightly and
+# changed nothing a publisher said.
+#
+# So it is read from THIS REPOSITORY now, not from /opt/stacks/palestine. The
+# id re-hash, the geo flap and the silent stall stop being risks this
+# category is guarded against and become risks it cannot have. And a fresh
+# clone can load it, which is the difference between open-source code and an
+# open-source project.
+#
+# To unfreeze: delete this block and the `cadence`, and re-measure with
+# ops/v1_liveness.py first — a corpus that started moving again is a finding.
+input:
+  root: data/frozen
+  glob: infrastructure.json.gz
+cadence: frozen
+
 notes: |
   FOUR SUB-DATASETS, MEASURED. event_type × source is 1:1 except that HDX
   supplies two of them:
