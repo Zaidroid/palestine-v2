@@ -43,6 +43,17 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/education/all-data.json",
   "why": "West Bank school register (OCHA oPt via HDX). A register, not a series \u2014 2,359 rows, unchanged."
  },
+ "health": {
+  "bytes_gzipped": 1358774,
+  "bytes_uncompressed": 21369378,
+  "evidence": "ops/evidence.open_snapshot: content hash 255e857ee3103ebc identical on 2026-08-09, -10 and -11 with V1_VOLATILE stripped; 12,712 records matching the loader's last green run.",
+  "file": "health.json.gz",
+  "frozen_at": "2026-08-11",
+  "records": 12712,
+  "sha256_uncompressed": "268635290f8517ed2582a6837ac11a4088e479322581cc8f7ce96d0bf123608b",
+  "v1_path": "RECOVERED FROM THE VAULT \u2014 v1 deleted health/all-data.json between 2026-08-09 and 2026-08-10",
+  "why": "INTERIM, not a finished corpus: v1's decaying rebuild deleted its own serving file and left only stale June partitions (40,559 rows, each record ~3x, an old generation whose values would land as phantom new identities). The vault's snapshot is the last good generation and is byte-stable across 2026-08-09..11 with v1's churn removed. Replaced by a direct WHO GHO fetcher when health is cut properly."
+ },
  "historical": {
   "bytes_gzipped": 234349,
   "bytes_uncompressed": 5150215,

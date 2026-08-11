@@ -32,8 +32,8 @@
  },
  "v1_conflict_tech4palestine": {
   "collisions": 2,
-  "distinct_keys": 2072,
-  "rows": 2074,
+  "distinct_keys": 2078,
+  "rows": 2080,
   "superseded_duplicates": 2
  },
  "v1_conflict_ucdp": {
@@ -58,8 +58,8 @@
  },
  "v1_demolitions_ocha_demolitions": {
   "collisions": 0,
-  "distinct_keys": 847,
-  "rows": 847
+  "distinct_keys": 904,
+  "rows": 904
  },
  "v1_economic_imf": {
   "collisions": 0,
@@ -83,13 +83,13 @@
  },
  "v1_food_wfp": {
   "collisions": 0,
-  "distinct_keys": 26814,
-  "rows": 26814
+  "distinct_keys": 27168,
+  "rows": 27168
  },
  "v1_funding_unfts": {
   "collisions": 0,
-  "distinct_keys": 9991,
-  "rows": 9991
+  "distinct_keys": 9992,
+  "rows": 9992
  },
  "v1_health_gaza_moh": {
   "collisions": 0,
@@ -133,8 +133,8 @@
  },
  "v1_land_goodshepherd": {
   "collisions": 0,
-  "distinct_keys": 237,
-  "rows": 237
+  "distinct_keys": 241,
+  "rows": 241
  },
  "v1_land_ocha": {
   "collisions": 0,
@@ -148,8 +148,8 @@
  },
  "v1_martyrs_snapshot_2023_tech4palestine": {
   "collisions": 0,
-  "distinct_keys": 73080,
-  "rows": 73080
+  "distinct_keys": 73082,
+  "rows": 73082
  },
  "v1_pcbs_pcbs": {
   "collisions": 0,
@@ -167,9 +167,10 @@
   "rows": 864
  },
  "v1_refugees_idmc": {
-  "collisions": 0,
+  "collisions": 331,
   "distinct_keys": 333,
-  "rows": 333
+  "rows": 664,
+  "superseded_duplicates": 331
  },
  "v1_refugees_unhcr": {
   "collisions": 0,
@@ -177,9 +178,10 @@
   "rows": 1157
  },
  "v1_refugees_unrwa": {
-  "collisions": 0,
+  "collisions": 1,
   "distinct_keys": 90,
-  "rows": 90
+  "rows": 91,
+  "superseded_duplicates": 1
  },
  "v1_settlements_peace_now": {
   "collisions": 0,

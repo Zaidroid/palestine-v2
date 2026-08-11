@@ -37,6 +37,13 @@ rc=$?
 # this the as_of proof would freeze at v1's last 38 days forever.
 .venv/bin/python -m ops.snapshot_inputs || echo "snapshot-inputs failed — as_of evidence did not grow tonight" >&2
 
+# Hot-copy any NEW days from v1's snapshot archive into the vault. Idempotent
+# (sha-skips what it holds) and cheap after the first run — but never wired
+# into the nightly until 2026-08-11, when the vault was found three days
+# behind and a test caught it. While v1's archive still writes days, each one
+# is as_of evidence; when v1 finally stops, the vault simply stops growing.
+.venv/bin/python -m ops.vault_snapshots || echo "vault hot-copy failed — new v1 snapshot days not preserved tonight" >&2
+
 # The gap radar re-measures after every sync: freshness on the data's own
 # dates, holes, era coverage, fetch-layer health → data/gap-radar.json
 # (served at /v2/databank/radar; Monday's maintenance run reads it).

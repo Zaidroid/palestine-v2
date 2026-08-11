@@ -12,6 +12,26 @@
 # event_type is uniformly 'health_indicator' and carries no information.
 category: health
 transform: python:t_health
+
+# INPUT RECOVERED FROM THE VAULT, 2026-08-11. Between 2026-08-09 and -10,
+# v1's decaying rebuild DELETED its own health/all-data.json — its
+# databank-* steps have failed ~30 consecutive nights and the rot has now
+# reached the serving files themselves. The loader silently fell back to
+# partitions/, which are a STALE JUNE GENERATION (40,559 rows, each record
+# ~3x): on 2026-08-10 that tripped the identity invariant (22,463
+# collisions), which is the guard doing its job — reading them today would
+# also inject ~2,487 phantom identities from old readings the databank has
+# since superseded.
+#
+# The vault's snapshot is the last good generation, byte-stable across
+# 2026-08-09..11 with v1's churn stripped (hash 255e857ee3103ebc), so it is
+# frozen into the repo as an INTERIM input. Not a finished corpus: WHO GHO
+# is a live upstream and the real fix is a direct fetcher (the
+# ops/fetch_gho_wash.py pattern, 184 indicator codes) when health is cut in
+# Stage 7. Until then this reads exactly what the last green nightly read.
+input:
+  root: data/frozen
+  glob: health.json.gz
 shape: observation
 status: reviewed
 records_measured: 40559

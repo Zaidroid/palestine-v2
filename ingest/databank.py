@@ -113,6 +113,29 @@ def _instant(v) -> str | None:
     return d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
+def content_of(*, value_num, value_text, unit, place_id, attrs) -> str:
+    """What a row SAYS, as one comparable string. Identity is what a row is.
+
+    The pair is what makes "corrections supersede" implementable. Identity
+    alone can only answer "do we already hold this?", and answering yes made
+    the loader skip a publisher's CORRECTION as if it were a re-fetch: OONI
+    revised eight days' measurement counts upward and the databank kept the
+    old numbers, silently, while reporting a clean run.
+
+    Rendered here rather than in SQL, and from the same normalisation on both
+    sides, for the reason identity_key_for's docstring gives: `value_num` is a
+    double, so Python's repr and numeric::text disagree, and a fingerprint
+    that disagrees with itself turns every row into a false revision — which
+    would supersede and re-insert the whole databank in one night.
+    """
+    return json.dumps({
+        "v": None if value_num is None else float(value_num),
+        "t": value_text, "u": unit,
+        "p": None if place_id is None else int(place_id),
+        "a": attrs or {},
+    }, sort_keys=True, ensure_ascii=False, default=str)
+
+
 def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
                      place_id, value_num, attrs) -> str:
     """The ONE renderer for a row's declared identity.
@@ -126,11 +149,19 @@ def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
     """
     parts = [dataset_key]
     for f in ident.get("fields", []):
+        # value_num is a DOUBLE in the database, so a stored key always spells
+        # it as a float — while a fresh key renders whatever JSON parsed,
+        # which is int 333 where the column reads back 333.0. str() of those
+        # differ, the guard compares a key against itself and loses, and 044's
+        # stable-id conflict masked it right up until v1 re-hashed: health
+        # then read 2,487 integral values as brand-new identities. Third
+        # spelling of the same bug this docstring already names twice.
         v = {"indicator": indicator,
              "occurred_at": str(occurred_at)[:10],
              "occurred_at_exact": _instant(occurred_at),
              "place_id": place_id,
-             "value_num": value_num}[f]
+             "value_num": None if value_num is None
+             else float(value_num)}[f]
         parts.append("" if v is None else str(v))
     for a in ident.get("attrs", []):
         v = (attrs or {}).get(a)
@@ -1574,7 +1605,13 @@ def run(category: str, dry_run: bool = False) -> dict:
     # generation). 044's unique index cannot see this: new hash = new row.
     # Declared identity is what the row IS, independent of v1's hashing.
     identity_spec = spec.get("identity")
-    known_identities: set[str] = set()
+    # identity → (observation_id or None, the content currently held). A row
+    # already here with the SAME content is a re-fetch and is skipped; the
+    # same identity with DIFFERENT content is a correction, and corrections
+    # supersede.
+    known_identities: dict[str, tuple[int | None, str]] = {}
+    to_supersede: list[int] = []
+    revision_samples: list[str] = []
 
     # Events need the same protection as observations: 046's index keys on
     # v1_stable_id, so a re-hashed upstream re-inserts the whole history
@@ -1657,14 +1694,21 @@ def run(category: str, dry_run: bool = False) -> dict:
             # (052). Recomputing it in SQL is what made the first guard fail
             # open — see identity_key_for's docstring.
             if identity_by_ds:
+                # identity → (observation_id, what it currently says). The
+                # second half is what makes a CORRECTION distinguishable from
+                # a re-fetch; without it the loader could only skip.
                 cur.execute("""
-                    SELECT DISTINCT o.identity_key
+                    SELECT o.identity_key, o.observation_id, o.value_num,
+                           o.value_text, o.unit, o.place_id, o.attrs
                     FROM observation o JOIN dataset d
                       ON d.dataset_id = o.dataset_id
                     WHERE d.key = ANY(%s) AND o.identity_key IS NOT NULL
                       AND upper_inf(o.sys_period)""",
                     (list(identity_by_ds),))
-                known_identities = {r[0] for r in cur.fetchall()}
+                for k, oid, vn, vt, un, pid, at in cur.fetchall():
+                    known_identities[k] = (oid, content_of(
+                        value_num=vn, value_text=vt, unit=un, place_id=pid,
+                        attrs=at))
             if spec.get("shape") == "event" or spec.get("shape_overrides"):
                 cur.execute(
                     "SELECT event_type, occurred_at::date::text, "
@@ -1706,17 +1750,40 @@ def run(category: str, dry_run: bool = False) -> dict:
                         collision_samples[r.dataset_key].append(ident)
                 emitted_identities.add(ident)
                 if ident in known_identities:
-                    # already in the databank under an older v1 hash —
-                    # the 2026-08-07 doubling, prevented at the source
-                    counts["identity_already_held"] += 1
-                    # a DRY RUN reports what the spec PRODUCES (the
-                    # arithmetic under test); only a real run drops
-                    # the already-held rows. emitted − already_held
-                    # is what a write would insert.
-                    if not dry_run:
-                        continue
+                    oid, held = known_identities[ident]
+                    fresh = content_of(
+                        value_num=r.value_num, value_text=r.value_text,
+                        unit=r.unit, place_id=r.place_id, attrs=r.attrs)
+                    if fresh == held:
+                        # already in the databank under an older v1 hash —
+                        # the 2026-08-07 doubling, prevented at the source
+                        counts["identity_already_held"] += 1
+                        # a DRY RUN reports what the spec PRODUCES (the
+                        # arithmetic under test); only a real run drops
+                        # the already-held rows. emitted − already_held
+                        # is what a write would insert.
+                        if not dry_run:
+                            continue
+                    else:
+                        # A CORRECTION. Same row, different reading — the
+                        # publisher revised it. Supersede what we hold and
+                        # write the new one, which is the law this databank
+                        # is built on and which the identity guard had
+                        # quietly suspended: OONI revised eight days upward
+                        # and the databank kept the stale numbers while
+                        # reporting a clean run.
+                        counts["revisions"] += 1
+                        if len(revision_samples) < 5:
+                            revision_samples.append(
+                                f"{r.indicator}@{str(r.occurred_at)[:10]}: "
+                                f"{held[:90]} → {fresh[:90]}")
+                        if not dry_run:
+                            to_supersede.append(oid)
+                        known_identities[ident] = (oid, fresh)
                 else:
-                    known_identities.add(ident)
+                    known_identities[ident] = (None, content_of(
+                        value_num=r.value_num, value_text=r.value_text,
+                        unit=r.unit, place_id=r.place_id, attrs=r.attrs))
             if isinstance(r, EventRow):
                 ek = _event_identity(r)
                 if ek in known_events:
@@ -1826,6 +1893,19 @@ def run(category: str, dry_run: bool = False) -> dict:
         if not dry_run:
             dataset_ids = ensure_datasets(conn, spec, category)
             with conn.cursor() as cur:
+                if to_supersede:
+                    # Corrections FIRST, in the same transaction as the rows
+                    # that replace them: 052's unique index forbids two
+                    # current rows sharing a key, so the revised row can only
+                    # land once the stale one has stopped being current. If
+                    # anything below fails, the rollback restores the old
+                    # reading — a correction is never applied halfway.
+                    cur.execute("""
+                        UPDATE observation
+                           SET sys_period = tstzrange(lower(sys_period),
+                                                      now())
+                         WHERE observation_id = ANY(%s)
+                           AND upper_inf(sys_period)""", (to_supersede,))
                 for r in rows:
                     cur.execute(INSERT_SQL, {
                         "dataset_id": dataset_ids[r.dataset_key],
@@ -1871,6 +1951,10 @@ def run(category: str, dry_run: bool = False) -> dict:
         "notes": {k: v for k, v in counts.items()
                   if k not in ("records_read", "deduped")},
     }
+    if revision_samples:
+        # a correction is a fact about the SOURCE, not a plumbing detail —
+        # it belongs in the run record where a reader can see what moved
+        report["revisions"] = revision_samples
     with RUNS.open("a") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report

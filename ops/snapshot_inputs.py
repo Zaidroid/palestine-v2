@@ -37,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ingest import bronze                                          # noqa: E402
 from ingest.databank import (SPECS, SpecRefused, _records,         # noqa: E402
-                             iter_v1_files, load_spec)
+                             iter_v1_files, load_spec, read_payload)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "evidence" / "v2-inputs"
@@ -62,9 +62,14 @@ def snapshot(day: str | None = None) -> dict:
         payloads: list[bytes] = []
         pos = 0
         for f in iter_v1_files(category, spec):
-            payload = f.read_bytes()
+            # read_payload, NOT read_bytes: a frozen corpus is gzipped, and
+            # json.loads on gzip bytes is the UnicodeDecodeError (0x8b) that
+            # killed every snapshot run from 2026-08-08 to -10 — silently
+            # freezing the as_of evidence at the night the corpora froze,
+            # while the nightly printed one non-fatal line nobody read.
+            payload = read_payload(f)
             payloads.append(payload)
-            for rec in _records(json.loads(payload)):
+            for rec in _records(json.loads(payload), spec):
                 if isinstance(rec, dict) and rec.get("stable_id"):
                     index[rec["stable_id"]] = pos
                 pos += 1
