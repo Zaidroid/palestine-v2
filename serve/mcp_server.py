@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,9 +45,21 @@ API = os.environ.get("PALESTINE_API", "http://127.0.0.1:7870")
 FUEL_AR = {"fuel_diesel": "سولار", "fuel_gasoline": "بنزين", "cooking_gas": "غاز"}
 
 
+# Every tool reaches the API through api(), so this is the one place a path can
+# be checked — and it has to be checked, because the server is now reachable by
+# strangers. `databank(category=...)` puts a caller's string into a URL PATH,
+# and "../../health" walked straight out of the databank surface and hit another
+# endpoint. It leaked nothing (the response shape differed and the tool raised),
+# which is luck, not a control. Anything the tools legitimately fetch is one of
+# two shapes; a path that is neither does not get sent.
+_SAFE_PATH = re.compile(r"^/(?:health|v2/[A-Za-z0-9/_.-]*)$")
+
+
 def api(path: str, **params) -> dict:
     """GET the v2 API. Raises on failure so the caller can answer honestly
     rather than inventing a reassuring reply."""
+    if ".." in path or not _SAFE_PATH.match(path):
+        raise ValueError(f"refusing to fetch an unexpected path: {path!r}")
     r = httpx.get(f"{API}{path}", params={k: v for k, v in params.items() if v is not None},
                   timeout=30.0)
     r.raise_for_status()
@@ -692,6 +705,12 @@ def databank(category: str | None = None, indicator: str | None = None,
                   f"{len(d['datasets'])} مصدراً.")
         return {"answer": answer, "categories": cats,
                 "datasets": d["datasets"]}
+    # The one place a caller's string becomes part of a URL path rather than a
+    # query value. Named categories only — no slashes, no dots, no query.
+    if not re.fullmatch(r"[a-z0-9_]{1,40}", category):
+        return {"answer": f"ما في فئة اسمها {category}.",
+                "error": "category must be a name from /v2/databank/categories",
+                "count": 0, "items": []}
     d = api(f"/v2/databank/{category}", indicator=indicator,
             as_of=as_of, limit=limit)
     when = f" كما كانت بتاريخ {as_of}" if as_of else ""

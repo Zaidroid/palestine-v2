@@ -150,12 +150,21 @@ def health(request: Request,
                 "feed_age_minutes": age_min,
                 "error": f"health checks unavailable: {e}"}
 
+    from serve.ratelimit import client_ip, is_local
+    local = is_local(client_ip(request))
+
     out: dict[str, Any] = {
         "status": "degraded" if faults else "ok",
         # Kept from the original response so existing callers keep working.
         "fuel_states": row["n"],
         "feed_age_minutes": age_min,
-        "faults": [f"{c['check']}:{c['name']} {c['status']}" for c in faults],
+        # The named list is the same internal detail `checks` withholds below —
+        # "job:maintain failing" names a job a stranger has no business knowing
+        # exists, and a list of what is currently broken is a map of where to
+        # push. The COUNT stays public alongside the status, so a degraded
+        # system still cannot be mistaken for a healthy one.
+        "faults": [f"{c['check']}:{c['name']} {c['status']}" for c in faults] if local else [],
+        "faults_total": len(faults),
         "jobs_ok": sum(1 for c in jobs if not c["fault"]),
         "jobs_total": len(jobs),
         "feeds_ok": sum(1 for c in feeds if not c["fault"]),
@@ -167,8 +176,7 @@ def health(request: Request,
     # outside it is answered only for local callers. The COUNTS stay public:
     # "13 of 13 jobs healthy" is a useful public promise, and hiding it would
     # make a degraded system look identical to a healthy one.
-    from serve.ratelimit import client_ip, is_local
-    if verbose and is_local(client_ip(request)):
+    if verbose and local:
         out["checks"] = {
             "jobs": [{"name": c["name"], "status": c["status"],
                       "age_minutes": c["age_minutes"],
@@ -1461,6 +1469,16 @@ def discovery() -> dict:
             "note": "reassuring values need a second independent witness; "
                     "cautions do not. See /v2/crowd/fields.",
         },
+        "agents": {
+            "mcp": "/mcp",
+            "transport": "streamable HTTP, JSON-RPC 2.0, stateless — POST only",
+            "add_to_claude_code":
+                "claude mcp add --transport http palestine "
+                "https://live-api.zaidlab.xyz/mcp",
+            "note": "the same tools the on-host stdio server serves, minus the "
+                    "two that report the health of this machine. No write "
+                    "path: contributing a report stays human.",
+        },
         "meta": {"health": "/health", "coverage": "/v2/coverage",
                  "geo": "/v2/geo/resolve", "openapi": "/openapi.json"},
         "fields": [
@@ -1497,6 +1515,16 @@ async def _rate_limit(request, call_next):
 def root() -> dict:
     """The bare hostname answers with the map of the system rather than a 404."""
     return discovery()
+
+
+# An agent can now reach this system without a clone, a venv or a path on the
+# caller's machine — the same tool table the stdio server serves, over HTTP.
+# Mounted on this host rather than a new one because the tunnel is
+# token-managed: hostnames live in the Cloudflare dashboard and cannot be added
+# from here, and a path costs nothing. See serve/mcp_http.py.
+from serve.mcp_http import router as _mcp_router                # noqa: E402
+
+app.include_router(_mcp_router)
 
 
 @app.post("/v2/crowd/register", tags=["crowd"])

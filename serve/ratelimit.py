@@ -47,6 +47,13 @@ LIMITS = {
     "read":     (120, 60),      # 2/second sustained
     "write":    (20, 60),
     "register": (3, 3600),      # three accounts an hour from one address
+    # MCP is JSON-RPC over POST, so the method says "write" while the surface
+    # served there is read-only. Classified by hand for that reason. The
+    # allowance is higher than `read` because an agent spends calls a person
+    # does not — a handshake, a tool listing, then several tools to answer one
+    # question — and because a room of people on one office connection arrives
+    # as a single address.
+    "mcp":      (300, 60),
 }
 
 # Bounded so the limiter cannot become the memory leak it exists to prevent.
@@ -60,6 +67,8 @@ _buckets: dict[str, OrderedDict[str, list]] = {k: OrderedDict() for k in LIMITS}
 def classify(path: str, method: str) -> str:
     if path.endswith("/crowd/register"):
         return "register"
+    if path.rstrip("/") == "/mcp":
+        return "mcp"
     if method not in ("GET", "HEAD", "OPTIONS"):
         return "write"
     return "read"

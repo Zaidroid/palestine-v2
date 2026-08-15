@@ -1,16 +1,42 @@
 # Registering the Palestine v2 MCP server
 
-One stdio server, `serve/mcp_server.py`, exposing four tools. Every tool returns
-a short Arabic `answer` string (ready to speak) plus structured data.
+24 tools, one table (`TOOLS` in `serve/mcp_server.py`), two transports. Every
+tool returns a short Arabic `answer` string (ready to speak) plus structured
+data. Run `tools/list` for the current catalogue rather than keeping a copy
+here — a hand-maintained list beside the code drifts from it within a week.
 
-| tool | question it answers |
-|:--|:--|
-| `fuel_near` | وين في سولار/بنزين؟ — nearest available stations |
-| `fuel_summary` | وضع الوقود بالضفة — West-Bank-wide totals |
-| `latest_news` | آخر الأخبار — recent messages, optionally by area |
-| `coverage` | what this system currently holds (sources, states, places) |
+| transport | who it is for | what it serves |
+|:--|:--|:--|
+| stdio · `serve/mcp_server.py` | processes on this host (Fawwaz, Sameera, Claude Code here) | all 24 tools |
+| HTTP · `POST /mcp` | anybody, no clone and no venv | 22 — the ops tools are withheld |
 
-## Claude Code
+## Public HTTP — https://live-api.zaidlab.xyz/mcp
+
+Streamable HTTP, JSON-RPC 2.0, stateless, no auth. Mounted on the existing
+public host rather than a new one because the tunnel is token-managed:
+hostnames live in the Cloudflare dashboard and cannot be added from here.
+
+```bash
+claude mcp add --transport http palestine https://live-api.zaidlab.xyz/mcp
+```
+
+Three things hold that surface in place, and all three have tests
+(`tests/test_mcp_http.py`):
+
+- **`system_health` and `ops_digest` are not served over HTTP.** They report
+  failing units and the maintenance ledger — infrastructure detail answering a
+  question nobody outside asked. Refused by name, not merely hidden from the
+  listing.
+- **No write path**, exactly as on stdio. The crowd endpoints stay human.
+- **A caller's string never becomes a URL path.** `databank(category=…)` was
+  the one place it did, and `../../health` walked out of the databank surface
+  into another endpoint. Now validated at the tool AND in `api()`, through
+  which every tool fetches.
+
+`/health` follows the same line: counts and status are public, the names of
+what is currently broken are answered only for local callers.
+
+## Claude Code — on this host, all 24 tools
 
 ```bash
 claude mcp add palestine -- /home/zaid/palestine-v2/.venv/bin/python \
