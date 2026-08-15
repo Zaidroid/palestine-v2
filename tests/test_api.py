@@ -128,6 +128,14 @@ CASES: dict[str, list[dict]] = {
     # CONNECT", not "send it and hang up". A plain GET never returns, so it gets
     # a dedicated streaming test instead of a row here.
     "/v2/stream":               [],
+    # Both branches: a real series, and a name that does not exist — the second
+    # must come back 200 with `refused` and reasons, never a 404 or a crash.
+    "/v2/databank/correlate/scan": [{"a": "refugees.cross_border"},
+                                    {"a": "no.such.indicator"}],
+    # Answers only for local callers and 404s for everyone else, so a smoke
+    # case here would assert the opposite of the property that matters. Covered
+    # by test_usage_is_invisible_to_a_stranger instead.
+    "/v2/usage":                [],
     # POSTs are exercised for REJECTION only — see test_write_routes_reject.
     "/v2/crowd/register":       [],
     "/v2/crowd/report":         [],
@@ -287,6 +295,10 @@ MCP_EXEMPT = {
     "/v2/stream",                   # an agent cannot hold an SSE socket open;
                                     # `stream_info` describes it instead
     "/v2/crowd/pending",            # moderation surface, human-only
+    # Usage of a service people consult about checkpoints says which places are
+    # on their minds this week — a fact about them, not about roads. Served to
+    # local callers only, and to the maintainer as the stdio-only `mcp_usage`.
+    "/v2/usage",
     # The crowd WRITE path is deliberately absent from MCP entirely: an agent
     # that can file reports is the sock-puppet problem P2.4 exists for, running
     # at machine speed. See the note at the foot of the TOOLS registry.
@@ -329,8 +341,9 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/databank/licenses": "licenses",
         "/v2/databank/concepts": "correlate",
         "/v2/databank/indicators": "correlate",
-        "/v2/databank/compare": "correlate",
+        "/v2/databank/compare": "compare",
         "/v2/databank/correlate": "correlate",
+        "/v2/databank/correlate/scan": "what_correlates_with",
         "/v2/databank/radar": "data_gaps",
         "/v2/databank/scout": "data_gaps",
     }
@@ -532,3 +545,20 @@ def test_scout_discovers_but_never_ingests() -> None:
             "new", "why"} <= set(top)
     assert all(c["score"] >= 5 for c in d["candidates"])
     assert "reviewed spec" in d["verdicts_note"]
+
+
+def test_usage_is_invisible_to_a_stranger() -> None:
+    """Aggregate usage of a checkpoint service says which places are on
+    people's minds this week. It answers locally and 404s — not 403 — for
+    anyone else, so its existence is not advertised either."""
+    r = client.get("/v2/usage")
+    assert r.status_code == 404, r.text[:200]
+
+
+def test_the_scan_refuses_an_unknown_series_with_a_reason() -> None:
+    """A typo and an empty window are different problems, and both used to look
+    like 'no correlation found'."""
+    r = client.get("/v2/databank/correlate/scan", params={"a": "no.such.indicator"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["refused"] is True and body["reasons"]

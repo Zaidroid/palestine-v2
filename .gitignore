@@ -23,6 +23,10 @@ data/session/
 # and reviewing a diff of it tells you nothing.
 ops/alerts.ndjson
 ops/accuracy.ndjson
+# Also: it is a record of what strangers asked a checkpoint service, and that
+# does not belong in a repository that might one day be published.
+ops/mcp-usage.ndjson
+ops/mcp-usage.ndjson.1
 ops/reliability.ndjson
 ops/crowd_independence.ndjson
 ops/backup-status.json

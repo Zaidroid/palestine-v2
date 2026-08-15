@@ -637,6 +637,210 @@ def correlate(a: str | None = None, b: str | None = None,
                           "strings, then `a` and `b` to correlate them."}
 
 
+def what_correlates_with(indicator: str, place: str | None = None,
+                         candidates: int = 40,
+                         allow_same_concept: bool = False) -> dict:
+    """Scan everything held for series that move with this one.
+
+    `correlate` needs both sides named, so it could only ever confirm a pair
+    somebody already suspected. This searches.
+    """
+    place_id = None
+    if place:
+        g = api("/v2/geo/resolve", q=place)
+        if not g.get("found"):
+            return {"answer": f"ما عرفت وين {place}.", "found": False}
+        place_id = g.get("place_id")
+    d = api("/v2/databank/correlate/scan", a=indicator, place_id=place_id,
+            candidates=candidates,
+            allow_same_concept="true" if allow_same_concept else "false")
+    if d.get("refused"):
+        return {"answer": "ما قدرت أفحص: " + " ".join(d["reasons"])[:200], **d}
+    ms = d["matches"]
+    if not ms:
+        # The reasons ARE the answer here. "Nothing correlates" and "nothing
+        # was comparable enough to test" are different findings and the second
+        # is the common one.
+        return {"answer": ("ما في ولا سلسلة قابلة للمقارنة مع هاي. الأسباب: "
+                           + "، ".join(f"{v} {k}" for k, v in d["skipped"].items())),
+                **d}
+    top = ms[0]
+    return {"answer": (f"من {d['tested']} سلسلة مفحوصة، أقواها: "
+                       f"{top['indicator']} (ρ={top['rho']}, n={top['n']}). "
+                       f"هاي فرضيات للفحص، مش نتائج."),
+            **d}
+
+
+def compare(indicators: str, place: str | None = None) -> dict:
+    """Two to six series side by side, each keeping its own unit.
+
+    Reachable by a frontend since P5.2 and by an agent only now, which is the
+    parity rule quietly broken: one place to read everything meant one place
+    unless you are an agent.
+    """
+    place_id = None
+    if place:
+        g = api("/v2/geo/resolve", q=place)
+        if g.get("found"):
+            place_id = g.get("place_id")
+    d = api("/v2/databank/compare", indicators=indicators, place_id=place_id)
+    ss = d.get("series", [])
+    bits = [f"{s['indicator']} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'})"
+            for s in ss]
+    ov = d.get("overlap") or {}
+    return {"answer": ("مقارنة: " + "، ".join(bits) +
+                       (f". الفترة المشتركة {ov.get('from')} → {ov.get('to')} "
+                        f"({ov.get('n')} نقطة)." if ov.get("n") else
+                        ". ما في فترة مشتركة بين السلاسل.")),
+            **d}
+
+
+def place_profile(place: str, days: int = 30) -> dict:
+    """Everything both tiers hold about one place, in a single call.
+
+    The cross-tier join is the databank's stated premise, and reaching it took
+    four separate calls plus knowing that the town and the checkpoint of the
+    same name are different rows. An agent asked "tell me about Huwara" should
+    not have to know that.
+    """
+    town = api("/v2/geo/resolve", q=place)
+    cp = api("/v2/geo/resolve", q=place, state_kind="checkpoint_status")
+    if not town.get("found") and not cp.get("found"):
+        return {"answer": f"ما عرفت وين {place}.", "found": False}
+    anchor = cp if cp.get("found") else town
+
+    out: dict[str, Any] = {"place": anchor.get("name"),
+                           "place_id": anchor.get("place_id"),
+                           "kind": anchor.get("kind"),
+                           "resolved": {"as_town": town.get("found"),
+                                        "as_checkpoint": cp.get("found")}}
+    said = []
+
+    if cp.get("found"):
+        try:
+            live = api("/v2/checkpoints/status", name=place, direction="both")
+            out["checkpoint_now"] = {"flow": live.get("flow"),
+                                     "age_minutes": live.get("age_minutes"),
+                                     "present": live.get("present")}
+            said.append(f"الحاجز {FLOW_AR.get(live.get('flow'), live.get('flow'))}")
+        except Exception:                                   # noqa: BLE001
+            pass
+
+    for label, call in (("history", lambda: api("/v2/history/place",
+                                                place_id=anchor["place_id"],
+                                                days=days)),
+                        ("pattern", lambda: api("/v2/patterns/place",
+                                                place_id=anchor["place_id"],
+                                                state_kind="checkpoint_status",
+                                                days=60))):
+        try:
+            out[label] = call()
+        except Exception:                                   # noqa: BLE001
+            out[label] = None
+
+    if town.get("found"):
+        try:
+            inc = api("/v2/incidents/recent", lat=town["lat"], lon=town["lon"],
+                      hours=days * 24, radius_km=10, limit=20)
+            out["incidents"] = inc.get("incidents", [])
+            if out["incidents"]:
+                said.append(f"{len(out['incidents'])} حدث بآخر {days} يوم")
+        except Exception:                                   # noqa: BLE001
+            out["incidents"] = []
+
+    days_with = len((out.get("history") or {}).get("series") or [])
+    if days_with:
+        said.append(f"{days_with} يوم فيها تقارير")
+    out["answer"] = (f"{anchor.get('name')}: " + "، ".join(said) + "."
+                     if said else
+                     f"{anchor.get('name')}: ما في معلومات حديثة عنها.")
+    out["caveat"] = ("A town and the checkpoint named after it are different "
+                     "rows; `resolved` says which of the two this answer "
+                     "actually covers.")
+    return out
+
+
+def search(text: str, hours: int = 168, limit: int = 20) -> dict:
+    """Free-text search across recent messages — the way people actually ask.
+
+    Every other tool needs a place or an indicator string. This one takes the
+    words somebody used.
+    """
+    d = api("/v2/news/latest", limit=100)          # the endpoint's own ceiling
+    needle = text.strip().lower()
+    hits = [i for i in d.get("items", [])
+            if needle in (i.get("text") or "").lower()][:limit]
+    if not hits:
+        return {"answer": f"ما لقيت ولا رسالة فيها «{text}» بالمخزون الحالي.",
+                "count": 0, "items": [],
+                "caveat": "searches the most recent ingested messages only, "
+                          "not the whole archive"}
+    return {"answer": f"{len(hits)} رسالة فيها «{text}». آخرها: "
+                      f"{hits[0]['text'][:160]}",
+            "count": len(hits), "items": hits,
+            "caveat": "matches the words as typed — a different spelling of "
+                      "the same place will not match"}
+
+
+def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
+    """Is this series above or below its own recent baseline?
+
+    A model handed 90 raw points reduces them itself, and does it differently
+    each time. The comparison is stated once, here.
+    """
+    place_id = None
+    if place:
+        g = api("/v2/geo/resolve", q=place)
+        if g.get("found"):
+            place_id = g.get("place_id")
+    d = api("/v2/databank/compare", indicators=f"{indicator},{indicator}",
+            place_id=place_id)
+    pts = [p for p in (d.get("series") or [{}])[0].get("points", [])
+           if p.get("value") is not None]
+    if len(pts) < 6:
+        return {"answer": f"ما في نقاط كفاية بـ{indicator} لأقارن باتجاه.",
+                "n": len(pts)}
+
+    # Most indicators here are a BREAKDOWN, not a line: refugees.cross_border
+    # is 1,157 points over 16 dates — seventy-odd rows per date, split by
+    # asylum country. Averaging the last three of those against the median of
+    # the rest produced "18,338% higher", which is not a wrong trend, it is a
+    # trend computed over something that has none. Repeated dates are the tell.
+    dates = [p["at"] for p in pts]
+    if len(set(dates)) < len(dates):
+        return {"answer": (f"{indicator} مش سلسلة واحدة — {len(pts)} نقطة على "
+                           f"{len(set(dates))} تاريخ، يعني تقسيمة مش خط زمني. "
+                           f"حدد `place` أو استعمل `databank` لتشوف التقسيمة."),
+                "refused": True, "n": len(pts), "distinct_dates": len(set(dates)),
+                "reason": ("multiple values share each date, so this indicator "
+                           "is a breakdown (by place, sex, age or category). A "
+                           "trend needs one value per date — narrow it with "
+                           "`place`, or read the breakdown with `databank`."),
+                "caveat": "no number is returned on purpose; a trend over a "
+                          "breakdown is arithmetic without a subject."}
+    vals = [float(p["value"]) for p in pts]
+    recent, base = vals[-3:], vals[:-3]
+    med = sorted(base)[len(base) // 2]
+    avg = sum(recent) / len(recent)
+    if med == 0:
+        change = None
+    else:
+        change = round((avg - med) / abs(med) * 100)
+    word = ("ثابت" if change is None or abs(change) < 10
+            else ("أعلى" if change > 0 else "أقل"))
+    return {"answer": (f"{indicator}: آخر {len(recent)} قراءة {word}"
+                       + (f" بنسبة {abs(change)}% عن الوسيط التاريخي"
+                          if change is not None else "")
+                       + f" ({round(avg, 2)} مقابل {round(med, 2)})."),
+            "indicator": indicator, "n": len(pts),
+            "recent_mean": round(avg, 4), "baseline_median": round(med, 4),
+            "change_pct": change,
+            "first": pts[0]["at"], "last": pts[-1]["at"],
+            "caveat": "compares the last three readings to the median of the "
+                      "rest. Points are reports, not evenly spaced time — a "
+                      "gap in reporting looks the same as a gap in events."}
+
+
 def licenses(source: str | None = None) -> dict:
     """Who owns the data, and what each licence obliges.
 
@@ -771,6 +975,62 @@ TOOLS = {
                                   "description": "days to scan for a lagged "
                                                  "fit; adds a caveat"},
                       "allow_same_concept": {"type": "boolean"}}}),
+    "what_correlates_with": (what_correlates_with,
+                             "SEARCH for series that move with a given one, "
+                             "instead of naming both sides yourself. Scans "
+                             "everything comparable, applies the same hard "
+                             "refusals as `correlate`, and reports how many "
+                             "tests it ran — results are hypotheses to check "
+                             "with `correlate`, never findings.",
+                             {"type": "object", "properties": {
+                                 "indicator": {"type": "string",
+                                               "description": "the series to scan around"},
+                                 "place": {"type": "string",
+                                           "description": "optional: restrict to one place"},
+                                 "candidates": {"type": "integer",
+                                                "description": "how many series to consider, default 40"},
+                                 "allow_same_concept": {"type": "boolean"}},
+                              "required": ["indicator"]}),
+    "compare": (compare,
+                "Two to six series side by side with their own units, native "
+                "grain, attribution and the window they actually share. "
+                "Nothing is rescaled to a common axis — two units on one axis "
+                "is a chart that lies.",
+                {"type": "object", "properties": {
+                    "indicators": {"type": "string",
+                                   "description": "comma-separated indicator strings"},
+                    "place": {"type": "string"}},
+                 "required": ["indicators"]}),
+    "place_profile": (place_profile,
+                      "Everything BOTH tiers hold about one place in a single "
+                      "call: live checkpoint state, recent report history, the "
+                      "hourly pattern, and nearby incidents. Use for 'tell me "
+                      "about Huwara'. Handles the trap that a town and the "
+                      "checkpoint named after it are different rows.",
+                      {"type": "object", "properties": {
+                          "place": {"type": "string"},
+                          "days": {"type": "integer"}},
+                       "required": ["place"]}),
+    "search": (search,
+               "Free-text search across recent ingested messages, for when you "
+               "have the words somebody used rather than a place or an "
+               "indicator string. Matches literally — a different spelling "
+               "will not match.",
+               {"type": "object", "properties": {
+                   "text": {"type": "string"},
+                   "hours": {"type": "integer"},
+                   "limit": {"type": "integer"}},
+                "required": ["text"]}),
+    "trend": (trend,
+              "Whether a databank series is above or below its own baseline — "
+              "the last three readings against the median of the rest — so the "
+              "comparison is made once here rather than differently by every "
+              "caller. Use for 'is X getting worse'.",
+              {"type": "object", "properties": {
+                  "indicator": {"type": "string"},
+                  "days": {"type": "integer"},
+                  "place": {"type": "string"}},
+               "required": ["indicator"]}),
     "licenses": (licenses,
                  "Who owns the databank's data and what each licence "
                  "obliges: the open / commercial-permissive / "
@@ -924,6 +1184,16 @@ TOOLS = {
                       "open operational alarms. For relaying system status to Zaid — "
                       "this is about the MACHINE, not about roads or checkpoints.",
                       {"type": "object", "properties": {}}),
+    "mcp_usage": (lambda days=7: _mcp_usage(days),
+                  "What people have been asking the public MCP endpoint, and "
+                  "which questions it could NOT answer. Use for 'what should "
+                  "we add next' — `unanswered_demand` ranks the questions "
+                  "people keep asking that this system has no source for, "
+                  "which is the demand side of the gap radar. Zaid only; not "
+                  "served over HTTP.",
+                  {"type": "object", "properties": {
+                      "days": {"type": "integer",
+                               "description": "lookback window, default 7"}}}),
     "ops_digest": (lambda: _ops_digest(),
                    "The latest weekly maintenance digest: what the automated Opus "
                    "maintenance run checked, measured, fixed and committed, plus the "
@@ -943,6 +1213,12 @@ TOOLS = {
                                                    "fuel_diesel, crossing_status"}},
                   "required": ["place"]}),
 }
+
+# Served over stdio only. Two of them report the health of THIS MACHINE; the
+# third reports what its visitors have been asking, which is a fact about them
+# rather than about roads. Kept beside TOOLS so a tool added below cannot be
+# published by forgetting a list in another file.
+HOST_ONLY = {"system_health", "ops_digest", "mcp_usage"}
 
 # DELIBERATELY ABSENT: the crowd WRITE path (/v2/crowd/register, /v2/crowd/report).
 # An agent that can file reports is the sock-puppet problem P2.4 exists for,
@@ -995,6 +1271,23 @@ def _system_health() -> dict:
             "feeds_ok": f"{h.get('feeds_ok')}/{h.get('feeds_total')}",
             "open_alarms": alarms,
             "caveat": "system status, not road status — use checkpoints_summary for roads"}
+
+
+def _mcp_usage(days: int = 7) -> dict:
+    """Read the usage ledger directly — it is a file beside this one, so this
+    works from the hermes user too, which has no database and no .env."""
+    from serve.mcp_usage import summary
+    d = summary(days)
+    if not d.get("calls"):
+        return {"answer": f"ما في استخدام مسجل بآخر {days} يوم.", **d}
+    top = list(d["by_tool"])[:3]
+    say = (f"{d['calls']} نداء من {d['callers']} مستخدم بآخر {days} يوم. "
+           f"الأكثر استخداماً: {'، '.join(top)}.")
+    if d["unanswered_demand"]:
+        u = d["unanswered_demand"][0]
+        say += (f" وأكثر سؤال ما إلنا جواب عليه: {u['tool']} "
+                f"({u['unmet_calls']} من {u['of_calls']} نداء رجعوا فاضيين).")
+    return {"answer": say, **d}
 
 
 def _ops_digest() -> dict:
@@ -1053,7 +1346,8 @@ def main() -> int:
                 _error(rid, -32602, f"unknown tool: {name}")
                 continue
             try:
-                out = TOOLS[name][0](**(p.get("arguments") or {}))
+                from serve.mcp_en import add_english
+                out = add_english(name, TOOLS[name][0](**(p.get("arguments") or {})))
             except Exception as exc:                    # noqa: BLE001
                 out = {"error": str(exc), "answer": "صار خطأ بالنظام."}
             _reply(rid, {"content": [{"type": "text",

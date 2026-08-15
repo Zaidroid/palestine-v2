@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -1552,6 +1553,23 @@ def crowd_register(
         raise HTTPException(400, str(e))
 
 
+@app.get("/v2/usage", include_in_schema=False)
+def mcp_usage(request: Request, days: int = Query(7, ge=1, le=90)) -> dict:
+    """Who asked this system what, and what it could not answer.
+
+    LOCAL CALLERS ONLY, and not in the schema. Aggregate usage of a service
+    people consult about checkpoints is not neutral information — it says which
+    places are on people's minds this week, which is a fact about them rather
+    than about roads. It is here to tell the maintainer what to build next, and
+    that job needs no audience.
+    """
+    from serve.ratelimit import client_ip, is_local
+    if not is_local(client_ip(request)):
+        raise HTTPException(404, "Not Found")
+    from serve.mcp_usage import summary
+    return summary(days)
+
+
 @app.get("/v2/limits", tags=["meta"])
 def limits() -> dict:
     """What the rate limits are, so a client can pace itself instead of
@@ -2010,6 +2028,162 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
         "caveats": C.caveats(sa, sb, pairs, lag),
         "attribution": sorted(set(sa["attribution"]) | set(sb["attribution"])),
     }
+
+
+@app.get("/v2/databank/correlate/scan", tags=["databank"])
+def databank_correlate_scan(
+    a: str, place_id: int | None = None, frm: str | None = None,
+    to: str | None = None, method: str = "spearman",
+    candidates: int = Query(40, ge=5, le=120),
+    allow_same_concept: bool = False,
+) -> dict:
+    """What, out of everything held, moves with this series.
+
+    The pairwise endpoint answers a question the caller already had. This one
+    is for the question they cannot ask yet, because naming both sides requires
+    knowing 1,349 indicator strings — so in practice `correlate` only ever got
+    asked about pairs somebody already suspected, which is a search that can
+    only confirm.
+
+    THE REFUSALS ARE STILL THE POINT, AND HARDER HERE
+    A scan is a multiple-comparisons machine: run forty tests at p<0.05 and two
+    come back "significant" from noise alone. So every candidate goes through
+    the SAME check_comparable gate as a pairwise call — cumulative totals,
+    categorical statuses, mismatched place grains and same-concept pairs are
+    dropped before any arithmetic — and what survives is reported with the
+    number of tests it survived beside it. A coefficient from a scan is a
+    hypothesis, and the response says so rather than implying a finding.
+
+    Ranked results carry no caveats on purpose: call /v2/databank/correlate on
+    the pair to get them. Finding is not the same act as concluding, and
+    keeping them separate is what stops a scan from reading like a result.
+    """
+    from serve import correlate as C
+    sa = _series(a, place_id, frm, to)
+    if not sa["known"]:
+        return {"refused": True, "a": a, "reasons": [
+            f"no series named {a!r} — search /v2/databank/indicators?q= to "
+            "find the right string."]}
+    if not sa["points"]:
+        return {"refused": True, "a": a, "reasons": [
+            f"{a} exists but has no points in that window or place."]}
+
+    # Prefiltered in SQL only for speed — check_comparable below remains the
+    # authority, so this cannot quietly allow something the pairwise path
+    # would refuse.
+    rows = q("""
+        SELECT d.indicator, d.concept_key, d.measure_kind, d.place_grain,
+               d.grain, d.canonical_unit, COUNT(*) AS n
+          FROM indicator_def d
+          JOIN v_observation_canonical v ON v.indicator = d.indicator
+         WHERE d.indicator <> %(a)s
+           AND d.place_grain IS NOT DISTINCT FROM %(grain)s
+           AND d.measure_kind NOT IN ('cumulative', 'status', 'unclassified')
+           AND d.measure_kind IS NOT NULL
+           AND (%(p)s::int IS NULL OR v.place_id = %(p)s)
+         GROUP BY 1, 2, 3, 4, 5, 6
+        HAVING COUNT(*) >= %(minn)s
+         ORDER BY n DESC
+         LIMIT %(lim)s
+    """, {"a": a, "grain": sa["place_grain"], "p": place_id,
+          "minn": C.MIN_N, "lim": candidates})
+    if not rows:
+        return {"refused": True, "a": a, "reasons": [
+            f"nothing else held is comparable to {a}: no other series shares "
+            f"its place grain ({sa['place_grain']}) with enough points."]}
+
+    # One query for every candidate's points rather than one per candidate.
+    where = ["v.indicator = ANY(%(inds)s)"]
+    params: dict = {"inds": [r["indicator"] for r in rows]}
+    if place_id is not None:
+        where.append("v.place_id = %(p)s")
+        params["p"] = place_id
+    if frm:
+        where.append("v.occurred_at >= %(f)s")
+        params["f"] = frm
+    if to:
+        where.append("v.occurred_at <= %(t)s")
+        params["t"] = to
+    pts = q(f"""SELECT v.indicator, v.occurred_at::date AS at,
+                       v.occurred_precision AS prec,
+                       COALESCE(v.value_canonical, v.value_num) AS value
+                  FROM v_observation_canonical v
+                 WHERE {' AND '.join(where)}""", params)
+    grouped: dict[str, list] = {}
+    for p in pts:
+        grouped.setdefault(p["indicator"], []).append(p)
+
+    by_a = {p["at"]: p for p in sa["points"]
+            if p["prec"] not in C.UNUSABLE_PRECISION and p["value"] is not None}
+
+    hits, skipped, tested = [], Counter(), 0
+    for r in rows:
+        sb = {**r, "known": True, "points": grouped.get(r["indicator"], [])}
+        stop = C.check_comparable(sa, sb)
+        if allow_same_concept:
+            stop = [s for s in stop if "both series are" not in s]
+        if stop:
+            skipped[_skip_reason(stop[0])] += 1
+            continue
+        # Series are paired on exact dates, so a daily series and an annual one
+        # can never meet and come back as "too few overlapping dates" — which
+        # reads as "no relationship" when it means "these two were never
+        # measured on the same day". Named for what it is instead. Resampling
+        # one to the other's period would create the overlap, and a number
+        # built on twelve invented monthly points is exactly the kind of
+        # confident artifact the rest of this file refuses to produce.
+        if sa["grain"] != r["grain"]:
+            skipped[f"different time grain ({sa['grain']} vs {r['grain']})"] += 1
+            continue
+        pairs = [(by_a[p["at"]]["value"], p["value"]) for p in sb["points"]
+                 if p["at"] in by_a and p["value"] is not None
+                 and p["prec"] not in C.UNUSABLE_PRECISION]
+        if len(pairs) < C.MIN_N:
+            skipped["too few overlapping dates"] += 1
+            continue
+        tested += 1
+        rho = (C.spearman([x for x, _ in pairs], [y for _, y in pairs])
+               if method == "spearman"
+               else C.pearson([x for x, _ in pairs], [y for _, y in pairs]))
+        if rho is None:
+            skipped["no variance in one series"] += 1
+            continue
+        ci = C.fisher_ci(rho, len(pairs))
+        hits.append({"indicator": r["indicator"], "concept": r["concept_key"],
+                     "rho": round(rho, 4), "n": len(pairs),
+                     "ci95": [round(ci[0], 4), round(ci[1], 4)] if ci else None,
+                     "unit": r["canonical_unit"]})
+
+    hits.sort(key=lambda h: -abs(h["rho"]))
+    return {
+        "refused": False, "a": a, "method": method,
+        "considered": len(rows), "tested": tested,
+        "skipped": dict(skipped),
+        "capped_at": candidates,
+        "truncated": len(rows) == candidates,
+        "matches": hits[:15],
+        "multiple_comparisons": (
+            f"{tested} tests were run. At the conventional 5% threshold "
+            f"roughly {max(1, round(tested * 0.05))} of these would look "
+            "significant from noise alone, so treat every row as a hypothesis "
+            "to check, never as a finding."),
+        "next": ("/v2/databank/correlate?a=…&b=… returns the caveats, the "
+                 "attribution and the lag search for one pair. This endpoint "
+                 "deliberately returns none of those: finding is not "
+                 "concluding."),
+    }
+
+
+def _skip_reason(reason: str) -> str:
+    """Collapse a full refusal sentence into something countable."""
+    for needle, label in (("CUMULATIVE", "cumulative — a running total"),
+                          ("categorical", "categorical status"),
+                          ("place grains differ", "different place grain"),
+                          ("both series are", "same concept as the subject"),
+                          ("measure_kind is unclassified", "kind unclassified")):
+        if needle in reason:
+            return label
+    return "not comparable"
 
 
 @app.get("/v2/databank/{category}", tags=["databank"])

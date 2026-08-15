@@ -9,6 +9,7 @@ server into doing with a string.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -122,3 +123,89 @@ def test_mcp_is_rate_limited_as_a_read_despite_being_a_POST():
 def test_the_crowd_write_endpoints_keep_their_own_stricter_class():
     assert rl.classify("/v2/crowd/register", "POST") == "register"
     assert rl.classify("/v2/crowd/report", "POST") == "write"
+
+
+# ── what the HTTP surface adds (usage, English, prompts, resources) ──────────
+
+def test_usage_counts_a_successful_but_empty_answer_as_unmet():
+    """The valuable column. A tool that answers "nobody reports this" worked
+    perfectly and still failed the person asking, and only the second sense
+    tells us what to go and acquire."""
+    from serve import mcp_usage as u
+    assert u.unmet({"answer": "…", "no_source": True}) is True
+    assert u.unmet({"count": 0}) is True
+    assert u.unmet({"found": False}) is True
+    assert u.unmet({"count": 3, "items": [1, 2, 3]}) is False
+
+
+def test_coverage_naming_its_blind_spots_is_not_a_failure():
+    """`no_source` is a FLAG on crossings and a LIST on coverage. Counting the
+    list as failure would park the one honest tool at the top of the roadmap
+    forever."""
+    from serve import mcp_usage as u
+    assert u.unmet({"answer": "…", "no_source": ["water", "power"]}) is False
+
+
+def test_the_usage_ledger_records_no_address():
+    """It records people asking which checkpoints are closed. A log of who
+    wanted to know that is not a neutral artifact."""
+    from serve import mcp_usage as u
+    a, b = u.caller("203.0.113.9"), u.caller("203.0.113.10")
+    assert a != b and "203.0.113" not in a and len(a) == 12
+
+
+def test_english_is_built_from_fields_not_translated():
+    """The Arabic sentence exists to stop the caveat being rephrased. The
+    English must therefore come from the same structured facts, so that a
+    reading with no recent report cannot become 'the checkpoint is open'."""
+    from serve.mcp_en import add_english
+    stale = add_english("checkpoint_status",
+                        {"name": "حوارة", "flow": "unknown",
+                         "last_known_flow": "open", "age_minutes": 180})
+    assert "no current reading" in stale["answer_en"]
+    assert "3h ago" in stale["answer_en"]
+
+
+def test_a_tool_without_a_renderer_gets_no_english_rather_than_bad_english():
+    from serve.mcp_en import add_english
+    assert "answer_en" not in add_english("stream_info", {"answer": "البث شغال."})
+
+
+def test_every_public_tool_declares_an_output_schema():
+    assert all("outputSchema" in t for t in m._tool_list())
+
+
+def test_prompts_and_resources_are_listed_and_readable():
+    ps = m._handle({"jsonrpc": "2.0", "id": 1, "method": "prompts/list"})["result"]["prompts"]
+    assert {p["name"] for p in ps} >= {"route_check", "whats_missing"}
+    got = m._handle({"jsonrpc": "2.0", "id": 1, "method": "prompts/get",
+                     "params": {"name": "route_check",
+                                "arguments": {"origin": "رام الله",
+                                              "destination": "نابلس"}}})
+    assert "نابلس" in got["result"]["messages"][0]["content"]["text"]
+    rs = m._handle({"jsonrpc": "2.0", "id": 1, "method": "resources/list"})["result"]["resources"]
+    assert {r["uri"] for r in rs} == set(m.READERS)
+
+
+def test_an_unknown_resource_is_refused_not_guessed():
+    assert m._handle({"jsonrpc": "2.0", "id": 1, "method": "resources/read",
+                      "params": {"uri": "palestine://../etc/passwd"}})["error"]["code"] == -32602
+
+
+def test_a_trend_over_a_breakdown_is_refused():
+    """refugees.cross_border is 1,157 points over 16 dates — a breakdown split
+    by asylum country. Averaging its last three against the median of the rest
+    produced '18,338% higher', which is arithmetic without a subject."""
+    out = call("trend", indicator="refugees.cross_border")
+    body = json.loads(out["result"]["content"][0]["text"])
+    assert body.get("refused") is True and "breakdown" in body["reason"]
+
+
+def test_the_scan_reports_how_many_tests_it_ran():
+    """A scan is a multiple-comparisons machine. Forty tests at the usual
+    threshold yield two 'significant' results from noise alone, so the count
+    has to travel with the matches."""
+    out = call("what_correlates_with", indicator="refugees.cross_border",
+               candidates=20)
+    body = json.loads(out["result"]["content"][0]["text"])
+    assert "tested" in body and ("multiple_comparisons" in body or body.get("refused"))
