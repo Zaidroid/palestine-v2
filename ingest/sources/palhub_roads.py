@@ -168,6 +168,28 @@ SELECT place_id, direction, value, observed_at
          ORDER BY place_id, direction, observed_at DESC) t
 """
 
+# THE LIMIT IS A BATCH SIZE, SO IT MUST APPLY TO WHAT IS LEFT TO DO.
+#
+# This used to select the oldest `limit` claims and discard the already-seen
+# ones in Python afterwards, which quietly turned a batch size into a ceiling on
+# how far this source could ever be read. `ops/ingest-palhub-roads.sh` passes
+# --limit 500; the seen set was already 1,816 when that timer was installed on
+# 2026-08-02, so every run since fetched 500 rows that were all seen, wrote
+# nothing, and reported success. Fifteen days green, never once working.
+#
+# Filtering in SQL is not a tidier spelling of the same thing: "no new work" and
+# "no work reachable" print the same zero, and only one of them is true.
+PENDING_SQL = """
+SELECT c.claim_id, c.raw_text, c.reported_at
+  FROM claim c JOIN source s USING (source_id)
+ WHERE s.key = %s
+   AND NOT EXISTS (SELECT 1 FROM ingest_seen g
+                    WHERE g.source_id = c.source_id
+                      AND g.external_id = c.claim_id::text)
+ ORDER BY c.reported_at
+ LIMIT %s
+"""
+
 
 def load(limit: int = 2000, dry_run: bool = False) -> dict:
     stats = {"claims": 0, "bulletins": 0, "readings": 0, "written": 0,
@@ -188,12 +210,7 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
                     (source_id,))
         seen = {r[0] for r in cur.fetchall()}
 
-        cur.execute("""
-            SELECT c.claim_id, c.raw_text, c.reported_at
-              FROM claim c JOIN source s USING (source_id)
-             WHERE s.key = %s
-             ORDER BY c.reported_at
-             LIMIT %s""", (SOURCE_KEY, limit))
+        cur.execute(PENDING_SQL, (SOURCE_KEY, limit))
         claims = cur.fetchall()
 
         for claim_id, text, reported_at in claims:
