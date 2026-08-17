@@ -321,6 +321,44 @@ def test_clearing_acknowledges_everything_open(alerts):
     assert alert.open_alerts() == []
 
 
+# ── one torn line must not take the alarm channel down with it ───────────────
+#
+# The host lost power mid-append on 2026-08-08 and ext4's delayed allocation
+# left line 195 as 3,275 NUL bytes. `open_alerts` json.loads()ed every line, so
+# from that moment `ops.alert --list` raised, `ops.watchdog` printed a traceback
+# where its alarm reconciliation should have been, and nothing said so. Nine
+# days. An alerting channel whose reader can be killed by its own log is worse
+# than none, because its silence reads as good news.
+
+def test_a_torn_line_does_not_take_the_whole_log_down(alerts):
+    alert.raise_alert("unit-a", "boom")
+    with alerts.open("a") as fh:
+        fh.write("\0" * 3275 + "\n")
+    alert.raise_alert("unit-b", "boom")
+    assert {r["unit"] for r in alert.open_alerts()} == {"unit-a", "unit-b"}
+
+
+def test_damage_is_counted_rather_than_passed_over_in_silence(alerts):
+    """Skipping quietly is the same bug one layer down: the alarms written into
+    the torn region are gone, and only the count says so."""
+    alert.raise_alert("unit-a", "boom")
+    with alerts.open("a") as fh:
+        fh.write("\0" * 12 + "\n{not json\n")
+    assert alert.damaged_lines() == 2
+
+
+def test_a_torn_line_cannot_hide_a_clear_marker(alerts):
+    """Every read of the log has to reach the end of it. If a torn line stopped
+    the scan early the newest alarms would vanish, which is the failure this
+    test exists to make impossible to reintroduce."""
+    alert.raise_alert("unit-a", "boom")
+    with alerts.open("a") as fh:
+        fh.write("\0" * 40 + "\n")
+        fh.write(json.dumps({"ts": "2999-01-01T00:00:00+00:00",
+                             "clear_marker": True}) + "\n")
+    assert alert.open_alerts() == []
+
+
 # ── the hole that let fuel sit dark for 23 hours ─────────────────────────────
 
 def _cad_unwatchable(days=1, max_gap=None):

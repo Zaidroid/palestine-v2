@@ -102,10 +102,46 @@ def resolve(unit: str, note: str = "") -> dict:
     return rec
 
 
-def open_alerts() -> list[dict]:
+def _read_log() -> tuple[list[dict], int]:
+    """Every record in the log, and a count of the lines that were not records.
+
+    A LOG THAT CAN KILL ITS OWN READER IS NOT A SINK, IT IS A SECOND OUTAGE.
+    The host lost power mid-append on 2026-08-08 and ext4's delayed allocation
+    left one line as 3,275 NUL bytes. Every read of this file went through a
+    bare `json.loads` per line, so from that instant `--list` raised, the
+    watchdog printed a traceback where its alarm reconciliation belonged, and
+    nothing anywhere said the alarm channel had stopped answering. Nine days.
+
+    So a torn line is stepped over — but COUNTED, and reported by --list. The
+    alarms written into a torn region are gone and no amount of care recovers
+    them; silence about that is the same bug one layer down. The damaged line
+    itself is never rewritten: it is the tombstone of a crash, and this log is
+    append-only in both directions.
+    """
     if not ALERTS.exists():
-        return []
-    recs = [json.loads(line) for line in ALERTS.read_text().splitlines() if line.strip()]
+        return [], 0
+    recs, damaged = [], 0
+    for line in ALERTS.read_text(errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            damaged += 1
+            continue
+        if isinstance(rec, dict) and isinstance(rec.get("ts"), str):
+            recs.append(rec)
+        else:
+            damaged += 1
+    return recs, damaged
+
+
+def damaged_lines() -> int:
+    return _read_log()[1]
+
+
+def open_alerts() -> list[dict]:
+    recs, _ = _read_log()
     cleared_at = max((r["ts"] for r in recs if r.get("clear_marker")), default="")
     # Last resolution per unit. An alarm re-raised AFTER its resolution is open
     # again — comparing timestamps rather than keeping a resolved set means a
@@ -137,6 +173,10 @@ def main() -> int:
         return 0
     if a.list or not a.unit:
         alerts = open_alerts()
+        damaged = damaged_lines()
+        if damaged:
+            print(f"WARNING: {damaged} unreadable line(s) in {ALERTS.name} — "
+                  "any alarm written there is lost", file=sys.stderr)
         if not alerts:
             print("no open alarms")
             return 0
