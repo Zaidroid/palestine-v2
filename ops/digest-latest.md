@@ -1,27 +1,31 @@
-# تقرير الصيانة الأسبوعي — ٤ آب ٢٠٢٦
+# صيانة الإثنين — ١٧ آب ٢٠٢٦
 
-زيد، النظام شغّال: ١٦ من ١٧ مهمة و١٢ من ١٢ مصدر خضراء، والنسخة الاحتياطية تمّت (١٫٢ مليون صف). العطل الوحيد المفتوح هو تشغيل الصيانة نفسه — فشل ٦:٣٠ لأنه ما لقي أمر `claude`، انصلح قبل ما أبدأ، وهذا التشغيل هو الدليل. بينطفي لحاله لما أخلص.
+**يا زيد: النظام يعمل، ولكن وجدتُ عطلين كانا صامتين تماماً — وكلاهما مُصلَح الآن.**
 
-**الوقود — الخبر المهم.** المصدر النصّي **مات**، مو بس ضعف: آخر نشرة أمس ١:٥١ ظهراً. النشرات باليوم ٣٤١ ← ١٠١ ← ٩ ← ١ ← صفر. القناة لسّه بتنشر ١١٤ رسالة اليوم، بس كلها **صور بدون نص**.
+١. **جامع بيانات الطرق (بالهَب) لم يكتب سطراً واحداً منذ ٢ آب.** كان يعمل كل خمس دقائق، ويقول "نجحت" في كل مرة — نحو ٤٣٠٠ تشغيلة على مدى خمسة عشر يوماً — وهو لا يفعل شيئاً. السبب سطر واحد في استعلام قاعدة البيانات: كان يطلب أقدم ٥٠٠ نشرة ثم يستبعد ما عالجه سابقاً، فبقي يدور في المكان. أصلحته، و٥٤٠٨ نشرات محجوزة تدخل الآن؛ وصلنا ٣٨٬١٨٨ قراءة والعدّاد يرتفع. (القناة نفسها صمتت بعد ١١ آب، فهذا استرجاع لما فات لا استئناف لبثّ حيّ.)
 
-والنظام تصرّف صح لحاله: كل الـ١٩٦ محطة صارت **"غير معروف"**، الثقة صفر، وعمر المعلومة مكتوب. **ولا محطة معروضة إنها فيها وقود.** ما حدا تدخّل — وهذا بالضبط اللي بيميّزنا. اليوم حوالي ٩:١٧ رح تصير إشارة الوقود حمرا؛ **صحيحة، مو عطل جديد**.
+٢. **قناة الإنذار كانت معطّلة تسعة أيام.** انقطعت الكهرباء عن الجهاز في ٨ آب أثناء الكتابة فتلف سطر في ملف الإنذارات، وصار كل من يقرأ الملف ينهار. النتيجة الملموسة: **الوقود صمت في ٨ آب ولم يصلك إنذار واحد**، وإنذار قديم بقي مفتوحاً لا يستطيع أحد إغلاقه. أصلحته، وأُطلقت الإنذارات الأربعة المستحقة، وأُغلق القديم.
 
-**[ZAID] — القرار الوحيد إلك:** الباقي الوحيد للوقود هو قراءة الصور، وهي **راسبة**: ٠٫٩٥٧، و**٣٤ حالة الصورة قالت "متوفر" والنص قال "مش متوفر"**، وصفر بالعكس. يعني غلطها كله باتجاه الطمأنة الكاذبة اللي بتبعث حدا على محطة فاضية، والشرط صفر. ما رفعتها ولا بروّجها — بتضلّ "غير معروف"، ولا نعرض الصور مع تحذير؟
+٣. **[لك القرار] أرقام غزة التراكمية متوقفة عند ٨ آب — تسعة أيام.** عندنا ٧٣٬٣٨٤ شهيداً و١٧٤٬٢٤٢ جريحاً؛ والناشر يقول ٧٣٬٣٩١ و١٧٤٬٢٨٠ حتى ١٥ آب. البيانات الجديدة تنزل عندنا على القرص كل ليلة ولا أحد يقرأها: هذا الجزء ما زال يمرّ عبر النظام القديم الذي مات في ٩ آب. الفصل قرار وتصميم، لا تصليح آلي — فتركته لك.
 
-الدقة: ما في جولة مستحقّة — v1.6 انقاست الصبح ٠٫٨٩٧. و`arrest` و`closure` و`demolition` و`death` لسّه **غير مقاسة**، وبنقولها بصراحة.
+٤. **[لك القرار] صيانة ١٠ آب لم تحدث أصلاً**: انتهت صلاحية تسجيل الدخول. أسبوع كامل بلا صيانة، وإنذارها وقع في الملف التالف.
 
-ملاحظة صغيرة: رح يضلّ إنذار واحد مفتوح باسم `palestine-v2-maintain.service` — سجلّ فشل الساعة ٦:٣٠. ما مسحته: إنذار فشلي أنا مو من حقّي أمسحه بنفسي. لما تشوفه، أمره: `.venv/bin/python -m ops.alert --clear`.
+٥. النسخة الاحتياطية سليمة تماماً: استرجعنا ١٬٦١٣٬٦٠٢ صفاً من النسخة البعيدة وطابقت. الكهرباء والوقود صامتان لأن **المصدر** صمت — تحققتُ من موقع الكهرباء بنفسي: آخر إعلان عندهم ١٣/٠٨.
 
 ---
 
-## English
+## English detail
 
-**Green.** 16/17 jobs, 12/12 feeds, backup ok (1,237,239 rows, off-host). Verification: **59/60 SQL**, 315 pytest, 34 + 27 standalone, eval_geo 89.3% / 0 foreign leaks. The one SQL failure is G3.7 naming `maintain` — this run. Proved in a rolled-back transaction that its success flips G3.7 to PASS: 60/60 the moment this run exits. Not a defect to "fix".
+**Green.** 18/19 jobs, 9/12 feeds. Backup 79.8s, 1,613,602 rows off-host; restore test PASSED from the OFF-SITE copy — 30 tables, hypertables intact. as_of evidence 1,034 entries / 0 bad, grew 2 → 9 days. Gap radar: 27 fresh, 1 late, 0 stalled. Scout swept 254 PSE datasets, 40 candidates, **0 never seen before** — nothing to license-read.
 
-**Measured.** Quarantine re-check: fuel images 0.957 with **34 one-sided false-availables** (gate ≥0.99 and ZERO) — stays. Palhub roads 0.7215 over 6,657 pairs (gate ≥0.90) — stays. No precision round due (v1.6 scored today, 0.897 [0.80–0.95]). **Unmeasured, stated as such: arrest, closure, demolition, death** (n<5). Classifier untouched, so 0.897 still holds.
+**Measured.** No precision round due: classifier 1.6 scored 2026-08-04 at 0.897, 12 days old against a 35-day ceiling. **No classifier rule was touched, so 1.6 stays measured**; arrest, closure and demolition remain UNMEASURED. The two quarantined feeds are now UNMEASURABLE, not failed — fuel_images n=0 (text bulletins dead since Aug 3) and palhub_roads n=0 (the bug above). Neither promoted; both stay quarantined.
 
-**Root-caused, not pattern-matched.** The fuel silence resembled the known "drying up" story. It isn't: the collector is healthy and the channel is live — palhub went image-only. Last text bulletin 2026-08-03 13:51:30Z matches the last DB row to the second.
+**Fixed.** `c9282fe` the palhub LIMIT-before-filter starvation, `8460d10` the torn alerts log. Each has a failing regression test written first. Verification after: 82 SQL PASS + 1 known FAIL (G3.7 naming this run, clears when it exits), 611 pytest passed / 1 skipped, 34 + 27 standalone, eval_geo 89.8% agreement and 0 foreign leaks.
 
-**Fixed.** `db5423b` — `ops/maintain-logs/` was not git-ignored; an unattended agent's full session transcript sat one `git add -A` from permanent history. Failing test written first, reads LOGDIR from `maintain.sh`. `d2def3a` — HANDOFF's test counts (436, measured).
+**[ZAID] 1 — the Gaza casualty series.** `conflict.yaml` is the last big spec still reading v1, and v1 died on Aug 9. `ops/fetch_t4p.py` already downloads the fresh file nightly; no spec reads it. Cutting it needs `cut_equivalence`, a replay transformer and a licence reading — Stage 7 work, not mechanical. Build it or say when.
 
-**Deliberately not done.** No promotion of the fuel image feed (failed gate, Zaid's call). No classifier, threshold, or serving-gate change. No re-scoring of scored rounds. Filed untouched: round 6's v1.7 list — street-name governorate, two actor inversions, settlement expansion read as demolition. **Did not `--clear` the `palestine-v2-maintain.service` alarm**: it records this run's own predecessor failing, and an unattended agent acknowledging the alarm raised by its own crash is marking its own homework. The `watchdog:job:maintain` twin self-resolves once the heartbeat lands.
+**[ZAID] 2 — the maintainer's credential.** Nothing in this repo can renew the Claude CLI OAuth, so a silent skipped week recurs whenever it expires. Worth an expiry check in `maintain.sh` pre-flight.
+
+**[ZAID] 3 — fuel, restated from Aug 4.** Still no believed source. Image cards failed their gate (0.957 with 34 false-availables). Serve them with a warning, or keep serving "unknown"? Your call, unchanged.
+
+**Deliberately not done.** Did not promote anything or move a gate. Did not touch v1 — its 13 failing refresh steps (25–29 nights) are restated, not chased; cutting v2 off them is the fix, not repairing them. Did not fix `measure_review` reporting `gate_crossed: false` when n=0, which makes "failed" and "unmeasurable" identical in the ledger — that is a judgment about what the ledger means. Did not add gazetteer aliases for the 8 unresolved palhub checkpoint names; each needs a real source, not a guess. Did not clear the 144 open alarms — most predate Aug 8 and acknowledging them is yours.
