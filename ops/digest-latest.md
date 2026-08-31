@@ -1,31 +1,33 @@
-# صيانة الإثنين — ١٧ آب ٢٠٢٦
+# صيانة الإثنين — ٣١ آب ٢٠٢٦
 
-**يا زيد: النظام يعمل، ولكن وجدتُ عطلين كانا صامتين تماماً — وكلاهما مُصلَح الآن.**
+**يا زيد: أهم شيء اليوم — النسخة الاحتياطية البعيدة متوقفة منذ ست ليالٍ، والسبب ليس عندنا. وصيانة الأسبوع الماضي لم تحدث أصلاً.**
 
-١. **جامع بيانات الطرق (بالهَب) لم يكتب سطراً واحداً منذ ٢ آب.** كان يعمل كل خمس دقائق، ويقول "نجحت" في كل مرة — نحو ٤٣٠٠ تشغيلة على مدى خمسة عشر يوماً — وهو لا يفعل شيئاً. السبب سطر واحد في استعلام قاعدة البيانات: كان يطلب أقدم ٥٠٠ نشرة ثم يستبعد ما عالجه سابقاً، فبقي يدور في المكان. أصلحته، و٥٤٠٨ نشرات محجوزة تدخل الآن؛ وصلنا ٣٨٬١٨٨ قراءة والعدّاد يرتفع. (القناة نفسها صمتت بعد ١١ آب، فهذا استرجاع لما فات لا استئناف لبثّ حيّ.)
+١. **[لك القرار] النسخة الاحتياطية خارج الجهاز متوقفة منذ ٢٥ آب — ست ليالٍ.** مساحة غوغل درايف امتلأت تماماً: ١٥.٠٨٧ من أصل ١٥ غيغابايت. أربع مهام نسخ تتشارك نفس الحساب: `zlab-restic` ٨.٤ غيغا (٥٦٪)، ومشروع فلسطين ٤.٧ غيغا (٣١٪)، و`agent-backups` ٢ غيغا، و`lifeos` ٠.٠٣. النسخ المحلية سليمة (٧ مجموعات، ٢.٦ غيغا) والنسخة اليومية ما زالت تُكتب — **الذي توقف هو النسخة التي تنجو لو احترق هذا الجهاز**. واختبار الاسترجاع الأسبوعي يفشل لأنه يبحث عن نسخة لم تُرفع، وهذا سلوك صحيح لا عطل ثانٍ. لم ألمس شيئاً: تفريغ المساحة يعني حذف نسخ أحدهم، واختيار أي المهام الأربع تأخذ المساحة قرارك أنت.
 
-٢. **قناة الإنذار كانت معطّلة تسعة أيام.** انقطعت الكهرباء عن الجهاز في ٨ آب أثناء الكتابة فتلف سطر في ملف الإنذارات، وصار كل من يقرأ الملف ينهار. النتيجة الملموسة: **الوقود صمت في ٨ آب ولم يصلك إنذار واحد**، وإنذار قديم بقي مفتوحاً لا يستطيع أحد إغلاقه. أصلحته، وأُطلقت الإنذارات الأربعة المستحقة، وأُغلق القديم.
+٢. **[لك القرار] وآلية التنظيف التي كان يفترض أن تمنع هذا لم تحذف شيئاً قط.** القاعدة "احتفظ بآخر ٣٠ + كل نسخة يوم ١ من الشهر للأبد" — وفي ١ آب كانت هناك تسع نسخ يدوية من أيام البناء، وكلها مثبّتة للأبد. جرّبتُ القاعدة على القائمة الحقيقية (٣٩ نسخة): **قائمة الحذف فارغة، ودائماً كانت**. والأسوأ: التنظيف يعمل *بعد* الرفع، فإذا امتلأت المساحة فشل الرفع ولم يصل التنظيف أبداً. سطر واحد يصلح كلاً منهما، لكنه يحذف نسخاً احتياطية — فتركته لك.
 
-٣. **[لك القرار] أرقام غزة التراكمية متوقفة عند ٨ آب — تسعة أيام.** عندنا ٧٣٬٣٨٤ شهيداً و١٧٤٬٢٤٢ جريحاً؛ والناشر يقول ٧٣٬٣٩١ و١٧٤٬٢٨٠ حتى ١٥ آب. البيانات الجديدة تنزل عندنا على القرص كل ليلة ولا أحد يقرأها: هذا الجزء ما زال يمرّ عبر النظام القديم الذي مات في ٩ آب. الفصل قرار وتصميم، لا تصليح آلي — فتركته لك.
+٣. **[لك القرار] صيانة ٢٤ آب لم تحدث: `API Error: 529 Overloaded`.** هذه ثالث طريقة مختلفة يفشل بها المشغّل في خمسة أسابيع (أمر مفقود، ثم انتهاء الجلسة، ثم ازدحام الخادم). **اثنان من آخر أربعة إثنينات لم يحدثا**، ولا شيء يعيد المحاولة.
 
-٤. **[لك القرار] صيانة ١٠ آب لم تحدث أصلاً**: انتهت صلاحية تسجيل الدخول. أسبوع كامل بلا صيانة، وإنذارها وقع في الملف التالف.
+٤. **أصلحتُ عطلاً كان صامتاً منذ ولادته: جامع أخبار الكهرباء كان يقرأ القائمة الخطأ.** موقع كهرباء الشمال ينشر قائمتين في صفحة واحدة: أخبار الشركة (بتواريخ)، وإعلانات فصل التيار (بدون تواريخ). الجامع كان يقرأ الأولى، والإعلانات ليست فيها أبداً. النتيجة: "صفر إعلانات" بينما **سبعة كانت على الصفحة**. والأخطر — في صيانة ١٧ آب قلتُ لك إن الكهرباء صامتة لأن *المصدر* صامت، وإن آخر إعلان عندهم ١٣/٠٨. **ذلك كان خبراً عن زيارة، لا إعلان فصل.** التحقّق نفسه جرى عبر العدسة المكسورة. الآن: ٧ إعلانات، ٦ بمواعيد مقروءة، ٥ محدّدة المكان، **ولا واحد فعّال الآن** فلا شيء قديم يُقدَّم كانقطاع جارٍ. استرجعنا ٤ إعلانات لم نرها قط (زواتا، عصيرة الشمالية، نابلس في ٢١/٨، والباذان في ٢٣/٨).
 
-٥. النسخة الاحتياطية سليمة تماماً: استرجعنا ١٬٦١٣٬٦٠٢ صفاً من النسخة البعيدة وطابقت. الكهرباء والوقود صامتان لأن **المصدر** صمت — تحققتُ من موقع الكهرباء بنفسي: آخر إعلان عندهم ١٣/٠٨.
+٥. النظام وجدته **أحمر قبل أن أبدأ** — اختباران كانا يفشلان أصلاً. أصلحتُ واحداً (رقم في README تخلّف: ٢٧٥ ألف مقابل ٣١٢ ألف حقيقية)، والثاني تركته لك لأنه يحتاج قراراً لا تصليحاً.
 
 ---
 
 ## English detail
 
-**Green.** 18/19 jobs, 9/12 feeds. Backup 79.8s, 1,613,602 rows off-host; restore test PASSED from the OFF-SITE copy — 30 tables, hypertables intact. as_of evidence 1,034 entries / 0 bad, grew 2 → 9 days. Gap radar: 27 fresh, 1 late, 0 stalled. Scout swept 254 PSE datasets, 40 candidates, **0 never seen before** — nothing to license-read.
+**Green.** 16/19 jobs, 8/12 feeds. as_of evidence **1,342 entries / 0 bad** (was 1,034), manifest grew **9 → 23 days** — the history layer is provable. Gap radar 31 datasets: 27 fresh, 0 late, **1 stalled**. Scout swept 253 PSE packages, 40 candidates, **0 never seen before** — nothing to license-read.
 
-**Measured.** No precision round due: classifier 1.6 scored 2026-08-04 at 0.897, 12 days old against a 35-day ceiling. **No classifier rule was touched, so 1.6 stays measured**; arrest, closure and demolition remain UNMEASURED. The two quarantined feeds are now UNMEASURABLE, not failed — fuel_images n=0 (text bulletins dead since Aug 3) and palhub_roads n=0 (the bug above). Neither promoted; both stay quarantined.
+**Measured.** The Aug-17 palhub fix is now proved by instrument: measure-review 0 pairs → 14,662 → **31,634** at 0.7909, the trailing window moving as a live feed's must. Still below its gate, still quarantined, **not promoted**. fuel_images still n=0 (UNMEASURABLE, text bulletins dead since Aug 3). No precision round due — classifier 1.6 scored 0.897 on Aug 4, 26 days against a 35-day ceiling, so it falls due on **Sep 14, not Sep 7**. No classifier rule touched, so 1.6 stays measured; arrest, closure and demolition remain UNMEASURED from round 6.
 
-**Fixed.** `c9282fe` the palhub LIMIT-before-filter starvation, `8460d10` the torn alerts log. Each has a failing regression test written first. Verification after: 82 SQL PASS + 1 known FAIL (G3.7 naming this run, clears when it exits), 611 pytest passed / 1 skipped, 34 + 27 standalone, eval_geo 89.8% agreement and 0 foreign leaks.
+**The one stalled dataset is not new.** `v1_conflict_tech4palestine` crossed from "late" to "stalled" — it is [ZAID] 1 from Aug 17 deteriorating on schedule, now 23 days frozen. `ops/fetch_t4p.py` is healthy and fetched 1,059 days at 03:45 today; no spec reads it. Not the June-9 class: nothing broke, the cut was never built.
 
-**[ZAID] 1 — the Gaza casualty series.** `conflict.yaml` is the last big spec still reading v1, and v1 died on Aug 9. `ops/fetch_t4p.py` already downloads the fresh file nightly; no spec reads it. Cutting it needs `cut_equivalence`, a replay transformer and a licence reading — Stage 7 work, not mechanical. Build it or say when.
+**Fixed.** `c557729` the power collector's discovery, with four regression tests written first. README observations floor 275,000 → 310,000, which `test_license_model` demanded by name.
 
-**[ZAID] 2 — the maintainer's credential.** Nothing in this repo can renew the Claude CLI OAuth, so a silent skipped week recurs whenever it expires. Worth an expiry check in `maintain.sh` pre-flight.
+**Verification.** 82 SQL PASS + **1 FAIL** — the liveness gate naming backup, maintain and restore-test. That FAIL is honest and, unlike last week's, **does not clear when this run exits**: two of the three need the quota freed. pytest 614 passed / 1 failed / 1 skipped, 34 + 27 standalone, eval_geo 89.5% agreement (gate ≥80%) and 0 foreign leaks.
 
-**[ZAID] 3 — fuel, restated from Aug 4.** Still no believed source. Image cards failed their gate (0.957 with 34 false-availables). Serve them with a warning, or keep serving "unknown"? Your call, unchanged.
+**[ZAID] 4 — the correlate test, red before I arrived.** Bread-vs-sugar from 2026-07-01 now has 1 overlapping point where it had 0, so the refusal reads "1 of 12 required" not "no points". The test exists so three kinds of absence send callers three different places; restoring that means choosing a window that is empty and stays empty. A test-design judgment, not a stale number.
 
-**Deliberately not done.** Did not promote anything or move a gate. Did not touch v1 — its 13 failing refresh steps (25–29 nights) are restated, not chased; cutting v2 off them is the fix, not repairing them. Did not fix `measure_review` reporting `gate_crossed: false` when n=0, which makes "failed" and "unmeasurable" identical in the ledger — that is a judgment about what the ledger means. Did not add gazetteer aliases for the 8 unresolved palhub checkpoint names; each needs a real source, not a guess. Did not clear the 144 open alarms — most predate Aug 8 and acknowledging them is yours.
+**[ZAID] 5 — restated, unchanged.** The Gaza casualty cut (`conflict.yaml` still reads v1); the maintainer's credential; fuel's missing believed source.
+
+**Deliberately not done.** Promoted nothing, moved no gate, touched no policy. Did not free the Drive quota or fix `prune_remote` — both delete backups. Did not raise `checkpoint_settlers`' 24h default: chased it and the feed is innocent (p50 11.2h, **p99 2.14 days**, 29 arrivals < the 60 needed to derive a threshold), so the alarm is the ceiling, and moving a ceiling is a threshold change. Did not touch v1's 28–30 failing steps — cutting v2 off them is the fix, not repairing them.
