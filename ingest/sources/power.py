@@ -65,6 +65,9 @@ DATE = re.compile(r"(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})")
 TIME = re.compile(r"الساعة\s*(\d{1,2})[:٫،.](\d{2})\s*(صباح\w*|مساء\w*|ظهر\w*|عصر\w*|ليل\w*)?")
 
 _TAGS = re.compile(r"<script.*?</script>|<style.*?</style>", re.S)
+# The whole anchor, however deeply the headline is nested inside it. Both
+# spellings of the parameter occur on the same page — see notices_in.
+ANCHOR = re.compile(r"<a\s[^>]*newsid=(\d+)[^>]*>(.*?)</a>", re.I | re.S)
 
 
 def _text(html: str) -> str:
@@ -127,15 +130,41 @@ def _ensure_source(cur) -> int:
     return cur.fetchone()[0]
 
 
-def discover_notices() -> list[tuple[str, str]]:
-    """[(newsid, title)] for headlines that announce a cut."""
-    html = _get(BASE + "/")
+def notices_in(html: str) -> list[tuple[str, str]]:
+    """[(newsid, title)] for headlines that announce a cut.
+
+    THE COLLECTOR WAS READING THE WRONG LIST FOR TWENTY-NINE DAYS.
+    One page carries two of them. The dated column on the right is company
+    news — delegations, tenders, a visit from the energy authority — and a cut
+    notice has never once appeared in it. The cuts live in the undated
+    "تحديثات الموقع" marquee, and that block differs in BOTH ways the old
+    pattern depended on: it spells the parameter `newsID`, and it puts the
+    headline two divs inside the anchor rather than straight after the tag.
+    Matching `newsid=(\\d+)[^>]*>([^<]{6,120})` therefore captured only the news
+    column, where nothing ever matches CUT_TITLE — so the source reported "no
+    cuts announced" while announcing them, which is indistinguishable from a
+    quiet upstream until you read the page yourself. It was: on 2026-08-17 the
+    newest thing this function could see was dated 13/08 and that was taken as
+    the publisher having nothing to say.
+
+    So the anchor is now taken whole and its tags stripped, which is agnostic
+    to how deep the headline is nested, and the id is matched case-insensitively.
+    The date chip is dropped explicitly: it sits INSIDE the anchor, and
+    PLACE_IN_TITLE anchors on the end of the title, so a date left at the front
+    does not fail loudly — it just quietly costs the place name.
+    """
     seen: dict[str, str] = {}
-    for nid, title in re.findall(r'newsid=(\d+)[^>]*>([^<]{6,120})', html):
-        title = re.sub(r"\s+", " ", title).strip()
+    for nid, inner in ANCHOR.findall(html):
+        text = re.sub(r"<[^>]+>", " ", inner)
+        text = DATE.sub(" ", text)
+        title = re.sub(r"\s+", " ", text).strip()
         if title and nid not in seen and CUT_TITLE.search(title):
             seen[nid] = title
     return list(seen.items())
+
+
+def discover_notices() -> list[tuple[str, str]]:
+    return notices_in(_get(BASE + "/"))
 
 
 def load(dry_run: bool = False) -> dict:
