@@ -50,6 +50,9 @@ from resolve.db import connect
 from resolve.geo import resolve_place
 
 BASE = "https://www.nedco.ps"
+# "أعطال الكهرباء" — the publisher's own index of cut notices, and the only
+# surface that carries all of them. See discover_notices.
+CUT_LIST = "/?page=cat&cat=6"
 SOURCE_KEY = "nedco"
 STATE_KIND = "power"
 LOCAL_TZ = ZoneInfo("Asia/Hebron")
@@ -60,9 +63,22 @@ ENCODING = "windows-1256"
 CUT_TITLE = re.compile(r"(فصل\s+تيار|فصل\s+التيار|قطع\s+التيار|انقطاع\s+التيار)")
 # "فصل تيار كهربائي في مدينة نابلس" -> "مدينة نابلس"
 PLACE_IN_TITLE = re.compile(r"(?:في|عن)\s+(.{2,40})$")
+# "فصل تيار كهربائي - قرية تل ." -> "قرية تل". A third of the notices name the
+# place after a dash instead of after "في", and this is the whole of the rest
+# of such a title once the announcement phrase is taken off the front.
+CUT_PHRASE = re.compile(
+    r"^\s*(?:اعلان|إعلان)?\s*(?:فصل\s+تيار\w*|فصل\s+التيار\w*|قطع\s+التيار"
+    r"|انقطاع\s+التيار)\s*(?:كهربائ\w*|كهرائ\w*)?")
 DATE = re.compile(r"(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})")
-# "الساعة 8:30 صباحا" / "الساعة 1:00 من ظهر"
-TIME = re.compile(r"الساعة\s*(\d{1,2})[:٫،.](\d{2})\s*(صباح\w*|مساء\w*|ظهر\w*|عصر\w*|ليل\w*)?")
+# THE DAY OF THE CUT, WHICH IS NOT THE DAY OF THE POSTING. It follows
+# "الموافق" — sometimes written "لموافق" — and the publisher uses four
+# separators and both orderings: 1/9/2026, 24_8_2026, 4-8-2026, 2026/7/21.
+ANNOUNCED_DATE = re.compile(
+    r"ل?موافق\s*(\d{1,4})\s*[/\-_.]\s*(\d{1,2})\s*[/\-_.]\s*(\d{1,4})")
+# "الساعة 8:30 صباحا" / "الساعة 1:00 من ظهر" / "الساعه 11:00" — the last
+# spelling appears once in 38 notices, and needing two times to make a window
+# means one unread hour costs the whole notice.
+TIME = re.compile(r"الساع[ةه]\s*(\d{1,2})[:٫،.](\d{2})\s*(صباح\w*|مساء\w*|ظهر\w*|عصر\w*|ليل\w*)?")
 
 _TAGS = re.compile(r"<script.*?</script>|<style.*?</style>", re.S)
 # The whole anchor, however deeply the headline is nested inside it. Both
@@ -100,12 +116,30 @@ def _to_24h(hour: int, minute: int, marker: str | None) -> int:
 
 
 def parse_window(body: str) -> tuple[datetime, datetime] | None:
-    """(start, end) in UTC for the announced cut, when both are stated."""
-    d = DATE.search(body)
+    """(start, end) in UTC for the announced cut, when both are stated.
+
+    THE DATE IS THE ONE THE NOTICE ANNOUNCES, NOT THE ONE IT WAS POSTED ON.
+    This took `DATE.search(body)` — the first date in the text — which is
+    always the publication chip ("تاريخ النشر: 31/08/2026"), while the cut it
+    describes is one to three days later ("يوم الثلاثاء الموافق 1/9/2026").
+    All 18 notices whose day could be checked were filed on the wrong day, and
+    the notice's own Arabic weekday name agrees with the announced date in 34
+    of 35 cases and with the publication date in none of them. A cut placed on
+    the day it was announced is not merely early: `active_now` is a window
+    test, so it can assert a live cut on a day with no cut and stay quiet
+    through the real one.
+
+    A notice with no announced date now yields no window at all. Two of the 38
+    are unscheduled faults ("لمدة ساعة من الان") that state no day and parsed
+    to nothing before this change too, so nothing is lost by refusing to
+    invent one from the posting date.
+    """
+    d = ANNOUNCED_DATE.search(body)
     times = TIME.findall(body)
     if not d or len(times) < 2:
         return None
-    day, month, year = (int(x) for x in d.groups())
+    a, b, c = (int(x) for x in d.groups())
+    day, month, year = (c, b, a) if a > 31 else (a, b, c)
     try:
         (h1, m1, k1), (h2, m2, k2) = times[0], times[1]
         start = datetime(year, month, day, _to_24h(int(h1), int(m1), k1), int(m1),
@@ -163,14 +197,63 @@ def notices_in(html: str) -> list[tuple[str, str]]:
     return list(seen.items())
 
 
-def discover_notices() -> list[tuple[str, str]]:
-    return notices_in(_get(BASE + "/"))
+def place_in_title(title: str) -> str | None:
+    """The place a cut notice names, in either of the two ways it names one.
+
+    THE SECOND LIST WAS NOT THE ONLY THING BEING MISSED. Fourteen of the 38
+    notices on the publisher's index write "فصل تيار كهربائي - قرية تل ."
+    rather than "... في قرية تل", and `PLACE_IN_TITLE` anchors on "في|عن".
+    A notice with no place resolves to nothing and `load` drops it whole, so
+    those fourteen were discovered and then thrown away — including both of
+    the cuts announced on 2026-08-31.
+
+    The dash form is read by removing the announcement phrase from the front
+    and taking what is left, which does not care whether the separator is a
+    dash, a hyphen or missing altogether. "في" still wins where it appears,
+    so the majority form reads exactly as it always did.
+    """
+    t = title.strip().rstrip(". ").strip()
+    m = PLACE_IN_TITLE.search(t)
+    if m:
+        return m.group(1).strip()
+    rest = CUT_PHRASE.sub("", t).strip().lstrip("-–—_ ").strip()
+    return rest or None
+
+
+def discover_notices(stats: dict | None = None) -> list[tuple[str, str]]:
+    """Every cut notice the publisher lists, from the list it keeps for them.
+
+    AND THE MARQUEE WAS THE WRONG LIST TOO. The 2026-08-31 fix moved discovery
+    off the dated news column and onto the homepage's "تحديثات الموقع"
+    marquee, which does carry cut notices — but only some. On 2026-09-07 the
+    marquee showed seven while `?page=cat&cat=6` ("أعطال الكهرباء"), which is
+    the publisher's own index of exactly this category, showed thirty-eight —
+    and the two the marquee omitted were the two newest, a cut in قرية تل
+    announced on 08-31 for 09-01. So `power` reported no observation for
+    fifteen days, the same shape of silence as before and the same cause: a
+    real list, read faithfully, that is not the list the facts are in.
+
+    The index is fetched first and its failure is allowed to raise, because a
+    caught one here would return "no cuts announced" from a page that was
+    never read. The marquee is then read as well — every one of its ids is in
+    the index today, and one request is cheaper than depending on that.
+    """
+    seen = dict(notices_in(_get(BASE + CUT_LIST)))
+    try:
+        for nid, title in notices_in(_get(BASE + "/")):
+            seen.setdefault(nid, title)
+    except Exception:                                      # noqa: BLE001
+        # Counted, not swallowed — but it cannot cause a silent zero, because
+        # the index above has already answered or raised.
+        if stats is not None:
+            stats["fetch_failed"] += 1
+    return list(seen.items())
 
 
 def load(dry_run: bool = False) -> dict:
     stats = {"notices": 0, "parsed_window": 0, "resolved": 0, "fetch_failed": 0,
              "announced": 0, "active_now": 0, "written": 0, "items": []}
-    notices = discover_notices()
+    notices = discover_notices(stats)
     stats["notices"] = len(notices)
     if not notices:
         return stats
@@ -192,8 +275,7 @@ def load(dry_run: bool = False) -> dict:
             if window:
                 stats["parsed_window"] += 1
 
-            m = PLACE_IN_TITLE.search(title)
-            place_text = m.group(1).strip() if m else None
+            place_text = place_in_title(title)
             res = resolve_place(place_text, conn=conn, learn=False) if place_text else None
             if not res:
                 continue
