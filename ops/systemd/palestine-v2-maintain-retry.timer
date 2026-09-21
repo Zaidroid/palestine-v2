@@ -1,0 +1,9 @@
+[Unit]
+Description=Weekly maintenance catch-up — Tuesday morning, runs only if the week has no digest yet
+
+[Timer]
+OnCalendar=Tue *-*-* 05:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

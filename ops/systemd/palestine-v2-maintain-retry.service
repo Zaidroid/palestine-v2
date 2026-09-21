@@ -1,0 +1,18 @@
+[Unit]
+Description=Palestine v2 — maintenance catch-up: start the weekly run only if no digest landed in 6 days
+After=docker.service network-online.target
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+# Started by palestine-v2-maintain-retry.timer (Tuesday) and by the transient
+# +6h timers ops/maintain.sh schedules when its seat probe fails. Exit 1 from
+# the check skips the unit cleanly: the week already has its digest.
+ExecCondition=/home/zaid/palestine-v2/.venv/bin/python -m ops.maintain_due --max-age-days 6
+# Start the real unit; never run maintain.sh from here. systemd runs at most
+# one instance of a unit, so a catch-up that lands on a running session joins
+# it instead of starting a second agent in the same repo. `+` is root for this
+# line only — starting a system unit needs it, the check above does not.
+ExecStart=+/usr/bin/systemctl start --no-block palestine-v2-maintain.service
