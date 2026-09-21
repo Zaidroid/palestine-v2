@@ -7,6 +7,8 @@ stapled to it gets quoted without the caveat.
 """
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -111,10 +113,22 @@ def test_too_few_points_is_a_refusal_not_a_wide_interval():
 
 
 def test_a_window_with_no_points_says_so_rather_than_counting():
+    """The window opens the day after the newer series' last point, so it is
+    empty on whatever the databank holds. It used to be a fixed
+    frm=2026-07-01 — empty when written on 2026-08-08, because WFP had
+    published through June — and WFP's July prices filled it, so the answer
+    became "only 1 usable point", correctly. A window past the end of a live
+    series is a date, not a property; this one is read off the data."""
+    held = client.get("/v2/databank/compare",
+                      params={"indicators": "food.price.bread,food.price.sugar"})
+    last = max(p["at"] for s in held.json()["series"] for p in s["points"])
+    after = (date.fromisoformat(last) + timedelta(days=1)).isoformat()
     d = corr(a="food.price.bread", b="food.price.sugar",
-             allow_same_concept="true", frm="2026-07-01")
+             allow_same_concept="true", frm=after)
     assert d["refused"]
-    assert "no points" in " ".join(d["reasons"])
+    reasons = " ".join(d["reasons"])
+    assert "no points" in reasons
+    assert "usable overlapping" not in reasons      # said, not counted
 
 
 def test_mixed_place_grain_is_refused():

@@ -3,6 +3,7 @@
 Unit tests run on synthetic records everywhere; the integration tests that
 read v1's real files skip when /opt/stacks/palestine is absent (CI, laptops).
 """
+import json
 from collections import Counter
 from pathlib import Path
 
@@ -184,8 +185,28 @@ needs_v1 = pytest.mark.skipif(not V1.exists(), reason="v1 databank not mounted")
 
 @needs_v1
 def test_pilot_dry_runs_reproduce_spec_arithmetic():
+    # prisoners is counted from v1's file, not pinned, because that file is
+    # a live scrape: v1 keeps only the Addameer months Addameer's page still
+    # shows. It read 890 (864 HaMoked + 26 Addameer) in every v1 snapshot
+    # from 06-25 to 09-08; on 09-09 six old months left and seven new ones
+    # arrived, so it became 864 + (26 - 12 + 14) = 892. The databank still
+    # holds all 53 Addameer readings it has ever seen, so nothing was lost on
+    # our side. The spec's arithmetic is the structure, so that is what is
+    # asserted, counted from the file without the loader: one record -> one
+    # observation, every record routes to one of the spec's two sources, and
+    # HaMoked is a complete four-series panel (864 = 4 x 216 when measured).
+    # The floor on the total is the spec's expect.min_records, which run()
+    # itself enforces.
+    spec = load_spec("prisoners")
+    recs = json.loads((V1 / "prisoners" / "all-data.json").read_bytes())["data"]
+    by_source = Counter(rec["sources"][0]["name"] for rec in recs)
     r = databank.run("prisoners", dry_run=True)
-    assert r["records_read"] == r["observations_emitted"] == 890
+    assert r["records_read"] == r["observations_emitted"] == len(recs)
+    assert not r["drops"]
+    assert set(by_source) <= set(spec["source_routing"]["by_name"])
+    months = {rec["date"] for rec in recs
+              if rec["sources"][0]["name"] == "HaMoked"}
+    assert by_source["HaMoked"] == 4 * len(months)
     r = databank.run("casualties", dry_run=True)
     assert r["records_read"] == r["observations_emitted"] == 49
     r = databank.run("demolitions", dry_run=True)
