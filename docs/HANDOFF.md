@@ -137,6 +137,10 @@ curl -s localhost:7870/health | jq '.status, .faults'
 curl -s https://live-api.zaidlab.xyz/v2 | jq '.route_count'   # public, from outside
 ```
 
+The analyst (P0, 2026-09-19) is on that same board as the job `analyst`, and has
+two views of its own — `analyst_health` per organ and `analyst_backlog`. What it
+is, and how organs B–G attach to it: `docs/analyst.md`.
+
 ---
 
 ## 4. Traps that already bit once — they will bite again

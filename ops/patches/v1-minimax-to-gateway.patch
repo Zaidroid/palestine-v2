@@ -1,0 +1,102 @@
+v1 westbank-alerts — let `complete_json` speak to an OpenAI-compatible endpoint,
+so it can be pointed at the brain's gateway instead of the dead subscription.
+
+APPLY AFTER v1-minimax-metrics.patch. From the service root:
+
+    cd /opt/stacks/palestine/services/westbank-alerts
+    patch -p1 --dry-run < ~/palestine-v2/ops/patches/v1-minimax-to-gateway.patch
+    patch -p1 < ~/palestine-v2/ops/patches/v1-minimax-to-gateway.patch
+
+Then, in that directory's .env (600, root's to edit — the key is NEVER copied
+into either repo; read it off the brain at the moment you paste it):
+
+    ssh zaid@100.110.89.116 'cut -d= -f2 /opt/stacks/gateway/.env'   # the key
+
+    MINIMAX_API_STYLE=openai
+    MINIMAX_BASE_URL=http://100.110.89.116:4000/v1
+    MINIMAX_MODEL=engine
+    MINIMAX_API_KEY=<the key that command printed>
+
+    docker compose up -d --build
+
+CHECK IT, DO NOT ASSUME IT:
+
+    curl -s localhost:8081/quality/checkpoints | jq .llm
+    # success_rate should stop being 0.0 within the hour
+    ~/palestine-v2/.venv/bin/python -m ops.minimax_alarm --dry-run
+
+ROLLBACK is the three .env lines back to MiniMax's, or MINIMAX_ENABLED=false —
+the pipeline has always run rules-first and falls back to them on any failure,
+which is precisely why three months of total failure changed no output.
+
+WHAT IS NOT DECIDED HERE
+Whether to cancel the MiniMax subscription. That is Zaid's call and this patch
+does not make it — it only makes the alternative one .env edit away.
+
+--- b/app/config.py	2026-09-19 17:20:19.510284329 +0000
++++ c/app/config.py	2026-09-19 17:21:11.869990841 +0000
+@@ -92,6 +92,14 @@
+     MINIMAX_BASE_URL: str = "https://api.minimax.io/v1"
+     MINIMAX_API_KEY: str = ""
+     MINIMAX_MODEL: str = "MiniMax-Text-01"   # reliable for Arabic; M3 garbles numbers
++    # "minimax"  -> POST {base}/text/chatcompletion_v2  (MiniMax's own shape)
++    # "openai"   -> POST {base}/chat/completions        (anything OpenAI-compatible)
++    # The second is how this points at the brain's LiteLLM gateway
++    # (http://100.110.89.116:4000/v1, MINIMAX_MODEL=engine) with no other
++    # change: same prompts, same JSON contract, same fail-safe-to-rules
++    # behaviour, no subscription. The variable names stay MINIMAX_* because
++    # renaming them would touch eleven call sites to say the same thing.
++    MINIMAX_API_STYLE: str = "minimax"
+     MINIMAX_TIMEOUT_S: float = 20.0
+     MINIMAX_DAILY_BUDGET: int = 0            # 0 = unlimited (subscription has generous limits)
+ 
+--- b/app/llm/minimax_client.py	2026-09-19 17:20:19.598283817 +0000
++++ c/app/llm/minimax_client.py	2026-09-19 17:21:11.869990841 +0000
+@@ -59,9 +59,11 @@
+ 
+ class MiniMaxClient:
+     def __init__(self, *, enabled: bool, model: str, base_url: str, api_key: str,
+-                 timeout: float = 20.0, daily_budget: int = 0):
++                 timeout: float = 20.0, daily_budget: int = 0,
++                 api_style: str = "minimax"):
+         self.enabled = enabled
+         self.model = model
++        self.api_style = (api_style or "minimax").lower()
+         self.base_url = base_url.rstrip("/")
+         self.api_key = api_key
+         self.timeout = timeout
+@@ -96,6 +98,7 @@
+         attempted = self._ok + self._fail
+         return {"calls_today": self._calls, "daily_budget": self.daily_budget,
+                 "enabled": self.enabled, "model": self.model,
++                "api_style": self.api_style, "base_url": self.base_url,
+                 "ok": self._ok, "failed": self._fail,
+                 # None, not 1.0 and not 0.0: a rate over no calls is unknown,
+                 # and a confident number here would be the same lie one layer
+@@ -118,8 +121,17 @@
+         self._last_error = key
+ 
+     async def _raw_complete(self, messages: list) -> Optional[str]:
+-        """POST to MiniMax chat endpoint, return assistant text (or None)."""
+-        url = f"{self.base_url}/text/chatcompletion_v2"
++        """POST to the chat endpoint, return assistant text (or None).
++
++        Two wire shapes, one contract. MiniMax's own path is the default and is
++        unchanged; `api_style=openai` posts the OpenAI shape, which is what the
++        brain's gateway speaks. Both answer `choices[0].message.content`, which
++        is why this is a path and a payload and not a second client.
++        """
++        if self.api_style == "openai":
++            url = f"{self.base_url}/chat/completions"
++        else:
++            url = f"{self.base_url}/text/chatcompletion_v2"
+         headers = {"Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"}
+         payload = {"model": self.model, "messages": messages,
+@@ -225,5 +237,6 @@
+             api_key=settings.MINIMAX_API_KEY,
+             timeout=settings.MINIMAX_TIMEOUT_S,
+             daily_budget=settings.MINIMAX_DAILY_BUDGET,
++            api_style=getattr(settings, "MINIMAX_API_STYLE", "minimax"),
+         )
+     return _client

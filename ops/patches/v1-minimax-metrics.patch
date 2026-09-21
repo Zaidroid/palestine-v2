@@ -1,0 +1,125 @@
+v1 westbank-alerts — give the MiniMax path a success rate, and make its failure
+legible. Apply from the service root:
+
+    cd /opt/stacks/palestine/services/westbank-alerts
+    cp -a app/llm/minimax_client.py app/llm/minimax_client.py.bak-$(date +%Y%m%dT%H%M%S)
+    patch -p1 --dry-run < ~/palestine-v2/ops/patches/v1-minimax-metrics.patch
+    patch -p1 < ~/palestine-v2/ops/patches/v1-minimax-metrics.patch
+    docker compose up -d --build            # the container runs the baked code
+
+WHAT IT CHANGES
+  * per-call outcome counters, surfaced through the EXISTING `stats()` — which
+    `GET /quality/checkpoints` already publishes as `llm`, so the number appears
+    on a surface that exists rather than a new one.
+  * `success_rate` is None when nothing has been attempted. Not 1.0, not 0.0.
+  * a 200 with no `choices` says what the upstream actually returned instead of
+    "'NoneType' object is not subscriptable", which is what all 29,686 failures
+    said and why none of them pointed at billing.
+
+NOT CHANGED: the fail-safe contract. `complete_json` still returns None on every
+problem and the rules pipeline still runs. Nothing about ingestion moves.
+
+WHY THIS IS A PATCH AND NOT AN EDIT
+ops/minimax_alarm.py measures the same thing from OUTSIDE the container today,
+from the journal and llm_cache, so the alarm does not wait for a deploy window.
+This patch replaces that estimate with the real counter when Zaid rebuilds.
+Applying it does not retire the alarm — the alarm watches the counter too.
+
+--- a/app/llm/minimax_client.py	2026-09-19 17:20:19.501284382 +0000
++++ b/app/llm/minimax_client.py	2026-09-19 17:20:19.598283817 +0000
+@@ -68,6 +68,19 @@
+         self.daily_budget = daily_budget  # 0 = unlimited
+         self._calls = 0
+         self._calls_day = date.today()
++        # WHY THESE EXIST (added 2026-09-19 after the audit in
++        # ~/lifeos-kernel/docs/LOCAL-ANALYST-2026-09.md §0).
++        # This client failed 29,686 of its last 29,687 calls and nothing said
++        # so for three months. It was not hidden: every failure logged "falling
++        # back to rules", truthfully. What was missing was a DENOMINATOR —
++        # `stats()` reported calls_today and nothing about whether any of them
++        # worked, so "degrading" and "stone dead" produced identical evidence
++        # on every surface this service has. A counter is the whole fix.
++        self._ok = 0
++        self._fail = 0
++        self._fail_reasons: dict = {}
++        self._last_ok_at: Optional[str] = None
++        self._last_error: Optional[str] = None
+ 
+     # ── budget (in-process soft cap; resets daily / on restart) ──────────────
+     def _budget_ok(self) -> bool:
+@@ -80,8 +93,29 @@
+         return self._calls < self.daily_budget
+ 
+     def stats(self) -> dict:
++        attempted = self._ok + self._fail
+         return {"calls_today": self._calls, "daily_budget": self.daily_budget,
+-                "enabled": self.enabled, "model": self.model}
++                "enabled": self.enabled, "model": self.model,
++                "ok": self._ok, "failed": self._fail,
++                # None, not 1.0 and not 0.0: a rate over no calls is unknown,
++                # and a confident number here would be the same lie one layer
++                # further in.
++                "success_rate": (round(self._ok / attempted, 4)
++                                 if attempted else None),
++                "failure_reasons": dict(self._fail_reasons),
++                "last_ok_at": self._last_ok_at,
++                "last_error": self._last_error}
++
++    def _record(self, ok: bool, reason: str = "") -> None:
++        from datetime import datetime as _dt
++        if ok:
++            self._ok += 1
++            self._last_ok_at = _dt.utcnow().isoformat()
++            return
++        self._fail += 1
++        key = (reason or "unknown")[:120]
++        self._fail_reasons[key] = self._fail_reasons.get(key, 0) + 1
++        self._last_error = key
+ 
+     async def _raw_complete(self, messages: list) -> Optional[str]:
+         """POST to MiniMax chat endpoint, return assistant text (or None)."""
+@@ -94,7 +128,19 @@
+             resp = await client.post(url, headers=headers, json=payload)
+             resp.raise_for_status()
+             data = resp.json()
+-            return data["choices"][0]["message"]["content"]
++            # `raise_for_status` passes on a 200 that carries a quota or billing
++            # body with no `choices`, and `data["choices"][0]` then raised
++            # "'NoneType' object is not subscriptable" — a message that names
++            # Python's indexing and not the upstream's answer. Every one of the
++            # 29,686 failures said that, and it is why nobody reading the log
++            # could tell a billing problem from a bug. Say what came back.
++            choices = data.get("choices") if isinstance(data, dict) else None
++            if not choices:
++                base = data.get("base_resp") if isinstance(data, dict) else None
++                raise RuntimeError(
++                    f"upstream returned no choices: "
++                    f"{base or str(data)[:200]}")
++            return choices[0]["message"]["content"]
+ 
+     async def complete_json(self, system: str, user: str, *,
+                             schema_hint: str = "",
+@@ -107,6 +153,7 @@
+                 return cached
+         if not self._budget_ok():
+             log.warning("MiniMax daily budget (%s) reached — falling back to rules", self.daily_budget)
++            self._record(False, "daily budget reached")
+             return None
+ 
+         sys_msg = system
+@@ -119,12 +166,15 @@
+             raw = await self._raw_complete(messages)
+         except Exception as e:  # noqa: BLE001 — fail safe to rules on any error
+             log.warning("MiniMax call failed (%s) — falling back to rules", e)
++            self._record(False, f"{type(e).__name__}: {e}")
+             return None
+ 
+         result = parse_json_lenient(raw)
+         if result is None:
+             log.warning("MiniMax returned non-JSON — falling back to rules")
++            self._record(False, "non-JSON reply")
+             return None
++        self._record(True)
+         if cache_key:
+             await _cache_put(cache_key, result, self.model)
+         return result

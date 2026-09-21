@@ -155,6 +155,12 @@ EXPECTED_JOBS = {
     "maintain":          (604800, 172800),
     "databank":          (86400, 21600),
     "scout":             (604800, 259200),
+    # The analyst (P0 of LOCAL-ANALYST-2026-09) is a consumer loop, not a
+    # timer: it beats once per tick from inside `analyst.loop`, like the poller,
+    # so it has no entry in any *.sh and the cadence is duplicated from
+    # analyst/loop.py's INTERVAL/GRACE — tests/test_analyst.py asserts the two
+    # agree, the same way test_watchdog does it for the wrapped jobs.
+    "analyst":           (60, 900),
 }
 
 # Which collector's heartbeat covers which state kinds. A feed is only judged
@@ -595,6 +601,30 @@ def dependency_checks() -> list[dict]:
     return out
 
 
+def minimax_check() -> list[dict]:
+    """v1's MiniMax path, which had no success metric and no watchdog at all.
+
+    It belongs with the dependency checks rather than the jobs: it is a thing
+    v2 reads and does not control, like v1's checkpoint database. The measuring
+    lives in ops/minimax_alarm.py, which is also a CLI; here it is one more row
+    on the same board, raised and resolved by the same alarm reconciliation as
+    everything else, so it cannot become a second monitoring system with its
+    own silence.
+
+    `safe_check` cannot raise: a bug in a check that was added to notice a
+    three-month outage must not be able to stop the watchdog that notices
+    everything else. Set MINIMAX_CHECK=0 to leave it out entirely — for a box
+    where v1 does not run.
+    """
+    if os.environ.get("MINIMAX_CHECK", "1") == "0":
+        return []
+    from ops.minimax_alarm import safe_check
+    rows = safe_check()
+    # `measure` carries the raw evidence and is useful from --json; it is not
+    # part of the row shape the printer and the alarm path expect.
+    return [{k: v for k, v in r.items() if k != "measure"} for r in rows]
+
+
 def _already_open(key: str) -> bool:
     return any(r.get("unit") == key for r in open_alerts())
 
@@ -609,7 +639,7 @@ def main() -> int:
     # The watchdog re-measures; /health reads what the watchdog recorded.
     feeds = feed_checks(jobs, measure_cadence())
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
-            + feeds)
+            + minimax_check() + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:

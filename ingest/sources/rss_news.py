@@ -44,6 +44,7 @@ sys.path.insert(0, str(ROOT))
 
 import httpx
 
+from analyst.lang import detect_quietly
 from ingest import bronze
 from resolve.db import connect
 
@@ -154,14 +155,22 @@ def ingest(dry_run: bool = False) -> dict:
                                       "published": item.findtext("pubDate")},
                                      ensure_ascii=False)
                 ref = bronze.put(feed["key"], payload, "json")
+                # These feeds are the ones the hard-coded 'ar' was most wrong
+                # about: a wire agency publishes what it publishes, and the
+                # claim now carries the measured language plus what measured it.
+                # No detector -> NULL, and the analyst's organ A fills it in.
+                code, detector = detect_quietly(text)
+                attrs = {"feed": feed["key"], "title": title,
+                         "link": item.findtext("link")}
+                if detector:
+                    attrs["lang_detector"] = detector
                 cur.execute("""
                     INSERT INTO claim (source_id,external_id,raw_ref,raw_text,lang,
                                        claim_type,reported_at,attrs)
-                    VALUES (%s,%s,%s,%s,'ar','unclassified',%s,%s)
+                    VALUES (%s,%s,%s,%s,%s,'unclassified',%s,%s)
                     RETURNING claim_id, ingested_at""",
-                    (source_id, ext, ref.ref, text[:4000], reported,
-                     json.dumps({"feed": feed["key"], "title": title,
-                                 "link": item.findtext("link")}, ensure_ascii=False)))
+                    (source_id, ext, ref.ref, text[:4000], code, reported,
+                     json.dumps(attrs, ensure_ascii=False)))
                 claim_id, ingested_at = cur.fetchone()
                 cur.execute("""INSERT INTO claim_dedup (source_id,external_id,claim_id,ingested_at)
                                VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING""",

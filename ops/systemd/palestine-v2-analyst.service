@@ -1,0 +1,41 @@
+[Unit]
+Description=Palestine v2 — THE LOCAL ANALYST (P0: organ A, language + health)
+After=network-online.target docker.service
+OnFailure=palestine-v2-alert@%n.service
+# Retry forever, like the poller, and for the same reason recorded at length in
+# palestine-v2-poller.service: on 2026-08-02 a StartLimitBurst killed the poller
+# permanently after three minutes of network trouble and it stayed dead for
+# seventeen hours. This loop is even safer to retry — it holds no Telegram
+# session, no account, and no upstream that can throttle it. The only thing it
+# talks to besides its own database is the PC's llama-swap, and it is built to
+# find that port shut (Zaid is playing) and sleep.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/.venv/bin/python -m analyst.loop
+Restart=on-failure
+
+# Same backoff shape as the poller: 30s doubling five times to a 15-minute
+# ceiling. A database that is down for an hour costs one connection attempt
+# every fifteen minutes instead of two a minute, and the watermark means the
+# restart resumes exactly where it stopped.
+RestartSec=30
+RestartSteps=5
+RestartMaxDelaySec=900
+
+# Python buffers stdout when it is not a TTY, and a long-running service whose
+# output only reaches the journal when it EXITS looks identical whether it is
+# healthy or wedged. The poller learned this the same way.
+Environment="PYTHONUNBUFFERED=1"
+
+# Ingestion comes first (§1: ingestion never waits for the analyst). This is a
+# deferrable consumer: it may have the CPU when nothing else wants it, and it
+# may never be the reason a claim is written late.
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

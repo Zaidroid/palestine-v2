@@ -49,6 +49,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from analyst.lang import detect_quietly               # noqa: E402
 from ingest import bronze                              # noqa: E402
 from resolve.db import connect                         # noqa: E402
 from resolve.geo import (_Ambiguous, resolve_for_state_kind,  # noqa: E402,F401
@@ -242,20 +243,27 @@ def submit(handle: str, token: str, state_kind: str, place: str, value: str,
         ref = bronze.put(f"crowd_{handle}", payload, "json")
 
         raw_text = f"[{state_kind}={value}] {place}" + (f" — {note}" if note else "")
+        # The old rule here was "any character in the Arabic block means
+        # Arabic", which called a note written in Hebrew English and could not
+        # say `und` about a place name that is only digits. It is the same
+        # detector the poller and the feeds use now, stamped the same way, so
+        # one library version explains every language code in the corpus.
+        code, detector = detect_quietly(raw_text)
+        attrs = {"handle": handle, "state_kind": state_kind,
+                 "value": value, "direction": direction,
+                 "place_confidence": res.confidence,
+                 "place_method": res.method, "note": note}
+        if detector:
+            attrs["lang_detector"] = detector
         cur.execute("""
             INSERT INTO claim (source_id, raw_ref, raw_text, lang, claim_type,
                                place_id, place_precision, place_phrase,
                                reported_at, attrs)
             VALUES (%s,%s,%s,%s,'crowd_report',%s,%s,%s, now(), %s)
             RETURNING claim_id""",
-            (source_id, ref.ref, raw_text,
-             "ar" if any("؀" <= c <= "ۿ" for c in place) else "en",
+            (source_id, ref.ref, raw_text, code,
              res.place_id, res.precision, place,
-             json.dumps({"handle": handle, "state_kind": state_kind,
-                         "value": value, "direction": direction,
-                         "place_confidence": res.confidence,
-                         "place_method": res.method, "note": note},
-                        ensure_ascii=False)))
+             json.dumps(attrs, ensure_ascii=False)))
         claim_id = cur.fetchone()[0]
 
         # confidence here is the OBSERVATION's own quality (how well the place

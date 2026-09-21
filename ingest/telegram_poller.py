@@ -63,6 +63,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from ingest import bronze                     # noqa: E402
+from analyst.lang import detect_quietly    # noqa: E402
 from ops.heartbeat import beat, fail          # noqa: E402
 from resolve.db import connect                # noqa: E402
 
@@ -256,18 +257,29 @@ def store(channel: str, messages, media_refs: dict | None = None) -> int:
             ref = bronze.put(f"tg_{channel.lower()}", payload, "json")
 
             reported = getattr(m, "date", None) or datetime.now(timezone.utc)
+            # `lang` was the literal 'ar' here for every claim this poller ever
+            # wrote, which was never a measurement. It is one now, and it
+            # carries what measured it — a value with no provenance is the same
+            # unfalsifiable constant wearing a different number. A detector that
+            # cannot be built returns (None, None) and the claim is written with
+            # a NULL language: the analyst's organ A picks up exactly the rows
+            # that carry no `lang_detector` stamp. Ingestion never waits for it.
+            code, detector = detect_quietly(text)
+            attrs = {"channel": channel, "views": getattr(m, "views", None),
+                     "fwd_from": _fwd_id(m),
+                     # The image ingester finds its work by this key, so
+                     # it is on the CLAIM rather than only in bronze.
+                     "media_ref": media_refs.get(getattr(m, "id", None)),
+                     "link_urls": _link_urls(m)}
+            if detector:
+                attrs["lang_detector"] = detector
             cur.execute("""
                 INSERT INTO claim (source_id,external_id,raw_ref,raw_text,lang,claim_type,
                                    reported_at,attrs)
-                VALUES (%s,%s,%s,%s,'ar','unclassified',%s,%s)
+                VALUES (%s,%s,%s,%s,%s,'unclassified',%s,%s)
                 RETURNING claim_id, ingested_at""",
-                (source_id, ext_id, ref.ref, text, reported,
-                 json.dumps({"channel": channel, "views": getattr(m, "views", None),
-                             "fwd_from": _fwd_id(m),
-                             # The image ingester finds its work by this key, so
-                             # it is on the CLAIM rather than only in bronze.
-                             "media_ref": media_refs.get(getattr(m, "id", None)),
-                             "link_urls": _link_urls(m)})))
+                (source_id, ext_id, ref.ref, text, code, reported,
+                 json.dumps(attrs)))
             claim_id, ingested_at = cur.fetchone()
             cur.execute("""INSERT INTO claim_dedup (source_id,external_id,claim_id,ingested_at)
                            VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
