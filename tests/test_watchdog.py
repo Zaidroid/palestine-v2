@@ -298,8 +298,13 @@ def test_resolving_closes_the_alarm_without_deleting_the_history(alerts):
     alert.resolve("watchdog:job:poller", "back within cadence")
     assert alert.open_alerts() == []
     lines = [json.loads(x) for x in alerts.read_text().splitlines() if x.strip()]
-    assert len(lines) == 2, "resolving must append, never rewrite"
+    # Three lines now, and each one is a different thing: the alarm, the
+    # delivery receipt that completes it, and the resolution. Nothing is
+    # rewritten — the receipt is appended AFTER the alarm it belongs to.
+    assert len(lines) == 3, "resolving must append, never rewrite"
     assert lines[0]["unit"] == "watchdog:job:poller"
+    assert lines[1]["delivery_of"] == "watchdog:job:poller"
+    assert lines[2]["resolves"] == "watchdog:job:poller"
 
 
 def test_a_fault_that_comes_back_is_reported_again(alerts):
@@ -539,14 +544,23 @@ def test_notify_never_raises_however_broken_the_config(monkeypatch):
     """Monitoring that can break what it monitors is worse than none.
 
     `raise_alert` runs inside a systemd OnFailure handler. An exception there
-    is a second outage on top of the one being reported.
+    is a second outage on top of the one being reported. Both transports are
+    broken at once here: the socket raises and the Telegram pair is missing.
     """
     from ops import notify
+
+    def boom(*a, **k):
+        raise OSError("network is gone")
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", boom)
+    monkeypatch.setattr(notify, "NTFY_TOKEN_FILE_DEFAULT", Path("/nonexistent"))
+    monkeypatch.setattr(notify, "NTFY_HIGH_MARK", "!!")
     for token, chat in ((None, None), ("bad-token", "123"), ("", "")):
         monkeypatch.setattr(notify, "_env",
                             lambda n, t=token, c=chat: t if n == notify.TOKEN_VAR else c)
         r = notify.send("x")
         assert isinstance(r, dict) and "ok" in r and "reason" in r
+        assert r["ok"] is False
 
 
 def test_alert_is_recorded_even_when_delivery_fails(monkeypatch, tmp_path):
@@ -579,8 +593,116 @@ def test_recovery_is_delivered_silently():
 
 
 def test_unconfigured_is_a_normal_state_not_a_crash(monkeypatch):
+    """Reachable only with the ntfy transport deliberately switched off.
+
+    ntfy is configured by default (that is the point of 2026-09-22), so the
+    honest way to reach this state — and the only one — is `NTFY_URL=off`
+    together with no Telegram pair.
+    """
     from ops import notify
-    monkeypatch.setattr(notify, "_env", lambda n: None)
+    monkeypatch.setattr(notify, "_env",
+                        lambda n: "off" if n == notify.NTFY_URL_VAR else None)
+    assert notify.ntfy_configured() is False
     assert notify.configured() is False
     r = notify.send("x")
     assert r["ok"] is False and "unconfigured" in r["reason"]
+
+
+def test_ntfy_is_the_doorbell_that_is_configured_by_default(monkeypatch):
+    """The 2026-09-22 finding: every detector worked and no phone rang.
+
+    `fawwaz-alerts` on the house ntfy is the channel Zaid already carries. What
+    `send` returns is ntfy's own message id — not a 200, not a bool — because a
+    receipt is the only thing that can be checked after the fact.
+    """
+    from ops import notify
+
+    class Resp:
+        status = 200
+
+        def read(self):
+            return b'{"id":"abc123","event":"message","topic":"fawwaz-alerts"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["url"] = req.full_url
+        seen["headers"] = {k.lower(): v for k, v in req.header_items()}
+        seen["body"] = req.data.decode()
+        return Resp()
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(notify, "_env",
+                        lambda n: "a-token" if n == notify.NTFY_TOKEN_VAR else None)
+    r = notify.send("!! checkpoint feed silent")
+    assert r["ok"] is True and r["channel"] == "ntfy" and r["id"] == "abc123"
+    assert seen["url"] == f"{notify.NTFY_URL_DEFAULT}/{notify.NTFY_TOPIC_DEFAULT}"
+    assert seen["headers"]["authorization"] == "Bearer a-token"
+    assert seen["headers"]["priority"] == "high", "a !! fault must be allowed to make a sound"
+    assert notify.configured() is True
+
+
+def test_a_recovery_push_is_silent_and_a_plain_push_is_not_high(monkeypatch):
+    """Good news must never wake anybody, and only a fault gets high priority."""
+    from ops import notify
+
+    class Resp:
+        status = 200
+
+        def read(self):
+            return b'{"id":"s1"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["priority"] = {k.lower(): v for k, v in req.header_items()}.get("priority")
+        return Resp()
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(notify, "_env", lambda n: None)
+    monkeypatch.setattr(notify, "NTFY_TOKEN_FILE_DEFAULT", Path("/nonexistent"))
+    assert notify.send("a plain alarm")["ok"] is True
+    assert seen["priority"] == "default"
+    assert notify.send("🟢 recovered: x", silent=True)["ok"] is True
+    assert seen["priority"] == "min"
+
+
+def test_alert_ledger_keeps_the_channel_and_the_message_id(monkeypatch, tmp_path):
+    """`delivered: true` with no channel is a claim nobody can check."""
+    from ops import alert
+    monkeypatch.setattr(alert, "ALERTS", tmp_path / "a.ndjson")
+    monkeypatch.setattr(alert, "_notify",
+                        lambda *a, **k: {"ok": True, "reason": "",
+                                         "channel": "ntfy", "id": "abc123"})
+    rec = alert.raise_alert("some-unit", "a reason")
+    assert rec["delivered"] is True
+    assert rec["channel"] == "ntfy"
+    assert rec["message_id"] == "abc123"
+    written = (tmp_path / "a.ndjson").read_text()
+    assert '"channel": "ntfy"' in written and "abc123" in written, \
+        "the receipt is not in the ledger"
+
+
+def test_a_delivery_receipt_is_not_a_second_alarm(monkeypatch, tmp_path):
+    """The receipt line completes a record; open_alerts() must not read it as
+    another open alarm, or every alarm would double the moment it was sent."""
+    from ops import alert
+    monkeypatch.setattr(alert, "ALERTS", tmp_path / "a.ndjson")
+    monkeypatch.setattr(alert, "_notify",
+                        lambda *a, **k: {"ok": True, "reason": "",
+                                         "channel": "ntfy", "id": "x1"})
+    alert.raise_alert("some-unit", "a reason")
+    assert [r["unit"] for r in alert.open_alerts()] == ["some-unit"]
+    assert alert.damaged_lines() == 0

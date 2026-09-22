@@ -55,3 +55,33 @@ files:
 rather than a drop-in: the watchdog exits 1 when it *finds* a fault, which is a
 successful run with a bad result. Without it, every detected fault would also
 mark the watchdog failed and raise a second alarm about the alarm.
+
+## Alarm delivery (F-04, 2026-09-22)
+
+Every `OnFailure=` in this directory ends in `ops/alert.py`, which records the
+alarm in `ops/alerts.ndjson` and then tries to put it in front of a human.
+Until 2026-09-22 that second half reached nobody: `ops/notify.py` wanted
+`ALERT_BOT_TOKEN` and `ALERT_CHAT_ID`, neither was set, and `send` returned
+`unconfigured` — so the file and the journal were the whole channel.
+
+Delivery now goes to the **house ntfy** first (`fawwaz-alerts` on main,
+`http://127.0.0.1:8688`), with Telegram kept as a fallback for whoever sets the
+pair. Three things about that server are worth knowing before changing config:
+
+- it runs `NTFY_AUTH_DEFAULT_ACCESS=deny-all`, so a publish needs a **Bearer
+  token**; the token is read at call time from
+  `/home/zaid/lifeos/state.json` (`ntfy_token`) rather than copied here;
+- **topics are per-user ACLs**, not free-form. `docker exec ntfy ntfy user list`
+  is the source of truth. Publishing to a topic the user does not hold answers
+  `403`, which looks exactly like a broken server;
+- a `403` and a missing token are therefore both returned as reasons, never
+  swallowed, and `ops/alerts.ndjson` keeps a receipt line
+  (`delivery_of`, `delivered`, `channel`, `message_id`) after every alarm, so
+  "did anyone hear this?" is answerable after the fact.
+
+Set `NTFY_URL=off` to disable ntfy deliberately. Prove the wiring with:
+
+```bash
+.venv/bin/python -m ops.notify --whoami   # url / topic / token present?
+.venv/bin/python -m ops.alert  --test     # a REAL alarm, down the real path
+```

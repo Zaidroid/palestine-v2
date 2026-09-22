@@ -66,6 +66,26 @@ def raise_alert(unit: str, reason: str = "") -> dict:
     # handler — an alarm path that can itself fail is a second outage.
     d = _notify(f"🔴 {unit}\n{line[:600]}")
     rec["delivered"] = d["ok"]
+    # WHICH channel, and WHICH message. An alarm that records "delivered" and
+    # nothing else cannot be checked after the fact — and on 2026-09-22 the
+    # honest answer for every alarm in this file was "nowhere".
+    rec["channel"] = d.get("channel", "unknown")
+    if d.get("id"):
+        rec["message_id"] = d["id"]
+    # THE RECEIPT IS APPENDED, NOT BACKDATED. The line above is written before
+    # delivery on purpose — a crash here must not cost the alarm — so the
+    # outcome was never IN it: `delivered` existed only in this function's
+    # return value, which means the ledger could not answer "did anyone hear
+    # this?" for any alarm it held. This second line answers it. open_alerts()
+    # steps over it: it completes a record, it is not another alarm.
+    receipt = {"ts": rec["ts"], "delivery_of": unit, "delivered": d["ok"],
+               "channel": rec["channel"]}
+    if d.get("id"):
+        receipt["message_id"] = d["id"]
+    if not d["ok"]:
+        receipt["reason"] = str(d.get("reason", ""))[:200]
+    with ALERTS.open("a") as fh:
+        fh.write(json.dumps(receipt, ensure_ascii=False) + "\n")
     if not d["ok"] and d["reason"] and "unconfigured" not in d["reason"]:
         print(f"  (alert delivery failed: {d['reason']})", file=sys.stderr)
     return rec
@@ -153,6 +173,7 @@ def open_alerts() -> list[dict]:
             resolved[r["resolves"]] = max(resolved.get(r["resolves"], ""), r["ts"])
     return [r for r in recs
             if not r.get("clear_marker") and not r.get("resolves")
+            and not r.get("delivery_of")          # a receipt completes an alarm
             and r["ts"] > cleared_at
             and r["ts"] > resolved.get(r.get("unit", ""), "")]
 
@@ -163,7 +184,19 @@ def main() -> int:
     ap.add_argument("reason", nargs="?", default="")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--clear", action="store_true")
+    ap.add_argument("--test", action="store_true",
+                    help="raise a real alarm down the real path and say where it landed")
     a = ap.parse_args()
+
+    if a.test:
+        # Deliberately NOT a bespoke one-line probe: this goes through
+        # raise_alert, so it proves the ledger, the delivery and the channel all
+        # at once. If it says delivered without a channel, nothing landed.
+        rec = raise_alert("notify-test",
+                          "palestine-v2 delivery test — a human should see this")
+        print(f"raised: delivered={rec['delivered']} "
+              f"channel={rec.get('channel')} id={rec.get('message_id', '-')}")
+        return 0 if rec["delivered"] else 1
 
     if a.clear:
         with ALERTS.open("a") as fh:
