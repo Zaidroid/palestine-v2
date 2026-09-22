@@ -1738,6 +1738,13 @@ def run(category: str, dry_run: bool = False) -> dict:
             counts["decided_total"] += 1
             if r.located:
                 counts["located_total"] += 1
+            # the same rule one level down. Counted after the already-held
+            # skip (2026-08-08 to 09-21), a per-dataset floor judged only the
+            # night's new rows: refugees failed four nights on IDMC "3/4"
+            # while the dataset stood at 336/339, and a dataset already held
+            # could never fail at all
+            per_ds[r.dataset_key][0] += 1
+            per_ds[r.dataset_key][1] += bool(r.located)
             ident = _identity_of(r)
             if ident is not None:
                 # THE INVARIANT: an identity that cannot tell two rows
@@ -1805,8 +1812,6 @@ def run(category: str, dry_run: bool = False) -> dict:
                 r.identity_key = ident
             seen_stable.add(r.v1_stable_id)
             r.raw_ref = refs[f]
-            per_ds[r.dataset_key][0] += 1
-            per_ds[r.dataset_key][1] += bool(r.located)
             (event_rows if isinstance(r, EventRow) else rows).append(r)
 
         # ── enforcement, before any write ────────────────────────────────────

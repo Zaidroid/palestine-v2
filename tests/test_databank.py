@@ -610,3 +610,99 @@ def test_the_t4p_fetcher_refuses_a_truncated_feed(monkeypatch, tmp_path) -> None
     assert not (tmp_path / "tiny.json").exists(), "a short feed overwrote"
     ev = (tmp_path / "events.ndjson").read_text()
     assert '"outcome": "refused"' in ev, "the refusal was not recorded"
+
+
+# ── per-dataset floors judge the emission, not the night's delta ────────────
+class _ReachedTheWrite(Exception):
+    """The run got past every floor and asked to write. Nothing is written."""
+
+
+def _floor_run(monkeypatch, emitted, held, *, dry_run=False):
+    """Drive `databank.run` through a REAL (non-dry) run with no database.
+
+    `emitted` is what the transform produces; `held` is which of those rows
+    the databank already stores. Every read the loader makes before its
+    floors is faked, and `ensure_datasets` — the first write — raises, so a
+    run that clears its floors proves it by stopping there."""
+    ident = {"fields": ["indicator", "occurred_at", "place_id", "value_num"]}
+    spec = {"category": "phantom", "status": "reviewed", "shape": "observation",
+            "identity": ident, "place": {},
+            "expect": {"min_records": 1, "max_observations": 1000},
+            "datasets": [{"key": "d_geo", "source": "s",
+                          "overrides": {"place": {"min_located_pct": 0.9}}}]}
+    stored = [(databank.identity_key_for(
+                   ident, r.dataset_key, indicator=r.indicator,
+                   occurred_at=r.occurred_at, place_id=r.place_id,
+                   value_num=r.value_num, attrs=r.attrs),
+               i, r.value_num, r.value_text, r.unit, r.place_id, r.attrs)
+              for i, r in enumerate(held)]
+
+    class Cur:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def execute(self, sql, params=None): self.sql = sql
+        def fetchall(self):
+            return stored if "identity_key" in self.sql else []
+
+    class Conn:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def cursor(self): return Cur()
+
+    def transform_all(category, spec, places, counts, drops):
+        for r in emitted:
+            counts["records_read"] += 1
+            yield Path("/phantom.json"), r
+
+    def refuse_to_write(*a, **k):
+        raise _ReachedTheWrite
+
+    monkeypatch.setattr(databank, "load_spec", lambda c: spec)
+    monkeypatch.setitem(databank.TRANSFORMERS, "phantom", lambda *a: [])
+    monkeypatch.setattr(databank, "connect", lambda: Conn())
+    monkeypatch.setattr(databank, "load_places", lambda conn: {})
+    monkeypatch.setattr(databank, "PointResolver", lambda conn: None)
+    monkeypatch.setattr(databank, "transform_all", transform_all)
+    monkeypatch.setattr(databank, "read_payload", lambda f: b"")
+    monkeypatch.setattr(databank.bronze, "put",
+                        lambda *a, **k: type("R", (), {"ref": "bronze:x"}))
+    monkeypatch.setattr(databank, "ensure_datasets", refuse_to_write)
+    return databank.run("phantom", dry_run=dry_run)
+
+
+def _geo_rows(n_located, n_unlocated):
+    return ([Row("d_geo", "x.event", f"2026-01-{i + 1:02d}", "day", f"L{i}",
+                 value_num=i + 1, place_id=100 + i, located=True)
+             for i in range(n_located)] +
+            [Row("d_geo", "x.event", f"2026-02-{i + 1:02d}", "day", f"U{i}",
+                 value_num=i + 1, located=False)
+             for i in range(n_unlocated)])
+
+
+def test_a_dataset_floor_is_not_failed_by_one_straggler_in_a_small_night(
+        monkeypatch):
+    """2026-09-18..21: refugees failed four nights on `v1_refugees_idmc:
+    located 3/4 = 0.750 < 0.98`. The dataset emits 339 rows and 336 are
+    located (0.991); the floor was judging only the 4 rows new that night,
+    one of which is IDMC's own offshore 'Gaza Strip' centroid. The dry run
+    of the same data passed. The category floor has said since 2026-08-07
+    that floors judge what the transform PRODUCED — this is that rule, one
+    level down."""
+    rows = _geo_rows(19, 1)                 # 19/20 = 0.95 ≥ 0.9
+    held = rows[:16]                        # tonight's delta: 3 located, 1 not
+    with pytest.raises(_ReachedTheWrite):
+        _floor_run(monkeypatch, rows, held)
+    # and the dry run of the same data reaches the same verdict
+    assert _floor_run(monkeypatch, rows, held, dry_run=True)["dry_run"]
+
+
+def test_a_dataset_that_has_gone_dark_fails_even_when_nothing_is_new(
+        monkeypatch):
+    """The other half, and the reason the fix is not a relaxation: judged on
+    the delta, a dataset already held could never fail its floor at all —
+    n = 0 skipped the check. Judged on the emission, it does."""
+    rows = _geo_rows(10, 10)                # 10/20 = 0.5 < 0.9
+    with pytest.raises(SpecRefused, match=r"d_geo: located 10/20"):
+        _floor_run(monkeypatch, rows, held=rows)
+    with pytest.raises(SpecRefused, match=r"d_geo: located 10/20"):
+        _floor_run(monkeypatch, rows, held=rows, dry_run=True)
