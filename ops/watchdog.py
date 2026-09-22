@@ -113,15 +113,25 @@ WEAK_THRESHOLD_SECONDS = 48 * 3600
 # So an unwatchable feed still gets a ceiling: silence this long, while its
 # collector is demonstrably healthy, is a fault whatever the feed's rhythm.
 #
-# 24 hours is CHOSEN, not measured, and the code says so where it reports —
-# v2 is days old and no feed has enough history for a real maximum-gap figure
-# yet. Once a feed has MIN_DAYS_FOR_MEASURED_SILENCE days of arrivals the
-# ceiling is derived from its own worst observed gap instead, and the detail
-# states which of the two is in force. A chosen number presented as a measured
-# one is how a threshold stops being questioned.
+# 24 hours is the FLOOR, and it is also the fallback while a feed is too new
+# for its own rhythm to mean anything. Above it, the ceiling is measured from
+# the feed's own p95 inter-arrival (F-08, CEILING_DAYS below) and the detail
+# states which of the two is in force, with the arrival count behind it. A
+# chosen number presented as a measured one is how a threshold stops being
+# questioned — which is also why the old measured branch, which read a key no
+# column ever held, is recorded here as having never fired once.
 SILENT_AFTER_SECONDS = 24 * 3600
-MIN_DAYS_FOR_MEASURED_SILENCE = 14
-SILENCE_MARGIN = 2.0
+
+# F-08 — the silence ceiling for feeds too irregular to judge by a late
+# threshold. Measured over a LONGER window than the late-threshold, because the
+# question is a different one: not "is it late yet", but "how long may this feed
+# legitimately say nothing at all".
+CEILING_DAYS = 60
+# A ceiling needs FEWER points than a threshold does, and that asymmetry is
+# deliberate. A percentile that is somewhat wrong makes a merely quiet feed
+# slightly noisier; a late-threshold that is too tight alarms every week on a
+# healthy feed. Not zero either: four gaps is not a p95.
+MIN_CEILING_ARRIVALS = 30
 
 # Every job that is supposed to report, and the cadence it reports at.
 #
@@ -236,6 +246,28 @@ SELECT state_kind,
  GROUP BY 1
 """
 
+# F-08 — how long each feed may legitimately say NOTHING. Same minute-bucketed
+# arrivals, a longer window, the 95th percentile rather than the 99th: a p99 is
+# the right shape for "is it late yet" and the wrong one for "has it stopped",
+# because it is dominated by the single worst gap in the window.
+CEILING_SQL = f"""
+WITH arrival AS (
+  SELECT state_kind, date_trunc('minute', observed_at) AS t
+    FROM state_observation
+   WHERE observed_at > now() - interval '{CEILING_DAYS} days'
+   GROUP BY 1, 2
+), gaps AS (
+  SELECT state_kind, t - lag(t) OVER (PARTITION BY state_kind ORDER BY t) AS gap
+    FROM arrival
+)
+SELECT state_kind,
+       count(gap)                                                    AS arrivals,
+       extract(epoch FROM percentile_cont(0.95)
+               WITHIN GROUP (ORDER BY gap))                          AS p95
+  FROM gaps
+ GROUP BY 1
+"""
+
 CURRENT_SQL = """
 SELECT state_kind,
        max(observed_at)                                              AS latest,
@@ -250,14 +282,20 @@ JOB_SQL = "SELECT * FROM ops_heartbeat_status ORDER BY name"
 STORE_SQL = """
 INSERT INTO feed_cadence (state_kind, arrivals, p50_seconds, p99_seconds,
                           threshold_seconds, watchable, measured_at,
-                          baseline_days, judge_hours)
-VALUES (%s, %s, %s, %s, %s, %s, now(), %s, %s)
+                          baseline_days, judge_hours, p95_seconds,
+                          silence_ceiling_seconds, ceiling_basis,
+                          ceiling_window_days)
+VALUES (%s, %s, %s, %s, %s, %s, now(), %s, %s, %s, %s, %s, %s)
 ON CONFLICT (state_kind) DO UPDATE SET
   arrivals = EXCLUDED.arrivals, p50_seconds = EXCLUDED.p50_seconds,
   p99_seconds = EXCLUDED.p99_seconds,
   threshold_seconds = EXCLUDED.threshold_seconds,
   watchable = EXCLUDED.watchable, measured_at = now(),
-  baseline_days = EXCLUDED.baseline_days, judge_hours = EXCLUDED.judge_hours
+  baseline_days = EXCLUDED.baseline_days, judge_hours = EXCLUDED.judge_hours,
+  p95_seconds = EXCLUDED.p95_seconds,
+  silence_ceiling_seconds = EXCLUDED.silence_ceiling_seconds,
+  ceiling_basis = EXCLUDED.ceiling_basis,
+  ceiling_window_days = EXCLUDED.ceiling_window_days
 """
 
 LOAD_SQL = "SELECT * FROM feed_cadence"
@@ -276,6 +314,7 @@ def measure_cadence() -> dict[str, dict]:
     here on a 10-minute timer rather than inside /health on every request.
     """
     rows = _q(CADENCE_SQL)
+    ceilings = {r["state_kind"]: r for r in _q(CEILING_SQL)}
     out = {}
     with psycopg.connect(dsn()) as conn, conn.cursor() as cur:
         for r in rows:
@@ -283,13 +322,18 @@ def measure_cadence() -> dict[str, dict]:
             p99 = float(r["p99"]) if r["p99"] is not None else None
             watchable = arrivals >= MIN_ARRIVALS and bool(p99)
             threshold = p99 * LATE_MULTIPLE if watchable else None
+            c = ceilings.get(r["state_kind"]) or {}
+            ceiling, basis = measured_ceiling(c.get("p95"), int(c.get("arrivals") or 0))
             cur.execute(STORE_SQL, (r["state_kind"], arrivals,
                                     r["p50"], p99, threshold, watchable,
-                                    BASELINE_DAYS, JUDGE_HOURS))
+                                    BASELINE_DAYS, JUDGE_HOURS,
+                                    c.get("p95"), ceiling, basis, CEILING_DAYS))
             out[r["state_kind"]] = {
                 "arrivals": arrivals, "p50_seconds": r["p50"],
                 "p99_seconds": p99, "threshold_seconds": threshold,
-                "watchable": watchable,
+                "watchable": watchable, "p95_seconds": c.get("p95"),
+                "silence_ceiling_seconds": ceiling, "ceiling_basis": basis,
+                "measured_at": r.get("measured_at"),
             }
         conn.commit()
     return out
@@ -343,21 +387,49 @@ def job_checks() -> list[dict]:
     return sorted(out, key=lambda r: r["name"])
 
 
+def measured_ceiling(p95, arrivals: int) -> tuple[float, str]:
+    """F-08 — the ceiling a feed is judged against, and where it came from.
+
+    Returned WITH its basis so the caller can say which it is: a chosen number
+    reported as a measured one stops being questioned, and this project has been
+    bitten by exactly that (0.70 "trust", 0.95 fuel confidence).
+
+    The 24 h default is a FLOOR as well as a fallback, so this can only ever
+    make a legitimately irregular feed quieter — never a real outage quieter
+    than a day. Below MIN_CEILING_ARRIVALS the honest answer is the default and
+    the count that explains why.
+    """
+    if p95 and arrivals >= MIN_CEILING_ARRIVALS:
+        measured = float(p95)
+        if measured >= SILENT_AFTER_SECONDS:
+            return measured, f"measured p95({CEILING_DAYS}d), n={arrivals}"
+        # Measured, but under the floor. Say BOTH, because "default" here would
+        # hide a number we actually measured and "measured" would hide that the
+        # floor is what is in force.
+        return (SILENT_AFTER_SECONDS,
+                f"floor 24h: p95({CEILING_DAYS}d) is {measured / 3600:.1f}h, n={arrivals}")
+    return (SILENT_AFTER_SECONDS,
+            f"default, {arrivals} arrivals in {CEILING_DAYS}d is too few for a p95")
+
+
 def _silence_ceiling(cad: dict | None) -> tuple[float, str]:
     """How long an unwatchable feed may say nothing before it counts as dead.
 
-    Measured from the feed's own worst observed gap once there is enough
-    history to have seen one; a stated default until then. Returned with its
-    basis so the caller can say which — a chosen number reported as a measured
-    one stops being questioned, and this project has been bitten by exactly
-    that (0.70 "trust" and a 0.95 fuel confidence both wore measurements'
-    clothing).
+    F-08: measured from the feed's OWN p95 inter-arrival and stored in
+    `feed_cadence` with the basis and the date it was measured, so the number
+    travels with its evidence.
+
+    This used to read `cad["max_gap_seconds"]`, a key no column of `feed_cadence`
+    has ever held — `INSERT`/`LOAD` never carried it — so the measured branch
+    could not fire and every unwatchable feed sat on the 24 h default. That is
+    why `checkpoint_settlers` alarmed on quiet weeks: measured 2026-09-22, its
+    own p95 gap is 45.9 h and its longest 8 days, while `power`'s p95 is 6.2
+    days and its longest 14.8. Both were being judged against a day.
     """
-    if cad:
-        span = cad.get("baseline_days") or 0
-        worst = cad.get("max_gap_seconds")
-        if worst and span >= MIN_DAYS_FOR_MEASURED_SILENCE:
-            return max(worst * SILENCE_MARGIN, SILENT_AFTER_SECONDS), "measured"
+    if cad and cad.get("silence_ceiling_seconds"):
+        ceiling = float(cad["silence_ceiling_seconds"])
+        return max(ceiling, SILENT_AFTER_SECONDS), (cad.get("ceiling_basis")
+                                                    or "measured")
     return SILENT_AFTER_SECONDS, "default, too little history to measure"
 
 

@@ -413,19 +413,51 @@ def test_the_ceiling_says_whether_it_was_measured_or_chosen():
     assert ceiling == watchdog.SILENT_AFTER_SECONDS
     assert "too little history" in basis
 
-    long_gap = 40 * 3600
     ceiling, basis = watchdog._silence_ceiling(
-        _cad_unwatchable(days=watchdog.MIN_DAYS_FOR_MEASURED_SILENCE, max_gap=long_gap))
-    assert basis == "measured"
-    assert ceiling == long_gap * watchdog.SILENCE_MARGIN
+        {"silence_ceiling_seconds": 45.9 * 3600,
+         "ceiling_basis": "measured p95(60d), n=139"})
+    assert basis == "measured p95(60d), n=139"
+    assert round(ceiling / 3600) == 46
 
 
 def test_a_measured_ceiling_never_drops_below_the_default():
     """A feed that has only ever been busy would otherwise earn a ceiling of
     minutes and alarm on its first quiet evening."""
     ceiling, _ = watchdog._silence_ceiling(
-        _cad_unwatchable(days=30, max_gap=60))
+        {"silence_ceiling_seconds": 60, "ceiling_basis": "measured"})
     assert ceiling >= watchdog.SILENT_AFTER_SECONDS
+
+
+def test_silence_ceilings_are_measured_from_each_feeds_own_rhythm():
+    """F-08, measured 2026-09-22: `checkpoint_settlers` (p95 45.9 h over 139
+    arrivals) and `power` (p95 6.2 d over 59) were both being judged against a
+    single day, which is why they alarmed on quiet weeks three Mondays running.
+    """
+    ceiling, basis = watchdog.measured_ceiling(45.9 * 3600, 139)
+    assert round(ceiling / 3600) == 46
+    assert "p95(60d)" in basis and "n=139" in basis
+
+    ceiling, basis = watchdog.measured_ceiling(6.2 * 86400, 59)
+    assert round(ceiling / 86400, 1) == 6.2
+
+    # A regular feed cannot be made quieter than the floor — and the basis says
+    # both things: the p95 was measured AND the floor is what is in force.
+    ceiling, basis = watchdog.measured_ceiling(600, 9956)
+    assert ceiling == watchdog.SILENT_AFTER_SECONDS and "floor 24h" in basis
+
+    # ... and neither can an irregular one with too few gaps behind the p95.
+    ceiling, basis = watchdog.measured_ceiling(9 * 86400, 5)
+    assert ceiling == watchdog.SILENT_AFTER_SECONDS and "5 arrivals" in basis
+
+
+def test_the_old_measured_branch_read_a_key_no_column_ever_held():
+    """F-08's root cause, held down. `_silence_ceiling` read
+    `cad["max_gap_seconds"]`, which `feed_cadence` has never had a column for —
+    STORE_SQL and LOAD_SQL never carried it — so the measured branch could not
+    fire and every unwatchable feed sat on the 24 h default. A stale key must
+    still mean the default, not a silent claim to have measured something."""
+    cad = {"baseline_days": 60, "max_gap_seconds": 8 * 86400}
+    assert watchdog._silence_ceiling(cad)[0] == watchdog.SILENT_AFTER_SECONDS
 
 
 # ── restart policy: the seventeen-hour outage ────────────────────────────────
