@@ -1,0 +1,68 @@
+{
+  "_README": [
+    "Proofs for migrations that declare no CREATE object — data-only migrations",
+    "(licence reads, regrades, permission rows). The reconciler will not record one of",
+    "these into schema_migrations on trust: each SQL below is read-only and returns the",
+    "exact string it must return for the file's own claims to hold. Any mismatch refuses",
+    "the whole reconciliation.",
+    "Every statement is taken from the migration's own wording, not invented here. If a",
+    "later migration legitimately supersedes an earlier one's state (063 read the IMF",
+    "terms that 058 had recorded as unreadable), the earlier file's proof states what",
+    "survives and the later file carries its own."
+  ],
+  "058_terms_read_2026_08_08.sql": [
+    {
+      "sql": "SELECT count(*) FROM source WHERE key IN ('worldbank','unhcr','wfp','idmc','unfts','ocha','unrwa_aid_trucks','unosat') AND terms_verified_at = '2026-08-08 00:00:00+00'",
+      "expect": "8",
+      "why": "058 read eight sources at their publishers and stamped each read date. Its ninth clause (imf, deliberately left unverified) is superseded by 063, which read it."
+    }
+  ],
+  "063_imf_terms_read.sql": [
+    {
+      "sql": "SELECT count(*) FROM source WHERE key = 'imf' AND license_spdx = 'LicenseRef-IMF-Data-Terms-2024-10-11' AND commercial_use = false AND redistribution = 'attribution' AND terms_verified_at = '2026-08-08 00:00:00+00'",
+      "expect": "1",
+      "why": "the IMF's statistical-data terms: redistributable with attribution, not sellable, recorded under a LicenseRef rather than a near-miss SPDX id."
+    },
+    {
+      "sql": "SELECT count(*) FROM source_permission WHERE source_key = 'imf' AND contact = 'copyright@imf.org'",
+      "expect": "1",
+      "why": "commercial reuse is askable and the address is published — the twelfth letter."
+    }
+  ],
+  "064_nc_is_not_no_redistribution.sql": [
+    {
+      "sql": "SELECT count(*) FROM source WHERE license_spdx LIKE 'CC-BY-NC%' AND redistribution = 'no-redistribution'",
+      "expect": "0",
+      "why": "the regrade itself: NC forbids commercial redistribution, not redistribution."
+    },
+    {
+      "sql": "SELECT count(*) FROM source WHERE (license_spdx LIKE '%-NC-%' OR license_spdx LIKE '%-NC') AND commercial_use",
+      "expect": "0",
+      "why": "belt and braces: nothing in the NC family is sellable, whatever its grade says."
+    }
+  ],
+  "065_hdx_dataset_licences.sql": [
+    {
+      "sql": "SELECT count(*) FROM dataset WHERE key IN ('v1_education_hdx','v1_infrastructure_hdx') AND terms_verified_at = '2026-08-08 00:00:00+00' AND license_spdx IN ('CC-BY-4.0','CC-BY-IGO-3.0')",
+      "expect": "2",
+      "why": "the two HDX datasets behind the portal-level `varies`, each read at its own HDX record and overridden at the dataset grain."
+    }
+  ],
+  "067_connectivity_terms_read.sql": [
+    {
+      "sql": "SELECT count(*) FROM source WHERE key IN ('ooni','ioda') AND terms_evidence IS NOT NULL AND terms_verified_at IS NOT NULL AND terms_url IS NOT NULL",
+      "expect": "2",
+      "why": "067's own assertion: a licence read is worth nothing if the row it should have produced is missing."
+    },
+    {
+      "sql": "SELECT count(*) FROM source WHERE share_alike AND redistribution <> 'share-alike'",
+      "expect": "0",
+      "why": "067's other assertion: no source may claim a copyleft in one column and deny it in another."
+    },
+    {
+      "sql": "SELECT count(*) FROM source_permission WHERE source_key = 'ioda' AND contact = 'https://ioda.inetintel.cc.gatech.edu/'",
+      "expect": "1",
+      "why": "IODA's rows are held back and the ledger says so — the thirteenth letter, still not sent."
+    }
+  ]
+}
