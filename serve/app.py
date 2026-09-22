@@ -92,6 +92,12 @@ WATERMARK_SECONDS = 300
 _QUERY_CACHE: dict[tuple, tuple] = {}
 _WATERMARK: dict[str, Any] = {"at": 0.0, "value": None}
 
+# F-05 — the caveat that travels with every reading read off a rendered card.
+# Same sentence the loader writes into `attrs.warning`
+# (ingest/sources/palhub_fuel_image.py); it is repeated here rather than
+# imported because `serve/` must not depend on an ingest module.
+IMAGE_OCR_WARNING = "read from a rendered card; may be stale or wrong"
+
 
 def _runs_stamp() -> tuple:
     try:
@@ -408,10 +414,35 @@ def fuel_summary() -> dict:
                COUNT(*) FILTER (WHERE value='available') AS available,
                COUNT(*) AS total
         FROM state_serving WHERE state_kind LIKE 'fuel%%' GROUP BY 1""")
+
+    # F-05 — WHERE these readings come from, on the page rather than in a commit
+    # message. Every served fuel row currently comes off a rendered card whose
+    # timestamp is when the card was drawn, not when a station was seen, so the
+    # basis and the warning travel with the numbers. `text` = an assertion row
+    # that is not image-sourced and needs no caveat.
+    origin = q("""
+        SELECT coalesce(o.attrs->>'modality_basis', 'text') AS basis,
+               count(*) AS n
+          FROM state_serving s
+          LEFT JOIN LATERAL (
+              SELECT o2.attrs FROM state_observation o2
+               WHERE o2.place_id = s.place_id AND o2.state_kind = s.state_kind
+                 AND o2.modality = 'assertion'
+               ORDER BY o2.observed_at DESC LIMIT 1) o ON true
+         WHERE s.state_kind LIKE 'fuel%%'
+         GROUP BY 1 ORDER BY 2 DESC""")
+    basis = {r["basis"]: r["n"] for r in origin}
     return {
         "totals": {t["state_kind"].replace("fuel_", ""):
                    {"available": t["available"], "total": t["total"]} for t in totals},
         "by_region": out,
+        "basis": basis,
+        "warning": (IMAGE_OCR_WARNING if basis.get("image_ocr") else None),
+        "note": ("`basis` counts served readings by how they were read. "
+                 "`image_ocr` means the reading came off a rendered card: the "
+                 "timestamp on it is when the card was drawn, and a station "
+                 "missing a pill is silence, never `unavailable`."
+                 if basis.get("image_ocr") else None),
         "attribution": "Palhub - احوال الوقود (Telegram)",
     }
 

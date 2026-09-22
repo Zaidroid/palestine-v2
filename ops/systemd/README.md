@@ -85,3 +85,22 @@ Set `NTFY_URL=off` to disable ntfy deliberately. Prove the wiring with:
 .venv/bin/python -m ops.notify --whoami   # url / topic / token present?
 .venv/bin/python -m ops.alert  --test     # a REAL alarm, down the real path
 ```
+
+## Fuel from the archived cards (F-05, 2026-09-22)
+
+`palestine-v2-fuel-images.{service,timer}` read `@palhubappfuel`'s rendered
+cards — the tee spool's text bulletins died on 2026-08-28 and the cards are the
+only fuel signal left. Every 10 minutes, up to 150 new cards from the last 6
+hours, newest first: a fuel reading is only asserted for `max_assert_seconds`
+(3 h), so reading yesterday's cards produces rows that are already expired. The
+run is a no-op when there is nothing new, and `/v2/fuel/summary` reports how
+many served readings came off a card (`basis.image_ocr`) with the warning.
+
+Two things about it are deliberate and worth keeping:
+
+- it writes `--serve`, which means `modality='assertion'` — believed and served.
+  That is the one flag that promotes or demotes this feed; drop it and the
+  loader writes `quarantined` rows again, which cannot reach a served value.
+- it refreshes belief for `fuel_diesel`/`fuel_gasoline` at the end of a run, the
+  same scoped refresh the tee loader does, because nothing is served until
+  belief has seen it.

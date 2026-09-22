@@ -149,6 +149,10 @@ EXPECTED_JOBS = {
     "telegram-poller":   (30, 900),
     "sync-checkpoints":  (120, 600),
     "ingest-fuel":       (300, 900),
+    # F-05: the tee spool's text bulletins stopped 2026-08-28; this is the
+    # collector that reads the rendered cards instead, and its heartbeat is what
+    # makes "images flowing" a checkable claim rather than a hope.
+    "fuel-images":       (600, 1800),
     "classify-news":     (300, 900),
     "ingest-external":   (900, 1800),
     "watchdog":          (600, 900),

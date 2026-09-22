@@ -1,0 +1,10 @@
+[Unit]
+Description=Palestine v2 — read fuel state off the archived palhub cards (F-05)
+After=docker.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/ingest-fuel-images.sh
+TimeoutStartSec=900

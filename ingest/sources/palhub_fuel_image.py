@@ -52,16 +52,40 @@ sys.path.insert(0, str(ROOT))
 
 from cascade.fuel_image import ocr_passes, parse_card   # noqa: E402
 from ingest import bronze                              # noqa: E402
+from resolve.belief import refresh as belief_refresh   # noqa: E402
 from resolve.db import connect                         # noqa: E402
+
+# The two kinds this loader owns. Named so the belief refresh can be scoped to
+# them: belief_refresh writes state_current, and a loader must never write
+# outside the kinds it is responsible for.
+FUEL_KINDS = ("fuel_diesel", "fuel_gasoline")
 
 # The tee loader's source. Same channel, one witness — see the module docstring.
 SOURCE_KEY = "telegram_fuel"
 POLLER_SOURCE_KEY = "tg_palhubappfuel"
 
-# `quarantined` is collected-but-never-believed (migration 033). resolve/belief
-# counts only `assertion`, so nothing here can reach a served value no matter
-# what else goes wrong.
-MODALITY = "quarantined"
+# F-05, 2026-09-22 — THE PROMOTION, AND HOW IT IS UNDONE.
+#
+# `quarantined` is collected-but-never-believed (migration 033): resolve/belief
+# counts only `assertion`, so a quarantined row can never reach a served value.
+# The text feed this loader deliberately shares a source with (one channel is
+# one witness, see above) died on 2026-08-28 and cannot supply the held-out
+# comparison this quarantine was waiting for. That leaves a choice between a
+# vertical with no readings at all and readings whose provenance is written on
+# the row. Zaid's default (ZAID-1) is to serve them, flagged.
+#
+# So `--serve` writes `assertion`; every served row carries its basis and its
+# warning in attrs, and `/v2/fuel/*` shows both. A run WITHOUT `--serve` still
+# writes `quarantined` — which is what makes this reversible by number rather
+# than by memory: the old modality is one flag away, and the reason the
+# promotion happened is recorded here rather than assumed.
+MODALITY_QUARANTINED = "quarantined"
+MODALITY_SERVING = "assertion"
+SERVING_BASIS = "image_ocr"
+SERVING_WARNING = "read from a rendered card; may be stale or wrong"
+
+# What a bare run writes. The safe path stays the default; serving is asked for.
+MODALITY = MODALITY_QUARANTINED
 
 # The parse is a template match on a fixed render, not a judgement about the
 # world, so the confidence describes OCR reliability and nothing more. It is
@@ -91,9 +115,19 @@ def _stations_by_region(cur) -> dict[str, list[tuple[int, str]]]:
     return out
 
 
-def run(limit: int | None = None, verbose: bool = False) -> dict:
+def run(limit: int | None = None, verbose: bool = False, serve: bool = False,
+        since_hours: int | None = None) -> dict:
+    """Read the archived cards and write what they say.
+
+    `serve` writes them as `assertion` (believed, served, flagged) instead of
+    `quarantined`; `since_hours` refuses cards older than the window, because
+    the observation time on a card is when it was RENDERED and a card from three
+    weeks ago is not evidence about now. Both default to the safe behaviour.
+    """
+    modality = MODALITY_SERVING if serve else MODALITY_QUARANTINED
     stats = {"cards": 0, "not_a_card": 0, "no_region": 0, "observations": 0,
-             "all_dry_regions": 0, "unmatched": 0, "ocr_failed": 0}
+             "all_dry_regions": 0, "unmatched": 0, "ocr_failed": 0,
+             "skipped_old": 0, "modality": modality}
     with connect() as conn, conn.cursor() as cur:
         cur.execute("SELECT source_id FROM source WHERE key = %s", (SOURCE_KEY,))
         row = cur.fetchone()
@@ -119,11 +153,19 @@ def run(limit: int | None = None, verbose: bool = False) -> dict:
                     (fuel_source_id,))
         seen = {r[0] for r in cur.fetchall()}
 
-        cur.execute("""
+        # NEWEST FIRST when serving: a fuel reading is asserted for
+        # `max_assert_seconds` (3 h, state_kind_config) after the card's own
+        # timestamp, so a card from yesterday is history the moment it is read.
+        # The measurement path keeps the old backlog order, which is what a
+        # catch-up and the quarantined comparison want.
+        order = "DESC" if serve else "ASC"
+        cur.execute(f"""
             SELECT claim_id, external_id, reported_at, attrs->>'media_ref'
               FROM claim
              WHERE source_id = %s AND attrs->>'media_ref' IS NOT NULL
-             ORDER BY reported_at""", (poller_source_id,))
+               AND (%s::int IS NULL
+                    OR reported_at > now() - make_interval(hours => %s::int))
+             ORDER BY reported_at {order}""", (poller_source_id, since_hours, since_hours))
         rows = cur.fetchall()
 
         pending = [r for r in rows if f"img:{r[1]}" not in seen]
@@ -182,6 +224,13 @@ def run(limit: int | None = None, verbose: bool = False) -> dict:
             attrs_common = {
                 "via": "image", "card_region": region, "claim_id": claim_id,
                 "others_dry": card.others_dry, "notes": card.notes or None,
+                # F-05: when these rows are SERVED, the provenance travels on
+                # the row itself — a served reading must never be mistakable for
+                # a text bulletin's. `basis` above stays what the CARD said
+                # (a pill, or the region-wide "no station has fuel"); this is
+                # what WE did with it.
+                "modality_basis": SERVING_BASIS if serve else None,
+                "warning": SERVING_WARNING if serve else None,
             }
 
             if card.region_all_dry:
@@ -191,7 +240,8 @@ def run(limit: int | None = None, verbose: bool = False) -> dict:
                         _write(cur, pid, kind, "unavailable",
                                "لا توجد محطة متوفر فيها وقود", reported_at,
                                fuel_source_id,
-                               {**attrs_common, "basis": "region_all_dry"})
+                               {**attrs_common, "basis": "region_all_dry"},
+                               modality=modality)
                         stats["observations"] += 1
             else:
                 for st in card.stations:
@@ -203,7 +253,8 @@ def run(limit: int | None = None, verbose: bool = False) -> dict:
                                reported_at, fuel_source_id,
                                {**attrs_common, "basis": "pill",
                                 "match_score": st.match_score,
-                                "crisis": st.crisis})
+                                "crisis": st.crisis},
+                               modality=modality)
                         stats["observations"] += 1
 
             _mark(cur, fuel_source_id, ext_id)
@@ -213,19 +264,26 @@ def run(limit: int | None = None, verbose: bool = False) -> dict:
                 if verbose:
                     print(f"  ... {done}/{len(pending)} cards, "
                           f"{stats['observations']} observations")
+        if serve:
+            # Nothing is served until belief has seen it. Same scoped refresh the
+            # tee loader does, and the same lock-free reason: this process owns
+            # these two kinds for the length of the run.
+            stats["belief_rows"] = belief_refresh(FUEL_KINDS, conn=conn)
+            if verbose:
+                print(f"  belief refreshed: {stats['belief_rows']} rows")
         conn.commit()
     return stats
 
 
 def _write(cur, place_id, state_kind, value, raw_value, observed_at,
-           source_id, attrs) -> None:
+           source_id, attrs, modality: str = MODALITY) -> None:
     cur.execute("""
         INSERT INTO state_observation
             (place_id, state_kind, value, raw_value, observed_at, source_id,
              confidence, modality, attrs)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
         (place_id, state_kind, value, raw_value, observed_at, source_id,
-         PARSE_CONFIDENCE, MODALITY, json.dumps(attrs, ensure_ascii=False)))
+         PARSE_CONFIDENCE, modality, json.dumps(attrs, ensure_ascii=False)))
 
 
 def _mark(cur, source_id, ext_id) -> None:
@@ -240,12 +298,25 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--verbose", action="store_true")
+    ap.add_argument("--serve", action="store_true",
+                    help="write as `assertion` (believed and served, flagged) "
+                         "instead of `quarantined` — F-05; drop the flag to undo")
+    ap.add_argument("--since-hours", type=int, default=None,
+                    help="refuse cards rendered more than this long ago")
     a = ap.parse_args()
-    s = run(limit=a.limit, verbose=a.verbose)
+    s = run(limit=a.limit, verbose=a.verbose, serve=a.serve,
+            since_hours=a.since_hours)
     for k, v in s.items():
         print(f"{k:20} {v}")
-    print(f"\nAll rows written with modality={MODALITY!r} — collected, never "
-          f"believed, pending the 2026-08-01 overlap measurement.")
+    if a.serve:
+        print(f"\nSERVED: rows written as modality={s['modality']!r} with "
+              f"modality_basis={SERVING_BASIS!r} and the warning "
+              f"{SERVING_WARNING!r} on every row (F-05, ZAID-1 default). "
+              f"Re-run without --serve to write quarantined rows again.")
+    else:
+        print(f"\nAll rows written with modality={s['modality']!r} — collected, "
+              f"never believed. Pass --serve to promote (F-05), or read "
+              f"docs/DECISIONS.md for why this default exists.")
     return 0
 
 
