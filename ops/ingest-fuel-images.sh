@@ -12,12 +12,14 @@
 # reading yesterday's cards produces rows that are already expired, which is
 # exactly what the first catch-up run measured (0 available of 212).
 #
-# Every 10 minutes, up to 150 new cards from the last 6 hours. The channel posts
-# roughly 36 cards an hour, so this keeps up with several times the rate and
-# grinds the backlog down as it goes. Drop --serve to write `quarantined` rows
-# again — that is the whole undo.
+# Every 10 minutes, up to 60 new cards from the last 6 hours. The channel posts a
+# MEASURED 28.6 cards an hour — 4.8 per ten-minute window — so 60 is twelve times
+# the arrival rate, and the first timed run took 11 minutes of CPU to read 150 on
+# the box that also runs Frigate, Immich and the voice stack. Same coverage,
+# roughly a quarter of the CPU. Drop --serve to write `quarantined` rows again —
+# that is the whole undo.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 exec "$(dirname "$0")/with-heartbeat.sh" fuel-images 600 1800 -- \
   ./.venv/bin/python -m ingest.sources.palhub_fuel_image \
-      --serve --since-hours 6 --limit 150
+      --serve --since-hours 6 --limit 60

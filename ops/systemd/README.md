@@ -90,11 +90,13 @@ Set `NTFY_URL=off` to disable ntfy deliberately. Prove the wiring with:
 
 `palestine-v2-fuel-images.{service,timer}` read `@palhubappfuel`'s rendered
 cards — the tee spool's text bulletins died on 2026-08-28 and the cards are the
-only fuel signal left. Every 10 minutes, up to 150 new cards from the last 6
+only fuel signal left. Every 10 minutes, up to 60 new cards from the last 6
 hours, newest first: a fuel reading is only asserted for `max_assert_seconds`
-(3 h), so reading yesterday's cards produces rows that are already expired. The
-run is a no-op when there is nothing new, and `/v2/fuel/summary` reports how
-many served readings came off a card (`basis.image_ocr`) with the warning.
+(3 h), so reading yesterday's cards produces rows that are already expired, and
+the channel posts a measured 28.6 cards an hour, so 60 is twelve times the
+arrival rate without spending 11 minutes of CPU a run. The run is a no-op when
+there is nothing new, and `/v2/fuel/summary` reports how many served readings
+came off a card (`basis.image_ocr`) with the warning.
 
 Two things about it are deliberate and worth keeping:
 
