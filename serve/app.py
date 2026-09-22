@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -67,6 +68,59 @@ def q(sql: str, params: tuple = ()) -> list[dict]:
     with psycopg.connect(dsn(), row_factory=dict_row) as conn, conn.cursor() as cur:
         cur.execute(sql, params)
         return cur.fetchall()
+
+
+# ── the answers that re-aggregate the whole databank, remembered ─────────────
+#
+# /v2/databank/categories groups 206k serving rows per call — 1,119 ms measured
+# 2026-09-22 — and it is the most-called public route. /v2/databank/{category}
+# is the same shape over the same view. The databank changes once a night, so
+# the identical answer was being rebuilt thousands of times a day.
+#
+# The key is the databank, not the clock:
+#   * `ops/databank-runs.ndjson` (mtime, size) is free to stat and is appended
+#     by every load, so a nightly sync invalidates this immediately;
+#   * `max(upper(sys_period))` on `observation` is the authoritative watermark
+#     the plan names, and costs ~380 ms, so it is re-read at most every
+#     WATERMARK_SECONDS rather than per request;
+#   * CACHE_TTL_SECONDS bounds the age of any answer regardless of both.
+# `as_of` NEVER routes through here: a historical answer must not be served
+# from a cache keyed on the present, so those callers keep the plain `q`.
+DATABANK_RUNS = Path(__file__).resolve().parent.parent / "ops" / "databank-runs.ndjson"
+CACHE_TTL_SECONDS = 60
+WATERMARK_SECONDS = 300
+_QUERY_CACHE: dict[tuple, tuple] = {}
+_WATERMARK: dict[str, Any] = {"at": 0.0, "value": None}
+
+
+def _runs_stamp() -> tuple:
+    try:
+        st = DATABANK_RUNS.stat()
+        return (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return (0, 0)
+
+
+def _databank_watermark() -> str:
+    now = time.monotonic()
+    if _WATERMARK["value"] is None or now - _WATERMARK["at"] > WATERMARK_SECONDS:
+        rows = q("SELECT max(upper(sys_period))::text AS w FROM observation")
+        _WATERMARK["value"] = (rows[0]["w"] if rows else "") or ""
+        _WATERMARK["at"] = now
+    return _WATERMARK["value"]
+
+
+def q_cached(sql: str, params: tuple = ()) -> list[dict]:
+    """`q` with a memory, for the aggregates that read the whole databank."""
+    key = (sql, params)
+    stamp = (_runs_stamp(), _databank_watermark())
+    entry = _QUERY_CACHE.get(key)
+    now = time.monotonic()
+    if entry and entry[0] == stamp and (now - entry[1]) < CACHE_TTL_SECONDS:
+        return entry[2]
+    rows = q(sql, params)
+    _QUERY_CACHE[key] = (stamp, now, rows)
+    return rows
 
 
 def _drive_times(origin: tuple[float, float], targets: list[dict]) -> dict[int, dict]:
@@ -1726,7 +1780,7 @@ def databank_categories() -> dict:
     """What the databank holds: per-dataset counts, ranges, and licenses.
     Serving is the free tier by decision (2026-08-05): everything
     redistributable, credited; `sellable` marks the commercial subset."""
-    rows = q("""
+    rows = q_cached("""
         SELECT v1_category, dataset_key, source_name, license_spdx,
                commercial_use, attribution_text,
                COUNT(*) AS n, MIN(occurred_at)::date AS from_date,
@@ -2197,7 +2251,7 @@ def databank_category(category: str, indicator: str | None = None,
         # Serving posture (decided 2026-08-05): the license permits per-name
         # serving; decency defaults to aggregates. `memorial=true` opens the
         # per-name view as a deliberate act, never as a default row dump.
-        rows = q("""
+        rows = q_cached("""
             SELECT CASE WHEN (attrs->>'age')::int < 13 THEN 'children_under_13'
                         WHEN (attrs->>'age')::int < 18 THEN 'ages_13_17'
                         WHEN (attrs->>'age')::int < 40 THEN 'ages_18_39'
@@ -2245,7 +2299,10 @@ def databank_category(category: str, indicator: str | None = None,
         LEFT JOIN place p ON p.place_id = o.place_id
         WHERE o.v1_stable_id IS NOT NULL AND {' AND '.join(conds)}
         ORDER BY o.occurred_at DESC LIMIT %s"""
-    rows = q(sql, tuple(params + ([as_of] if as_of else []) + [limit]))
+    # An `as_of` reconstruction must never come out of a cache keyed on the
+    # present, so the historical path keeps the plain connection-per-call q().
+    runner = q if as_of else q_cached
+    rows = runner(sql, tuple(params + ([as_of] if as_of else []) + [limit]))
     return {"category": category, "as_of": as_of, "count": len(rows),
             "items": [{k: r[k] for k in
                        ("indicator", "occurred_at", "occurred_precision",
