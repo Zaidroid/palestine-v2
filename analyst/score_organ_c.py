@@ -205,14 +205,16 @@ def main() -> int:
                             "answer": res["json"], "scored": score_row(row["reader"], res["json"])})
             # nothing is written to the databank and no state is mutated: this is a
             # measurement, and its artifact is written incrementally so a paused run
-            # keeps everything it paid for.
+            # keeps everything it paid for. While a role is mid-run its status says
+            # so — an artifact that says `complete` at row 40 is a lie, and a
+            # resuming caller has to be able to tell the difference.
             state["rows"][role] = results
+            state["status"] = {**state.get("status", {}), role: "running"}
             state["summary"] = {r: summarise(state["rows"][r]) for r in state["rows"]}
-            state["status"] = {r: status for r in state["rows"]}
             artifact.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
 
         state["rows"][role] = results
-        state["status"] = {**state.get("status", {}), **{r: status for r in [role]}}
+        state["status"] = {**state.get("status", {}), role: status}
         state["summary"] = {r: summarise(state["rows"][r]) for r in state["rows"]}
         artifact.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
 
