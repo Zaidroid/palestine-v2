@@ -57,3 +57,4 @@ data/open-release/*.csv.gz
 data/raw/tech4palestine/
 data/raw/ooni/
 data/raw/ioda/
+.keys/

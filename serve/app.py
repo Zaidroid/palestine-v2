@@ -112,7 +112,10 @@ def _databank_watermark() -> str:
 
 def q_cached(sql: str, params: tuple = ()) -> list[dict]:
     """`q` with a memory, for the aggregates that read the whole databank."""
-    key = (sql, params)
+    # A dict of named parameters is not hashable and must still key the cache:
+    # `insights` passes %(lat)s-style params, and a TypeError here would 500 the
+    # route rather than miss the cache.
+    key = (sql, tuple(sorted(params.items())) if isinstance(params, dict) else params)
     stamp = (_runs_stamp(), _databank_watermark())
     entry = _QUERY_CACHE.get(key)
     now = time.monotonic()
@@ -851,17 +854,23 @@ def news_latest(area: str | None = None, limit: int = Query(10, ge=1, le=100)) -
 @app.get("/v2/coverage", tags=["meta"])
 def coverage() -> dict:
     """What this system currently holds — so an agent can answer honestly about
-    the limits of its own knowledge instead of implying total coverage."""
-    src = q("""SELECT s.name, s.key, COUNT(c.*) AS claims, MAX(c.reported_at) AS newest
+    the limits of its own knowledge instead of implying total coverage.
+
+    Measured 2,695 ms before 2026-09-23 (the source/claim rollup scans every
+    claim ever ingested) and this is the FIRST call a new client makes, which is
+    the worst possible place to look slow. Cached like the databank aggregates:
+    same TTL, same invalidation, so a fresh ingest is visible within a minute.
+    """
+    src = q_cached("""SELECT s.name, s.key, COUNT(c.*) AS claims, MAX(c.reported_at) AS newest
                FROM source s LEFT JOIN claim c ON c.source_id = s.source_id
                GROUP BY 1,2 HAVING COUNT(c.*) > 0 ORDER BY 3 DESC""")
-    st = q("SELECT state_kind, COUNT(*) AS n FROM state_serving GROUP BY 1 ORDER BY 2 DESC")
-    pl = q("SELECT kind::text AS kind, COUNT(*) AS n FROM place GROUP BY 1 ORDER BY 2 DESC")
+    st = q_cached("SELECT state_kind, COUNT(*) AS n FROM state_serving GROUP BY 1 ORDER BY 2 DESC")
+    pl = q_cached("SELECT kind::text AS kind, COUNT(*) AS n FROM place GROUP BY 1 ORDER BY 2 DESC")
     # `live_states` is built from state_serving, so a field with no data at all
     # simply DOES NOT APPEAR — the blind spot is invisible in the very endpoint
     # whose job is to describe the blind spots. `fields` lists every configured
     # kind whether or not anything feeds it (migration 036).
-    fields = q("""SELECT state_kind, coverage_state, no_source, crowd_reportable,
+    fields = q_cached("""SELECT state_kind, coverage_state, no_source, crowd_reportable,
                          observations, non_crowd_sources, last_observed_at
                     FROM state_kind_coverage
                    ORDER BY coverage_state, state_kind""")
@@ -1037,6 +1046,255 @@ SELECT o.occurred_at::date                          AS day,
    AND (%s::text IS NULL OR o.attrs->>'state_kind' = %s)
  ORDER BY 1
 """
+
+
+# ── insights: the question a person actually asks (2026-09-23, W8) ───────────
+# "Give me quick insights about checkpoint status last month around Ramallah."
+# Nothing answered that: /v2/history/area rolls up to GOVERNORATE, /v2/history/
+# place and /v2/patterns/place need one exact place, /v2/checkpoints/summary is
+# a national snapshot, /v2/incidents/recent is a list. The partner's own example
+# needed a radius, a window and a reduction — which meant the caller fetching
+# hundreds of rows and averaging them itself, the exact step where an agent
+# invents a summary.
+#
+# So the reduction happens here, once, with the caveats attached. Two things it
+# gets right on purpose: the flow distribution reads `checkpoint_flow` with
+# direction='both' (checkpoint_status is a legacy kind that mixes flow words
+# with presence words like `idf`, so counting it mixes two axes into one
+# histogram), and presence stays a SEPARATE block because a sighting is not a
+# state — empty means "not sighted", never "not there".
+INSIGHTS_CKPT_SQL = """
+WITH anchor AS (
+  SELECT ST_SetSRID(ST_MakePoint(%(lon)s, %(lat)s), 4326)::geography AS g),
+near AS MATERIALIZED (
+  -- The radius holds every kind of place — 591 of them around Ramallah, of
+  -- which 33 report flow. Driving the scan from `place` therefore fetched 18x
+  -- the rows it needed (820 ms measured). state_serving already holds exactly
+  -- the places that have ever had a reading, so it drives instead.
+  SELECT DISTINCT s.place_id, p.name_ar
+    FROM state_serving s
+    JOIN place p ON p.place_id = s.place_id
+    CROSS JOIN anchor a
+   WHERE s.state_kind = 'checkpoint_flow'
+     AND ST_DWithin(p.centroid, a.g, %(radius_m)s)),
+win AS MATERIALIZED (
+  SELECT o.place_id, n.name_ar, o.value, o.observed_at
+    FROM near n
+    JOIN state_observation o
+      ON o.place_id = n.place_id
+   WHERE o.state_kind = 'checkpoint_flow'
+     AND o.direction = 'both'
+     AND o.modality = 'assertion'
+     AND o.observed_at >= now() - make_interval(days => %(days)s)),
+now_rows AS (
+  SELECT s.place_id, s.name_ar, s.value, s.age_minutes
+    FROM state_serving s JOIN near n ON n.place_id = s.place_id
+   WHERE s.state_kind = 'checkpoint_flow' AND s.direction = 'both'),
+dirs AS (
+  SELECT o.direction::text AS direction, count(*) AS n
+    FROM near n JOIN state_observation o ON o.place_id = n.place_id
+   WHERE o.state_kind = 'checkpoint_flow' AND o.modality = 'assertion'
+     AND o.observed_at >= now() - make_interval(days => %(days)s)
+   GROUP BY 1),
+presence AS (
+  SELECT o.state_kind, o.value, count(*) AS n
+    FROM near n JOIN state_observation o ON o.place_id = n.place_id
+   WHERE o.state_kind IN ('checkpoint_idf', 'checkpoint_inspection',
+                          'checkpoint_police', 'checkpoint_settlers')
+     AND o.observed_at >= now() - make_interval(days => %(days)s)
+   GROUP BY 1, 2)
+SELECT
+  (SELECT count(DISTINCT place_id) FROM win)                       AS places,
+  (SELECT count(*) FROM win)                                       AS readings,
+  (SELECT jsonb_object_agg(v.value, v.n) FROM (
+      SELECT value, count(*) n FROM win GROUP BY 1) v)             AS over_window,
+  (SELECT jsonb_object_agg(n.value, n.n) FROM (
+      SELECT value, count(*) n FROM now_rows GROUP BY 1) n)        AS now_snapshot,
+  (SELECT count(*) FROM now_rows)                                  AS places_now,
+  (SELECT min(age_minutes) FROM now_rows)                          AS freshest_minutes,
+  (SELECT count(*) FROM now_rows WHERE value = 'unknown')          AS unknown_now,
+  (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.readings DESC) FROM (
+      SELECT name_ar, count(*) readings,
+             count(DISTINCT value) distinct_values,
+             min(extract(epoch FROM now() - observed_at)/60)::int AS last_seen_minutes
+        FROM win GROUP BY place_id, name_ar
+       ORDER BY count(*) DESC LIMIT 8) t)                          AS most_reported,
+  (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.readings DESC) FROM (
+      SELECT name_ar, count(*) readings, count(DISTINCT value) distinct_values
+        FROM win GROUP BY place_id, name_ar
+       HAVING count(DISTINCT value) > 1
+       ORDER BY count(DISTINCT value) DESC, count(*) DESC LIMIT 8) t) AS changing,
+  (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.n DESC) FROM (
+      SELECT extract(hour FROM observed_at AT TIME ZONE 'Asia/Hebron')::int AS hour,
+             count(*) n FROM win GROUP BY 1
+       ORDER BY n DESC LIMIT 5) t)                                 AS busiest_hours,
+  (SELECT jsonb_object_agg(direction, n) FROM dirs)                AS directions,
+  (SELECT jsonb_agg(to_jsonb(t)) FROM (
+      SELECT state_kind, value, n FROM presence) t)                AS presence
+"""
+
+INSIGHTS_INC_SQL = """
+WITH anchor AS (
+  SELECT ST_SetSRID(ST_MakePoint(%(lon)s, %(lat)s), 4326)::geography AS g)
+SELECT e.event_type,
+       count(*)                                                  AS events,
+       count(*) FILTER (WHERE e.independent_sources >= 2)         AS corroborated,
+       max(e.occurred_at)                                        AS newest,
+       (array_agg(p.name_ar ORDER BY e.occurred_at DESC))[1]      AS newest_place
+  FROM event e
+  LEFT JOIN place p ON p.place_id = e.place_id
+  CROSS JOIN anchor a
+ WHERE e.status = 'believed'
+   AND e.occurred_at >= now() - make_interval(days => %(days)s)
+   AND ST_DWithin(e.geom, a.g, %(radius_m)s)
+ GROUP BY 1 ORDER BY events DESC
+"""
+
+_PRESENCE_KINDS = {"checkpoint_idf": "army", "checkpoint_inspection": "inspection",
+                   "checkpoint_police": "police", "checkpoint_settlers": "settlers"}
+
+
+def _measured_precision(state_kind: str) -> dict | None:
+    """The newest backtest line for a state kind, from the accuracy ledger.
+
+    Read rather than asserted: if the ledger has nothing for this subject, the
+    answer says nothing about precision instead of inventing a number.
+    """
+    import json as _json
+    repo = Path(__file__).resolve().parent.parent
+    best = None
+    try:
+        for line in (repo / "ops" / "accuracy.ndjson").read_text().splitlines():
+            r = _json.loads(line)
+            if r.get("state_kind") == state_kind:
+                best = r                      # the ledger is append-only: last wins
+    except Exception:                          # noqa: BLE001
+        return None
+    if not best:
+        return None
+    return {"precision": round(best["precision"], 4), "n": best["pairs_examined"],
+            "mode": best.get("mode"), "window_days": best.get("window_days"),
+            "basis": "backtest, ops/accuracy.ndjson"}
+
+
+def _incident_quality() -> dict | None:
+    """The incident classifier's measured precision and its gate state.
+
+    ZAID-9 settled on 2026-09-23 that an obituary or a funeral is not a death
+    report. This measurement predates that: it is what the ledger says, and
+    saying it out loud is the point.
+    """
+    import json as _json
+    repo = Path(__file__).resolve().parent.parent
+    try:
+        r = _json.loads((repo / "ops" / "incident-precision-round7.json").read_text())
+    except Exception:                          # noqa: BLE001
+        return None
+    o = r["overall"]
+    return {"precision": o["precision"], "ci95": o["ci95"], "n": o["n"],
+            "gate": 0.80, "state": "below gate" if o["precision"] < 0.80 else "passing",
+            "measured_at": r["measured_at"],
+            "by_type": {k: v["precision"] for k, v in (r.get("per_type") or {}).items()},
+            "basis": "hand-scored sample, ops/incident-precision-round7.json"}
+
+
+@app.get("/v2/insights", tags=["insights"])
+def insights(
+    place: str | None = Query(None, min_length=2, description="Arabic or English place name"),
+    lat: float | None = Query(None, ge=29.0, le=34.0),
+    lon: float | None = Query(None, ge=33.0, le=37.0),
+    radius_km: float = Query(15.0, gt=0, le=60),
+    days: int = Query(30, ge=1, le=365),
+) -> dict:
+    """One reduction of a place over a window: checkpoints, incidents, precision.
+
+    Answers "what was happening around X for the last N days" in a single call
+    — the reduction a person does by eye, with the sample sizes kept.
+    """
+    if place:
+        from resolve.geo import resolve_place
+        r = resolve_place(place)
+        if not r:
+            raise HTTPException(404, f"place {place!r} did not resolve")
+        row = q("SELECT ST_Y(centroid::geometry) AS la, ST_X(centroid::geometry) AS lo "
+                "FROM place WHERE place_id = %s", (r.place_id,))
+        if not row or row[0]["la"] is None:
+            raise HTTPException(404, f"place {place!r} resolved but carries no geometry")
+        lat, lon = row[0]["la"], row[0]["lo"]
+        resolved = {"query": place, "name": r.name_ar or r.name_en, "kind": r.kind,
+                    "name_en": r.name_en, "place_id": r.place_id,
+                    "lat": round(lat, 4), "lon": round(lon, 4),
+                    "precision": r.precision, "confidence": round(r.confidence, 3),
+                    "method": r.method}
+    elif lat is None or lon is None:
+        raise HTTPException(400, "give either `place` or both `lat` and `lon`")
+    else:
+        resolved = {"query": f"{lat:.4f},{lon:.4f}", "lat": lat, "lon": lon}
+
+    par = {"lat": lat, "lon": lon, "days": days, "radius_m": radius_km * 1000}
+    # Cached like the other whole-databank reductions — and here the trade is
+    # explicit: a benchmark that calls this twenty times gets the same answer
+    # twenty times, so the FIRST call is the one that costs. `as_of` in the
+    # payload is when the answer was built, so a caller can always see the age;
+    # CACHE_TTL_SECONDS bounds it at a minute.
+    ck = q_cached(INSIGHTS_CKPT_SQL, par)[0]
+    inc = q_cached(INSIGHTS_INC_SQL, par)
+
+    presence: dict[str, dict] = {}
+    for row in (ck["presence"] or []):
+        axis = _PRESENCE_KINDS.get(row["state_kind"], row["state_kind"])
+        presence.setdefault(axis, {})[row["value"]] = row["n"]
+    events = sum(r["events"] for r in inc)
+    caves = [
+        "A checkpoint reading is what a channel reported, not an official "
+        "count. `unknown` means nobody reported recently — it is NOT `open`.",
+        "`present` counts sightings; an empty presence block means nobody "
+        "sighted them, never that they were not there.",
+        "Incident times are when the channel POSTED, not when it happened "
+        "(precision: hour).",
+        "`independent_sources` counts independence groups: channels that "
+        "mirror each other count once.",
+    ]
+    if not ck["readings"]:
+        caves.append("No checkpoint reading in this radius and window at all — "
+                     "that is absence of evidence, not a quiet month.")
+    if inc and max(r["corroborated"] for r in inc) == 0:
+        caves.append("No incident type here reached two independent sources in "
+                     "this window; every count is single-source.")
+    return {
+        "scope": {**resolved, "radius_km": radius_km, "days": days,
+                  "window_hours": days * 24},
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "checkpoints": {
+            "places": ck["places"], "readings": ck["readings"],
+            "over_window": ck["over_window"] or {},
+            "now": ck["now_snapshot"] or {}, "places_now": ck["places_now"],
+            "unknown_now": ck["unknown_now"],
+            "freshest_reading_minutes": ck["freshest_minutes"],
+            "directions": ck["directions"] or {},
+            "most_reported": ck["most_reported"] or [],
+            "changing": ck["changing"] or [],
+            "busiest_hours_hebron": ck["busiest_hours"] or [],
+            "presence": presence,
+        },
+        "incidents": {
+            "events": events,
+            "by_type": [{"type": r["event_type"], "events": r["events"],
+                         "corroborated": r["corroborated"],
+                         "newest": r["newest"], "newest_place": r["newest_place"]}
+                        for r in inc],
+            "absent_types": [t for t in ("raid", "settler_attack", "demolition",
+                                         "closure", "arrest", "shooting", "death",
+                                         "injury", "fire_detection", "siege")
+                             if t not in {r["event_type"] for r in inc}],
+        },
+        "quality": {"checkpoints": _measured_precision("checkpoint_flow"),
+                    "incidents": _incident_quality()},
+        "caveats": caves,
+        "attribution": ("Checkpoints and incidents: Telegram road-condition and news "
+                        "channels via Palestine Data Platform v2. See /v2/coverage "
+                        "and /v2/databank/licenses."),
+    }
 
 
 @app.get("/v2/history/place", tags=["history"])

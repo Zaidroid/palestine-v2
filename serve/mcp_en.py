@@ -313,6 +313,41 @@ def databank(d: dict) -> str:
             + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
 
 
+def insights(d: dict) -> str:
+    scope = d.get("scope") or {}
+    ck = d.get("checkpoints") or {}
+    inc = d.get("incidents") or {}
+    name = scope.get("name") or scope.get("query") or "that place"
+    out = (f"Last {scope.get('days')} days around {name} "
+           f"({scope.get('radius_km'):g} km): {ck.get('readings', 0):,} checkpoint "
+           f"readings across {ck.get('places', 0)} checkpoints")
+    now = ck.get("now") or {}
+    if now:
+        said = ", ".join(f"{v} {k}" for k, v in sorted(now.items(), key=lambda kv: -kv[1]))
+        out += f". Right now {ck.get('places_now', 0)} have a fresh reading: {said}"
+    if ck.get("unknown_now"):
+        out += f", and {ck['unknown_now']} have no recent reading at all"
+    fresh = ck.get("freshest_reading_minutes")
+    if fresh is not None:
+        out += f". Newest reading is {int(fresh)} minutes old"
+    top = (ck.get("most_reported") or [])[:3]
+    if top:
+        out += ". Most reported: " + ", ".join(
+            f"{r['name_ar']} ({r['readings']:,} readings)" for r in top)
+    rows = inc.get("by_type") or []
+    if rows:
+        out += ". Incidents in the window: " + ", ".join(
+            f"{r['events']} {r['type'].replace('_', ' ')} "
+            f"({r['corroborated']} corroborated)" for r in rows[:6])
+    qy = (d.get("quality") or {}).get("incidents") or {}
+    if qy.get("state") == "below gate":
+        out += (f". Accuracy note: the incident classifier measures "
+                f"{qy['precision']:.0%} against its {qy['gate']:.0%} gate, so read "
+                f"those counts as a lower-confidence signal")
+    return out + (". A reading is what a channel reported, not an official count; "
+                  "no reading does not mean open.")
+
+
 RENDERERS: dict[str, Callable[[dict], str]] = {
     "fuel_prices": fuel_prices,
     "checkpoint_status": checkpoint_status, "checkpoints_near": checkpoints_near,
@@ -323,7 +358,7 @@ RENDERERS: dict[str, Callable[[dict], str]] = {
     "search": search, "where_is": where_is, "trend": trend,
     "what_correlates_with": what_correlates_with, "compare": compare,
     "correlate": correlate, "licenses": licenses, "data_gaps": data_gaps,
-    "databank": databank,
+    "databank": databank, "insights": insights,
 }
 
 

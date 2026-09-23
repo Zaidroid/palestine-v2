@@ -194,6 +194,92 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
             "source": d.get("attribution")}
 
 
+def insights(place: str | None = None, lat: float | None = None,
+             lon: float | None = None, days: int = 30,
+             radius_km: float = 15) -> dict:
+    """One reduction of a place over a window: checkpoints, incidents, sample sizes.
+
+    This is the "give me quick insights about checkpoint status last month
+    around Ramallah" call. It answers in one round trip what otherwise takes a
+    fetch of hundreds of rows: the reduction happens here, once, and the
+    precision each subject was MEASURED at travels with it.
+    """
+    ask: dict = {"days": days, "radius_km": radius_km}
+    if place:
+        ask["place"] = place
+    elif lat is not None and lon is not None:
+        ask["lat"], ask["lon"] = lat, lon
+    else:
+        return {"answer": "أعطيني اسم مكان أو إحداثيات.", "found": False}
+    try:
+        d = api("/v2/insights", **ask)
+    except Exception as exc:                                    # noqa: BLE001
+        if "404" in str(exc):
+            return {"answer": f"ما عرفت وين {place}.", "found": False}
+        raise
+    name = (d.get("scope") or {}).get("name") or place
+    ck = d.get("checkpoints") or {}
+    inc = d.get("incidents") or {}
+    parts = [f"آخر {days} يوم حول {name} (نطاق {radius_km:g} كم): "
+             f"{ck.get('readings', 0):,} قراءة عن {ck.get('places', 0)} حاجز"]
+
+    now = ck.get("now") or {}
+    definite = {k: v for k, v in now.items() if k != "unknown"}
+    if definite:
+        said = "، ".join(f"{_ar_value(k)} {v}" for k, v in
+                         sorted(definite.items(), key=lambda kv: -kv[1]))
+        parts.append(f"الآن {sum(definite.values())} حاجز بقراءة محددة: {said}")
+    if ck.get("unknown_now"):
+        parts.append(f"{ck['unknown_now']} حاجز بلا قراءة حديثة")
+    fresh = ck.get("freshest_reading_minutes")
+    if fresh is not None:
+        parts.append(f"أحدث قراءة عمرها {int(fresh)} دقيقة")
+
+    top = (ck.get("most_reported") or [])[:3]
+    if top:
+        parts.append("أكثر تقاريراً: " + "، ".join(
+            f"{r['name_ar']} ({r['readings']:,} قراءة)" for r in top))
+    changing = ck.get("changing") or []
+    if changing:
+        parts.append("حواجز بتغيّر فعلي: " + "، ".join(
+            f"{r['name_ar']} ({r['distinct_values']} حالات)" for r in changing[:3]))
+    hours = [h["hour"] for h in (ck.get("busiest_hours_hebron") or [])[:3]]
+    if hours:
+        parts.append("أزحم الساعات بتوقيت البلد: " + "، ".join(f"{h}:00" for h in hours))
+
+    rows = inc.get("by_type") or []
+    if rows:
+        parts.append("أحداث: " + "، ".join(
+            f"{r['events']} {_ar_event(r['type'])}" for r in rows[:6]))
+    elif inc.get("events") == 0:
+        parts.append("ما في أحداث مسجّلة بالنطاق")
+
+    qy = (d.get("quality") or {}).get("incidents") or {}
+    if qy.get("state") == "below gate":
+        parts.append(f"تنبيه: مصنّف الأحداث مقيس {qy['precision']:.0%} مقابل بوّابة "
+                     f"{qy['gate']:.0%} — دونها")
+
+    return {"answer": ". ".join(parts) + ". "
+            "القراءة تقرير قناة، مش إحصاء رسمي. «ما في معلومة» لا تعني «مفتوح».",
+            "found": True, **d}
+
+_AR_VALUES = {"open": "مفتوح", "closed": "مغلق", "congested": "مزدحم",
+              "slow": "بطيء", "unknown": "بلا معلومة", "restricted": "مقيّد",
+              "partial": "جزئي"}
+_AR_EVENTS = {"raid": "اقتحام", "settler_attack": "اعتداء مستوطنين",
+              "closure": "إغلاق", "arrest": "اعتقال", "demolition": "هدم",
+              "shooting": "إطلاق نار", "death": "وفاة", "injury": "إصابة",
+              "fire_detection": "حريق", "siege": "حصار"}
+
+
+def _ar_value(v: str) -> str:
+    return _AR_VALUES.get(v, v)
+
+
+def _ar_event(t: str) -> str:
+    return _AR_EVENTS.get(t, t)
+
+
 def checkpoints_near(place: str | None = None, lat: float | None = None,
                      lon: float | None = None, direction: str = "both",
                      radius_km: float = 15.0, limit: int = 6) -> dict:
@@ -1104,6 +1190,18 @@ TOOLS = {
                               "direction": {"type": "string", "enum": ["inbound", "outbound", "both"],
                                             "description": "direction of travel; both is the default"}},
                            "required": ["name"]}),
+    "insights": (insights,
+                 "ONE reduction of a place over a window: checkpoint status "
+                 "distribution around it, which checkpoints actually changed, the "
+                 "busiest hours, incident counts by type, and the measured "
+                 "precision of each subject. Use this for 'what was happening "
+                 "around X last month' instead of fetching rows and averaging them "
+                 "yourself. Give `place` (or lat/lon).",
+                 {"type": "object", "properties": {
+                     "place": {"type": "string", "description": "e.g. رام الله, Ramallah, نابلس"},
+                     "lat": {"type": "number"}, "lon": {"type": "number"},
+                     "days": {"type": "integer", "description": "lookback window, default 30"},
+                     "radius_km": {"type": "number", "description": "radius around it, default 15"}}}),
     "checkpoints_near": (checkpoints_near,
                          "Checkpoints around a place or coordinate, nearest first, with what is "
                          "known and how much is NOT known. Give `place` or lat/lon.",

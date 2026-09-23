@@ -101,6 +101,9 @@ CASES: dict[str, list[dict]] = {
     "/v2/incidents/recent":     [{}, {"hours": 6, "limit": 5},
                                  {"lat": LAT, "lon": LON, "radius_km": 10}],
     "/v2/history/area":         [{}, {"days": 7}, {"state_kind": "checkpoint_status"}],
+    # The partner's own example question, in the shape they will ask it.
+    "/v2/insights":              [{"place": "رام الله", "days": 30},
+                                  {"lat": LAT, "lon": LON, "radius_km": 10, "days": 7}],
     # Both variants of the optional filter, because it was the None branch of
     # exactly this shape that 500'd everywhere it was uncast.
     "/v2/fuel/prices":          [{}, {"product": "diesel"}],
@@ -345,6 +348,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/databank/correlate/scan": "what_correlates_with",
         "/v2/databank/radar": "data_gaps",
         "/v2/databank/scout": "data_gaps",
+        "/v2/insights": "insights",
     }
     missing = _routes() - MCP_EXEMPT - set(covered)
     assert not missing, f"REST routes with no MCP tool and no exemption: {sorted(missing)}"

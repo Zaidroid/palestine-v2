@@ -41,9 +41,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Request, Response
@@ -82,7 +85,11 @@ INSTRUCTIONS = (
     "point: 'unknown' means nobody credible has looked recently, which is an "
     "answer, not a gap. Sending someone toward a checkpoint that closed three "
     "hours ago is the failure every layer here is built to prevent.\n\n"
-    "Start with `coverage` to see what is held and what is held nothing for."
+    "Start with `coverage` to see what is held and what is held nothing for. "
+    "For a question about a place over a period — 'what happened around "
+    "Ramallah last month' — call `insights` and do not fetch rows and average "
+    "them yourself: it does the reduction once, and it carries the sample size "
+    "and the measured precision of each subject."
 )
 
 # ── resources ────────────────────────────────────────────────────────────────
@@ -399,6 +406,95 @@ def _handle(msg: dict, ip: str | None = None) -> dict | None:
     return _err(rid, -32601, f"method not found: {method}")
 
 
+
+
+# ── the door (W8, 2026-09-23) ────────────────────────────────────────────────
+# Until today this endpoint answered anyone who had the URL: a public
+# tools/list, a public call, no key anywhere in `serve/`. For a partner release
+# that is the first finding their test writes, so every POST now needs a key
+# unless it comes from this machine. Keys live OUTSIDE the repo, so this file
+# stays committable and revocation is a file edit, not a deploy.
+KEYS_PATH = Path("/home/zaid/palestine-v2/.keys/partner-keys.json")
+_KEY_STATE: dict = {"mtime": 0.0, "keys": {}, "counts": {}}
+
+
+def _partner_keys() -> dict:
+    """name -> record, re-read when the file changes, so revocation is instant."""
+    import json as _json
+    try:
+        m = KEYS_PATH.stat().st_mtime
+    except OSError:
+        return {}
+    if m != _KEY_STATE["mtime"]:
+        try:
+            data = _json.loads(KEYS_PATH.read_text())
+            _KEY_STATE["keys"] = {k["key"]: k for k in data.get("keys", [])}
+            _KEY_STATE["mtime"] = m
+        except Exception:                                        # noqa: BLE001
+            pass                     # a broken file must not revoke a working key
+    return _KEY_STATE["keys"]
+
+
+def _presented_key(request: Request) -> str | None:
+    """Header first, `?key=` second — because a browser-hosted client cannot
+    send a header.
+
+    Claude's own connector UI takes ONE url and no header field, and it reacts
+    to a 401 by starting an OAuth discovery flow this server does not have: the
+    failure it shows is "Authentication failed", which reads like a broken
+    server rather than a client that needs a different url shape. So the key is
+    accepted as a query parameter too, and `?key=` is scrubbed from the access
+    log below so it does not end up in journald.
+    """
+    auth = request.headers.get("authorization") or ""
+    if auth[:7].lower() == "bearer ":
+        return auth[7:].strip()
+    return request.headers.get("x-api-key") or request.query_params.get("key")
+
+
+def _quota_exceeded(record: dict) -> bool:
+    """Per-key calls per UTC day, counted in memory, reset by date."""
+    quota = int(record.get("daily_quota") or 0)
+    if not quota:
+        return False
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    slot = _KEY_STATE["counts"]
+    if slot.get("day") != day:
+        _KEY_STATE["counts"] = {"day": day, "n": {}}
+        slot = _KEY_STATE["counts"]
+    n = int(slot["n"].get(record["name"], 0))
+    slot["n"][record["name"]] = n + 1
+    return n >= quota
+
+
+# A key in a url must not become a key in a log file. uvicorn's access record
+# carries the full path as a positional argument, so the scrub is on the args.
+class _ScrubKeys(logging.Filter):
+    _RE = re.compile(r"([?&]key=)[A-Za-z0-9_\-]+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple):
+            record.args = tuple(
+                self._RE.sub(r"\1[redacted]", a) if isinstance(a, str) else a
+                for a in record.args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_ScrubKeys())
+
+
+def _unauthenticated(why: str) -> JSONResponse:
+    """A 401 that says how to get a key instead of a bare refusal."""
+    # Deliberately NO `WWW-Authenticate: Bearer`: a client that sees one starts
+    # RFC 9728 discovery, finds no authorization server, and reports an
+    # authentication failure. The body is the instruction, and it names the
+    # one field the client's UI actually has.
+    return JSONResponse(_err(None, -32001, why + " For a client that takes a "
+                             "single url and no headers, append `?key=<key>` "
+                             "instead."), status_code=401,
+                        headers={"x-key-request": "https://zaidlab.xyz/palestine"})
+
+
 @router.post("/mcp", include_in_schema=False)
 async def mcp_endpoint(request: Request) -> Response:
     raw = await request.body()
@@ -412,8 +508,21 @@ async def mcp_endpoint(request: Request) -> Response:
     if not msgs:
         return JSONResponse(_err(None, -32600, "empty batch"), status_code=400)
 
-    from serve.ratelimit import client_ip
+    from serve.ratelimit import client_ip, is_local
     ip = client_ip(request)
+
+    if not is_local(ip):
+        key = _presented_key(request)
+        keys = _partner_keys()
+        if not key or key not in keys:
+            return _unauthenticated(
+                "this endpoint needs a partner key: send it as "
+                "`Authorization: Bearer <key>` or `X-Api-Key`. Ask us for one — "
+                "the data is free to read, we only need to know who is calling.")
+        if _quota_exceeded(keys[key]):
+            return JSONResponse(_err(None, -32002, "daily quota for this key is "
+                                     "used up; it resets at midnight UTC"),
+                                status_code=429)
 
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(

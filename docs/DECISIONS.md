@@ -418,3 +418,20 @@ One line per non-obvious decision. Newest last. Format:
 - 2026-09-23 · F-12 · **ONLY WHAT A BULLETIN STATES IS SERVED.** T4P fills a day with no bulletin by subtracting the next bulletin's 24 h line from its total. That is an inference from two counters Zaid's B2 ruling says count different things, and on 2026-09-13 it produced 73,784 where the bulletin says 73,786. Rows with `report_source != "mohtel"` are dropped and counted; the 8 already loaded were superseded, not deleted.
 - 2026-09-23 · ZAID · **THE PLAN REFOCUSES ON THE TIER 1 MCP SERVER FOR THE THAURA RELEASE.** Thaura is Tech for Palestine's consumer AI — the same ecosystem as Tech4Palestine, whose Unlicense files already carry our Gaza and West Bank series — subscription-funded, so the partner tier is a commercial use under our own `commercial_use` flags and cannot be waved through. W8 (§4 of the plan) carries it: keys and quotas (F-80), licence grading per tool and per datum (F-81), measured accuracy stated on the surface (F-82), partner docs (F-83), a security review (F-84), and a staging key for them to test (F-85). The audited starting point is in §8: the server is built, public and unauthenticated.
 
+## 2026-09-23 · The Thaura release is live trackers plus insights (ZAID-9, ZAID-10, ZAID-11)
+
+Zaid: the partner needs the Tier 1 live trackers — checkpoints, incidents,
+attacks, settlers, demolitions — plus insights and database analysis ("give me
+quick insights about checkpoint status last month around Ramallah"), needs it
+today, and will test performance, accuracy and privacy. Scope is the needed data,
+not the whole databank. Explaining the obituary question, he answered that an
+obituary or a funeral is not a death report, which unblocks the classifier fix.
+
+**Consequences.** (1) The licence tier stays conservative without slowing the
+release: derived live-state is served, the ungraded and `no-redistribution`
+databank sets are not, and `licenses` keeps naming every obligation. (2) A
+question that spans a radius and a window must be answerable in one call — so
+the reduction happens server-side with its sample size, not in the caller's
+head where it would be invented. (3) Accuracy is served as a number, not a
+claim: each subject's measured precision travels with the answer, including
+when that number is below its gate.
