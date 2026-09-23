@@ -97,7 +97,11 @@ for f in tests/test_gate*.sql tests/test_no_data_loss.sql \
   docker exec -i -e PGPASSWORD="$PGPASSWORD" palestine-v2-db \
     psql -tA -U "$PGUSER" -d "$PGDATABASE" -f - < "$f" | grep -c '^PASS'
 done
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest -q --deselect tests/test_evidence.py::test_vault_verifies_end_to_end
+# ^ the vault re-hash (~30 min, 1.8k objects) runs alone:
+#   .venv/bin/python -m pytest -q tests/test_evidence.py::test_vault_verifies_end_to_end
+# It lives in tests/test_evidence.py. The `--ignore=tests/test_vault_verifies_end_to_end.py`
+# used through 2026-09-22 named a file that does not exist and excluded nothing.
 .venv/bin/python tests/test_arabic.py; .venv/bin/python tests/test_ingest.py
 ```
 Expected: 60 SQL passes (9/19/10/9/4/9), 315 pytest, 34 + 27 standalone.

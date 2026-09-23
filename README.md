@@ -101,7 +101,11 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 cp .env.example .env          # fill in, then: chmod 600 .env
 docker compose up -d db       # Postgres 16 + PostGIS + TimescaleDB
 for f in db/migrations/*.sql; do psql -f "$f"; done
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest -q --deselect tests/test_evidence.py::test_vault_verifies_end_to_end
+# ^ the vault re-hash (~30 min, 1.8k objects) runs alone:
+#   .venv/bin/python -m pytest -q tests/test_evidence.py::test_vault_verifies_end_to_end
+# It lives in tests/test_evidence.py. The `--ignore=tests/test_vault_verifies_end_to_end.py`
+# used through 2026-09-22 named a file that does not exist and excluded nothing.
 .venv/bin/uvicorn serve.app:app --port 7870
 ```
 

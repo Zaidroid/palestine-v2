@@ -68,7 +68,9 @@ lines first; it is the memory of every mistake already made once.
    this project and was right both times.
 4. **Re-run what you changed** and then the full verification:
    `bash` the SQL gates as in docs/HANDOFF.md §3, `.venv/bin/python -m
-   pytest -q`, the two standalone test scripts, `tests/eval_geo.py`.
+   pytest -q --deselect tests/test_evidence.py::test_vault_verifies_end_to_end`
+   (the vault re-hash takes ~30 min; run it separately as HANDOFF §3 says),
+   the two standalone test scripts, `tests/eval_geo.py`.
    Everything must pass before any commit.
 5. **Write the digest** — overwrite `ops/digest-latest.md`, ≤ 35 lines,
    Arabic summary first then English detail, no jargon: what was green, what
