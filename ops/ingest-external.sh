@@ -23,6 +23,7 @@ step() {
 }
 
 step rss_news       .venv/bin/python -m ingest.sources.rss_news
+step fuel_prices    .venv/bin/python -m ingest.sources.fuel_prices
 step weather        .venv/bin/python -m ingest.sources.weather
 step connectivity   .venv/bin/python -m ingest.sources.connectivity
 step power          .venv/bin/python -m ingest.sources.power
@@ -33,12 +34,12 @@ step classify       .venv/bin/python -m ingest.sources.news_incidents
 
 if [ ${#failed[@]} -eq 0 ]; then
   .venv/bin/python -m ops.heartbeat ingest-external --interval 900 --grace 1800 \
-      --detail '{"steps": 6, "failed": 0}' || true
+      --detail '{"steps": 7, "failed": 0}' || true
   exit 0
 fi
 
 joined=$(IFS=,; echo "${failed[*]}")
 .venv/bin/python -m ops.heartbeat ingest-external --interval 900 --grace 1800 \
     --fail "failed steps: $joined" || true
-echo "${#failed[@]} of 6 steps failed: $joined" >&2
+echo "${#failed[@]} of 7 steps failed: $joined" >&2
 exit 1

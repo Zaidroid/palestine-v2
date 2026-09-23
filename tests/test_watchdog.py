@@ -770,3 +770,40 @@ def test_the_retired_list_matches_the_migration_that_retired_them():
     jobs = re.search(r"WHERE name IN \(([^)]*)\)", sql).group(1)
     for job in re.findall(r"'([a-z0-9-]+)'", jobs):
         assert job not in EXPECTED_JOBS, f"{job} is retired in 070 but still expected by the watchdog"
+
+
+# ── fuel prices: judged by the monthly list, not by feed cadence ──────────────
+
+def _price_row(**kw):
+    row = {"confirmed": 8, "conflicting": 0, "products": 8, "newest": "2026-09-07", "day": 10}
+    row.update(kw)
+    return [row]
+
+
+def test_a_month_with_no_confirmed_list_is_a_fault_after_the_grace_days(monkeypatch):
+    import ops.watchdog as w
+    monkeypatch.setattr(w, "_q", lambda sql: _price_row(confirmed=0, day=w.FUEL_PRICE_GRACE_DAYS))
+    r = w.fuel_price_check()[0]
+    assert r["status"] == "no_list" and r["fault"] is True
+
+
+def test_the_first_days_of_a_month_are_awaiting_not_a_fault(monkeypatch):
+    import ops.watchdog as w
+    monkeypatch.setattr(w, "_q", lambda sql: _price_row(confirmed=0, day=2))
+    r = w.fuel_price_check()[0]
+    assert r["status"] == "awaiting" and r["fault"] is False
+
+
+def test_outlets_disagreeing_on_a_price_is_a_fault(monkeypatch):
+    import ops.watchdog as w
+    monkeypatch.setattr(w, "_q", lambda sql: _price_row(conflicting=1))
+    assert w.fuel_price_check()[0]["fault"] is True
+
+
+def test_a_broken_price_query_cannot_take_the_watchdog_down(monkeypatch):
+    import ops.watchdog as w
+    def boom(sql):
+        raise RuntimeError("relation does not exist")
+    monkeypatch.setattr(w, "_q", boom)
+    r = w.fuel_price_check()[0]
+    assert r["status"] == "unreadable" and r["fault"] is True

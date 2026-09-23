@@ -96,20 +96,16 @@ CASES: dict[str, list[dict]] = {
     "/v2/export/checkpoints.geojson": [{}],
     "/v2/export/incidents.csv":       [{}, {"days": 7}],
     "/v2/export/incidents.geojson":   [{}, {"days": 7}],
-    "/v2/export/fuel.csv":            [{}],
+    "/v2/export/fuel_prices.csv":     [{}],
     "/v2/incidents/summary":    [{}, {"hours": 6}],
     "/v2/incidents/recent":     [{}, {"hours": 6, "limit": 5},
                                  {"lat": LAT, "lon": LON, "radius_km": 10}],
     "/v2/history/area":         [{}, {"days": 7}, {"state_kind": "checkpoint_status"}],
-    # Both variants of the filter, because it was the None branch of exactly
-    # this shape of optional filter that 500'd everywhere it was uncast.
-    "/v2/fuel/stations":        [{}, {"region": "أريحا"}, {"only_available": "true"},
-                                 {"region": "أريحا", "only_available": "true"},
-                                 {"region": "no-such-region-ﻻ"}],
-    "/v2/fuel/summary":         [{}],
-    "/v2/fuel/nearby":          [{"lat": LAT, "lon": LON},
-                                 {"lat": LAT, "lon": LON, "fuel": "diesel"},
-                                 {"lat": EMPTY_LAT, "lon": EMPTY_LON}],
+    # Both variants of the optional filter, because it was the None branch of
+    # exactly this shape that 500'd everywhere it was uncast.
+    "/v2/fuel/prices":          [{}, {"product": "diesel"}],
+    "/v2/fuel/prices/history":  [{}, {"product": "gasoline_95"},
+                                 {"include_unconfirmed": "true"}],
     "/v2/checkpoints/nearby":   [{"lat": LAT, "lon": LON},
                                  {"lat": LAT, "lon": LON, "include_unknown": "true"},
                                  {"lat": EMPTY_LAT, "lon": EMPTY_LON}],
@@ -145,9 +141,13 @@ GET_CASES = [(p, params) for p, variants in CASES.items() for params in variants
 
 
 def _routes() -> set[str]:
+    # Retired paths answer 410 by design and are asserted by
+    # test_retired_fuel_availability_answers_410_not_an_empty_list, not here.
+    from serve.app import FUEL_RETIRED_PATHS
     return {r.path for r in app.routes
             if getattr(r, "methods", None) and r.path.startswith(("/v2", "/health", "/"))
-            and r.path not in ("/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect")}
+            and r.path not in ("/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect")
+            and r.path not in FUEL_RETIRED_PATHS}
 
 
 def test_every_route_is_covered() -> None:
@@ -173,7 +173,6 @@ def test_route_answers(path: str, params: dict) -> None:
     ("/v2/checkpoints/status", {}),          # name is required
     ("/v2/geo/resolve", {}),                 # q is required
     ("/v2/history/place", {}),               # place_id is required
-    ("/v2/fuel/nearby", {"lat": LAT}),       # lon is required
     ("/v2/route", {"from_lat": LAT}),        # the other three are required
 ])
 def test_missing_required_params_are_422_not_500(path: str, params: dict) -> None:
@@ -182,7 +181,6 @@ def test_missing_required_params_are_422_not_500(path: str, params: dict) -> Non
 
 
 @pytest.mark.parametrize("path,params", [
-    ("/v2/fuel/nearby", {"lat": "north", "lon": LON}),
     ("/v2/history/place", {"place_id": "الظاهرية"}),
     ("/v2/incidents/summary", {"hours": "many"}),
 ])
@@ -305,9 +303,10 @@ MCP_EXEMPT = {
     "/v2/crowd/register", "/v2/crowd/report", "/v2/crowd/fields",
     # Covered by can_i_travel, which answers the journey rather than the maths.
     "/v2/route", "/v2/route/between",
-    # Covered by checkpoint_status / checkpoints_near / fuel_near.
-    "/v2/checkpoints/status", "/v2/checkpoints/nearby", "/v2/fuel/nearby",
-    "/v2/fuel/stations",
+    # Covered by checkpoint_status / checkpoints_near.
+    "/v2/checkpoints/status", "/v2/checkpoints/nearby",
+    # Covered by fuel_prices(history=true).
+    "/v2/fuel/prices/history",
     # Covered by place_history / place_pattern / area_history, which resolve the
     # name themselves so an agent never has to hold a place_id.
     "/v2/history/place", "/v2/history/area", "/v2/patterns/place",
@@ -316,7 +315,7 @@ MCP_EXEMPT = {
     # agent reads the same data through the query tools row by row.
     "/v2/export/checkpoints.csv", "/v2/export/checkpoints.geojson",
     "/v2/export/incidents.csv", "/v2/export/incidents.geojson",
-    "/v2/export/fuel.csv",
+    "/v2/export/fuel_prices.csv",
 }
 
 
@@ -335,7 +334,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/news/latest": "latest_news", "/v2/incidents/recent": "incidents_near",
         "/v2/incidents/summary": "incidents_summary",
         "/v2/checkpoints/summary": "checkpoints_summary",
-        "/v2/fuel/summary": "fuel_summary",
+        "/v2/fuel/prices": "fuel_prices",
         "/v2/databank/categories": "databank",
         "/v2/databank/{category}": "databank",
         "/v2/databank/licenses": "licenses",
@@ -382,24 +381,29 @@ def test_health_reports_faults_honestly() -> None:
         assert body["status"] != "ok", "faults present but status still ok"
 
 
-def test_stale_states_are_not_served_as_current() -> None:
-    """The decay gate, checked through HTTP rather than through SQL.
+def test_retired_fuel_availability_answers_410_not_an_empty_list() -> None:
+    """Availability was retired 2026-09-23 (070). An empty 200 would read as "no
+    station has diesel" — a claim this system can no longer make either way — so
+    the old paths must say the question is retired and name what replaced it."""
+    from serve.app import FUEL_RETIRED_PATHS
+    for path in FUEL_RETIRED_PATHS:
+        r = client.get(path, params={"lat": LAT, "lon": LON})
+        assert r.status_code == 410, f"{path} -> {r.status_code}"
+        assert r.json()["replacement"] == "/v2/fuel/prices"
+    assert not set(FUEL_RETIRED_PATHS) & set(client.get("/v2").json()["live"]["fuel"])
 
-    With fuel silent for over a day, every station must read `unknown`. If this
-    starts failing because fuel came back, that is fine — but it must never fail
-    because a 27-hour-old reading is being presented as today's.
-    """
-    body = client.get("/v2/fuel/summary").json()
-    for fuel, t in body["totals"].items():
-        stale_hours = 27
-        if t["total"] and t["available"]:
-            r = client.get("/v2/fuel/stations", params={"only_available": "true"})
-            for st in r.json()["stations"]:
-                for f in st["fuels"].values():
-                    if f["value"] == "available":
-                        assert (f["age_minutes"] or 0) < stale_hours * 60, (
-                            f"{fuel}: serving a {f['age_minutes']}-minute-old "
-                            f"'available' as current")
+
+def test_a_fuel_price_is_never_served_without_its_confirmation() -> None:
+    """A served price must carry the outlets that agreed on it; a price that is
+    not confirmed for THIS month must be null with a status that says why."""
+    body = client.get("/v2/fuel/prices").json()
+    assert "West Bank" in body["scope"]["where"] and "maximum" in body["scope"]["what"]
+    for r in body["prices"]:
+        if r["price"] is not None:
+            assert r["status"] == "confirmed" and r["outlets_agreeing"] >= 2, r
+            assert r["source_urls"], f"{r['product']}: a price with no source link"
+        else:
+            assert r["status"] in ("unconfirmed", "conflicting", "awaiting_list", "no_data"), r
 
 
 def test_exports_carry_the_honesty_columns() -> None:
@@ -408,8 +412,9 @@ def test_exports_carry_the_honesty_columns() -> None:
     csv_head = client.get("/v2/export/checkpoints.csv").text.splitlines()[0]
     for col in ("staleness_band", "age_minutes", "confidence", "last_known_flow"):
         assert col in csv_head, f"checkpoints.csv lost {col}"
-    fuel_head = client.get("/v2/export/fuel.csv").text.splitlines()[0]
-    assert "staleness_band" in fuel_head
+    fuel_head = client.get("/v2/export/fuel_prices.csv").text.splitlines()[0]
+    for col in ("effective_from", "confirmed", "outlets", "sources"):
+        assert col in fuel_head, f"fuel_prices.csv lost {col}"
 
     gj = client.get("/v2/export/checkpoints.geojson").json()
     assert gj["type"] == "FeatureCollection" and gj["features"], "empty export"

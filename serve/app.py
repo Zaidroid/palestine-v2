@@ -33,6 +33,7 @@ import httpx
 import psycopg
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from psycopg.rows import dict_row
 
 from resolve.db import dsn, env_value
@@ -40,8 +41,6 @@ from resolve.db import dsn, env_value
 # .env is the source of truth (ops/sync-valhalla-ip.sh keeps it current);
 # no hardcoded IP fallback — a wrong default is worse than a loud miss.
 VALHALLA = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
-FUEL_KINDS = {"diesel": "fuel_diesel", "gasoline": "fuel_gasoline",
-              "benzine": "fuel_gasoline", "gas": "cooking_gas"}
 
 # Which geo precisions justify quoting a drive time at all. A station located
 # only to admin2 sits at the REGION CENTROID, so routing to it returns the
@@ -92,11 +91,6 @@ WATERMARK_SECONDS = 300
 _QUERY_CACHE: dict[tuple, tuple] = {}
 _WATERMARK: dict[str, Any] = {"at": 0.0, "value": None}
 
-# F-05 — the caveat that travels with every reading read off a rendered card.
-# Same sentence the loader writes into `attrs.warning`
-# (ingest/sources/palhub_fuel_image.py); it is repeated here rather than
-# imported because `serve/` must not depend on an ingest module.
-IMAGE_OCR_WARNING = "read from a rendered card; may be stale or wrong"
 
 
 def _runs_stamp() -> tuple:
@@ -252,224 +246,105 @@ def health(request: Request,
     return out
 
 
-@app.get("/v2/fuel/nearby", tags=["fuel"])
-def fuel_nearby(
-    lat: float = Query(..., ge=29.0, le=34.0),
-    lon: float = Query(..., ge=33.0, le=37.0),
-    fuel: str = Query("diesel", description="diesel | gasoline | gas"),
-    radius_km: float = Query(30.0, gt=0, le=200),
-    limit: int = Query(15, ge=1, le=100),
-    include_unknown: bool = Query(False, description="include stations whose reading has decayed"),
-) -> dict:
-    """Stations with the requested fuel, ranked by drive time."""
-    kind = FUEL_KINDS.get(fuel.lower())
-    if not kind:
-        raise HTTPException(400, f"unknown fuel '{fuel}'; use one of {sorted(set(FUEL_KINDS))}")
-
-    rows = q("""
-        SELECT s.place_id, s.name_ar, s.name_en, s.state_kind,
-               s.value, s.last_known_value, s.observed_at, s.age_minutes,
-               s.confidence, s.staleness_band, s.independent_sources,
-               ST_Y(s.centroid::geometry) AS lat,
-               ST_X(s.centroid::geometry) AS lon,
-               ST_Distance(s.centroid, ST_SetSRID(ST_MakePoint(%s,%s),4326)::geography)/1000.0
-                   AS straight_km,
-               p.attrs->>'geo_precision' AS geo_precision,
-               p.source_refs->>'palhub_region' AS region,
-               p.source_refs->>'palhub_locality' AS locality
-        FROM state_serving s
-        JOIN place p ON p.place_id = s.place_id
-        WHERE s.state_kind = %s
-          AND ST_DWithin(s.centroid, ST_SetSRID(ST_MakePoint(%s,%s),4326)::geography, %s)
-        ORDER BY straight_km ASC
-        LIMIT 300""", (lon, lat, kind, lon, lat, radius_km * 1000))
-
-    available = [r for r in rows if r["value"] == "available"]
-    unknown = [r for r in rows if r["value"] == "unknown"]
-    candidates = available + (unknown if include_unknown else [])
-
-    routable = [c for c in candidates
-                if c["lat"] is not None
-                and (c["geo_precision"] or "station") in ROUTABLE_PRECISION]
-    times = _drive_times((lat, lon), routable)
-
-    results = []
-    for c in candidates:
-        precision = c["geo_precision"] or "station"
-        is_routable = precision in ROUTABLE_PRECISION
-        t = times.get(c["place_id"], {})
-        # Never quote distance or drive time we have not earned.
-        loc_note = None
-        if not is_routable:
-            t = {}
-            loc_note = (f"approximate — location known only to "
-                        f"{c['region'] or 'region'} level, not the station itself")
-        results.append({
-            "place_id": c["place_id"],
-            "name": c["name_ar"] or c["name_en"],
-            "name_en": c["name_en"],
-            "region": c["region"],
-            "locality": c["locality"],
-            "lat": c["lat"], "lon": c["lon"],
-            # the serving contract
-            "value": c["value"],
-            "last_known_value": c["last_known_value"],
-            "confidence": round(float(c["confidence"]), 3),
-            "observed_at": c["observed_at"],
-            "age_minutes": c["age_minutes"],
-            "staleness_band": c["staleness_band"],
-            "independent_sources": c["independent_sources"],
-            # how precisely we know WHERE this station is — distinct from how
-            # confident we are about its fuel
-            "geo_precision": precision,
-            "straight_km": round(float(c["straight_km"]), 1) if is_routable else None,
-            "location_note": loc_note,
-            **t,
-        })
-
-    # Rank: precisely-located stations first (by drive time, then straight
-    # line), then approximate ones. Confidence breaks ties so a fresher reading
-    # wins at equal distance. Without the precision tier, region-centroid
-    # stations sort to the top with a fictitious 0-minute drive.
-    def rank(r):
-        approx = r["location_note"] is not None
-        if approx:
-            return (1, 0.0, -r["confidence"])
-        primary = r.get("drive_minutes")
-        if primary is None:
-            primary = (r["straight_km"] or 0) * 2      # rough min/km fallback
-        return (0, primary, -r["confidence"])
-
-    results.sort(key=rank)
-
-    return {
-        "query": {"lat": lat, "lon": lon, "fuel": fuel, "kind": kind,
-                  "radius_km": radius_km, "include_unknown": include_unknown},
-        "counts": {"in_radius": len(rows), "available": len(available),
-                   "unknown": len(unknown), "returned": min(len(results), limit),
-                   "located_precisely": sum(1 for r in results if r["location_note"] is None),
-                   "located_approximately": sum(1 for r in results if r["location_note"])},
-        "routing": "valhalla" if times else "straight_line_fallback",
-        "results": results[:limit],
-        "attribution": "Palhub - احوال الوقود (Telegram) · © OpenStreetMap contributors",
-    }
+# ── fuel availability: RETIRED 2026-09-23 ────────────────────────────────────
+# Zaid: "fuel is not an issue to track anymore, lets change that to track live
+# updated prices of fuel in palestine". The vertical's last source was one
+# Telegram channel's rendered cards — measured once (0.957, every error a false
+# "available") and not re-measurable after its text feed died on 2026-08-28.
+# Its collectors were stopped 2026-09-23 07:40 UTC (migration 070).
+#
+# WHY 410 AND NOT A DELETED ROUTE. A caller that asked "where is diesel" must
+# not get a 404 that reads as a typo, and must never get a 200 whose stations
+# all decayed to `unknown` — that answer reads as "no station has diesel",
+# which is a claim this system can no longer make either way. 410 says the
+# question itself is retired, and the body says what replaced it. The 848k
+# availability observations stay in the database (070 deleted nothing).
+FUEL_AVAILABILITY_RETIRED = {
+    "retired": "2026-09-23",
+    "what": "Per-station fuel availability (which station has diesel/petrol now).",
+    "why": ("Its last source was one Telegram channel's rendered cards: measured "
+            "once, with every error a false 'available', and impossible to "
+            "re-measure after the channel's text feed stopped on 2026-08-28."),
+    "replacement": "/v2/fuel/prices",
+    "history": "Past availability observations are retained in the database; nothing was deleted.",
+}
 
 
-@app.get("/v2/fuel/stations", tags=["fuel"])
-def fuel_stations(region: str | None = None, only_available: bool = False,
-                  basis: str | None = None) -> dict:
-    # F-05's DONE WHEN says the `image_ocr` basis and its warning are surfaced by
-    # /v2/fuel/*. The summary carried them; this endpoint — the one a consumer
-    # actually reads per station — did not, so a reading off a rendered card
-    # arrived looking exactly like a reading off a text bulletin. `basis` on each
-    # reading, the warning beside it, and an optional filter so a caller who
-    # wants only text-derived readings can say so.
-    rows = q("""
-        SELECT s.place_id, s.name_ar, s.name_en, s.state_kind, s.value,
-               s.last_known_value, s.confidence, s.observed_at, s.age_minutes,
-               s.staleness_band,
-               coalesce(o.attrs->>'modality_basis', 'text') AS basis,
-               p.source_refs->>'palhub_region' AS region,
-               p.source_refs->>'palhub_locality' AS locality
-        FROM state_serving s
-        JOIN place p ON p.place_id = s.place_id
-        LEFT JOIN LATERAL (
-            SELECT o2.attrs FROM state_observation o2
-             WHERE o2.place_id = s.place_id AND o2.state_kind = s.state_kind
-               AND o2.modality = 'assertion'
-             ORDER BY o2.observed_at DESC LIMIT 1) o ON true
-        WHERE s.state_kind LIKE 'fuel%%'
-          -- The ::text cast is load-bearing. `$1 IS NULL` gives Postgres no
-          -- context to infer a type from, so it raises IndeterminateDatatype
-          -- and the endpoint 500s on EVERY call, not just the region-less one.
-          -- Every other optional filter in this file already casts; this one
-          -- was written without and stayed broken for two days because no test
-          -- ever issued an HTTP request against it.
-          AND (%s::text IS NULL OR p.source_refs->>'palhub_region' = %s)
-          AND (%s::boolean = false OR s.value = 'available')
-          AND (%s::text IS NULL OR coalesce(o.attrs->>'modality_basis', 'text') = %s)
-        ORDER BY p.source_refs->>'palhub_region', s.name_ar""",
-        (region, region, only_available, basis, basis))
-    by_station: dict[int, dict] = {}
-    any_image = False
+def fuel_availability_retired() -> JSONResponse:
+    return JSONResponse(FUEL_AVAILABILITY_RETIRED, status_code=410)
+
+
+FUEL_RETIRED_PATHS = ("/v2/fuel/nearby", "/v2/fuel/stations", "/v2/fuel/summary",
+                      "/v2/export/fuel.csv")
+for _path in FUEL_RETIRED_PATHS:
+    app.add_api_route(_path, fuel_availability_retired, methods=["GET"],
+                      tags=["fuel"], include_in_schema=False)
+
+
+# ── fuel PRICES: the official monthly maximum (071-073) ─────────────────────
+# What replaced availability. The Petroleum Corporation's maximum consumer
+# price for the West Bank, read from the outlets that repost it
+# (ingest/sources/fuel_prices.py) and believed only when two independent
+# outlets agree (db/migrations/071-073). It is a regulated CEILING for the West
+# Bank, not a pump price and not Gaza's; the response says so every time.
+FUEL_PRICE_SCOPE = {
+    "what": "Official maximum consumer price, set monthly by the Palestinian "
+            "General Petroleum Corporation (Ministry of Finance).",
+    "where": "West Bank. Gaza has no official consumer fuel price.",
+    "not": "Not a pump price: stations may sell below the ceiling, and a "
+           "station charging above it is breaking the published maximum.",
+    "belief": "A price is served only when two independent outlets report the "
+              "same number for the same start date, at least one of them naming "
+              "the Petroleum Corporation, and nobody credible reports another.",
+}
+FUEL_PRICE_ATTRIBUTION = ("Palestinian General Petroleum Corporation, as reported by "
+                          "Palestinian news outlets (sources listed per price)")
+
+
+@app.get("/v2/fuel/prices", tags=["fuel"])
+def fuel_prices(product: str | None = None) -> dict:
+    """Today's official fuel prices, one row per product.
+
+    `price` is null unless the newest list for that product is confirmed and
+    was set for the current month. `status` says why when it is null:
+    `unconfirmed` (one outlet so far), `conflicting` (outlets disagree),
+    `awaiting_list` (the month has turned and no new list has been read yet),
+    `no_data`. `reported` always shows what the outlets said, and
+    `last_confirmed_price` the last price that was confirmed, with its date.
+    """
+    rows = q("""SELECT product, name_ar, name_en, unit, status, price, effective_from,
+                       newest_list, outlets_agreeing, source_urls, reported,
+                       last_confirmed_price, last_confirmed_from, as_of_date
+                  FROM fuel_price_current
+                 WHERE %s::text IS NULL OR product = %s::text
+                 ORDER BY sort""", (product, product))
+    if product and not rows:
+        raise HTTPException(404, f"unknown product {product!r}")
     for r in rows:
-        st = by_station.setdefault(r["place_id"], {
-            "place_id": r["place_id"], "name": r["name_ar"] or r["name_en"],
-            "region": r["region"], "locality": r["locality"], "fuels": {},
-        })
-        fuel = {
-            "value": r["value"], "last_known_value": r["last_known_value"],
-            "confidence": round(float(r["confidence"]), 3),
-            "observed_at": r["observed_at"], "age_minutes": r["age_minutes"],
-            "staleness_band": r["staleness_band"],
-            "basis": r["basis"],
-        }
-        if r["basis"] == "image_ocr":
-            fuel["warning"] = IMAGE_OCR_WARNING
-            any_image = True
-        st["fuels"][r["state_kind"].replace("fuel_", "")] = fuel
-    return {"count": len(by_station), "stations": list(by_station.values()),
-            "warning": IMAGE_OCR_WARNING if any_image else None,
-            "note": ("At least one reading above came off a rendered card: its "
-                     "timestamp is when the card was drawn, not when a station "
-                     "was seen. Pass `basis=text` to exclude those."
-                     if any_image else None),
-            "attribution": "Palhub - احوال الوقود (Telegram)"}
+        r["price"] = float(r["price"]) if r["price"] is not None else None
+        r["last_confirmed_price"] = (float(r["last_confirmed_price"])
+                                     if r["last_confirmed_price"] is not None else None)
+    return {"scope": FUEL_PRICE_SCOPE, "as_of_date": rows[0]["as_of_date"] if rows else None,
+            "prices": rows, "attribution": FUEL_PRICE_ATTRIBUTION}
 
 
-@app.get("/v2/fuel/summary", tags=["fuel"])
-def fuel_summary() -> dict:
-    rows = q("""
-        SELECT p.source_refs->>'palhub_region' AS region, s.state_kind,
-               COUNT(*) FILTER (WHERE s.value='available') AS available,
-               COUNT(*) FILTER (WHERE s.value='unavailable') AS unavailable,
-               COUNT(*) FILTER (WHERE s.value='unknown') AS unknown,
-               COUNT(*) AS total
-        FROM state_serving s JOIN place p ON p.place_id = s.place_id
-        WHERE s.state_kind LIKE 'fuel%%' AND p.source_refs ? 'palhub_region'
-        GROUP BY 1,2 ORDER BY 1,2""")
-    out: dict[str, Any] = {}
-    for r in rows:
-        out.setdefault(r["region"], {})[r["state_kind"].replace("fuel_", "")] = {
-            "available": r["available"], "unavailable": r["unavailable"],
-            "unknown": r["unknown"], "total": r["total"],
-        }
-    totals = q("""
-        SELECT state_kind,
-               COUNT(*) FILTER (WHERE value='available') AS available,
-               COUNT(*) AS total
-        FROM state_serving WHERE state_kind LIKE 'fuel%%' GROUP BY 1""")
-
-    # F-05 — WHERE these readings come from, on the page rather than in a commit
-    # message. Every served fuel row currently comes off a rendered card whose
-    # timestamp is when the card was drawn, not when a station was seen, so the
-    # basis and the warning travel with the numbers. `text` = an assertion row
-    # that is not image-sourced and needs no caveat.
-    origin = q("""
-        SELECT coalesce(o.attrs->>'modality_basis', 'text') AS basis,
-               count(*) AS n
-          FROM state_serving s
-          LEFT JOIN LATERAL (
-              SELECT o2.attrs FROM state_observation o2
-               WHERE o2.place_id = s.place_id AND o2.state_kind = s.state_kind
-                 AND o2.modality = 'assertion'
-               ORDER BY o2.observed_at DESC LIMIT 1) o ON true
-         WHERE s.state_kind LIKE 'fuel%%'
-         GROUP BY 1 ORDER BY 2 DESC""")
-    basis = {r["basis"]: r["n"] for r in origin}
-    return {
-        "totals": {t["state_kind"].replace("fuel_", ""):
-                   {"available": t["available"], "total": t["total"]} for t in totals},
-        "by_region": out,
-        "basis": basis,
-        "warning": (IMAGE_OCR_WARNING if basis.get("image_ocr") else None),
-        "note": ("`basis` counts served readings by how they were read. "
-                 "`image_ocr` means the reading came off a rendered card: the "
-                 "timestamp on it is when the card was drawn, and a station "
-                 "missing a pill is silence, never `unavailable`."
-                 if basis.get("image_ocr") else None),
-        "attribution": "Palhub - احوال الوقود (Telegram)",
-    }
+@app.get("/v2/fuel/prices/history", tags=["fuel"])
+def fuel_price_history(product: str | None = None,
+                       include_unconfirmed: bool = Query(
+                           False, description="also list prices only one outlet reported")) -> dict:
+    """Every list read, oldest first: the confirmed price per start date, and
+    optionally the single-outlet readings beside them, marked as such."""
+    rows = q("""SELECT v.effective_from, v.product, p.unit, v.price, v.units AS outlets,
+                       v.outlets AS sources, v.urls,
+                       EXISTS (SELECT 1 FROM fuel_price_believed b
+                                WHERE b.effective_from = v.effective_from
+                                  AND b.product = v.product AND b.price = v.price) AS confirmed
+                  FROM fuel_price_votes v JOIN fuel_price_product p USING (product)
+                 WHERE (%s::text IS NULL OR v.product = %s::text)
+                 ORDER BY v.effective_from, p.sort, v.units DESC""", (product, product))
+    rows = [dict(r, price=float(r["price"])) for r in rows
+            if include_unconfirmed or r["confirmed"]]
+    return {"scope": FUEL_PRICE_SCOPE, "history": rows, "attribution": FUEL_PRICE_ATTRIBUTION}
 
 
 # ── checkpoints ──────────────────────────────────────────────────────────────
@@ -1352,7 +1227,7 @@ async def stream(
 
     See serve/stream.py for why SSE rather than WebSockets.
     """
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import JSONResponse, StreamingResponse
 
     from serve.stream import event_source
     return StreamingResponse(
@@ -1436,6 +1311,17 @@ _EXPORT_CP_COLUMNS = ["place_id", "name_ar", "name_en", "lat", "lon", "direction
                       "independent_sources", "present", "absent"]
 
 
+@app.get("/v2/export/fuel_prices.csv", tags=["export"])
+def export_fuel_prices_csv():
+    """Every price read, one row per start date, product and price, with how
+    many independent outlets reported it and whether that made it confirmed."""
+    rows = fuel_price_history(include_unconfirmed=True)["history"]
+    rows = [dict(r, sources=";".join(r["sources"] or []), urls=";".join(r["urls"] or []))
+            for r in rows]
+    return _csv_response(rows, ["effective_from", "product", "unit", "price", "confirmed",
+                                "outlets", "sources", "urls"], "fuel-prices-westbank.csv")
+
+
 @app.get("/v2/export/checkpoints.csv", tags=["export"])
 def export_checkpoints_csv():
     """Every checkpoint's current serving state, honesty columns included."""
@@ -1489,29 +1375,6 @@ def export_incidents_geojson(days: int = Query(30, ge=1, le=365)):
         feats, "West Bank governorate news channels (Telegram) via agent2")
 
 
-@app.get("/v2/export/fuel.csv", tags=["export"])
-def export_fuel_csv():
-    """One row per station and fuel, with region and the staleness the JSON
-    API would have shown. The fuel feed's text source has been drying up since
-    2026-08-01; the staleness_band column is where that shows, honestly."""
-    rows = q("""
-        SELECT s.place_id, s.name_ar, s.name_en, s.state_kind AS fuel,
-               s.value, s.last_known_value, s.confidence, s.observed_at,
-               s.age_minutes, s.staleness_band,
-               p.source_refs->>'palhub_region' AS region,
-               p.source_refs->>'palhub_locality' AS locality
-        FROM state_serving s JOIN place p ON p.place_id = s.place_id
-        WHERE s.state_kind LIKE 'fuel%%'
-        ORDER BY p.source_refs->>'palhub_region', s.name_ar, s.state_kind""")
-    rows = [dict(r, fuel=r["fuel"].replace("fuel_", "")) for r in rows]
-    return _csv_response(rows, ["place_id", "name_ar", "name_en", "region",
-                                "locality", "fuel", "value", "last_known_value",
-                                "confidence", "observed_at", "age_minutes",
-                                "staleness_band"], "fuel-stations.csv")
-
-
-# ── P5.3: one entry point ────────────────────────────────────────────────────
-
 @app.get("/v2", tags=["discovery"])
 def discovery() -> dict:
     """Everything this system can answer, from one URL.
@@ -1527,7 +1390,8 @@ def discovery() -> dict:
     """
     routes = sorted(
         {r.path for r in app.routes
-         if getattr(r, "path", "").startswith("/v2") and r.path != "/v2"})
+         if getattr(r, "path", "").startswith("/v2") and r.path != "/v2"
+         and r.path not in FUEL_RETIRED_PATHS})
 
     def group(prefix: str) -> list[str]:
         return [p for p in routes if p.startswith(prefix)]

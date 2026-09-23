@@ -181,6 +181,9 @@ EXPECTED_JOBS = {
 # needs no query, and tests/test_watchdog.py asserts the two agree.
 RETIRED_FEEDS = frozenset({"fuel_diesel", "fuel_gasoline", "cooking_gas"})
 
+# Fuel PRICES replaced them (071-073). Monthly, so judged by fuel_price_check.
+FUEL_PRICE_GRACE_DAYS = 4
+
 # Which collector's heartbeat covers which state kinds. A feed is only judged
 # silent when its collector is demonstrably alive; without this mapping one
 # dead poller becomes one alarm per vertical.
@@ -704,6 +707,43 @@ def minimax_check() -> list[dict]:
     return [{k: v for k, v in r.items() if k != "measure"} for r in rows]
 
 
+def fuel_price_check() -> list[dict]:
+    """Fuel prices (071-073) are monthly, so feed cadence cannot judge them.
+
+    The question is: has this month's official list been confirmed? The
+    Corporation publishes on the last evening of the month before, and outlets
+    carry it within hours, so three days into a month with no confirmed list
+    means the reader or the outlets have failed, not that the list is late.
+    Before the 4th it is `awaiting`, not a fault.
+    """
+    try:
+        rows = _q("""SELECT count(*) FILTER (WHERE status = 'confirmed')     AS confirmed,
+                            count(*) FILTER (WHERE status = 'conflicting')   AS conflicting,
+                            count(*)                                         AS products,
+                            max(newest_list)                                 AS newest,
+                            extract(day FROM (now() AT TIME ZONE 'Asia/Hebron'))::int AS day
+                       FROM fuel_price_current""")
+    except Exception as e:                                  # noqa: BLE001
+        return [{"check": "dep", "name": "fuel-prices", "status": "unreadable",
+                 "age_minutes": None, "fault": True, "detail": f"query failed: {e}"}]
+    r = rows[0]
+    detail = (f"{r['confirmed']}/{r['products']} products confirmed this month, "
+              f"newest list {r['newest']}")
+    if r["conflicting"]:
+        detail += f", {r['conflicting']} conflicting"
+    if r["confirmed"] == 0 and r["day"] >= FUEL_PRICE_GRACE_DAYS:
+        status, fault = "no_list", True
+        detail = f"day {r['day']} of the month and no confirmed list — {detail}"
+    elif r["confirmed"] == 0:
+        status, fault = "awaiting", False
+    elif r["conflicting"]:
+        status, fault = "conflicting", True
+    else:
+        status, fault = "ok", False
+    return [{"check": "dep", "name": "fuel-prices", "status": status,
+             "age_minutes": None, "fault": fault, "detail": detail}]
+
+
 def _already_open(key: str) -> bool:
     return any(r.get("unit") == key for r in open_alerts())
 
@@ -718,7 +758,7 @@ def main() -> int:
     # The watchdog re-measures; /health reads what the watchdog recorded.
     feeds = feed_checks(jobs, measure_cadence())
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
-            + minimax_check() + feeds)
+            + minimax_check() + fuel_price_check() + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:

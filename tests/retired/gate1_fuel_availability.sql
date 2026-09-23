@@ -1,3 +1,9 @@
+-- RETIRED 2026-09-23 with the fuel availability vertical (migration 070).
+-- Kept for the record, outside the tests/test_gate*.sql glob so it no longer runs.
+-- Its last run: G1.7 FAIL, 4052 image-derived rows served as assertion under
+-- ZAID-1's default; the vertical was retired rather than the gate amended.
+-- Replaced by tests/test_gate1_fuel_prices.sql.
+
 -- Gate 1 (Phase 1, fuel vertical) — safety assertions.
 --
 -- The headline requirement: "ZERO stations served available with age > 2x

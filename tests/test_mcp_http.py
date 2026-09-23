@@ -89,7 +89,7 @@ def test_the_fetcher_itself_refuses_a_path_it_never_meant_to_ask_for():
 
 def test_the_paths_the_tools_really_use_still_pass():
     """A guard that blocks the real traffic is an outage, not a control."""
-    for path in ("/health", "/v2/coverage", "/v2/fuel/nearby",
+    for path in ("/health", "/v2/coverage", "/v2/fuel/prices",
                  "/v2/databank/prisoners", "/v2/geo/resolve",
                  "/v2/databank/licenses", "/v2/patterns/place"):
         assert s._SAFE_PATH.match(path) and ".." not in path

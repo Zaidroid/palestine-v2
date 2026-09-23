@@ -116,25 +116,30 @@ def can_i_travel(d: dict) -> str:
     return out
 
 
-def fuel_near(d: dict) -> str:
-    st = d.get("stations") or []
-    if not st:
-        return f"No station is reported to have {d.get('fuel')} right now."
-    bits = []
-    for s in st[:3]:
-        dist = (f"{round(s['drive_minutes'])} min" if s.get("drive_minutes")
-                else f"{round(s.get('straight_km') or 0)} km")
-        bits.append(f"{s['name']} ({dist}{'' if s.get('location_precise') else ', approximate location'})")
-    return (f"{len(st)} station(s) with fuel near {d.get('origin')}: "
-            + ", ".join(bits) + f". Last update {_age(st[0].get('age_minutes'))}.")
-
-
-def fuel_summary(d: dict) -> str:
-    t = d.get("totals") or {}
-    bits = [f"{k.replace('fuel_', '')}: {v['available']} of {v['total']}"
-            for k, v in t.items()]
-    return ("West Bank fuel — " + ", ".join(bits) +
-            f". Last update {_age(d.get('feed_age_minutes'))}.")
+def fuel_prices(d: dict) -> str:
+    if "history" in d:
+        rows = d.get("history") or []
+        if not rows:
+            return "No confirmed prices recorded for that product."
+        last = rows[-1]
+        return (f"Latest confirmed price {last['price']:g} shekels from {last['effective_from']}; "
+                f"{len(rows)} confirmed prices on record.")
+    rows = d.get("prices") or []
+    said, gaps = [], []
+    for r in rows:
+        unit = "shekels per litre" if r["unit"] == "ILS/L" else "shekels"
+        if r["price"] is not None:
+            said.append(f"{r['name_en']} {r['price']:g} {unit}")
+        elif r["status"] == "awaiting_list":
+            gaps.append(f"{r['name_en']}: this month's list not read yet "
+                        f"(last confirmed {r['last_confirmed_price']:g} from {r['last_confirmed_from']})")
+        elif r["status"] in ("unconfirmed", "conflicting"):
+            gaps.append(f"{r['name_en']}: {r['status']}")
+    since = next((r["effective_from"] for r in rows if r["price"] is not None), None)
+    out = ("Official West Bank maximum fuel prices (Petroleum Corporation)"
+           + (f", in force from {since}" if since else "") + ": "
+           + ("; ".join(said) if said else "none confirmed right now"))
+    return out + (". " + "; ".join(gaps) if gaps else "") + "."
 
 
 def incidents_near(d: dict) -> str:
@@ -309,9 +314,9 @@ def databank(d: dict) -> str:
 
 
 RENDERERS: dict[str, Callable[[dict], str]] = {
+    "fuel_prices": fuel_prices,
     "checkpoint_status": checkpoint_status, "checkpoints_near": checkpoints_near,
     "checkpoints_summary": checkpoints_summary, "can_i_travel": can_i_travel,
-    "fuel_near": fuel_near, "fuel_summary": fuel_summary,
     "incidents_near": incidents_near, "incidents_summary": incidents_summary,
     "weather_now": weather_now, "connectivity_now": connectivity_now,
     "crossings": crossings, "coverage": coverage, "place_profile": place_profile,

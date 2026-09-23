@@ -112,7 +112,7 @@ def test_a_crowd_report_is_a_write_not_a_registration():
 
 def test_reads_and_preflight_are_reads():
     for m in ("GET", "HEAD", "OPTIONS"):
-        assert rl.classify("/v2/fuel/nearby", m) == "read"
+        assert rl.classify("/v2/fuel/prices", m) == "read"
 
 
 def test_the_stream_is_a_read():

@@ -47,9 +47,6 @@ def test_serve_writes_an_assertion_carrying_its_provenance():
     assert "may be stale or wrong" in cur.params[-1]
 
 
-def test_the_api_repeats_the_loader_warning_exactly():
-    """`serve/` must not import an ingest module, so the warning sentence exists
-    twice. This is the thing that keeps the two copies from drifting."""
-    from serve import app as api
-    assert api.IMAGE_OCR_WARNING == loader.SERVING_WARNING
-    assert loader.SERVING_BASIS == "image_ocr"
+# test_the_api_repeats_the_loader_warning_exactly was removed 2026-09-23:
+# the API no longer serves card readings (availability retired, migration 070),
+# so there is no second copy of the warning to keep in step.

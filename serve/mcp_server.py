@@ -42,7 +42,6 @@ import httpx
 
 PROTOCOL = "2024-11-05"
 API = os.environ.get("PALESTINE_API", "http://127.0.0.1:7870")
-FUEL_AR = {"fuel_diesel": "سولار", "fuel_gasoline": "بنزين", "cooking_gas": "غاز"}
 
 
 # Every tool reaches the API through api(), so this is the one place a path can
@@ -78,63 +77,43 @@ def _age_ar(minutes: int | None) -> str:
 
 # ── tools ────────────────────────────────────────────────────────────────────
 
-def fuel_near(place: str | None = None, lat: float | None = None,
-              lon: float | None = None, fuel: str = "diesel", limit: int = 5) -> dict:
-    """Where can I get diesel/petrol right now?"""
-    fuel = {"سولار": "diesel", "بنزين": "gasoline", "غاز": "gas",
-            "petrol": "gasoline"}.get(fuel.lower(), fuel.lower())
-
-    if lat is None or lon is None:
-        if not place:
-            return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
-        geo = api("/v2/geo/resolve", q=place)
-        if not geo.get("found"):
-            return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
-        lat, lon, place = geo["lat"], geo["lon"], geo["name"]
-
-    d = api("/v2/fuel/nearby", lat=lat, lon=lon, fuel=fuel, limit=limit, radius_km=60)
-    label = {"diesel": "سولار", "gasoline": "بنزين", "gas": "غاز"}.get(fuel, fuel)
-    res = d.get("results", [])
-
-    if not res:
-        answer = f"ما في ولا محطة فيها {label} حالياً حسب آخر تحديث."
-    else:
-        parts = []
-        for r in res[:3]:
-            approx = "" if r.get("location_note") is None else " (الموقع تقريبي)"
-            dist = (f"{r['drive_minutes']:.0f} دقيقة بالسيارة"
-                    if r.get("drive_minutes") is not None
-                    else f"{r.get('straight_km') or 0:.0f} كم")
-            parts.append(f"{r['name']} على بعد {dist}{approx}")
-        answer = (f"في {len(res)} محطة فيها {label}: " + "، ".join(parts) +
-                  f". آخر تحديث {_age_ar(res[0].get('age_minutes'))}.")
-
-    return {"answer": answer, "fuel": label,
-            "origin": place or f"{lat:.4f},{lon:.4f}",
-            "count": len(res), "counts": d.get("counts"),
-            "routing": d.get("routing"),
-            "stations": [{
-                "name": r["name"], "region": r.get("region"),
-                "drive_minutes": r.get("drive_minutes"),
-                "straight_km": r.get("straight_km"),
-                "value": r["value"], "confidence": r["confidence"],
-                "age_minutes": r.get("age_minutes"),
-                "staleness_band": r.get("staleness_band"),
-                "location_precise": r.get("location_note") is None,
-            } for r in res],
-            "source": d.get("attribution")}
-
-
-def fuel_summary() -> dict:
-    d = api("/v2/fuel/summary")
-    h = api("/health")
-    bits = [f"{FUEL_AR.get('fuel_' + k, k)}: {v['available']} من {v['total']} محطة"
-            for k, v in d.get("totals", {}).items()]
-    age = h.get("feed_age_minutes")
-    return {"answer": "وضع الوقود بالضفة — " + "، ".join(bits) +
-                      f". آخر تحديث {_age_ar(age)}.",
-            "totals": d.get("totals"), "by_region": d.get("by_region"),
-            "feed_age_minutes": age, "source": d.get("attribution")}
+def fuel_prices(product: str | None = None, history: bool = False) -> dict:
+    """Official West Bank fuel prices: today's, or every list read so far."""
+    product = {"بنزين": "gasoline_95", "بنزين 95": "gasoline_95", "بنزين 98": "gasoline_98",
+               "سولار": "diesel", "ديزل": "diesel", "كاز": "kerosene", "غاز": "lpg_12kg",
+               "petrol": "gasoline_95", "gasoline": "gasoline_95", "gas": "lpg_12kg",
+               "lpg": "lpg_12kg"}.get((product or "").strip().lower(), product)
+    if history:
+        d = api("/v2/fuel/prices/history", product=product)
+        rows = d.get("history", [])
+        if not rows:
+            return {"answer": "ما في أسعار مؤكدة مسجلة لهاد الصنف.", "history": [],
+                    "scope": d.get("scope")}
+        last = rows[-1]
+        return {"answer": (f"آخر سعر مؤكد: {last['price']} شيكل من {last['effective_from']}، "
+                           f"و{len(rows)} سعر مؤكد مسجل."),
+                "history": rows, "scope": d.get("scope"), "source": d.get("attribution")}
+    d = api("/v2/fuel/prices", product=product)
+    rows = d.get("prices", [])
+    unit_ar = {"ILS/L": "شيكل للتر", "ILS/cylinder": "شيكل"}
+    said, gaps = [], []
+    for r in rows:
+        if r["price"] is not None:
+            said.append(f"{r['name_ar']}: {r['price']:g} {unit_ar.get(r['unit'], 'شيكل')}")
+        elif r["status"] == "awaiting_list":
+            gaps.append(f"{r['name_ar']}: ما انقرت تسعيرة هالشهر لسا "
+                        f"(آخر سعر مؤكد {r['last_confirmed_price']:g} من {r['last_confirmed_from']})")
+        elif r["status"] in ("unconfirmed", "conflicting"):
+            rep = "، ".join(f"{x['price']:g}" for x in (r.get("reported") or []))
+            gaps.append(f"{r['name_ar']}: غير مؤكد (المنشور: {rep})")
+    since = next((r["effective_from"] for r in rows if r["price"] is not None), None)
+    head = ("الحد الأقصى الرسمي لأسعار المحروقات بالضفة، من الهيئة العامة للبترول"
+            + (f"، ساري من {since}" if since else "") + ": ")
+    answer = head + ("، ".join(said) if said else "ما في سعر مؤكد حالياً")
+    if gaps:
+        answer += ". " + "؛ ".join(gaps)
+    return {"answer": answer + ".", "prices": rows, "scope": d.get("scope"),
+            "as_of_date": d.get("as_of_date"), "source": d.get("attribution")}
 
 
 # ── checkpoints ──────────────────────────────────────────────────────────────
@@ -1103,15 +1082,18 @@ TOOLS = {
                     "How to subscribe to live changes over server-sent events, and whether the "
                     "stream is currently running.",
                     {"type": "object", "properties": {}}),
-    "fuel_near": (fuel_near, "Which stations have diesel/petrol right now, nearest first. "
-                             "Give `place` (Arabic or English name) or lat/lon.",
-                  {"type": "object", "properties": {
-                      "place": {"type": "string", "description": "e.g. نابلس, Ramallah"},
-                      "lat": {"type": "number"}, "lon": {"type": "number"},
-                      "fuel": {"type": "string", "enum": ["diesel", "gasoline", "gas"]},
-                      "limit": {"type": "integer"}}}),
-    "fuel_summary": (fuel_summary, "West-Bank-wide fuel availability totals.",
-                     {"type": "object", "properties": {}}),
+    "fuel_prices": (fuel_prices,
+                    "Official West Bank fuel prices (petrol 95/98, diesel, kerosene, "
+                    "cooking-gas cylinders): the Petroleum Corporation's monthly MAXIMUM "
+                    "consumer price, not a pump price and not Gaza's. A price is given only "
+                    "when two independent outlets agree; otherwise the answer says it is "
+                    "unconfirmed, conflicting, or that this month's list has not been read "
+                    "yet. history=true lists every confirmed price so far.",
+                    {"type": "object", "properties": {
+                        "product": {"type": "string",
+                                    "enum": ["gasoline_95", "gasoline_98", "diesel", "kerosene",
+                                             "lpg_2_5kg", "lpg_5kg", "lpg_12kg", "lpg_48kg"]},
+                        "history": {"type": "boolean"}}}),
     "checkpoint_status": (checkpoint_status,
                           "Is a named checkpoint open right now? Returns flow (open/congested/"
                           "slow/closed), whether it is passable, who is present (army, police, "
