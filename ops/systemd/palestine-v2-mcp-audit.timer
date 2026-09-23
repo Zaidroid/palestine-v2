@@ -1,0 +1,12 @@
+[Unit]
+Description=Palestine v2 — accuracy audit of the MCP surface, daily
+
+[Timer]
+# 04:40: after the databank sync (03:40) and the model backtest (04:10), so the
+# audit measures the data the partner will see today rather than yesterday's.
+OnCalendar=*-*-* 04:40:00
+Persistent=true
+AccuracySec=5min
+
+[Install]
+WantedBy=timers.target

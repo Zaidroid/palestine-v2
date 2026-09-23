@@ -10,11 +10,19 @@ Run it after any change to the serving layer or a tool:
     sudo -n -u zaid bash -lc 'set -a; . /opt/stacks/palestine/services/westbank-alerts/.env; \
       set +a; cd /home/zaid/palestine-v2 && ./.venv/bin/python -m ops.mcp_accuracy_audit'
 
-Exit code is the number of CRITICAL findings, so it can gate a deploy.
+Exit 1 when a critical finding exists, 0 when none — so it can gate a
+deploy, and so ops/with-heartbeat.sh can treat it as a working job that
+reported something rather than as a job that broke.
 Findings JSON: ops/mcp-accuracy.json
+
+Nightly the unit runs it with alerting on; a critical finding pages the phone
+once and stays open until a run comes back clean, which is the same shape as
+the Gaza cross-check. The watchdog watches the ARTIFACT for staleness, so a job
+that stops running at all is noticed too — one paging path each, no overlap.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import traceback
@@ -449,7 +457,35 @@ def audit_renderer_artifacts() -> None:
                                 "no rendering artifact", txt[:120])
 
 
+ALERT_UNIT = "palestine-v2:mcp-audit"
+
+
+def page(crit: list[dict]) -> None:
+    """Alert on a critical, resolve when the surface comes back clean.
+
+    A condition rather than an event: an unfixed critical must not page every
+    night, and a fixed one must close what it opened. `--no-alert` exists for
+    manual runs while fixing, which is when the alert would be noise about
+    something the person running it already knows.
+    """
+    from ops.alert import open_alerts, raise_alert, resolve
+    is_open = any(r.get("unit") == ALERT_UNIT for r in open_alerts())
+    if crit and not is_open:
+        first = crit[0]
+        raise_alert(ALERT_UNIT,
+                    f"{len(crit)} critical accuracy finding(s). First: "
+                    f"{first['tool']} — {first['claim']} (expected "
+                    f"{str(first['expected'])[:60]}, got {str(first['got'])[:60]}). "
+                    f"See ops/mcp-accuracy.json.")
+    elif not crit and is_open:
+        resolve(ALERT_UNIT, "every accuracy check passes")
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser(description="measured accuracy of the MCP surface")
+    ap.add_argument("--no-alert", action="store_true",
+                    help="report only; never page (manual runs while fixing)")
+    a = ap.parse_args()
     print("MCP accuracy audit —", datetime.now(timezone.utc).isoformat(timespec="seconds"))
     for fn in (audit_serving_invariants, audit_checkpoints_summary, audit_checkpoints_near,
                audit_incidents_summary, audit_insights, audit_fuel_prices, audit_coverage,
@@ -471,8 +507,15 @@ def main() -> int:
               f"        got      {str(f['got'])[:110]}")
     (ROOT / "ops" / "mcp-accuracy.json").write_text(
         json.dumps({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "counts": {"critical": len(crit), "major": len(major),
+                               "minor": len(minor)},
                     "findings": FINDINGS}, indent=1, default=str))
-    return len(crit)
+
+    if not a.no_alert:
+        page(crit)
+    # 1, not the count: the wrapper's OK_EXIT_CODES treats 1 as "ran fine and
+    # found something", and the count is in ops/mcp-accuracy.json.
+    return 1 if crit else 0
 
 
 if __name__ == "__main__":

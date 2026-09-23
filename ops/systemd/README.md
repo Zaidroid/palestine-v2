@@ -26,6 +26,7 @@ directory as the record, and keep the two in step.
     sudo systemctl enable --now palestine-v2-{checkpoints,news,fuel,external}.timer
     sudo systemctl enable --now palestine-v2-{backup,restore-test,watchdog}.timer
     sudo systemctl enable --now palestine-v2-{accuracy,checkpoint-learn}.timer
+    sudo systemctl enable --now palestine-v2-mcp-audit.timer
     sudo systemctl enable --now palestine-v2-analyst.service
 
 ## Checking they have not drifted

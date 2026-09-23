@@ -160,6 +160,11 @@ EXPECTED_JOBS = {
     "stream":            (10, 300),
     "rollup":            (86400, 10800),
     "measure-accuracy":  (86400, 10800),
+    # The accuracy audit of the served surface: daily, and its exit 1 means
+    # "ran fine, found criticals" — the same OK_EXIT_CODES contract the
+    # watchdog itself uses, so the harness records a working job and the
+    # audit's own alert is the single paging path.
+    "mcp-audit":         (86400, 10800),
     "learn-checkpoints": (86400, 10800),
     "backup":            (86400, 10800),
     "restore-test":      (604800, 86400),
