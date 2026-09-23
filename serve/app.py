@@ -1758,6 +1758,8 @@ def root() -> dict:
 from serve.mcp_http import router as _mcp_router                # noqa: E402
 
 app.include_router(_mcp_router)
+from serve.mcp_oauth import router as _oauth_router             # noqa: E402
+app.include_router(_oauth_router)          # discovery, registration, /authorize, /token
 
 
 @app.post("/v2/crowd/register", tags=["crowd"])

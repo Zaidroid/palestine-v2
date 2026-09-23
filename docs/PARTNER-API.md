@@ -27,6 +27,22 @@ A missing or unknown key returns `401` with the reason in the JSON-RPC error bod
 Keys are read from a file on every request, so revocation takes effect without a
 restart, and `?key=` is scrubbed from the server's access log.
 
+**Hosted clients (Claude, ChatGPT, and anything else that cannot hold a static
+header) use OAuth instead**, per the MCP authorization spec. Point the connector
+at `https://live-api.zaidlab.xyz/mcp` with no key and it will:
+
+1. get a `401` carrying `WWW-Authenticate: Bearer resource_metadata=".../‌.well-known/oauth-protected-resource"`;
+2. read `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`;
+3. register itself at `POST /register` (RFC 7591);
+4. open `GET /authorize` — a page asking for your partner key, because this is a
+   gate and not a formality;
+5. exchange the resulting code at `POST /token` (authorization code + PKCE S256)
+   for an access token.
+
+Tokens last 30 days, refresh tokens 90, and both survive a redeploy. Code
+exchange is single-use: a replayed code is refused, and so is one presented with
+the wrong PKCE verifier.
+
 ## 2. Handshake
 
 Standard MCP. `initialize` answers with the protocol version it will use
@@ -141,6 +157,10 @@ Answer, 2026-09-23 (abridged from the real payload):
 * No account, no cookie, no tracking pixel, nothing to accept.
 
 ## 7. Privacy
+
+OAuth adds nothing to the privacy surface: registration takes a client name and a
+redirect URI, no personal data, and an issued token identifies an integration
+rather than a person.
 
 * No PII is served. Place names, checkpoint states, road conditions, incident
   types — no names of people, no reporter identities, no locations of individuals.

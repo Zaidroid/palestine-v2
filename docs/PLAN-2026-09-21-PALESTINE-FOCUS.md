@@ -416,7 +416,7 @@ ZAID-10.
 
 ### 2026-09-23 · W8 shipped its first slice — the door, the reduction, the page
 
-**F-80 done.** `/mcp` was reachable and answering to anyone with the URL; it is now gated by a partner key, accepted as `Authorization: Bearer`, `X-Api-Key`, or `?key=` for clients whose UI takes a single url and has no header field. Keys sit in `.keys/partner-keys.json` (gitignored, outside the repo), re-read on every request so revocation needs no restart, and `?key=` is scrubbed from the access log by a filter on uvicorn's access record. Verified: 401 unauthenticated with the reason and the fix in the body, 200 from localhost, 200 with a key, and a live `?key=` call returning the insights payload. No `WWW-Authenticate` header on the 401 on purpose — a browser client that sees one starts OAuth discovery, finds no authorization server here, and reports "Authentication failed", which reads like a broken server.
+**F-80 done.** `/mcp` was reachable and answering to anyone with the URL; it is now gated by a partner key, accepted as `Authorization: Bearer`, `X-Api-Key`, or `?key=` for clients whose UI takes a single url and has no header field. Keys sit in `.keys/partner-keys.json` (gitignored, outside the repo), re-read on every request so revocation needs no restart, and `?key=` is scrubbed from the access log by a filter on uvicorn's access record. Verified: 401 unauthenticated with the reason and the fix in the body, 200 from localhost, 200 with a key, and a live `?key=` call returning the insights payload. The 401 carries `WWW-Authenticate: Bearer resource_metadata=...` per RFC 9728 §5.1 — which is the opposite of what the first attempt did, and the reason is worth keeping: removing that header did not stop Claude from starting OAuth discovery, it only removed the pointer it was supposed to follow. The client guessed four well-known URLs, got four 404s, and reported "Authentication failed". The header stayed off for exactly one hour; `serve/mcp_oauth.py` is the fix.
 
 **F-83 done.** `docs/PARTNER-API.md`: the handshake and the three protocol versions, both auth shapes, the 27 public tools grouped by subject, the exemplar call with its real output, and the semantics a UI must not get wrong (`unknown` is not `open`; `present` counts sightings; incident times are report times; independent sources count groups). Limits, privacy, attribution, ten calls to try, and the known gaps written plainly.
 
@@ -431,3 +431,14 @@ ZAID-10.
 **Suite after the slice:** 734 passed, 2 skipped, 0 failed (225 s), and the MCP read-surface parity test is what caught the new route needing its tool mapping — the guard worked on the first route added under it.
 
 **ZAID-9 answered** (an obituary or a funeral is not a death report) — the classifier change and its re-measurement are the next task. **ZAID-10 answered** as: live trackers plus insights now, the ungraded and `no-redistribution` databank sets stay out of the partner payloads. **ZAID-11:** the partner needs it today and will test performance, accuracy and privacy — those three became the shape of this slice.
+
+
+### 2026-09-23 · The gate broke the connector, which turned out to be the spec asking for OAuth
+
+Closing the endpoint with a key was correct and it broke Claude's own connector, which cannot send a static header and therefore walks the MCP authorization spec instead: `POST /mcp` (401) → `/.well-known/oauth-protected-resource[/mcp]` → `/.well-known/oauth-authorization-server` → `POST /register` → give up. The access log shows the whole walk, four 404s deep, across four separate attempts.
+
+**`serve/mcp_oauth.py`** now serves it: RFC 9728 protected-resource metadata, RFC 8414 authorization-server metadata, RFC 7591 dynamic client registration, an authorization page, and a token endpoint with authorization code + PKCE S256. The gate stays a gate — `/authorize` renders one field asking for the partner key, because auto-approving would have been an open endpoint wearing a token. Tokens last 30 days, refresh 90, and both live in `.keys/oauth-state.json` so a deploy does not silently log every connector out (verified: a token still works after a service restart). A code is single-use, and a failed PKCE exchange burns it too.
+
+Two things this cost, both recorded because they were avoidable: the first attempt removed the `WWW-Authenticate` header thinking it would *prevent* the OAuth walk, when that header is the spec's own pointer *for* the walk — the client guessed the URLs anyway. And `python-multipart` is not installed, so the form bodies are parsed with `parse_qsl` from the stdlib rather than adding a dependency on a box that takes deploys on a whim.
+
+**Suite:** 195 passed, 1 skipped across the MCP, API, insights, OAuth and watchdog files.

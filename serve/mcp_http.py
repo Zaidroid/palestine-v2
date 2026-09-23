@@ -52,6 +52,7 @@ from typing import Any
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
+from serve import mcp_oauth as oauth
 from serve import mcp_usage as usage
 from serve.mcp_en import add_english
 from serve.mcp_server import API, HOST_ONLY, TOOLS
@@ -485,14 +486,15 @@ logging.getLogger("uvicorn.access").addFilter(_ScrubKeys())
 
 def _unauthenticated(why: str) -> JSONResponse:
     """A 401 that says how to get a key instead of a bare refusal."""
-    # Deliberately NO `WWW-Authenticate: Bearer`: a client that sees one starts
-    # RFC 9728 discovery, finds no authorization server, and reports an
-    # authentication failure. The body is the instruction, and it names the
-    # one field the client's UI actually has.
-    return JSONResponse(_err(None, -32001, why + " For a client that takes a "
-                             "single url and no headers, append `?key=<key>` "
-                             "instead."), status_code=401,
-                        headers={"x-key-request": "https://zaidlab.xyz/palestine"})
+    # The header is the spec's own pointer (RFC 9728 §5.1): it tells a hosted
+    # client where the protected-resource metadata is, which is how Claude's
+    # connector finds /register and completes the flow. Without it a client can
+    # only guess the well-known URLs — and it did guess, four 404s deep, before
+    # this existed.
+    return JSONResponse(_err(None, -32001, why), status_code=401, headers={
+        "www-authenticate": f'Bearer resource_metadata="{oauth.RESOURCE.rsplit("/mcp", 1)[0]}'
+                             f'/.well-known/oauth-protected-resource", error="invalid_token"',
+        "x-key-request": "https://zaidlab.xyz/palestine"})
 
 
 @router.post("/mcp", include_in_schema=False)
@@ -514,15 +516,19 @@ async def mcp_endpoint(request: Request) -> Response:
     if not is_local(ip):
         key = _presented_key(request)
         keys = _partner_keys()
-        if not key or key not in keys:
+        if key and key in keys:                       # a partner key: quota per key
+            if _quota_exceeded(keys[key]):
+                return JSONResponse(_err(None, -32002, "daily quota for this key is "
+                                         "used up; it resets at midnight UTC"),
+                                    status_code=429)
+        elif key and oauth.valid_token(key):
+            pass                          # an OAuth token from /token, per client
+        else:
             return _unauthenticated(
                 "this endpoint needs a partner key: send it as "
-                "`Authorization: Bearer <key>` or `X-Api-Key`. Ask us for one — "
+                "`Authorization: Bearer <key>` or `X-Api-Key`, or connect through "
+                "OAuth at /.well-known/oauth-protected-resource. Ask us for a key — "
                 "the data is free to read, we only need to know who is calling.")
-        if _quota_exceeded(keys[key]):
-            return JSONResponse(_err(None, -32002, "daily quota for this key is "
-                                     "used up; it resets at midnight UTC"),
-                                status_code=429)
 
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(
