@@ -886,7 +886,11 @@ def coverage() -> dict:
     src = q_cached("""SELECT s.name, s.key, COUNT(c.*) AS claims, MAX(c.reported_at) AS newest
                FROM source s LEFT JOIN claim c ON c.source_id = s.source_id
                GROUP BY 1,2 HAVING COUNT(c.*) > 0 ORDER BY 3 DESC""")
-    st = q_cached("SELECT state_kind, COUNT(*) AS n FROM state_serving GROUP BY 1 ORDER BY 2 DESC")
+    st = q_cached("""SELECT s.state_kind, COUNT(*) AS n,
+                            (k.retired_at IS NOT NULL) AS retired
+                       FROM state_serving s
+                       LEFT JOIN state_kind_config k USING (state_kind)
+                      GROUP BY 1, 3 ORDER BY 2 DESC""")
     pl = q_cached("SELECT kind::text AS kind, COUNT(*) AS n FROM place GROUP BY 1 ORDER BY 2 DESC")
     # `live_states` is built from state_serving, so a field with no data at all
     # simply DOES NOT APPEAR — the blind spot is invisible in the very endpoint
@@ -901,7 +905,15 @@ def coverage() -> dict:
     return {"sources": [{"name": r["name"], "key": r["key"], "claims": r["claims"],
                          "newest": r["newest"]} for r in src],
             "total_claims": sum(r["claims"] for r in src),
-            "live_states": {r["state_kind"]: r["n"] for r in st},
+            "live_states": {r["state_kind"]: r["n"] for r in st if not r["retired"]},
+            # Retired on purpose (fuel availability, 2026-09-23) is not the same
+            # as gone quiet, and calling it live made coverage contradict a
+            # working fuel-prices feature.
+            "retired_states": {r["state_kind"]: r["n"] for r in st if r["retired"]},
+            "grain_note": ("`checkpoint_status` is the legacy kind that carries "
+                           "presence words (`idf`, `police`) in the same column as "
+                           "flow; `checkpoint_flow` is the flow grain every flow "
+                           "answer is built on."),
             "places": {r["kind"]: r["n"] for r in pl},
             # A retired kind is not a stale kind. Fuel availability was
             # retired on purpose (its monitoring went with it), and reporting it
@@ -2023,7 +2035,15 @@ def databank_categories() -> dict:
          "from": r["from_date"], "to": r["to_date"],
          "attribution": r["attribution_text"]} for r in rows],
         "note": "occurred_precision governs how much a date claims; "
-                "year/month/unknown rows are periods or registers, not days."}
+                "year/month/unknown rows are periods or registers, not days.",
+        # The list is what CARRIES ROWS. Nine registered datasets carry none, so
+        # a reader counting the registry against this list finds a gap and has
+        # to guess at it; naming both numbers costs one query and removes the
+        # guess (the partner's QA pass asked exactly this).
+        "datasets_with_rows": len(rows),
+        "datasets_registered": q_cached("SELECT count(*) AS n FROM dataset")[0]["n"],
+        "list_note": "`datasets` lists the ones carrying rows; the difference "
+                     "from `datasets_registered` is datasets with no data yet."}
 
 
 @app.get("/v2/databank/radar", tags=["databank"])

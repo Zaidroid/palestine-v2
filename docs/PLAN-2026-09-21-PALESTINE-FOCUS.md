@@ -456,3 +456,21 @@ An external reviewer ran all 27 tools over the public endpoint and hand-checked 
 **Queued, in priority order:** the incident dedup rule (two channels reporting one demolition must be one event with two sources, not two events — this contradicts the independence model the system rests on), then the classifier fix ZAID-9 unblocked, then the `src:36` opaque source ids, the food-price units, and a batch of small text defects. **ZAID-12 raised:** `connectivity_now` labels IODA CC BY-NC 4.0 while the licence registry records all rights reserved with the permission request not yet sent — licence-facing, so it is his call, not a fix.
 
 **Suite:** 209 passed, 1 skipped across the surface, name-safety, honesty, MCP, OAuth and watchdog files.
+
+### 2026-09-23 · The accuracy audit: an instrument, and the five defects it found
+
+`ops/mcp_accuracy_audit.py` — the answer to "how accurate is this, measured". It recomputes each payload's headline numbers from the database, checks the arithmetic inside every payload, tests the serving view's own invariant across all 2,200 rows, compares tools against each other, scans every sentence for rendering artifacts, and exits with the critical count so it can gate a deploy. First run: **6 critical, 6 major, 2 minor — five of which were the instrument's own bugs**, which is the point of running it before believing it.
+
+**The five real defects it found, all fixed:**
+
+1. **`trend` asserted a direction with no date on it.** A series ending in 2021 was described as "the last three readings, flat" — true, and years stale, which changes what a reader does with it. The payload carried `last` all along; the sentence now names it, gives the age in days, and says so outright when the series is more than 45 days cold.
+2. **`closed_now` listed a name twice.** Eight checkpoint names in the gazetteer belong to two or three DISTINCT places each (`دير استيا` ×3, `الكونتينر` ×3, `النبي يونس` ×2). The payload carried no id, so it read as a duplicate. Entries now carry `place_id`, `name_en` and coordinates, and the spoken sentence lists the name once while stating that a second checkpoint shares it.
+3. **`coverage` advertised a retired kind as a live state.** `live_states` still listed `fuel_diesel`/`fuel_gasoline` after the retirement, and it still calls `checkpoint_status` — the legacy kind that mixes presence words into the flow column — a live flow state. Retired kinds now have their own key and `grain_note` names the legacy one.
+4. **`databank` said 186k rows / 19 categories when the live numbers are 206,153 / 20** — in three places, including the tool description every model reads. And the dataset list (32) silently disagreed with the registry (41). Both counts now travel in the payload, with a note saying the difference is datasets carrying no rows.
+5. **`incidents_summary`'s English read "In the last Noneh"** — the tool names the window `window_hours` and the renderer read `hours`. Found by the new artifact scan, which checks every sentence of every tool for `None`/`nan`/`undefined` as a class rather than one occurrence.
+
+**What the audit now certifies, on demand:** payload arithmetic, tool-vs-database agreement for checkpoints, incidents, insights, fuel, coverage, crossings, databank and area history; the serving view's invariant (no value asserted while its band says `expired`) across every row; every renderer's sentence against the payload it accompanies; refusal-with-words at the edges; and no rendering artifacts anywhere. **Current state: 0 critical, 0 major, 0 minor, exit 0.**
+
+**Standing numbers the partner will ask for:** 108,042 messages ingested, 2,200 serving rows of which **1,872 (85%) read `unknown`** — that is the system refusing to guess, not an outage — 206,153 databank observations across 20 categories from 41 registered datasets (32 carrying rows).
+
+**Queued:** F-86, run this nightly and alert on any critical (the same shape as `ops/gaza_crosscheck.py`).

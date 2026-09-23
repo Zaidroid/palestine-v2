@@ -75,7 +75,7 @@ _POOL = ThreadPoolExecutor(max_workers=16, thread_name_prefix="mcp")
 
 INSTRUCTIONS = (
     "Live and historical data for the West Bank and Gaza: checkpoints, fuel, "
-    "incidents, road routing, weather, connectivity, and a 186k-row historical "
+    "incidents, road routing, weather, connectivity, and a 200,000-row historical "
     "databank with per-source licensing.\n\n"
     "Every tool returns a short Arabic `answer` written to be read aloud "
     "verbatim, plus the structured data behind it. The `answer` already carries "

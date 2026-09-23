@@ -161,7 +161,9 @@ def incidents_summary(d: dict) -> str:
         return f"No incidents recorded in the last {d.get('hours')} hours."
     bits = [f"{v['n']} {k.replace('_', ' ')}" for k, v in
             sorted(bt.items(), key=lambda kv: -kv[1]["n"])[:5]]
-    out = f"In the last {d.get('hours')}h: " + ", ".join(bits) + "."
+    # the tool names the window `window_hours`; reading `hours` printed None
+    out = f"In the last {d.get('window_hours') or d.get('hours')}h: " + \
+          ", ".join(bits) + "."
     places = ", ".join(p["place"] for p in (d.get("by_place") or [])[:4])
     if places:
         out += f" Worst affected: {places}."

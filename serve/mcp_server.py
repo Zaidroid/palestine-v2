@@ -106,7 +106,16 @@ def fuel_prices(product: str | None = None, history: bool = False) -> dict:
         elif r["status"] in ("unconfirmed", "conflicting"):
             rep = "، ".join(f"{x['price']:g}" for x in (r.get("reported") or []))
             gaps.append(f"{r['name_ar']}: غير مؤكد (المنشور: {rep})")
-    since = next((r["effective_from"] for r in rows if r["price"] is not None), None)
+    # Kerosene and LPG came into force on 1 Sep, petrol and diesel on the 7th;
+    # naming one date for all of them was wrong for four of the eight products.
+    dates = sorted({r["effective_from"] for r in rows if r["price"] is not None
+                    and r.get("effective_from")})
+    if len(dates) == 1:
+        since = dates[0]
+    elif dates:
+        since = f"{dates[0]} (وأحدثها {dates[-1]})"
+    else:
+        since = None
     head = ("الحد الأقصى الرسمي لأسعار المحروقات بالضفة، من الهيئة العامة للبترول"
             + (f"، ساري من {since}" if since else "") + ": ")
     answer = head + ("، ".join(said) if said else "ما في سعر مؤكد حالياً")
@@ -367,13 +376,30 @@ def checkpoints_summary() -> dict:
         # readings for a minority of them at any moment; a summary that omits
         # that reads as though the rest are fine.
         answer += f" و{t['unknown']} حاجز ما إلهم تحديث حديث."
-    if closed:
-        answer += " المغلقة حالياً: " + "، ".join(c["name"] for c in closed[:6]) + "."
+    # Eight checkpoint names in the gazetteer belong to two or three DISTINCT
+    # places each (دير استيا ×3, الكونتينر ×3, النبي يونس ×2). The payload
+    # carried no id, so "النبي يونس" appeared twice and read as a duplicate;
+    # the id disambiguates it, and the spoken sentence lists the name once
+    # because a name repeated out loud sounds like a fault.
+    seen: list[str] = []
+    for c in closed:
+        if c["name"] not in seen:
+            seen.append(c["name"])
+    if seen:
+        answer += " المغلقة حالياً: " + "، ".join(seen[:6]) + "."
+    dupes = len(closed) - len(seen)
+    if dupes:
+        answer += (f" (وفي {dupes} حاجز مغلق تاني بإسم مكرر — الأسماء بتتشارك "
+                   f"بين مواقع مختلفة)")
     return {"answer": answer, "totals": t,
             "known_fraction": d.get("known_fraction"),
             "tracked": d.get("tracked"), "presence": d.get("presence"),
-            "closed_now": [{"name": c["name"], "age_minutes": c["age_minutes"],
-                            "present": c.get("present")} for c in closed],
+            "closed_now": [{"place_id": c["place_id"], "name": c["name"],
+                            "name_en": c.get("name_en"),
+                            "age_minutes": c["age_minutes"],
+                            "present": c.get("present"),
+                            "lat": c.get("lat"), "lon": c.get("lon")}
+                           for c in closed],
             "source": d.get("attribution")}
 
 
@@ -949,11 +975,30 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
         change = round((avg - med) / abs(med) * 100)
     word = ("ثابت" if change is None or abs(change) < 10
             else ("أعلى" if change > 0 else "أقل"))
+    # The headline used to assert a direction with no date on it. The partner's
+    # QA pass found series ending in December 2021 still being described as
+    # "the last three readings, flat" — true, and nine months stale, which is
+    # the part that changes what a reader does with it. The payload carried
+    # `last` all along; the sentence now says it too.
+    last_at = str(pts[-1]["at"])[:10]
+    try:
+        from datetime import datetime, timezone as _tz
+        _d = datetime.fromisoformat(str(pts[-1]["at"]).replace("Z", "+00:00"))
+        if _d.tzinfo is None:
+            _d = _d.replace(tzinfo=_tz.utc)
+        age_days = (datetime.now(_tz.utc) - _d).days
+    except Exception:                                            # noqa: BLE001
+        age_days = None
+    freshest = (f" آخر قراءة بتاريخ {last_at}"
+                + (f"، قبل {age_days} يوم" if age_days is not None and age_days > 0 else ""))
+    if age_days is not None and age_days > 45:
+        freshest += " — السلسلة واقفة، فخُد الاتجاه بحدود عمره"
     return {"answer": (f"{indicator}: آخر {len(recent)} قراءة {word}"
                        + (f" بنسبة {abs(change)}% عن الوسيط التاريخي"
                           if change is not None else "")
-                       + f" ({round(avg, 2)} مقابل {round(med, 2)})."),
-            "indicator": indicator, "n": len(pts),
+                       + f" ({round(avg, 2)} مقابل {round(med, 2)})."
+                       + freshest + "."),
+            "indicator": indicator, "n": len(pts), "last_age_days": age_days,
             "recent_mean": round(avg, 4), "baseline_median": round(med, 4),
             "change_pct": change,
             "first": pts[0]["at"], "last": pts[-1]["at"],
@@ -1014,7 +1059,7 @@ def licenses(source: str | None = None) -> dict:
 
 def databank(category: str | None = None, indicator: str | None = None,
              as_of: str | None = None, limit: int = 10) -> dict:
-    """The historical databank: 186k observations from 19 categories
+    """The historical databank: 200,000+ observations across 20 categories
     (prisoners, demolitions, food prices, funding, the martyrs roster…),
     each row carrying its source's license and attribution. `as_of`
     reconstructs what the archive served on a past day."""
@@ -1029,7 +1074,10 @@ def databank(category: str | None = None, indicator: str | None = None,
                   f". المجموع {sum(cats.values()):,} سجلاً من "
                   f"{len(d['datasets'])} مصدراً.")
         return {"answer": answer, "categories": cats,
-                "datasets": d["datasets"]}
+                "datasets": d["datasets"],
+                "datasets_with_rows": d.get("datasets_with_rows"),
+                "datasets_registered": d.get("datasets_registered"),
+                "list_note": d.get("list_note")}
     # The one place a caller's string becomes part of a URL path rather than a
     # query value. Named categories only — no slashes, no dots, no query.
     if not re.fullmatch(r"[a-z0-9_]{1,40}", category):
@@ -1172,7 +1220,7 @@ TOOLS = {
                   "is missing/stale?' and before trusting a quiet series.",
                   {"type": "object", "properties": {}}),
     "databank": (databank,
-                 "Historical databank (186k+ rows, 19 categories: prisoners, "
+                 "Historical databank (200k+ rows, 20 categories: prisoners, "
                  "demolitions, food prices, funding, martyrs roster…) with "
                  "per-source licensing. No `category` lists what exists; "
                  "`as_of` (YYYY-MM-DD) reconstructs a past day's answer.",
