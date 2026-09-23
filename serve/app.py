@@ -831,20 +831,42 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
 
 
 @app.get("/v2/news/latest", tags=["news"])
-def news_latest(area: str | None = None, limit: int = Query(10, ge=1, le=100)) -> dict:
-    """Most recent ingested messages, optionally filtered by area substring."""
+def news_latest(area: str | None = None, limit: int = Query(10, ge=1, le=100),
+                hours: int | None = Query(None, ge=1, le=720),
+                text: str | None = Query(None, min_length=2)) -> dict:
+    """Most recent ingested messages, optionally filtered by area, text, window.
+
+    Resolving the name first is the difference between "Ramallah" returning this
+    morning's reports and returning two English-language mentions from July: the
+    channel text is Arabic, so a literal Latin match only ever finds the rare
+    message that happens to be written in English — and it finds it, however old
+    it is, which reads as a quiet area rather than a missed filter.
+    """
+    where = ["length(c.raw_text) > 30"]
+    params: list = []
     if area:
-        rows = q("""
-            SELECT c.raw_text, c.reported_at, s.name AS src, s.key AS src_key
-            FROM claim c JOIN source s ON s.source_id = c.source_id
-            WHERE c.raw_text ILIKE %s AND length(c.raw_text) > 30
-            ORDER BY c.reported_at DESC LIMIT %s""", (f"%{area}%", limit))
-    else:
-        rows = q("""
-            SELECT c.raw_text, c.reported_at, s.name AS src, s.key AS src_key
-            FROM claim c JOIN source s ON s.source_id = c.source_id
-            WHERE length(c.raw_text) > 30
-            ORDER BY c.reported_at DESC LIMIT %s""", (limit,))
+        names = {area}
+        try:
+            from resolve.geo import resolve_place
+            r = resolve_place(area, learn=False)
+            if r:
+                names |= {n for n in (r.name_ar, r.name_en) if n}
+        except Exception:                                        # noqa: BLE001
+            pass                     # an unresolvable name keeps the literal match
+        where.append("c.raw_text ILIKE ANY(%s)")
+        params.append([f"%{n}%" for n in names])
+    if text:
+        where.append("c.raw_text ILIKE %s")
+        params.append(f"%{text}%")
+    if hours:
+        where.append("c.reported_at >= now() - make_interval(hours => %s)")
+        params.append(hours)
+    params.append(limit)
+    rows = q(f"""
+        SELECT c.raw_text, c.reported_at, s.name AS src, s.key AS src_key
+        FROM claim c JOIN source s ON s.source_id = c.source_id
+        WHERE {' AND '.join(where)}
+        ORDER BY c.reported_at DESC LIMIT %s""", tuple(params))
     return {"count": len(rows), "area": area,
             "items": [{"text": " ".join(r["raw_text"].split())[:500],
                        "source": r["src"], "source_key": r["src_key"],
@@ -870,16 +892,23 @@ def coverage() -> dict:
     # simply DOES NOT APPEAR — the blind spot is invisible in the very endpoint
     # whose job is to describe the blind spots. `fields` lists every configured
     # kind whether or not anything feeds it (migration 036).
-    fields = q_cached("""SELECT state_kind, coverage_state, no_source, crowd_reportable,
-                         observations, non_crowd_sources, last_observed_at
-                    FROM state_kind_coverage
-                   ORDER BY coverage_state, state_kind""")
+    fields = q_cached("""SELECT c.state_kind, c.coverage_state, c.no_source,
+                         c.crowd_reportable, c.observations, c.non_crowd_sources,
+                         c.last_observed_at, k.retired_at IS NOT NULL AS retired
+                    FROM state_kind_coverage c
+                    LEFT JOIN state_kind_config k USING (state_kind)
+                   ORDER BY c.coverage_state, c.state_kind""")
     return {"sources": [{"name": r["name"], "key": r["key"], "claims": r["claims"],
                          "newest": r["newest"]} for r in src],
             "total_claims": sum(r["claims"] for r in src),
             "live_states": {r["state_kind"]: r["n"] for r in st},
             "places": {r["kind"]: r["n"] for r in pl},
-            "fields": [dict(r) for r in fields],
+            # A retired kind is not a stale kind. Fuel availability was
+            # retired on purpose (its monitoring went with it), and reporting it
+            # as `stale` made coverage contradict a live fuel-prices feature.
+            "fields": [{**dict(r),
+                        **({"coverage_state": "retired"} if r.get("retired") else {})}
+                       for r in fields],
             "field_states": {
                 "live": "a source is feeding this and the last reading is "
                         "within its assert ceiling",
@@ -1919,13 +1948,29 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
                g.name_en                   AS governorate,
                ST_Y(p.centroid::geometry)  AS lat,
                ST_X(p.centroid::geometry)  AS lon,
-               s.value, s.last_known_value, s.confidence,
-               s.age_minutes, s.staleness_band, s.independent_sources
+               COALESCE(s.value, cf.value)                       AS value,
+               COALESCE(s.last_known_value, cf.last_known_value)  AS last_known_value,
+               COALESCE(s.confidence, cf.confidence)              AS confidence,
+               COALESCE(s.age_minutes, cf.age_minutes)            AS age_minutes,
+               COALESCE(s.staleness_band, cf.staleness_band)      AS staleness_band,
+               COALESCE(s.independent_sources, cf.independent_sources)
+                                                                  AS independent_sources,
+               CASE WHEN s.value IS NOT NULL THEN 'crossing_status'
+                    WHEN cf.value IS NOT NULL THEN 'checkpoint_flow'
+               END                                                AS basis
           FROM place p
           LEFT JOIN place g ON g.kind = 'governorate'
                            AND g.admin2_pcode = p.admin2_pcode
           LEFT JOIN state_serving s ON s.place_id = p.place_id
                                    AND s.state_kind = 'crossing_status'
+          -- Allenby reads "no source has ever reported this" while
+          -- checkpoints_summary lists جسر الملك حسين with a reading 114 minutes
+          -- old: the same place, known to one layer and denied by the other.
+          -- A crossing that is also a checkpoint is served from the checkpoint
+          -- layer, and `basis` says which layer answered.
+          LEFT JOIN state_serving cf ON cf.place_id = p.place_id
+                                    AND cf.state_kind = 'checkpoint_flow'
+                                    AND cf.direction = 'both'
          WHERE p.kind = 'crossing'
            AND (%s::text IS NULL OR g.name_en ILIKE %s)
          ORDER BY g.name_en NULLS LAST, p.name_en
@@ -1940,7 +1985,8 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
             "confidence": round(r["confidence"], 3) if r["confidence"] is not None else None,
             "age_minutes": float(r["age_minutes"]) if r["age_minutes"] is not None else None,
             "staleness_band": r["staleness_band"],
-            "independent_sources": r["independent_sources"]} for r in rows]
+            "independent_sources": r["independent_sources"],
+            "basis": r["basis"]} for r in rows]
     known = [c for c in out if c["value"] != "unknown"]
     return {
         "crossings": out,
@@ -1948,8 +1994,11 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
         "vocabulary": ["open", "partial", "closed"],
         "note": ("`partial` means open for some traffic only — medical cases, "
                  "aid lorries, a named list. It is never rounded up to `open`. "
-                 "No source reports crossing status yet, so these read "
-                 "`unknown`; that is the truth rather than a gap."),
+                 "`crossing_status` still has no source of its own, so a "
+                 "crossing that is ALSO a checkpoint is served from the "
+                 "checkpoint layer and `basis` says where the reading came "
+                 "from; the rest read `unknown`, which is the truth rather "
+                 "than a gap."),
     }
 
 

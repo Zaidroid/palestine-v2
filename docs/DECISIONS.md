@@ -435,3 +435,13 @@ the reduction happens server-side with its sample size, not in the caller's
 head where it would be invented. (3) Accuracy is served as a number, not a
 claim: each subject's measured precision travels with the answer, including
 when that number is below its gate.
+
+## 2026-09-23 · A name match is never allowed to sound certain when it is a guess
+
+The partner's QA pass found `checkpoint_status("Zaatara")` answering about a
+different checkpoint 11 km away, in the opposite state, because a fuzzy match at
+score 0.738 was presented with no signal at all. The rule that comes out of it,
+for every tool that takes a name: the match score travels in the payload, a
+non-exact match says so inside the answer, and below 0.8 the doubt leads the
+sentence rather than trailing it. An approximate answer that announces itself is
+usable; one that sounds exact is the failure this whole system exists to prevent.

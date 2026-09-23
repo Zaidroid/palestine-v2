@@ -183,11 +183,24 @@ def weather_now(d: dict) -> str:
 
 
 def connectivity_now(d: dict) -> str:
-    return {"outage": (f"A widespread internet outage is measured in the West "
-                       f"Bank ({d.get('signals_agreeing')} independent signals agree)."),
-            "degraded": "West Bank internet quality is measurably degraded.",
-            "ok": "West Bank internet is reachable and behaving normally.",
-            }.get(d.get("status"), "No current measurement of the network.")
+    """The status vocabulary is `normal`/`degraded`/`outage`/`unknown` — the
+    renderer knew `ok`, so every healthy reading fell through to its default and
+    the English sentence said "No current measurement of the network" while the
+    payload said status=normal, two minutes old. A default that asserts absence
+    is the worst kind: it invents a gap exactly where there is a measurement.
+    """
+    status = d.get("status")
+    known = {
+        "normal": "West Bank internet is reachable and behaving normally.",
+        "ok": "West Bank internet is reachable and behaving normally.",
+        "degraded": "West Bank internet quality is measurably degraded.",
+        "outage": (f"A widespread internet outage is measured in the West "
+                   f"Bank ({d.get('signals_agreeing')} independent signals agree)."),
+        "unknown": "No current measurement of the network.",
+    }
+    if status in known:
+        return known[status]
+    return f"West Bank internet status: {status}."        # never claim silence
 
 
 def crossings(d: dict) -> str:
@@ -317,14 +330,15 @@ def insights(d: dict) -> str:
     scope = d.get("scope") or {}
     ck = d.get("checkpoints") or {}
     inc = d.get("incidents") or {}
-    name = scope.get("name") or scope.get("query") or "that place"
+    name = scope.get("name_en") or scope.get("name") or scope.get("query") or "that place"
     out = (f"Last {scope.get('days')} days around {name} "
            f"({scope.get('radius_km'):g} km): {ck.get('readings', 0):,} checkpoint "
            f"readings across {ck.get('places', 0)} checkpoints")
     now = ck.get("now") or {}
-    if now:
-        said = ", ".join(f"{v} {k}" for k, v in sorted(now.items(), key=lambda kv: -kv[1]))
-        out += f". Right now {ck.get('places_now', 0)} have a fresh reading: {said}"
+    definite = {k: v for k, v in now.items() if k != "unknown"}
+    if definite:
+        said = ", ".join(f"{v} {k}" for k, v in sorted(definite.items(), key=lambda kv: -kv[1]))
+        out += f". Right now {sum(definite.values())} have a definite reading: {said}"
     if ck.get("unknown_now"):
         out += f", and {ck['unknown_now']} have no recent reading at all"
     fresh = ck.get("freshest_reading_minutes")

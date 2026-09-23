@@ -442,3 +442,17 @@ Closing the endpoint with a key was correct and it broke Claude's own connector,
 Two things this cost, both recorded because they were avoidable: the first attempt removed the `WWW-Authenticate` header thinking it would *prevent* the OAuth walk, when that header is the spec's own pointer *for* the walk — the client guessed the URLs anyway. And `python-multipart` is not installed, so the form bodies are parsed with `parse_qsl` from the stdlib rather than adding a dependency on a box that takes deploys on a whim.
 
 **Suite:** 195 passed, 1 skipped across the MCP, API, insights, OAuth and watchdog files.
+
+### 2026-09-23 · The partner's QA pass: seven fixes, and the one that could send a traveller wrong
+
+An external reviewer ran all 27 tools over the public endpoint and hand-checked the answers. `docs/QA-2026-09-23-partner-pass.md` is the triage with my verdicts.
+
+**The one that mattered.** `checkpoint_status("Zaatara")` answered about عطارة — 11 km away, opposite state. The real checkpoint's registered Latin name is "Za'tara (Tapuach)", so the apostrophe-free spelling matched nothing exactly, fell to fuzzy matching, and took the nearest Latin lookalike at 0.738, silently. Fixed in three parts: migration `074` gives the common spelling an exact alias, the match score now travels in the payload, and any match below 0.9 says so in the answer — below 0.8 the doubt leads the sentence. Re-verification found a second instance of the same shape (`Hawara` → عورتا at 0.707), which is the evidence that the fix is a class and not an instance.
+
+**Six more, all verified against the live server before and after.** `connectivity_now`'s English said "No current measurement" over a payload reading status=normal two minutes old (the renderer knew the key `ok`; the API emits `normal`). `crossings` denied data the server held — Allenby read "no source has ever reported this" while `checkpoints_summary` listed جسر الملك حسين with a reading 114 minutes old. `latest_news area="Ramallah"` was a Latin literal filter over Arabic text. `place_pattern` answered "usually open" for Qalandiya, whose modal hour is `congested`, and read the legacy mixed kind in the first place. `search` searched the last hundred messages while 49 matching ones sat in the claim store. Coverage called the deliberately retired fuel-availability field `stale`.
+
+**One report was a misreading, and that is a documentation defect.** The staleness bands are `half_life_seconds` relative — "are we still watching this place at its own rhythm" — so 299 minutes reads `live` for a place reported twice a day and `stale` for one reported every few minutes. That reasoning lived in a SQL comment; it now travels as `staleness_note`.
+
+**Queued, in priority order:** the incident dedup rule (two channels reporting one demolition must be one event with two sources, not two events — this contradicts the independence model the system rests on), then the classifier fix ZAID-9 unblocked, then the `src:36` opaque source ids, the food-price units, and a batch of small text defects. **ZAID-12 raised:** `connectivity_now` labels IODA CC BY-NC 4.0 while the licence registry records all rights reserved with the permission request not yet sent — licence-facing, so it is his call, not a fix.
+
+**Suite:** 209 passed, 1 skipped across the surface, name-safety, honesty, MCP, OAuth and watchdog files.

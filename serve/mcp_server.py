@@ -182,7 +182,27 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
         if d["flow"] != "unknown":
             answer += f" آخر تحديث {_age_ar(d.get('age_minutes'))}."
 
+    # A fuzzy match used to be invisible: "Zaatara" answered about عطارة, 11 km
+    # away and in the opposite state, with a match score of 0.738 that never
+    # left the database. Saying it out loud is the difference between a
+    # traveller checking the name and a traveller driving to the wrong junction.
+    score = float((d.get("match") or {}).get("score") or 0.0)
+    if 0 < score < 0.8:
+        # Below 0.8 the match is a guess that happens to be nearest: "Hawara"
+        # resolved to عورتا at 0.707. A guess that answers confidently is worse
+        # than one that refuses, so the doubt goes FIRST here.
+        answer = (f"مش متأكد من الاسم — أقرب تطابق {nm}. {answer} "
+                  "إذا ما قصدت هذا الحاجز، جرّب الاسم كامل أو بالإنجليزي.")
+    elif score < 0.9:
+        answer += (" تنبيه: الاسم تطابق تقريبياً — تأكد إنك قصدت نفس الحاجز، "
+                   "في حواجز بأسماء قريبة.")
+
     return {"answer": answer, "name": nm, "direction": direction,
+            "match": d.get("match"),
+            "staleness_note": ("The band is relative to this checkpoint's own "
+                               "reporting rhythm, not a fixed age: a place that "
+                               "is reported every few minutes reads `stale` at "
+                               "an age where a quiet one still reads `live`."),
             "flow": d["flow"], "passable": d["passable"],
             "last_known_flow": d.get("last_known_flow"),
             "age_minutes": d.get("age_minutes"),
@@ -530,8 +550,15 @@ def crossings(area: str | None = None) -> dict:
                             "reports crossing status yet. This is absence of "
                             "evidence, not evidence of absence. Never present "
                             "it as 'the crossing is open'.")}
+    # `basis` matters: a reading that came from the checkpoint layer is this
+    # system's own observation of traffic at that crossing, not a statement by
+    # a crossings authority, and the caller can tell the two apart.
     say = "، ".join(f"{c['name']}: {c['value']}" for c in known[:6])
-    return {"answer": say, "count": len(items), "crossings": items}
+    return {"answer": say, "count": len(items), "crossings": items,
+            "with_a_current_reading": len(known),
+            "note": ("Where basis is `checkpoint_flow` the reading is this "
+                     "system's own checkpoint observation, not a crossing "
+                     "authority's statement.")}
 
 
 def where_is(place: str, state_kind: str | None = None) -> dict:
@@ -583,24 +610,49 @@ def place_history(place: str, state_kind: str | None = None,
             "counts": "reports, not time — sparse days mean sparse attention."}
 
 
-def place_pattern(place: str, state_kind: str = "checkpoint_status",
+def place_pattern(place: str, state_kind: str = "checkpoint_flow",
                   days: int = 60) -> dict:
-    """What usually happens here, by hour of day, local time."""
+    """What usually happens here, by hour of day, local time.
+
+    Two fixes from the partner's QA pass (2026-09-23). The default was
+    `checkpoint_status`, the legacy kind that carries presence words (`idf`,
+    `police`) in the same column as flow, so the per-hour counts mixed two axes.
+    And the headline was a binary — any closed hour meant "usually closed",
+    otherwise "usually open" — which answered "usually open" for Qalandiya
+    where the modal hour is `congested`, i.e. exactly the state a traveller
+    needs to know about. The headline now reports the modal value and how many
+    hours it holds, and never claims a value the hours do not show.
+    """
     g = api("/v2/geo/resolve", q=place, state_kind=state_kind)
     if not g.get("found"):
         return {"answer": f"ما عرفت وين {place}.", "found": False, **g}
     d = api("/v2/patterns/place", place_id=g["place_id"],
             state_kind=state_kind, days=days)
-    known = [h for h in d["hours"] if h["usually"] != "unknown"]
+    known = [h for h in d["hours"] if h.get("usually") not in (None, "unknown")]
     if not known:
         return {"answer": f"ما في تقارير كافية عن {g['name']} لأستنتج نمط.",
-                "place": g["name"], "hours": d["hours"]}
-    worst = [h for h in known if h["usually"] in ("closed", "unavailable")]
-    hrs = "، ".join(f"{h['hour']:02d}:00" for h in worst[:6]) or "ما في"
-    return {"answer": f"{g['name']}: عادة مسكّر الساعات {hrs}." if worst
-                      else f"{g['name']}: عادة سالك بمعظم الساعات.",
-            "place": g["name"], "place_id": g["place_id"],
+                "place": g["name"], "hours": d["hours"],
+                "caveat": d.get("note")}
+
+    tally: dict[str, int] = {}
+    for h in known:
+        tally[h["usually"]] = tally.get(h["usually"], 0) + 1
+    modal, n_modal = max(tally.items(), key=lambda kv: kv[1])
+    word = {"open": "سالك", "congested": "فيه أزمة", "slow": "بطيء",
+            "closed": "مسكّر"}.get(modal, modal)
+    answer = (f"{g['name']}: عادة {word} — {n_modal} من {len(known)} ساعة "
+              f"إلها تقارير كافية.")
+    if "congested" in tally and modal != "congested":
+        hrs = "، ".join(f"{h['hour']:02d}:00" for h in known
+                        if h["usually"] == "congested")[:120]
+        if hrs:
+            answer += f" ساعات الأزمة: {hrs}."
+    closed = [h for h in known if h["usually"] == "closed"]
+    if closed:
+        answer += " ساعات الإغلاق: " + "، ".join(f"{h['hour']:02d}:00" for h in closed[:6]) + "."
+    return {"answer": answer, "place": g["name"], "place_id": g["place_id"],
             "timezone": d["timezone"], "hours": d["hours"],
+            "usually_by_hour_tally": tally,
             "caveat": d["note"]}
 
 
@@ -830,11 +882,15 @@ def search(text: str, hours: int = 168, limit: int = 20) -> dict:
 
     Every other tool needs a place or an indicator string. This one takes the
     words somebody used.
+
+    It used to fetch the last 100 messages and substring-match them in Python,
+    so "قلنديا" over 24 hours returned zero hits while 49 matching messages sat
+    in the claim store — the road-condition channel alone has 27,588 of them,
+    none of them recent enough to reach a 100-message window. The window is now
+    the caller's, and the match happens in the database.
     """
-    d = api("/v2/news/latest", limit=100)          # the endpoint's own ceiling
-    needle = text.strip().lower()
-    hits = [i for i in d.get("items", [])
-            if needle in (i.get("text") or "").lower()][:limit]
+    d = api("/v2/news/latest", text=text.strip(), hours=hours, limit=limit)
+    hits = d.get("items", [])
     if not hits:
         return {"answer": f"ما لقيت ولا رسالة فيها «{text}» بالمخزون الحالي.",
                 "count": 0, "items": [],
