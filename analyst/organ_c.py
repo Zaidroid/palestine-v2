@@ -101,13 +101,26 @@ _H24_HEAD = re.compile(r"(\d{1,3})\s*ساعة[^\n]{0,30}?ماضية")
 # Two 2026 bulletins report a count this way, and a reader without this header
 # reports those days as having no casualties stated anywhere.
 _H24_HEAD_FALLBACK = re.compile(r"خلال\s+(?:ايام|أيام)[^\n]{0,60}?الساعة")
+# And one bulletin names no period at all: `بلغ إجمالي ما وصل إلى مستشفيات قطاع
+# غزة حتى هذه اللحظة.` — its numbers are stated, its window is not, so the
+# numbers are read and `window_hours` stays None. Anchored on the reach-hospitals
+# phrase, because the rubble sentence ends with the same three words.
+_H24_HEAD_NO_WINDOW = re.compile(r"ما وصل إلى مستشفيات[^\n]{0,60}?حتى هذه اللحظة")
 _CF_HEAD = re.compile(r"وقف إطلاق النار")
 _CUM_HEAD = re.compile(r"منذ بداية العدوان|الحصيلة التراكمية|الإحصائية التراكمية")
 _DATE_AR = re.compile(r"(\d{1,2})\s*(" + "|".join(MONTHS) + r")\s*(\d{4})")
 
 _KILLED = ("شهداء", "شهيد", "الشهداء")
-_INJURED = ("إصابات", "إصابة", "الإصابات")
+# `اصابة` without the hamza is the same word: one archived bulletin writes its
+# 24 h injuries that way (`19 اصابة`) and a reader that knows only the hamzated
+# spelling reports that day as having no injuries.
+_INJURED = ("إصابات", "إصابة", "الإصابات", "اصابات", "اصابة")
 _RECOVERED = ("انتشال", "الانتشال")
+# Stated absence, not inferred absence: `ولا توجد إصابات` is the bulletin saying
+# so, and it is read as 0. A window that merely omits a line is left as None and
+# refused by the schema check, because silence is not a statement.
+_NO_INJURED = re.compile(r"لا توجد (?:أي )?(?:إصاب|اصاب)")
+_NO_KILLED = re.compile(r"لا توجد (?:أي )?(?:شهد|شهيد)")
 
 _SEG_SPLIT = re.compile(r"[•⭕🔴\-\n]")
 
@@ -190,8 +203,8 @@ def _blocks(text: str) -> dict[str, str]:
     character then reports as the day's death toll (measured: 24 appeared as
     `last_24h_killed` in 30 rows).
     """
-    heads = [(H24, (_H24_HEAD, _H24_HEAD_FALLBACK)), (CEASEFIRE, (_CF_HEAD,)),
-             (CUMULATIVE, (_CUM_HEAD,))]
+    heads = [(H24, (_H24_HEAD, _H24_HEAD_FALLBACK, _H24_HEAD_NO_WINDOW)),
+             (CEASEFIRE, (_CF_HEAD,)), (CUMULATIVE, (_CUM_HEAD,))]
     hits: list[tuple[int, str]] = []
     for name, patterns in heads:
         for rx in patterns:
@@ -288,7 +301,12 @@ def read(text: str, reported_at: datetime | None = None) -> dict:
     # Spelled numbers are expanded in the 24 h block only: the dual form appears
     # there, and expanding it inside the cumulative block would let a note after
     # the cumulative line (`شهيدان كلاهما طفلان`) masquerade as the day's total.
-    h24 = _read_block(_expand_spelled(blocks.get(H24, "")), allow_recovered=False)
+    h24_text = _expand_spelled(blocks.get(H24, ""))
+    h24 = _read_block(h24_text, allow_recovered=False)
+    if h24.get("killed") is None and _NO_KILLED.search(h24_text):
+        h24["killed"] = 0
+    if h24.get("injured") is None and _NO_INJURED.search(h24_text):
+        h24["injured"] = 0
     cf = _read_block(blocks.get(CEASEFIRE, ""))
     cu = _read_block(blocks.get(CUMULATIVE, ""), allow_recovered=False)
     win = _H24_HEAD.search(t)
