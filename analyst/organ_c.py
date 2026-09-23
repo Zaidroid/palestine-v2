@@ -46,7 +46,7 @@ import re
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime
 
-VERSION = "c/1"
+VERSION = "c/2"
 
 # ── text cleaning ────────────────────────────────────────────────────────────
 # Bidi marks and word joiners sit inside phrases in this corpus (81 U+2060, plus
@@ -57,10 +57,17 @@ _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 _NUM = r"(\d[\d,.\u066c]*)"
 
 MONTHS = {
+    # Egyptian/Gulf names AND the Levantine names the Ministry also uses. The
+    # reader originally knew only a few Levantine forms, so `02 تموز 2026`
+    # fell through to the war's start date and one bulletin was dated
+    # 2023-10-07 (found by the F-11 adjudication, not by the reader's tests).
     "يناير": 1, "فبراير": 2, "مارس": 3, "أبريل": 4, "ابريل": 4, "مايو": 5,
-    "يونيو": 6, "يوليو": 7, "أغسطس": 8, "اغسطس": 8, "سبتمبر": 9, "أيلول": 9,
-    "ايلول": 9, "أكتوبر": 10, "اكتوبر": 10, "تشرين الأول": 10, "نوفمبر": 11,
-    "ديسمبر": 12, "كانون الأول": 12,
+    "يونيو": 6, "يوليو": 7, "أغسطس": 8, "اغسطس": 8, "سبتمبر": 9, "أكتوبر": 10,
+    "اكتوبر": 10, "نوفمبر": 11, "ديسمبر": 12,
+    "كانون الثاني": 1, "شباط": 2, "آذار": 3, "اذار": 3, "نيسان": 4, "أيار": 5,
+    "ايار": 5, "حزيران": 6, "تموز": 7, "آب": 8, "أيلول": 9, "ايلول": 9,
+    "تشرين الأول": 10, "تشرين الاول": 10, "تشرين الثاني": 11, "كانون الأول": 12,
+    "كانون الاول": 12,
 }
 
 # The schema F-10 commits to. Enforced on the model's answer in F-11 (json_schema
@@ -108,7 +115,8 @@ _H24_HEAD_FALLBACK = re.compile(r"خلال\s+(?:ايام|أيام)[^\n]{0,60}?ا
 _H24_HEAD_NO_WINDOW = re.compile(r"ما وصل إلى مستشفيات[^\n]{0,60}?حتى هذه اللحظة")
 _CF_HEAD = re.compile(r"وقف إطلاق النار")
 _CUM_HEAD = re.compile(r"منذ بداية العدوان|الحصيلة التراكمية|الإحصائية التراكمية")
-_DATE_AR = re.compile(r"(\d{1,2})\s*(" + "|".join(MONTHS) + r")\s*(\d{4})")
+_DATE_AR = re.compile(r"(\d{1,2})\s*(" + "|".join(sorted(MONTHS, key=len, reverse=True))
+                      + r")\s*(\d{4})")
 
 _KILLED = ("شهداء", "شهيد", "الشهداء")
 # `اصابة` without the hamza is the same word: one archived bulletin writes its
@@ -336,15 +344,22 @@ class Refusal:
     """Why a reading cannot be served, in words a human can act on."""
     code: str
     detail: str
+    field: str | None = None
 
 
 @dataclass
 class Verdict:
     ok: bool
     reasons: list[Refusal] = field(default_factory=list)
+    # Facts about the row that do not stop it being served: a stated revision,
+    # a divergence between the publisher's own counters, a zero proven by the
+    # cumulative. They travel with the row so a reader of the series can see them.
+    notes: list[Refusal] = field(default_factory=list)
+    settled: dict | None = None
 
     def as_dict(self) -> dict:
-        return {"ok": self.ok, "reasons": [asdict(r) for r in self.reasons]}
+        return {"ok": self.ok, "reasons": [asdict(r) for r in self.reasons],
+                "notes": [asdict(n) for n in self.notes]}
 
 
 def schema_errors(reading: dict) -> list[str]:
@@ -372,34 +387,80 @@ def schema_errors(reading: dict) -> list[str]:
     return errs
 
 
+# Ratified by Zaid 2026-09-23 ("B as written"). Both limits are fractions of
+# the previous ACCEPTED total, never of the row before, so one bad row cannot
+# poison the next good one.
+MAX_REVISION_DOWN = 0.005   # a stated downward revision up to 0.5 % is served
+MAX_DAILY_RISE = 0.01       # a one-day rise above 1 % is refused as a typo
+
+
+def settle(reading: dict, previous: dict | None) -> tuple[dict, list[Refusal], list[Refusal]]:
+    """B3: a window line the bulletin omits is 0 only when the cumulative proves it.
+
+    Six 2026 bulletins list injuries and say nothing about deaths; on every one
+    of them cumulative killed did not move, and on the one mirror case
+    cumulative injured did not move. That is the publisher's own arithmetic
+    stating the zero, so it is filled — and marked. If the cumulative DID move,
+    the missing line is a real gap and the row is refused.
+    """
+    out = dict(reading)
+    notes: list[Refusal] = []
+    reasons: list[Refusal] = []
+    for line, cum, label in (("last_24h_killed", "cum_killed", "killed"),
+                             ("last_24h_injured", "cum_injured", "injured")):
+        if out.get(line) is not None:
+            continue
+        if previous is None or previous.get(cum) is None or out.get(cum) is None:
+            continue            # nothing proves it either way; schema refuses below
+        if out[cum] == previous[cum]:
+            out[line] = 0
+            notes.append(Refusal(
+                "zero-by-cumulative",
+                f"the bulletin states no {label} line; cumulative {label} is unchanged "
+                f"at {out[cum]}, so the day's {label} count is 0", field=line))
+        else:
+            reasons.append(Refusal(
+                "window-missing",
+                f"the bulletin states no {label} line while cumulative {label} moved "
+                f"{previous[cum]} -> {out[cum]}", field=line))
+    return out, notes, reasons
+
+
 def validate(reading: dict, previous: dict | None = None,
              reported_at: datetime | None = None) -> Verdict:
-    """The plan's three validators, plus the structural check.
+    """What a bulletin row must satisfy before it may join the series.
 
-    1. every required field present and of the right type (schema_errors)
-    2. `as_of_date` within ±2 days of when the bulletin was posted
-    3. cumulative counts never go backwards against the previous believed bulletin
-    4. the reporting window and the cumulative block agree: the day's rise in a
-       cumulative series is what the bulletin reported for its window, and a
-       cumulative series that does not move while the window reports deaths is
-       not a reading, it is a parse that lost a block.
+    `previous` is the last ACCEPTED reading, not the row before it.
 
-    Only the LOW side of (4) is refused, and only for a 24-hour window. A rise
-    larger than the window's count is the publisher's own arithmetic, not an
-    error: recovered bodies are added to the cumulative separately, and one
-    archived bulletin announces a committee approval that added **110** to the
-    cumulative in a single day. A rise smaller than a 48-hour window's count is
-    not evidence of anything either, because a 48-hour window overlaps the
-    previous bulletin's window and those deaths are already inside the previous
-    cumulative. Both directions are why `window_hours` is read.
+    Refused:
+      schema          a required field missing or the wrong type
+      window-missing  a window line absent while its cumulative moved (B3)
+      date-drift      the printed date more than 2 days from the posting date
+      not-monotonic   a cumulative fell by more than MAX_REVISION_DOWN (B1)
+      implausible-jump  a cumulative rose by more than MAX_DAILY_RISE in one
+                      bulletin (B1) — the 7 June 1,730,128 is an extra digit,
+                      and the old rule ACCEPTED it and then refused the correct
+                      next day for falling
+    Noted, and served:
+      revised-down        a fall within the band — 28 Jan revised injured
+                          171,428 -> 171,343 and the series continued from it
+      delta-divergence    the window line exceeds the cumulative rise (B2). The
+                          two count different things — hospital arrivals in the
+                          window vs registered deaths — and on 6 of the 14 such
+                          days the Ministry's two running totals move identically
+      zero-by-cumulative  B3, above
     """
-    reasons: list[Refusal] = []
-    for e in schema_errors(reading):
+    settled, notes, reasons = settle(reading, previous)
+    explained = {r.field for r in reasons if r.code == "window-missing"}
+    for e in schema_errors(settled):
+        # A gap settle() already explained in words is one refusal, not two.
+        if e.split(":")[0] in explained:
+            continue
         reasons.append(Refusal("schema", e))
     if reasons:
-        return Verdict(False, reasons)
+        return Verdict(False, reasons, notes, settled)
 
-    as_of = date.fromisoformat(reading["as_of_date"])
+    as_of = date.fromisoformat(settled["as_of_date"])
     if reported_at is not None:
         drift = abs((as_of - reported_at.date()).days)
         if drift > 2:
@@ -408,24 +469,42 @@ def validate(reading: dict, previous: dict | None = None,
                 f"bulletin is dated {as_of}, posted {reported_at.date()} — {drift} days apart"))
 
     if previous:
-        window = reading.get("window_hours")
+        window = settled.get("window_hours")
         for key, label in (("cum_killed", "killed"), ("cum_injured", "injured")):
             prev = previous.get(key)
-            now = reading[key]
-            if prev is None:
+            now = settled[key]
+            if not prev:
                 continue
             if now < prev:
-                reasons.append(Refusal(
-                    "not-monotonic",
-                    f"cumulative {label} fell {prev} -> {now} against the previous bulletin"))
-            elif window is None or window <= 24:
-                rise = now - prev
-                day = reading.get("last_24h_killed" if key == "cum_killed" else "last_24h_injured")
-                if day is not None and rise < day:
+                drop = prev - now
+                if drop / prev <= MAX_REVISION_DOWN:
+                    notes.append(Refusal(
+                        "revised-down",
+                        f"cumulative {label} revised {prev} -> {now} (-{drop}, "
+                        f"{100 * drop / prev:.2f} %) by the publisher"))
+                else:
                     reasons.append(Refusal(
-                        "delta-inconsistent",
-                        f"cumulative {label} rose {rise} while the {window or 24} h line reported {day}"))
-    return Verdict(not reasons, reasons)
+                        "not-monotonic",
+                        f"cumulative {label} fell {prev} -> {now} (-{drop}, "
+                        f"{100 * drop / prev:.2f} %), beyond the "
+                        f"{100 * MAX_REVISION_DOWN:.1f} % revision band"))
+                continue
+            rise = now - prev
+            if rise / prev > MAX_DAILY_RISE:
+                reasons.append(Refusal(
+                    "implausible-jump",
+                    f"cumulative {label} rose {prev} -> {now} (+{rise}, "
+                    f"{100 * rise / prev:.1f} %) in one bulletin, beyond "
+                    f"{100 * MAX_DAILY_RISE:.0f} %"))
+                continue
+            if window is None or window <= 24:
+                line = settled.get("last_24h_killed" if key == "cum_killed" else "last_24h_injured")
+                if line is not None and rise < line:
+                    notes.append(Refusal(
+                        "delta-divergence",
+                        f"cumulative {label} rose {rise} while the {window or 24} h "
+                        f"line reported {line}"))
+    return Verdict(not reasons, reasons, notes, settled)
 
 
 def to_json(reading: dict) -> str:

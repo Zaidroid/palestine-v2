@@ -79,23 +79,48 @@ def main() -> int:
     args = ap.parse_args()
 
     out_rows = []
-    prev_reading = None
+    last_accepted = None          # B1: every comparison is to the last ACCEPTED row
+    last_reading = None
+    last_claim = None
     verdict_counts: dict[str, int] = {}
+    note_counts: dict[str, int] = {}
     for cid, when, text in rows_from_csv(args.csv, args.year):
         reading = organ_c.read(text, when)
-        verdict = organ_c.validate(reading, previous=prev_reading, reported_at=when)
+        # The Ministry sometimes posts the same bulletin twice on one day (twice
+        # in 2026: 17 Mar and 18 Jun). A repost is one fact, not two, and
+        # comparing a bulletin with its own copy refused both halves of it.
+        repost_of = None
+        if (last_reading and reading["as_of_date"] == last_reading["as_of_date"]
+                and reading["cum_killed"] == last_reading["cum_killed"]
+                and reading["cum_injured"] == last_reading["cum_injured"]):
+            repost_of = last_claim
+        if repost_of:
+            out_rows.append({
+                "claim_id": cid, "reported_at": when.isoformat(),
+                "label_method": "read" if cid in READ_VERIFIED else "arithmetic",
+                "reader": reading, "repost_of": repost_of,
+                "verdict": {"ok": None, "reasons": [], "notes": []}, "previous": None,
+            })
+            continue
+        previous = ({"cum_killed": last_accepted["cum_killed"],
+                     "cum_injured": last_accepted["cum_injured"]} if last_accepted else None)
+        verdict = organ_c.validate(reading, previous=previous, reported_at=when)
         for reason in verdict.reasons:
             verdict_counts[reason.code] = verdict_counts.get(reason.code, 0) + 1
+        for note in verdict.notes:
+            note_counts[note.code] = note_counts.get(note.code, 0) + 1
         out_rows.append({
             "claim_id": cid,
             "reported_at": when.isoformat(),
             "label_method": "read" if cid in READ_VERIFIED else "arithmetic",
             "reader": reading,
+            "settled": verdict.settled,
             "verdict": verdict.as_dict(),
-            "previous": ({"cum_killed": prev_reading["cum_killed"],
-                          "cum_injured": prev_reading["cum_injured"]} if prev_reading else None),
+            "previous": previous,
         })
-        prev_reading = reading
+        if verdict.ok:
+            last_accepted = verdict.settled
+        last_reading, last_claim = reading, cid
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -103,11 +128,14 @@ def main() -> int:
         for row in out_rows:
             fh.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 
+    unique = [r for r in out_rows if not r.get("repost_of")]
     read_n = sum(1 for r in out_rows if r["label_method"] == "read")
-    ok_n = sum(1 for r in out_rows if r["verdict"]["ok"])
-    print(f"{out}: {len(out_rows)} rows · {ok_n} pass the validators · {len(out_rows) - ok_n} refused "
+    ok_n = sum(1 for r in unique if r["verdict"]["ok"])
+    print(f"{out}: {len(out_rows)} rows · {len(out_rows) - len(unique)} reposts · "
+          f"{len(unique)} unique days · {ok_n} served · {len(unique) - ok_n} refused "
           f"· {read_n} read by a human · {len(out_rows) - read_n} arithmetic-verified")
     print("refusal codes:", verdict_counts)
+    print("notes (served):", note_counts)
     return 0
 
 

@@ -233,21 +233,24 @@ def test_the_date_comes_from_the_trailer_not_from_the_war_or_the_ceasefire_line(
 
 
 def test_the_validator_refuses_a_corrupted_row():
-    """F-10's DONE WHEN, in four shapes."""
+    """The refusals that survive the 2026-09-23 ratification ("B as written")."""
     good = organ_c.read(NEWEST, datetime(2026, 9, 22, 8, 39))
     # The real previous bulletin: 2026-09-21 read 73,914 / 174,952 with a 24 h
     # line of 1 killed, and the 22nd moves killed to 73,919 with a line of 5.
     previous = {"cum_killed": 73914, "cum_injured": 174952}
-    assert organ_c.validate(good, previous=previous, reported_at=REF.replace(day=22)).ok
+    v = organ_c.validate(good, previous=previous, reported_at=REF.replace(day=22))
+    assert v.ok and v.reasons == []
 
-    backwards = dict(good, cum_killed=previous["cum_killed"] - 100)
+    # a fall far beyond the 0.5 % revision band
+    backwards = dict(good, cum_killed=previous["cum_killed"] - 1000)
     v = organ_c.validate(backwards, previous=previous)
     assert not v.ok and [r.code for r in v.reasons] == ["not-monotonic"]
     assert "fell" in v.reasons[0].detail
 
-    too_many = dict(good, cum_killed=previous["cum_killed"] + 1, last_24h_killed=9)
-    v = organ_c.validate(too_many, previous=previous)
-    assert not v.ok and "delta-inconsistent" in [r.code for r in v.reasons]
+    # the 7 June shape: an extra digit is a 900 % rise, refused as a typo
+    typo = dict(good, cum_injured=previous["cum_injured"] * 10)
+    v = organ_c.validate(typo, previous=previous)
+    assert not v.ok and [r.code for r in v.reasons] == ["implausible-jump"]
 
     misdated = dict(good, as_of_date="2026-07-22")
     v = organ_c.validate(misdated, previous=previous, reported_at=REF.replace(day=22))
@@ -256,6 +259,54 @@ def test_the_validator_refuses_a_corrupted_row():
     missing = {k: v for k, v in good.items() if k != "cum_injured"}
     v = organ_c.validate(missing, previous=previous)
     assert not v.ok and [r.code for r in v.reasons] == ["schema"]
+
+
+def test_a_small_stated_revision_is_served_and_marked():
+    """B1 — 28 Jan revised cumulative injured 171,428 -> 171,343 (0.05 %), and
+    the series continued from the new number; the old rule refused it."""
+    row = {"as_of_date": "2026-01-28", "window_hours": 24,
+           "cum_killed": 71667, "cum_injured": 171343,
+           "last_24h_killed": 5, "last_24h_injured": 6}
+    v = organ_c.validate(row, previous={"cum_killed": 71662, "cum_injured": 171428})
+    assert v.ok
+    assert [n.code for n in v.notes] == ["revised-down"]
+    assert "-85" in v.notes[0].detail
+
+
+def test_a_window_line_larger_than_the_rise_is_a_note_not_a_refusal():
+    """B2 — the window counts hospital arrivals, the cumulative counts registered
+    deaths. The divergence is recorded, and the row is served."""
+    row = {"as_of_date": "2026-01-04", "window_hours": 24,
+           "cum_killed": 71386, "cum_injured": 171264,
+           "last_24h_killed": 3, "last_24h_injured": 13}
+    v = organ_c.validate(row, previous={"cum_killed": 71384, "cum_injured": 171251})
+    assert v.ok
+    assert [n.code for n in v.notes] == ["delta-divergence"]
+
+
+def test_an_omitted_line_is_zero_only_when_the_cumulative_proves_it():
+    """B3 — a bulletin that lists injuries only. If cumulative killed did not
+    move, the day's deaths are 0 and the row says how it knows. If it did
+    move, the missing line is a real gap and the row is refused."""
+    base = {"as_of_date": "2026-02-24", "window_hours": 24,
+            "cum_killed": 72073, "cum_injured": 171756,
+            "last_24h_killed": None, "last_24h_injured": 7}
+    proven = organ_c.validate(base, previous={"cum_killed": 72073, "cum_injured": 171749})
+    assert proven.ok
+    assert proven.settled["last_24h_killed"] == 0
+    assert [n.code for n in proven.notes] == ["zero-by-cumulative"]
+    assert base["last_24h_killed"] is None, "the reader's output is never rewritten"
+
+    moved = organ_c.validate(base, previous={"cum_killed": 72070, "cum_injured": 171749})
+    assert not moved.ok
+    assert [r.code for r in moved.reasons] == ["window-missing"]
+
+
+def test_levantine_month_names_date_the_bulletin():
+    """`02 تموز 2026` was dated 2023-10-07 by c/1 — the war's start date."""
+    assert organ_c.parse_date("وزارة الصحة\n02 تموز 2026", None).isoformat() == "2026-07-02"
+    assert organ_c.parse_date("وزارة الصحة\n1 تشرين الثاني 2025", None).isoformat() == "2025-11-01"
+    assert organ_c.parse_date("وزارة الصحة\n9 شباط 2026", None).isoformat() == "2026-02-09"
 
 
 def test_the_row_the_databank_froze_at_carries_the_same_numbers():
@@ -277,11 +328,28 @@ def test_every_gold_row_revalidates_to_the_verdict_it_was_filed_with():
     assert len(lines) == 201, "the 2026 window, one row per bulletin"
     for line in lines:
         row = json.loads(line)
+        if row.get("repost_of"):
+            continue
         reported_at = datetime.fromisoformat(row["reported_at"])
         verdict = organ_c.validate(row["reader"], previous=row["previous"], reported_at=reported_at)
         assert verdict.ok == row["verdict"]["ok"], f"{row['claim_id']} verdict drifted"
         assert [r.code for r in verdict.reasons] == [r["code"] for r in row["verdict"]["reasons"]], \
             f"{row['claim_id']} reasons drifted"
+        assert [n.code for n in verdict.notes] == [n["code"] for n in row["verdict"]["notes"]], \
+            f"{row['claim_id']} notes drifted"
+
+
+def test_the_ratified_rules_serve_198_of_199_days_and_refuse_only_the_typo():
+    """The number Zaid ratified against (2026-09-23): 2 same-day reposts are
+    one fact each, and of the 199 unique days only 7 June — 1,730,128 injured,
+    an extra digit — is refused. If this moves, a rule moved."""
+    rows = [json.loads(l) for l in GOLD.read_text(encoding="utf-8").splitlines()]
+    reposts = [r for r in rows if r.get("repost_of")]
+    unique = [r for r in rows if not r.get("repost_of")]
+    refused = [r for r in unique if not r["verdict"]["ok"]]
+    assert len(reposts) == 2 and len(unique) == 199
+    assert [(r["reader"]["as_of_date"], r["verdict"]["reasons"][0]["code"]) for r in refused] \
+        == [("2026-06-07", "implausible-jump")]
 
 
 def test_gold_provenance_is_declared_and_honest():

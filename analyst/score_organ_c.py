@@ -54,10 +54,15 @@ Palestinian Ministry of Health in Gaza. Read it and return the numbers it states
 
 - as_of_date: the date printed at the END of the bulletin, as YYYY-MM-DD
 - cum_killed, cum_injured: the CUMULATIVE totals since the start of the aggression
-- last_24h_killed, last_24h_injured: the totals for the window the bulletin names
-  (it is not always 24 hours; it may be 48, or a holiday period with no hours)
+- last_24h_killed, last_24h_injured: the TOTALS for the window the bulletin names
+  (it is not always 24 hours; it may be 48, or a holiday period with no hours).
+  When the line gives a total and then breaks it down in brackets, the total is
+  the number before the brackets. Small numbers are sometimes written as words:
+  شهيد or شهيد واحد is 1, شهيدان or شهيدين is 2, إصابتان is 2.
 - since_ceasefire_killed, since_ceasefire_injured: the block "since the ceasefire"
-- recovered: bodies recovered from under the rubble, if the bulletin states it
+- recovered: the CUMULATIVE number of bodies recovered from under the rubble,
+  stated in the since-ceasefire block (إجمالي حالات الانتشال) — not the few
+  recovered in the reporting window
 
 Rules: use null for any field the bulletin does not state. Never guess, never
 carry a number over from another block. Digits only, no thousands separators.
@@ -149,16 +154,57 @@ def summarise(results: list[dict]) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gold", required=True)
-    ap.add_argument("--csv", required=True, help="the dump the gold set was built from")
+    ap.add_argument("--csv", help="the dump the gold set was built from (not needed with --rescore-only)")
     ap.add_argument("--roles", default="engine,engine-quality")
     ap.add_argument("--limit", type=int, default=200)
     ap.add_argument("--base-url-env", default="MINIMAX_BASE_URL")
     ap.add_argument("--key-env", default="MINIMAX_API_KEY")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--rescore-only", action="store_true",
+                    help="re-score the answers already stored in --out against the CURRENT gold "
+                         "set, without calling the gateway")
     args = ap.parse_args()
+
+    if args.rescore_only:
+        # The gold set is a living file. A run scored hours ago against an older
+        # revision must not be compared with one scored against a newer one, and
+        # re-scoring the STORED answers costs nothing: no gateway call, no new
+        # data, only the same answers put to the current truth. Writes beside the
+        # live artifact rather than into it, because a scoring run may still be
+        # appending to that file.
+        source = Path(args.out)
+        state = json.loads(source.read_text(encoding="utf-8"))
+        # Score against what the SERIES says — the settled reading, which carries
+        # B3's zero-by-cumulative — not the raw reader. A model that answers 0 on
+        # a day the Ministry's own totals prove was 0 is right, not inventing.
+        gold = {}
+        for l in Path(args.gold).read_text(encoding="utf-8").splitlines():
+            g = json.loads(l)
+            gold[g["claim_id"]] = g.get("settled") or g["reader"]
+        for role, results in state["rows"].items():
+            for r in results:
+                if r.get("answer") and r["claim_id"] in gold:
+                    r["scored"] = score_row(gold[r["claim_id"]], r["answer"])
+            state["summary"][role] = summarise(results)
+        state["rescored_at"] = datetime.now(timezone.utc).isoformat()
+        state["rescored_against"] = str(args.gold)
+        target = source.with_name(source.stem + "-rescored.json")
+        target.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
+        for role in state["rows"]:
+            s = state["summary"][role]
+            print(f"== {role} · rescored · {s['rows_scored']} rows · "
+                  f"{s['rows_exact']} exact · {s['rows_wrong']} wrong ==")
+            for field, v in s["per_field"].items():
+                print(f"   {field:<26} correct {v['correct']:>3}  wrong {v['wrong']:>3}  "
+                      f"invented {v['invented']:>3}  precision {v['precision']}")
+        print(f"\nartifact: {target}")
+        return 0
 
     base_url = os.environ.get(args.base_url_env)
     key = os.environ.get(args.key_env)
+    if not args.csv:
+        print("refusing: --csv is required to score (it holds the bulletin texts)", file=sys.stderr)
+        return 2
     if not base_url:
         print(f"refusing: ${args.base_url_env} is not set", file=sys.stderr)
         return 2
@@ -167,7 +213,10 @@ def main() -> int:
         return 2
 
     gold_rows = [json.loads(l) for l in Path(args.gold).read_text(encoding="utf-8").splitlines()]
-    gold_rows = [r for r in gold_rows if r["reader"]["cum_killed"] is not None][:args.limit]
+    gold_rows = [r for r in gold_rows
+                 if r["reader"]["cum_killed"] is not None and not r.get("repost_of")][:args.limit]
+    for r in gold_rows:
+        r["truth"] = r.get("settled") or r["reader"]
     texts = {}
     with open(args.csv, encoding="utf-8") as fh:
         for cid, _ts, text in csv.reader(fh):
@@ -187,6 +236,7 @@ def main() -> int:
         for row in gold_rows:
             text = texts[row["claim_id"]]
             last_error = None
+            res = {"ok": False, "error": "no attempt was made", "enforced": False}
             for attempt in range(3):
                 res = call(base_url, key, role, text)
                 if res["ok"]:
@@ -202,7 +252,7 @@ def main() -> int:
                 continue
             consecutive_failures = 0
             results.append({"claim_id": row["claim_id"], "latency_ms": res["latency_ms"],
-                            "answer": res["json"], "scored": score_row(row["reader"], res["json"])})
+                            "answer": res["json"], "scored": score_row(row["truth"], res["json"])})
             # nothing is written to the databank and no state is mutated: this is a
             # measurement, and its artifact is written incrementally so a paused run
             # keeps everything it paid for. While a role is mid-run its status says
