@@ -428,4 +428,6 @@ ZAID-10.
 
 **Performance, measured (server-side, warm, 2026-09-23).** `coverage` 2,695 ms to 3 ms (cached like the databank aggregates: this is the first call a new client makes and the worst place to look slow). `insights` 822 ms to 607 ms cold, 112 ms warm: the radius query was driving from `place`, which holds 591 places within 15 km of Ramallah of which 33 report flow, so it fetched 18x the rows it needed; driving from `state_serving` fixed the scan and `q_cached` answered the benchmark's repeats. `q_cached`'s key now normalises a dict of named params — a raw dict is unhashable and would have 500'd the route instead of missing the cache.
 
+**Suite after the slice:** 734 passed, 2 skipped, 0 failed (225 s), and the MCP read-surface parity test is what caught the new route needing its tool mapping — the guard worked on the first route added under it.
+
 **ZAID-9 answered** (an obituary or a funeral is not a death report) — the classifier change and its re-measurement are the next task. **ZAID-10 answered** as: live trackers plus insights now, the ungraded and `no-redistribution` databank sets stay out of the partner payloads. **ZAID-11:** the partner needs it today and will test performance, accuracy and privacy — those three became the shape of this slice.
