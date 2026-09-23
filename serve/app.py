@@ -356,15 +356,28 @@ def fuel_nearby(
 
 
 @app.get("/v2/fuel/stations", tags=["fuel"])
-def fuel_stations(region: str | None = None, only_available: bool = False) -> dict:
+def fuel_stations(region: str | None = None, only_available: bool = False,
+                  basis: str | None = None) -> dict:
+    # F-05's DONE WHEN says the `image_ocr` basis and its warning are surfaced by
+    # /v2/fuel/*. The summary carried them; this endpoint — the one a consumer
+    # actually reads per station — did not, so a reading off a rendered card
+    # arrived looking exactly like a reading off a text bulletin. `basis` on each
+    # reading, the warning beside it, and an optional filter so a caller who
+    # wants only text-derived readings can say so.
     rows = q("""
         SELECT s.place_id, s.name_ar, s.name_en, s.state_kind, s.value,
                s.last_known_value, s.confidence, s.observed_at, s.age_minutes,
                s.staleness_band,
+               coalesce(o.attrs->>'modality_basis', 'text') AS basis,
                p.source_refs->>'palhub_region' AS region,
                p.source_refs->>'palhub_locality' AS locality
         FROM state_serving s
         JOIN place p ON p.place_id = s.place_id
+        LEFT JOIN LATERAL (
+            SELECT o2.attrs FROM state_observation o2
+             WHERE o2.place_id = s.place_id AND o2.state_kind = s.state_kind
+               AND o2.modality = 'assertion'
+             ORDER BY o2.observed_at DESC LIMIT 1) o ON true
         WHERE s.state_kind LIKE 'fuel%%'
           -- The ::text cast is load-bearing. `$1 IS NULL` gives Postgres no
           -- context to infer a type from, so it raises IndeterminateDatatype
@@ -374,21 +387,33 @@ def fuel_stations(region: str | None = None, only_available: bool = False) -> di
           -- ever issued an HTTP request against it.
           AND (%s::text IS NULL OR p.source_refs->>'palhub_region' = %s)
           AND (%s::boolean = false OR s.value = 'available')
+          AND (%s::text IS NULL OR coalesce(o.attrs->>'modality_basis', 'text') = %s)
         ORDER BY p.source_refs->>'palhub_region', s.name_ar""",
-        (region, region, only_available))
+        (region, region, only_available, basis, basis))
     by_station: dict[int, dict] = {}
+    any_image = False
     for r in rows:
         st = by_station.setdefault(r["place_id"], {
             "place_id": r["place_id"], "name": r["name_ar"] or r["name_en"],
             "region": r["region"], "locality": r["locality"], "fuels": {},
         })
-        st["fuels"][r["state_kind"].replace("fuel_", "")] = {
+        fuel = {
             "value": r["value"], "last_known_value": r["last_known_value"],
             "confidence": round(float(r["confidence"]), 3),
             "observed_at": r["observed_at"], "age_minutes": r["age_minutes"],
             "staleness_band": r["staleness_band"],
+            "basis": r["basis"],
         }
+        if r["basis"] == "image_ocr":
+            fuel["warning"] = IMAGE_OCR_WARNING
+            any_image = True
+        st["fuels"][r["state_kind"].replace("fuel_", "")] = fuel
     return {"count": len(by_station), "stations": list(by_station.values()),
+            "warning": IMAGE_OCR_WARNING if any_image else None,
+            "note": ("At least one reading above came off a rendered card: its "
+                     "timestamp is when the card was drawn, not when a station "
+                     "was seen. Pass `basis=text` to exclude those."
+                     if any_image else None),
             "attribution": "Palhub - احوال الوقود (Telegram)"}
 
 
