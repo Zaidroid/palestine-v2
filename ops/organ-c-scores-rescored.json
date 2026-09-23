@@ -1,0 +1,5289 @@
+{
+ "started_at": "2026-09-23T06:46:46.244663+00:00",
+ "base_url": "http://100.110.89.116:4000/v1",
+ "roles": [
+  "engine",
+  "engine-quality"
+ ],
+ "rows": {
+  "engine": [
+   {
+    "claim_id": 11560,
+    "latency_ms": 2094,
+    "answer": {
+     "as_of_date": "2026-01-01",
+     "cum_killed": 71271,
+     "cum_injured": 171233,
+     "last_24h_killed": 2,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 416,
+     "since_ceasefire_injured": 1153,
+     "recovered": 683
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11561,
+    "latency_ms": 1490,
+    "answer": {
+     "as_of_date": "2026-01-03",
+     "cum_killed": 71384,
+     "cum_injured": 171251,
+     "last_24h_killed": 3,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 418,
+     "since_ceasefire_injured": 1171,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11563,
+    "latency_ms": 1992,
+    "answer": {
+     "as_of_date": "2026-01-04",
+     "cum_killed": 71386,
+     "cum_injured": 171264,
+     "last_24h_killed": 3,
+     "last_24h_injured": 13,
+     "since_ceasefire_killed": 420,
+     "since_ceasefire_injured": 1184,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11564,
+    "latency_ms": 1699,
+    "answer": {
+     "as_of_date": "2026-01-05",
+     "cum_killed": 71388,
+     "cum_injured": 171269,
+     "last_24h_killed": 2,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 422,
+     "since_ceasefire_injured": 1189,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11565,
+    "latency_ms": 1802,
+    "answer": {
+     "as_of_date": "2026-01-06",
+     "cum_killed": 71391,
+     "cum_injured": 171279,
+     "last_24h_killed": 2,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 424,
+     "since_ceasefire_injured": 1199,
+     "recovered": 685
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11569,
+    "latency_ms": 1793,
+    "answer": {
+     "as_of_date": "2026-01-08",
+     "cum_killed": 71395,
+     "cum_injured": 171287,
+     "last_24h_killed": 4,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 425,
+     "since_ceasefire_injured": 1206,
+     "recovered": 688
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11570,
+    "latency_ms": 1705,
+    "answer": {
+     "as_of_date": "2026-01-09",
+     "cum_killed": 71409,
+     "cum_injured": 171304,
+     "last_24h_killed": 14,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 439,
+     "since_ceasefire_injured": 1223,
+     "recovered": 688
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11571,
+    "latency_ms": 1790,
+    "answer": {
+     "as_of_date": "2026-01-11",
+     "cum_killed": 71412,
+     "cum_injured": 171314,
+     "last_24h_killed": 3,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 442,
+     "since_ceasefire_injured": 1236,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11572,
+    "latency_ms": 1903,
+    "answer": {
+     "as_of_date": "2026-01-12",
+     "cum_killed": 71419,
+     "cum_injured": 171318,
+     "last_24h_killed": 7,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 442,
+     "since_ceasefire_injured": 1240,
+     "recovered": 697
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11574,
+    "latency_ms": 1793,
+    "answer": {
+     "as_of_date": "2026-01-13",
+     "cum_killed": 71424,
+     "cum_injured": 171324,
+     "last_24h_killed": 5,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 447,
+     "since_ceasefire_injured": 1246,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11576,
+    "latency_ms": 1796,
+    "answer": {
+     "as_of_date": "2026-01-14",
+     "cum_killed": 71439,
+     "cum_injured": 171324,
+     "last_24h_killed": 15,
+     "last_24h_injured": 0,
+     "since_ceasefire_killed": 449,
+     "since_ceasefire_injured": 1246,
+     "recovered": 710
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11579,
+    "latency_ms": 2200,
+    "answer": {
+     "as_of_date": "2026-01-15",
+     "cum_killed": 71441,
+     "cum_injured": 171329,
+     "last_24h_killed": 0,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 451,
+     "since_ceasefire_injured": 1251,
+     "recovered": 710
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "wrong",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11580,
+    "latency_ms": 1893,
+    "answer": {
+     "as_of_date": "2026-01-16",
+     "cum_killed": 71455,
+     "cum_injured": 171347,
+     "last_24h_killed": 14,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 463,
+     "since_ceasefire_injured": 1269,
+     "recovered": 712
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11582,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-01-17",
+     "cum_killed": 71548,
+     "cum_injured": 171353,
+     "last_24h_killed": 1,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 464,
+     "since_ceasefire_injured": 1275,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11590,
+    "latency_ms": 1714,
+    "answer": {
+     "as_of_date": "2026-01-19",
+     "cum_killed": 71550,
+     "cum_injured": 171365,
+     "last_24h_killed": 1,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 465,
+     "since_ceasefire_injured": 1287,
+     "recovered": 713
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11592,
+    "latency_ms": 1749,
+    "answer": {
+     "as_of_date": "2026-01-20",
+     "cum_killed": 71551,
+     "cum_injured": 171372,
+     "last_24h_killed": 1,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 466,
+     "since_ceasefire_injured": 1294,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11599,
+    "latency_ms": 1700,
+    "answer": {
+     "as_of_date": "2026-01-22",
+     "cum_killed": 71562,
+     "cum_injured": 171379,
+     "last_24h_killed": 11,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 477,
+     "since_ceasefire_injured": 1301,
+     "recovered": 713
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11602,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-01-24",
+     "cum_killed": 71654,
+     "cum_injured": 171391,
+     "last_24h_killed": 4,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 481,
+     "since_ceasefire_injured": 1313,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11604,
+    "latency_ms": 1727,
+    "answer": {
+     "as_of_date": "2026-01-25",
+     "cum_killed": 71657,
+     "cum_injured": 171399,
+     "last_24h_killed": 3,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 484,
+     "since_ceasefire_injured": 1321,
+     "recovered": 713
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11607,
+    "latency_ms": 1769,
+    "answer": {
+     "as_of_date": "2026-01-26",
+     "cum_killed": 71660,
+     "cum_injured": 171419,
+     "last_24h_killed": 3,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 486,
+     "since_ceasefire_injured": 1341,
+     "recovered": 714
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11609,
+    "latency_ms": 1733,
+    "answer": {
+     "as_of_date": "2026-01-27",
+     "cum_killed": 71662,
+     "cum_injured": 171428,
+     "last_24h_killed": 2,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 488,
+     "since_ceasefire_injured": 1350,
+     "recovered": 714
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11611,
+    "latency_ms": 1798,
+    "answer": {
+     "as_of_date": "2026-01-28",
+     "cum_killed": 71667,
+     "cum_injured": 171343,
+     "last_24h_killed": 5,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 492,
+     "since_ceasefire_injured": 1356,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11617,
+    "latency_ms": 1796,
+    "answer": {
+     "as_of_date": "2026-01-31",
+     "cum_killed": 71769,
+     "cum_injured": 171483,
+     "last_24h_killed": 12,
+     "last_24h_injured": 49,
+     "since_ceasefire_killed": 509,
+     "since_ceasefire_injured": 1405,
+     "recovered": 715
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "wrong",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11619,
+    "latency_ms": 1998,
+    "answer": {
+     "as_of_date": "2026-02-01",
+     "cum_killed": 71795,
+     "cum_injured": 171551,
+     "last_24h_killed": 26,
+     "last_24h_injured": 68,
+     "since_ceasefire_killed": 523,
+     "since_ceasefire_injured": 1443,
+     "recovered": 715
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11621,
+    "latency_ms": 1918,
+    "answer": {
+     "as_of_date": "2026-02-02",
+     "cum_killed": 71800,
+     "cum_injured": 171555,
+     "last_24h_killed": 5,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 526,
+     "since_ceasefire_injured": 1447,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11623,
+    "latency_ms": 1710,
+    "answer": {
+     "as_of_date": "2026-02-03",
+     "cum_killed": 71803,
+     "cum_injured": 171570,
+     "last_24h_killed": 3,
+     "last_24h_injured": 15,
+     "since_ceasefire_killed": 529,
+     "since_ceasefire_injured": 1462,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11630,
+    "latency_ms": 1696,
+    "answer": {
+     "as_of_date": "2026-02-05",
+     "cum_killed": 71851,
+     "cum_injured": 171626,
+     "last_24h_killed": 27,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 574,
+     "since_ceasefire_injured": 1518,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11634,
+    "latency_ms": 1790,
+    "answer": {
+     "as_of_date": "2026-02-07",
+     "cum_killed": 72027,
+     "cum_injured": 171651,
+     "last_24h_killed": 2,
+     "last_24h_injured": 25,
+     "since_ceasefire_killed": 576,
+     "since_ceasefire_injured": 1543,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11637,
+    "latency_ms": 1790,
+    "answer": {
+     "as_of_date": "2026-02-09",
+     "cum_killed": 72032,
+     "cum_injured": 171661,
+     "last_24h_killed": 5,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 581,
+     "since_ceasefire_injured": 1553,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11638,
+    "latency_ms": 1796,
+    "answer": {
+     "as_of_date": "2026-02-10",
+     "cum_killed": 72037,
+     "cum_injured": 171666,
+     "last_24h_killed": 5,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 586,
+     "since_ceasefire_injured": 1558,
+     "recovered": 717
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11639,
+    "latency_ms": 1699,
+    "answer": {
+     "as_of_date": "2026-02-11",
+     "cum_killed": 72045,
+     "cum_injured": 171686,
+     "last_24h_killed": 8,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 591,
+     "since_ceasefire_injured": 1578,
+     "recovered": 3
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11640,
+    "latency_ms": 1720,
+    "answer": {
+     "as_of_date": "2026-02-14",
+     "cum_killed": 72051,
+     "cum_injured": 171706,
+     "last_24h_killed": 2,
+     "last_24h_injured": 15,
+     "since_ceasefire_killed": 591,
+     "since_ceasefire_injured": 1598,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11643,
+    "latency_ms": 1706,
+    "answer": {
+     "as_of_date": "2026-02-15",
+     "cum_killed": 72061,
+     "cum_injured": 171715,
+     "last_24h_killed": 10,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 601,
+     "since_ceasefire_injured": 1607,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11649,
+    "latency_ms": 1687,
+    "answer": {
+     "as_of_date": "2026-02-16",
+     "cum_killed": 72063,
+     "cum_injured": 171726,
+     "last_24h_killed": 2,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 603,
+     "since_ceasefire_injured": 1618,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11653,
+    "latency_ms": 1693,
+    "answer": {
+     "as_of_date": "2026-02-19",
+     "cum_killed": 72069,
+     "cum_injured": 171728,
+     "last_24h_killed": 2,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 611,
+     "since_ceasefire_injured": 1630,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11654,
+    "latency_ms": 1699,
+    "answer": {
+     "as_of_date": "2026-02-21",
+     "cum_killed": 72070,
+     "cum_injured": 171738,
+     "last_24h_killed": 1,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 612,
+     "since_ceasefire_injured": 1640,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11655,
+    "latency_ms": 1708,
+    "answer": {
+     "as_of_date": "2026-02-22",
+     "cum_killed": 72072,
+     "cum_injured": 171741,
+     "last_24h_killed": 2,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 614,
+     "since_ceasefire_injured": 1643,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11656,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-02-23",
+     "cum_killed": 72073,
+     "cum_injured": 171749,
+     "last_24h_killed": 1,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 615,
+     "since_ceasefire_injured": 1651,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11657,
+    "latency_ms": 1794,
+    "answer": {
+     "as_of_date": "2026-02-24",
+     "cum_killed": 72073,
+     "cum_injured": 171756,
+     "last_24h_killed": 0,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 615,
+     "since_ceasefire_injured": 1658,
+     "recovered": 726
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11658,
+    "latency_ms": 1797,
+    "answer": {
+     "as_of_date": "2026-02-25",
+     "cum_killed": 72082,
+     "cum_injured": 171761,
+     "last_24h_killed": 9,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 618,
+     "since_ceasefire_injured": 1663,
+     "recovered": 6
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11659,
+    "latency_ms": 1711,
+    "answer": {
+     "as_of_date": "2026-03-01",
+     "cum_killed": 72096,
+     "cum_injured": 171791,
+     "last_24h_killed": 1,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 629,
+     "since_ceasefire_injured": 1693,
+     "recovered": 735
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11660,
+    "latency_ms": 1677,
+    "answer": {
+     "as_of_date": "2026-03-02",
+     "cum_killed": 72097,
+     "cum_injured": 171796,
+     "last_24h_killed": 1,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 630,
+     "since_ceasefire_injured": 1698,
+     "recovered": 735
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11661,
+    "latency_ms": 1694,
+    "answer": {
+     "as_of_date": "2026-03-03",
+     "cum_killed": 72116,
+     "cum_injured": 171798,
+     "last_24h_killed": 18,
+     "last_24h_injured": 2,
+     "since_ceasefire_killed": 631,
+     "since_ceasefire_injured": 1700,
+     "recovered": 753
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11662,
+    "latency_ms": 1789,
+    "answer": {
+     "as_of_date": "2026-03-04",
+     "cum_killed": 72117,
+     "cum_injured": 171801,
+     "last_24h_killed": 1,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 633,
+     "since_ceasefire_injured": 1703,
+     "recovered": 753
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11663,
+    "latency_ms": 1694,
+    "answer": {
+     "as_of_date": "2026-03-05",
+     "cum_killed": 72120,
+     "cum_injured": 171802,
+     "last_24h_killed": 3,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 636,
+     "since_ceasefire_injured": 1704,
+     "recovered": 753
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11664,
+    "latency_ms": 1710,
+    "answer": {
+     "as_of_date": "2026-03-07",
+     "cum_killed": 72123,
+     "cum_injured": 171805,
+     "last_24h_killed": 3,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 640,
+     "since_ceasefire_injured": 1707,
+     "recovered": 753
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11666,
+    "latency_ms": 1679,
+    "answer": {
+     "as_of_date": "2026-03-08",
+     "cum_killed": 72126,
+     "cum_injured": 171809,
+     "last_24h_killed": 3,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 641,
+     "since_ceasefire_injured": 1711,
+     "recovered": 755
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11667,
+    "latency_ms": 1690,
+    "answer": {
+     "as_of_date": "2026-03-09",
+     "cum_killed": 72133,
+     "cum_injured": 171826,
+     "last_24h_killed": 7,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 648,
+     "since_ceasefire_injured": 1728,
+     "recovered": 755
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11668,
+    "latency_ms": 2515,
+    "answer": {
+     "as_of_date": "2026-03-10",
+     "cum_killed": 72134,
+     "cum_injured": 171828,
+     "last_24h_killed": 2,
+     "last_24h_injured": 2,
+     "since_ceasefire_killed": 649,
+     "since_ceasefire_injured": 1730,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11669,
+    "latency_ms": 1674,
+    "answer": {
+     "as_of_date": "2026-03-11",
+     "cum_killed": 72135,
+     "cum_injured": 171830,
+     "last_24h_killed": 1,
+     "last_24h_injured": 2,
+     "since_ceasefire_killed": 650,
+     "since_ceasefire_injured": 1732,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11671,
+    "latency_ms": 1621,
+    "answer": {
+     "as_of_date": "2026-03-12",
+     "cum_killed": 72136,
+     "cum_injured": 171839,
+     "last_24h_killed": 1,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 651,
+     "since_ceasefire_injured": 1741,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11672,
+    "latency_ms": 1711,
+    "answer": {
+     "as_of_date": "2026-03-14",
+     "cum_killed": 72234,
+     "cum_injured": 171852,
+     "last_24h_killed": 7,
+     "last_24h_injured": 13,
+     "since_ceasefire_killed": 658,
+     "since_ceasefire_injured": 1754,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11673,
+    "latency_ms": 1791,
+    "answer": {
+     "as_of_date": "2026-03-15",
+     "cum_killed": 72239,
+     "cum_injured": 171861,
+     "last_24h_killed": 5,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 663,
+     "since_ceasefire_injured": 1762,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11675,
+    "latency_ms": 1912,
+    "answer": {
+     "as_of_date": "2026-03-16",
+     "cum_killed": 72247,
+     "cum_injured": 171878,
+     "last_24h_killed": 8,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 671,
+     "since_ceasefire_injured": 1779,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11677,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-03-17",
+     "cum_killed": 72249,
+     "cum_injured": 171898,
+     "last_24h_killed": 2,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 673,
+     "since_ceasefire_injured": 1799,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11678,
+    "latency_ms": 1495,
+    "answer": {
+     "as_of_date": "2026-03-17",
+     "cum_killed": 72249,
+     "cum_injured": 171898,
+     "last_24h_killed": 2,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 673,
+     "since_ceasefire_injured": 1799,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11679,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-03-18",
+     "cum_killed": 72253,
+     "cum_injured": 171912,
+     "last_24h_killed": 4,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 677,
+     "since_ceasefire_injured": 1813,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11681,
+    "latency_ms": 1995,
+    "answer": {
+     "as_of_date": "2026-03-23",
+     "cum_killed": 72263,
+     "cum_injured": 171944,
+     "last_24h_killed": 9,
+     "last_24h_injured": 30,
+     "since_ceasefire_killed": 687,
+     "since_ceasefire_injured": 1845,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11682,
+    "latency_ms": 1889,
+    "answer": {
+     "as_of_date": "2026-03-24",
+     "cum_killed": 72263,
+     "cum_injured": 171948,
+     "last_24h_killed": 0,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 687,
+     "since_ceasefire_injured": 1849,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11683,
+    "latency_ms": 1992,
+    "answer": {
+     "as_of_date": "2026-03-25",
+     "cum_killed": 72265,
+     "cum_injured": 171959,
+     "last_24h_killed": 1,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 689,
+     "since_ceasefire_injured": 1860,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "wrong",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11684,
+    "latency_ms": 1679,
+    "answer": {
+     "as_of_date": "2026-03-26",
+     "cum_killed": 72267,
+     "cum_injured": 171976,
+     "last_24h_killed": 2,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 691,
+     "since_ceasefire_injured": 1876,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11686,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-03-28",
+     "cum_killed": 72268,
+     "cum_injured": 171995,
+     "last_24h_killed": 1,
+     "last_24h_injured": 19,
+     "since_ceasefire_killed": 692,
+     "since_ceasefire_injured": 1895,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11689,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-03-29",
+     "cum_killed": 72278,
+     "cum_injured": 172013,
+     "last_24h_killed": 10,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 702,
+     "since_ceasefire_injured": 1913,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11692,
+    "latency_ms": 1701,
+    "answer": {
+     "as_of_date": "2026-03-30",
+     "cum_killed": 72280,
+     "cum_injured": 172014,
+     "last_24h_killed": 2,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 704,
+     "since_ceasefire_injured": 1914,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11699,
+    "latency_ms": 1627,
+    "answer": {
+     "as_of_date": "2026-03-31",
+     "cum_killed": 72285,
+     "cum_injured": 172028,
+     "last_24h_killed": 5,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 709,
+     "since_ceasefire_injured": 1928,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11701,
+    "latency_ms": 1757,
+    "answer": {
+     "as_of_date": "2026-04-01",
+     "cum_killed": 72289,
+     "cum_injured": 172040,
+     "last_24h_killed": 4,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 713,
+     "since_ceasefire_injured": 1940,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11707,
+    "latency_ms": 1691,
+    "answer": {
+     "as_of_date": "2026-04-02",
+     "cum_killed": 72289,
+     "cum_injured": 172043,
+     "last_24h_killed": 0,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 713,
+     "since_ceasefire_injured": 1943,
+     "recovered": 756
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11715,
+    "latency_ms": 1895,
+    "answer": {
+     "as_of_date": "2026-04-05",
+     "cum_killed": 72292,
+     "cum_injured": 172073,
+     "last_24h_killed": 4,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 716,
+     "since_ceasefire_injured": 1968,
+     "recovered": 759
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11718,
+    "latency_ms": 1791,
+    "answer": {
+     "as_of_date": "2026-04-06",
+     "cum_killed": 72302,
+     "cum_injured": 172090,
+     "last_24h_killed": 7,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 723,
+     "since_ceasefire_injured": 1990,
+     "recovered": 29
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11722,
+    "latency_ms": 1623,
+    "answer": {
+     "as_of_date": "2026-04-07",
+     "cum_killed": 72312,
+     "cum_injured": 172134,
+     "last_24h_killed": 10,
+     "last_24h_injured": 44,
+     "since_ceasefire_killed": 733,
+     "since_ceasefire_injured": 2034,
+     "recovered": 759
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11724,
+    "latency_ms": 1752,
+    "answer": {
+     "as_of_date": "2026-04-08",
+     "cum_killed": 72315,
+     "cum_injured": 172137,
+     "last_24h_killed": 3,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 736,
+     "since_ceasefire_injured": 2035,
+     "recovered": 759
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11726,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-04-09",
+     "cum_killed": 72317,
+     "cum_injured": 172158,
+     "last_24h_killed": 2,
+     "last_24h_injured": 21,
+     "since_ceasefire_killed": 738,
+     "since_ceasefire_injured": 2036,
+     "recovered": 759
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11728,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-04-11",
+     "cum_killed": 72328,
+     "cum_injured": 172184,
+     "last_24h_killed": 11,
+     "last_24h_injured": 26,
+     "since_ceasefire_killed": 749,
+     "since_ceasefire_injured": 2082,
+     "recovered": 759
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11730,
+    "latency_ms": 1695,
+    "answer": {
+     "as_of_date": "2026-04-12",
+     "cum_killed": 72329,
+     "cum_injured": 172192,
+     "last_24h_killed": 2,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 750,
+     "since_ceasefire_injured": 2090,
+     "recovered": 760
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11733,
+    "latency_ms": 1700,
+    "answer": {
+     "as_of_date": "2026-04-13",
+     "cum_killed": 72333,
+     "cum_injured": 172202,
+     "last_24h_killed": 4,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 754,
+     "since_ceasefire_injured": 2100,
+     "recovered": 760
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11735,
+    "latency_ms": 1693,
+    "answer": {
+     "as_of_date": "2026-04-14",
+     "cum_killed": 72336,
+     "cum_injured": 172213,
+     "last_24h_killed": 3,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 757,
+     "since_ceasefire_injured": 2111,
+     "recovered": 760
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11736,
+    "latency_ms": 1689,
+    "answer": {
+     "as_of_date": "2026-04-15",
+     "cum_killed": 72344,
+     "cum_injured": 172242,
+     "last_24h_killed": 8,
+     "last_24h_injured": 29,
+     "since_ceasefire_killed": 765,
+     "since_ceasefire_injured": 2140,
+     "recovered": 760
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11738,
+    "latency_ms": 1611,
+    "answer": {
+     "as_of_date": "2026-04-16",
+     "cum_killed": 72345,
+     "cum_injured": 172250,
+     "last_24h_killed": 1,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 766,
+     "since_ceasefire_injured": 2147,
+     "recovered": 760
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11748,
+    "latency_ms": 1709,
+    "answer": {
+     "as_of_date": "2026-04-18",
+     "cum_killed": 72549,
+     "cum_injured": 172274,
+     "last_24h_killed": 8,
+     "last_24h_injured": 24,
+     "since_ceasefire_killed": 773,
+     "since_ceasefire_injured": 2171,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11749,
+    "latency_ms": 1945,
+    "answer": {
+     "as_of_date": "2026-04-19",
+     "cum_killed": 72551,
+     "cum_injured": 172274,
+     "last_24h_killed": 2,
+     "last_24h_injured": 0,
+     "since_ceasefire_killed": 775,
+     "since_ceasefire_injured": 2171,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11752,
+    "latency_ms": 1659,
+    "answer": {
+     "as_of_date": "2026-04-20",
+     "cum_killed": 72553,
+     "cum_injured": 172296,
+     "last_24h_killed": 2,
+     "last_24h_injured": 22,
+     "since_ceasefire_killed": 777,
+     "since_ceasefire_injured": 2193,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11754,
+    "latency_ms": 1647,
+    "answer": {
+     "as_of_date": "2026-04-21",
+     "cum_killed": 72560,
+     "cum_injured": 172317,
+     "last_24h_killed": 7,
+     "last_24h_injured": 21,
+     "since_ceasefire_killed": 784,
+     "since_ceasefire_injured": 2214,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11755,
+    "latency_ms": 1693,
+    "answer": {
+     "as_of_date": "2026-04-22",
+     "cum_killed": 72562,
+     "cum_injured": 172320,
+     "last_24h_killed": 1,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 786,
+     "since_ceasefire_injured": 2217,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11756,
+    "latency_ms": 1791,
+    "answer": {
+     "as_of_date": "2026-04-23",
+     "cum_killed": 72568,
+     "cum_injured": 172338,
+     "last_24h_killed": 6,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 972,
+     "since_ceasefire_injured": 2235,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11757,
+    "latency_ms": 1641,
+    "answer": {
+     "as_of_date": "2026-04-25",
+     "cum_killed": 72585,
+     "cum_injured": 172370,
+     "last_24h_killed": 13,
+     "last_24h_injured": 32,
+     "since_ceasefire_killed": 809,
+     "since_ceasefire_injured": 2267,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "wrong",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11758,
+    "latency_ms": 1700,
+    "answer": {
+     "as_of_date": "2026-04-26",
+     "cum_killed": 72587,
+     "cum_injured": 172381,
+     "last_24h_killed": 2,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 811,
+     "since_ceasefire_injured": 2278,
+     "recovered": 761
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11759,
+    "latency_ms": 1689,
+    "answer": {
+     "as_of_date": "2026-04-27",
+     "cum_killed": 72593,
+     "cum_injured": 172399,
+     "last_24h_killed": 7,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 817,
+     "since_ceasefire_injured": 2296,
+     "recovered": 762
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11761,
+    "latency_ms": 1694,
+    "answer": {
+     "as_of_date": "2026-04-28",
+     "cum_killed": 72594,
+     "cum_injured": 172404,
+     "last_24h_killed": 1,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 818,
+     "since_ceasefire_injured": 2301,
+     "recovered": 762
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11763,
+    "latency_ms": 1692,
+    "answer": {
+     "as_of_date": "2026-04-29",
+     "cum_killed": 72599,
+     "cum_injured": 172411,
+     "last_24h_killed": 5,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 823,
+     "since_ceasefire_injured": 2308,
+     "recovered": 763
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11764,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-04-30",
+     "cum_killed": 72601,
+     "cum_injured": 172419,
+     "last_24h_killed": 2,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 824,
+     "since_ceasefire_injured": 2316,
+     "recovered": 764
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11765,
+    "latency_ms": 1706,
+    "answer": {
+     "as_of_date": "2026-05-02",
+     "cum_killed": 72608,
+     "cum_injured": 172445,
+     "last_24h_killed": 7,
+     "last_24h_injured": 26,
+     "since_ceasefire_killed": 828,
+     "since_ceasefire_injured": 2342,
+     "recovered": 767
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11767,
+    "latency_ms": 1707,
+    "answer": {
+     "as_of_date": "2026-05-03",
+     "cum_killed": 72610,
+     "cum_injured": 172448,
+     "last_24h_killed": 2,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 830,
+     "since_ceasefire_injured": 2345,
+     "recovered": 767
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11768,
+    "latency_ms": 1632,
+    "answer": {
+     "as_of_date": "2026-05-04",
+     "cum_killed": 72612,
+     "cum_injured": 172457,
+     "last_24h_killed": 2,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 832,
+     "since_ceasefire_injured": 2354,
+     "recovered": 767
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11769,
+    "latency_ms": 1635,
+    "answer": {
+     "as_of_date": "2026-05-05",
+     "cum_killed": 72615,
+     "cum_injured": 172468,
+     "last_24h_killed": 3,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 834,
+     "since_ceasefire_injured": 2365,
+     "recovered": 768
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11770,
+    "latency_ms": 1696,
+    "answer": {
+     "as_of_date": "2026-05-06",
+     "cum_killed": 72619,
+     "cum_injured": 172484,
+     "last_24h_killed": 4,
+     "last_24h_injured": 16,
+     "since_ceasefire_killed": 837,
+     "since_ceasefire_injured": 2381,
+     "recovered": 769
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11772,
+    "latency_ms": 1795,
+    "answer": {
+     "as_of_date": "2026-05-07",
+     "cum_killed": 72628,
+     "cum_injured": 172520,
+     "last_24h_killed": 9,
+     "last_24h_injured": 39,
+     "since_ceasefire_killed": 846,
+     "since_ceasefire_injured": 2418,
+     "recovered": 769
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11774,
+    "latency_ms": 1783,
+    "answer": {
+     "as_of_date": "2026-05-09",
+     "cum_killed": 72736,
+     "cum_injured": 172535,
+     "last_24h_killed": 5,
+     "last_24h_injured": 15,
+     "since_ceasefire_killed": 850,
+     "since_ceasefire_injured": 2433,
+     "recovered": 770
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11776,
+    "latency_ms": 1704,
+    "answer": {
+     "as_of_date": "2026-05-10",
+     "cum_killed": 72737,
+     "cum_injured": 172539,
+     "last_24h_killed": 1,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 851,
+     "since_ceasefire_injured": 2437,
+     "recovered": 770
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11777,
+    "latency_ms": 1678,
+    "answer": {
+     "as_of_date": "2026-05-11",
+     "cum_killed": 72740,
+     "cum_injured": 172555,
+     "last_24h_killed": 3,
+     "last_24h_injured": 16,
+     "since_ceasefire_killed": 854,
+     "since_ceasefire_injured": 2453,
+     "recovered": 770
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11778,
+    "latency_ms": 1628,
+    "answer": {
+     "as_of_date": "2026-05-12",
+     "cum_killed": 72742,
+     "cum_injured": 172565,
+     "last_24h_killed": 2,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 856,
+     "since_ceasefire_injured": 2463,
+     "recovered": 770
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11779,
+    "latency_ms": 1638,
+    "answer": {
+     "as_of_date": "2026-05-14",
+     "cum_killed": 72744,
+     "cum_injured": 172588,
+     "last_24h_killed": 2,
+     "last_24h_injured": 24,
+     "since_ceasefire_killed": 857,
+     "since_ceasefire_injured": 2486,
+     "recovered": 771
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11780,
+    "latency_ms": 1792,
+    "answer": {
+     "as_of_date": "2026-05-16",
+     "cum_killed": 72757,
+     "cum_injured": 172645,
+     "last_24h_killed": 13,
+     "last_24h_injured": 57,
+     "since_ceasefire_killed": 870,
+     "since_ceasefire_injured": 2543,
+     "recovered": 30
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11782,
+    "latency_ms": 1691,
+    "answer": {
+     "as_of_date": "2026-05-17",
+     "cum_killed": 72763,
+     "cum_injured": 172664,
+     "last_24h_killed": 6,
+     "last_24h_injured": 19,
+     "since_ceasefire_killed": 871,
+     "since_ceasefire_injured": 2562,
+     "recovered": 776
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11783,
+    "latency_ms": 1713,
+    "answer": {
+     "as_of_date": "2026-05-18",
+     "cum_killed": 72769,
+     "cum_injured": 172704,
+     "last_24h_killed": 6,
+     "last_24h_injured": 40,
+     "since_ceasefire_killed": 877,
+     "since_ceasefire_injured": 2602,
+     "recovered": 776
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11787,
+    "latency_ms": 1694,
+    "answer": {
+     "as_of_date": "2026-05-19",
+     "cum_killed": 72772,
+     "cum_injured": 172707,
+     "last_24h_killed": 3,
+     "last_24h_injured": 3,
+     "since_ceasefire_killed": 880,
+     "since_ceasefire_injured": 2605,
+     "recovered": 776
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11793,
+    "latency_ms": 1710,
+    "answer": {
+     "as_of_date": "2026-05-20",
+     "cum_killed": 72773,
+     "cum_injured": 172723,
+     "last_24h_killed": 1,
+     "last_24h_injured": 16,
+     "since_ceasefire_killed": 881,
+     "since_ceasefire_injured": 2621,
+     "recovered": 776
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11797,
+    "latency_ms": 1685,
+    "answer": {
+     "as_of_date": "2026-05-21",
+     "cum_killed": 72775,
+     "cum_injured": 172750,
+     "last_24h_killed": 2,
+     "last_24h_injured": 27,
+     "since_ceasefire_killed": 883,
+     "since_ceasefire_injured": 2648,
+     "recovered": 776
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11799,
+    "latency_ms": 1698,
+    "answer": {
+     "as_of_date": "2026-05-23",
+     "cum_killed": 72783,
+     "cum_injured": 172779,
+     "last_24h_killed": 8,
+     "last_24h_injured": 29,
+     "since_ceasefire_killed": 890,
+     "since_ceasefire_injured": 2677,
+     "recovered": 777
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11802,
+    "latency_ms": 1692,
+    "answer": {
+     "as_of_date": "2026-05-25",
+     "cum_killed": 72797,
+     "cum_injured": 172821,
+     "last_24h_killed": 6,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 904,
+     "since_ceasefire_injured": 2713,
+     "recovered": 777
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11803,
+    "latency_ms": 1691,
+    "answer": {
+     "as_of_date": "2026-05-26",
+     "cum_killed": 72803,
+     "cum_injured": 172855,
+     "last_24h_killed": 6,
+     "last_24h_injured": 34,
+     "since_ceasefire_killed": 906,
+     "since_ceasefire_injured": 2747,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11804,
+    "latency_ms": 1882,
+    "answer": {
+     "as_of_date": "2026-05-28",
+     "cum_killed": 72819,
+     "cum_injured": 172894,
+     "last_24h_killed": 16,
+     "last_24h_injured": 39,
+     "since_ceasefire_killed": 922,
+     "since_ceasefire_injured": 2786,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11805,
+    "latency_ms": 1750,
+    "answer": {
+     "as_of_date": "2026-05-30",
+     "cum_killed": 72938,
+     "cum_injured": 172919,
+     "last_24h_killed": 7,
+     "last_24h_injured": 25,
+     "since_ceasefire_killed": 929,
+     "since_ceasefire_injured": 2811,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11807,
+    "latency_ms": 1727,
+    "answer": {
+     "as_of_date": "2026-05-31",
+     "cum_killed": 72939,
+     "cum_injured": 172927,
+     "last_24h_killed": 1,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 930,
+     "since_ceasefire_injured": 2819,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11808,
+    "latency_ms": 1691,
+    "answer": {
+     "as_of_date": "2026-06-01",
+     "cum_killed": 72941,
+     "cum_injured": 172967,
+     "last_24h_killed": 2,
+     "last_24h_injured": 40,
+     "since_ceasefire_killed": 932,
+     "since_ceasefire_injured": 2859,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11809,
+    "latency_ms": 1629,
+    "answer": {
+     "as_of_date": "2026-06-02",
+     "cum_killed": 72942,
+     "cum_injured": 172967,
+     "last_24h_killed": 1,
+     "last_24h_injured": 9,
+     "since_ceasefire_killed": 933,
+     "since_ceasefire_injured": 2868,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11811,
+    "latency_ms": 1693,
+    "answer": {
+     "as_of_date": "2026-06-03",
+     "cum_killed": 72945,
+     "cum_injured": 173011,
+     "last_24h_killed": 3,
+     "last_24h_injured": 35,
+     "since_ceasefire_killed": 936,
+     "since_ceasefire_injured": 2903,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11812,
+    "latency_ms": 1806,
+    "answer": {
+     "as_of_date": "2026-06-04",
+     "cum_killed": 72956,
+     "cum_injured": 173043,
+     "last_24h_killed": 11,
+     "last_24h_injured": 32,
+     "since_ceasefire_killed": 947,
+     "since_ceasefire_injured": 2935,
+     "recovered": 781
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11814,
+    "latency_ms": 1800,
+    "answer": {
+     "as_of_date": "2026-06-06",
+     "cum_killed": 72961,
+     "cum_injured": 173092,
+     "last_24h_killed": 5,
+     "last_24h_injured": 49,
+     "since_ceasefire_killed": 951,
+     "since_ceasefire_injured": 2984,
+     "recovered": 782
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11815,
+    "latency_ms": 1589,
+    "answer": {
+     "as_of_date": "2026-06-07",
+     "cum_killed": 72971,
+     "cum_injured": 1730128,
+     "last_24h_killed": 10,
+     "last_24h_injured": 36,
+     "since_ceasefire_killed": 961,
+     "since_ceasefire_injured": 3020,
+     "recovered": 782
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11818,
+    "latency_ms": 1781,
+    "answer": {
+     "as_of_date": "2026-06-08",
+     "cum_killed": 72980,
+     "cum_injured": 173171,
+     "last_24h_killed": 9,
+     "last_24h_injured": 43,
+     "since_ceasefire_killed": 970,
+     "since_ceasefire_injured": 3063,
+     "recovered": 782
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11821,
+    "latency_ms": 1828,
+    "answer": {
+     "as_of_date": "2026-06-09",
+     "cum_killed": 72988,
+     "cum_injured": 173205,
+     "last_24h_killed": 8,
+     "last_24h_injured": 34,
+     "since_ceasefire_killed": 978,
+     "since_ceasefire_injured": 3097,
+     "recovered": 782
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11823,
+    "latency_ms": 1798,
+    "answer": {
+     "as_of_date": "2026-06-10",
+     "cum_killed": 72991,
+     "cum_injured": 173212,
+     "last_24h_killed": 3,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 981,
+     "since_ceasefire_injured": 3104,
+     "recovered": 783
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11827,
+    "latency_ms": 1785,
+    "answer": {
+     "as_of_date": "2026-06-11",
+     "cum_killed": 72991,
+     "cum_injured": 173219,
+     "last_24h_killed": 0,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 981,
+     "since_ceasefire_injured": 3111,
+     "recovered": 783
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11829,
+    "latency_ms": 1699,
+    "answer": {
+     "as_of_date": "2026-06-13",
+     "cum_killed": 72993,
+     "cum_injured": 173230,
+     "last_24h_killed": 2,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 983,
+     "since_ceasefire_injured": 3122,
+     "recovered": 783
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11831,
+    "latency_ms": 1703,
+    "answer": {
+     "as_of_date": "2026-06-14",
+     "cum_killed": 72996,
+     "cum_injured": 173246,
+     "last_24h_killed": 3,
+     "last_24h_injured": 16,
+     "since_ceasefire_killed": 986,
+     "since_ceasefire_injured": 3138,
+     "recovered": 783
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11835,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-06-15",
+     "cum_killed": 73003,
+     "cum_injured": 173252,
+     "last_24h_killed": 7,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 992,
+     "since_ceasefire_injured": 3144,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11837,
+    "latency_ms": 1783,
+    "answer": {
+     "as_of_date": "2026-06-16",
+     "cum_killed": 73008,
+     "cum_injured": 173260,
+     "last_24h_killed": 5,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 997,
+     "since_ceasefire_injured": 3152,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11839,
+    "latency_ms": 1687,
+    "answer": {
+     "as_of_date": "2026-06-17",
+     "cum_killed": 73016,
+     "cum_injured": 173265,
+     "last_24h_killed": 2,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 1005,
+     "since_ceasefire_injured": 3157,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11840,
+    "latency_ms": 1782,
+    "answer": {
+     "as_of_date": "2026-06-18",
+     "cum_killed": 73018,
+     "cum_injured": 173273,
+     "last_24h_killed": 2,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 1007,
+     "since_ceasefire_injured": 3165,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11841,
+    "latency_ms": 1888,
+    "answer": {
+     "as_of_date": "2026-06-18",
+     "cum_killed": 73018,
+     "cum_injured": 173273,
+     "last_24h_killed": 2,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 1007,
+     "since_ceasefire_injured": 3165,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11842,
+    "latency_ms": 1699,
+    "answer": {
+     "as_of_date": "2026-06-21",
+     "cum_killed": 73032,
+     "cum_injured": 173357,
+     "last_24h_killed": 9,
+     "last_24h_injured": 41,
+     "since_ceasefire_killed": 1021,
+     "since_ceasefire_injured": 3249,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11843,
+    "latency_ms": 1783,
+    "answer": {
+     "as_of_date": "2026-06-22",
+     "cum_killed": 73035,
+     "cum_injured": 173368,
+     "last_24h_killed": 3,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 1024,
+     "since_ceasefire_injured": 3260,
+     "recovered": 784
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11845,
+    "latency_ms": 1681,
+    "answer": {
+     "as_of_date": "2026-06-23",
+     "cum_killed": 73039,
+     "cum_injured": 173388,
+     "last_24h_killed": 4,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 1027,
+     "since_ceasefire_injured": 3280,
+     "recovered": 785
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11849,
+    "latency_ms": 1784,
+    "answer": {
+     "as_of_date": "2026-06-24",
+     "cum_killed": 73041,
+     "cum_injured": 173402,
+     "last_24h_killed": 2,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 1029,
+     "since_ceasefire_injured": 3294,
+     "recovered": 785
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11850,
+    "latency_ms": 1712,
+    "answer": {
+     "as_of_date": "2026-06-25",
+     "cum_killed": 73043,
+     "cum_injured": 173417,
+     "last_24h_killed": 2,
+     "last_24h_injured": 15,
+     "since_ceasefire_killed": 1031,
+     "since_ceasefire_injured": 3309,
+     "recovered": 785
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11852,
+    "latency_ms": 1697,
+    "answer": {
+     "as_of_date": "2026-06-27",
+     "cum_killed": 73051,
+     "cum_injured": 173437,
+     "last_24h_killed": 8,
+     "last_24h_injured": 20,
+     "since_ceasefire_killed": 1038,
+     "since_ceasefire_injured": 3329,
+     "recovered": 786
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11854,
+    "latency_ms": 1689,
+    "answer": {
+     "as_of_date": "2026-06-28",
+     "cum_killed": 73054,
+     "cum_injured": 173480,
+     "last_24h_killed": 3,
+     "last_24h_injured": 43,
+     "since_ceasefire_killed": 1041,
+     "since_ceasefire_injured": 3372,
+     "recovered": 786
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11856,
+    "latency_ms": 1782,
+    "answer": {
+     "as_of_date": "2026-06-29",
+     "cum_killed": 73058,
+     "cum_injured": 173488,
+     "last_24h_killed": 4,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 1045,
+     "since_ceasefire_injured": 3380,
+     "recovered": 786
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11857,
+    "latency_ms": 1696,
+    "answer": {
+     "as_of_date": "2026-06-30",
+     "cum_killed": 73066,
+     "cum_injured": 173514,
+     "last_24h_killed": 8,
+     "last_24h_injured": 26,
+     "since_ceasefire_killed": 1053,
+     "since_ceasefire_injured": 3406,
+     "recovered": 786
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11859,
+    "latency_ms": 2303,
+    "answer": {
+     "as_of_date": "2026-07-02",
+     "cum_killed": 73074,
+     "cum_injured": 173537,
+     "last_24h_killed": 4,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 1059,
+     "since_ceasefire_injured": 3429,
+     "recovered": 2
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 11863,
+    "latency_ms": 1787,
+    "answer": {
+     "as_of_date": "2026-07-04",
+     "cum_killed": 73090,
+     "cum_injured": 173553,
+     "last_24h_killed": 16,
+     "last_24h_injured": 16,
+     "since_ceasefire_killed": 1066,
+     "since_ceasefire_injured": 3445,
+     "recovered": 797
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11865,
+    "latency_ms": 1984,
+    "answer": {
+     "as_of_date": "2026-07-06",
+     "cum_killed": 73098,
+     "cum_injured": 173571,
+     "last_24h_killed": 5,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 1072,
+     "since_ceasefire_injured": 3463,
+     "recovered": 799
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11866,
+    "latency_ms": 2187,
+    "answer": {
+     "as_of_date": "2026-07-08",
+     "cum_killed": 73110,
+     "cum_injured": 173599,
+     "last_24h_killed": 8,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 1084,
+     "since_ceasefire_injured": 3491,
+     "recovered": 799
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11868,
+    "latency_ms": 1990,
+    "answer": {
+     "as_of_date": "2026-07-09",
+     "cum_killed": 73118,
+     "cum_injured": 173615,
+     "last_24h_killed": 8,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 1092,
+     "since_ceasefire_injured": 3507,
+     "recovered": 799
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11871,
+    "latency_ms": 1704,
+    "answer": {
+     "as_of_date": "2026-07-11",
+     "cum_killed": 73221,
+     "cum_injured": 173643,
+     "last_24h_killed": 7,
+     "last_24h_injured": 28,
+     "since_ceasefire_killed": 1098,
+     "since_ceasefire_injured": 3535,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11875,
+    "latency_ms": 1782,
+    "answer": {
+     "as_of_date": "2026-07-12",
+     "cum_killed": 73223,
+     "cum_injured": 173654,
+     "last_24h_killed": 2,
+     "last_24h_injured": 11,
+     "since_ceasefire_killed": 1100,
+     "since_ceasefire_injured": 3546,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11877,
+    "latency_ms": 1788,
+    "answer": {
+     "as_of_date": "2026-07-13",
+     "cum_killed": 73231,
+     "cum_injured": 173686,
+     "last_24h_killed": 8,
+     "last_24h_injured": 32,
+     "since_ceasefire_killed": 1108,
+     "since_ceasefire_injured": 3578,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11878,
+    "latency_ms": 2316,
+    "answer": {
+     "as_of_date": "2026-07-14",
+     "cum_killed": 73233,
+     "cum_injured": 173707,
+     "last_24h_killed": 2,
+     "last_24h_injured": 21,
+     "since_ceasefire_killed": 1110,
+     "since_ceasefire_injured": 3599,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11879,
+    "latency_ms": 1904,
+    "answer": {
+     "as_of_date": "2026-07-15",
+     "cum_killed": 73246,
+     "cum_injured": 173727,
+     "last_24h_killed": 13,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 1123,
+     "since_ceasefire_injured": 3616,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11880,
+    "latency_ms": 1868,
+    "answer": {
+     "as_of_date": "2026-07-16",
+     "cum_killed": 73250,
+     "cum_injured": 173751,
+     "last_24h_killed": 4,
+     "last_24h_injured": 28,
+     "since_ceasefire_killed": 1127,
+     "since_ceasefire_injured": 3643,
+     "recovered": 800
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11882,
+    "latency_ms": 1693,
+    "answer": {
+     "as_of_date": "2026-07-20",
+     "cum_killed": 73283,
+     "cum_injured": 173864,
+     "last_24h_killed": 3,
+     "last_24h_injured": 22,
+     "since_ceasefire_killed": 1158,
+     "since_ceasefire_injured": 3756,
+     "recovered": 802
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11886,
+    "latency_ms": 1780,
+    "answer": {
+     "as_of_date": "2026-07-21",
+     "cum_killed": 73293,
+     "cum_injured": 173906,
+     "last_24h_killed": 10,
+     "last_24h_injured": 42,
+     "since_ceasefire_killed": 1168,
+     "since_ceasefire_injured": 3798,
+     "recovered": 802
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11888,
+    "latency_ms": 1790,
+    "answer": {
+     "as_of_date": "2026-07-22",
+     "cum_killed": 73305,
+     "cum_injured": 173918,
+     "last_24h_killed": 12,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 1180,
+     "since_ceasefire_injured": 3810,
+     "recovered": 802
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11892,
+    "latency_ms": 1784,
+    "answer": {
+     "as_of_date": "2026-07-23",
+     "cum_killed": 73311,
+     "cum_injured": 173924,
+     "last_24h_killed": 6,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 1185,
+     "since_ceasefire_injured": 3816,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11893,
+    "latency_ms": 1856,
+    "answer": {
+     "as_of_date": "2026-07-25",
+     "cum_killed": 73317,
+     "cum_injured": 173961,
+     "last_24h_killed": 6,
+     "last_24h_injured": 37,
+     "since_ceasefire_killed": 1191,
+     "since_ceasefire_injured": 3853,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11894,
+    "latency_ms": 1787,
+    "answer": {
+     "as_of_date": "2026-07-26",
+     "cum_killed": 73326,
+     "cum_injured": 173997,
+     "last_24h_killed": 9,
+     "last_24h_injured": 36,
+     "since_ceasefire_killed": 1200,
+     "since_ceasefire_injured": 3888,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11897,
+    "latency_ms": 1786,
+    "answer": {
+     "as_of_date": "2026-07-27",
+     "cum_killed": 73329,
+     "cum_injured": 174009,
+     "last_24h_killed": 3,
+     "last_24h_injured": 12,
+     "since_ceasefire_killed": 1203,
+     "since_ceasefire_injured": 3900,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11899,
+    "latency_ms": 1789,
+    "answer": {
+     "as_of_date": "2026-07-28",
+     "cum_killed": 73333,
+     "cum_injured": 174023,
+     "last_24h_killed": 4,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 1207,
+     "since_ceasefire_injured": 3914,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11902,
+    "latency_ms": 1787,
+    "answer": {
+     "as_of_date": "2026-07-29",
+     "cum_killed": 73335,
+     "cum_injured": 174052,
+     "last_24h_killed": 2,
+     "last_24h_injured": 29,
+     "since_ceasefire_killed": 1209,
+     "since_ceasefire_injured": 3943,
+     "recovered": 803
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11903,
+    "latency_ms": 1689,
+    "answer": {
+     "as_of_date": "2026-07-30",
+     "cum_killed": 73341,
+     "cum_injured": 174086,
+     "last_24h_killed": 6,
+     "last_24h_injured": 34,
+     "since_ceasefire_killed": 1214,
+     "since_ceasefire_injured": 3977,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11910,
+    "latency_ms": 1688,
+    "answer": {
+     "as_of_date": "2026-08-01",
+     "cum_killed": 73349,
+     "cum_injured": 174162,
+     "last_24h_killed": 8,
+     "last_24h_injured": 76,
+     "since_ceasefire_killed": 1222,
+     "since_ceasefire_injured": 4053,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11912,
+    "latency_ms": 1884,
+    "answer": {
+     "as_of_date": "2026-08-02",
+     "cum_killed": 73356,
+     "cum_injured": 174185,
+     "last_24h_killed": 7,
+     "last_24h_injured": 23,
+     "since_ceasefire_killed": 1230,
+     "since_ceasefire_injured": 4076,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 13213,
+    "latency_ms": 2712,
+    "answer": {
+     "as_of_date": "2026-08-03",
+     "cum_killed": 73375,
+     "cum_injured": 174220,
+     "last_24h_killed": 19,
+     "last_24h_injured": 35,
+     "since_ceasefire_killed": 1250,
+     "since_ceasefire_injured": 4110,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 26971,
+    "latency_ms": 2571,
+    "answer": {
+     "as_of_date": "2026-08-04",
+     "cum_killed": 73377,
+     "cum_injured": 174230,
+     "last_24h_killed": 2,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 1252,
+     "since_ceasefire_injured": 4120,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 29025,
+    "latency_ms": 2579,
+    "answer": {
+     "as_of_date": "2026-08-05",
+     "cum_killed": 73381,
+     "cum_injured": 174231,
+     "last_24h_killed": 4,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 1254,
+     "since_ceasefire_injured": 4121,
+     "recovered": 804
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 31319,
+    "latency_ms": 2593,
+    "answer": {
+     "as_of_date": "2026-08-06",
+     "cum_killed": 73382,
+     "cum_injured": 174236,
+     "last_24h_killed": 1,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 1255,
+     "since_ceasefire_injured": 4125,
+     "recovered": 806
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 34668,
+    "latency_ms": 2544,
+    "answer": {
+     "as_of_date": "2026-08-08",
+     "cum_killed": 73384,
+     "cum_injured": 174242,
+     "last_24h_killed": 2,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 1257,
+     "since_ceasefire_injured": 4131,
+     "recovered": 806
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 36624,
+    "latency_ms": 2638,
+    "answer": {
+     "as_of_date": "2026-08-09",
+     "cum_killed": 73386,
+     "cum_injured": 174250,
+     "last_24h_killed": 2,
+     "last_24h_injured": 8,
+     "since_ceasefire_killed": 1258,
+     "since_ceasefire_injured": 4139,
+     "recovered": 807
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 38195,
+    "latency_ms": 2691,
+    "answer": {
+     "as_of_date": "2026-08-10",
+     "cum_killed": 73386,
+     "cum_injured": 174256,
+     "last_24h_killed": 0,
+     "last_24h_injured": 6,
+     "since_ceasefire_killed": 1258,
+     "since_ceasefire_injured": 4145,
+     "recovered": 807
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 39831,
+    "latency_ms": 2429,
+    "answer": {
+     "as_of_date": "2026-08-11",
+     "cum_killed": 73387,
+     "cum_injured": 174257,
+     "last_24h_killed": 1,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 1259,
+     "since_ceasefire_injured": 4146,
+     "recovered": 807
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 40576,
+    "latency_ms": 2326,
+    "answer": {
+     "as_of_date": "2026-08-12",
+     "cum_killed": 73388,
+     "cum_injured": 174259,
+     "last_24h_killed": 1,
+     "last_24h_injured": 2,
+     "since_ceasefire_killed": 1259,
+     "since_ceasefire_injured": 4148,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   },
+   {
+    "claim_id": 41270,
+    "latency_ms": 2886,
+    "answer": {
+     "as_of_date": "2026-08-13",
+     "cum_killed": 73389,
+     "cum_injured": 174266,
+     "last_24h_killed": 1,
+     "last_24h_injured": 7,
+     "since_ceasefire_killed": 1260,
+     "since_ceasefire_injured": 4154,
+     "recovered": 808
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 42486,
+    "latency_ms": 1983,
+    "answer": {
+     "as_of_date": "2026-08-15",
+     "cum_killed": 73391,
+     "cum_injured": 174280,
+     "last_24h_killed": 2,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 1262,
+     "since_ceasefire_injured": 4168,
+     "recovered": 808
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 48755,
+    "latency_ms": 1689,
+    "answer": {
+     "as_of_date": "2026-08-17",
+     "cum_killed": 73399,
+     "cum_injured": 174310,
+     "last_24h_killed": 5,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 1265,
+     "since_ceasefire_injured": 4198,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 49362,
+    "latency_ms": 2002,
+    "answer": {
+     "as_of_date": "2026-08-18",
+     "cum_killed": 73400,
+     "cum_injured": 174312,
+     "last_24h_killed": 1,
+     "last_24h_injured": 2,
+     "since_ceasefire_killed": 1266,
+     "since_ceasefire_injured": 4200,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 49869,
+    "latency_ms": 2176,
+    "answer": {
+     "as_of_date": "2026-08-19",
+     "cum_killed": 73407,
+     "cum_injured": 174335,
+     "last_24h_killed": 7,
+     "last_24h_injured": 23,
+     "since_ceasefire_killed": 1273,
+     "since_ceasefire_injured": 4223,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 50401,
+    "latency_ms": 1888,
+    "answer": {
+     "as_of_date": "2026-08-20",
+     "cum_killed": 73417,
+     "cum_injured": 174360,
+     "last_24h_killed": 10,
+     "last_24h_injured": 25,
+     "since_ceasefire_killed": 1283,
+     "since_ceasefire_injured": 4248,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 53107,
+    "latency_ms": 1788,
+    "answer": {
+     "as_of_date": "2026-08-22",
+     "cum_killed": 73419,
+     "cum_injured": 174364,
+     "last_24h_killed": 2,
+     "last_24h_injured": 4,
+     "since_ceasefire_killed": 1285,
+     "since_ceasefire_injured": 4252,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 54586,
+    "latency_ms": 1613,
+    "answer": {
+     "as_of_date": "2026-08-23",
+     "cum_killed": 73420,
+     "cum_injured": 174369,
+     "last_24h_killed": 1,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 1286,
+     "since_ceasefire_injured": 4257,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 56613,
+    "latency_ms": 1606,
+    "answer": {
+     "as_of_date": "2026-08-24",
+     "cum_killed": 73422,
+     "cum_injured": 174401,
+     "last_24h_killed": 2,
+     "last_24h_injured": 32,
+     "since_ceasefire_killed": 1288,
+     "since_ceasefire_injured": 4290,
+     "recovered": 813
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 58257,
+    "latency_ms": 1871,
+    "answer": {
+     "as_of_date": "2026-08-25",
+     "cum_killed": 73431,
+     "cum_injured": 174437,
+     "last_24h_killed": 9,
+     "last_24h_injured": 36,
+     "since_ceasefire_killed": 1296,
+     "since_ceasefire_injured": 4296,
+     "recovered": 814
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 59883,
+    "latency_ms": 1626,
+    "answer": {
+     "as_of_date": "2026-08-26",
+     "cum_killed": 73438,
+     "cum_injured": 174447,
+     "last_24h_killed": 7,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 1303,
+     "since_ceasefire_injured": 4336,
+     "recovered": 814
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 66123,
+    "latency_ms": 1664,
+    "answer": {
+     "as_of_date": "2026-08-29",
+     "cum_killed": 73449,
+     "cum_injured": 174472,
+     "last_24h_killed": 10,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 1313,
+     "since_ceasefire_injured": 4361,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 67871,
+    "latency_ms": 1634,
+    "answer": {
+     "as_of_date": "2026-08-30",
+     "cum_killed": 73454,
+     "cum_injured": 174486,
+     "last_24h_killed": 5,
+     "last_24h_injured": 14,
+     "since_ceasefire_killed": 1318,
+     "since_ceasefire_injured": 4375,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 72321,
+    "latency_ms": 1789,
+    "answer": {
+     "as_of_date": "2026-08-31",
+     "cum_killed": 73456,
+     "cum_injured": 174496,
+     "last_24h_killed": 2,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 1320,
+     "since_ceasefire_injured": 4385,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 74176,
+    "latency_ms": 2090,
+    "answer": {
+     "as_of_date": "2026-09-01",
+     "cum_killed": 73462,
+     "cum_injured": 174509,
+     "last_24h_killed": 6,
+     "last_24h_injured": 13,
+     "since_ceasefire_killed": 1326,
+     "since_ceasefire_injured": 4398,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 77443,
+    "latency_ms": 2081,
+    "answer": {
+     "as_of_date": "2026-09-02",
+     "cum_killed": 73470,
+     "cum_injured": 174540,
+     "last_24h_killed": 8,
+     "last_24h_injured": 31,
+     "since_ceasefire_killed": 1334,
+     "since_ceasefire_injured": 4429,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 81886,
+    "latency_ms": 1854,
+    "answer": {
+     "as_of_date": "2026-09-05",
+     "cum_killed": 73651,
+     "cum_injured": 174575,
+     "last_24h_killed": 17,
+     "last_24h_injured": 27,
+     "since_ceasefire_killed": 1344,
+     "since_ceasefire_injured": 4464,
+     "recovered": 815
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 83225,
+    "latency_ms": 1989,
+    "answer": {
+     "as_of_date": "2026-09-06",
+     "cum_killed": 73651,
+     "cum_injured": 174592,
+     "last_24h_killed": 0,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 1344,
+     "since_ceasefire_injured": 4481,
+     "recovered": 826
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 86350,
+    "latency_ms": 1782,
+    "answer": {
+     "as_of_date": "2026-09-07",
+     "cum_killed": 73658,
+     "cum_injured": 174622,
+     "last_24h_killed": 7,
+     "last_24h_injured": 30,
+     "since_ceasefire_killed": 1352,
+     "since_ceasefire_injured": 4511,
+     "recovered": 826
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 90133,
+    "latency_ms": 1728,
+    "answer": {
+     "as_of_date": "2026-09-09",
+     "cum_killed": 73669,
+     "cum_injured": 174652,
+     "last_24h_killed": 7,
+     "last_24h_injured": 25,
+     "since_ceasefire_killed": 1358,
+     "since_ceasefire_injured": 4541,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 91980,
+    "latency_ms": 1794,
+    "answer": {
+     "as_of_date": "2026-09-10",
+     "cum_killed": 73670,
+     "cum_injured": 174682,
+     "last_24h_killed": 1,
+     "last_24h_injured": 30,
+     "since_ceasefire_killed": 1359,
+     "since_ceasefire_injured": 4571,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 95330,
+    "latency_ms": 1683,
+    "answer": {
+     "as_of_date": "2026-09-12",
+     "cum_killed": 73783,
+     "cum_injured": 174738,
+     "last_24h_killed": 10,
+     "last_24h_injured": 56,
+     "since_ceasefire_killed": 1369,
+     "since_ceasefire_injured": 4627,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 98669,
+    "latency_ms": 1682,
+    "answer": {
+     "as_of_date": "2026-09-13",
+     "cum_killed": 73786,
+     "cum_injured": 174771,
+     "last_24h_killed": 2,
+     "last_24h_injured": 25,
+     "since_ceasefire_killed": 1372,
+     "since_ceasefire_injured": 4659,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 100374,
+    "latency_ms": 1650,
+    "answer": {
+     "as_of_date": "2026-09-15",
+     "cum_killed": 73789,
+     "cum_injured": 174798,
+     "last_24h_killed": 3,
+     "last_24h_injured": 27,
+     "since_ceasefire_killed": 1375,
+     "since_ceasefire_injured": 4686,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 102173,
+    "latency_ms": 1690,
+    "answer": {
+     "as_of_date": "2026-09-16",
+     "cum_killed": 73795,
+     "cum_injured": 174869,
+     "last_24h_killed": 6,
+     "last_24h_injured": 71,
+     "since_ceasefire_killed": 1381,
+     "since_ceasefire_injured": 4757,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 104259,
+    "latency_ms": 1786,
+    "answer": {
+     "as_of_date": "2026-09-17",
+     "cum_killed": 73821,
+     "cum_injured": 174897,
+     "last_24h_killed": 5,
+     "last_24h_injured": 28,
+     "since_ceasefire_killed": 1386,
+     "since_ceasefire_injured": 4784,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 108368,
+    "latency_ms": 1691,
+    "answer": {
+     "as_of_date": "2026-09-19",
+     "cum_killed": 73910,
+     "cum_injured": 174914,
+     "last_24h_killed": 4,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 1390,
+     "since_ceasefire_injured": 4801,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 112472,
+    "latency_ms": 1682,
+    "answer": {
+     "as_of_date": "2026-09-20",
+     "cum_killed": 73910,
+     "cum_injured": 174935,
+     "last_24h_killed": 3,
+     "last_24h_injured": 21,
+     "since_ceasefire_killed": 1393,
+     "since_ceasefire_injured": 4822,
+     "recovered": 831
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 114878,
+    "latency_ms": 2281,
+    "answer": {
+     "as_of_date": "2026-09-21",
+     "cum_killed": 73914,
+     "cum_injured": 174952,
+     "last_24h_killed": 4,
+     "last_24h_injured": 17,
+     "since_ceasefire_killed": 1394,
+     "since_ceasefire_injured": 4839,
+     "recovered": null
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "wrong",
+     "row": "not-correct"
+    }
+   }
+  ],
+  "engine-quality": [
+   {
+    "claim_id": 11560,
+    "latency_ms": 169876,
+    "answer": {
+     "as_of_date": "2026-01-01",
+     "cum_killed": 71271,
+     "cum_injured": 171233,
+     "last_24h_killed": 2,
+     "last_24h_injured": 1,
+     "since_ceasefire_killed": 416,
+     "since_ceasefire_injured": 1153,
+     "recovered": 683
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11561,
+    "latency_ms": 41547,
+    "answer": {
+     "as_of_date": "2026-01-03",
+     "cum_killed": 71384,
+     "cum_injured": 171251,
+     "last_24h_killed": 3,
+     "last_24h_injured": 18,
+     "since_ceasefire_killed": 418,
+     "since_ceasefire_injured": 1171,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11563,
+    "latency_ms": 35481,
+    "answer": {
+     "as_of_date": "2026-01-04",
+     "cum_killed": 71386,
+     "cum_injured": 171264,
+     "last_24h_killed": 3,
+     "last_24h_injured": 13,
+     "since_ceasefire_killed": 420,
+     "since_ceasefire_injured": 1184,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11564,
+    "latency_ms": 72598,
+    "answer": {
+     "as_of_date": "2026-01-05",
+     "cum_killed": 71388,
+     "cum_injured": 171269,
+     "last_24h_killed": 2,
+     "last_24h_injured": 5,
+     "since_ceasefire_killed": 422,
+     "since_ceasefire_injured": 1189,
+     "recovered": 684
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   },
+   {
+    "claim_id": 11565,
+    "latency_ms": 33392,
+    "answer": {
+     "as_of_date": "2026-01-06",
+     "cum_killed": 71391,
+     "cum_injured": 171279,
+     "last_24h_killed": 2,
+     "last_24h_injured": 10,
+     "since_ceasefire_killed": 424,
+     "since_ceasefire_injured": 1199,
+     "recovered": 685
+    },
+    "scored": {
+     "as_of_date": "correct",
+     "cum_killed": "correct",
+     "cum_injured": "correct",
+     "last_24h_killed": "correct",
+     "last_24h_injured": "correct",
+     "since_ceasefire_killed": "correct",
+     "since_ceasefire_injured": "correct",
+     "recovered": "correct",
+     "row": "correct"
+    }
+   }
+  ]
+ },
+ "summary": {
+  "engine": {
+   "rows_scored": 200,
+   "rows_wrong": 18,
+   "rows_exact": 182,
+   "per_field": {
+    "as_of_date": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "cum_killed": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "cum_injured": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "last_24h_killed": {
+     "correct": 196,
+     "wrong": 4,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 0.98
+    },
+    "last_24h_injured": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "since_ceasefire_killed": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "since_ceasefire_injured": {
+     "correct": 200,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 1.0
+    },
+    "recovered": {
+     "correct": 186,
+     "wrong": 14,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 200,
+     "precision": 0.93
+    }
+   }
+  },
+  "engine-quality": {
+   "rows_scored": 5,
+   "rows_wrong": 0,
+   "rows_exact": 5,
+   "per_field": {
+    "as_of_date": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "cum_killed": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "cum_injured": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "last_24h_killed": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "last_24h_injured": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "since_ceasefire_killed": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "since_ceasefire_injured": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    },
+    "recovered": {
+     "correct": 5,
+     "wrong": 0,
+     "invented": 0,
+     "abstained": 0,
+     "compared": 5,
+     "precision": 1.0
+    }
+   }
+  }
+ },
+ "status": {
+  "engine": "complete",
+  "engine-quality": "stopped at 5 rows by fawwaz 07:10 UTC: daytime model swaps, 33-170 s per call, D3 says night window"
+ },
+ "rescored_at": "2026-09-23T07:34:48.004479+00:00",
+ "rescored_against": "tests/gold/moh_c.jsonl"
+}
