@@ -9,7 +9,7 @@ Over a million state observations across 35,000+ claims and 359 checkpoints,
 and growing every few minutes — which is why those three are rounded here and
 exact only in the API.
 
-**Tier 2 — what has happened.** 310,000+ observations and 10,400+ events from
+**Tier 2 — what has happened.** 340,000+ observations and 10,400+ events from
 **1922 to today**, across 21 categories and 101 sources, each row carrying
 its origin, its licence and the window it was true in.
 
