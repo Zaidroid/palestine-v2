@@ -80,7 +80,8 @@ CLAIM_LOOKBACK = timedelta(days=3)
 # ── article text ─────────────────────────────────────────────────────────────
 
 _DROP = re.compile(r"<(script|style|noscript|nav|footer|aside|form)\b.*?</\1>", re.S | re.I)
-_BLOCK = re.compile(r"<(p|li|h1|h2|h3)\b[^>]*>(.*?)</\1>", re.S | re.I)
+_BLOCK = re.compile(r"<(p|li|h1|h2|h3|tr)\b[^>]*>(.*?)</\1>", re.S | re.I)
+_CELL = re.compile(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", re.S | re.I)
 _TAG = re.compile(r"<[^>]+>")
 _META_PUB = re.compile(
     r'(?:property|name|itemprop)="(?:article:published_time|datePublished|pubdate)"'
@@ -94,11 +95,28 @@ def article_text(page: str) -> str:
     page = _DROP.sub(" ", page)
     title = re.search(r"<title[^>]*>(.*?)</title>", page, re.S | re.I)
     parts = [htmllib.unescape(_TAG.sub(" ", title.group(1))).strip()] if title else []
-    for _, inner in _BLOCK.findall(page):
+    for tag, inner in _BLOCK.findall(page):
+        if tag.lower() == "tr":
+            # A price table row ("بنزين 95 | 7.99") becomes "بنزين 95: 7.99
+            # شيكل", the shape the reader already reads — but only when the
+            # table itself says its unit is the shekel (al-ayyam's header
+            # "السعر/ شيكل", measured 2026-09-23). A table with no stated unit
+            # stays unread: a number without its unit is not a price.
+            cells = [re.sub(r"\s+", " ", htmllib.unescape(_TAG.sub(" ", c))).strip()
+                     for c in _CELL.findall(inner)]
+            cells = [c for c in cells if c]
+            if len(cells) == 2 and re.fullmatch(r"\d{1,3}(?:[.,]\d{1,2})?", cells[1]) \
+                    and _SHEKEL_TABLE.search(page):
+                parts.append(f"{cells[0]}: {cells[1]} شيكل")
+            continue
         t = re.sub(r"\s+", " ", htmllib.unescape(_TAG.sub(" ", inner))).strip()
         if t:
             parts.append(t)
     return "\n".join(parts)
+
+
+_SHEKEL_TABLE = re.compile(r"<t[dh]\b[^>]*>[^<]*(?:<[^>]+>[^<]*)*?السعر\s*/?\s*(?:شيكل|شيقل)",
+                           re.S | re.I)
 
 
 def published_from_page(page: str) -> datetime | None:

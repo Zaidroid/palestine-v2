@@ -102,3 +102,16 @@ def test_every_frozen_reading_is_within_bounds():
         for product, value in fp.parse(doc["text"], pub).prices.items():
             lo, hi = fp.BOUNDS[product]
             assert lo <= value <= hi, (key, product, value)
+
+
+def test_a_price_table_is_read_only_when_the_table_names_its_unit():
+    """al-ayyam publishes the list as a table headed "السعر/ شيكل". A table
+    row becomes "product: price شيكل" only because the header states the unit."""
+    from ingest.sources.fuel_prices import article_text
+    page = (Path(__file__).parent / "fixtures/fuel_price/al-ayyam-2026-08-01.html").read_text(encoding="utf-8")
+    a = fp.parse(article_text(page), date(2026, 8, 1))
+    assert a.verdict == "prices"
+    assert a.prices == {"gasoline_95": 7.99, "gasoline_98": 9.05, "diesel": 8.56, "kerosene": 8.56,
+                        "lpg_5kg": 36.0, "lpg_12kg": 85.0, "lpg_48kg": 340.0}
+    unitless = page.replace("السعر/ شيكل", "السعر")
+    assert fp.parse(article_text(unitless), date(2026, 8, 1)).verdict != "prices"

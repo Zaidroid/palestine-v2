@@ -41,7 +41,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-VERSION = "fuel_price@3"
+VERSION = "fuel_price@4"
 
 LITRE_PRODUCTS = ("gasoline_95", "gasoline_98", "diesel", "kerosene")
 LPG_SIZES = {"2.5": "lpg_2_5kg", "5": "lpg_5kg", "12": "lpg_12kg", "48": "lpg_48kg"}
