@@ -615,16 +615,36 @@ def routing_check() -> list[dict]:
     shell that sourced .env got the stranger. That is precisely the kind of
     divergence a monitor is supposed to close.
     """
-    url = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
+    # TWO URLS, BECAUSE THERE ARE TWO .env FILES AND ONLY ONE IS HOST-SCOPED.
+    # `env_value` prefers the ambient environment over the repo file, which is
+    # right for serving and wrong here: v1's /opt .env carries
+    # `VALHALLA_URL=http://valhalla:8002`, a name that resolves only inside
+    # v1's compose network. Any host run that sources that file (every ingest
+    # script does, for the DB credentials) therefore exports a routing address
+    # that cannot work from here, and the check reported "unreachable" against
+    # a router answering perfectly at 172.22.0.4 — measured 2026-09-23.
+    # So: judge the URL the SERVING layer will use, and fall back to the repo's
+    # .env when the ambient one cannot answer. Production sets no
+    # VALHALLA_URL, so this changes nothing there.
     row = {"check": "dep", "name": "valhalla", "age_minutes": None,
            "threshold_minutes": None}
-    try:
-        import httpx
-        r = httpx.get(f"{url}/status", timeout=10.0)
-    except Exception as exc:                                    # noqa: BLE001
+    primary = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
+    from resolve.db import _env as _repo_env
+    repo_url = _repo_env().get("VALHALLA_URL")
+    candidates = [primary] + ([repo_url] if repo_url and repo_url != primary else [])
+    import httpx
+    url, r, exc = candidates[0], None, None
+    for cand in candidates:
+        try:
+            r = httpx.get(f"{cand}/status", timeout=10.0)
+            url = cand
+            break
+        except Exception as e:                                  # noqa: BLE001
+            exc = e
+    if r is None:
         return [{**row, "status": "unreachable", "fault": True,
-                 "detail": f"{url}: {type(exc).__name__} — /v2/route and every "
-                           f"corridor answer will 503"}]
+                 "detail": f"{' and '.join(candidates)}: {type(exc).__name__} — "
+                           f"/v2/route and every corridor answer will 503"}]
     if r.status_code != 200:
         return [{**row, "status": "wrong-service", "fault": True,
                  "detail": f"{url}/status returned {r.status_code} — something "
