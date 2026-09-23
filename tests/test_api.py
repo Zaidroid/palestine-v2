@@ -529,9 +529,15 @@ def test_gap_radar_measures_on_data_dates_not_mtimes() -> None:
     assert dead["status"] == "dead_upstream" and dead["dead_reason"]
     for x in d["datasets"]:
         assert x["status"] in ("fresh", "late", "stalled", "dead_upstream",
-                               "closed_corpus", "unmeasured")
-        if x["status"] in ("fresh", "late", "stalled"):
+                               "closed_corpus", "continued", "unmeasured")
+        if x["status"] in ("fresh", "late", "stalled", "continued"):
             assert x["age_days"] is not None and x["allowance_days"] > 0
+    # `continued` is earned, not declared: a predecessor is only excused when
+    # its successor is in the report and is itself judged (F-12, 2026-09-23).
+    from ops.gap_radar import CONTINUED_BY
+    for old_key, new_key in CONTINUED_BY.items():
+        if by_status.get(old_key, {}).get("status") == "continued":
+            assert by_status[new_key]["status"] in ("fresh", "late", "stalled")
     assert all(g["severity"] >= g2["severity"]
                for g, g2 in zip(d["gaps"], d["gaps"][1:])), "gaps unranked"
     assert "era_grid" in d and "1922–1947" in next(iter(d["era_grid"].values()))

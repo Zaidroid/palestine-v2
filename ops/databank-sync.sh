@@ -31,6 +31,12 @@ cd /home/zaid/palestine-v2
   .venv/bin/python -m ingest.databank --all
 rc=$?
 
+# F-12: the Gaza series is served from T4P (conflict_gaza.yaml); organ C reads
+# the same Ministry bulletins directly. A served day the two disagree on
+# alarms once and stays open until they agree. Non-fatal: the check reports,
+# it never changes a figure, and a failed check must not fail the ingest.
+.venv/bin/python -m ops.gaza_crosscheck || echo "gaza crosscheck failed — tonight's served days are unchecked" >&2
+
 # Archive tonight's loader inputs as as_of evidence, in v1's snapshot shape.
 # Non-fatal: a failed snapshot must never fail the night's ingest — but the
 # gap radar watches the vault's age, so it cannot go quiet unnoticed. Without

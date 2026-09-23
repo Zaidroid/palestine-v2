@@ -1,0 +1,95 @@
+# conflict_gaza — T4P's Gaza daily casualty series, read straight from the
+# publisher (Format v2 `input:`), the same cut conflict_westbank made on
+# 2026-08-08. F-12 of docs/PLAN-2026-09-21-PALESTINE-FOCUS.md, done the T4P
+# way on Zaid's decision of 2026-09-23.
+#
+# WHY THIS SPEC EXISTS. The databank's Gaza cumulative series came through
+# v1's unified tree (conflict.yaml, dataset v1_conflict_tech4palestine), and
+# v1 stopped refreshing it on 2026-08-08: frozen at 73,384 killed / 174,242
+# injured for 46 days while ops/fetch_t4p.py fetched the SAME publisher's
+# file into data/raw/tech4palestine/gaza_daily.json every night and nothing
+# read it. Measured 2026-09-23: T4P's 2026-08-08 row is 73,384 / 174,242 —
+# exactly the frozen value — so this is the same series continued, not a
+# second opinion.
+#
+# WHY IT STARTS ON 2026-08-09. Before that date the series is already served
+# by v1_conflict_tech4palestine. Loading 2023-10-07..2026-08-08 again under a
+# second dataset would put every day in the databank twice. The cut-over is
+# the day after the last frozen value, so the two datasets meet and never
+# overlap. Nothing is superseded and nothing is deleted.
+#
+# WHAT IT CARRIES. killed_cum and injured_cum, as published, on the indicators
+# the frozen series already uses (conflict.gaza_cumulative_killed/injured), so
+# a consumer reading the indicator sees one continuous series. T4P's source
+# for these figures is the Gaza Ministry of Health's daily bulletin
+# (report_source "mohtel"); T4P's compilation is Unlicense (050).
+#
+# ONLY THE MINISTRY'S OWN BULLETINS. T4P marks each row's origin in
+# `report_source`. "mohtel" is a transcription of the Ministry's bulletin.
+# "missing" means no bulletin that day, and T4P then either leaves the totals
+# empty (7 days since the cut-over) or FILLS them by subtracting the next
+# bulletin's 24 h line from its total (4 days since the cut-over: 08-27, 09-03,
+# 09-08, 09-13; 9 in 2026, every one equal to that subtraction). The 24 h line
+# and the total count different things — the B2 finding Zaid ratified — so a
+# filled value is a number no bulletin states. Both kinds are DROPPED and
+# counted: a gap is honest, an inferred value served as published is not.
+# Found by the cross-check on its first run: on 2026-09-13 T4P's fill read
+# 73,784 / 174,746, and the bulletin posted the next morning, dated 13 Sep in
+# its own text, reads 73,786 / 174,771.
+#
+# THE CHECK BEHIND IT. analyst/organ_c.py reads the same bulletins directly
+# from the Ministry's channel. ops/gaza_crosscheck.py compares the two every
+# night and alarms on any day they disagree. In 2026 they agree on 188 of 199
+# days; on the rest each has been right at least once (T4P on the 06-07
+# extra-digit typo, the bulletin on the 01-28 downward revision).
+category: conflict_gaza
+transform: python:t_conflict_gaza
+v1_category: conflict            # joins the conflict serving views
+shape: observation
+status: reviewed
+records_measured: 1082           # 2026-09-23: 2023-10-07 .. 2026-09-22 (the whole file is read)
+
+input:
+  root: data/raw/tech4palestine
+  glob: "gaza_daily.json"
+  # Fetched nightly by ops/fetch_t4p.py (floor 900 rows), before the
+  # databank runs, in ops/databank-sync.sh.
+
+datasets:
+  - key: t4p_gaza_daily
+    source: tech4palestine       # Unlicense — public domain (050, verified)
+
+drop:
+  - reason: before_cutover       # served by v1_conflict_tech4palestine
+    measured: 1037               # 2023-10-07 .. 2026-08-08
+  - reason: no_cumulative        # no bulletin that day, and T4P left it empty
+    measured: 7                  # since the cut-over, at spec time
+  - reason: t4p_inferred         # no bulletin that day, and T4P filled it by
+    measured: 4                  #   arithmetic (report_source != "mohtel")
+  - reason: missing_date
+    measured: 0
+
+expect:
+  min_records: 1000              # the file is read whole; 1,082 at spec time
+  max_observations: 400          # 68 at spec time, +2 a day: ~5 months of
+                                 #   headroom. If this trips, re-measure and
+                                 #   raise deliberately.
+
+identity:
+  fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "cumulative_(killed|injured)"}
+      concept: mortality.conflict
+      measure_kind: cumulative   # a running toll; NOTHING may sum it
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons
+
+notes: |
+  Revisions: T4P corrects past days in place. The loader compares content per
+  identity and supersedes a changed value rather than skipping it, so a
+  correction lands with the old value still readable at its own as_of.

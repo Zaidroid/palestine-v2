@@ -1409,6 +1409,49 @@ def _wb_prepass(all_recs, spec, counts):
 t_conflict_westbank.prepass = _wb_prepass
 
 
+# ── conflict_gaza — T4P's Gaza daily series after v1 froze (F-12) ────────────
+# The same publisher file v1 used to feed, read directly (conflict_gaza.yaml).
+# Starts the day after the frozen series' last value so the two datasets meet
+# and never overlap. Only rows T4P transcribed from a Ministry bulletin are
+# served; a day with no bulletin is a counted gap, never filled.
+GAZA_CUTOVER = "2026-08-09"
+
+
+def t_conflict_gaza(rec, spec, places, counts):
+    ds = "t4p_gaza_daily"
+    day = str(rec.get("report_date") or "")[:10]
+    if not day:
+        return Drop("missing_date")
+    if day < GAZA_CUTOVER:
+        return Drop("before_cutover")
+    killed, injured = rec.get("killed_cum"), rec.get("injured_cum")
+    if killed is None and injured is None:
+        return Drop("no_cumulative")
+    # T4P fills a day with no Ministry bulletin by subtracting the NEXT
+    # bulletin's 24 h line from its total, and marks it report_source
+    # "missing". Measured 2026-09-23: all 9 such rows in 2026 equal exactly
+    # that subtraction. The 24 h line and the total count different things
+    # (the B2 finding Zaid ratified), so the result is a number no bulletin
+    # states — and on 2026-09-13 it put 73,784 on a day the bulletin itself
+    # reads 73,786. A gap is honest; an inferred value served as published is
+    # not.
+    if rec.get("report_source") != "mohtel":
+        return Drop("t4p_inferred")
+    gaza = places["region"]["Gaza Strip"]
+    attrs = {"cumulative": True, "region": "Gaza Strip",
+             "report_source": rec.get("report_source")}
+    rows = []
+    for value, field_name, indicator in (
+            (killed, "killed_cum", "conflict.gaza_cumulative_killed"),
+            (injured, "injured_cum", "conflict.gaza_cumulative_injured")):
+        if value is None:
+            counts[f"one_total_missing:{field_name}"] += 1
+            continue
+        rows.append(Row(ds, indicator, day, "day", f"t4p-gaza-{day}:{field_name}",
+                        value_num=value, unit="persons", place_id=gaza, attrs=attrs))
+    return rows
+
+
 # ── water_gho — WHO GHO WASH indicators, v2's own fetch ──────────────────────
 # The one code with PSE data the databank lacked (WSH_SANITATION_OD; the
 # whole diff is in water_gho.yaml). Conventions mirror v1_health_who exactly
@@ -1447,6 +1490,7 @@ def t_water_gho(rec, spec, places, counts):
 TRANSFORMERS = {
     "conflict": t_conflict,
     "conflict_westbank": t_conflict_westbank,
+    "conflict_gaza": t_conflict_gaza,
     "water_gho": t_water_gho,
     "historical": t_historical,
     "refugees": t_refugees,

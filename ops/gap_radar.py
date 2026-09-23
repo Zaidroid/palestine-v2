@@ -57,6 +57,16 @@ CLOSED_CORPUS = {
     "v1_historical_palopenmaps",
 }
 
+# Datasets whose series another dataset CONTINUES. Their age stops mattering
+# on the day the successor takes over; the successor is judged instead, and
+# if the successor stalls the radar reports that. Measured, not asserted:
+# the successor's first day must follow the predecessor's last, checked below.
+CONTINUED_BY = {
+    # v1 stopped refreshing the Gaza series at 2026-08-08; conflict_gaza.yaml
+    # reads the same publisher (T4P) from 2026-08-09 (F-12, 2026-09-23).
+    "v1_conflict_tech4palestine": "t4p_gaza_daily",
+}
+
 # Rhythm overrides where the learned median would mislead (annual releases
 # that arrive in one batch, registers whose dates are disclaimed).
 ALLOWANCE_OVERRIDE_DAYS = {
@@ -161,6 +171,21 @@ def measure_datasets(cur, today: date) -> list[dict]:
         WHERE d.v1_category IS NOT NULL ORDER BY d.key""")
     metas = cur.fetchall()
     out = []
+    # A successor counts only if it really picks up where the predecessor
+    # stopped: its first day is within 3 days after the predecessor's last,
+    # and it holds current rows at all. Otherwise the predecessor is judged
+    # as before, and a broken hand-over stays visible.
+    continued_ok = set()
+    for old_key, new_key in CONTINUED_BY.items():
+        cur.execute("""
+            SELECT (max(o.occurred_at) FILTER (WHERE d.key = %s))::date,
+                   (min(o.occurred_at) FILTER (WHERE d.key = %s))::date
+              FROM observation o JOIN dataset d USING (dataset_id)
+             WHERE d.key IN (%s, %s) AND upper_inf(o.sys_period)""",
+                    (old_key, new_key, old_key, new_key))
+        last_old, first_new = cur.fetchone()
+        if last_old and first_new and 0 < (first_new - last_old).days <= 3:
+            continued_ok.add(new_key)
     for ds_id, key, cat, src, lic, comm in metas:
         cur.execute("""
             SELECT count(*), min(occurred_at)::date, max(occurred_at)::date,
@@ -202,6 +227,8 @@ def measure_datasets(cur, today: date) -> list[dict]:
             status = "dead_upstream"
         elif key in CLOSED_CORPUS:
             status = "closed_corpus"
+        elif key in CONTINUED_BY and CONTINUED_BY[key] in continued_ok:
+            status = "continued"
         elif age is None:
             status = "unmeasured"
         elif age <= allowance:
@@ -285,8 +312,12 @@ def measure_fetch_health(today: date) -> list[dict]:
                             "note": STEP_NOTES.get(label)})
     # v2-native fetch artifacts: file age at the RAW layer — the June-9 class
     for name, path, allowance in [
-        ("t4p raw casualties (v1 tree, fed by the healed fetch)",
-         V1_T4P_RAW / "casualties", 3),
+        # v2's own T4P fetch (ops/fetch_t4p.py). Until 2026-09-23 this line
+        # watched v1's tree, which v2 stopped reading for T4P on 2026-08-08,
+        # so it reported a 45-day-old file at severity 5 while the file v2
+        # actually loads was refreshed every night.
+        ("t4p raw casualties (v2-native fetch)",
+         ROOT / "data" / "raw" / "tech4palestine" / "gaza_daily.json", 3),
         ("gho wash (v2-native fetch)", ROOT / "data" / "gho" / "wash_pse.json", 3),
         # The as_of evidence base. If this stops growing, the history layer
         # keeps answering and quietly stops being provable — the exact class
@@ -401,6 +432,7 @@ def main() -> int:
                                  if d["status"] == "dead_upstream"),
             "closed_corpus": sum(1 for d in datasets
                                  if d["status"] == "closed_corpus"),
+            "continued": sum(1 for d in datasets if d["status"] == "continued"),
             "open_gaps": len(gaps),
         },
         "datasets": datasets,
@@ -416,7 +448,8 @@ def main() -> int:
     c = report["counts"]
     print(f"gap radar {today}: {c['datasets']} datasets — "
           f"{c['fresh']} fresh · {c['late']} late · {c['stalled']} stalled · "
-          f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed")
+          f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed · "
+          f"{c['continued']} continued")
     for g in gaps[:12]:
         print(f"  [{g['severity']}] {g['kind']:<12} {g['subject']:<44} "
               f"{g['measure'][:80]}")
