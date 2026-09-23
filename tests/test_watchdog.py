@@ -86,22 +86,22 @@ def _cad(p99, arrivals=500, watchable=True):
             "watchable": watchable}
 
 
-HEALTHY = [{"name": "ingest-fuel", "status": "ok", "fault": False}]
-BROKEN = [{"name": "ingest-fuel", "status": "not_running", "fault": True}]
+HEALTHY = [{"name": "sync-checkpoints", "status": "ok", "fault": False}]
+BROKEN = [{"name": "sync-checkpoints", "status": "not_running", "fault": True}]
 
 
 def test_a_feed_past_its_own_threshold_is_a_fault(monkeypatch):
-    out = _checks({"fuel_diesel": _cad(600)},          # threshold 1800s
-                  {"fuel_diesel": 5000}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "silent"
-    assert out["fuel_diesel"]["fault"] is True
+    out = _checks({"checkpoint_status": _cad(600)},          # threshold 1800s
+                  {"checkpoint_status": 5000}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "silent"
+    assert out["checkpoint_status"]["fault"] is True
 
 
 def test_a_feed_inside_its_threshold_is_not(monkeypatch):
-    out = _checks({"fuel_diesel": _cad(600)},
-                  {"fuel_diesel": 1000}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "ok"
-    assert out["fuel_diesel"]["fault"] is False
+    out = _checks({"checkpoint_status": _cad(600)},
+                  {"checkpoint_status": 1000}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "ok"
+    assert out["checkpoint_status"]["fault"] is False
 
 
 def test_one_dead_collector_does_not_become_one_alarm_per_vertical(monkeypatch):
@@ -109,9 +109,9 @@ def test_one_dead_collector_does_not_become_one_alarm_per_vertical(monkeypatch):
     downstream of it look silent at once; reporting each one would turn one
     fault into ten alarms, and an alerting channel that does that gets muted —
     after which the next real fault is delivered to nobody."""
-    out = _checks({"fuel_diesel": _cad(600), "fuel_gasoline": _cad(600)},
-                  {"fuel_diesel": 5000, "fuel_gasoline": 5000}, BROKEN, monkeypatch)
-    for kind in ("fuel_diesel", "fuel_gasoline"):
+    out = _checks({"checkpoint_status": _cad(600), "checkpoint_flow": _cad(600)},
+                  {"checkpoint_status": 5000, "checkpoint_flow": 5000}, BROKEN, monkeypatch)
+    for kind in ("checkpoint_status", "checkpoint_flow"):
         assert out[kind]["status"] == "collector_down"
         assert out[kind]["fault"] is False, "the collector's own alarm covers this"
 
@@ -123,20 +123,20 @@ def test_a_feed_nobody_watches_reports_itself_as_unwatched(monkeypatch):
     27.8h, which this test called healthy — and that expectation is exactly
     what let fuel sit dark for 23 hours reading `collector_only ... ok`.
     """
-    out = _checks({"fuel_diesel": _cad(0, arrivals=MIN_ARRIVALS - 1, watchable=False)},
-                  {"fuel_diesel": 3600}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "collector_only"
-    assert out["fuel_diesel"]["fault"] is False
+    out = _checks({"checkpoint_status": _cad(0, arrivals=MIN_ARRIVALS - 1, watchable=False)},
+                  {"checkpoint_status": 3600}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "collector_only"
+    assert out["checkpoint_status"]["fault"] is False
 
 
 def test_a_hole_in_the_monitoring_is_itself_a_fault(monkeypatch):
     """No usable cadence AND no healthy collector means nothing whatsoever is
     watching this feed. That is reported as a fault, because a gap in coverage
     looks exactly like health and is the reason this file exists."""
-    out = _checks({"fuel_diesel": _cad(0, arrivals=3, watchable=False)},
-                  {"fuel_diesel": 99999}, BROKEN, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "uncovered"
-    assert out["fuel_diesel"]["fault"] is True
+    out = _checks({"checkpoint_status": _cad(0, arrivals=3, watchable=False)},
+                  {"checkpoint_status": 99999}, BROKEN, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "uncovered"
+    assert out["checkpoint_status"]["fault"] is True
 
 
 def test_an_unmapped_feed_is_uncovered_not_quietly_skipped(monkeypatch):
@@ -160,9 +160,9 @@ def test_a_threshold_too_wide_to_be_useful_is_labelled_as_such(monkeypatch):
 
 
 def test_a_feed_with_no_observations_at_all_is_a_fault(monkeypatch):
-    out = _checks({"fuel_diesel": _cad(600)}, {}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "no_data"
-    assert out["fuel_diesel"]["fault"] is True
+    out = _checks({"checkpoint_status": _cad(600)}, {}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "no_data"
+    assert out["checkpoint_status"]["fault"] is True
 
 
 # ── the baseline must not learn to accept a decline ──────────────────────────
@@ -378,20 +378,20 @@ def test_an_unwatchable_feed_still_has_a_silence_ceiling(monkeypatch):
     looks exactly like a healthy one. Fuel — the flagship vertical — read
     `collector_only ... ok` for 23 hours while its upstream had stopped
     publishing entirely."""
-    out = _checks({"fuel_diesel": _cad_unwatchable()},
-                  {"fuel_diesel": 30 * 3600}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "silent"
-    assert out["fuel_diesel"]["fault"] is True
-    assert "upstream has stopped" in out["fuel_diesel"]["detail"]
+    out = _checks({"checkpoint_status": _cad_unwatchable()},
+                  {"checkpoint_status": 30 * 3600}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "silent"
+    assert out["checkpoint_status"]["fault"] is True
+    assert "upstream has stopped" in out["checkpoint_status"]["detail"]
 
 
 def test_an_unwatchable_feed_within_the_ceiling_is_still_fine(monkeypatch):
     """The ceiling must not turn every sporadic feed into a permanent alarm —
     road_closure is news-driven and 14 quiet hours is an ordinary night."""
-    out = _checks({"fuel_diesel": _cad_unwatchable()},
-                  {"fuel_diesel": 14 * 3600}, HEALTHY, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "collector_only"
-    assert out["fuel_diesel"]["fault"] is False
+    out = _checks({"checkpoint_status": _cad_unwatchable()},
+                  {"checkpoint_status": 14 * 3600}, HEALTHY, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "collector_only"
+    assert out["checkpoint_status"]["fault"] is False
 
 
 def test_a_dead_collector_is_reported_as_a_hole_not_as_a_silent_feed(monkeypatch):
@@ -399,10 +399,10 @@ def test_a_dead_collector_is_reported_as_a_hole_not_as_a_silent_feed(monkeypatch
     feed at all — `uncovered`. It must not be labelled `silent`, which would
     blame the upstream for our own collector being down and send whoever reads
     the alarm to the wrong system."""
-    out = _checks({"fuel_diesel": _cad_unwatchable()},
-                  {"fuel_diesel": 99 * 3600}, BROKEN, monkeypatch)
-    assert out["fuel_diesel"]["status"] == "uncovered"
-    assert "not healthy" in out["fuel_diesel"]["detail"]
+    out = _checks({"checkpoint_status": _cad_unwatchable()},
+                  {"checkpoint_status": 99 * 3600}, BROKEN, monkeypatch)
+    assert out["checkpoint_status"]["status"] == "uncovered"
+    assert "not healthy" in out["checkpoint_status"]["detail"]
 
 
 def test_the_ceiling_says_whether_it_was_measured_or_chosen():
@@ -738,3 +738,35 @@ def test_a_delivery_receipt_is_not_a_second_alarm(monkeypatch, tmp_path):
     alert.raise_alert("some-unit", "a reason")
     assert [r["unit"] for r in alert.open_alerts()] == ["some-unit"]
     assert alert.damaged_lines() == 0
+
+
+# ── 070: a retired vertical is not an outage ─────────────────────────────────
+
+def test_a_retired_feed_is_not_judged_even_when_silent(monkeypatch):
+    """Zaid retired fuel availability on 2026-09-23. Its collectors were stopped
+    on purpose, so its silence is the intended state; judging it would page a
+    human every night about a vertical nobody wants — and an alarm that is
+    always expected trains people to skim the one that is not."""
+    from ops.watchdog import RETIRED_FEEDS
+    assert "fuel_diesel" in RETIRED_FEEDS
+    out = _checks({"fuel_diesel": _cad(600), "checkpoint_status": _cad(600)},
+                  {"fuel_diesel": 99 * 3600, "checkpoint_status": 99 * 3600},
+                  HEALTHY, monkeypatch)
+    assert "fuel_diesel" not in out
+    # ...and retiring one feed does not quietly silence its neighbours.
+    assert out["checkpoint_status"]["fault"] is True
+
+
+def test_the_retired_list_matches_the_migration_that_retired_them():
+    """RETIRED_FEEDS is a copy of state_kind_config.retired_at (070), kept in
+    code so the check needs no query. A copy that drifts is a lie, so pin it."""
+    import re
+    from pathlib import Path
+    from ops.watchdog import RETIRED_FEEDS, EXPECTED_JOBS
+    sql = (Path(__file__).resolve().parents[1]
+           / "db/migrations/070_retire_fuel_availability.sql").read_text(encoding="utf-8")
+    kinds = re.search(r"WHERE state_kind IN \(([^)]*)\)", sql).group(1)
+    assert set(re.findall(r"'([a-z_]+)'", kinds)) == set(RETIRED_FEEDS)
+    jobs = re.search(r"WHERE name IN \(([^)]*)\)", sql).group(1)
+    for job in re.findall(r"'([a-z0-9-]+)'", jobs):
+        assert job not in EXPECTED_JOBS, f"{job} is retired in 070 but still expected by the watchdog"

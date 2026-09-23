@@ -148,11 +148,9 @@ MIN_CEILING_ARRIVALS = 30
 EXPECTED_JOBS = {
     "telegram-poller":   (30, 900),
     "sync-checkpoints":  (120, 600),
-    "ingest-fuel":       (300, 900),
-    # F-05: the tee spool's text bulletins stopped 2026-08-28; this is the
-    # collector that reads the rendered cards instead, and its heartbeat is what
-    # makes "images flowing" a checkable claim rather than a hope.
-    "fuel-images":       (600, 1800),
+    # `ingest-fuel` and `fuel-images` were RETIRED 2026-09-23 with the fuel
+    # availability vertical (migration 070); their heartbeat rows stay in the
+    # table with `retired_at` set and are no longer judged.
     "classify-news":     (300, 900),
     "ingest-external":   (900, 1800),
     "watchdog":          (600, 900),
@@ -177,6 +175,12 @@ EXPECTED_JOBS = {
     "analyst":           (60, 900),
 }
 
+# State kinds that are no longer collected. Their observations stay in the
+# database; the watchdog stops judging their freshness. Mirrors
+# state_kind_config.retired_at (migration 070) — duplicated here so the check
+# needs no query, and tests/test_watchdog.py asserts the two agree.
+RETIRED_FEEDS = frozenset({"fuel_diesel", "fuel_gasoline", "cooking_gas"})
+
 # Which collector's heartbeat covers which state kinds. A feed is only judged
 # silent when its collector is demonstrably alive; without this mapping one
 # dead poller becomes one alarm per vertical.
@@ -187,9 +191,6 @@ FEED_COLLECTOR = {
     "checkpoint_police":     "sync-checkpoints",
     "checkpoint_settlers":   "sync-checkpoints",
     "checkpoint_inspection": "sync-checkpoints",
-    "fuel_diesel":           "ingest-fuel",
-    "fuel_gasoline":         "ingest-fuel",
-    "cooking_gas":           "ingest-fuel",
     "road_closure":          "classify-news",
     "weather":               "ingest-external",
     "internet":              "ingest-external",
@@ -220,9 +221,6 @@ DEPENDENCIES = {
     "v1-checkpoints-db": (
         "/opt/stacks/palestine/services/westbank-alerts/data/checkpoints.db",
         3600, "v1's checkpoint parser writes this; checkpoints stop if it does"),
-    "v1-fuel-spool": (
-        "/opt/stacks/palestine/services/westbank-alerts/data/tee",
-        7200, "the palhub tee spool; fuel readings stop if it stops growing"),
 }
 
 CADENCE_SQL = f"""
@@ -448,9 +446,14 @@ def feed_checks(jobs: list[dict], cadence: dict[str, dict] | None = None) -> lis
     healthy = {j["name"] for j in jobs if j["status"] == "ok"}
     cadence = load_cadence() if cadence is None else cadence
     current = {r["state_kind"]: r for r in _q(CURRENT_SQL)}
+    # A retired state kind is no longer collected, so its silence is the
+    # intended state, not an outage (070: fuel availability, 2026-09-23).
+    retired = RETIRED_FEEDS
 
     out = []
     for kind in sorted(set(cadence) | set(current)):
+        if kind in retired:
+            continue
         cad, cur = cadence.get(kind), current.get(kind)
         age = float(cur["age_seconds"]) if cur and cur["age_seconds"] is not None else None
         collector = FEED_COLLECTOR.get(kind)
