@@ -2,9 +2,10 @@
 
 A live-data and historical-record platform for Palestine. Two halves:
 
-**Tier 1 — what is happening now.** Checkpoint status, road closures, fuel
-availability and incidents, parsed from Arabic Telegram channels and news
-feeds, resolved to real places, and served with a confidence that decays.
+**Tier 1 — what is happening now.** Checkpoint status, road closures,
+incidents and the official West Bank fuel prices, parsed from Arabic Telegram
+channels and news feeds, resolved to real places, and served with a confidence
+that decays. (Per-station fuel availability was retired on 2026-09-23.)
 Over a million state observations across 35,000+ claims and 359 checkpoints,
 and growing every few minutes — which is why those three are rounded here and
 exact only in the API.
@@ -124,7 +125,7 @@ Nothing here is explained only in code.
   Most entries name the failure that caused them.
 - **`db/scout/verdicts.yaml`** — sources assessed and *rejected*, with
   evidence, so nobody re-chases a dead end.
-- **`tests/test_gate*.sql`** — 82 assertions that run against the live
+- **`tests/test_gate*.sql`** — 66 assertions that run against the live
   database without the application, so they hold even if the Python is wrong.
 
 ## Tests

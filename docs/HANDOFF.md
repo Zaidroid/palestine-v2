@@ -43,9 +43,9 @@ and cross-tier gate on the way past.
 | `palestine-v2-api` | daemon | FastAPI on :7870 — **public at https://live-api.zaidlab.xyz** |
 | `palestine-v2-poller` | daemon | agent2 Telegram poller, 10 channels, 30s |
 | `palestine-v2-checkpoints.timer` | 2 min | v1 SQLite → claims/state |
-| `palestine-v2-fuel.timer` | 5 min | palhub tee → fuel state |
 | `palestine-v2-news.timer` | 5 min | classify news claims → events |
-| `palestine-v2-external.timer` | 15 min | RSS → weather → connectivity → power → fires → classify |
+| `palestine-v2-external.timer` | 15 min | RSS → **fuel prices** → weather → connectivity → power → fires → classify |
+| ~~`palestine-v2-fuel{,-images}.timer`~~ | retired 2026-09-23 | fuel availability; units kept in `ops/retired/systemd/` (migration 070) |
 | `palestine-v2-checkpoint-learn.timer` | nightly 03:20 | independence + persistence re-fit |
 | `palestine-v2-accuracy.timer` | nightly 04:10 | precision backtest → `ops/accuracy.ndjson` |
 | `palestine-v2-backup.timer` | nightly 02:30 | encrypted set → `gdrive:palestine-v2-backups` |
