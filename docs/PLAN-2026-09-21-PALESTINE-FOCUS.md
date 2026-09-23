@@ -119,6 +119,9 @@ causes, and the alert channel is unconfigured. Operability before intelligence.
 | ZAID-6 | Product calls from the Tier 2 gate: martyrs serving posture, Nakba gazetteer, T4P licence, Western Erez = Zikim?, the 24 verify-required licences | unserved / unverified, as today |
 | ZAID-7 | Cancel the MiniMax subscription (billing; the code no longer calls it) | still paid |
 | ZAID-8 | `agent2` crossings-authority channel and the backup passphrase custody | as today |
+| ZAID-9 | Is an obituary or a funeral a death report? **Now a partner-facing accuracy call** (36 of the incident classifier's 51 wrong rows) | undecided; the classifier serves them |
+| ZAID-10 | May a partner tier carry the Telegram/RSS-derived **status**, or only what is openly licensed until a permission pass? | nothing is graded for partners; the HTTP door is open and unauthenticated |
+| ZAID-11 | Partner key policy: one key for Thaura, its quota, and the uptime we are willing to write down | no key infrastructure exists; anyone with the URL has all 26 tools |
 
 ---
 
@@ -265,16 +268,67 @@ one-paragraph brief (what changes if yes/no, who is affected, licence facts) in 
 `terms_verified_at` campaign, five per week, evidence in `terms_evidence`. **F-72** scout candidates worth a spec →
 [ZAID]-or-build items, as the prompt already says.
 
+### W8 · The Thaura partner release (added 2026-09-23, Zaid's focus change)
+
+**why.** Thaura — Tech for Palestine's consumer AI, subscription-funded, Paul Biggar's team — wants the
+Tier 1 live-status MCP surface in an upcoming release. Measured state of that surface on 2026-09-23: **it is
+already built, and already public.** `https://live-api.zaidlab.xyz/mcp` answers **200 to an unauthenticated
+`tools/list`** (23,791 bytes of schemas) and **200 to a real `coverage` call from the open internet**; there is
+no key infrastructure anywhere in `serve/`. What IS there: **26 public tools**, three host-only (`mcp_usage`,
+`ops_digest`, `system_health`) routed away from the HTTP door, three protocol versions supported
+(2025-06-18 / 2025-03-26 / 2024-11-05), a per-class sliding limiter (mcp 300 per 60 s per Cloudflare client
+IP, localhost exempt, 20k addresses tracked), a byte-counted `answer` in Arabic that carries its own
+uncertainty plus `answer_en`, refusals in place of estimates, and no write path exposed at all.
+So the work is not building the server. It is closing the door, grading what leaves, saying the accuracy out
+loud, and shipping docs a partner can integrate from. T4P is Thaura's own ecosystem — our Gaza series is
+already T4P's Unlicense file, which is the cleanest thing we could possibly hand them.
+
+**F-80 · Keys, quotas, revocation.** what: a key per integration, scoped to the public tools, a per-key quota on
+top of the per-IP limiter, revocation that lands without a restart, and no key in a query string. The
+unauthenticated answer is a `401` that says how to ask. DONE WHEN an unauthenticated call from outside reads
+401 and a keyed call returns byte-for-byte what it returns today. PROVE an external session with no key, a bad
+key, a revoked key, a good key.
+
+**F-81 · What may leave the building (licence tier).** what: grade every public tool for a commercial partner
+BEFORE it is served. Measured today: **35 of the Tier 1 Telegram sources and 18 RSS sources are
+`no-redistribution`**; **78 of 101 sources have never had their terms verified**; the databank's twelve largest
+datasets are all `commercial_use=false`. The core that needs nobody's permission: **T4P's Gaza and West Bank
+series (Unlicense, public domain)** and this system's own derived observations. F-71's five-a-week campaign is
+the slow road. DONE WHEN every public tool names its licence tier and a tool refuses, per datum, what the
+partner tier may not carry. PROVE a per-tool licence table + a call refused for licence, not for a bug.
+[ZAID-10]
+
+**F-82 · Accuracy posture on a partner surface.** what: classifier 1.6 is measured at **0.717 [0.647–0.777]
+against its 0.80 gate** and `/v2/incidents` serves it now (8,505 incident rows of 32,941 classified). **36 of
+its 51 wrong rows are obituaries, funerals and features** — a taxonomy call, not a bug. A partner release
+either passes or says so. DONE WHEN every public tool carries its measured precision and gate state, and any
+tool below its gate says so inside its own `answer`. PROVE the payloads. [ZAID-9]
+
+**F-83 · Docs a partner can integrate from** (absorbs F-60/F-61): the integration guide (handshake, protocol
+versions, error shape, limits, retry), the tool and data dictionary (what each tool answers, what `unknown`
+means, what `last_known_value` means, why an `answer` must not be rephrased), the attribution matrix, a
+changelog and version header, and a status endpoint. DONE WHEN a client integrates from the docs alone. PROVE
+it from a clean machine with nothing but the document.
+
+**F-84 · Security review.** what: the door closed (F-80); what a hostile caller can make the server do
+(expensive tools, big `limit`, deep databank scans, the correlation surface); `allow_origins=["*"]` justified
+or narrowed; the three host-only tools PROVEN unreachable over HTTP; a written threat note. DONE WHEN the note
+exists with every item proved or explicitly accepted. PROVE the note + the refusals.
+
+**F-85 · Staging key and review window for Thaura** before their release: their test key, a "try these ten
+calls" script, and a named path for what they find. DONE WHEN they have it and have used it. Needs F-80 and
+ZAID-10.
+
 ---
 
 ## 5 · Order and calendar
 
 | week | do | needs |
 |---|---|---|
-| this week | W0 F-01…F-08; W1 F-10, F-11 | nothing from Zaid except ZAID-1/ZAID-4 answers (defaults run) |
-| next | W1 F-12; W2 F-20, F-21, F-22 (shadow on) ; W3 F-30 | — |
-| after | W3 F-31, F-32; W4 F-40, F-41; W6 F-60, F-61 | vision bench (short runs) |
-| PSU replaced | F-23, F-33, F-42, W5 | ZAID-5 |
+| this week | **W8 F-80, F-82, F-83** (the partner release); W1 F-11 finishes itself tonight | **ZAID-9, ZAID-10, ZAID-11** |
+| next | W8 F-84, F-85; then W2 F-20, F-21, F-22 (shadow on); W3 F-30 | ZAID-9 for W2's taxonomy |
+| after | W3 F-31, F-32 | — |
+| PSU replaced | F-23, F-33, W5; F-06's clean-day measurement | ZAID-5 |
 
 ---
 
@@ -358,3 +412,4 @@ one-paragraph brief (what changes if yes/no, who is affected, licence facts) in 
 2026-09-23 09:58 UTC · F-09c · done · proof: fuel reader `fuel_price@4`. al-ayyam publishes the list as a table headed "السعر/ شيكل"; a table row is now read as "product: price شيكل" **only when the table names its unit** (a unitless table stays unread, asserted by a test). Re-read over all 16 archived documents: exactly 1 reading changed — al-ayyam's 08-01 list, all 7 figures equal to the other outlets'. August's petrol and diesel now rest on 4 outlets. raya.ps's September page carries its list as a picture, and reading pictures is the path retired with availability; left unread, stated.
 2026-09-23 09:58 UTC · docs · the HANDOFF §3, README and maintainer-prompt test commands now `--deselect tests/test_evidence.py::test_vault_verifies_end_to_end`. The `--ignore=tests/test_vault_verifies_end_to_end.py` used in this ledger since 09-21 named a file that does not exist and excluded nothing; it hung today's suite for 10 minutes.
 2026-09-23 12:10 UTC · F-06 · **FAILED for its first full day, decided early by arithmetic** · proof: v1's client counter since the 2026-09-22 21:10 restart: **945 ok / 66 failed of 1,011 (93.5 %)**. At ~74 calls an hour the day ends near 1,780 calls, so even a clean remainder ends at ~96 %; 99 % would need 6,600 calls against a 3,000 budget. **The failures are not the gateway and not the brain host**, correcting this ledger's 09-22 line ("17 of 18 are ConnectError to zlab-brain"): matched minute by minute against MainPC's own event log, they are (a) **17 at 04:37–04:40 UTC**, MainPC restarted twice by Windows Update (TrustedInstaller / MoUsoCoreWorker, event 1074) — 13 ConnectError + 4 timeouts; (b) **32 × HTTP 429 at 07:00–07:20 UTC**, the window of Fawwaz's daytime `engine-quality` scoring run, against the plan's own night-window rule; (c) **9 timeouts at 07:20–07:30 UTC**, a hard power loss at 07:20:59 UTC (Kernel-Power 41, BugcheckCode 0, no power-button press: not a crash, the power went); (d) 2 strays. Without (a)–(c) the day reads ~1,009 / 1,011. **The PSU is the finding.** MainPC logged **11 hard power losses in 6 days** (2 on 09-18, 2 on 09-19, 2 on 09-20, 1 on 09-21, 3 on 09-22, 1 on 09-23), against 2 in the 12 days before; 2 WHEA hardware errors in 30 days. That is ZAID-5 (§3) arriving, not a new problem. **The chain recovers by itself:** llama-swap is a boot-trigger task, up 10:33 local after a 10:33 boot, and v1 was back to 200s from **07:30 UTC**, two hours before anyone signed in (session logon 09:33 UTC). The gateway retry fix (`num_retries: 2` on zlab-brain) is still not applied — this box's key is still refused there — but it would only have absorbed (b), which was self-inflicted. Re-measure F-06 on a day with no reboot.
+2026-09-23 13:05 UTC · pivot · **THE FOCUS MOVES TO THE TIER 1 MCP SERVER, BECAUSE A PARTNER IS COMING.** Zaid: Thaura (Tech for Palestine's consumer AI; subscription-funded; Paul Biggar's team) wants the live-status MCP surface in an upcoming release, and he wants this plan pointed at delivering it ready, polished, secured and accurate. Audited the surface before writing anything, and the finding is that the server is **already built and already public**: `https://live-api.zaidlab.xyz/mcp` answered **200 to an unauthenticated `tools/list`** (23,791 bytes) and **200 to a real `coverage` call** from the open internet, with no key infrastructure in `serve/` at all. Already partner-grade: 26 public tools with three host-only ones routed off the HTTP door, three protocol versions, a per-class sliding limiter (mcp 300/60s per Cloudflare client IP, localhost exempt), no exposed write path, refusals in place of estimates, and an Arabic `answer` that carries its own uncertainty plus `answer_en`. Not partner-grade, all measured: (1) the door is open; (2) of the sources behind Tier 1, **35 Telegram and 18 RSS sources are `no-redistribution`** and **78 of 101 sources have never had terms verified**, while the databank's twelve largest datasets are all `commercial_use=false` — the partner is subscription-funded, so this is a commercial use and a licence question, and the only clean core is T4P's own Unlicense series plus our derived observations; (3) the incident classifier is **0.717 against its 0.80 gate** and serves publicly; (4) there are no docs a partner could integrate from. New workstream **W8** (§4) and three decisions **ZAID-9/10/11** (§3). Nothing was changed on the live door yet: closing it is a decision, not a tidy-up.
