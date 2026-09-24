@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from cascade.news import read
 from resolve.db import connect
+from resolve.arabic import fold_for_match
 from resolve.geo import resolve_place
 
 # Reports of the same kind, at the same place, inside this window are one event.
@@ -256,14 +257,32 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 continue
 
             # The gazetteer decides whether the extracted string is a place.
+            #
+            # THE NAMED PLACE IS THE PLACE, AND A GOVERNORATE IS NOT A SUBSTITUTE
+            # FOR IT. The fallback below used to silently replace an unresolvable
+            # village with its governorate, which is how "land being bulldozed in
+            # المزرعة الغربية" was served as *a demolition in Ramallah, pinned to
+            # the city centre* and "the army installing a gate near بيت عور" as *a
+            # settler attack in al-Bireh*. The village was named in the message
+            # both times — the text is where the place lives — and the fallback
+            # threw that name away and answered with a different, larger place
+            # that no channel had reported anything about.
+            #
+            # So the fallback still LOCATES the incident loosely (admin2 is the
+            # honest precision for "somewhere in this governorate") but it no
+            # longer pretends the governorate IS the place: the resolved place,
+            # the named place as written, and which of the two answered all
+            # travel with the event.
             res = None
-            if r.place_text:
-                res = resolve_place(r.place_text, {"admin": r.governorate},
+            named_place = (r.place_text or "").strip() or None
+            if named_place:
+                res = resolve_place(named_place, {"admin": r.governorate},
                                     conn=conn, learn=False)
+            place_precision = "named" if res else None
             if not res and r.governorate:
-                # Fall back to the governorate: admin2 precision, still useful
-                # for "what is happening in my area", explicitly less precise.
                 res = resolve_place(r.governorate, conn=conn, learn=False)
+                if res:
+                    place_precision = "governorate"
             if not res:
                 stats["unresolved_place"] += 1
                 unresolved[(r.place_text or r.governorate or "?")[:28]] += 1
@@ -273,14 +292,23 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 continue
 
             stats["located"] += 1
+            if place_precision == "governorate":
+                stats["located_gov_fallback"] = \
+                    stats.get("located_gov_fallback", 0) + 1
             verdicts.append((claim_id, "incident", r.incident_type, None,
                              res.place_id, r.place_text, r.governorate, r.confidence))
-            groups.setdefault((r.incident_type, res.place_id), []).append(
-                (claim_id, reported_at, unit, source_id, r))
+            # Group on the place the report actually named when we have it: two
+            # channels naming المزرعة الغربية are reporting the same village even
+            # if the gazetteer made them land on different rows, and a name is
+            # what a channel writes. Falls back to the resolved id so nothing
+            # stops grouping.
+            name_key = fold_for_match(named_place) if named_place else None
+            groups.setdefault((r.incident_type, res.place_id, name_key), []).append(
+                (claim_id, reported_at, unit, source_id, r, place_precision))
 
         # Split each group into time-windowed clusters; each cluster is an event.
         events = []
-        for (itype, place_id), members in groups.items():
+        for (itype, place_id, _name_key), members in groups.items():
             for cluster in cluster_by_window(members, DEDUP_WINDOW):
                 events.append((itype, place_id, cluster))
 
@@ -366,7 +394,17 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                                  "channels": sorted({m[2] for m in cluster}),
                                  "place_text": reading.place_text,
                                  "governorate": reading.governorate,
-                                 "matched": reading.matched}, ensure_ascii=False),
+                                 "matched": reading.matched,
+                                 # Which of the two located this event. `named`
+                                 # means the place in the message resolved;
+                                 # `governorate` means it did NOT and only the
+                                 # governorate matched, so the pin is admin2 and
+                                 # the village in `place_text` is what the
+                                 # channel named. Without this the two are
+                                 # indistinguishable and a village incident
+                                 # reads as if it happened in the city.
+                                 "place_precision": (cluster[0][5] or "named")},
+                                ensure_ascii=False),
                      place_id))
                 row = cur.fetchone()
                 if not row:

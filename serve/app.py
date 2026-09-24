@@ -816,6 +816,15 @@ def incidents_recent(
             "type": r["event_type"],
             "place": r["name_ar"] or r["name_en"],
             "place_en": r["name_en"],
+            # WHAT THE CHANNEL NAMED, AND HOW THE PIN WAS EARNED. `place` above
+            # is where the gazetteer located the event, which for an
+            # unresolvable village is its GOVERNORATE — the centroid of Ramallah
+            # for something that happened in المزرعة الغربية, or of al-Bireh for
+            # بيت عور. `place_precision` says which of the two answered, and
+            # `named_place` carries the village as the message wrote it, so a
+            # reader is never told an incident happened in a city it did not.
+            "named_place": (r["attrs"] or {}).get("place_text"),
+            "place_precision": (r["attrs"] or {}).get("place_precision") or "named",
             "lat": r["lat"], "lon": r["lon"],
             "straight_km": round(float(r["straight_km"]), 1) if r["straight_km"] is not None else None,
             "occurred_at": r["occurred_at"],
