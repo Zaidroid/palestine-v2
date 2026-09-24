@@ -482,8 +482,12 @@ def incidents_near(place: str | None = None, lat: float | None = None,
             answer += f" ({solo} منها من مصدر واحد بس.)"
     if fires:
         answer += f" ورصد الأقمار الصناعية {len(fires)} حريق بالنطاق (بدون تقارير)."
+    from serve import quality
+    precision = quality.summary(by_type)
+    answer += _precision_ar(precision)
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
-            "hours": hours, "count": len(items), "by_type": by_type,
+            "hours": hours, "count": len(items), "by_type": quality.annotate_by_type(by_type),
+            "precision": precision,
             "incidents": items,
             "fires": {"n": len(fires), "note": "NASA FIRMS satellite fire pixels — a "
                                                "detection, not a report; never a raid"},
@@ -507,7 +511,22 @@ def incidents_summary(hours: int = 24) -> dict:
         answer += f" الأكثر تأثراً: {places}."
     if d["fires"]["n"]:
         answer += f" ورصدت الأقمار الصناعية {d['fires']['n']} حريق."
+    from serve import quality
+    d["precision"] = quality.summary(bt)
+    answer += _precision_ar(d["precision"])
     return {"answer": answer, **d}
+
+
+def _precision_ar(precision: dict | None) -> str:
+    """The measured read precision of the served types that fall under the
+    gate, deaths first — said in the answer, not only carried in the payload."""
+    weak = (precision or {}).get("weak") or []
+    if not weak:
+        return ""
+    bits = [f"{INCIDENT_AR.get(w['type'], w['type'])} {round(w['precision'] * 100)}%" for w in weak[:3]]
+    rnd = (precision or {}).get("round")
+    return (f" دقّة القراءة الآلية بآخر فحص يدوي" + (f" (جولة {rnd})" if rnd else "") +
+            ": " + "، ".join(bits) + ".")
 
 
 def _mins_since(iso: str | None) -> int | None:

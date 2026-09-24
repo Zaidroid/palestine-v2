@@ -1,5 +1,7 @@
 {
   "measured_at": "2026-09-24T19:00:22.531965+00:00",
+  "round": "8",
+  "classifier_version": "1.8.0",
   "overall": {
     "n": 150,
     "precision": 0.767,

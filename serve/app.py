@@ -898,11 +898,16 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
                  (hours,))
     ledger = q("""SELECT verdict, reject_reason, COUNT(*) n
                   FROM claim_classification GROUP BY 1,2 ORDER BY 3 DESC""")
+    from serve.quality import annotate_by_type, summary as precision_summary
+    types = {r["event_type"]: {"n": r["n"], "corroborated": r["corroborated"]} for r in by_type}
     return {
         "window_hours": hours,
         "total": sum(r["n"] for r in by_type),
-        "by_type": {r["event_type"]: {"n": r["n"], "corroborated": r["corroborated"]}
-                    for r in by_type},
+        # Every count carries what the last hand-scored round measured for
+        # its type (deaths first in the answer): a count from a reader that
+        # is right 60 % of the time is a different fact from one at 93 %.
+        "by_type": annotate_by_type(types),
+        "precision": precision_summary(types),
         "by_place": [{"place": r["name_ar"] or r["name_en"], "n": r["n"]}
                      for r in by_place],
         "located_to_governorate_only": int(gov_only[0]["n"]) if gov_only else 0,
@@ -1361,18 +1366,20 @@ def _incident_quality() -> dict | None:
     report. This measurement predates that: it is what the ledger says, and
     saying it out loud is the point.
     """
-    import json as _json
-    repo = Path(__file__).resolve().parent.parent
-    try:
-        r = _json.loads((repo / "ops" / "incident-precision-round7.json").read_text())
-    except Exception:                          # noqa: BLE001
+    from serve.quality import incident_precision
+    q = incident_precision()                   # the LATEST round, whichever it is
+    if not q:
         return None
-    o = r["overall"]
-    return {"precision": o["precision"], "ci95": o["ci95"], "n": o["n"],
-            "gate": 0.80, "state": "below gate" if o["precision"] < 0.80 else "passing",
-            "measured_at": r["measured_at"],
-            "by_type": {k: v["precision"] for k, v in (r.get("per_type") or {}).items()},
-            "basis": "hand-scored sample, ops/incident-precision-round7.json"}
+    o = q["overall"]
+    out = {"precision": o["precision"], "ci95": o["ci95"], "n": o["n"],
+           "gate": 0.80, "state": q["gate"]["state"],
+           "measured_at": q["measured_at"], "round": q["round"],
+           "measured_version": q["measured_version"], "serving_version": q["serving_version"],
+           "by_type": {k: v["precision"] for k, v in q["per_type"].items()},
+           "basis": q["basis"]}
+    if q.get("note"):
+        out["note"] = q["note"]
+    return out
 
 
 @app.get("/v2/insights", tags=["insights"])

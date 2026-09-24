@@ -65,10 +65,14 @@ SCORED_FILE = ROOT / "ops" / "incident-scored.ndjson"
 RESULT_FILE = ROOT / "ops" / "incident-precision.json"
 
 
+ROUND: str | None = None
+
+
 def use_round(r: str | None) -> None:
     """Round files live side by side (`incident-sample-round8.ndjson`…) so a
     round is never clobbered by the next; `already_scored` reads them all."""
-    global SAMPLE_FILE, SCORED_FILE, RESULT_FILE
+    global SAMPLE_FILE, SCORED_FILE, RESULT_FILE, ROUND
+    ROUND = r
     if r:
         SAMPLE_FILE = ROOT / "ops" / f"incident-sample-round{r}.ndjson"
         SCORED_FILE = ROOT / "ops" / f"incident-scored-round{r}.ndjson"
@@ -326,8 +330,14 @@ def score() -> dict:
                 "wrong_place": sum(1 for i in items if i.get("is_incident") and not i.get("place_ok"))}
 
     adv_items = [i for v in adversarial.values() for i in v]
+    try:
+        from ingest.sources.news_incidents import CLASSIFIER_VERSION as _measured
+    except Exception:                                           # noqa: BLE001
+        _measured = None
     result = {
         "measured_at": datetime.now(timezone.utc).isoformat(),
+        "round": ROUND,
+        "classifier_version": _measured,
         "overall": {"n": len(all_items),
                     "precision": round(good_all / max(len(all_items), 1), 3),
                     "ci95": [round(lo, 3), round(hi, 3)]},
@@ -352,6 +362,9 @@ def score() -> dict:
         "pass": result["overall"]["precision"] >= GATE_OVERALL and not failing,
     }
     RESULT_FILE.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+    # The latest round is also the file serving reads (serve/quality.py).
+    (ROOT / "ops" / "incident-precision.json").write_text(
+        json.dumps(result, indent=2, ensure_ascii=False))
 
     # Append the round to a machine-readable history. RESULT_FILE holds only
     # the LATEST round, and the scored files hold claim verdicts with no

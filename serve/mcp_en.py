@@ -235,6 +235,7 @@ def incidents_near(d: dict) -> str:
     fires = (d.get("fires") or {}).get("n")
     if fires:
         out += f" Satellite fire detections in range: {fires} (no reports)."
+    out += _precision_en(d.get("precision"))
     return out
 
 
@@ -266,7 +267,18 @@ def incidents_summary(d: dict) -> str:
     fires = (d.get("fires") or {}).get("n")
     if fires:
         out += f" Satellite fire detections: {fires}."
+    out += _precision_en(d.get("precision"))
     return out
+
+
+def _precision_en(precision: dict | None) -> str:
+    weak = (precision or {}).get("weak") or []
+    if not weak:
+        return ""
+    bits = [f"{w['type'].replace('_', ' ')} {round(w['precision'] * 100)} %" for w in weak[:3]]
+    rnd = (precision or {}).get("round")
+    return (" Machine-read precision on the last hand check" + (f" (round {rnd})" if rnd else "") +
+            ": " + ", ".join(bits) + ".")
 
 
 def weather_now(d: dict) -> str:
