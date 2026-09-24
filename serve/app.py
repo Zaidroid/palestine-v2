@@ -21,8 +21,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 import time
-from collections import Counter
+from collections import Counter, OrderedDict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -88,8 +89,17 @@ def q(sql: str, params: tuple = ()) -> list[dict]:
 DATABANK_RUNS = Path(__file__).resolve().parent.parent / "ops" / "databank-runs.ndjson"
 CACHE_TTL_SECONDS = 60
 WATERMARK_SECONDS = 300
-_QUERY_CACHE: dict[tuple, tuple] = {}
+# F-84: BOUNDED, because the key includes the caller's parameters. A stranger
+# varying `limit` (1..2000), `indicator` or `days` mints a new cache entry per
+# request, and one entry can hold 276 KB of rows (`limit=2000` measured), so the
+# cache was an unbounded memory growth vector with a trivial trigger. 400 entries
+# covers every aggregate route this API has, several times over; beyond that the
+# least recently used is evicted, and a miss just costs a query. OrderedDict so a
+# hit can refresh recency — a plain dict cannot move a key to the end.
+QUERY_CACHE_MAX = 400
+_QUERY_CACHE: "OrderedDict[tuple, tuple]" = OrderedDict()
 _WATERMARK: dict[str, Any] = {"at": 0.0, "value": None}
+_WATERMARK_LOCK = threading.Lock()
 
 
 
@@ -104,9 +114,18 @@ def _runs_stamp() -> tuple:
 def _databank_watermark() -> str:
     now = time.monotonic()
     if _WATERMARK["value"] is None or now - _WATERMARK["at"] > WATERMARK_SECONDS:
-        rows = q("SELECT max(upper(sys_period))::text AS w FROM observation")
-        _WATERMARK["value"] = (rows[0]["w"] if rows else "") or ""
-        _WATERMARK["at"] = now
+        # F-84: ONE reader, not N. Without this lock every concurrent request
+        # that finds the watermark stale runs the same ~380 ms aggregate at the
+        # same moment, so a burst of callers multiplies the most expensive query
+        # on the cheapest path — the thundering herd lands exactly when the
+        # server is busiest. Double-checked so the waiters reuse the winner's
+        # value instead of queueing up to each re-read it.
+        with _WATERMARK_LOCK:
+            if (_WATERMARK["value"] is None
+                    or time.monotonic() - _WATERMARK["at"] > WATERMARK_SECONDS):
+                rows = q("SELECT max(upper(sys_period))::text AS w FROM observation")
+                _WATERMARK["value"] = (rows[0]["w"] if rows else "") or ""
+                _WATERMARK["at"] = time.monotonic()
     return _WATERMARK["value"]
 
 
@@ -120,9 +139,13 @@ def q_cached(sql: str, params: tuple = ()) -> list[dict]:
     entry = _QUERY_CACHE.get(key)
     now = time.monotonic()
     if entry and entry[0] == stamp and (now - entry[1]) < CACHE_TTL_SECONDS:
+        _QUERY_CACHE.move_to_end(key)          # a hit refreshes recency
         return entry[2]
     rows = q(sql, params)
     _QUERY_CACHE[key] = (stamp, now, rows)
+    _QUERY_CACHE.move_to_end(key)
+    while len(_QUERY_CACHE) > QUERY_CACHE_MAX:
+        _QUERY_CACHE.popitem(last=False)       # evict least recently used
     return rows
 
 
@@ -2096,7 +2119,17 @@ def databank_licenses() -> dict:
     because a portal is not a licence-holder — the three datasets we take
     through HDX carry three different publishers' terms.
     """
-    rows = q("""
+    # F-84: CACHED, and it was the slowest public route before this. Five
+    # whole-dataset aggregates over 206k serving rows, every call, with no cache
+    # — measured warm at 3.5-4.0 s serial and 5.6 s median under ten concurrent
+    # callers, on a single-worker server that opens ONE CONNECTION PER QUERY.
+    # So a stranger could spend 5 connections and 4 seconds per request, and the
+    # rate limit allowed 120 of them a minute. These are exactly the aggregates
+    # `q_cached` exists for: the databank changes once a night, and the cache is
+    # keyed on the sync watermark rather than the clock, so a nightly load
+    # invalidates them immediately. `as_of` does not apply here — nothing on this
+    # route reconstructs a past day.
+    rows = q_cached("""
         SELECT source_key, source_name, license_spdx, commercial_use,
                share_alike, attribution_required, redistribution,
                terms_url, terms_verified_at::date AS verified_on,
@@ -2106,20 +2139,20 @@ def databank_licenses() -> dict:
         FROM databank_serving
         GROUP BY 1,2,3,4,5,6,7,8,9,10
         ORDER BY 11 DESC""")
-    tiers = q("""
+    tiers = q_cached("""
         SELECT 'open'                  AS tier, COUNT(*) AS n FROM v_tier_open
         UNION ALL SELECT 'commercial_permissive', COUNT(*)
           FROM v_tier_commercial_permissive
         UNION ALL SELECT 'commercial_sharealike', COUNT(*)
           FROM v_tier_commercial_sharealike""")
-    pending = q("""SELECT source_key, status, scope, asked_at, expires_at
+    pending = q_cached("""SELECT source_key, status, scope, asked_at, expires_at
                    FROM source_permission WHERE status <> 'granted'
                    ORDER BY source_key""")
-    withheld = q("""SELECT v1_category, source_name, license_spdx, rows_held,
+    withheld = q_cached("""SELECT v1_category, source_name, license_spdx, rows_held,
                            from_date, to_date, reason, permission_status,
                            terms_url
                     FROM v_withheld ORDER BY rows_held DESC""")
-    bulk = q("""SELECT (SELECT count(*) FROM databank_serving) AS queryable,
+    bulk = q_cached("""SELECT (SELECT count(*) FROM databank_serving) AS queryable,
                        (SELECT count(*) FROM databank_bulk)    AS exportable""")[0]
     return {
         "tiers": {r["tier"]: r["n"] for r in tiers},
