@@ -284,3 +284,17 @@ incident 9,155 · rejected 15,491 · unclear 9,037 · 5,069 events · named 4,19
 82.7 %**; claim_count exact; 0 duplicate keys; المغير 232 on Ramallah's row, 9 on Jenin's; new reject reasons live:
 obituary 222, court 90, propaganda 75, testimony 65. **The honest precision number is round 8's 0.767 until round 9 draws a
 fresh sample of 1.8.1**; the projection is a tuning-set number. Next: round 9 after a week of 1.8.1 output.
+2026-09-24 19:30 UTC · P0-C.3 per-type precision in every incident answer + migration 078 · done · proof: commit `1b3804c`;
+`serve/quality.py` reads the latest round (`ops/incident-precision.json`, now stamped round + measured version); live
+`/v2/incidents/summary` → `precision: {round 8, measured 1.8.0, serving 1.8.1, weak: death 0.60 · siege 0.60 · demolition
+0.667 · land_levelling 0.667}` and `by_type.<type>.precision`; MCP `incidents` answer ends with "دقّة القراءة الآلية بآخر فحص
+يدوي (جولة 8): استشهاد 60%، حصار 60%، هدم 67%" (English: "Machine-read precision on the last hand check (round 8): …");
+the insights quality block reads the latest round instead of a hard-coded round-7 file. 078: 38 servable rows with an
+Arabic key but no Arabic name now display it ("هدم في Bayt Rima" → بيت ريما); 417 Latin-only rows remain. Serving tests
+141 green on a dev instance; test_quality 5.
+2026-09-24 19:26 UTC · INCIDENT (mine) · the production API restarted · while stopping the dev instance I matched every
+`uvicorn serve.app:app` process, which killed the production API at 19:26:36; systemd (`Restart=always`) had it back at
+19:26:38 (NRestarts=1, `/health` 200, no alert fired). Two seconds of downtime, no data touched. The restarted process runs
+the current tree, so **HANDS §1b (the serving-resolver restart) is done — by this accident, not by Zaid's hand**; the
+per-type precision answers above are therefore live too. Lesson recorded: never kill by a pattern the production unit
+also matches; use the dev instance's port/pid.
