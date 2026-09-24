@@ -121,7 +121,7 @@ causes, and the alert channel is unconfigured. Operability before intelligence.
 | ZAID-8 | `agent2` crossings-authority channel and the backup passphrase custody | as today |
 | ZAID-9 | Is an obituary or a funeral a death report? **Now a partner-facing accuracy call** (36 of the incident classifier's 51 wrong rows) | undecided; the classifier serves them |
 | ZAID-10 | May a partner tier carry the Telegram/RSS-derived **status**, or only what is openly licensed until a permission pass? | **ANSWERED 2026-09-23**: live trackers plus insights now; ungraded and `no-redistribution` databank sets stay out of the partner payloads |
-| ZAID-11 | Partner key policy: one key for Thaura, its quota, and the uptime we are willing to write down | key infrastructure exists (F-80) and a shared **published test key** now covers testers (`f0fe881`); Thaura's uptime commitment still unwritten |
+| ZAID-11 | Partner key policy: one key for Thaura, its quota, and the uptime we are willing to write down | **ANSWERED 2026-09-24**: **99% monthly, with two named carve-outs** (the host's own power/connectivity, and planned maintenance announced 24 h ahead), plus the promise that failure is visible via `/health`; written into `PARTNER-API.md` §11. Per-key quota stays 100,000/day for `thaura`; the shared **published test key** covers testers (`f0fe881`) |
 
 ---
 
@@ -316,8 +316,9 @@ or narrowed; the three host-only tools PROVEN unreachable over HTTP; a written t
 exists with every item proved or explicitly accepted. PROVE the note + the refusals.
 
 **F-85 · Staging key and review window for Thaura** before their release: their test key, a "try these ten
-calls" script, and a named path for what they find. DONE WHEN they have it and have used it. Needs F-80 and
-ZAID-10.
+calls" script, and a named path for what they find. DONE WHEN they have it and have used it. DELIVERED 2026-09-24
+(see §8) — the kit is finished and the key is live; the remaining half of the DONE WHEN is theirs to use, so this
+stays open until they report back. Needed F-80 and ZAID-10, both answered.
 
 ---
 
@@ -516,3 +517,15 @@ An external reviewer ran all 27 tools over the public endpoint and hand-checked 
 **Probe discipline worth keeping:** the first draft of the traversal test asserted a 200 was a hole — it was httpx normalising `../../health` into `/health` before sending, so the probe tested the client. The note's figures are warm and distribution-shaped, and an early comparison of `licenses` against `coverage` was cold-vs-warm and was discarded rather than reported.
 
 **Verified:** `tests/test_security_review.py` 16 passed; `test_api` + `test_mcp_http` + `test_licence_tier` 149 passed, 1 skipped; live probes above.
+
+2026-09-24 11:30 local · F-85 · delivered · proof: `docs/try-ten-calls.sh` run end-to-end against the live tunnel with the staging key (ten calls, all 200, 451-3393 ms). **THE HANDOVER KIT EXISTS AND THE KEY IS LIVE; THE LAST HALF OF THE DONE WHEN IS THAURA'S.** DONE WHEN they have it and have used it — they have it as of Zaid sending it, and only their use closes this, so it stays open rather than being ticked.
+
+**ZAID-11 answered (Zaid, 2026-09-24): 99% monthly availability, with two carve-outs named in writing** — the host's own power or connectivity, and planned maintenance announced 24 h ahead. Written into `PARTNER-API.md` §11 with what it means arithmetically (about seven hours of the month is inside the commitment), because a number a partner cannot interpret is a number they will interpret for us. Beyond the number the commitment is that failure is **visible, not silent**: `/health` goes `degraded` rather than staying `ok`, so a halted backfill is reported rather than discovered. The carve-out is not hedging — this system runs on one machine in a home lab, and the honest reason the number is not higher is the electricity supply, which is also ZAID-5.
+
+**The kit.** `docs/try-ten-calls.sh` — runnable with nothing but bash and python3, key in a header (the shape a server-side harness should send), and it never echoes the key (verified: 0 occurrences in its own output). It prints each answer, `answer_en`, the licence tier of what it just received, the caveat, and the round-trip time, so a reviewer reads the licence posture instead of being told about it. Ordered so `coverage` comes first: a reviewer who skips it reads every thin answer that follows as a data problem rather than a known gap. §9 now points at the script, and the by-hand curl block stays for anyone who wants the wire format.
+
+**The feedback path is the channel Thaura already has with Zaid** — no address was invented. The doc asks for the exact request, the exact response and the UTC time, and names the three reports that help most (a wrong answer; a refusal they disagree with, quoting `licence.refused`; a performance number they cannot live with). A real contact address is Zaid's to name if he wants one in the doc; until then the doc says the true thing rather than a plausible-looking mailbox.
+
+**Staging key:** `thaura` already existed from 09-23 (finite scope, 100,000 calls/day, revocable by file edit without a restart) and is verified working from outside. Nothing new was minted, because a second key for the same partner would split the usage ledger F-80 exists to keep attributable.
+
+**Landing it taught one thing about the payloads:** the per-payload `licence` block carries `tier` and `emits` but not `partner_tier` (that lives on `/v2/licence/tools`, where the grade is read from the database). The script's first draft printed `partner=n/a` and was corrected to print what the payload actually says, including an explicit `UNGRADED — do not redistribute` line if a grade is ever missing.

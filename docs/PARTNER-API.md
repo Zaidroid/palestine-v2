@@ -227,6 +227,16 @@ Everything on this server is readable; the cut is only on carrying it away.
 
 ## 9. Ten calls to try first
 
+Run `docs/try-ten-calls.sh` with your staging key and you have all ten in one
+pass — it prints each answer, the licence tier of what it just received, and the
+round-trip time, and it never echoes the key:
+
+```bash
+THAURA_KEY=pv2_... ./docs/try-ten-calls.sh
+```
+
+The same ten calls by hand, if you would rather see the wire format:
+
 ```bash
 K=<key>; U=https://live-api.zaidlab.xyz/mcp
 call() { curl -s -X POST "$U?key=$K" -H 'content-type: application/json' \
@@ -256,3 +266,39 @@ call weather_now '{}'
   than others because fewer channels report on them, not because less happens.
 * A caller may see `unknown` far more than it expects. That is the system
   refusing to guess.
+
+## 11. Availability, and what to do when something looks wrong
+
+**Our commitment: 99% monthly availability of `POST /mcp` and the read routes,
+excluding the two carve-outs below.** Plainly: in a month, up to roughly seven
+hours of unavailability is inside the commitment. A number we can hold is worth
+more to you than one that sounds better.
+
+Excluded, because they are outside anything this system can promise:
+
+* **The host's own power or connectivity.** This runs on one machine in a home
+  lab in the West Bank. A power cut, a PSU failure or a local internet outage
+  takes the API with it, and we cannot promise availability our electricity
+  supply does not have.
+* **Planned maintenance announced at least 24 hours ahead** on the status
+  endpoint below.
+
+Beyond the number, the commitment is that failure is **visible, not silent**.
+`GET /health` returns the machine's own verdict — `status`, `faults_total`,
+`jobs_ok/jobs_total`, `feeds_ok/feeds_total`, `feed_age_minutes` — and it goes
+`degraded` rather than staying `ok` when the watchdog has faults. A halted
+backfill or a stop-the-line fault is reported there rather than discovered by you.
+
+**When a call looks wrong, send the exact request and the exact response**, with
+the UTC time, through the channel you already have with Zaid. The three reports
+that help most:
+
+* a **wrong answer** — the most valuable report there is. Include the answer text
+  and, if you can, the source you believe contradicts it;
+* a **refusal you disagree with** — include `licence.refused` or `refused`
+  verbatim: those fields state why the system declined, and a wrong refusal is a
+  bug worth fixing;
+* a **performance** number you cannot live with — include the call and the
+  timing, since our own figures are measured warm and yours may not be.
+
+We will answer a report with the mechanism, not an apology.
