@@ -319,7 +319,8 @@ _AR_VALUES = {"open": "مفتوح", "closed": "مغلق", "congested": "مزدح
 _AR_EVENTS = {"raid": "اقتحام", "settler_attack": "اعتداء مستوطنين",
               "closure": "إغلاق", "arrest": "اعتقال", "demolition": "هدم",
               "shooting": "إطلاق نار", "death": "وفاة", "injury": "إصابة",
-              "fire_detection": "حريق", "siege": "حصار"}
+              "fire_detection": "حريق", "siege": "حصار",
+              "land_levelling": "تجريف أراضٍ"}
 
 
 def _ar_value(v: str) -> str:
@@ -429,6 +430,7 @@ INCIDENT_AR = {
     "raid": "اقتحام", "settler_attack": "اعتداء مستوطنين", "closure": "إغلاق",
     "siege": "حصار", "arrest": "اعتقالات", "injury": "إصابات",
     "shooting": "إطلاق نار", "demolition": "هدم", "death": "استشهاد",
+    "land_levelling": "تجريف أراضٍ",
     # Kept in step with _AR_EVENTS above by hand, and it had drifted: this map is
     # the COUNTING register ("5 اعتقالات"), that one phrases a single event
     # ("اعتقال"), so they are two maps on purpose — but a missing key falls

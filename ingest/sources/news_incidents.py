@@ -33,6 +33,7 @@ observation and decay like any other reading.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections import Counter
@@ -117,7 +118,7 @@ CLASSIFIER = "news"
 # in normalize(). Round 5's 163 claims are tuning data now — 1.6 has NO
 # held-out precision until round 6. Closure at 1.5 measured 0.875 (was
 # 0.167 in round 3); the rewrite held on disjoint data.
-CLASSIFIER_VERSION = "1.6"
+CLASSIFIER_VERSION = "1.7"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
@@ -157,6 +158,45 @@ def cluster_by_window(members: list[tuple], window: timedelta) -> list[list[tupl
     return out
 
 
+def _stable_key(itype: str, place_id: int, name_key: str | None, first_claim_id: int) -> str:
+    raw = f"{CLASSIFIER}|{itype}|{place_id}|{name_key or ''}|{first_claim_id}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def _fuller_form(conn, name: str, governorate: str) -> tuple:
+    """(resolution-like, candidate ids) for a short name inside a longer alias.
+
+    Whole-word containment only (`بيت عور` inside `بيت عور التحتا`, never a
+    fragment), restricted to the governorate the message named, stations and
+    governorate rows excluded, four characters or more. Exactly one distinct
+    place is an answer; two or more are recorded so the event can say it is
+    ambiguous instead of pinning the wrong twin.
+    """
+    from types import SimpleNamespace
+    key = fold_for_match(name)
+    if not key or len(key) < 4:
+        return None, []
+    gov = resolve_place(governorate, conn=conn, learn=False)
+    if not gov or not gov.admin2_pcode:
+        return None, []
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT p.place_id, p.name_ar
+              FROM place_alias a
+              JOIN place p0 ON p0.place_id = a.place_id
+              JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
+             WHERE p.servable AND p.admin2_pcode = %s
+               AND p.kind::text NOT IN ('station', 'governorate', 'region')
+               AND (a.alias_norm LIKE %s OR a.alias_norm LIKE %s OR a.alias_norm LIKE %s)
+             LIMIT 6""",
+            (gov.admin2_pcode, key + " %", "% " + key, "% " + key + " %"))
+        rows = cur.fetchall()
+    ids = sorted({r[0] for r in rows})
+    if len(ids) == 1:
+        return SimpleNamespace(place_id=ids[0], name_ar=rows[0][1]), ids
+    return None, ids
+
+
 def _confidence(groups: int) -> float:
     return round(min(MAX_CONFIDENCE, 1 - (1 - SINGLE_SOURCE_TRUST) ** max(groups, 1)), 4)
 
@@ -177,7 +217,13 @@ REBUILD_STEPS = [
      "(SELECT event_id FROM event WHERE attrs->>'classifier' = %(clf)s)"),
     ("DELETE FROM state_current WHERE state_kind = %(closure)s"),
     ("DELETE FROM claim_classification WHERE classifier = %(clf)s"),
-    ("DELETE FROM event WHERE attrs->>'classifier' = %(clf)s"),
+    # NOT deleted: reset. Re-clustering then joins each event by its stable
+    # key and the id survives the rebuild; whatever the new clustering no
+    # longer produces is left with claim_count 0 and no claim pointing at it,
+    # and the orphan sweep at the end of classify() removes it.
+    ("UPDATE event SET claim_count = 0, independent_sources = 0, "
+     "attrs = attrs - 'channels' WHERE attrs->>'classifier' = %(clf)s "
+     "AND status = 'believed'"),
 ]
 
 REFRESH_CLOSURE_SQL = """
@@ -275,14 +321,24 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             # travel with the event.
             res = None
             named_place = (r.place_text or "").strip() or None
+            candidates: list[int] = []
             if named_place:
                 res = resolve_place(named_place, {"admin": r.governorate},
                                     conn=conn, learn=False)
             place_precision = "named" if res else None
+            if not res and named_place and r.governorate:
+                # THE FULLER FORM THE TEXT DID NOT WRITE. "بيت عور" fails while
+                # "بيت عور التحتا" resolves; the gazetteer holds the long name
+                # and the channel wrote the short one. Try aliases that contain
+                # the phrase as a whole word, inside the message's governorate.
+                # One candidate is the place; several are recorded, not guessed.
+                res, candidates = _fuller_form(conn, named_place, r.governorate)
+                if res:
+                    place_precision = "named"
             if not res and r.governorate:
                 res = resolve_place(r.governorate, conn=conn, learn=False)
                 if res:
-                    place_precision = "governorate"
+                    place_precision = "village_ambiguous" if candidates else "governorate"
             if not res:
                 stats["unresolved_place"] += 1
                 unresolved[(r.place_text or r.governorate or "?")[:28]] += 1
@@ -304,29 +360,35 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             # stops grouping.
             name_key = fold_for_match(named_place) if named_place else None
             groups.setdefault((r.incident_type, res.place_id, name_key), []).append(
-                (claim_id, reported_at, unit, source_id, r, place_precision))
+                (claim_id, reported_at, unit, source_id, r, place_precision, candidates))
 
         # Split each group into time-windowed clusters; each cluster is an event.
         events = []
-        for (itype, place_id, _name_key), members in groups.items():
+        for (itype, place_id, name_key), members in groups.items():
             for cluster in cluster_by_window(members, DEDUP_WINDOW):
-                events.append((itype, place_id, cluster))
+                events.append((itype, place_id, name_key, cluster))
 
         stats["events"] = len(events)
-        stats["claims_grouped"] = sum(len(c) for _, _, c in events)
+        stats["claims_grouped"] = sum(len(c) for *_, c in events)
         stats["corroborated"] = sum(
-            1 for _, _, c in events if len({m[2] for m in c}) > 1)
+            1 for *_, c in events if len({m[2] for m in c}) > 1)
 
         if dry_run:
             stats["unresolved_sample"] = unresolved.most_common(8)
             return stats
 
         event_by_claim: dict[int, int] = {}
-        for itype, place_id, cluster in events:
+        for itype, place_id, name_key, cluster in events:
             units = {m[2] for m in cluster}
             occurred = cluster[0][1]
             conf = _confidence(len(units))
             reading = cluster[0][4]
+            # A STABLE IDENTITY. Event ids used to be re-minted on every
+            # --rebuild (79,779-84,453 on 2026-09-24 alone), so nothing outside
+            # could reference an event. The key is the grouping key plus the
+            # EARLIEST claim, which never changes; an hour bucket would flip
+            # when a report lands either side of the boundary.
+            stable_key = _stable_key(itype, place_id, name_key, min(m[0] for m in cluster))
 
             # JOIN THE EVENT THAT ALREADY EXISTS, rather than minting a new one.
             # This loop used to be reached with only the claims THIS RUN picked
@@ -345,16 +407,28 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 SELECT event_id, claim_count, independent_sources, occurred_at,
                        attrs->'channels' AS channels
                   FROM event
-                 WHERE event_type = %s AND place_id = %s
-                   AND status = 'believed'
-                   AND attrs->>'classifier' = %s
-                   AND ABS(EXTRACT(EPOCH FROM (occurred_at - %s::timestamptz)))
-                       <= %s
-                 ORDER BY occurred_at
-                 LIMIT 1""",
-                (itype, place_id, CLASSIFIER, occurred,
-                 DEDUP_WINDOW.total_seconds()))
+                 WHERE attrs->>'stable_key' = %s
+                 LIMIT 1""", (stable_key,))
             prior = cur.fetchone()
+            if not prior:
+                # Keyed on the NAMED place too: 43 governorate-level events were
+                # merging reports about different villages (validation,
+                # 2026-09-24), because the window only knew type + resolved row.
+                cur.execute("""
+                    SELECT event_id, claim_count, independent_sources, occurred_at,
+                           attrs->'channels' AS channels
+                      FROM event
+                     WHERE event_type = %s AND place_id = %s
+                       AND status = 'believed'
+                       AND attrs->>'classifier' = %s
+                       AND COALESCE(attrs->>'name_key', '') = %s
+                       AND ABS(EXTRACT(EPOCH FROM (occurred_at - %s::timestamptz)))
+                           <= %s
+                     ORDER BY occurred_at
+                     LIMIT 1""",
+                    (itype, place_id, CLASSIFIER, name_key or "", occurred,
+                     DEDUP_WINDOW.total_seconds()))
+                prior = cur.fetchone()
 
             if prior:
                 event_id, prev_n, _prev_srcs, _prev_at, prev_ch = prior
@@ -371,7 +445,9 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                     (prev_n + len(cluster), len(merged_units),
                      _confidence(len(merged_units)),
                      json.dumps({"channels": sorted(merged_units),
-                                 "merged_reports": (prev_n + len(cluster))},
+                                 "merged_reports": (prev_n + len(cluster)),
+                                 "stable_key": stable_key,
+                                 "name_key": name_key or ""},
                                 ensure_ascii=False),
                      event_id))
                 stats["events_joined"] = stats.get("events_joined", 0) + 1
@@ -403,7 +479,10 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                                  # channel named. Without this the two are
                                  # indistinguishable and a village incident
                                  # reads as if it happened in the city.
-                                 "place_precision": (cluster[0][5] or "named")},
+                                 "place_precision": (cluster[0][5] or "named"),
+                                 "place_candidates": cluster[0][6] or [],
+                                 "name_key": name_key or "",
+                                 "stable_key": stable_key},
                                 ensure_ascii=False),
                      place_id))
                 row = cur.fetchone()

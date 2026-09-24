@@ -107,9 +107,16 @@ _MOVE_OBJECT = (r"(?:شارع|شوارع|طريق|طرق|حاجز|حواجز|ب�
                 r"مدخل|مداخل|مخرج|منطقه|بلده|قريه|مخيم|مفترق|دوار|جسر|نفق|الحركه)")
 # `[^.،؛]` keeps the two inside one clause: crossing a full stop or a comma is
 # usually crossing into a different sentence about a different thing.
+# Installing a gate or earth mound IS the closure it announces: "the army
+# installs an iron gate on the Jariot road near Beit Ur" was filed as a settler
+# attack in al-Bireh (audit, 2026-09-24).
+_INSTALL_BARRIER = (r"(?:تركيب|نصب|وضع|اقامه|اقامة|[يت]نصب|[يت]ركب|[يت]ضع)\s+"
+                    r"(?:ال)?(?:بوابه|بوابة|بوابات|ساتر|سواتر|مكعبات|حواجز اسمنتيه|"
+                    r"حواجز اسمنتية|كتل اسمنتيه|كتل اسمنتية)")
 _CLOSURE_PATTERN = (
     r"(" + _CLOSE_VERB + r"[^.،؛]{0,40}?" + _MOVE_OBJECT +
     r"|" + _MOVE_OBJECT + r"[^.،؛]{0,40}?" + _CLOSE_VERB +
+    r"|" + _INSTALL_BARRIER +
     r"|منع الحركة|قطع الطريق)")
 
 INCIDENT_PATTERNS: list[tuple[str, str]] = [
@@ -184,7 +191,13 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # as a demolition, on the strength of "threatened to demolish his house if
     # he does not surrender". Excluding it lets the arrests in the same message
     # take the classification, which is what actually happened.
-    ("demolition",     r"((?<!بنيه )هدم\w*|جرافات|تجريف|يجرف|تجرف)"),
+    # LAND LEVELLING IS NOT A DEMOLITION (classifier 1.7, 2026-09-24). The
+    # audit caught "army bulldozing land in al-Mazra'a al-Gharbiya" served as a
+    # demolition in Ramallah: 155 of 670 demolition claims carried تجريف with no
+    # هدم at all. A levelled field and a demolished home are different harms
+    # with different sources, and a closed vocabulary should say which.
+    ("land_levelling", r"(تجريف|[يت]جرف\w*|جرفت)"),
+    ("demolition",     r"((?<!بنيه )هدم\w*|جرافات)"),
     # NOT "معتقل" — like "شهيد", the participle names a person ("the detained
     # child Muhammad") rather than reporting an arrest.
     ("arrest",         r"([اتين]عتقل\w*|اعتقالات?)"),
@@ -250,7 +263,8 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # (هدم|بالهدم) alternation and بهدم then matched the demolition pattern
     # INSIDE itself — a notice bulletin served as the act it only threatens.
     ("notice not act", r"(اخطار\w*\s+(هدم|بالهدم|بهدم|لهدم)|اوامر\s+هدم|"
-                       r"انذار\w*\s+بالهدم)"),
+                       r"انذار\w*\s+بالهدم|[يت]خطر\w*\s+ب?هدم|اخطرت\s+ب?هدم|"
+                       r"تسليم\s+اخطار)"),
     # Follow-ups about an earlier event: a release days later, a family
     # inspecting old damage. Measured as four of seventeen sampled
     # `demolition` incidents — all one story about a woman freed after 8 days,
@@ -472,6 +486,12 @@ class NewsReading:
 
 
 _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
+# Funeral / obituary / memorial vocabulary. Deliberately WITHOUT the bare جثمان
+# ("body"): a fresh death report often says where the body was taken.
+_FUNERAL_RE = re.compile(_norm_pat(
+    r"(تشييع|شيعت|شيع\s+جثمان|[يت]شيع\w*|جنازه|جنازة|موكب\s+(?:الشهيد|جنازه|جنازة|تشييع)|"
+    r"\bنعي\b|[يت]نعي|ينعي|تنعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|"
+    r"ذكري\s+(?:استشهاد|رحيل)|الذكري\s+ال\S+\s+لاستشهاد)"))
 _REJECT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in REJECT_PATTERNS]
 
 
@@ -556,6 +576,18 @@ def read(text: str | None) -> NewsReading:
     inc = _first_match(norm, _INCIDENT_RE)
     if not inc:
         return NewsReading(verdict="unclear", reject_reason="no incident verb")
+
+    # AN OBITUARY OR A FUNERAL IS NOT A DEATH REPORT (ZAID-9, 2026-09-23).
+    # 36 of the 51 wrong rows in precision round 7 were funerals, obituaries and
+    # memorial features read as deaths — the whole gap between 0.717 and the
+    # 0.80 gate. The gate applies to DEATHS ONLY: funeral words appear in raid
+    # and settler-attack reports too (a funeral procession attacked, a raid
+    # during a wake), and those are events.
+    if inc[0] == "death":
+        fun = _FUNERAL_RE.search(norm)
+        if fun:
+            return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
+                               matched=fun.group(0)[:60])
 
     place_text, gov = _extract_place(norm)
     if not place_text and not gov:

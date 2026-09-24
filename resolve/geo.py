@@ -86,6 +86,38 @@ def _mk(row, method: str, confidence: float, ambiguous: int = 0) -> Resolution:
     )
 
 
+_ADMIN_PCODE: dict[str, str | None] = {}
+
+
+def _with_admin_pcode(cur, context: dict | None) -> dict | None:
+    """Turn an `admin` governorate NAME in the context into `admin2_pcode`.
+
+    The incident classifier has always passed `{"admin": governorate}` and
+    `_prefer` has only ever read `admin2_pcode`, so the hint was ignored: a
+    village name shared by two governorates resolved by size, not by the
+    governorate the message named. Measured 2026-09-24 (validation of the
+    public-release plan). Cached per name; a governorate does not move.
+    """
+    if not context or context.get("admin2_pcode") or not context.get("admin"):
+        return context
+    name = str(context["admin"])
+    if name not in _ADMIN_PCODE:
+        key = fold_for_match(name)
+        cur.execute("""
+            SELECT p.admin2_pcode
+              FROM place_alias a
+              JOIN place p0 ON p0.place_id = a.place_id
+              JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
+             WHERE a.alias_norm = %s AND p.kind::text = 'governorate'
+               AND p.admin2_pcode IS NOT NULL
+             LIMIT 1""", (key,))
+        row = cur.fetchone()
+        _ADMIN_PCODE[name] = row[0] if row else None
+    if _ADMIN_PCODE[name]:
+        return {**context, "admin2_pcode": _ADMIN_PCODE[name]}
+    return context
+
+
 def _prefer(rows, context: dict | None):
     """Tie-break among equally-good matches.
 
@@ -127,6 +159,7 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
         conn = cm.__enter__()
     try:
         with conn.cursor() as cur:
+            context = _with_admin_pcode(cur, context)
             probe = fold_for_match(text)
             # Order matters: variants first (most faithful), then the
             # generic-stripped probe. A phrase that reduces to nothing but

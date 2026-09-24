@@ -881,11 +881,21 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
                    FROM event WHERE status='believed'
                      AND occurred_at > now() - make_interval(hours => %s)
                    GROUP BY 1 ORDER BY 2 DESC""", (hours,))
+    # NAMED PLACES ONLY. An incident the classifier could pin only to a
+    # governorate sat at the city centroid and was counted under the city, which
+    # is why Ramallah topped every "worst affected" list (audit, 2026-09-24).
+    # Those are counted apart, as what they are.
     by_place = q("""SELECT p.name_ar, p.name_en, COUNT(*) n
                     FROM event e JOIN place p ON p.place_id = e.place_id
                     WHERE e.status='believed'
                       AND e.occurred_at > now() - make_interval(hours => %s)
+                      AND COALESCE(e.attrs->>'place_precision', 'named') = 'named'
                     GROUP BY 1,2 ORDER BY 3 DESC LIMIT 15""", (hours,))
+    gov_only = q("""SELECT COUNT(*) n FROM event e
+                    WHERE e.status='believed'
+                      AND e.occurred_at > now() - make_interval(hours => %s)
+                      AND e.attrs->>'place_precision' IN ('governorate', 'village_ambiguous')""",
+                 (hours,))
     ledger = q("""SELECT verdict, reject_reason, COUNT(*) n
                   FROM claim_classification GROUP BY 1,2 ORDER BY 3 DESC""")
     return {
@@ -895,6 +905,9 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
                     for r in by_type},
         "by_place": [{"place": r["name_ar"] or r["name_en"], "n": r["n"]}
                      for r in by_place],
+        "located_to_governorate_only": int(gov_only[0]["n"]) if gov_only else 0,
+        "by_place_note": "counts incidents whose village resolved; the rest are "
+                         "counted in located_to_governorate_only, never under a city",
         "classification_ledger": [{"verdict": r["verdict"],
                                    "reason": r["reject_reason"], "n": r["n"]}
                                   for r in ledger],
@@ -1463,7 +1476,7 @@ def insights(
                          "corroborated": r["corroborated"],
                          "newest": r["newest"], "newest_place": r["newest_place"]}
                         for r in inc],
-            "absent_types": [t for t in ("raid", "settler_attack", "demolition",
+            "absent_types": [t for t in ("raid", "settler_attack", "demolition", "land_levelling",
                                          "closure", "arrest", "shooting", "death",
                                          "injury", "fire_detection", "siege")
                              if t not in {r["event_type"] for r in inc}],

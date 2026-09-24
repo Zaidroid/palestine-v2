@@ -469,3 +469,58 @@ def test_censorship_dots_do_not_hide_the_settler():
     r = read("▫️▫️ مسـ.ـتوطن يهاجم مركبة أحد المواطنين بين قريتي المغير وأبو فلاح شرق رام الله")
     assert r.verdict == "incident"
     assert r.incident_type == "settler_attack"
+
+
+# ── classifier 1.7 (2026-09-24): the audit's three label defects, and ZAID-9 ──
+
+@pytest.mark.parametrize("text", [
+    # The failure shape round 7 measured: a funeral report that CARRIES the
+    # death verb, so the death pattern fired and the funeral was served as a
+    # fresh killing.
+    "تشييع جثمان الشهيد الذي استشهد أمس برصاص الاحتلال في بلدة بيتا جنوب نابلس",
+    "الآلاف يشيعون جثمان الشهيد الطفل الذي ارتقى برصاص الاحتلال في مخيم جنين",
+    "موكب جنازة الشهيد الذي استشهد فجر اليوم ينطلق من مستشفى رفيديا في نابلس",
+    "بيت عزاء الشهيد الذي ارتقى في بلدة كفر قدوم يستقبل المعزين",
+])
+def test_a_funeral_or_obituary_is_not_a_death_report(text):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == "obituary or funeral", r
+
+
+@pytest.mark.parametrize("text", [
+    "تشييع جثمان الشهيد محمد أحمد في بلدة سلواد شرق رام الله بمشاركة المئات",
+    "في الذكرى الأولى لاستشهاد الشاب خالد في بلدة بيتا",
+])
+def test_a_verbless_funeral_or_a_memorial_is_never_served(text):
+    assert read(text).verdict in ("rejected", "unclear")
+
+
+def test_a_fresh_death_is_still_a_death():
+    r = read("استشهد شاب برصاص قوات الاحتلال خلال اقتحام بلدة سلواد شرق رام الله ونقل جثمانه إلى المستشفى")
+    assert r.verdict == "incident" and r.incident_type == "death", r
+
+
+def test_the_funeral_gate_does_not_touch_other_events():
+    r = read("قوات الاحتلال تعتدي على موكب تشييع الشهيد وتطلق قنابل الغاز في بلدة بيتا جنوب نابلس")
+    assert r.verdict == "incident" and r.incident_type in ("shooting", "raid", "injury"), r
+
+
+def test_land_levelling_is_its_own_type():
+    r = read("جرافات الاحتلال تجرف أراضي زراعية في قرية المزرعة الغربية شمال رام الله")
+    assert r.verdict == "incident" and r.incident_type == "land_levelling", r
+    r2 = read("قوات الاحتلال تهدم منزلاً في قرية الولجة غرب بيت لحم")
+    assert r2.verdict == "incident" and r2.incident_type == "demolition", r2
+
+
+def test_installing_a_gate_is_a_closure():
+    r = read("قوات الاحتلال تنصب بوابة حديدية على مدخل بلدة بيت عور التحتا غرب رام الله")
+    assert r.verdict == "incident" and r.incident_type == "closure", r
+
+
+@pytest.mark.parametrize("text", [
+    "الاحتلال يخطر بهدم منزل في قرية جالود جنوب نابلس",
+    "قوات الاحتلال تسلم إخطارات بهدم ثلاثة منازل في بلدة يطا جنوب الخليل",
+])
+def test_notice_variants_are_notices_not_acts(text):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == "notice not act", r
