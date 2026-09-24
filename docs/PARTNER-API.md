@@ -289,9 +289,8 @@ Beyond the number, the commitment is that failure is **visible, not silent**.
 `degraded` rather than staying `ok` when the watchdog has faults. A halted
 backfill or a stop-the-line fault is reported there rather than discovered by you.
 
-**When a call looks wrong, send the exact request and the exact response**, with
-the UTC time, through the channel you already have with Zaid. The three reports
-that help most:
+**When a call looks wrong, email `zaidsalem@live.com` with the exact request, the
+exact response, and the UTC time.** The three reports that help most:
 
 * a **wrong answer** — the most valuable report there is. Include the answer text
   and, if you can, the source you believe contradicts it;
