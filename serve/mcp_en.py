@@ -101,6 +101,9 @@ def can_i_travel(d: dict) -> str:
     say = {"likely_open": "The route is probably passable",
            "slow": "The route is passable but congested",
            "blocked": "The route is blocked",
+           # NOT "probably passable". Nothing seen is closed, but the evidence
+           # does not cover the journey — see corridor._score.
+           "unverified": "Cannot confirm this route is open",
            "unknown": "No recent reports on this route"}.get(
         d.get("verdict"), str(d.get("verdict")))
     out = say

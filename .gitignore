@@ -58,3 +58,7 @@ data/raw/tech4palestine/
 data/raw/ooni/
 data/raw/ioda/
 .keys/
+
+# scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)
+tmp/
+ops/mcp-accuracy.json

@@ -729,10 +729,14 @@ def can_i_travel(origin: str, destination: str) -> dict:
     if not rs:
         return {"answer": f"ما قدرت أحسب طريق من {origin} لـ{destination}.", **d}
     best = rs[0]
+    # `.get` with a fallback, not `[...]`: a new verdict must degrade to a
+    # readable sentence, never a KeyError in the serving path.
     say = {"likely_open": "الطريق سالك على الأغلب",
            "slow": "الطريق سالك بس فيه ازمة",
            "blocked": "الطريق مسكّر",
-           "unknown": "ما في تقارير حديثة عن هالطريق"}[best["verdict"]]
+           "unverified": "ما بقدر أأكد إنه الطريق سالك",
+           "unknown": "ما في تقارير حديثة عن هالطريق"}.get(
+        best["verdict"], "ما في تقارير حديثة عن هالطريق")
     detail = ""
     if best["blocked_at"]:
         detail = " — مسكّر عند " + "، ".join(best["blocked_at"][:2])

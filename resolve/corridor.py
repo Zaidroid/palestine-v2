@@ -82,6 +82,28 @@ CORRIDOR_METRES = 300
 # off the alignment is on somebody's journey is their call. Silence is not.
 NEAR_MISS_METRES = 3000
 
+# WHEN "LIKELY OPEN" IS NOT A THING WE MAY SAY.
+#
+# Two thresholds, both taken from the partner audit's own measurements on
+# Ramallah->Nablus (2026-09-24) rather than picked for roundness.
+#
+# UNVERIFIED_GAP_KM — the route is 53.2 km and the first tracked checkpoint sits
+# at 26.8 km. Coverage on the West Bank road network is thin by nature, so this
+# must not fire on every trip: measured across the corridors this server serves,
+# a 10 km blind stretch is roughly the point where the unwatched part stops
+# being "between two junctions" and starts being "most of the drive". Below it
+# the payload still reports the gap; above it the gap outweighs the verdict.
+UNVERIFIED_GAP_KM = 10.0
+
+# ENDS_KM — a closure in the first or last stretch is the one that decides
+# whether you can start or finish the journey at all. On the audited trip Beit
+# El, Ein Siniya and Silwad were all closed 2.0-2.6 km off the line within the
+# first few km of leaving Ramallah: the corridor could not see them and they
+# were exactly the roads out of the city. 10 km is the distance within which an
+# off-route closure is still plausibly on the way in or out rather than an
+# unrelated road that happens to pass nearby.
+ENDS_KM = 10.0
+
 # Presence is a SIGHTING, not a state (migration 025) — a 15-minute half-life
 # against a 35-hour reporting gap. It never blocks a route, because an army
 # sighting two hours ago says nothing reliable about now. It is surfaced as a
@@ -118,7 +140,8 @@ NEAR_MISS_SQL = """
 WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
 SELECT p.place_id, p.name_ar, p.name_en,
        round(ST_Distance(p.centroid, line.g)::numeric) AS off_route_m,
-       f.value AS flow, f.age_minutes, f.independent_sources
+       f.value AS flow, f.age_minutes, f.independent_sources,
+       ST_LineLocatePoint(line.m, p.centroid::geometry) AS along
   FROM place p
  CROSS JOIN line
   JOIN state_serving f
@@ -224,7 +247,7 @@ class CheckpointOnRoute:
 
 @dataclass
 class Corridor:
-    verdict: str                    # blocked | slow | likely_open | unknown
+    verdict: str                    # blocked | slow | unverified | likely_open | unknown
     summary: str
     distance_km: float
     duration_minutes: float
@@ -295,8 +318,39 @@ def _valhalla(origin, dest, alternates: int) -> list[dict]:
     return trips
 
 
-def _score(cps: list[CheckpointOnRoute]) -> tuple[str, str]:
-    """Verdict and a sentence. See the module docstring on the asymmetry."""
+def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
+           near_misses: list | None = None, distance_km: float | None = None
+           ) -> tuple[str, str]:
+    """Verdict and a sentence. See the module docstring on the asymmetry.
+
+    THE VERDICT MUST NOT SPEAK FOR ROAD IT CANNOT SEE.
+    Until 2026-09-24 this function received ONLY the checkpoints inside the
+    300 m corridor, so `likely_open` was structurally incapable of knowing
+    either how much of the drive nothing watched or that a closure sat just
+    off the line. The partner's audit caught the consequence four times on one
+    trip: Ramallah->Nablus read "likely open" at 16:24 and 16:47 while Beit El,
+    Ein Siniya and Silwad were all closed 2.0-2.6 km off the route, and the
+    first 26.8 km of that route had no tracked checkpoint at all. Every
+    statement in the payload was individually true and the headline was still
+    the opposite of the answer.
+
+    So `likely_open` — the only verdict that reads as permission — now has to
+    earn it. It degrades to `unverified` when either:
+
+      * the longest unwatched stretch exceeds UNVERIFIED_GAP_KM, or
+      * a closure sits within ENDS_KM of the origin or the destination.
+
+    The second is the one that matters most and the one the audit named: a
+    closure 2 km off a corridor AT THE ORIGIN is usually the road you must take
+    to reach that corridor. Near the middle of a long drive it is far more
+    often a genuinely different road, which is why position, not just distance
+    from the line, decides.
+
+    `unverified` is not `blocked`. It means: we cannot tell you this is open,
+    here is what we do know. A confirmed closure ON the route still blocks, and
+    congestion still reads as slow — degrading those would be hiding evidence
+    rather than qualifying its absence.
+    """
     blocked = [c for c in cps if c.flow == BLOCKING]
     slow = [c for c in cps if c.flow in SLOWING]
     known = [c for c in cps if c.flow != "unknown"]
@@ -316,9 +370,59 @@ def _score(cps: list[CheckpointOnRoute]) -> tuple[str, str]:
         return "slow", (f"Passable but congested at {names}. "
                         f"{len(known)} of {len(cps)} checkpoints reported"
                         + (f", {len(unknown)} not checked recently." if unknown else "."))
+
+    # Nothing on the route contradicts "open" — now ask whether we saw enough
+    # of the route, and of its two ends, to say so.
+    doubts = _doubts(coverage, near_misses, distance_km)
+    if doubts:
+        return "unverified", ("Nothing on this route is reported closed, but "
+                              + "; ".join(doubts)
+                              + ". Check before travelling.")
     return "likely_open", (f"{len(known)} of {len(cps)} checkpoints confirmed open"
                            + (f"; {len(unknown)} have not been reported recently."
                               if unknown else "."))
+
+
+def _doubts(coverage: dict | None, near_misses: list | None,
+            distance_km: float | None) -> list[str]:
+    """Reasons an otherwise-open route cannot be called open. Empty means clean."""
+    out: list[str] = []
+
+    gap = float((coverage or {}).get("longest_gap_km") or 0.0)
+    if gap >= UNVERIFIED_GAP_KM:
+        frm = (coverage or {}).get("longest_gap_from_km")
+        to = (coverage or {}).get("longest_gap_to_km")
+        where = f" ({frm:.0f}-{to:.0f} km in)" if frm is not None and to is not None else ""
+        out.append(f"no checkpoint is tracked for {gap:.0f} km of it{where}")
+
+    for m in _closures_at_ends(near_misses, distance_km):
+        end = "leaving" if m["along"] <= 0.5 else "arriving at"
+        out.append(f"{m['name']} is {m['flow']} {m['off_route_m'] / 1000:.1f} km "
+                   f"off the route where you are {end} it")
+    return out
+
+
+def _closures_at_ends(near_misses: list | None, distance_km: float | None) -> list[dict]:
+    """Near-miss CLOSURES sitting in the first or last ENDS_KM of the route.
+
+    Congestion is excluded deliberately: a busy junction near town is the
+    normal state of the road and would fire on almost every trip, which would
+    make `unverified` meaningless. A closure is an event.
+    """
+    if not near_misses or not distance_km:
+        return []
+    frac = min(0.5, ENDS_KM / distance_km) if distance_km else 0.0
+    out = []
+    for m in near_misses:
+        if m.get("flow") != "closed":
+            continue
+        along = m.get("along")
+        if along is None:
+            continue
+        if along <= frac or along >= (1.0 - frac):
+            out.append(m)
+    # Nearest to the alignment first — the most likely to actually be on the way.
+    return sorted(out, key=lambda m: m["off_route_m"])[:3]
 
 
 def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
@@ -350,12 +454,16 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                 -(m.get("age_minutes") if m.get("age_minutes") is not None else 1e9))
 
     near: dict[int, dict] = {}
-    for (npid, nar, nen, noff, nflow, nage, nsrcs) in near_rows:
+    for (npid, nar, nen, noff, nflow, nage, nsrcs, nalong) in near_rows:
         cand = {"place_id": npid, "name": nar or nen or f"#{npid}",
                 "name_en": nen, "off_route_m": int(noff),
                 "flow": nflow,
                 "age_minutes": float(nage) if nage is not None else None,
-                "independent_sources": nsrcs}
+                "independent_sources": nsrcs,
+                # WHERE on the route it sits, 0.0 at the origin and 1.0 at the
+                # destination. A closure's position is what decides whether it
+                # is on the way out of town or an unrelated road thirty km away.
+                "along": float(nalong)}
         prev = near.get(npid)
         if prev is None or _rank(cand) > _rank(prev):
             near[npid] = cand
@@ -400,7 +508,6 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                     by_id[pid].presence.append(
                         {"kind": kind, "age_minutes": float(age) if age is not None else None})
 
-    verdict, summary = _score(cps)
     known = [c for c in cps if c.flow != "unknown"]
 
     # ── HOW MUCH OF THIS DRIVE ANYTHING ACTUALLY WATCHES ──
@@ -413,6 +520,10 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     # cannot see WHERE on the 53 km those two are. So the longest blind stretch
     # travels with the verdict, in kilometres, with an explicit section:
     # unverified.
+    #
+    # THIS IS COMPUTED BEFORE THE VERDICT, NOT AFTER IT. Until 2026-09-24 the
+    # order was reversed, which is precisely why the verdict could not take any
+    # of it into account — see _score.
     dist = float(trip["summary"]["length"])
     marks = sorted([0.0] + [c.along for c in cps if 0.0 <= c.along <= 1.0] + [1.0])
     segs = [(marks[i + 1] - marks[i], marks[i], marks[i + 1])
@@ -427,13 +538,19 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         "longest_gap_from_km": round(dist * gap_a, 1),
         "longest_gap_to_km": round(dist * gap_b, 1),
     }
+
+    verdict, summary = _score(cps, coverage=coverage, near_misses=near_misses,
+                              distance_km=dist)
+
     # A verdict that speaks for a route it cannot see half of is the defect, not
     # the numbers behind it. Say which it is rather than leaving the reader to
     # infer it from a fraction.
     coverage["verdict_covers"] = ("the whole route"
                                   if coverage["coverage_fraction"] >= 0.8
                                   else "part of the route")
-    if coverage["coverage_fraction"] < 0.8 and coverage["longest_gap_km"] > 0:
+    # `unverified` already says this in its own sentence, from the same numbers.
+    if (verdict != "unverified" and coverage["coverage_fraction"] < 0.8
+            and coverage["longest_gap_km"] > 0):
         summary += (f" No checkpoint is tracked for {coverage['longest_gap_km']:.0f}"
                     f" km of this route ({coverage['longest_gap_from_km']:.0f}-"
                     f"{coverage['longest_gap_to_km']:.0f} km in), so that stretch is"
@@ -511,6 +628,10 @@ def routes(origin: tuple[float, float], dest: tuple[float, float],
     # US confidence. How much is known is shown on every route — 4 of 7, 3 of 8 —
     # so the traveller can weigh it themselves. Reporting uncertainty is the job;
     # acting on it for them is not.
-    rank = {"likely_open": 0, "slow": 1, "unknown": 2, "blocked": 3}
+    # `unverified` outranks `unknown`: both are absences of evidence, but
+    # unverified means the checkpoints we DID see were open, which is strictly
+    # more than nothing. It sits below `slow` because a reported delay is still
+    # a road somebody got through.
+    rank = {"likely_open": 0, "slow": 1, "unverified": 2, "unknown": 3, "blocked": 4}
     out.sort(key=lambda c: (rank.get(c.verdict, 9), c.duration_minutes))
     return out

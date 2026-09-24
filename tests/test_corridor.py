@@ -15,8 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from resolve.corridor import (CORRIDOR_METRES, CheckpointOnRoute,   # noqa: E402
-                              _score, decode_polyline)
+from resolve.corridor import (CORRIDOR_METRES, ENDS_KM,   # noqa: E402
+                              UNVERIFIED_GAP_KM, CheckpointOnRoute,
+                              _closures_at_ends, _score, decode_polyline)
 
 
 # Captured from our Valhalla for a short road inside Nablus.
@@ -82,6 +83,120 @@ def test_an_empty_route_is_unknown_not_open():
     the road is clear."""
     v, _ = _score([])
     assert v == "unknown"
+
+
+# ── "likely open" has to have SEEN the route ─────────────────────────────────
+#
+# Regression cover for the partner audit of 2026-09-24, which caught the same
+# trip reading "likely open" four times while the checkpoints out of the origin
+# were closed and half the drive was watched by nothing.
+
+def _coverage(gap_km, dist=53.2):
+    return {"distance_km": dist, "longest_gap_km": gap_km,
+            "longest_gap_from_km": 0.0, "longest_gap_to_km": gap_km,
+            "coverage_fraction": round(1.0 - gap_km / dist, 2)}
+
+
+def _miss(name, flow="closed", off_m=2300, along=0.02):
+    return {"place_id": 1, "name": name, "name_en": name, "off_route_m": off_m,
+            "flow": flow, "age_minutes": 18.0, "independent_sources": 2,
+            "along": along}
+
+
+def test_open_checkpoints_do_not_certify_a_route_nobody_watched():
+    """The measured case: 53.2 km with the first tracked checkpoint at 26.8 km.
+    Every checkpoint we could see was open, and the verdict still may not say
+    the route is open, because it has not seen the route."""
+    v, msg = _score([cp("A", "open", along=0.55)],
+                    coverage=_coverage(26.8), distance_km=53.2)
+    assert v == "unverified"
+    assert "27 km" in msg and "Check before travelling" in msg
+
+
+def test_a_gap_shorter_than_the_threshold_still_reads_open():
+    """The rule has to stay silent on ordinary routes or it means nothing:
+    West Bank coverage is thin everywhere, so a short blind stretch between two
+    junctions is the normal case, not a warning."""
+    v, _ = _score([cp("A", "open")],
+                  coverage=_coverage(UNVERIFIED_GAP_KM - 1), distance_km=53.2)
+    assert v == "likely_open"
+
+
+def test_a_closure_on_the_way_out_of_town_blocks_the_open_verdict():
+    """Ein Siniya, Beit El and Silwad were closed 2.0-2.6 km off the route at
+    the Ramallah end. A closure that near the origin is usually the road you
+    must take to reach the corridor at all."""
+    v, msg = _score([cp("A", "open", along=0.6)],
+                    coverage=_coverage(2.0), near_misses=[_miss("عين سينيا")],
+                    distance_km=53.2)
+    assert v == "unverified"
+    assert "عين سينيا" in msg and "leaving" in msg
+
+
+def test_a_closure_at_the_destination_end_counts_too():
+    v, msg = _score([cp("A", "open", along=0.4)],
+                    coverage=_coverage(2.0),
+                    near_misses=[_miss("حوارة", along=0.99)], distance_km=53.2)
+    assert v == "unverified" and "arriving at" in msg
+
+
+def test_a_closure_in_the_middle_of_a_long_drive_does_not():
+    """Mid-route, an off-corridor closure is far more often a genuinely
+    different road. It is still reported in near_misses; it just does not
+    overturn the verdict."""
+    v, _ = _score([cp("A", "open")],
+                  coverage=_coverage(2.0),
+                  near_misses=[_miss("somewhere", along=0.5)], distance_km=53.2)
+    assert v == "likely_open"
+
+
+def test_congestion_off_the_route_does_not_trigger_unverified():
+    """A busy junction near town is the road's normal state and would fire on
+    almost every trip, which would make the verdict meaningless."""
+    v, _ = _score([cp("A", "open")],
+                  coverage=_coverage(2.0),
+                  near_misses=[_miss("busy", flow="congested")], distance_km=53.2)
+    assert v == "likely_open"
+
+
+def test_unverified_never_overrides_evidence_we_do_have():
+    """It qualifies an ABSENCE of evidence. A confirmed closure on the route
+    still blocks and congestion still reads slow — degrading those would hide
+    what we actually know."""
+    blocked, _ = _score([cp("C", "closed")], coverage=_coverage(40.0),
+                        near_misses=[_miss("x")], distance_km=53.2)
+    slow, _ = _score([cp("A", "open"), cp("B", "congested")],
+                     coverage=_coverage(40.0), near_misses=[_miss("x")],
+                     distance_km=53.2)
+    assert blocked == "blocked" and slow == "slow"
+
+
+def test_score_without_coverage_is_unchanged():
+    """Callers that pass no coverage (and the existing tests above) must keep
+    the old behaviour, so the new rule can never fire on missing input."""
+    v, _ = _score([cp("A", "open"), cp("B", "unknown")])
+    assert v == "likely_open"
+
+
+def test_the_ends_window_scales_with_the_route_and_is_capped():
+    """ENDS_KM is a distance, so on a long drive it is a small slice at each
+    end and the middle is excluded. On a hop shorter than 2*ENDS_KM the whole
+    route genuinely IS within reach of both ends, and the cap at half keeps the
+    two windows from overlapping into a double count."""
+    mid_long = _miss("mid", along=0.5)
+    assert _closures_at_ends([mid_long], distance_km=53.2) == []
+    assert _closures_at_ends([_miss("out", along=0.02)], distance_km=53.2)
+    # 4 km hop: every point on it is inside ENDS_KM of an end.
+    assert len(_closures_at_ends([mid_long], distance_km=4.0)) == 1
+
+
+def test_only_the_three_nearest_closures_are_named():
+    """The verdict is a briefing, not a directory of every shut checkpoint in
+    the governorate, and the ones closest to the alignment are the ones most
+    likely to actually be on the way."""
+    many = [_miss(f"cp{i}", off_m=500 * (i + 1), along=0.01) for i in range(6)]
+    picked = _closures_at_ends(many, distance_km=53.2)
+    assert [m["name"] for m in picked] == ["cp0", "cp1", "cp2"]
 
 
 # ── the polyline, which fails silently ───────────────────────────────────────
