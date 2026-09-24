@@ -136,6 +136,9 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # as an INJURY, which is the worst direction for this error to run.
     ("death",          r"(استشه\w*|ارتقى|ارتقي|قتلت قوات|قتل الاحتلال|اعدمت|أعدمت|"
                        r"يرتقي شهيد|ارتقاء|"
+                       # Round 8: "يغتال عبد الكريم بني جابر .. حصار واشتباكات" was
+                       # served as a SIEGE because the killing had no verb here.
+                       r"اغتال\w*|[يت]غتال\w*|اغتيال|[يت]عدم\w*|اعدام\w*\s+ميداني|"
                        r"(شهيد|شهداء|شهيدا)\s*و\s*[\d٠-٩]*\s*(اصاب|مصاب|جريح|إصاب)|"
                        r"حصيله الشهداء|حصيلة الشهداء|"
                        r"[\d٠-٩]+\s*(شهداء|شهيدا))"),
@@ -165,14 +168,19 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # existing ستولا only matched the noun) are round-5 misses too.
     ("settler_attack", r"(?:(مستوطن\w*|قطعان)(?:\s+\S+){0,5}?\s+\S*"
                        r"(عتد|هاجم|هجوم|عربد|حرق|شعل|شعال|ضرم|رشق|قتلع|خرب|"
-                       r"حطم|دهس|قتح|سيطر|ستيلا|ستول|دشن)"
+                       r"حطم|دهس|قتح|سيطر|ستيلا|ستول|دشن|"
+                       # Round 8 misses: grazing livestock in a village's olive
+                       # groves and "desecrating" al-Aqsa are settler incursions.
+                       r"مواشيهم|اغنامهم|قطعانهم|باغنام|بمواشي|بقطعان|ستبيح|ستباح|"
+                       r"رعي\s+(?:اغنام|مواشي|ابقار|قطعان))"
                        r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|ضرم|شعال)\w*"
                        r"(?:\s+\S+){0,3}?\s*\S*(مستوطن|قطعان))"),
     # A beating by the army is harm without an injury noun: "تعتدي بالضرب على
     # صاحب محل" was rejected as having no incident verb (round 5). Settler
     # beatings keep their actor — settler_attack sits above this entry.
     ("injury",         r"(اصاب\w*|إصاب\w*|جرح\w*|اصيب|أصيب|اختناق|"
-                       r"[اتين]?عتد\w*\s+بالضرب|اعتداء بالضرب)"),
+                       r"[اتين]?عتد\w*\s+بالضرب|اعتداء بالضرب|"
+                       r"عتد\w*\s+علي\w*\s+بالضرب|الضرب\s+المبرح)"),
     # Arabic marks person/tense with a PREFIX, so "تقتحم" / "يقتحم" share no
     # leading letters with "اقتحم". Matching only the perfective missed the
     # commonest headline form in this corpus — "قوات الاحتلال تقتحم بلدة بيت
@@ -180,7 +188,10 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # Stem "قتح", not "قتحم": the verbal noun "اقتحام" is ا-ق-ت-ح-ا-م and does
     # not contain the fuller stem, so requiring it dropped every headline that
     # names the raid rather than conjugating it.
-    ("raid",           r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*)"),
+    ("raid",           r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*|"
+                       # A heavy troop deployment in a town's streets is an
+                       # incursion (round 8 miss, Anata).
+                       r"انتشار\s+(?:مكثف\s+|واسع\s+)?(?:ل?قوات|ل?جنود)\s+الاحتلال|انتشار\s+عسكري)"),
     # "اخطار هدم" REMOVED: a demolition notice is not a demolition. It was
     # serving "owners handed demolition notices" as a completed demolition.
     # Notices are rejected below as `notice not act`.
@@ -264,7 +275,16 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # INSIDE itself — a notice bulletin served as the act it only threatens.
     ("notice not act", r"(اخطار\w*\s+(هدم|بالهدم|بهدم|لهدم)|اوامر\s+هدم|"
                        r"انذار\w*\s+بالهدم|[يت]خطر\w*\s+ب?هدم|اخطرت\s+ب?هدم|"
-                       r"تسليم\s+اخطار)"),
+                       r"تسليم\s+اخطار|"
+                       # Round 8: a threat, a "threatened with demolition"
+                       # school, orders issued (at the head of the text, or as
+                       # a COUNT of orders anywhere), a farmer leaving after
+                       # "the occupation's notice to demolish it".
+                       r"تهديد\w*\s+بهدم|مهدد\w*\s+(?:\S+\s+){0,2}?بالهدم|"
+                       r"^\W*(?:\S+\s+){0,5}?(?:(?:[يت]صدر\w*|اصدر\w*)\s+(?:\S+\s+){0,3}?اوامر|"
+                       r"اوامر\s+(?:عسكريه|بتجريف|جديده|مصادره))|"
+                       r"اصدار\s+[\d٠-٩]+\s+(?:امر|اوامر)|[\d٠-٩]+\s+(?:امر|اوامر)\s+(?:هدم|عسكري\w*|مصادره)|"
+                       r"اخطار\w*\s+(?:الاحتلال\s+)?ب?هدم\w*)"),
     # Follow-ups about an earlier event: a release days later, a family
     # inspecting old damage. Measured as four of seventeen sampled
     # `demolition` incidents — all one story about a woman freed after 8 days,
@@ -289,7 +309,8 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # incidents was "16 شهيدا خلال يوليو" or its siblings, because this
     # pattern knew "خلال العام" but no month had a name. آب is written
     # with a lookahead because bare اب sits inside ابو.
-    ("statistical", r"(خلال النصف الاول|خلال العام|خلال الاسبوع الماضي|"
+    ("statistical", r"(خلال النصف الاول|النصف\s+الاول\s+من\s+20|[\d٠-٩]{3,}\s+اعتداء|"
+                    r"خلال العام|خلال الاسبوع الماضي|"
                     r"خلال الشهر الماضي|احصائيه|إحصائية|حصيله\s+\S+\s+خلال|"
                     r"منذ\s+بدايه\s+(?:ال)?عام|"
                     r"خلال\s+(?:شهر\s+)?(?:يناير|فبراير|مارس|ابريل|مايو|يونيو|"
@@ -302,7 +323,21 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # first. Three of round 5's twenty `shooting` samples were these.
     ("roundup", r"(اقتحامات واعتقالات|اقتحامات ومواجهات|حمله اقتحامات|"
                 r"تصعيد ميداني|يقتحم مدنا وبلدات|مدن وبلدات الضفه|"
-                r"انحاء متفرقه من الضفه)"),
+                r"انحاء متفرقه من الضفه|"
+                # Round 8: "settler attacks in the past 24 hours", "in one week
+                # more than 100 orders", "104 homes since 7 October", "the
+                # main field developments" — many events, no one place.
+                r"خلال\s+(?:24|٢٤)\s+ساعه|خلال\s+اسبوع\s+واحد|منذ\s+(?:7|٧)\s+اكتوبر|"
+                r"ابرز\s+(?:المستجدات|الاحداث|اخبار)|الاشهر\s+(?:\S+\s+)?الماضيه|"
+                r"خلال\s+الاشهر)"),
+    # A propaganda channel's signature: the messages of the dead are not
+    # reports (round 8: five of the twelve funeral-stratum rows).
+    ("propaganda", r"(ارث العاروري|رساله الشيخ القائد|قناه ارث)"),
+    # Court news: an acquittal months after the assault, a detention extended.
+    ("court", r"([يت]برئ\w*|تبرئه|براءه\s+|تمديد\s+اعتقال|[يت]مدد\w*\s+اعتقال|"
+              r"الحكم\s+علي|[يت]حكم\w*\s+علي|محكمه\s+\S+\s+(?:تقضي|تصدر|ترفض|تقرر))"),
+    # A vigil, a march, a ceremony at the head of the text is the subject.
+    ("gathering", r"^\W*(?:\S+\s+)?(?:وقفه|مسيره|فعاليه|حفل|مهرجان|معرض|ورشه|ندوه|مؤتمر)\b"),
     # Court decisions about future demolitions are legal news, not field
     # events: "the high court rejected 15 petitions" was served as a SHOOTING.
     ("legal", r"(المحكمه العليا|التماس\w*)"),
@@ -344,6 +379,11 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # Institutional statements rather than a located happening.
     ("statement", r"(نادي الاسير|نادي الأسير|تصريح|بيان صحفي|وزارة الصحة تعلن|"
                   r"تنعى|تدين|تستنكر|طالب\w* ب|دعا\w* الى|ناشد|"
+                  # Round 8: a faction official or a party speaking, in the
+                  # third person or the first-person plural.
+                  r"القيادي\s+في|القياديه\s+في|\bحماس\s*:|\bفتح\s*:|الجهاد\s+الاسلامي|"
+                  r"زياره\s+(?:اجراها\s+)?المحامي|تفاصيل\s+ظروف\s+اعتقال|"
+                  r"الناطق\s+باسم|المتحدث\s+باسم|\bنحذر\b|\bنبارك\b|\bندعو\b|\bنناشد\b|"
                   # First-person-plural statements and calls to action are a
                   # faction speaking, not a field report.
                   r"\bندين\b|\bنستنكر\b|\bنؤكد\b|توجهوا\s+الي|كونوا\s+سندا|فكوا\s+حصار|"
@@ -422,9 +462,17 @@ def _defused(tok: str) -> list[str]:
     return out
 
 
+# A governorate's name after one of these is a STREET named after the city:
+# "شارع القدس شرق نابلس" is in Nablus, "بمنطقة شارع نابلس" in Tulkarm (round 8,
+# two wrong places).
+_STREET_HEADS = frozenset(["شارع", "طريق", "مدخل"])
+
+
 def _find_governorate(toks: list[str]) -> str | None:
     """First governorate named as a whole word, in canonical normalized form."""
     for i, t in enumerate(toks):
+        if i > 0 and _bare(toks[i - 1]) in _STREET_HEADS:
+            continue
         for cand in _defused(t):
             if cand in _GOV_SINGLE:
                 return cand
@@ -442,6 +490,7 @@ _PERSON_WORDS = frozenset([
     "اسيره", "اسري", "معتقل", "معتقلا", "شهيد", "شهيدا", "شهيده",
     "مسن", "مسنا", "مسنه", "سيده", "جريح", "مصاب", "عامل", "عاملا",
     "عائله", "عايله", "اسره", "الاسير", "المطارد", "مطارد",
+    "شابين", "الشابين", "الشابان", "فتيين", "طفلين", "مواطنين", "اسيرين",
 ])
 
 
@@ -458,6 +507,7 @@ _STOP_TOKENS = (BEARING_WORDS | _GOV_TOKENS | PLACE_WORDS | frozenset([
     # Administrative and relational words that follow a name without being
     # part of it: "ترمسعيا قضاء رام الله", "قصرة بمحافظة نابلس".
     "بين", "قضاء", "محافظه", "لواء", "ضواحي", "نواحي", "المجاوره", "المحيطه",
+    "الخارج", "الداخل", "للخارج", "للداخل", "باتجاه", "اتجاه",
     "القريبه", "داخل", "خارج", "امام", "خلف", "قباله", "مقابل", "تجاه", "نحو",
     "حتي", "منذ", "عند", "عبر", "ضد", "لدي", "بينما", "ثم", "لكن", "ان",
     "انه", "هذا", "هذه", "تلك", "ذلك", "كل", "بعض", "عده", "عدد", "قرابه",
@@ -516,7 +566,13 @@ _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
 # ("body"): a fresh death report often says where the body was taken.
 _FUNERAL_RE = re.compile(_norm_pat(
     r"(تشييع|شيعت|شيع\s+جثمان|[يت]شيع\w*|جنازه|جنازة|موكب\s+(?:الشهيد|جنازه|جنازة|تشييع)|"
-    r"\bنعي\b|[يت]نعي|ينعي|تنعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|يوم\s+الوداع|"
+    r"\bنعي\b|[يت]نعي|ينعي|تنعي|ننعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|يوم\s+الوداع|"
+    # Round 8: "a sad farewell to the young man", "scenes from the farewell of",
+    # "during the farewell of his brother", a body handed back months later, a
+    # grave visited, a martyr of two years ago.
+    r"وداع\s+(?:حزين\s+)?(?:ل?لشاب|ل?لطفل|ل?لفتي|ل?لشهيد|القمر|الطفل|الشاب|الفتي|شقيق\w*)|"
+    r"مشاهد\s+من\s+وداع|خلال\s+وداع|استلام\s+جثمان|تسليم\s+جثمان|[يت]زور\w*\s+قبر|زياره\s+قبر|"
+    r"قبل\s+(?:عام|عامين|سنه|سنتين|[\d٠-٩]+\s+(?:اعوام|سنوات|اشهر|شهور))|"
     r"ذكري\s+(?:استشهاد|رحيل)|الذكري\s+ال\S+\s+لاستشهاد|"
     # A EULOGY: a faction or a family "zaffs" (announces) its martyr — the
     # report of the killing came earlier, from a news channel. Round 7's
@@ -532,6 +588,21 @@ _FUNERAL_RE = re.compile(_norm_pat(
     r"هتافات|زغرتي|اقمار\s+في\s+سماء|شيخ\s+المطاردين|"
     r"(?:عام|سنه|سنة)\s+20[0-2][0-9]\b)"))
 _REJECT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in REJECT_PATTERNS]
+# A farewell or an obituary AT THE HEAD of the text is its subject, whatever
+# verb follows (round 8: "وداع الشهيد الفتى .. خلال هجوم للمستوطنين" served as a
+# settler attack). Not تشييع: a funeral procession attacked is an event.
+_HEAD_FUNERAL_RE = re.compile(_norm_pat(
+    r"^\W*(?:\S+\s+){0,3}?(?:وداع|جنازه|موكب\s+(?:الشهيد|الجنازه)|ننعي|نعي)\b"))
+_RELEASE_RE = re.compile(_norm_pat(r"^\W*(?:\S+\s+){0,4}?(?:[يت]فرج\w*\s+عن|الافراج\s+عن)"))
+_HARM_RE = re.compile(_norm_pat(r"(بالضرب|تنكيل|اصاب|إصاب|استشه|ارتقي|ارتقى)"))
+_ACCIDENT_RE = re.compile(_norm_pat(r"حادث\s+(?:سير|مروري|طرق|تصادم)"))
+_TESTIMONY_RE = re.compile(_norm_pat(r"([يت]تحدث\w*\s+عن|[يت]روي\s+)"))
+_SIEGE_WORDS_RE = re.compile(_norm_pat(r"(حصار|محاصر)"))
+_RAID_VERB_RE = re.compile(_norm_pat(r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*)"))
+_ARMY_RE = re.compile(_norm_pat(r"(قوات|جيش|جنود|الاحتلال|شرطه|قوه)"))
+_SETTLER_RE = re.compile(_norm_pat(r"(مستوطن|قطعان)"))
+_HOMES_LEVELLED_RE = re.compile(_norm_pat(
+    r"(?:تجريف|[يت]جرف\w*|جرفت)\s+(?:\S+\s+){0,3}?(?:مساكن|منازل|منزل|مسكن|بركسات|بركس|بيوت(?!ا?\s+بلاستيك)ا?)"))
 
 
 def _first_match(text: str, patterns) -> tuple[str, str] | None:
@@ -556,7 +627,11 @@ _DUAL_WORDS = frozenset(["قريتي", "بلدتي", "مدينتي", "مخيمي
 # article — "المنطقة الشرقية" is a description, not a name. What follows one
 # resolves by exact or contained alias only; the gazetteer decides.
 _CUE_WORDS = frozenset(["منطقه", "حي", "شارع", "سهل", "جبل", "واد", "وادي", "مدخل",
-                        "طريق", "بوابه", "مقام", "عزبه", "اراضي", "اطراف", "محيط"])
+                        "طريق", "بوابه", "مقام", "عزبه", "اراضي", "اطراف", "محيط",
+                        # "رئيس مجلس قروي فقوعة: اقتحم مستوطنون محيط منازل
+                        # المواطنين في القرية" — the village is named only in
+                        # the council's title (round 8 miss).
+                        "قروي", "بلديه", "بلدي"])
 
 # Toponym prefixes: a token that, with the next one, is a name on its own —
 # "بيت أمر", "دير شرف", "كفر قدوم", "عين سينيا", "أبو نجيم", "أم صفا", "خربة
@@ -568,7 +643,8 @@ _NAME_PREFIXES = frozenset(["بيت", "دير", "كفر", "عين", "خربه", 
 
 # A region that is not a place: "خلة الحمص بمسافر يطا" names the hamlet, and
 # "مسافر يطا" alone must not collapse to the town of Yatta.
-_REGION_HEADS = frozenset(["مسافر", "بمسافر", "لمسافر", "ومسافر"])
+_REGION_HEADS = frozenset(["مسافر", "بمسافر", "لمسافر", "ومسافر",
+                           "الاغوار", "بالاغوار", "والاغوار", "اغوار"])
 
 # Ranking of the ways a candidate was found, most trusted first. Within a
 # rank, text order.
@@ -651,6 +727,8 @@ def _extract_places(text: str) -> tuple[list[tuple[str, str]], str | None]:
         name = " ".join(parts).strip()
         if not name or name in seen:
             return
+        if all(t in _CUE_WORDS for t in parts):
+            return                                  # "بمنطقة شارع نابلس" → "شارع"
         # A governorate's name is a place only when a settlement word says so
         # ("مدينة نابلس"). Read off a prefix or a bearing it is the governorate
         # mention itself: "برية زعترة جنوب بيت لحم" must not pin to the city.
@@ -697,6 +775,18 @@ def _extract_places(text: str) -> tuple[list[tuple[str, str]], str | None]:
             j += 1
         if parts:
             add(parts, how, i)
+            # "رئيس مجلس قروي فقوعة بركات العمري": the village, then the
+            # council head's name. The first token alone is offered too.
+            if how == "cue" and len(parts) > 1:
+                add(parts[:1], how, i)
+
+    # ── 0. landmarks the gazetteer holds under the city ───────────────────────
+    # "المسجد الأقصى" has no settlement word before it and is stormed weekly;
+    # its aliases point at Jerusalem (round 8: two misses).
+    for i, t in enumerate(toks):
+        if t in ("الاقصي", "للاقصي", "بالاقصي"):
+            add(["المسجد", "الاقصي"], "place_word", i)
+            break
 
     # ── 1. settlement words, dual forms, cue words ────────────────────────────
     for i, t in enumerate(toks):
@@ -756,6 +846,10 @@ def _extract_places(text: str) -> tuple[list[tuple[str, str]], str | None]:
                 i -= 1
             # "في مسافر يطا جنوب الخليل": a region, not the town of Yatta.
             if parts and (i >= 0 and toks[i] in _REGION_HEADS or parts[0] in _REGION_HEADS):
+                parts = []
+            # "قرية زويدين شرق يطا جنوب الخليل": what sits before "جنوب الخليل"
+            # is "شرق يطا" — a REFERENCE town, not the site (round 8).
+            if parts and i >= 0 and toks[i] in BEARING_WORDS:
                 parts = []
             if parts and " ".join(parts) not in seen:
                 for length in range(len(parts), 0, -1):
@@ -842,27 +936,58 @@ def read(text: str | None) -> NewsReading:
     # 0.80 gate. The gate applies to DEATHS ONLY: funeral words appear in raid
     # and settler-attack reports too (a funeral procession attacked, a raid
     # during a wake), and those are events.
-    if inc[0] == "death":
+    itype = inc[0]
+    if itype == "death":
         fun = _FUNERAL_RE.search(norm)
         if fun:
             return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
                                matched=fun.group(0)[:60])
+    head_fun = _HEAD_FUNERAL_RE.search(norm)
+    if head_fun:
+        return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
+                           matched=head_fun.group(0)[:60])
+    # ROUND 8 (2026-09-24), each class measured on a fresh sample:
+    # a release is not an arrest — unless the text reports the harm done
+    # in custody, which is the event;
+    if itype == "arrest" and _RELEASE_RE.search(norm) and not _HARM_RE.search(norm):
+        return NewsReading(verdict="rejected", reject_reason="release",
+                           matched=_RELEASE_RE.search(norm).group(0)[:60])
+    # a traffic accident is not an occupation injury (a road it closes is
+    # still a closure, so only these two types);
+    if itype in ("injury", "death") and _ACCIDENT_RE.search(norm):
+        return NewsReading(verdict="rejected", reject_reason="traffic accident",
+                           matched=_ACCIDENT_RE.search(norm).group(0)[:60])
+    # someone TALKING ABOUT harassment is a testimony; kept only for a siege,
+    # where the testimony is the ongoing event (measured 2 vs 2 in round 7);
+    tm = _TESTIMONY_RE.search(norm)
+    if tm and not _SIEGE_WORDS_RE.search(norm):
+        return NewsReading(verdict="rejected", reject_reason="testimony",
+                           matched=tm.group(0)[:60])
+    # settlers storming homes are a settler attack, not an army raid;
+    if itype == "raid":
+        rv = _RAID_VERB_RE.search(norm)
+        before = norm[:rv.start()] if rv else ""
+        if _SETTLER_RE.search(before) and not _ARMY_RE.search(before):
+            itype = "settler_attack"
+    # homes bulldozed are a demolition, whatever the verb.
+    if itype == "land_levelling" and _HOMES_LEVELLED_RE.search(norm):
+        itype = "demolition"
 
     candidates, gov = _extract_places(norm)
     place_text = candidates[0][0] if candidates else None
     if not place_text and not gov:
         # An action with nowhere to put it is not usable by anything that
         # answers "what is happening near me".
-        return NewsReading(verdict="unclear", incident_type=inc[0],
+        return NewsReading(verdict="unclear", incident_type=itype,
                            reject_reason="no resolvable West Bank place")
 
     # A named settlement plus its governorate is the strongest shape; a bare
     # governorate locates the report only to admin2 and is worth less.
     conf = 0.80 if (place_text and gov) else (0.70 if place_text else 0.55)
     return NewsReading(
-        verdict="incident", incident_type=inc[0], place_text=place_text,
+        verdict="incident", incident_type=itype, place_text=place_text,
         governorate=gov, confidence=conf, matched=inc[1],
-        is_closure=inc[0] in ("closure", "siege"),
+        is_closure=itype in ("closure", "siege"),
         evidence=[inc[1]],
         place_candidates=candidates,
     )

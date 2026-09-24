@@ -120,7 +120,7 @@ CLASSIFIER = "news"
 # in normalize(). Round 5's 163 claims are tuning data now — 1.6 has NO
 # held-out precision until round 6. Closure at 1.5 measured 0.875 (was
 # 0.167 in round 3); the rewrite held on disjoint data.
-CLASSIFIER_VERSION = "1.8.0"
+CLASSIFIER_VERSION = "1.8.1"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
@@ -232,9 +232,10 @@ class Located:
 
 
 NEAR_GOVERNORATE_M = 3000
+FAR_FROM_HOME_M = 40000
 
 
-def _near_governorate(conn, place_id: int, pcode: str) -> bool:
+def _near_governorate(conn, place_id: int, pcode: str, metres: int = NEAR_GOVERNORATE_M) -> bool:
     """A place on the wrong side of a governorate line, by a little.
 
     The channels name the governorate a village belongs to administratively;
@@ -247,12 +248,25 @@ def _near_governorate(conn, place_id: int, pcode: str) -> bool:
             SELECT ST_DWithin(p.centroid::geography, g.geom::geography, %s)
               FROM place p, place g
              WHERE p.place_id = %s AND g.kind::text = 'governorate' AND g.servable
-               AND g.admin2_pcode = %s""", (NEAR_GOVERNORATE_M, place_id, pcode))
+               AND g.admin2_pcode = %s""", (metres, place_id, pcode))
         row = cur.fetchone()
     return bool(row and row[0])
 
 
-def locate(conn, r: NewsReading, stats: Counter | None = None) -> Located:
+# The governorate a channel reports from. A hint for `_prefer` ONLY when the
+# text names no governorate — a Ramallah channel writing "قرية المغير" means
+# Ramallah's, and without this the alias's owner (Jenin's) answered (round 8:
+# two wrong places). Never a hard check: every channel also reports the Bank.
+HOME_GOVERNORATE = {
+    "tg_ramallahnewss": "رام الله", "tg_bzunewss": "رام الله",
+    "tg_nabuls_news": "نابلس", "tg_jeninnews1": "جنين", "tg_jeninalkarama": "جنين",
+    "tg_khalelnews": "الخليل", "tg_qalqilianewss": "قلقيليه",
+    "tg_bethlehemnewss": "بيت لحم", "tg_jerichonews": "اريحا", "tg_tulkrmeoon": "طولكرم",
+}
+
+
+def locate(conn, r: NewsReading, stats: Counter | None = None,
+           home: str | None = None) -> Located:
     """The place an incident reading names, or the governorate, honestly.
 
     Every candidate the reader offered is tried in order of trust. A
@@ -266,6 +280,7 @@ def locate(conn, r: NewsReading, stats: Counter | None = None) -> Located:
     stats = stats if stats is not None else Counter()
     with conn.cursor() as cur:
         gov_code = governorate_pcode(cur, r.governorate) if r.governorate else None
+        home_code = governorate_pcode(cur, home) if (home and not gov_code) else None
     twins: list[int] = []
     rejected: list[tuple[str, str]] = []
     gov_norm = fold_for_match(r.governorate) if r.governorate else None
@@ -280,7 +295,7 @@ def locate(conn, r: NewsReading, stats: Counter | None = None) -> Located:
         # A village and a checkpoint often share a name (حوارة, الجلزون,
         # عطارة). An incident happens in the village unless the text said
         # حاجز/معبر/مفرق, in which case the checkpoint row is the place.
-        ctx = {"admin": r.governorate,
+        ctx = {"admin": r.governorate or home,
                "prefer_kind": "checkpoint" if how == "station_word" else "locality"}
         res = resolve_place(name, ctx, conn=conn, learn=False,
                             fuzzy=how in FUZZY_HOW, contain=how in CONTAIN_HOW)
@@ -293,6 +308,15 @@ def locate(conn, r: NewsReading, stats: Counter | None = None) -> Located:
                 and not _near_governorate(conn, res.place_id, gov_code)):
             rejected.append((name, "outside stated governorate"))
             stats["rejected_outside_governorate"] += 1
+            res = None
+        if (res and not gov_code and home_code and res.admin2_pcode
+                and res.admin2_pcode != home_code and res.kind not in ("governorate", "region")
+                and not _near_governorate(conn, res.place_id, home_code, FAR_FROM_HOME_M)):
+            # No governorate in the text: a Hebron channel's "الثغرة" is not the
+            # Tubas hamlet of that name 90 km away. Adjacent governorates
+            # (Nablus channels report Jenin) stay within 40 km.
+            rejected.append((name, "far from the channel's governorate"))
+            stats["rejected_far_from_home"] += 1
             res = None
         if not res and r.governorate and how in FULLER_HOW:
             res, cands = _fuller_form(conn, name, r.governorate)
@@ -397,7 +421,8 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
         # firing turned 151 events into 216.
         sql = """
             SELECT c.claim_id, c.raw_text, c.reported_at, c.source_id,
-                   COALESCE(s.independence_group, 'src:' || s.source_id::text) AS unit
+                   COALESCE(s.independence_group, 'src:' || s.source_id::text) AS unit,
+                   s.key AS source_key
             FROM claim c
             JOIN source s USING (source_id)
             WHERE c.raw_text IS NOT NULL
@@ -427,7 +452,7 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
         # Every verdict is recorded, rejections included — see migration 017.
         verdicts: list[tuple] = []
 
-        for claim_id, text, reported_at, source_id, unit in claims:
+        for claim_id, text, reported_at, source_id, unit, source_key in claims:
             r = read(text)
             stats[f"verdict_{r.verdict}"] += 1
             if r.verdict != "incident":
@@ -450,7 +475,7 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             # named place as written, and which of the two answered all travel
             # with the event. `locate` holds the whole chain — every candidate
             # the reader offered, the governorate check, the fuller form.
-            loc = locate(conn, r, stats)
+            loc = locate(conn, r, stats, home=HOME_GOVERNORATE.get(source_key))
             res = loc
             named_place = loc.named_place
             candidates = loc.candidates

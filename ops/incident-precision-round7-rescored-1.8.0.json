@@ -1,0 +1,93 @@
+{
+  "round": "7",
+  "classifier_version": "1.8.0",
+  "served_then": 180,
+  "tally": {
+    "kept_right": 128,
+    "kept_wrong": 31,
+    "dropped_wrong": 21
+  },
+  "projected_precision": 0.805,
+  "per_type": {
+    "arrest": {
+      "tally": {
+        "kept_right": 18,
+        "kept_wrong": 2
+      },
+      "projected_precision": 0.9
+    },
+    "closure": {
+      "tally": {
+        "kept_right": 15,
+        "kept_wrong": 5
+      },
+      "projected_precision": 0.75
+    },
+    "death": {
+      "tally": {
+        "kept_right": 7,
+        "dropped_wrong": 12,
+        "kept_wrong": 1
+      },
+      "projected_precision": 0.875
+    },
+    "demolition": {
+      "tally": {
+        "kept_right": 12,
+        "kept_wrong": 7,
+        "dropped_wrong": 1
+      },
+      "projected_precision": 0.632
+    },
+    "injury": {
+      "tally": {
+        "kept_right": 15,
+        "kept_wrong": 5
+      },
+      "projected_precision": 0.75
+    },
+    "raid": {
+      "tally": {
+        "kept_right": 18,
+        "kept_wrong": 2
+      },
+      "projected_precision": 0.9
+    },
+    "settler_attack": {
+      "tally": {
+        "kept_right": 14,
+        "kept_wrong": 4,
+        "dropped_wrong": 2
+      },
+      "projected_precision": 0.778
+    },
+    "shooting": {
+      "tally": {
+        "kept_right": 17,
+        "kept_wrong": 3
+      },
+      "projected_precision": 0.85
+    },
+    "siege": {
+      "tally": {
+        "kept_right": 12,
+        "dropped_wrong": 6,
+        "kept_wrong": 2
+      },
+      "projected_precision": 0.857
+    }
+  },
+  "why_dropped_or_moved": {
+    "rejected:obituary or funeral": 12,
+    "rejudged:demolition->land_levelling:right": 5,
+    "rejected:commentary": 4,
+    "rejudged:demolition->land_levelling:wrong": 3,
+    "rejected:statement": 3,
+    "rejected:notice not act": 1,
+    "rejudged:shooting->settler_attack:wrong": 1,
+    "unclear:no incident verb": 1,
+    "rejudged:siege->closure:wrong": 1
+  },
+  "rejudged": 10,
+  "note": "projection over the old sample; type_moved rows need a human re-judge"
+}

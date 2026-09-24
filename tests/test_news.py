@@ -524,3 +524,110 @@ def test_installing_a_gate_is_a_closure():
 def test_notice_variants_are_notices_not_acts(text):
     r = read(text)
     assert r.verdict == "rejected" and r.reject_reason == "notice not act", r
+
+
+# ── round 8 (2026-09-24): every case below is a class measured on a fresh
+# 238-row sample (core precision 0.767, deaths and sieges 0.60) ──────────────
+@pytest.mark.parametrize("text", [
+    "▫️▫️وداع حزين للشاب خليل أبو عليا الذي استشهد برصاص الاحتلال في بلدة المغير شرقي رام الله",
+    "💔🔴مشاهد مؤثرة .. وداع الطفل إسلام عجوري الذي ارتقى برصاص الاحتلال في مخيم عسكر شرق نابلس",
+    "مؤسسات الأسرى: ننعى الشهيد فتحي خازم الذي ارتقى فجر اليوم بعد إعدامه داخل منزله في مدينة جنين",
+    "من المقرر استلام جثمان الشهيد الفتى سليم فقها من بلدة سنجل بمحافظة رام الله يوم الخميس المقبل بعد احتجاز جثمانه لنحو 5 أشهر منذ استشهاده",
+    "الأسير المحرر الشيخ عبد الجبار جرار من جنين يزور قبر زوجته التي استشهدت خلال فترة اعتقاله",
+])
+def test_farewells_obituaries_and_old_deaths_are_not_death_reports(text):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == "obituary or funeral", r
+
+
+def test_a_farewell_at_the_head_is_the_subject_whatever_follows():
+    """"وداع الشهيد الفتى .. خلال هجوم للمستوطنين على بلدة المغير" was served as
+    a settler attack: the attack was reported the night before."""
+    r = read("وداع الشهيد الفتى خليل شحادة داخل منزله بعد أن قضى ليلة أمس برصاص الاحتلال خلال هجوم للمستوطنين على بلدة المغير برام الله")
+    assert r.verdict == "rejected", r
+
+
+def test_a_raid_on_a_mourning_house_is_still_a_raid():
+    r = read("قوات الاحتلال تقتحم بيت عزاء الحج عبد الرزاق أبو مويس في قرية المغير شمال شرق رام الله واجبار المعزيين بالدخول")
+    assert r.verdict == "incident" and r.incident_type == "raid", r
+
+
+def test_a_release_is_not_an_arrest_unless_it_reports_the_harm():
+    assert read("قوات الاحتلال تفرج عن الشاب حمودة سمارة، مخيم العروب شمال الخليل.. الذي اعتقل يوم امس بعد دفع غرامة مالية").verdict == "rejected"
+    r = read("جيش الاحتلال يفرج عن رئيس بلدية بيت فوريك وأعضاء البلدية بعد احتجازهم والاعتداء عليهم بالضرب في المنطقة الشرقية من البلدة")
+    assert r.verdict == "incident", r
+
+
+def test_a_traffic_accident_is_not_an_injury_but_its_closure_is_a_closure():
+    assert read("إصابة خمسة أشخاص من عائلة واحدة في حادث سير وقع في مدينة أريحا").verdict == "rejected"
+    r = read("حادث سير مروع على طريق حزما - عناتا شمال القدس المحتلة والشارع مغلق")
+    assert r.verdict == "incident" and r.incident_type == "closure", r
+
+
+@pytest.mark.parametrize("text,reason", [
+    ("القيادي في حركة حماس عبد الرحمن شديد: هجوم المستوطنين على المواطنين بين قريتي المغير وأبو فلاح شمال شرق رام الله يمثل تصعيداً جديداً", "statement"),
+    ("حماس: نحذر من تصاعد الهجمة الاستيطانية في بيت لحم وما تتعرض له قرية الولجة من عمليات هدم", "statement"),
+    ("رسالة الشيخ القائد الشهيد صالح العاروري إلى أبناء شعبنا في الضفة الغربية مع تصاعد هجمات المستوطنين في القدس قناة إرث العاروري", "propaganda"),
+    ("الاحتلال يبرئ مستوطنا اعتدى على راهبة فرنسية في القدس بدعوى إصابته باضطراب ذهاني", "court"),
+    ("🟣وقفة لأهالي الشهداء والأسرى والجرحى في جنين لمطالبة السلطة بحقوق أبنائهم", "gathering"),
+    ("اعتداءات المستوطنين في الضفة الغربية خلال 24 ساعة: تواصل حصار منزلي عائلتي أبو ريدة وحسان في بلدة قصرة جنوب نابلس", "roundup"),
+    ("المواطن سعيد صباح من بلدة قفين شمال طولكرم يتحدث عن اعتداءات المستوطنين على أرضه", "testimony"),
+])
+def test_statements_propaganda_courts_gatherings_roundups_and_testimony(text, reason):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == reason, r
+
+
+def test_testimony_about_an_ongoing_siege_is_the_event():
+    r = read("لؤي أبو ريدة يتحدث عن حصار منزله في بلدة قصرة جنوبي نابلس ويقول إن الجيش يمنعهم من مغادرته")
+    assert r.verdict == "incident" and r.incident_type == "siege", r
+
+
+@pytest.mark.parametrize("text", [
+    "الاحتلال يصدر أوامر بتجريف سهول العنب في جنين",
+    "هيئة مقاومة الجدار والاستيطان: الاحتلال يصدر 8 أوامر جديدة لتجريف 316 دونمًا من أراضي بلدات جنين",
+    "الأسير دواس حسون خلف القضبان، وعائلته تواجه تهديدًا بهدم منزلها في بيت إمرين شمال غرب نابلس",
+    "افتتاح العام الدراسي في مدرسة دير رازح الأساسية المهددة مرافقها بالهدم والمحاطة ببؤرة استيطانية",
+    "مزارع فلسطيني يخلي مزرعته بعد إخطار الاحتلال بهدمها في طولكرم",
+])
+def test_orders_and_threats_are_notices(text):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == "notice not act", r
+
+
+def test_a_demolition_after_earlier_notices_is_still_an_act():
+    r = read("شرعت آليات الاحتلال بهدم نحو 40 منشأة في جنين كانت قد تلقت إخطارات سابقة بالهدم")
+    assert r.verdict == "incident" and r.incident_type == "demolition", r
+
+
+def test_an_assassination_is_a_death_not_a_siege():
+    r = read("الاحتلال يغتال عبد الكريم بني جابر في نابلس .. حصار واشتباكات في منزل بقرية عقربا جنوب نابلس")
+    assert r.verdict == "incident" and r.incident_type == "death", r
+
+
+def test_settlers_storming_homes_are_a_settler_attack():
+    r = read("مشاهد توثق انتشار المستوطنين المتواصل في منطقة رأس العين ببلدة قصرة جنوب نابلس ومحاولة لاقتحام منازل المواطنين")
+    assert r.verdict == "incident" and r.incident_type == "settler_attack", r
+    r2 = read("قوات الاحتلال برفقة أعداد كبيرة من المستوطنين تقتحم المنطقة الشرقية لقرية المغير شمال شرق رام الله")
+    assert r2.incident_type in ("raid", "settler_attack")
+
+
+def test_homes_bulldozed_are_a_demolition():
+    r = read("جرافات الاحتلال تنفذ عمليات تجريف طالت مساكن الأهالي في خربة تبن بمسافر يطا جنوب مدينة الخليل")
+    assert r.verdict == "incident" and r.incident_type == "demolition", r
+    r2 = read("الاحتلال يجرف أراضي المزارعين في بلدة زبوبا غرب جنين")
+    assert r2.incident_type == "land_levelling"
+
+
+def test_recovered_misses_deployment_grazing_and_aqsa():
+    assert read("انتشار مكثف لجنود الاحتلال في شوارع بلدة عناتا شمال شرق القدس").incident_type == "raid"
+    assert read("مستوطنون يطلقون مواشيهم بين أشجار الزيتون في منطقة رأس العين ببلدة قصرة جنوب نابلس").incident_type == "settler_attack"
+    r = read("المستوطنون يستبيحون المسجد الأقصى المبارك هذا الصباح بحماية شرطة الاحتلال")
+    assert r.incident_type == "settler_attack" and r.place_candidates, r
+
+
+def test_a_street_named_after_a_city_is_not_that_city():
+    r = read("قوات الاحتلال تستهدف الصحفيين خلال اقتحامها شارع القدس شرق نابلس بقنابل الغاز")
+    assert r.governorate == "نابلس", r
+    r2 = read("محاصرة الاحتلال منزله قرب مسجد الفردوس بمنطقة شارع نابلس في طولكرم واعتقاله")
+    assert r2.governorate == "طولكرم", r2

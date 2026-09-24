@@ -38,6 +38,14 @@ def main(n: str) -> int:
               if x.strip()}
     scored = [json.loads(x) for x in (ROOT / "ops" / f"incident-scored-round{n}.ndjson")
               .read_text().splitlines() if x.strip()]
+    # A human re-judgement of rows whose type moved (ops/incident-rejudged-
+    # roundN-<version>.ndjson: claim_id, type_now, is_incident, type_ok) turns
+    # `type_moved` back into kept_right / kept_wrong for that version.
+    rejudged: dict[int, dict] = {}
+    rj = ROOT / "ops" / f"incident-rejudged-round{n}-{CLASSIFIER_VERSION}.ndjson"
+    if rj.exists():
+        rejudged = {json.loads(x)["claim_id"]: json.loads(x)
+                    for x in rj.read_text().splitlines() if x.strip()}
     tally: Counter = Counter()
     by_type: dict[str, Counter] = {}
     reasons: Counter = Counter()
@@ -54,8 +62,15 @@ def main(n: str) -> int:
             key = "dropped_right" if right else "dropped_wrong"
             reasons[f"{r.verdict}:{r.reject_reason}"] += 1
         elif r.incident_type != t:
-            key = "type_moved"
-            reasons[f"moved:{t}->{r.incident_type}"] += 1
+            j = rejudged.get(s["claim_id"])
+            if j and j.get("type_now") == r.incident_type:
+                ok = bool(j.get("is_incident") and j.get("type_ok")
+                          and s.get("place_ok") and s.get("west_bank"))
+                key = "kept_right" if ok else "kept_wrong"
+                reasons[f"rejudged:{t}->{r.incident_type}:{'right' if ok else 'wrong'}"] += 1
+            else:
+                key = "type_moved"
+                reasons[f"moved:{t}->{r.incident_type}"] += 1
         else:
             key = "kept_right" if right else "kept_wrong"
         tally[key] += 1
@@ -69,6 +84,7 @@ def main(n: str) -> int:
                                                          max(c["kept_right"] + c["kept_wrong"], 1), 3)}
                         for t, c in sorted(by_type.items())},
            "why_dropped_or_moved": dict(reasons.most_common()),
+           "rejudged": len(rejudged),
            "note": "projection over the old sample; type_moved rows need a human re-judge"}
     path = ROOT / "ops" / f"incident-precision-round{n}-rescored-{CLASSIFIER_VERSION}.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False))

@@ -1,3 +1,4 @@
 {"scored_at": "2026-08-03T17:53:52.501820+00:00", "classifier_version": "1.5", "overall": {"n": 123, "precision": 0.748, "ci95": [0.665, 0.816]}, "gate_pass": false, "types_unmeasured": []}
 {"scored_at": "2026-08-04T06:07:14.874437+00:00", "classifier_version": "1.6", "overall": {"n": 68, "precision": 0.897, "ci95": [0.802, 0.949]}, "gate_pass": true, "types_unmeasured": ["arrest", "closure", "demolition"]}
 {"scored_at": "2026-09-21T22:39:01.010287+00:00", "classifier_version": "1.6", "overall": {"n": 180, "precision": 0.717, "ci95": [0.647, 0.777]}, "gate_pass": false, "types_unmeasured": []}
+{"scored_at": "2026-09-24T19:00:22.531965+00:00", "classifier_version": "1.8.0", "overall": {"n": 150, "precision": 0.767, "ci95": [0.693, 0.827]}, "gate_pass": false, "types_unmeasured": []}

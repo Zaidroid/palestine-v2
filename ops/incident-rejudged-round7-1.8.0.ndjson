@@ -1,0 +1,10 @@
+{"claim_id": 38878, "type_now": "land_levelling", "is_incident": false, "type_ok": null, "note": "weekly roundup ('خلال أسبوع واحد سُجّل أكثر من 100 أمر'), not one incident"}
+{"claim_id": 102325, "type_now": "land_levelling", "is_incident": true, "type_ok": true, "note": "bulldozing olive trees in Deir Abu Da'if: land levelling is the right type"}
+{"claim_id": 100437, "type_now": "land_levelling", "is_incident": true, "type_ok": true, "note": "bulldozing olive land in Arraba"}
+{"claim_id": 54968, "type_now": "land_levelling", "is_incident": true, "type_ok": true, "note": "levelling and tree cutting in Jalbun"}
+{"claim_id": 104548, "type_now": "land_levelling", "is_incident": true, "type_ok": true, "note": "bulldozing land in al-Majd and cutting a settler road"}
+{"claim_id": 100663, "type_now": "land_levelling", "is_incident": false, "type_ok": null, "note": "the mayor TALKS ABOUT the levelling (يتحدث عن) — a statement, not the event"}
+{"claim_id": 100664, "type_now": "land_levelling", "is_incident": true, "type_ok": true, "note": "footage of the levelling in Arraba — the event, reported"}
+{"claim_id": 79655, "type_now": "land_levelling", "is_incident": false, "type_ok": null, "note": "the mayor's statement on what the levelling is part of; the event itself is not reported here"}
+{"claim_id": 105316, "type_now": "settler_attack", "is_incident": false, "type_ok": null, "note": "an overnight roundup of many incidents ('أبرز المستجدات الميدانية'), not one"}
+{"claim_id": 40845, "type_now": "closure", "is_incident": true, "type_ok": false, "note": "a house besieged by settlers is a siege; 'closure' is a road or checkpoint — the barrier rule fired on 'منعوا الدخول والخروج'"}

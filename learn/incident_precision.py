@@ -64,6 +64,34 @@ SAMPLE_FILE = ROOT / "ops" / "incident-sample.ndjson"
 SCORED_FILE = ROOT / "ops" / "incident-scored.ndjson"
 RESULT_FILE = ROOT / "ops" / "incident-precision.json"
 
+
+def use_round(r: str | None) -> None:
+    """Round files live side by side (`incident-sample-round8.ndjson`…) so a
+    round is never clobbered by the next; `already_scored` reads them all."""
+    global SAMPLE_FILE, SCORED_FILE, RESULT_FILE
+    if r:
+        SAMPLE_FILE = ROOT / "ops" / f"incident-sample-round{r}.ndjson"
+        SCORED_FILE = ROOT / "ops" / f"incident-scored-round{r}.ndjson"
+        RESULT_FILE = ROOT / "ops" / f"incident-precision-round{r}.json"
+
+
+# ADVERSARIAL STRATA (round 8, plan P0-C.3: "200 claims incl. 50 adversarial").
+# Served incidents whose text carries a marker the classifier is known to
+# stumble on. They are scored separately: a stress measure of the rules, not
+# an estimate of the population's precision — mixing them into the core sample
+# would bias it downward. Regexes run in Postgres (ARE), on the raw text.
+ADVERSARIAL_STRATA = {
+    "funeral":  r"تشييع|جنازة|جنازه|نعي|ينعي|تنعي|عزاء|وداع|ذكرى|ذكري|تزف|يزف|الشهيد المجاهد|القائد الشهيد",
+    "notice":   r"إخطار|اخطار|يخطر|تخطر|أوامر|اوامر",
+    "origin":   r"(شاب|شابا|مواطن|مواطنا|أسير|اسير|طفل|فتى|الشهيد)\s+\S+(\s+\S+){0,3}\s+من\s+(بلدة|قرية|مخيم|مدينة)",
+    "opinion":  r"؟|\?|مقال|رأي|تحليل|قراءة في|لماذا|كيف",
+    "long":     None,                       # length(raw_text) > 700: features, roundups
+    "past":     r"عام 20[0-2][0-9]|العام الماضي|قبل عام|قبل أشهر|قبل اشهر|في مثل هذا اليوم|منذ عام",
+    "bulletin": r"سولار|بنزين|كازية|كازيه|محروقات|الطابور",
+}
+ADVERSARIAL_SHARE = {"funeral": 12, "notice": 10, "origin": 10, "opinion": 6,
+                     "long": 5, "past": 4, "bulletin": 3}                    # = 50
+
 PER_TYPE_CAP = 20      # every type up to 20; the small ones are taken whole
 REJECT_SAMPLE = 40     # enough to put a bound on the miss rate
 
@@ -90,20 +118,42 @@ def _clean(t: str) -> str:
 SAMPLE_SQL = """
 WITH ranked AS (
   SELECT cc.claim_id, cc.verdict, cc.incident_type, cc.reject_reason,
-         cc.place_text, cc.governorate, cc.confidence,
-         p.name_en AS resolved_place, c.raw_text, s.key AS source_key,
+         cc.place_text, cc.governorate, cc.confidence, cc.classifier_version,
+         p.name_en AS resolved_place, p.name_ar AS resolved_place_ar,
+         e.attrs->>'place_precision' AS place_precision,
+         c.raw_text, s.key AS source_key,
          row_number() OVER (PARTITION BY cc.verdict, cc.incident_type
                             ORDER BY md5(cc.claim_id::text)) AS rn
   FROM claim_classification cc
   JOIN claim c USING (claim_id)
   LEFT JOIN place p ON p.place_id = cc.place_id
+  LEFT JOIN event e ON e.event_id = cc.event_id
   LEFT JOIN source s ON s.source_id = c.source_id
-  WHERE cc.verdict = 'incident'
+  WHERE cc.classifier = 'news' AND cc.verdict = 'incident'
     AND NOT (cc.claim_id = ANY(%(exclude)s))
 )
 SELECT claim_id, verdict, incident_type, reject_reason, place_text, governorate,
-       confidence, resolved_place, raw_text, source_key
+       confidence, classifier_version, resolved_place, resolved_place_ar,
+       place_precision, raw_text, source_key
 FROM ranked WHERE rn <= %(cap)s
+"""
+
+ADVERSARIAL_SQL = """
+SELECT cc.claim_id, cc.verdict, cc.incident_type, cc.reject_reason,
+       cc.place_text, cc.governorate, cc.confidence, cc.classifier_version,
+       p.name_en AS resolved_place, p.name_ar AS resolved_place_ar,
+       e.attrs->>'place_precision' AS place_precision,
+       c.raw_text, s.key AS source_key
+FROM claim_classification cc
+JOIN claim c USING (claim_id)
+LEFT JOIN place p ON p.place_id = cc.place_id
+LEFT JOIN event e ON e.event_id = cc.event_id
+LEFT JOIN source s ON s.source_id = c.source_id
+WHERE cc.classifier = 'news' AND cc.verdict = 'incident'
+  AND NOT (cc.claim_id = ANY(%(exclude)s))
+  AND {where}
+ORDER BY md5(cc.claim_id::text)
+LIMIT %(limit)s
 """
 
 REJECT_SQL = """
@@ -114,7 +164,7 @@ FROM claim_classification cc
 JOIN claim c USING (claim_id)
 LEFT JOIN place p ON p.place_id = cc.place_id
 LEFT JOIN source s ON s.source_id = c.source_id
-WHERE cc.verdict <> 'incident'
+WHERE cc.classifier = 'news' AND cc.verdict <> 'incident'
   -- 'too short' and 'gaza' are mechanical and not worth human time; the
   -- interesting rejects are the ones a rule decided against on meaning.
   -- NOTE this makes the miss rate a CONSERVATIVE (high) estimate: the
@@ -143,7 +193,8 @@ def already_scored() -> set[int]:
     return seen
 
 
-def draw_sample() -> int:
+def draw_sample(per_type_cap: int = PER_TYPE_CAP, adversarial: int = 0,
+                rejects: int = REJECT_SAMPLE) -> int:
     exclude = sorted(already_scored())
     rows = []
     with connect() as conn, conn.cursor() as cur:
@@ -164,12 +215,31 @@ def draw_sample() -> int:
                         WHERE claim_id = ANY(%(ids)s) AND event_id IS NOT NULL))""",
                 {"ids": exclude})
             exclude = sorted({*exclude, *(r[0] for r in cur.fetchall())})
-        cur.execute(SAMPLE_SQL, {"exclude": exclude, "cap": PER_TYPE_CAP})
+        cur.execute(SAMPLE_SQL, {"exclude": exclude, "cap": per_type_cap})
         cols = [d[0] for d in cur.description]
-        rows += [dict(zip(cols, r)) for r in cur.fetchall()]
-        cur.execute(REJECT_SQL, {"exclude": exclude, "limit": REJECT_SAMPLE})
-        cols = [d[0] for d in cur.description]
-        rows += [dict(zip(cols, r)) for r in cur.fetchall()]
+        core = [dict(zip(cols, r), stratum="core") for r in cur.fetchall()]
+        rows += core
+        if adversarial:
+            # Each stratum gets its share of the adversarial budget, scaled;
+            # a stratum that cannot fill its share leaves the rest unfilled
+            # (a trap that fires rarely is a small trap).
+            taken = set(exclude) | {r["claim_id"] for r in core}
+            total_share = sum(ADVERSARIAL_SHARE.values())
+            for name, share in ADVERSARIAL_SHARE.items():
+                n = max(1, round(adversarial * share / total_share))
+                rx = ADVERSARIAL_STRATA[name]
+                where = "length(c.raw_text) > 700" if rx is None else "c.raw_text ~ %(rx)s"
+                cur.execute(ADVERSARIAL_SQL.format(where=where),
+                            {"exclude": sorted(taken), "limit": n, "rx": rx})
+                cols = [d[0] for d in cur.description]
+                got = [dict(zip(cols, r), stratum=f"adv:{name}") for r in cur.fetchall()]
+                taken |= {r["claim_id"] for r in got}
+                rows += got
+        if rejects:
+            cur.execute(REJECT_SQL, {"exclude": sorted({*exclude, *(r["claim_id"] for r in rows)}),
+                                     "limit": rejects})
+            cols = [d[0] for d in cur.description]
+            rows += [dict(zip(cols, r), stratum="reject") for r in cur.fetchall()]
 
     with SAMPLE_FILE.open("w") as fh:
         for r in rows:
@@ -202,11 +272,15 @@ def score() -> dict:
 
     by_type: dict[str, list[dict]] = defaultdict(list)
     rejects: list[dict] = []
+    adversarial: dict[str, list[dict]] = defaultdict(list)
     for s in scored:
         src = sample.get(s["claim_id"])
         if not src:
             continue
-        if src["verdict"] == "incident":
+        stratum = src.get("stratum") or ("core" if src["verdict"] == "incident" else "reject")
+        if stratum.startswith("adv:"):
+            adversarial[stratum[4:]].append(s)
+        elif src["verdict"] == "incident":
             by_type[src["incident_type"]].append(s)
         else:
             rejects.append(s)
@@ -240,6 +314,18 @@ def score() -> dict:
     lo, hi = _wilson(good_all, len(all_items))
 
     missed = sum(1 for r in rejects if r.get("is_incident"))
+
+    def block(items):
+        good = sum(1 for i in items if i.get("is_incident") and i.get("type_ok")
+                   and i.get("place_ok") and i.get("west_bank"))
+        l, h = _wilson(good, len(items))
+        return {"n": len(items), "precision": round(good / max(len(items), 1), 3),
+                "ci95": [round(l, 3), round(h, 3)],
+                "not_incident": sum(1 for i in items if not i.get("is_incident")),
+                "wrong_type": sum(1 for i in items if i.get("is_incident") and not i.get("type_ok")),
+                "wrong_place": sum(1 for i in items if i.get("is_incident") and not i.get("place_ok"))}
+
+    adv_items = [i for v in adversarial.values() for i in v]
     result = {
         "measured_at": datetime.now(timezone.utc).isoformat(),
         "overall": {"n": len(all_items),
@@ -249,6 +335,10 @@ def score() -> dict:
         "rejects": {"n": len(rejects), "were_really_incidents": missed,
                     "miss_rate": round(missed / max(len(rejects), 1), 3)},
     }
+    if adv_items:
+        result["adversarial"] = {"all": block(adv_items),
+                                 "by_stratum": {k: block(v) for k, v in sorted(adversarial.items())}}
+        result["all_served"] = block(all_items + adv_items)
     failing = [t for t, v in per_type.items()
                if v["n"] >= MIN_N_TO_GATE and v["precision"] < GATE_PER_TYPE]
     unmeasured = [t for t, v in per_type.items() if v["n"] < MIN_N_TO_GATE]
@@ -299,6 +389,17 @@ def show(r: dict) -> None:
     rj = r["rejects"]
     print(f"\n  rejects sampled {rj['n']}: {rj['were_really_incidents']} were real "
           f"incidents (miss rate {rj['miss_rate']:.1%})")
+    if r.get("adversarial"):
+        a = r["adversarial"]["all"]
+        print(f"\n  adversarial {a['n']}: precision {a['precision']:.3f} "
+              f"[{a['ci95'][0]:.2f}–{a['ci95'][1]:.2f}]  not_incident {a['not_incident']} "
+              f"wrong_type {a['wrong_type']} wrong_place {a['wrong_place']}")
+        for k, v in r["adversarial"]["by_stratum"].items():
+            print(f"    {k:<10}{v['n']:>4}{v['precision']:>7.3f}  not_incident {v['not_incident']} "
+                  f"wrong_type {v['wrong_type']} wrong_place {v['wrong_place']}")
+        s_ = r["all_served"]
+        print(f"  all served rows {s_['n']}: precision {s_['precision']:.3f} "
+              f"[{s_['ci95'][0]:.2f}–{s_['ci95'][1]:.2f}]")
     g = r["gate"]
     print(f"\n  GATE {'PASS' if g['pass'] else 'FAIL'} "
           f"(need >={g['overall_required']} overall, "
@@ -315,9 +416,15 @@ def main() -> int:
     ap.add_argument("--sample", action="store_true")
     ap.add_argument("--score", action="store_true")
     ap.add_argument("--show", action="store_true")
+    ap.add_argument("--round", help="round number: files become incident-*-roundN.*")
+    ap.add_argument("--per-type-cap", type=int, default=PER_TYPE_CAP)
+    ap.add_argument("--adversarial", type=int, default=0,
+                    help="served incidents drawn from the trap strata, scored apart")
+    ap.add_argument("--rejects", type=int, default=REJECT_SAMPLE)
     a = ap.parse_args()
+    use_round(a.round)
     if a.sample:
-        n = draw_sample()
+        n = draw_sample(a.per_type_cap, a.adversarial, a.rejects)
         print(f"{n} claims written to {SAMPLE_FILE}")
         print(f"score them into {SCORED_FILE} as one JSON object per line:")
         print('  {"claim_id":123,"is_incident":true,"type_ok":true,'
