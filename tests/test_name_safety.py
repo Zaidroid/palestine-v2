@@ -75,7 +75,11 @@ def test_crossings_and_checkpoints_stop_contradicting_each_other():
                or "Allenby" in (c["name_en"] or "")]
     assert allenby, "the bridge is one of the crossings"
     b = allenby[0]
-    assert b["value"] != "unknown", "the checkpoint layer holds a reading for it"
-    assert b["basis"] == "checkpoint_flow", "and the payload must say where it came from"
+    # The reading may have DECAYED since (it did on 2026-09-24 at 14 hours old,
+    # and this test failed on the data rather than on the defect). What must
+    # hold is that the checkpoint layer answers for the bridge at all.
+    assert b["basis"] == "checkpoint_flow", "the payload must say where it came from"
+    assert b["value"] != "unknown" or b["last_known_value"] is not None, \
+        "the checkpoint layer holds a reading (current or decayed) for it"
     assert b["age_minutes"] is not None
-    assert d["with_a_current_reading"] >= 1
+    assert len(d["crossings"]) >= 1

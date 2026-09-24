@@ -58,14 +58,35 @@ def checkpoint_status(d: dict) -> str:
     flow, name = d.get("flow"), d.get("name")
     who = [PRESENCE.get(p, p) for p in (d.get("present") or [])]
     tail = f" {' and '.join(who)} present." if who else ""
-    if flow == "unknown":
+    by = d.get("by_direction") or {}
+    inb, outb = by.get("inbound") or {}, by.get("outbound") or {}
+    # THE SAME FACTS THE ARABIC SENTENCE CARRIES: a direction split and a
+    # doubtful name match were said in Arabic and dropped here, so an English
+    # reader of "Hawara" was told "عورتا: open" while an Arabic reader was
+    # told the name was a guess. Two answers from one payload name one set
+    # of facts.
+    if (d.get("direction") == "both" and inb.get("flow") and outb.get("flow")
+            and inb["flow"] != outb["flow"]
+            and "unknown" not in (inb["flow"], outb["flow"])):
+        out = (f"{name}: {FLOW.get(inb['flow'], inb['flow'])} inbound, "
+               f"{FLOW.get(outb['flow'], outb['flow'])} outbound.{tail}")
+    elif flow == "unknown":
         last = d.get("last_known_flow")
         if not last or last == "unknown":
-            return f"{name}: nothing known about it.{tail}"
-        return (f"{name}: no current reading — last report {_age(d.get('age_minutes'))} "
-                f"said {FLOW.get(last, last)}.{tail}")
-    return (f"{name}: {FLOW.get(flow, flow)}, reported {_age(d.get('age_minutes'))}."
-            f"{tail}")
+            out = f"{name}: nothing known about it.{tail}"
+        else:
+            out = (f"{name}: no current reading — last report {_age(d.get('age_minutes'))} "
+                   f"said {FLOW.get(last, last)}.{tail}")
+    else:
+        out = (f"{name}: {FLOW.get(flow, flow)}, reported {_age(d.get('age_minutes'))}."
+               f"{tail}")
+    score = float((d.get("match") or {}).get("score") or 0.0)
+    if 0 < score < 0.8:
+        out = (f"Not sure about the name — nearest match is {name}. {out} If that is "
+               f"not the checkpoint you meant, try the full name or the Arabic spelling.")
+    elif score < 0.9:
+        out += " Note: the name matched approximately — there are checkpoints with similar names."
+    return out
 
 
 def checkpoints_near(d: dict) -> str:
@@ -184,12 +205,35 @@ def incidents_near(d: dict) -> str:
     if not items:
         return (f"No incidents recorded around {d.get('origin')} in the last "
                 f"{d.get('hours')} hours.")
-    bits = [f"{i['type'].replace('_', ' ')} in {i['place']}" for i in items[:4]]
+    bits = []
+    for i in items[:4]:
+        where = i.get("place_en") or i["place"]
+        if i.get("place_precision") == "governorate" and i.get("named_place"):
+            where = f"{i['named_place']} ({where} governorate)"
+        elif i.get("place_precision") == "governorate":
+            where = f"{where} governorate (village not resolved)"
+        bits.append(f"{i['type'].replace('_', ' ')} in {where} {_age(_mins(i.get('occurred_at')))}")
     out = f"Around {d.get('origin')}: " + ", ".join(bits) + "."
     solo = sum(1 for i in items if (i.get("independent_sources") or 0) < 2)
     if solo:
         out += f" ({solo} reported by a single source only.)"
+    fires = (d.get("fires") or {}).get("n")
+    if fires:
+        out += f" Satellite fire detections in range: {fires} (no reports)."
     return out
+
+
+def _mins(iso) -> int | None:
+    from datetime import datetime, timezone
+    if not iso:
+        return None
+    try:
+        t = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        return int((datetime.now(timezone.utc) - t).total_seconds() // 60)
+    except (ValueError, TypeError):
+        return None
 
 
 def incidents_summary(d: dict) -> str:
@@ -204,6 +248,9 @@ def incidents_summary(d: dict) -> str:
     places = ", ".join(p["place"] for p in (d.get("by_place") or [])[:4])
     if places:
         out += f" Worst affected: {places}."
+    fires = (d.get("fires") or {}).get("n")
+    if fires:
+        out += f" Satellite fire detections: {fires}."
     return out
 
 
@@ -217,6 +264,9 @@ def weather_now(d: dict) -> str:
                 f"({(n.get('today') or {}).get('max_c')}°C)" for n in notable]
         return "Weather advisories: " + ", ".join(bits) + "."
     h = govs[0]
+    if len(govs) == 1:
+        return (f"{h['governorate']}: {str(h.get('advisory', 'normal')).replace('_', ' ')}, "
+                f"{h.get('temp_now_c')}°C now, high {(h.get('today') or {}).get('max_c')}°C.")
     return (f"Normal across the West Bank. Hottest: {h['governorate']} "
             f"{(h.get('today') or {}).get('max_c')}°C.")
 
@@ -246,8 +296,23 @@ def crossings(d: dict) -> str:
     if d.get("no_source"):
         return ("Every crossing reads unknown because no source reports crossing "
                 "status yet. That is absence of evidence, not an open crossing.")
-    known = [c for c in d.get("crossings", []) if c.get("value") not in (None, "unknown")]
-    return "; ".join(f"{c['name']}: {c['value']}" for c in known[:6])
+    items = d.get("crossings", [])
+    known = [c for c in items if c.get("value") not in (None, "unknown")]
+    out = "Crossings — " + "; ".join(
+        f"{c.get('name_en') or c['name']}: {c['value']}"
+        + (f" ({_age(int(c['age_minutes']))})" if c.get("age_minutes") is not None else "")
+        for c in known[:6]) + "."
+    decayed = [c for c in items if c not in known and c.get("basis")]
+    if decayed:
+        out += " No current reading: " + "; ".join(
+            f"{c.get('name_en') or c['name']} (last known {c.get('last_known_value') or 'unknown'}"
+            + (f" {_age(int(c['age_minutes']))}" if c.get("age_minutes") is not None else "") + ")"
+            for c in decayed[:4]) + "."
+    unsourced = [c for c in items if not c.get("basis")]
+    if unsourced:
+        out += (" NO source reports " + ", ".join(c.get("name_en") or c["name"] for c in unsourced[:6])
+                + " — that is not 'open', it is unmeasured.")
+    return out
 
 
 def coverage(d: dict) -> str:
@@ -295,13 +360,25 @@ def where_is(d: dict) -> str:
 def trend(d: dict) -> str:
     if d.get("refused"):
         return d.get("reason", "Refused.")
+    if "recent_mean" not in d:
+        # Not enough points: the Arabic says so; "None vs None" said nothing.
+        return f"Not enough readings to compare a trend (n={d.get('n', 0)})."
     c = d.get("change_pct")
     word = ("flat" if c is None or abs(c) < 10 else
             ("higher" if c > 0 else "lower"))
-    return (f"{d.get('indicator')}: the last readings are {word}"
-            + (f" by {abs(c)}%" if c is not None else "")
-            + f" against the historical median ({d.get('recent_mean')} vs "
-              f"{d.get('baseline_median')}). {d.get('caveat', '')}")
+    out = (f"{d.get('indicator')}: the last readings are {word}"
+           + (f" by {abs(c)}%" if c is not None else "")
+           + f" against the historical median ({d.get('recent_mean')} vs "
+             f"{d.get('baseline_median')}).")
+    age = d.get("last_age_days")
+    if d.get("last"):
+        out += f" Newest reading {str(d['last'])[:10]}"
+        if age:
+            out += f", {age} days ago"
+        out += "."
+        if age and age > 45:
+            out += " The series has stopped; read the trend with that age in mind."
+    return out + (f" {d.get('caveat')}" if d.get("caveat") else "")
 
 
 def what_correlates_with(d: dict) -> str:
@@ -388,11 +465,14 @@ def insights(d: dict) -> str:
     if top:
         out += ". Most reported: " + ", ".join(
             f"{r['name_ar']} ({r['readings']:,} readings)" for r in top)
-    rows = inc.get("by_type") or []
+    rows = [r for r in (inc.get("by_type") or []) if r.get("type") != "fire_detection"]
     if rows:
         out += ". Incidents in the window: " + ", ".join(
             f"{r['events']} {r['type'].replace('_', ' ')} "
             f"({r['corroborated']} corroborated)" for r in rows[:6])
+    fires = (inc.get("fires") or {}).get("n")
+    if fires:
+        out += f". Satellite fire detections: {fires} (no reports)"
     qy = (d.get("quality") or {}).get("incidents") or {}
     if qy.get("state") == "below gate":
         out += (f". Accuracy note: the incident classifier measures "
@@ -443,8 +523,90 @@ def about(d: dict) -> str:
     return out
 
 
+def latest_news(d: dict) -> str:
+    items = d.get("items") or []
+    if not items:
+        return "No new messages" + (f" about {d['area']}." if d.get("area") else ".")
+    first = items[0]
+    what = {"news": "news items", "roads": "road bulletins", "all": "messages"}.get(
+        d.get("kind"), "messages")
+    text = " ".join(str(first.get("text") or "").split())[:160]
+    return (f"Newest {len(items)} {what}; the latest, {_age(first.get('age_minutes'))} "
+            f"from {first.get('source')}: {text}")
+
+
+def place_history(d: dict) -> str:
+    if d.get("found") is False:
+        return "Place not found."
+    if not d.get("series"):
+        return f"No saved history for {d.get('place')} yet."
+    flow = d.get("flow_totals") or {}
+    out = f"{d.get('place')}, last {d.get('days')} days"
+    if flow:
+        n = sum(flow.values())
+        said = ", ".join(f"{v} {FLOW.get(k, k)}" for k, v in sorted(flow.items(), key=lambda kv: -kv[1]))
+        out += f": {n} road reports — {said}"
+    else:
+        out += f": {d.get('days_with_data')} days with reports"
+    seen = []
+    for kind, word in (("checkpoint_idf", "army"), ("checkpoint_settlers", "settlers"),
+                       ("checkpoint_police", "police"), ("checkpoint_inspection", "inspection")):
+        n = ((d.get("totals_by_kind") or {}).get(kind) or {}).get("present", 0)
+        if n:
+            seen.append(f"{word} {n}×")
+    if seen:
+        out += "; sighted: " + ", ".join(seen)
+    u = d.get("max_independent_units_per_day")
+    if u:
+        out += f"; up to {u} independent reporters in a day"
+    return out + ". Counts are reports, not time."
+
+
+def place_pattern(d: dict) -> str:
+    if d.get("found") is False:
+        return "Place not found."
+    tally = d.get("usually_by_hour_tally") or {}
+    if not tally:
+        return f"Not enough reports about {d.get('place')} to infer a pattern."
+    modal, n_modal = max(tally.items(), key=lambda kv: kv[1])
+    known = [h for h in (d.get("hours") or []) if h.get("usually") not in (None, "unknown")]
+    out = (f"{d.get('place')}: usually {FLOW.get(modal, modal)} — {n_modal} of {len(known)} "
+           f"hours with enough reports.")
+    congested = [f"{h['hour']:02d}:00" for h in known if h.get("usually") == "congested"]
+    if congested and modal != "congested":
+        out += " Congested hours: " + ", ".join(congested[:8]) + "."
+    closed = [f"{h['hour']:02d}:00" for h in known if h.get("usually") == "closed"]
+    if closed:
+        out += " Closed hours: " + ", ".join(closed[:6]) + "."
+    return out + " A pattern is what was reported at that hour, not what was true."
+
+
+def area_history(d: dict) -> str:
+    ranked = d.get("ranked_by_closed_share") or []
+    govs = d.get("governorates") or {}
+    if not ranked:
+        return f"Last {d.get('days')} days across {len(govs)} governorates — no road reports in the window."
+    top = ", ".join(f"{r['governorate']} ({r['closed']} of {r['reports']} reports closed)"
+                    for r in ranked[:3])
+    last = ranked[-1]
+    return (f"Last {d.get('days')} days across {len(govs)} governorates. Most closures: {top}. "
+            f"Fewest: {last['governorate']} ({last['closed']} of {last['reports']}).")
+
+
+def stream_info(d: dict) -> str:
+    if not d.get("running"):
+        return "The live stream is stopped — no live updates right now."
+    age = d.get("last_poll_age_seconds")
+    return (f"Live stream running — {int(d.get('watched_states') or 0):,} states watched"
+            + (f", last checked {int(age)} s ago" if age is not None else "")
+            + f". Subscribe at {d.get('url', '/v2/stream')} (server-sent events).")
+
+
 RENDERERS: dict[str, Callable[[dict], str]] = {
     "about": about,
+    "latest_news": latest_news, "place_history": place_history,
+    "place_pattern": place_pattern, "area_history": area_history,
+    "stream_info": stream_info,
     "fuel_prices": fuel_prices,
     "checkpoint_status": checkpoint_status, "checkpoints_near": checkpoints_near,
     "checkpoints_summary": checkpoints_summary, "can_i_travel": can_i_travel,

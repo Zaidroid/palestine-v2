@@ -18,6 +18,8 @@ Reads ONLY from the `state_serving` view, never `state_current`.
 """
 from __future__ import annotations
 
+import functools
+
 import json
 import os
 import sys
@@ -833,10 +835,36 @@ def incidents_recent(
             "confidence": round(float(r["confidence"]), 3),
             "reports": r["claim_count"],
             "independent_sources": r["independent_sources"],
-            "channels": (r["attrs"] or {}).get("channels"),
+            "channels": _channel_labels((r["attrs"] or {}).get("channels")),
         } for r in rows],
         "attribution": "West Bank governorate news channels (Telegram) via agent2",
     }
+
+
+def _channel_labels(units) -> list[str] | None:
+    """Independence units, as names a reader can recognise.
+
+    The classifier stores each event's reporters as INDEPENDENCE UNITS —
+    `COALESCE(independence_group, 'src:' || source_id)` — because that is what
+    corroboration counts. `src:36` is correct there and meaningless in a
+    payload: the partner audit listed it as a leak. A unit that is a bare
+    source id becomes that source's key; a named group stays a group name.
+    """
+    if not units:
+        return units
+    keys = _source_keys()
+    out = []
+    for u in units:
+        if isinstance(u, str) and u.startswith("src:") and u[4:].isdigit():
+            out.append(keys.get(int(u[4:]), u))
+        else:
+            out.append(u)
+    return out
+
+
+@functools.lru_cache(maxsize=1)
+def _source_keys() -> dict[int, str]:
+    return {int(r["source_id"]): r["key"] for r in q("SELECT source_id, key FROM source")}
 
 
 @app.get("/v2/incidents/summary", tags=["incidents"])

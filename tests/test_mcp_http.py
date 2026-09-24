@@ -171,7 +171,7 @@ def test_english_is_built_from_fields_not_translated():
 
 def test_a_tool_without_a_renderer_gets_no_english_rather_than_bad_english():
     from serve.mcp_en import add_english
-    assert "answer_en" not in add_english("stream_info", {"answer": "البث شغال."})
+    assert "answer_en" not in add_english("ops_digest", {"answer": "تقرير."})
 
 
 def test_every_public_tool_declares_an_output_schema():

@@ -195,7 +195,14 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
     # away and in the opposite state, with a match score of 0.738 that never
     # left the database. Saying it out loud is the difference between a
     # traveller checking the name and a traveller driving to the wrong junction.
-    score = float((d.get("match") or {}).get("score") or 0.0)
+    # A similarity score above 1.0 is a defect of the scorer, not a stronger
+    # match: 1.04 for عين سينيا read as nonsense to the audit. Capped here so
+    # the number a reader sees means what it says.
+    match = dict(d.get("match") or {})
+    if match.get("score") is not None:
+        match["score"] = round(min(1.0, float(match["score"])), 3)
+    d["match"] = match
+    score = float(match.get("score") or 0.0)
     if 0 < score < 0.8:
         # Below 0.8 the match is a guess that happens to be nearest: "Hawara"
         # resolved to عورتا at 0.707. A guess that answers confidently is worse
@@ -285,12 +292,19 @@ def insights(place: str | None = None, lat: float | None = None,
     if hours:
         parts.append("أزحم الساعات بتوقيت البلد: " + "، ".join(f"{h}:00" for h in hours))
 
-    rows = inc.get("by_type") or []
+    rows = [r for r in (inc.get("by_type") or []) if r.get("type") != "fire_detection"]
+    fires = next((r for r in (inc.get("by_type") or []) if r.get("type") == "fire_detection"), None)
+    if isinstance(inc, dict):
+        inc["by_type"] = rows
+        inc["fires"] = {"n": (fires or {}).get("events", 0),
+                        "note": "NASA FIRMS satellite fire pixels — detections, not reports"}
     if rows:
         parts.append("أحداث: " + "، ".join(
             f"{r['events']} {_ar_event(r['type'])}" for r in rows[:6]))
     elif inc.get("events") == 0:
         parts.append("ما في أحداث مسجّلة بالنطاق")
+    if fires and fires.get("events"):
+        parts.append(f"ورصد الأقمار الصناعية {fires['events']} حريق (بدون تقارير)")
 
     qy = (d.get("quality") or {}).get("incidents") or {}
     if qy.get("state") == "below gate":
@@ -441,35 +455,58 @@ def incidents_near(place: str | None = None, lat: float | None = None,
 
     d = api("/v2/incidents/recent", lat=lat, lon=lon, hours=hours,
             radius_km=radius_km, limit=limit)
-    items = d.get("incidents", [])
+    all_items = d.get("incidents", [])
+    # A SATELLITE FIRE PIXEL IS NOT A REPORT. `fire_detection` rows come from
+    # NASA FIRMS, have no reporter and no corroboration, and read beside raids
+    # as "13 fires" to anyone who did not open the payload. They travel apart.
+    fires = [i for i in all_items if i.get("type") == "fire_detection"]
+    items = [i for i in all_items if i.get("type") != "fire_detection"]
+    by_type = dict(d.get("by_type") or {})
+    by_type.pop("fire_detection", None)
     if not items:
         answer = f"ما في أحداث مسجلة حوالين {place or 'موقعك'} بآخر {hours} ساعة."
     else:
         parts = []
         for i in items[:4]:
             ar = INCIDENT_AR.get(i["type"], i["type"])
-            parts.append(f"{ar} في {i['place']} {_age_ar(_mins_since(i['occurred_at']))}")
+            where = i["place"]
+            if i.get("place_precision") == "governorate" and i.get("named_place"):
+                where = f"{i['named_place']} (محافظة {i['place']})"
+            elif i.get("place_precision") == "governorate":
+                where = f"محافظة {i['place']}"
+            parts.append(f"{ar} في {where} {_age_ar(_mins_since(i['occurred_at']))}")
         answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."
         # Corroboration stated plainly — a single channel is not the same as four.
         solo = sum(1 for i in items if i["independent_sources"] < 2)
         if solo:
             answer += f" ({solo} منها من مصدر واحد بس.)"
+    if fires:
+        answer += f" ورصد الأقمار الصناعية {len(fires)} حريق بالنطاق (بدون تقارير)."
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
-            "hours": hours, "count": len(items), "by_type": d.get("by_type"),
-            "incidents": items, "source": d.get("attribution")}
+            "hours": hours, "count": len(items), "by_type": by_type,
+            "incidents": items,
+            "fires": {"n": len(fires), "note": "NASA FIRMS satellite fire pixels — a "
+                                               "detection, not a report; never a raid"},
+            "source": d.get("attribution")}
 
 
 def incidents_summary(hours: int = 24) -> dict:
     d = api("/v2/incidents/summary", hours=hours)
-    bt = d.get("by_type", {})
+    bt = dict(d.get("by_type", {}))
+    fires = bt.pop("fire_detection", None)
+    d["by_type"] = bt
+    d["fires"] = {"n": (fires or {}).get("n", 0),
+                  "note": "NASA FIRMS satellite fire pixels — detections, not reports"}
     if not bt:
         return {"answer": f"ما في أحداث مسجلة بآخر {hours} ساعة.", **d}
     bits = [f"{v['n']} {INCIDENT_AR.get(k, k)}" for k, v in
             sorted(bt.items(), key=lambda kv: -kv[1]["n"])[:5]]
-    places = ", ".join(p["place"] for p in d.get("by_place", [])[:4])
+    places = "، ".join(p["place"] for p in d.get("by_place", [])[:4])
     answer = f"بآخر {hours} ساعة بالضفة: " + "، ".join(bits) + "."
     if places:
         answer += f" الأكثر تأثراً: {places}."
+    if d["fires"]["n"]:
+        answer += f" ورصدت الأقمار الصناعية {d['fires']['n']} حريق."
     return {"answer": answer, **d}
 
 
@@ -536,14 +573,53 @@ def connectivity_now() -> dict:
     return {"answer": answer, **d}
 
 
-def latest_news(area: str | None = None, limit: int = 8) -> dict:
-    d = api("/v2/news/latest", area=area, limit=limit)
+ROAD_BULLETIN = "🚧"     # palhub's machine-generated road tables start with it
+
+
+def _dedupe_messages(items: list[dict]) -> list[dict]:
+    """One row per (source, opening words). The road channel reposts the same
+    table every fifteen minutes and a search for a checkpoint name returned five
+    copies of one bulletin; the newest copy carries the news, the rest is echo."""
+    seen: set[tuple] = set()
+    out = []
+    for it in items:
+        key = (it.get("source_key"), " ".join(str(it.get("text") or "").split())[:80])
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(it)
+    return out
+
+
+def latest_news(area: str | None = None, limit: int = 8, kind: str = "news") -> dict:
+    """The newest messages. `kind` — news (default) leaves out the road-status
+    tables, which are a feed of their own and drowned every other channel
+    (five of five items were bulletins, measured 2026-09-24); roads returns
+    only them; all returns everything."""
+    if kind not in ("news", "roads", "all"):
+        raise TypeError("kind must be news, roads or all")
+    d = api("/v2/news/latest", area=area, limit=max(limit * 4, 20) if kind != "all" else limit)
     items = d.get("items", [])
+    if kind == "news":
+        items = [i for i in items if not str(i.get("text", "")).startswith(ROAD_BULLETIN)]
+    elif kind == "roads":
+        items = [i for i in items if str(i.get("text", "")).startswith(ROAD_BULLETIN)]
+    items = _dedupe_messages(items)[:limit]
+    for it in items:
+        it["age_minutes"] = _mins_since(it.get("reported_at"))
     if not items:
         return {"answer": (f"ما في أخبار جديدة عن {area}." if area else "ما في أخبار جديدة."),
-                "items": []}
-    return {"answer": f"آخر خبر: {items[0]['text'][:180]}",
-            "count": len(items), "items": items}
+                "kind": kind, "count": 0, "items": []}
+    first = items[0]
+    age = _age_ar(first.get("age_minutes"))
+    what = {"news": "خبر", "roads": "نشرة طرق", "all": "رسالة"}[kind]
+    answer = (f"آخر {len(items)} {what}" + (f" عن {area}" if area else "") +
+              f"؛ أحدثها {age} من {first.get('source')}: "
+              f"{' '.join(str(first.get('text', '')).split())[:160]}")
+    return {"answer": answer, "kind": kind, "count": len(items),
+            "newest_at": first.get("reported_at"), "items": items,
+            "note": ("road-status tables are left out unless kind=roads; identical "
+                     "reposts are collapsed to the newest copy")}
 
 
 def coverage() -> dict:
@@ -595,9 +671,29 @@ def crossings(area: str | None = None) -> dict:
     # `basis` matters: a reading that came from the checkpoint layer is this
     # system's own observation of traffic at that crossing, not a statement by
     # a crossings authority, and the caller can tell the two apart.
-    say = "، ".join(f"{c['name']}: {c['value']}" for c in known[:6])
+    # THREE KINDS OF SILENCE, SAID AS THREE. A crossing with a value; one we
+    # follow but whose reading decayed (last known + age); and the ones NO
+    # source reports at all — today that is every Gaza crossing, and a
+    # headline that named only the one Jericho reading was read as "Rafah is
+    # fine" by everyone who did not open the payload.
+    decayed = [c for c in items if c not in known and c.get("basis")]
+    unsourced = [c for c in items if not c.get("basis")]
+    bits = [f"{c['name']}: {_ar_value(c['value'])}"
+            + (f" ({_age_ar(int(c['age_minutes']))})" if c.get("age_minutes") is not None else "")
+            for c in known[:6]]
+    say = "المعابر — " + "، ".join(bits) + "."
+    if decayed:
+        say += " بلا قراءة حديثة: " + "، ".join(
+            f"{c['name']} (آخر معلومة {_ar_value(c.get('last_known_value') or 'unknown')}"
+            + (f" {_age_ar(int(c['age_minutes']))}" if c.get("age_minutes") is not None else "")
+            + ")" for c in decayed[:4]) + "."
+    if unsourced:
+        say += (" ما في ولا مصدر بيخبرنا عن: " + "، ".join(c["name"] for c in unsourced[:6])
+                + " — مش معناها مفتوحة، معناها ما حدا بيقيسها.")
     return {"answer": say, "count": len(items), "crossings": items,
             "with_a_current_reading": len(known),
+            "decayed": [c["name"] for c in decayed],
+            "no_source_for": [c["name"] for c in unsourced],
             # Passed through so a caller can tell WHY a reading is withheld while
             # its band still reads fresh — the two are gated by different rules,
             # and bare they look like a contradiction (measured on King Hussein
@@ -650,9 +746,43 @@ def place_history(place: str, state_kind: str | None = None,
             slot = tot.setdefault(kind, {})
             for val, n in v.get("values", {}).items():
                 slot[val] = slot.get(val, 0) + n
-    return {"answer": f"{g['name']}: تاريخ {len(series)} يوم.",
+    # THE HEADLINE SAYS WHAT HAPPENED, not how many days it holds. Flow and
+    # presence are two axes: the legacy `checkpoint_status` kind mixes them, so
+    # the sentence reads `checkpoint_flow` for the road and the presence kinds
+    # for who was seen, and never adds an army sighting to an "open" count.
+    flow = tot.get("checkpoint_flow") or {}
+    nflow = sum(flow.values())
+    parts = [f"{g['name']}، آخر {days} يوم"]
+    if nflow:
+        said = "، ".join(f"{_ar_value(k)} {v}" for k, v in
+                         sorted(flow.items(), key=lambda kv: -kv[1]))
+        parts.append(f"{nflow} تقرير عن الطريق — {said}")
+        worst = max(series, key=lambda day: (day["kinds"].get("checkpoint_flow") or {})
+                    .get("values", {}).get("closed", 0))
+        wc = (worst["kinds"].get("checkpoint_flow") or {}).get("values", {}).get("closed", 0)
+        if wc:
+            parts.append(f"أسوأ يوم {worst['day']} ({wc} تقرير مسكّر)")
+    else:
+        other = {k: sum(v.values()) for k, v in tot.items()
+                 if not k.startswith("checkpoint_")}
+        if other:
+            parts.append("، ".join(f"{n} تقرير {k}" for k, n in other.items()))
+    seen = []
+    for kind, word in (("checkpoint_idf", "الجيش"), ("checkpoint_settlers", "مستوطنين"),
+                       ("checkpoint_police", "الشرطة"), ("checkpoint_inspection", "تفتيش")):
+        n = (tot.get(kind) or {}).get("present", 0)
+        if n:
+            seen.append(f"{word} {n} مرات")
+    if seen:
+        parts.append("شوهد: " + "، ".join(seen))
+    units = max((v.get("units", 0) for day in series for v in day["kinds"].values()),
+                default=0)
+    if units:
+        parts.append(f"من {units} جهة مستقلة كحد أقصى في اليوم")
+    return {"answer": "؛ ".join(parts) + ".",
             "place": g["name"], "place_id": g["place_id"],
-            "days_with_data": len(series), "totals_by_kind": tot,
+            "days": days, "days_with_data": len(series), "totals_by_kind": tot,
+            "flow_totals": flow, "max_independent_units_per_day": units,
             "series": series,
             "counts": "reports, not time — sparse days mean sparse attention."}
 
@@ -703,18 +833,61 @@ def place_pattern(place: str, state_kind: str = "checkpoint_flow",
             "caveat": d["note"]}
 
 
+RETIRED_KINDS = ("fuel_diesel", "fuel_gasoline", "cooking_gas")
+
+
 def area_history(state_kind: str | None = None, days: int = 30) -> dict:
-    """Totals by governorate — the cross-tier view."""
+    """Totals by governorate — the cross-tier view.
+
+    The headline ranks governorates by how much of their road reporting was
+    `closed`, which is the question the tool exists for. Retired feeds are
+    dropped from the payload: a quarantined or retired kind never appears as
+    data (DESIGN law 7), and the fuel-availability columns were retired on
+    2026-09-23."""
     d = api("/v2/history/area", state_kind=state_kind, days=days)
     govs = d.get("governorates", {})
-    return {"answer": f"تاريخ {days} يوم عبر {len(govs)} محافظة.",
-            "governorates": govs, "note": d.get("note")}
+    for g in govs.values():
+        for k in RETIRED_KINDS:
+            (g.get("kinds") or {}).pop(k, None)
+    ranked = []
+    for name, g in govs.items():
+        flow = ((g.get("kinds") or {}).get("checkpoint_flow") or {})
+        n = flow.get("reports", 0)
+        closed = (flow.get("values") or {}).get("closed", 0)
+        if n:
+            ranked.append((name, closed, n, closed / n))
+    ranked.sort(key=lambda t: -t[3])
+    if ranked:
+        top = "، ".join(f"{GOV_AR.get(n, n)} ({c} من {t} تقرير مسكّر)" for n, c, t, _ in ranked[:3])
+        answer = (f"آخر {days} يوم عبر {len(govs)} محافظة. الأكثر إغلاقاً: {top}. "
+                  f"الأقل: {GOV_AR.get(ranked[-1][0], ranked[-1][0])} "
+                  f"({ranked[-1][1]} من {ranked[-1][2]}).")
+    else:
+        answer = f"آخر {days} يوم عبر {len(govs)} محافظة — ما في تقارير طرق بالنافذة."
+    return {"answer": answer, "days": days,
+            "ranked_by_closed_share": [{"governorate": n, "closed": c, "reports": t,
+                                        "closed_share": round(r, 3)} for n, c, t, r in ranked],
+            "governorates": govs, "note": d.get("note"),
+            "grain_note": ("`checkpoint_flow` is the road; `checkpoint_idf`/`_police`/"
+                           "`_settlers`/`_inspection` are sightings and are never "
+                           "added to it. The legacy `checkpoint_status` column mixes "
+                           "the two and is kept for the record only.")}
+
+
+GOV_AR = {"Hebron": "الخليل", "Nablus": "نابلس", "Ramallah": "رام الله", "Jenin": "جنين",
+          "Tulkarm": "طولكرم", "Qalqilya": "قلقيلية", "Salfit": "سلفيت", "Bethlehem": "بيت لحم",
+          "Jericho": "أريحا", "Tubas": "طوباس", "Jerusalem": "القدس", "North Gaza": "شمال غزة",
+          "Gaza": "غزة", "Deir Al-Balah": "دير البلح", "Khan Yunis": "خان يونس", "Rafah": "رفح"}
 
 
 def stream_info() -> dict:
     """How to subscribe to live changes, and whether the stream is alive."""
     d = api("/v2/stream/status")
-    return {"answer": ("البث شغال." if d.get("running") else "البث واقف."),
+    age = d.get("last_poll_age_seconds")
+    head = (f"البث شغال — {d.get('watched_states', 0):,} حالة تحت المراقبة"
+            + (f"، آخر فحص قبل {int(age)} ثانية" if age is not None else "") + "."
+            if d.get("running") else "البث واقف — ما في تحديثات حية هالوقت.")
+    return {"answer": head,
             "url": "/v2/stream",
             "protocol": "server-sent events",
             "emits": "changes in what the system will ASSERT, including a "
@@ -1010,8 +1183,8 @@ def search(text: str, hours: int = 168, limit: int = 20) -> dict:
     none of them recent enough to reach a 100-message window. The window is now
     the caller's, and the match happens in the database.
     """
-    d = api("/v2/news/latest", text=text.strip(), hours=hours, limit=limit)
-    hits = d.get("items", [])
+    d = api("/v2/news/latest", text=text.strip(), hours=hours, limit=limit * 3)
+    hits = _dedupe_messages(d.get("items", []))[:limit]
     if not hits:
         return {"answer": f"ما لقيت ولا رسالة فيها «{text}» بالمخزون الحالي.",
                 "count": 0, "items": [],
@@ -1218,9 +1391,36 @@ def databank(category: str | None = None, indicator: str | None = None,
     d = api(f"/v2/databank/{category}", indicator=indicator,
             as_of=as_of, limit=limit)
     when = f" كما كانت بتاريخ {as_of}" if as_of else ""
-    answer = (f"{d['count']} سجلاً من {category}{when}."
-              if d["count"] else f"لا سجلات مطابقة في {category}{when}.")
-    return {"answer": answer, **d}
+    items = d.get("items") or []
+    if not items:
+        return {"answer": f"لا سجلات مطابقة في {category}{when}.", **d}
+    # THE HEADLINE IS THE LATEST FIGURE, NOT A ROW COUNT. "5 rows from
+    # demolitions" told a reader nothing; the newest value per indicator, its
+    # date, its place and who published it is what they asked for.
+    newest: dict[str, dict] = {}
+    for it in items:
+        k = it.get("indicator") or "?"
+        if k not in newest or str(it.get("occurred_at") or "") > str(newest[k].get("occurred_at") or ""):
+            newest[k] = it
+    dates = sorted(str(it.get("occurred_at") or "")[:10] for it in items if it.get("occurred_at"))
+    span = f" السلسلة من {dates[0][:4]} إلى {dates[-1][:4]}." if dates else ""
+    bits = []
+    for k, it in list(newest.items())[:3]:
+        val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
+        if isinstance(val, float) and val.is_integer():
+            val = int(val)
+        unit = f" {it['unit']}" if it.get("unit") else ""
+        prec = it.get("occurred_precision")
+        when_ = str(it.get("occurred_at") or "")[:4 if prec == "year" else 10]
+        partial = " (سنة ناقصة)" if (it.get("attrs") or {}).get("partial_year") else ""
+        where = f"، {it['place_ar']}" if it.get("place_ar") else ""
+        bits.append(f"{k}: {val:,}{unit} في {when_}{partial}{where}" if isinstance(val, (int, float))
+                    else f"{k}: {val} في {when_}{where}")
+    src = "؛ ".join(d.get("attribution") or [])[:120]
+    answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
+              + (f" المصدر: {src}." if src else "") + span
+              + f" ({d['count']} سجل معروض" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
+    return {"answer": answer, "latest_by_indicator": list(newest.values())[:3], **d}
 
 
 def data_gaps() -> dict:
@@ -1263,12 +1463,15 @@ def about(section: str = "overview") -> dict:
     of each is one `section` away, so the first call a stranger makes is small
     and the detail is reachable rather than mandatory.
     """
+    # A section IS another tool's payload, so it carries that tool's English:
+    # the outer transport adds `about`'s renderer only when none is present.
+    from serve.mcp_en import add_english
     if section in ("sources", "fields"):
-        return coverage()
+        return add_english("coverage", coverage())
     if section == "gaps":
-        return data_gaps()
+        return add_english("data_gaps", data_gaps())
     if section == "stream":
-        return stream_info()
+        return add_english("stream_info", stream_info())
     if section != "overview":
         raise TypeError("section must be one of overview, sources, fields, gaps, stream")
     cov = coverage()
@@ -1577,9 +1780,17 @@ TOOLS = {
                          "(routing table, active probes, darknet telescope) rather than reported "
                          "by anyone. Answers 'is the internet down' when nobody can post that it is.",
                          {"type": "object", "properties": {}}),
-    "latest_news": (latest_news, "Most recent ingested messages, optionally filtered by area.",
+    "latest_news": (latest_news,
+                    "Most recent ingested messages, optionally filtered by area. kind=news "
+                    "(default) leaves out the road-status tables; roads returns only them.",
                     {"type": "object", "properties": {
-                        "area": {"type": "string"}, "limit": {"type": "integer"}}}),
+                        "area": {"type": "string", "description": "a governorate or town"},
+                        "limit": {"type": "integer", "default": 8,
+                                  "description": "how many messages to return"},
+                        "kind": {"type": "string", "enum": ["news", "roads", "all"],
+                                 "default": "news",
+                                 "description": "news leaves out road-status tables; roads "
+                                                "returns only them; all returns everything"}}}),
     "coverage": (coverage, "What sources and data this system currently holds — "
                            "and, more usefully, what it holds NOTHING for. Check "
                            "this before answering a question about power, water, "

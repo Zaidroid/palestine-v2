@@ -216,7 +216,10 @@ FACADES: dict[str, dict[str, Any]] = {
             "hours": {"type": "integer", "default": 168,
                       "description": "search mode: lookback window"},
             "limit": {"type": "integer", "default": 8,
-                      "description": "how many messages to return"}}},
+                      "description": "how many messages to return"},
+            "kind": {"type": "string", "enum": ["news", "roads", "all"], "default": "news",
+                     "description": "newest-messages mode: news leaves out the road-status "
+                                    "tables, roads returns only them, all returns everything"}}},
         "route": _r_news},
     "series": {
         "description": "A databank series over time. One indicator: is it above or "
