@@ -24,7 +24,9 @@ def test_ramallah_last_month_answers_in_one_call():
     d = _ins(days=30, radius_km=15)
     ck = d["checkpoints"]
     assert d["scope"]["name_en"] == "Ramallah"
-    assert ck["places"] > 5 and ck["readings"] > 1000
+    # `places_in_window` since the round-4 fix of 2026-09-24 (the window count and
+    # the now-count are different sets and are labelled as such).
+    assert ck.get("places_in_window", ck.get("places", 0)) > 5 and ck["readings"] > 1000
     assert set(ck["over_window"]) <= {"open", "closed", "congested", "slow"}, \
         "flow words only: presence words in this histogram mean the wrong grain"
     assert ck["most_reported"] and ck["most_reported"][0]["readings"] > 0
