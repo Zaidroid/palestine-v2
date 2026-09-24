@@ -66,6 +66,14 @@ Two defects were found and fixed rather than accepted:
   calls. Now `q_cached`, keyed on the databank sync watermark, so a nightly load
   invalidates it immediately. Warm serial 4.0 s → 0.01 s; under ten concurrent
   callers the median went 5.59 s → 0.11 s.
+
+  **Read the cache's 60 s TTL with those numbers, or they overclaim.** The first
+  call after a 60-second gap still rebuilds (measured 4.1 s through the tunnel
+  after an idle minute); what changed is that everyone inside that window shares
+  the answer instead of each paying for it. At the limiter's ceiling of 120
+  read-requests a minute that is **one** rebuild a minute instead of 120 — which
+  is the hostile-caller case the fix is for. The "before" column paid 5.5 s for
+  all ten concurrent callers because all ten missed.
 - **The query cache was unbounded.** Its key includes the caller's parameters,
   and a stranger controls `limit` (1..2000), `indicator` and `days`. One
   `limit=2000` entry holds **276 KB** of rows, so varying `limit` in a loop grew
