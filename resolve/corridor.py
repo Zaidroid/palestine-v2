@@ -62,6 +62,26 @@ VALHALLA = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
 # needed at all.
 CORRIDOR_METRES = 300
 
+# A CLOSURE JUST OUTSIDE THE CORRIDOR IS NOT SILENCE.
+# Measured 2026-09-24: `can_i_travel` Ramallah→Nablus answered "passable, congested
+# at Za'tara" while عين سينيا (Ein Siniya) was closed 25 minutes earlier with TWO
+# independent sources. Its row passes every registry filter — kind='checkpoint',
+# servable, not merged — its centroid is simply 2,327 m from the polyline, so the
+# corridor dropped it without a word. The only name the traveller ever saw was a
+# pseudo-checkpoint literally named "من عين سينا لزعترة" (a road SEGMENT, whose
+# centroid lands on the line and therefore survives the buffer).
+#
+# WIDTH IS CHOSEN FROM THE DATA, NOT FROM TASTE. Counting blocking/slow
+# checkpoints by radius on that same call: 300 m → 1 (just Za'tara), 900 m → 1,
+# 1,500 m → 1, 2,500 m → 4 (بيت ايل closed, سلواد يبرود congested, عين سينيا
+# closed, كفر عقب closed at 2.7 km), 5,000 m → 9 and climbing. So 3 km is the band
+# that reaches the closure a traveller needs while still being a briefing rather
+# than a directory of every shut checkpoint in the Ramallah area.
+#
+# The closure is NAMED, never promoted onto the route: whether a checkpoint 2.3 km
+# off the alignment is on somebody's journey is their call. Silence is not.
+NEAR_MISS_METRES = 3000
+
 # Presence is a SIGHTING, not a state (migration 025) — a 15-minute half-life
 # against a 35-hour reporting gap. It never blocks a route, because an army
 # sighting two hours ago says nothing reliable about now. It is surfaced as a
@@ -92,6 +112,22 @@ SELECT cp.place_id, cp.name_ar, cp.name_en, cp.along, cp.off_route_m,
   LEFT JOIN state_serving f
     ON f.place_id = cp.place_id AND f.state_kind = 'checkpoint_flow'
  ORDER BY cp.along, f.direction
+"""
+
+NEAR_MISS_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
+SELECT p.place_id, p.name_ar, p.name_en,
+       round(ST_Distance(p.centroid, line.g)::numeric) AS off_route_m,
+       f.value AS flow, f.age_minutes, f.independent_sources
+  FROM place p
+ CROSS JOIN line
+  JOIN state_serving f
+    ON f.place_id = p.place_id AND f.state_kind = 'checkpoint_flow'
+ WHERE p.kind = 'checkpoint' AND p.centroid IS NOT NULL
+   AND COALESCE(p.servable, true) AND p.merged_into IS NULL
+   AND ST_DWithin(p.centroid, line.g, %(near)s)
+   AND NOT ST_DWithin(p.centroid, line.g, %(buf)s)
+   AND f.value IN ('closed', 'congested', 'slow')
 """
 
 PRESENCE_SQL = """
@@ -137,6 +173,7 @@ class Corridor:
     slow_at: list = field(default_factory=list)
     unreported: list = field(default_factory=list)
     cautions: list = field(default_factory=list)
+    near_misses: list = field(default_factory=list)
     checkpoints: list = field(default_factory=list)
     shape: str = ""
     is_alternate: bool = False
@@ -223,6 +260,38 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     with conn.cursor() as cur:
         cur.execute(ON_ROUTE_SQL, {"wkt": wkt, "buf": CORRIDOR_METRES})
         rows = cur.fetchall()
+        # The band just outside the corridor. A closure here is NAMED, not
+        # promoted: whether a checkpoint 500 m off the alignment is on the
+        # journey is the traveller's call, not ours — but silence is not an
+        # option either, which is exactly what Ein Siniya was.
+        cur.execute(NEAR_MISS_SQL, {"wkt": wkt, "buf": CORRIDOR_METRES,
+                                    "near": NEAR_MISS_METRES})
+        near_rows = cur.fetchall()
+
+    # One place can appear several times (per direction, and once per reading).
+    # Keep the most severe, then the best-corroborated, then the FRESHEST: on
+    # 2026-09-24 Ein Siniya had a 25-minute-old reading with two independent
+    # sources AND an 87-minute-old one from a single source. Reporting the stale
+    # solo reading would understate a closure the system actually knows well.
+    order_worst = {"closed": 3, "congested": 2, "slow": 1}
+
+    def _rank(m: dict) -> tuple:
+        return (order_worst.get(m["flow"], 0),
+                m.get("independent_sources") or 0,
+                -(m.get("age_minutes") if m.get("age_minutes") is not None else 1e9))
+
+    near: dict[int, dict] = {}
+    for (npid, nar, nen, noff, nflow, nage, nsrcs) in near_rows:
+        cand = {"place_id": npid, "name": nar or nen or f"#{npid}",
+                "name_en": nen, "off_route_m": int(noff),
+                "flow": nflow,
+                "age_minutes": float(nage) if nage is not None else None,
+                "independent_sources": nsrcs}
+        prev = near.get(npid)
+        if prev is None or _rank(cand) > _rank(prev):
+            near[npid] = cand
+    near_on_route: set[int] = set()
+    near_misses: list = []
 
     # One checkpoint can appear once per direction. A route has a direction of
     # travel but our inbound/outbound is defined relative to the CHECKPOINT, and
@@ -247,6 +316,9 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
             c.independent_sources = srcs
 
     cps = sorted(by_id.values(), key=lambda c: c.along)
+    near_on_route = {c.place_id for c in cps}
+    near_misses = sorted((v for k, v in near.items() if k not in near_on_route),
+                         key=lambda v: v["off_route_m"])
 
     if cps:
         with conn.cursor() as cur:
@@ -273,6 +345,7 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         unreported=[c.name for c in cps if c.flow == "unknown"],
         cautions=[{"place": c.name, "seen": p["kind"], "age_minutes": p["age_minutes"]}
                   for c in cps for p in c.presence],
+        near_misses=near_misses,
         checkpoints=cps, shape=leg["shape"], is_alternate=is_alternate)
 
 

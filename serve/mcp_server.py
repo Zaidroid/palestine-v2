@@ -718,8 +718,32 @@ def can_i_travel(origin: str, destination: str) -> dict:
         alt = next((r for r in rs if r["verdict"] in ("likely_open", "slow")), None)
         if alt:
             detail += f". بديل: {alt['duration_minutes']:.0f} دقيقة ({alt['verdict']})"
+
+    # A closure just outside the corridor is not silence. Ein Siniya was closed
+    # 85 minutes earlier while this tool said "passable, congested at Za'tara",
+    # because its centroid sits further than CORRIDOR_METRES from the polyline —
+    # and the only name the caller saw was a pseudo-checkpoint named after the
+    # road segment ("من عين سينا لزعترة"). The closure is NOT promoted onto the
+    # route: whether a checkpoint 500 m off the alignment is on somebody's
+    # journey is their call. It is named, with its distance and age, in the
+    # sentence a traveller hears.
+    nm = best.get("near_misses") or []
+    blocking_nm = [m for m in nm if m.get("flow") == "closed"]
+    near_note = ""
+    if blocking_nm:
+        w = blocking_nm[0]
+        age = w.get("age_minutes")
+        when = f" قبل {int(age)} دقيقة" if age is not None else ""
+        others = len(blocking_nm) - 1
+        extra = (f" و{others} إغلاقات قريبة ثانية" if others > 1
+                 else " وإغلاق قريب ثاني" if others == 1 else "")
+        near_note = (f" تنبيه: {w['name']} مسكّر{when} على بعد "
+                     f"{w['off_route_m']} متر من هالطريق — يمكن ما يوقفك، "
+                     f"بس اعرفه{extra}.")
+
     return {"answer": f"{say}{detail}. "
-                      f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة.",
+                      f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
+                      f"{near_note}",
             "verdict": best["verdict"],
             "duration_minutes": best["duration_minutes"],
             "distance_km": best["distance_km"],
@@ -727,11 +751,28 @@ def can_i_travel(origin: str, destination: str) -> dict:
             "congested_at": best["slow_at"],
             "not_reported_recently": best["unreported"],
             "cautions": best["cautions"],
+            # The ORDERED list the tool's own description promises, in travel
+            # order, each with its flow and AGE. It was in
+            # resolve/corridor.py:Corridor.checkpoints all along and the
+            # projection here dropped it, so the only names a caller ever saw
+            # were `unreported` plus the worst one or two in blocks/slow — which
+            # made both an omission and a stale reading invisible.
+            "checkpoints": [{"name": c["name"], "name_en": c.get("name_en"),
+                             "flow": c["flow"], "age_minutes": c.get("age_minutes"),
+                             "independent_sources": c.get("independent_sources"),
+                             "off_route_m": c.get("off_route_m"),
+                             "position": round(c["along"], 3),
+                             "presence": c.get("presence") or []}
+                            for c in (best.get("checkpoints") or [])],
+            "oldest_known_minutes": best.get("oldest_known_minutes"),
+            "near_misses": nm,
             "routes": [{k: r[k] for k in ("verdict", "duration_minutes", "distance_km",
                                           "known", "checkpoints_on_route",
                                           "blocked_at", "unreported")} for r in rs],
             "caveat": "one confirmed closure blocks a route; unreported checkpoints "
-                      "never block and are always named"}
+                      "never block and are always named. `checkpoints` is in travel "
+                      "order with each reading's age; `near_misses` are closures and "
+                      "congestion just outside the corridor we scored."}
 
 
 def correlate(a: str | None = None, b: str | None = None,
