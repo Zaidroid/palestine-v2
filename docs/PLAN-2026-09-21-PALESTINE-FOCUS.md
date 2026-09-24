@@ -310,7 +310,7 @@ means, what `last_known_value` means, why an `answer` must not be rephrased), th
 changelog and version header, and a status endpoint. DONE WHEN a client integrates from the docs alone. PROVE
 it from a clean machine with nothing but the document.
 
-**F-84 · Security review.** what: the door closed (F-80); what a hostile caller can make the server do
+**F-84 · Security review. DONE 2026-09-24 (see §8).** what: the door closed (F-80); what a hostile caller can make the server do
 (expensive tools, big `limit`, deep databank scans, the correlation surface); `allow_origins=["*"]` justified
 or narrowed; the three host-only tools PROVEN unreachable over HTTP; a written threat note. DONE WHEN the note
 exists with every item proved or explicitly accepted. PROVE the note + the refusals.
@@ -498,3 +498,21 @@ An external reviewer ran all 27 tools over the public endpoint and hand-checked 
 2026-09-24 10:10 local · F-81 follow-up · **the full-suite gate has a red that is a SCHEDULE race, not a regression, and it now has timestamps.** Reading the one `F` out of a `--deselect`'d full run by mapping the progress dots onto `--collect-only` order named it: `tests/test_databank.py::test_snapshot_tree_intact_zero_days_deleted`, `vault has 83 days, v1 still has 84`. Measured cause: v1 wrote its own `2026-09-24` snapshot at **04:05:06 UTC**, while the vault hot-copy (`ops.vault_snapshots`, inside `ops/databank-sync.sh`) runs at **~03:50** — so on any night we beat v1 to its own write, the vault is legitimately one day behind at check time and the invariant `vault_days >= v1_days` cannot hold until the next run. Not data loss: the copy is idempotent and copies new days only, so tonight's run takes 09-24 and the gate goes green. It will flap again on the next night we win the race. F-81 touched neither `tests/test_databank.py` nor `data/evidence/` (`git log --name-only` on both commits), so this is pre-existing and unrelated to the licence work.
 
 **The fix is ordering, not the assertion** — the test is right that a falling-behind vault is the evidence base shrinking, so it must keep teeth. Options: run the vault hot-copy as its own registered job after v1's window (~04:30, which needs the wrapper + `EXPECTED_JOBS` + unit pair + README line), or give the nightly a second vault pass. Both are a change to when a data-integrity job runs, so it waits for Zaid rather than being slipped in at the end of a session.
+
+2026-09-24 10:55 local · F-84 · done · proof: `docs/SECURITY-REVIEW.md` + `tests/test_security_review.py` (16 passed). **THE HOSTILE CALLER CANNOT GET MUCH, AND TWO THINGS WERE FIXED RATHER THAN ACCEPTED.**
+
+**Proved from the open internet, with a valid key.** `tools/list` returns 28 tools and none of `system_health` / `ops_digest` / `mcp_usage`; calling each by name returns `-32601` ("not served over HTTP"); and the REST route behind the third, `GET /v2/usage`, answers **404** to a non-local caller and does not appear in the published `openapi.json` — so hiding the tool is not bypassable through the REST layer. `/health` is public but already narrowed: external callers get counts only, while the `checks` block that names each job and its error detail is local-only.
+
+**`/v2/databank/licenses` was never cached — the slowest public route in the system, and the one the `licenses` tool calls.** Five whole-dataset aggregates over 206k rows on every request: warm serial **3.5-4.0 s**, and **5.59 s median** under ten concurrent callers. Now `q_cached`, keyed on the sync watermark like the other databank aggregates. Warm serial **0.01 s**; ten concurrent **median 0.11 s, max 0.30 s**, all 200. That is roughly a 50x improvement on the path a hostile caller would pick.
+
+**The query cache was unbounded, and the key contains the caller's parameters.** `limit` (1..2000), `indicator` and `days` are all caller-controlled, and one `limit=2000` entry holds **276 KB** of rows — so varying `limit` in a loop grew the process's memory with no ceiling on a single-worker process that never restarts. Now an LRU bounded at 400 entries; the test exercises the bound through HTTP rather than reimplementing it.
+
+**The watermark had no lock.** Every caller finding it stale ran the same ~380 ms `max(upper(sys_period))` aggregate at the same instant, multiplying the most expensive query on the cheapest path exactly when the server is busiest. Now double-checked under a lock; a 12-thread barrier test asserts **one** read per burst.
+
+**Accepted, each with its reason in the note.** CORS `*` is fine because `allow_credentials` stays False — no cookies, no auth state — and a test makes widening that pair a red build rather than a one-word edit. The read API stays unauthenticated (the key buys attribution, quota and revocation, not exclusivity; F-81's per-caller tier is what makes redistribution meaningful now). No timeout or concurrency cap beyond the per-IP limiter: heavy paths are now effectively free at 10-way concurrency, and this box serves one partner. `correlate`/`what_correlates_with` stay uncached on purpose — caching them on the caller's window would be the unbounded-cache problem wearing a different hat — bounded by `candidates<=120` and `check_comparable`.
+
+**Not closed, and said so rather than implied:** corpus injection (a channel writing a payload that survives into an `answer`) is an ingestion-trust class, not an HTTP-surface one. Filed for the classifier pass.
+
+**Probe discipline worth keeping:** the first draft of the traversal test asserted a 200 was a hole — it was httpx normalising `../../health` into `/health` before sending, so the probe tested the client. The note's figures are warm and distribution-shaped, and an early comparison of `licenses` against `coverage` was cold-vs-warm and was discarded rather than reported.
+
+**Verified:** `tests/test_security_review.py` 16 passed; `test_api` + `test_mcp_http` + `test_licence_tier` 149 passed, 1 skipped; live probes above.
