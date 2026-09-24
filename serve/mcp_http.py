@@ -305,6 +305,32 @@ def _tool_list() -> list[dict]:
             for n, (_, d, s) in PUBLIC_TOOLS.items()]
 
 
+# ── the grading table, read once in a while rather than per call ─────────────
+# The per-payload licence block should carry the tool's GRADE and its
+# OBLIGATION, and those are read from the database by /v2/licence/tools. Asking
+# for that table on every tool call would cost a round trip per request, so it is
+# held for a minute: grades move when a publisher's terms are re-read, which is
+# not an event that needs to be seen within one second. A failure to read it
+# leaves the block without the grade rather than failing an answer about a road.
+_GRADES: dict = {"at": 0.0, "tools": {}}
+_GRADES_TTL = 60.0
+
+
+def _tool_grades() -> dict:
+    now = time.monotonic()
+    if _GRADES["tools"] and (now - _GRADES["at"]) < _GRADES_TTL:
+        return _GRADES["tools"]
+    try:
+        from serve.mcp_server import api as _api
+        fresh = {t["tool"]: t for t in _api("/v2/licence/tools").get("tools", [])}
+        if fresh:
+            _GRADES["tools"] = fresh
+            _GRADES["at"] = now
+    except Exception:                                       # noqa: BLE001
+        pass
+    return _GRADES["tools"]
+
+
 def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
 
@@ -401,7 +427,7 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
         # the tier on the payload rather than describing it. A tool function
         # cannot raise its own tier: the tier is decided from who is calling
         # (below), never from an argument the caller supplied.
-        out = licence.apply(name, out, tier)
+        out = licence.apply(name, out, tier, _tool_grades().get(name))
         result = {
             "content": [{"type": "text",
                          "text": json.dumps(out, ensure_ascii=False, default=str)}],

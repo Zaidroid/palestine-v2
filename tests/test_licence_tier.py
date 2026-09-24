@@ -14,6 +14,7 @@ other people's articles, and no key we issue can grant a licence we do not hold.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from fastapi.testclient import TestClient
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from serve import app as A                                        # noqa: E402
 from serve import licence as L                                    # noqa: E402
 from serve import mcp_http as m                                   # noqa: E402
 from serve.app import app                                         # noqa: E402
@@ -327,6 +329,137 @@ def test_labelling_never_takes_down_an_answer_about_a_road():
     assert out["answer"] == "x"
     out2 = L.apply("latest_news", {"error": "boom"}, "partner")
     assert out2 == {"error": "boom"}
+
+
+# ── the licence block must not contradict the payload under it ───────────────
+# Reported by an external reviewer who compared the block against the payload
+# beside it, 2026-09-24. Each of these is a contradiction found that way.
+
+def test_a_share_alike_tool_says_so_in_its_own_payload():
+    """A grade that names a copyleft and a payload that never mentions it leaves
+    the reader to discover the obligation after they have shipped. The table
+    said `share-alike`; the per-call block said nothing."""
+    out = payload(call("where_is", tier="partner", place="نابلس"))
+    lic = out["licence"]
+    assert lic["grade"] == "share-alike"
+    # `full` means sellable — which is true, and exactly why the obligation has
+    # to travel beside it rather than be inferred from the tier name.
+    assert lic["partner_tier"] == "full"
+    joined = " ".join(lic.get("obligations") or [])
+    assert "SHARE-ALIKE" in joined and "DERIVED DATABASE" in joined
+
+
+def test_a_metadata_tool_does_not_claim_to_be_computed_from_reports():
+    """`coverage` describes what THIS SYSTEM holds; `licenses` is our own
+    register; `licence_tools` is this table; `data_gaps` measures our own
+    freshness; `stream_info` describes our transport. None of them reduces
+    anybody's reports, and saying so was boilerplate that was simply false."""
+    for tool in ("coverage", "data_gaps", "licenses", "licence_tools",
+                 "stream_info"):
+        assert L.TOOLS[tool]["emits"] == L.METADATA, tool
+        out = payload(call(tool, tier="house"))
+        note = out["licence"]["emits_note"].lower()
+        assert "reports" not in note, f"{tool} still claims to reduce reports"
+        assert "this system" in note
+
+
+def test_the_checkpoint_tools_explain_the_osm_credit_instead_of_hiding_it():
+    """They return this platform's OWN checkpoint coordinates and a `km`
+    computed over OpenStreetMap roads, and their attribution credits OSM. The
+    grade is `open` because ODbL calls a computed distance a PRODUCED WORK
+    (attribution owed, your database is your own) — not because OSM is being
+    copied. The reviewer read the credit and the grade as contradictory; the
+    fix is to state the distinction, not to hide either half."""
+    out = payload(call("checkpoints_near", tier="partner", place="نابلس",
+                       limit=3))
+    lic = out["licence"]
+    assert lic["grade"] == "open"
+    joined = " ".join(lic.get("obligations") or [])
+    assert "PRODUCED WORK" in joined
+    assert "OpenStreetMap" in " " + str(out.get("source", ""))
+    # And the coordinates really are ours: the gazetteer query that decides this
+    # grades checkpoint/crossing/road without OSM provenance.
+    assert "checkpoint" in L.GEO_CHECKPOINT_KINDS
+
+
+def test_the_incident_bearing_profile_does_not_deny_its_own_coordinates():
+    """`place_profile` says it resolves a place name; when that place has
+    incidents, every incident row carries a latitude and longitude. Its note
+    used to assert the payload carried no coordinate, which is false for
+    exactly the payloads where it matters."""
+    sample = payload(call("place_profile", tier="partner", place="حوارة"))
+    note = sample["licence"].get("note", "")
+    assert "no coordinate" not in note.lower()
+    # Either it carries coordinates, or the note does not claim it never can.
+    body = json.dumps(sample, ensure_ascii=False)
+    if '"lat"' in body:
+        assert "DOES carry coordinates" in note
+
+
+def test_full_text_chars_is_the_message_length_not_the_route_cap():
+    """The route caps every body at NEWS_TEXT_CHARS before the licence layer
+    sees it, so `len(text)` was that cap wearing the name of a fact: every
+    excerpted item reported exactly 500. A number labelled "full" must be the
+    full length, or the reason for its absence must be named."""
+    assert A.NEWS_TEXT_CHARS == 500
+    r = client.get("/v2/news/latest", params={"limit": 25})
+    for it in r.json()["items"]:
+        assert "text_full_chars" in it, "the true length is not reported"
+        assert it["text_full_chars"] >= len(it["text"].rstrip("…"))
+        if it.get("excerpted"):
+            assert it["full_text_chars"] > L.EXCERPT_CHARS, \
+                "an excerpt whose 'full' length is the cut length"
+            if it["full_text_chars"] == A.NEWS_TEXT_CHARS:
+                # Legitimate: the route capped it. Name that rather than passing
+                # the cap off as the message length.
+                assert it.get("truncated_by_route") is True
+
+
+def test_connectivity_attribution_is_read_from_the_registry_not_typed():
+    """It said 'CC BY-NC 4.0' while the registry said All Rights Reserved and
+    `redistribution = ask` — two contradictory licence claims in ONE payload.
+    The string was an assumption recorded with no terms_url (migration 053) and
+    migration 067 replaced it by reading IODA's own API."""
+    p = payload(call("connectivity_now", tier="partner"))
+    assert "CC BY-NC" not in json.dumps(p, ensure_ascii=False), \
+        "a superseded licence claim is back"
+    assert p.get("license") == "LicenseRef-IODA-All-Rights-Reserved"
+    assert p.get("redistribution") == "ask"
+    assert p["licence"]["grade"] == "ask"
+    # The registry's own wording: a copyright line with no grant of any kind,
+    # which is why the grade is `ask` rather than `attribution`.
+    assert "Copyright" in str(p.get("attribution", ""))
+    assert "Georgia Tech" in str(p.get("attribution", ""))
+
+
+def test_every_tool_that_carries_an_obligation_says_which_kind_it_is():
+    """Obligations are the part a reader acts on. A payload may carry two
+    different ones (a Produced Work's attribution and a Derivative Database's
+    copyleft); each must be nameable, and the two kinds must be distinguishable
+    rather than one blob of boilerplate.
+
+    Counted from the SPECS, not by calling every tool: most tools need
+    arguments, so calling them with none returns an error payload that carries no
+    licence block and the count would silently under-report."""
+    declared = {t: spec["obligations"] for t, spec in L.TOOLS.items()
+                if spec.get("obligations")}
+    assert len(declared) >= 3, f"almost nothing declares an obligation: {declared}"
+    for tool, obs in declared.items():
+        for ob in obs:
+            assert isinstance(ob, str) and len(ob) > 60, (tool, ob)
+            assert "PRODUCED WORK" in ob, (tool, ob)
+    # The OTHER kind — the copyleft that travels into a partner's database — is
+    # attached from the measured grade rather than declared per tool, because
+    # whether it applies is a property of the sources, not of the code. Both
+    # kinds must exist and must be distinguishable, or the reader cannot tell
+    # "cite us" from "license your database the same way".
+    assert "PRODUCED WORK" in L._OSM_PRODUCED_WORK
+    assert "DERIVED DATABASE" in L._SHARE_ALIKE_OBLIGATION
+    assert L._OSM_PRODUCED_WORK != L._SHARE_ALIKE_OBLIGATION
+    # And the copyleft one reaches a real payload, from the grade.
+    out = payload(call("where_is", tier="partner", place="نابلس"))
+    obs = " ".join(out["licence"]["obligations"])
+    assert "DERIVED DATABASE" in obs
 
 
 # ── the two surfaces must agree ──────────────────────────────────────────────

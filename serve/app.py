@@ -689,6 +689,15 @@ def connectivity() -> dict:
     if not rows:
         return {"status": "unknown", "reason": "no measurement yet"}
     r = rows[0]
+    # The attribution is READ from the source registry, never typed here. It used
+    # to say "CC BY-NC 4.0", which was an assumption recorded with no terms_url
+    # and no evidence (migration 053's own note). Migration 067 read IODA's API
+    # and found a copyright line on every response with no grant of any kind, so
+    # the registry says All Rights Reserved and `redistribution = 'ask'`. A
+    # hardcoded string cannot follow that, and this one did not: the payload
+    # contradicted its own licence block until 2026-09-24.
+    src = q_cached("""SELECT attribution_text, license_spdx, redistribution
+                        FROM source WHERE key = 'ioda'""")
     return {"region": r["name_en"], "status": r["value"],
             "observed_at": r["observed_at"], "age_minutes": r["age_minutes"],
             "staleness_band": r["staleness_band"],
@@ -696,7 +705,10 @@ def connectivity() -> dict:
             "signals_agreeing": r["independent_sources"],
             "signals": (r["attrs"] or {}).get("signals"),
             "method": (r["attrs"] or {}).get("method"),
-            "attribution": "Internet measurement by IODA, Georgia Tech (CC BY-NC 4.0)"}
+            "attribution": (src[0]["attribution_text"] if src else
+                            "Internet outage detection: IODA, Georgia Tech"),
+            "license": (src[0]["license_spdx"] if src else None),
+            "redistribution": (src[0]["redistribution"] if src else None)}
 
 
 @app.get("/v2/weather", tags=["weather"])
@@ -853,6 +865,15 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
     }
 
 
+# How much of a message body this route will hand back at all. It is a STORAGE
+# cap, not a licence decision: the partner-tier excerpt (serve/licence.py) is
+# applied on top of it. Reported per item as `text_full_chars` so a reader can
+# tell a short message from a truncated one — before this, the licence layer
+# measured the already-capped string and every excerpted row claimed exactly
+# this number as its "full" length.
+NEWS_TEXT_CHARS = 500
+
+
 @app.get("/v2/news/latest", tags=["news"])
 def news_latest(request: Request, area: str | None = None,
                 limit: int = Query(10, ge=1, le=100),
@@ -899,7 +920,8 @@ def news_latest(request: Request, area: str | None = None,
     from serve.ratelimit import client_ip, is_local
     tier = "house" if is_local(client_ip(request)) else "partner"
     out = {"count": len(rows), "area": area,
-           "items": [{"text": " ".join(r["raw_text"].split())[:500],
+           "items": [{"text": " ".join(r["raw_text"].split())[:NEWS_TEXT_CHARS],
+                      "text_full_chars": len(" ".join(r["raw_text"].split())),
                       "source": r["src"], "source_key": r["src_key"],
                       "reported_at": r["reported_at"]} for r in rows]}
     return L.apply("latest_news", out, tier)
