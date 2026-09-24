@@ -254,3 +254,13 @@ row, برقا 70, camps over checkpoints 62); 55 demoted honestly; 70 new placem
 Tests: `tests/test_place_extraction.py` (16) + `tests/test_place_locate.py` (9) + test_news 75 green. NOTE: killing the
 timer's own 1.8.0 re-read (it would have hit `TimeoutStartSec=900` and rolled back in a loop) fired one ntfy alert
 at 18:04 UTC — expected, see HANDS §7.
+2026-09-24 18:07 UTC · P0-C.1b corpus re-read (1.8.0, `--rebuild`, 2.5 min) · done · proof: `read 33659 unclassified
+claims · incident 9068 · located 8661 · dropped 407 · 5098 distinct events from 8661 reports (1147 corroborated) · 459
+closure states`. DB after: `place_precision` named 4,172 / governorate 909 / village_ambiguous 17 of 5,098 → **named
+81.8 %, governorate-only 17.8 % (was 27.8 %)**; claim_count off 0 of 5,098 (was 5,069); duplicate stable keys 0; events
+on stations 0 (was 5), on governorate polygons 0 (was 327); المغير: 221 events on Ramallah's row, 36 on Jenin's.
+Live `/v2/incidents/summary?hours=168`: 755 incidents, 153 located to a governorate only, by_place led by المغير 26 ·
+برقة 19 · جبع 17 · سلواد 14 — the Ramallah villages count as themselves now. G3 placement line (≥ 80 % named) met;
+precision of new placements 94 % on a 70-row hand check (a real round-8 gold set is still the next step). The serving
+API keeps the 09-24 17:15 process: it reads the new events live, but its own resolver (place, checkpoint_status) loads
+the 1.8.0 `resolve/geo.py` only at the next restart (HANDS §1b).
