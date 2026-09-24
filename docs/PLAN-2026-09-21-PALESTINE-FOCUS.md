@@ -319,9 +319,10 @@ or narrowed; the three host-only tools PROVEN unreachable over HTTP; a written t
 exists with every item proved or explicitly accepted. PROVE the note + the refusals.
 
 **F-85 · Staging key and review window for Thaura** before their release: their test key, a "try these ten
-calls" script, and a named path for what they find. DONE WHEN they have it and have used it. DELIVERED 2026-09-24
-(see §8) — the kit is finished and the key is live; the remaining half of the DONE WHEN is theirs to use, so this
-stays open until they report back. Needed F-80 and ZAID-10, both answered.
+calls" script, and a named path for what they find. DONE WHEN they have it and have used it. **KIT READY 2026-09-24;
+NOT YET HANDED OVER** (Zaid, 2026-09-24: he has not shared it with Thaura yet — he is making the MCP solid first and
+has given it to friends to test). The key is live and verified; the handover itself has not happened, so neither half
+of the DONE WHEN is met. Needed F-80 and ZAID-10, both answered.
 
 ---
 
