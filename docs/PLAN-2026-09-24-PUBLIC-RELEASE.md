@@ -304,3 +304,10 @@ no DB password, api_hash or private key in any commit; the one key in history is
 (`docs/PARTNER-API.md`, f0fe881). The nightly run ledger `ops/databank-runs.ndjson` is no longer tracked; `CLAUDE.md` tells a
 session away from main-server what it can and cannot run. The GitHub CLI lives in `~/.local/bin/gh` (logged in as Zaidroid,
 https); an SSH key `~/.ssh/github-main-server` exists unused. v1 (`/opt/stacks/palestine`) is not in this repo.
+2026-09-24 20:35 UTC · v1's code published too (private) · done · proof: https://github.com/Zaidroid/palestine-v1, one snapshot
+commit, 461 files, 23 MB, copied out of `/opt/stacks/palestine` (never a git repo, 41 GB on disk) with its data, `.env`
+files, Telegram sessions, SQLite databases, backups, tiles and the 40 GB `public/data` left out; no credential in any file
+(the CI placeholder key is a dummy). `SNAPSHOT.md` there says what is in, what is out, and that production is the tree on
+main-server, not the checkout. The old Actions workflow was moved to `ci/github-workflows/` so no CI runs on the snapshot.
+Together the two repositories are the whole project: v2 = Tier 1 + Tier 2 + API/MCP; v1 = the road-channel parser v2 still
+reads, the old site and the nightly refresh (P3 folds the parser into v2).
