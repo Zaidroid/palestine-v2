@@ -12,6 +12,11 @@ Fawwaz towards it so he can take care of the whole implementation and report bac
 
 ## 0 · How to use this document (Fawwaz, read this first)
 
+> **2026-09-24 — SUPERSEDED for ordering by `docs/PLAN-2026-09-24-PUBLIC-RELEASE.md`** (Zaid's "make it public-ready"
+> analysis and plan, approved 2026-09-24). This document keeps its §8 ledger as history and its task definitions as
+> reference; the order of work, the gates and the decisions now live there. W8 is absorbed into its P0/P2-B.
+
+
 1. Read `docs/HANDOFF.md` §1 (hard rules) and `ops/maintenance-prompt.md` (its rules and its loop). Both stay in
    force. This plan adds work; it removes no rule.
 2. Work the tasks in order inside each workstream (W0 first, then W1 …). A task is done only when its

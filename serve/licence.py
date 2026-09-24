@@ -195,6 +195,10 @@ TOOLS: dict[str, dict] = {
                             "note": "the scope block echoes the resolved place's "
                                     "coordinates, which may be an ODbL locality."},
     "stream_info":         {"emits": METADATA, "sources": []},
+    "about":               {"emits": METADATA, "sources": [],
+                            "note": "the overview of this system: counts of what it "
+                                    "holds and lacks, reduced from coverage, the gap "
+                                    "radar and the stream status."},
     "coverage":            {"emits": METADATA, "sources": [],
                             "note": "metadata about this system, not data from "
                                     "anyone's dataset."},
@@ -470,7 +474,8 @@ def table(q, public_tools: set[str]) -> dict:
 
 # ── applying it to one payload ────────────────────────────────────────────────
 
-def apply(tool: str, out: Any, tier: str, entry: dict | None = None) -> Any:
+def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
+          shown_as: str | None = None) -> Any:
     """Attach the licence block and enforce it, per datum.
 
     Never raises: a licence-labelling bug must not take down an answer about a
@@ -497,9 +502,13 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None) -> Any:
         return out
 
     emits = spec["emits"]
-    block: dict[str, Any] = {"tool": tool, "graded": True, "emits": emits,
+    block: dict[str, Any] = {"tool": shown_as or tool, "graded": True, "emits": emits,
                              "emits_note": _EMIT_NOTE[emits], "tier": tier,
                              "table": "/v2/licence/tools"}
+    if shown_as and shown_as != tool:
+        # The caller used a public façade name; the grade is the answering
+        # tool's, and saying which one keeps /v2/licence/tools readable.
+        block["via"] = tool
     if spec.get("note"):
         block["note"] = spec["note"]
     for key in ("obligations",):

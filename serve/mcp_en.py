@@ -425,7 +425,26 @@ def licence_tools(d: dict) -> str:
                   "read.")
 
 
+def about(d: dict) -> str:
+    live, db, st = d.get("live") or {}, d.get("databank") or {}, d.get("stream") or {}
+    out = (f"Palestine Data: {int(live.get('messages') or 0):,} messages from "
+           f"{live.get('sources', 0)} sources, "
+           f"{sum((live.get('live_states') or {}).values()):,} live states over "
+           f"{live.get('checkpoints_tracked', 0)} tracked checkpoints.")
+    if live.get("no_source"):
+        out += " NO source at all for: " + ", ".join(live["no_source"]) + "."
+    if live.get("stale"):
+        out += " Quiet for a long time: " + ", ".join(live["stale"]) + "."
+    out += (f" Databank: {int(db.get('rows') or 0):,} rows in {db.get('categories', 0)} "
+            f"categories")
+    if db.get("failing_supply_lines"):
+        out += f", with {db['failing_supply_lines']} supply lines failing"
+    out += ". Live stream " + ("running." if st.get("running") else "stopped.")
+    return out
+
+
 RENDERERS: dict[str, Callable[[dict], str]] = {
+    "about": about,
     "fuel_prices": fuel_prices,
     "checkpoint_status": checkpoint_status, "checkpoints_near": checkpoints_near,
     "checkpoints_summary": checkpoints_summary, "can_i_travel": can_i_travel,

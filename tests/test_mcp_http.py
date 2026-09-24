@@ -38,7 +38,10 @@ def test_the_ops_tools_are_not_served_over_http():
     listed = {t["name"] for t in m._tool_list()}
     assert "system_health" not in listed
     assert "ops_digest" not in listed
-    assert listed == set(s.TOOLS) - m.PRIVATE
+    # The menu is the 16 public names (serve/mcp_facades.py); the absorbed
+    # old names are aliases that answer but are not offered.
+    from serve.mcp_facades import LISTED
+    assert listed == set(LISTED)
 
 
 def test_a_hidden_tool_cannot_be_called_by_name_either():

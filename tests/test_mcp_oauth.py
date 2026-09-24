@@ -108,7 +108,8 @@ def test_a_registered_client_gets_a_code_and_a_token():
                                           "cf-connecting-ip": "198.51.100.9"},
                          json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
     assert listed.status_code == 200, listed.text
-    assert len(listed.json()["result"]["tools"]) > 20
+    from serve.mcp_facades import LISTED
+    assert len(listed.json()["result"]["tools"]) == len(LISTED)
 
 
 def test_pkce_is_verified_and_a_replayed_code_is_refused():

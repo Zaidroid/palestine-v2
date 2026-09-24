@@ -56,6 +56,7 @@ from serve import mcp_oauth as oauth
 from serve import mcp_usage as usage
 from serve import licence
 from serve.mcp_en import add_english
+from serve.mcp_facades import FACADES, LISTED, listed_tools, route
 from serve.mcp_server import API, HOST_ONLY, TOOLS
 
 # Defined beside TOOLS rather than here, so adding a tool there cannot publish
@@ -75,23 +76,28 @@ DEFAULT_PROTOCOL = "2025-06-18"
 _POOL = ThreadPoolExecutor(max_workers=16, thread_name_prefix="mcp")
 
 INSTRUCTIONS = (
-    "Live and historical data for the West Bank and Gaza: checkpoints, fuel, "
-    "incidents, road routing, weather, connectivity, and a 200,000-row historical "
-    "databank with per-source licensing.\n\n"
-    "Every tool returns a short Arabic `answer` written to be read aloud "
-    "verbatim, plus the structured data behind it. The `answer` already carries "
-    "the uncertainty — how old the reading is, whether anyone independent "
-    "corroborated it, whether the field has any source at all. Do not rephrase "
-    "it into something more confident. This system never asserts a decayed "
-    "reading as current, and smoothing that away in your reply defeats the "
-    "point: 'unknown' means nobody credible has looked recently, which is an "
-    "answer, not a gap. Sending someone toward a checkpoint that closed three "
-    "hours ago is the failure every layer here is built to prevent.\n\n"
-    "Start with `coverage` to see what is held and what is held nothing for. "
-    "For a question about a place over a period — 'what happened around "
-    "Ramallah last month' — call `insights` and do not fetch rows and average "
-    "them yourself: it does the reduction once, and it carries the sample size "
-    "and the measured precision of each subject."
+    "Palestine Data — live + databank (بيانات فلسطين). Tier 1: what is happening "
+    "NOW on the West Bank's roads — checkpoints per direction, journeys, incidents "
+    "— read from crowd and news channels, corroborated across independent "
+    "reporters and decayed with age. Tier 2: a historical databank of 200,000+ rows "
+    "(1922 → today: casualties, demolitions, prisoners, displacement, food prices, "
+    "funding, health…) with a licence on every row.\n\n"
+    "Every tool returns `answer` (Palestinian Arabic, written to be read aloud "
+    "verbatim) and `answer_en` (the same facts in English), plus the structured "
+    "data behind them. The answer already carries the uncertainty — how old the "
+    "reading is, how many independent reporters agree, whether the field has any "
+    "source at all. Do not rephrase it into something more confident. Three words "
+    "are never blurred: a VALUE we assert now; `unknown` — nobody credible looked "
+    "recently, which is an answer, not a gap, and never the last value; `no source` "
+    "— nothing measures this, ever. Sending someone toward a checkpoint that closed "
+    "three hours ago is the failure every layer here is built to prevent.\n\n"
+    "Start with `about`. For one checkpoint use `checkpoint_status`; for a journey "
+    "`can_i_travel` and read its `verdict` — `unverified` means we could not see "
+    "enough of the road to call it open. For a place over a period call `insights` "
+    "and do not fetch rows to average them yourself. `place` gives one place in four "
+    "views; `incidents`, `checkpoints` and `news` take a place or answer West-Bank-"
+    "wide; `databank`, `series` and `correlate` are the historical side; `licence` "
+    "says what you may republish."
 )
 
 # ── resources ────────────────────────────────────────────────────────────────
@@ -182,7 +188,7 @@ def _p_route(a: dict) -> str:
 
 def _p_place(a: dict) -> str:
     return (f"Give a briefing on {a.get('place', '?')}.\n\n"
-            "Call place_profile. Then say plainly: what is known right now, how "
+            "Call place (view=profile). Then say plainly: what is known right now, how "
             "old that knowledge is, and what is NOT known. If the place has both "
             "a town and a checkpoint of the same name, say which one the answer "
             "covers. Do not fill silence with inference — 'no recent reports' is "
@@ -191,7 +197,7 @@ def _p_place(a: dict) -> str:
 
 def _p_missing(a: dict) -> str:
     return ("Find out what this system CANNOT answer.\n\n"
-            "Call coverage and data_gaps. Report three things: fields with no "
+            "Call about, then about with section=gaps. Report three things: fields with no "
             "source at all, series that have gone stale, and upstreams that have "
             "died. Be specific that a field with no source will never answer, no "
             "matter how often it is asked — that is different from a field that "
@@ -203,9 +209,9 @@ def _p_relationship(a: dict) -> str:
     topic = a.get("topic", "")
     return (f"Explore what moves together in this data{', around ' + topic if topic else ''}.\n\n"
             "Use correlate with no arguments to see the concepts, then with "
-            "`search` to find indicator strings, then what_correlates_with to "
-            "scan, and finally correlate on the single most promising pair to "
-            "get its caveats and attribution.\n\n"
+            "`search` to find indicator strings, then correlate with `indicator` "
+            "to scan, and finally correlate with `a` and `b` on the single most "
+            "promising pair to get its caveats and attribution.\n\n"
             "Treat every scan row as a hypothesis. The scan reports how many "
             "tests it ran, and at forty tests a couple will look significant "
             "from noise alone. If a tool refuses, report the refusal and its "
@@ -215,7 +221,7 @@ def _p_relationship(a: dict) -> str:
 
 def _p_reuse(a: dict) -> str:
     return (f"Can I reuse or sell figures from {a.get('source', 'this databank')}?\n\n"
-            "Call licenses. Distinguish three things clearly: rows that are "
+            "Call licence with scope=sources. Distinguish three things clearly: rows that are "
             "republishable with attribution, rows that are sellable outright, "
             "and rows under a share-alike licence, which are sellable but force "
             "any derived DATABASE to carry the same licence. Name the sources "
@@ -300,9 +306,9 @@ OUTPUT_SCHEMA = {
 
 
 def _tool_list() -> list[dict]:
-    return [{"name": n, "description": d, "inputSchema": s,
-             "outputSchema": OUTPUT_SCHEMA}
-            for n, (_, d, s) in PUBLIC_TOOLS.items()]
+    """The 16 public names (serve/mcp_facades.py). Absorbed old names still
+    answer by name; they are simply not on the menu any more."""
+    return [{**t, "outputSchema": OUTPUT_SCHEMA} for t in listed_tools()]
 
 
 # ── the grading table, read once in a while rather than per call ─────────────
@@ -361,7 +367,9 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
                              "resources": {"listChanged": False,
                                            "subscribe": False},
                              "prompts": {"listChanged": False}},
-            "serverInfo": {"name": "palestine-live-tracker", "version": "2.0.0"},
+            "serverInfo": {"name": "palestine-data",
+                           "title": "Palestine Data — live + databank",
+                           "version": "2.1.0"},
             "instructions": INSTRUCTIONS,
         })
     if method == "ping":
@@ -397,18 +405,27 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
 
     if method == "tools/call":
         name = params.get("name")
-        if name in PRIVATE:
-            return _err(rid, -32601,
-                        f"{name} is not served over HTTP — it reports the "
-                        f"health of the host, not the state of the country")
-        if name not in PUBLIC_TOOLS:
-            return _err(rid, -32602, f"unknown tool: {name}")
         args = params.get("arguments") or {}
         if not isinstance(args, dict):
             return _err(rid, -32602, "arguments must be an object")
+        # A public name is a façade over the tool that answers (P0-A). The
+        # façade decides the target from the arguments and drops what the target
+        # does not take; everything after this line sees the INTERNAL name, so
+        # the licence grade and the English renderer stay keyed on the tool that
+        # produced the payload.
+        try:
+            target, targs = route(name, args)
+        except TypeError as exc:
+            return _err(rid, -32602, _scrub(str(exc)))
+        if name in PRIVATE or target in PRIVATE:
+            return _err(rid, -32601,
+                        f"{name} is not served over HTTP — it reports the "
+                        f"health of the host, not the state of the country")
+        if target not in PUBLIC_TOOLS:
+            return _err(rid, -32602, f"unknown tool: {name}")
         started = time.monotonic()
         try:
-            out = PUBLIC_TOOLS[name][0](**args)
+            out = PUBLIC_TOOLS[target][0](**targs)
             failed = False
         except TypeError as exc:                            # bad arguments
             out, failed = {"error": _scrub(str(exc))}, True
@@ -421,13 +438,15 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
         usage.record(name, args, int((time.monotonic() - started) * 1000),
                      not failed, out, ip)
         if not failed:
-            out = add_english(name, out)
+            out = add_english(target, out)
         # F-81: the licence block goes on LAST, after the tool and its English
         # have produced everything they are going to produce, and it enforces
         # the tier on the payload rather than describing it. A tool function
         # cannot raise its own tier: the tier is decided from who is calling
-        # (below), never from an argument the caller supplied.
-        out = licence.apply(name, out, tier, _tool_grades().get(name))
+        # (below), never from an argument the caller supplied. Graded on the
+        # tool that answered; labelled with the name the caller used.
+        out = licence.apply(target, out, tier, _tool_grades().get(target),
+                            shown_as=name)
         result = {
             "content": [{"type": "text",
                          "text": json.dumps(out, ensure_ascii=False, default=str)}],

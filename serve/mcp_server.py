@@ -1254,7 +1254,94 @@ def data_gaps() -> dict:
             "measured_at": d["measured_at"], "scout": scout}
 
 
+def about(section: str = "overview") -> dict:
+    """One call to learn what this system is, holds, cannot answer, and whether it
+    is alive — the first call a new client should make (P0-A, 2026-09-24).
+
+    `overview` is a REDUCTION of `coverage`, `data_gaps`, `stream_info` and the
+    databank totals: counts and the top gaps, not every field. The full payload
+    of each is one `section` away, so the first call a stranger makes is small
+    and the detail is reachable rather than mandatory.
+    """
+    if section in ("sources", "fields"):
+        return coverage()
+    if section == "gaps":
+        return data_gaps()
+    if section == "stream":
+        return stream_info()
+    if section != "overview":
+        raise TypeError("section must be one of overview, sources, fields, gaps, stream")
+    cov = coverage()
+    gaps = data_gaps()
+    st = stream_info()
+    cats = api("/v2/databank/categories")
+    # The route lists DATASETS (category, dataset, rows…); categories are the
+    # sum over them, which is also how the `databank` tool counts.
+    cat_counts: dict[str, int] = {}
+    for d in cats.get("datasets") or []:
+        if isinstance(d, dict) and d.get("category"):
+            cat_counts[d["category"]] = cat_counts.get(d["category"], 0) + int(d.get("rows") or 0)
+    rows = sum(cat_counts.values())
+    fields = cov.get("fields") or []
+    live = sorted(f["state_kind"] for f in fields if f.get("coverage_state") == "live")
+    failing = [g for g in (gaps.get("gaps") or []) if g.get("kind") == "fetch"]
+    top = [{"subject": g.get("subject"), "measure": g.get("measure"),
+            "fill_path": g.get("fill_path")}
+           for g in sorted(gaps.get("gaps") or [], key=lambda g: -int(g.get("severity") or 0))[:3]]
+    newest = max((s.get("newest") or "" for s in cov.get("sources") or []), default=None)
+    no_source = cov.get("no_source") or []
+    stale = cov.get("stale") or []
+    retired = sorted((cov.get("retired_states") or {}).keys())
+    places = cov.get("places") or {}
+    running = bool(st.get("running"))
+
+    ar = (f"بيانات فلسطين: {cov.get('total_claims', 0):,} رسالة من "
+          f"{len(cov.get('sources') or [])} مصدر، {sum((cov.get('live_states') or {}).values()):,} "
+          f"حالة مباشرة على {places.get('checkpoint', 0)} حاجز متابَع.")
+    if no_source:
+        ar += " ما في ولا مصدر لـ: " + "، ".join(no_source) + "."
+    if stale:
+        ar += " ساكتة من زمان: " + "، ".join(stale) + "."
+    ar += (f" بنك المعلومات: {rows:,} سجل في {len(cat_counts)} فئة"
+           + (f"، و{len(failing)} خط إمداد معطّل." if failing else "."))
+    ar += " البث شغال." if running else " البث واقف."
+    return {
+        "answer": ar,
+        "name": "Palestine Data — live + databank", "name_ar": "بيانات فلسطين",
+        "live": {"messages": cov.get("total_claims"),
+                 "sources": len(cov.get("sources") or []),
+                 "newest_message_at": newest,
+                 "live_states": cov.get("live_states"),
+                 "live_fields": live,
+                 "no_source": no_source, "stale": stale, "retired": retired,
+                 "checkpoints_tracked": places.get("checkpoint")},
+        "databank": {"rows": rows, "categories": len(cat_counts),
+                     "datasets": (gaps.get("counts") or {}).get("datasets"),
+                     "fresh": (gaps.get("counts") or {}).get("fresh"),
+                     "failing_supply_lines": len(failing)},
+        "top_gaps": top,
+        "stream": {"running": running, "url": st.get("url", "/v2/stream")},
+        "sections": "about(section=sources|fields|gaps|stream) returns the full detail "
+                    "behind each count.",
+        "reading": "Three words, never blurred: a VALUE we will assert now; `unknown` "
+                   "(nobody credible looked recently — an answer, not a gap, never the "
+                   "last value); `no source` (nothing measures this, ask tomorrow and "
+                   "it is still no).",
+    }
+
+
 TOOLS = {
+    "about": (about,
+              "What this system is, what it holds, what it holds NOTHING for, and "
+              "whether it is alive — call this first. overview (default) is a short "
+              "reduction; section=sources|fields|gaps|stream returns the full detail. "
+              "`no source` means nothing measures a field, ever; `unknown` means nobody "
+              "credible reported recently.",
+              {"type": "object", "properties": {
+                  "section": {"type": "string",
+                              "enum": ["overview", "sources", "fields", "gaps", "stream"],
+                              "default": "overview",
+                              "description": "overview, or one section in full"}}}),
     "correlate": (correlate,
                   "Concepts, indicator search, and correlation between two "
                   "series. Call with nothing to see what the databank "
@@ -1372,7 +1459,8 @@ TOOLS = {
                                    "description": "prefix filter, e.g. prisoners.child"},
                      "as_of": {"type": "string",
                                "description": "YYYY-MM-DD — answer as of that day"},
-                     "limit": {"type": "integer"}}}),
+                     "limit": {"type": "integer", "default": 10,
+                               "description": "rows to return (1–2000)"}}}),
     "can_i_travel": (can_i_travel,
                      "Can I get from A to B right now? Returns every reasonable route scored by "
                      "the checkpoints ON it — in travel order, each with its age — plus "
@@ -1423,8 +1511,10 @@ TOOLS = {
                     {"type": "object", "properties": {
                         "product": {"type": "string",
                                     "enum": ["gasoline_95", "gasoline_98", "diesel", "kerosene",
-                                             "lpg_2_5kg", "lpg_5kg", "lpg_12kg", "lpg_48kg"]},
-                        "history": {"type": "boolean"}}}),
+                                             "lpg_2_5kg", "lpg_5kg", "lpg_12kg", "lpg_48kg"],
+                                    "description": "one product; omit for the whole list"},
+                        "history": {"type": "boolean", "default": False,
+                                    "description": "true lists every confirmed price so far"}}}),
     "checkpoint_status": (checkpoint_status,
                           "Is a named checkpoint open right now? Returns flow (open/congested/"
                           "slow/closed), whether it is passable, who is present (army, police, "
@@ -1433,7 +1523,8 @@ TOOLS = {
                           {"type": "object", "properties": {
                               "name": {"type": "string", "description": "e.g. حوارة, قلنديا, Huwara"},
                               "direction": {"type": "string", "enum": ["inbound", "outbound", "both"],
-                                            "description": "direction of travel; both is the default"}},
+                                            "default": "both",
+                                            "description": "direction of travel relative to the checkpoint"}},
                            "required": ["name"]}),
     "insights": (insights,
                  "ONE reduction of a place over a window: checkpoint status "
@@ -1660,19 +1751,29 @@ def main() -> int:
         if method == "initialize":
             _reply(rid, {"protocolVersion": PROTOCOL,
                          "capabilities": {"tools": {}},
-                         "serverInfo": {"name": "palestine-v2", "version": "2.0.0"}})
+                         "serverInfo": {"name": "palestine-data",
+                                        "title": "Palestine Data — live + databank",
+                                        "version": "2.1.0"}})
         elif method == "tools/list":
-            _reply(rid, {"tools": [{"name": n, "description": d, "inputSchema": s}
-                                   for n, (_, d, s) in TOOLS.items()]})
+            # The same 16 public names the HTTP door lists (serve/mcp_facades.py),
+            # plus the host-only tools, because this transport IS the host.
+            from serve.mcp_facades import listed_tools
+            _reply(rid, {"tools": listed_tools(include_host_only=True)})
         elif method == "tools/call":
+            from serve.mcp_facades import route
             p = req.get("params", {})
             name = p.get("name")
-            if name not in TOOLS:
+            try:
+                target, args = route(name, p.get("arguments") or {})
+            except TypeError as exc:
+                _error(rid, -32602, str(exc))
+                continue
+            if target not in TOOLS:
                 _error(rid, -32602, f"unknown tool: {name}")
                 continue
             try:
                 from serve.mcp_en import add_english
-                out = add_english(name, TOOLS[name][0](**(p.get("arguments") or {})))
+                out = add_english(target, TOOLS[target][0](**args))
             except Exception as exc:                    # noqa: BLE001
                 out = {"error": str(exc), "answer": "صار خطأ بالنظام."}
             _reply(rid, {"content": [{"type": "text",
