@@ -253,7 +253,7 @@ named 72.2 % → 83.4 % (4,237 of 5,081); 642 of the 1,414 now named; 590 named 
 row, برقا 70, camps over checkpoints 62); 55 demoted honestly; 70 new placements hand-checked → 66 right (94 %).
 Tests: `tests/test_place_extraction.py` (16) + `tests/test_place_locate.py` (9) + test_news 75 green. NOTE: killing the
 timer's own 1.8.0 re-read (it would have hit `TimeoutStartSec=900` and rolled back in a loop) fired one ntfy alert
-at 18:04 UTC — expected, see HANDS §7.
+at 18:04 UTC — expected, see HANDS §8.
 2026-09-24 18:07 UTC · P0-C.1b corpus re-read (1.8.0, `--rebuild`, 2.5 min) · done · proof: `read 33659 unclassified
 claims · incident 9068 · located 8661 · dropped 407 · 5098 distinct events from 8661 reports (1147 corroborated) · 459
 closure states`. DB after: `place_precision` named 4,172 / governorate 909 / village_ambiguous 17 of 5,098 → **named
