@@ -119,7 +119,7 @@ causes, and the alert channel is unconfigured. Operability before intelligence.
 | ZAID-6 | Product calls from the Tier 2 gate: martyrs serving posture, Nakba gazetteer, T4P licence, Western Erez = Zikim?, the 24 verify-required licences | unserved / unverified, as today |
 | ZAID-7 | Cancel the MiniMax subscription (billing; the code no longer calls it) | still paid |
 | ZAID-8 | `agent2` crossings-authority channel and the backup passphrase custody | as today |
-| ZAID-9 | Is an obituary or a funeral a death report? **Now a partner-facing accuracy call** (36 of the incident classifier's 51 wrong rows) | undecided; the classifier serves them |
+| ZAID-9 | Is an obituary or a funeral a death report? **Now a partner-facing accuracy call** (36 of the incident classifier's 51 wrong rows) | **ANSWERED 2026-09-23** (Zaid, recorded in `docs/DECISIONS.md`): an obituary or a funeral is NOT a death report — which unblocks the classifier fix. The remaining work is ours: the "not a report" gate plus the lexicon variants, then a re-measure. Expected on the round-7 sample: **0.717 → 0.896** (the 129 correct rows over the 144 that are actually reports) |
 | ZAID-10 | May a partner tier carry the Telegram/RSS-derived **status**, or only what is openly licensed until a permission pass? | **ANSWERED 2026-09-23**: live trackers plus insights now; ungraded and `no-redistribution` databank sets stay out of the partner payloads |
 | ZAID-11 | Partner key policy: one key for Thaura, its quota, and the uptime we are willing to write down | **ANSWERED 2026-09-24**: **99% monthly, with two named carve-outs** (the host's own power/connectivity, and planned maintenance announced 24 h ahead), plus the promise that failure is visible via `/health`; written into `PARTNER-API.md` §11. Per-key quota stays 100,000/day for `thaura`; the shared **published test key** covers testers (`f0fe881`) |
 
@@ -300,9 +300,11 @@ partner tier may not carry. PROVE a per-tool licence table + a call refused for 
 
 **F-82 · Accuracy posture on a partner surface.** what: classifier 1.6 is measured at **0.717 [0.647–0.777]
 against its 0.80 gate** and `/v2/incidents` serves it now (8,505 incident rows of 32,941 classified). **36 of
-its 51 wrong rows are obituaries, funerals and features** — a taxonomy call, not a bug. A partner release
-either passes or says so. DONE WHEN every public tool carries its measured precision and gate state, and any
-tool below its gate says so inside its own `answer`. PROVE the payloads. [ZAID-9]
+its 51 wrong rows are obituaries, funerals and features** — a taxonomy call, not a bug, and **answered 2026-09-23**
+(`DECISIONS.md`): obituary or funeral is NOT a death report. The gate and the lexicon fix are therefore OURS to
+build, and the round-7 sample already says what they buy: 129 correct over 144 real reports = **0.896**. A partner
+release either passes or says so. DONE WHEN every public tool carries its measured precision and gate state, and any
+tool below its gate says so inside its own `answer`. PROVE the payloads. [ZAID-9 answered]
 
 **F-83 · Docs a partner can integrate from** (absorbs F-60/F-61): the integration guide (handshake, protocol
 versions, error shape, limits, retry), the tool and data dictionary (what each tool answers, what `unknown`
