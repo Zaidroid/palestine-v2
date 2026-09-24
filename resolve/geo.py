@@ -41,7 +41,8 @@ KIND_PRECISION = {
 
 FUZZY_MIN = 0.55          # pg_trgm similarity floor
 FUZZY_MARGIN = 0.08       # winner must beat runner-up by this much, else ambiguous
-MIN_LEN = 3               # shorter strings match everything; not worth the noise
+MIN_LEN = 2               # two letters resolve by EXACT alias only (تل, جت);
+                          # containment and fuzzy keep their own floors
 FUZZY_CONF_FLOOR = 0.55   # fuzzy is last-resort; below this, answer "unknown"
 
 
@@ -89,6 +90,62 @@ def _mk(row, method: str, confidence: float, ambiguous: int = 0) -> Resolution:
 _ADMIN_PCODE: dict[str, str | None] = {}
 
 
+_GOV_ROWS: list[tuple[str, str]] | None = None      # (normalised name, pcode)
+
+
+def governorate_pcode(cur, name: str | None) -> str | None:
+    """OCHA admin2 code of the governorate NAMED — read from the governorate
+    rows' own names, never through an alias and never from the city.
+
+    Two things made the alias route unusable: `resolve_place("رام الله")`
+    answers with the CITY (a locality beats a polygon in `_prefer`), and the
+    alias backfill deliberately MOVED the bare Arabic name from the governorate
+    polygon to the city (origin `backfill_city`), so the governorate row keeps
+    no bare-name key at all. Until migration 077 the city also carried v1's own
+    code, so every caller that wanted "the governorate this text names" got a
+    code nothing else used; the fuller-form village lookup was dead for that
+    reason from the day it landed (found 2026-09-24). The 16 rows are read once.
+    """
+    global _GOV_ROWS
+    if not name:
+        return None
+    if _GOV_ROWS is None:
+        cur.execute("""
+            SELECT name_ar, name_en, admin2_pcode FROM place
+             WHERE kind::text = 'governorate' AND servable AND admin2_pcode IS NOT NULL""")
+        rows = []
+        for ar, en, pc in cur.fetchall():
+            for nm in (ar, en):
+                for key in (normalize(nm), fold_for_match(nm)):
+                    if key:
+                        rows.append((key, pc))
+        _GOV_ROWS = rows
+    probes = {k for k in (normalize(name), fold_for_match(name)) if k}
+    for key, pc in _GOV_ROWS:
+        if key in probes:
+            return pc
+    return None
+
+
+def _twin_in(cur, keys: list[str], admin2: str):
+    """A promoted twin of a name whose alias belongs to a place elsewhere.
+
+    `place_alias.alias_norm` is unique, so the second المغير (Ramallah's) can
+    never hold the key the first one (Jenin's) already has. A row promoted as a
+    twin carries its keys in `attrs.twin_keys` instead, and is reachable only
+    through the governorate hint — which is exactly when the alias's owner is
+    the wrong answer. Returns a row shaped like `_SELECT`'s, or None.
+    """
+    cur.execute("""
+        SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
+               p.admin1_pcode, p.admin2_pcode, p.oslo_area, %s, 0.9
+          FROM place p
+         WHERE p.servable AND p.merged_into IS NULL AND p.admin2_pcode = %s
+           AND p.attrs->'twin_keys' ?| %s
+         ORDER BY p.place_id LIMIT 1""", (keys[0], admin2, keys))
+    return cur.fetchone()
+
+
 def _with_admin_pcode(cur, context: dict | None) -> dict | None:
     """Turn an `admin` governorate NAME in the context into `admin2_pcode`.
 
@@ -96,26 +153,28 @@ def _with_admin_pcode(cur, context: dict | None) -> dict | None:
     `_prefer` has only ever read `admin2_pcode`, so the hint was ignored: a
     village name shared by two governorates resolved by size, not by the
     governorate the message named. Measured 2026-09-24 (validation of the
-    public-release plan). Cached per name; a governorate does not move.
+    public-release plan).
     """
     if not context or context.get("admin2_pcode") or not context.get("admin"):
         return context
-    name = str(context["admin"])
-    if name not in _ADMIN_PCODE:
-        key = fold_for_match(name)
-        cur.execute("""
-            SELECT p.admin2_pcode
-              FROM place_alias a
-              JOIN place p0 ON p0.place_id = a.place_id
-              JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
-             WHERE a.alias_norm = %s AND p.kind::text = 'governorate'
-               AND p.admin2_pcode IS NOT NULL
-             LIMIT 1""", (key,))
-        row = cur.fetchone()
-        _ADMIN_PCODE[name] = row[0] if row else None
-    if _ADMIN_PCODE[name]:
-        return {**context, "admin2_pcode": _ADMIN_PCODE[name]}
-    return context
+    pcode = governorate_pcode(cur, context["admin"])
+    return {**context, "admin2_pcode": pcode} if pcode else context
+
+
+def _swap_ending(key: str) -> str | None:
+    """The same name with its final ا/ه swapped: channels write عنزا, يرزا,
+    بلعا where the gazetteer holds عنزه, يرزه, بلعه — and the other way round.
+    An extra EXACT probe only; never a replacement, never a display form."""
+    if not key or len(key) < 3:
+        return None
+    last = key.rsplit(" ", 1)[-1]
+    if len(last) < 3:
+        return None
+    if key.endswith("ا"):
+        return key[:-1] + "ه"
+    if key.endswith("ه"):
+        return key[:-1] + "ا"
+    return None
 
 
 def _prefer(rows, context: dict | None):
@@ -147,8 +206,15 @@ def _prefer(rows, context: dict | None):
 
 
 def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
-                  learn: bool = True) -> Resolution | None:
-    """Resolve a free-text place phrase. Returns None when nothing is confident."""
+                  learn: bool = True, fuzzy: bool = True,
+                  contain: bool = True) -> Resolution | None:
+    """Resolve a free-text place phrase. Returns None when nothing is confident.
+
+    `fuzzy=False` stops before the fuzzy branch and `contain=False` before the
+    contained-alias branch: a caller whose phrase is a guess (a token that
+    merely sits before "جنوب نابلس", or after "أبو") must not be handed the
+    nearest-looking alias for it.
+    """
     if not text or len(text.strip()) < MIN_LEN:
         return None
 
@@ -169,6 +235,7 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             # become "يت لحم".
             unprep = " ".join(strip_preposition(t) or t for t in probe.split()) if probe else ""
             keys = [k for k in (*variants(text), probe, unprep) if k and len(k) >= 2]
+            keys += [sw for sw in (_swap_ending(k) for k in list(keys)) if sw]
             if not keys:
                 return None
             seen_k: set[str] = set()
@@ -182,6 +249,11 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             rows = cur.fetchall()
             if rows:
                 ranked = _prefer(rows, context)
+                want_a2 = (context or {}).get("admin2_pcode")
+                if want_a2 and not any(r[5] == want_a2 for r in ranked):
+                    twin = _twin_in(cur, keys, want_a2)
+                    if twin:
+                        ranked = [twin]
                 best = ranked[0]
                 # A fold-only hit is slightly weaker than a normalize hit: folding
                 # discards information, so the match is less specific.
@@ -191,6 +263,10 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
                     _bump(cur, best[7])
                     conn.commit()
                 return _mk(best, "exact", conf, max(0, len(ranked) - 1))
+
+            # Two letters are a name only when an alias says so exactly.
+            if len(normalize(text)) < 3 or not contain:
+                return None
 
             # ── 2. containment ────────────────────────────────────────────────
             # "الجيش يقتحم بلدة حوارة" — the alias sits inside a longer phrase.
@@ -254,6 +330,8 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
                 return _mk(best, "contains", conf, max(0, len({r[0] for r in ranked}) - 1))
 
             # ── 3. fuzzy ──────────────────────────────────────────────────────
+            if not fuzzy:
+                return None
             fz = folded or keys[0]
             # Own SELECT list — appending `, similarity(...)` to _SELECT would put
             # the function in the FROM clause (legal SQL, wrong column count).

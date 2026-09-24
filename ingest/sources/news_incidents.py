@@ -42,10 +42,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from cascade.news import read
+from dataclasses import dataclass, field
+
+from cascade.news import NewsReading, read
 from resolve.db import connect
 from resolve.arabic import fold_for_match
-from resolve.geo import resolve_place
+from resolve.geo import governorate_pcode, resolve_place
 
 # Reports of the same kind, at the same place, inside this window are one event.
 DEDUP_WINDOW = timedelta(minutes=90)
@@ -118,7 +120,7 @@ CLASSIFIER = "news"
 # in normalize(). Round 5's 163 claims are tuning data now — 1.6 has NO
 # held-out precision until round 6. Closure at 1.5 measured 0.875 (was
 # 0.167 in round 3); the rewrite held on disjoint data.
-CLASSIFIER_VERSION = "1.7.1"
+CLASSIFIER_VERSION = "1.8.0"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
@@ -171,15 +173,27 @@ def _fuller_form(conn, name: str, governorate: str) -> tuple:
     governorate rows excluded, four characters or more. Exactly one distinct
     place is an answer; two or more are recorded so the event can say it is
     ambiguous instead of pinning the wrong twin.
+
+    The governorate's code comes from the GOVERNORATE row. Resolving the name
+    gives the city, and until migration 077 the city carried a code no village
+    shared — this lookup matched nothing from the day it landed (2026-09-24).
     """
     from types import SimpleNamespace
     key = fold_for_match(name)
     if not key or len(key) < 4:
         return None, []
-    gov = resolve_place(governorate, conn=conn, learn=False)
-    if not gov or not gov.admin2_pcode:
-        return None, []
     with conn.cursor() as cur:
+        pcode = governorate_pcode(cur, governorate)
+        if not pcode:
+            return None, []
+        keys = [key]
+        if key.endswith("ا"):
+            keys.append(key[:-1] + "ه")
+        elif key.endswith("ه"):
+            keys.append(key[:-1] + "ا")
+        pats: list[str] = []
+        for k in keys:
+            pats += [k + " %", "% " + k, "% " + k + " %"]
         cur.execute("""
             SELECT DISTINCT p.place_id, p.name_ar
               FROM place_alias a
@@ -187,14 +201,120 @@ def _fuller_form(conn, name: str, governorate: str) -> tuple:
               JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
              WHERE p.servable AND p.admin2_pcode = %s
                AND p.kind::text NOT IN ('station', 'governorate', 'region')
-               AND (a.alias_norm LIKE %s OR a.alias_norm LIKE %s OR a.alias_norm LIKE %s)
-             LIMIT 6""",
-            (gov.admin2_pcode, key + " %", "% " + key, "% " + key + " %"))
+               AND a.alias_norm LIKE ANY(%s)
+             LIMIT 6""", (pcode, pats))
         rows = cur.fetchall()
     ids = sorted({r[0] for r in rows})
     if len(ids) == 1:
-        return SimpleNamespace(place_id=ids[0], name_ar=rows[0][1]), ids
+        return SimpleNamespace(place_id=ids[0], name_ar=rows[0][1], method="fuller",
+                               kind="locality", admin2_pcode=pcode), ids
     return None, ids
+
+
+# How a candidate may be resolved, by how it was read. A settlement-word
+# capture is the text's own statement of a place and may use every branch;
+# a token that merely sits before "جنوب نابلس" or after "أبو" must match an
+# alias exactly or as a whole contained word — never a fuzzy neighbour.
+FUZZY_HOW = frozenset(["place_word", "station_word", "dual"])
+CONTAIN_HOW = frozenset(["place_word", "station_word", "dual", "bearing"])
+FULLER_HOW = frozenset(["place_word", "dual", "bearing", "cue"])
+
+
+@dataclass
+class Located:
+    place_id: int | None
+    precision: str | None            # named | village_ambiguous | governorate
+    named_place: str | None          # the candidate that answered, else the first
+    candidates: list[int] = field(default_factory=list)   # ambiguous twins
+    how: str | None = None
+    method: str | None = None
+    rejected: list[tuple[str, str]] = field(default_factory=list)
+
+
+NEAR_GOVERNORATE_M = 3000
+
+
+def _near_governorate(conn, place_id: int, pcode: str) -> bool:
+    """A place on the wrong side of a governorate line, by a little.
+
+    The channels name the governorate a village belongs to administratively;
+    the polygons put بيت فجار's centroid in Hebron and قلنديا's in Jerusalem,
+    and بدّو sits on the Ramallah line. Within 3 km of the stated governorate
+    the text and the map agree closely enough to keep the village.
+    """
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT ST_DWithin(p.centroid::geography, g.geom::geography, %s)
+              FROM place p, place g
+             WHERE p.place_id = %s AND g.kind::text = 'governorate' AND g.servable
+               AND g.admin2_pcode = %s""", (NEAR_GOVERNORATE_M, place_id, pcode))
+        row = cur.fetchone()
+    return bool(row and row[0])
+
+
+def locate(conn, r: NewsReading, stats: Counter | None = None) -> Located:
+    """The place an incident reading names, or the governorate, honestly.
+
+    Every candidate the reader offered is tried in order of trust. A
+    resolution is refused when it lands OUTSIDE the governorate the message
+    named: the gazetteer holds one المغير (Jenin's) and the channels write about
+    Ramallah's, and 223 Ramallah events were pinned 50 km away on 2026-09-24
+    for want of this check. A refused twin falls through to the fuller-form
+    lookup inside the stated governorate, and then to the governorate itself
+    with `place_precision = governorate` — never to the wrong village.
+    """
+    stats = stats if stats is not None else Counter()
+    with conn.cursor() as cur:
+        gov_code = governorate_pcode(cur, r.governorate) if r.governorate else None
+    twins: list[int] = []
+    rejected: list[tuple[str, str]] = []
+    gov_norm = fold_for_match(r.governorate) if r.governorate else None
+    for idx, (name, how) in enumerate(r.place_candidates):
+        if gov_norm and fold_for_match(name) == gov_norm:
+            # The governorate's own name. "اقتحام مدينة نابلس" names the city
+            # and that is the place; but "قرية برقا شرق مدينة رام الله", once
+            # برقا fails to resolve, must not fall through to a NAMED pin on
+            # Ramallah's centre — the village was named, the city was not.
+            if how != "place_word" or idx > 0:
+                continue
+        # A village and a checkpoint often share a name (حوارة, الجلزون,
+        # عطارة). An incident happens in the village unless the text said
+        # حاجز/معبر/مفرق, in which case the checkpoint row is the place.
+        ctx = {"admin": r.governorate,
+               "prefer_kind": "checkpoint" if how == "station_word" else "locality"}
+        res = resolve_place(name, ctx, conn=conn, learn=False,
+                            fuzzy=how in FUZZY_HOW, contain=how in CONTAIN_HOW)
+        if res and res.kind == "station":
+            # A fuel station is where fuel is sold, not where a raid happens.
+            rejected.append((name, "station"))
+            res = None
+        if (res and gov_code and res.admin2_pcode and res.admin2_pcode != gov_code
+                and res.kind not in ("governorate", "region")
+                and not _near_governorate(conn, res.place_id, gov_code)):
+            rejected.append((name, "outside stated governorate"))
+            stats["rejected_outside_governorate"] += 1
+            res = None
+        if not res and r.governorate and how in FULLER_HOW:
+            res, cands = _fuller_form(conn, name, r.governorate)
+            if cands and not res and not twins:
+                twins = cands
+        if res and res.kind in ("governorate", "region"):
+            # "مدينة جنين" resolves to the governorate polygon because Jenin
+            # city has no Arabic row of its own: that is a governorate pin,
+            # and must be served as one.
+            return Located(res.place_id, "governorate", name, [], how,
+                           getattr(res, "method", "exact"), rejected)
+        if res:
+            stats[f"located_named_{how}"] += 1
+            return Located(res.place_id, "named", name, [], how,
+                           getattr(res, "method", "fuller"), rejected)
+    first = r.place_candidates[0][0] if r.place_candidates else None
+    if r.governorate:
+        res = resolve_place(r.governorate, conn=conn, learn=False)
+        if res:
+            return Located(res.place_id, "village_ambiguous" if twins else "governorate",
+                           first, twins, None, None, rejected)
+    return Located(None, None, first, twins, None, None, rejected)
 
 
 def _confidence(groups: int) -> float:
@@ -247,9 +367,22 @@ WHERE EXCLUDED.observed_at >= state_current.observed_at
 """
 
 
+LOCK_KEY = 7870_0001          # pg advisory lock: one classifier run at a time
+
+
 def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
     stats = Counter()
     with connect() as conn, conn.cursor() as cur:
+        # ONE RUN AT A TIME. A version bump re-reads the whole corpus, which
+        # outlives the five-minute timer; a second run reading the same claims
+        # would mint the same events and fail on the stable-key index, or
+        # double-count what the first is about to write. The lock is held by
+        # this session and released with it.
+        cur.execute("SELECT pg_try_advisory_lock(%s)", (LOCK_KEY,))
+        if not cur.fetchone()[0]:
+            stats["locked"] = 1
+            stats["read"] = 0
+            return stats
         if rebuild and not dry_run:
             for step in REBUILD_STEPS:
                 cur.execute(step, {"clf": CLASSIFIER, "closure": STATE_KIND_CLOSURE})
@@ -305,41 +438,24 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             # The gazetteer decides whether the extracted string is a place.
             #
             # THE NAMED PLACE IS THE PLACE, AND A GOVERNORATE IS NOT A SUBSTITUTE
-            # FOR IT. The fallback below used to silently replace an unresolvable
+            # FOR IT. The fallback used to silently replace an unresolvable
             # village with its governorate, which is how "land being bulldozed in
             # المزرعة الغربية" was served as *a demolition in Ramallah, pinned to
-            # the city centre* and "the army installing a gate near بيت عور" as *a
-            # settler attack in al-Bireh*. The village was named in the message
-            # both times — the text is where the place lives — and the fallback
-            # threw that name away and answered with a different, larger place
-            # that no channel had reported anything about.
+            # the city centre*. The village was named in the message — the text
+            # is where the place lives — and the fallback threw that name away.
             #
             # So the fallback still LOCATES the incident loosely (admin2 is the
-            # honest precision for "somewhere in this governorate") but it no
-            # longer pretends the governorate IS the place: the resolved place,
-            # the named place as written, and which of the two answered all
-            # travel with the event.
-            res = None
-            named_place = (r.place_text or "").strip() or None
-            candidates: list[int] = []
-            if named_place:
-                res = resolve_place(named_place, {"admin": r.governorate},
-                                    conn=conn, learn=False)
-            place_precision = "named" if res else None
-            if not res and named_place and r.governorate:
-                # THE FULLER FORM THE TEXT DID NOT WRITE. "بيت عور" fails while
-                # "بيت عور التحتا" resolves; the gazetteer holds the long name
-                # and the channel wrote the short one. Try aliases that contain
-                # the phrase as a whole word, inside the message's governorate.
-                # One candidate is the place; several are recorded, not guessed.
-                res, candidates = _fuller_form(conn, named_place, r.governorate)
-                if res:
-                    place_precision = "named"
-            if not res and r.governorate:
-                res = resolve_place(r.governorate, conn=conn, learn=False)
-                if res:
-                    place_precision = "village_ambiguous" if candidates else "governorate"
-            if not res:
+            # honest precision for "somewhere in this governorate") but never
+            # pretends the governorate IS the place: the resolved place, the
+            # named place as written, and which of the two answered all travel
+            # with the event. `locate` holds the whole chain — every candidate
+            # the reader offered, the governorate check, the fuller form.
+            loc = locate(conn, r, stats)
+            res = loc
+            named_place = loc.named_place
+            candidates = loc.candidates
+            place_precision = loc.precision
+            if loc.place_id is None:
                 stats["unresolved_place"] += 1
                 unresolved[(r.place_text or r.governorate or "?")[:28]] += 1
                 verdicts.append((claim_id, "unclear", r.incident_type,
@@ -352,7 +468,7 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 stats["located_gov_fallback"] = \
                     stats.get("located_gov_fallback", 0) + 1
             verdicts.append((claim_id, "incident", r.incident_type, None,
-                             res.place_id, r.place_text, r.governorate, r.confidence))
+                             res.place_id, named_place, r.governorate, r.confidence))
             # Group on the place the report actually named when we have it: two
             # channels naming المزرعة الغربية are reporting the same village even
             # if the gazetteer made them land on different rows, and a name is
@@ -573,6 +689,19 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 {"closure": STATE_KIND_CLOSURE})
             stats["stale_closure_obs_swept"] = cur.rowcount
 
+        # (4) Counts are derived, not accumulated. Joining an event adds the
+        # cluster to its claim_count, and a re-read of the same claims (every
+        # version bump) added them again — measured 2026-09-24. The claims
+        # that point at an event are the count.
+        cur.execute("""
+            UPDATE event e
+               SET claim_count = c.n
+              FROM (SELECT event_id, count(*) AS n FROM claim
+                     WHERE event_id IS NOT NULL GROUP BY event_id) c
+             WHERE e.event_id = c.event_id AND e.attrs->>'classifier' = %(clf)s
+               AND e.claim_count <> c.n""", {"clf": CLASSIFIER})
+        stats["claim_counts_corrected"] = cur.rowcount
+
         if stats["closure_states"] or stats.get("stale_closure_obs_swept"):
             # The refresh only ever advances observed_at, so if a sweep removed
             # the newest observation behind a state_current row, the row must
@@ -596,6 +725,9 @@ def main() -> int:
     a = ap.parse_args()
 
     s = classify(a.limit, a.dry_run, a.rebuild)
+    if s.get("locked"):
+        print("another classifier run holds the lock; nothing done")
+        return 0
     print(f"read {s['read']} unclassified claims")
     print(f"  incident {s['verdict_incident']} · rejected {s['verdict_rejected']} "
           f"· unclear {s['verdict_unclear']}")

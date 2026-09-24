@@ -395,6 +395,7 @@ _GOV_TOKENS = frozenset(normalize(g) for g in GOVERNORATES) | {"رام", "الل
 # fused conjunction/preposition and the article: بنابلس، والخليل، للقدس.
 _GOV_SINGLE = frozenset(normalize(g) for g in GOVERNORATES if " " not in g)
 _GOV_PAIRS = tuple(tuple(normalize(g).split()) for g in GOVERNORATES if " " in g)
+_GOV_PAIR_NAMES = frozenset(" ".join(p) for p in _GOV_PAIRS)
 
 
 def _defused(tok: str) -> list[str]:
@@ -440,6 +441,7 @@ _PERSON_WORDS = frozenset([
     "مواطن", "مواطنا", "مواطنه", "مواطنان", "مواطنين", "اسير", "اسيرا",
     "اسيره", "اسري", "معتقل", "معتقلا", "شهيد", "شهيدا", "شهيده",
     "مسن", "مسنا", "مسنه", "سيده", "جريح", "مصاب", "عامل", "عاملا",
+    "عائله", "عايله", "اسره", "الاسير", "المطارد", "مطارد",
 ])
 
 
@@ -453,6 +455,15 @@ _STOP_TOKENS = (BEARING_WORDS | _GOV_TOKENS | PLACE_WORDS | frozenset([
     "بعد", "قبل", "و", "او", "التي", "الذي", "حيث", "كما", "المحتله",
     "المحتلة", "بالضفه", "الضفه", "الغربيه", "اليوم", "امس", "صباح", "مساء",
     "قوات", "الاحتلال", "جيش", "المستوطنين", "مستوطنين",
+    # Administrative and relational words that follow a name without being
+    # part of it: "ترمسعيا قضاء رام الله", "قصرة بمحافظة نابلس".
+    "بين", "قضاء", "محافظه", "لواء", "ضواحي", "نواحي", "المجاوره", "المحيطه",
+    "القريبه", "داخل", "خارج", "امام", "خلف", "قباله", "مقابل", "تجاه", "نحو",
+    "حتي", "منذ", "عند", "عبر", "ضد", "لدي", "بينما", "ثم", "لكن", "ان",
+    "انه", "هذا", "هذه", "تلك", "ذلك", "كل", "بعض", "عده", "عدد", "قرابه",
+    "اكثر", "اقل", "فجر", "ظهر", "ليل", "ليله", "الليله", "الماضيه", "الجاريه",
+    "الاسرائيلي", "الاسرائيليه", "المستوطنون", "مستوطنون", "مستوطنه",
+    "مستوطنات", "بؤره", "الفلسطينيه", "الفلسطيني", "فلسطين",
 ]))
 
 _WS = re.compile(r"\s+")
@@ -495,6 +506,9 @@ class NewsReading:
     matched: str | None = None
     is_closure: bool = False           # also a movement STATE, not just an event
     evidence: list[str] = field(default_factory=list)
+    # Every name the text offers, most trusted first, with how it was read
+    # (place_word | dual | prefix | bearing | cue | between | conjunct).
+    place_candidates: list[tuple[str, str]] = field(default_factory=list)
 
 
 _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
@@ -528,63 +542,283 @@ def _first_match(text: str, patterns) -> tuple[str, str] | None:
     return None
 
 
-def _extract_place(text: str) -> tuple[str | None, str | None]:
-    """(place name, governorate) — the governorate only when actually stated.
+# Dual settlement words name TWO places at once — "بين بلدتي جالود وقصرة" — and
+# the waw that joins them ends the first name and starts the second.
+_DUAL_WORDS = frozenset(["قريتي", "بلدتي", "مدينتي", "مخيمي", "خربتي",
+                         "قريتين", "بلدتين", "مخيمين"])
 
-    Scans for a settlement word and takes the 1-3 tokens after it, stopping at
-    a bearing, a governorate, a preposition or a verb. Multi-word names such as
-    "بيت لحم" and "دير شرف" survive; "قرية المغير شمال رام الله" yields
-    ("المغير", "رام الله") rather than "المغير شمال".
+# Site words that are not settlement words. They say WHERE without saying what
+# kind of place it is: "منطقة الديرات", "حي الطيرة", "سهل عرابة", "جبل
+# الرحمة", "وادي الرخيم", "مدخل المنشية", "طريق المهلل", "أراضي قصرة". Measured
+# on the 936 governorate-only events whose text named no settlement word
+# (2026-09-24): منطقه appeared in 168 of them, طريق in 70, شارع in 54, حي in
+# 49. Whole-token, bare or behind a fused preposition, never behind the
+# article — "المنطقة الشرقية" is a description, not a name. What follows one
+# resolves by exact or contained alias only; the gazetteer decides.
+_CUE_WORDS = frozenset(["منطقه", "حي", "شارع", "سهل", "جبل", "واد", "وادي", "مدخل",
+                        "طريق", "بوابه", "مقام", "عزبه", "اراضي", "اطراف", "محيط"])
+
+# Toponym prefixes: a token that, with the next one, is a name on its own —
+# "بيت أمر", "دير شرف", "كفر قدوم", "عين سينيا", "أبو نجيم", "أم صفا", "خربة
+# التبان", "عرب الجهالين". Only an exact alias can answer for one of these (no
+# contained fragment, no fuzzy neighbour): "أبو" opens a kunya as often as a
+# village, and the gazetteer is the only thing that can tell them apart.
+_NAME_PREFIXES = frozenset(["بيت", "دير", "كفر", "عين", "خربه", "خله", "عزبه",
+                            "راس", "ام", "ابو", "عرب", "بير"])
+
+# A region that is not a place: "خلة الحمص بمسافر يطا" names the hamlet, and
+# "مسافر يطا" alone must not collapse to the town of Yatta.
+_REGION_HEADS = frozenset(["مسافر", "بمسافر", "لمسافر", "ومسافر"])
+
+# Ranking of the ways a candidate was found, most trusted first. Within a
+# rank, text order.
+_HOW_RANK = {"place_word": 0, "station_word": 0, "dual": 0, "cue": 1, "bearing": 1,
+             "prefix": 2, "between": 3, "conjunct": 4}
+# A capture after one of these names a checkpoint, crossing or junction — the
+# resolver should prefer that row over the village of the same name.
+_STATION_WORDS = frozenset(["حاجز", "مفرق", "مفترق", "دوار", "معبر"])
+
+
+def _word_class(tok: str, words: frozenset) -> bool:
+    """Whole-token membership, bare or behind ONE fused preposition/conjunction
+    (بحي، لمنطقه، وكفر). The article is deliberately not peeled here."""
+    if tok in words:
+        return True
+    return len(tok) >= 3 and tok[0] in "بلكفو" and tok[1:] in words
+
+
+def _bare(tok: str) -> str:
+    for words in (PLACE_WORDS, _DUAL_WORDS, _CUE_WORDS, _NAME_PREFIXES):
+        if tok in words:
+            return tok
+        if len(tok) >= 3 and tok[0] in "بلكفو" and tok[1:] in words:
+            return tok[1:]
+    return tok
+
+
+def _ends_name(tok: str, first: bool) -> bool:
+    """Whether a token ends the name being read, seen through any fused
+    conjunction, preposition or article.
+
+    "بمسافر" ends "خلة الحمص بمسافر يطا" at الحمص; "والقرى" ends "قرية جنيد
+    والقرى المحيطة" at جنيد; "بالخليل" ends "خلة X بالخليل" at X. A cue word
+    ends a name only when it is not the name's first token — "قرية وادي فوكين"
+    keeps its وادي.
+    """
+    if len(tok) < 2 or tok.isdigit():
+        return True
+    for cand in _defused(tok):
+        if (cand in _STOP_TOKENS or cand in PLACE_WORDS or cand in _DUAL_WORDS
+                or cand in _REGION_HEADS or cand in _GOV_SINGLE):
+            return True
+        if not first and cand in _CUE_WORDS:
+            return True
+    return False
+
+
+def _extract_places(text: str) -> tuple[list[tuple[str, str]], str | None]:
+    """Every candidate place name in the text, most trusted first, plus the
+    governorate when one is stated.
+
+    Four readers, each measured against the corpus on 2026-09-24:
+
+      place_word / dual  the 1–3 tokens after a settlement word ("بلدة",
+                         "قرية", "مخيم", "خربة"…, or a dual "بلدتي X وY") —
+                         the original reader, now returning every occurrence
+                         rather than the first;
+      prefix             a toponym prefix and its next token ("بيت أمر",
+                         "خربة التبان");
+      bearing            the tokens before "<bearing> <governorate>" — "قصرة
+                         جنوب نابلس", "يرزا شرق طوباس" — emitted shortest
+                         suffix first;
+      cue / between      what follows a site word ("منطقة الديرات") or sits
+                         between "بين" and a waw ("بين مركة وقباطية").
+
+    Nothing here decides that a candidate IS a place; the gazetteer does that,
+    in `ingest.sources.news_incidents.locate`, which also enforces that the
+    resolved place lies in the governorate the message named. This function
+    only refuses to LOSE a name: 881 of the 1,260 governorate-only events
+    measured on 2026-09-24 carried a name the old single-pass reader never
+    looked at.
     """
     toks = normalize(text).split()
-    name: str | None = None
-    for i, t in enumerate(toks):
-        if not _is_place_word(t):
-            continue
-        # ORIGIN IS NOT SITE. "اعتقل الشاب محمد من قرية المغير" states where
-        # the man is FROM; the arrest happened wherever the rest of the
-        # sentence says. Round 3 measured this as a distinct failure class —
-        # an arrest at مفرق فصايل was pinned to المغير, the arrested man's home
-        # village — and 12 of 20 round-3 failures were place resolution. When
-        # the place word follows من and a person stands just before it, this
-        # candidate is a residence: skip it and keep scanning. A troop
-        # withdrawal ("انسحبت قوات الاحتلال من قرية X") survives, because
-        # قوات is not a person word.
-        if (i > 0 and toks[i - 1] in ("من", "ومن")
-                and any(_is_person(p) for p in toks[max(0, i - 5):i - 1])):
-            continue
-        # A governorate is a stop-word in the trailing position ("بلدة علار
-        # شمال طولكرم" must not capture طولكرم) but it is the NAME when it
-        # follows the place word directly — "لمدينة سلفيت" is the city of
-        # Salfit. Two tokens, so "مدينة رام الله" survives intact.
+    n = len(toks)
+    found: list[tuple[str, str, int]] = []      # (name, how, text position)
+    seen: set[str] = set()
+    skipped: set[int] = set()                   # residences: origin ≠ site
+
+    def add(parts: list[str], how: str, pos: int, gov_ok: bool = False) -> None:
+        name = " ".join(parts).strip()
+        if not name or name in seen:
+            return
+        # A governorate's name is a place only when a settlement word says so
+        # ("مدينة نابلس"). Read off a prefix or a bearing it is the governorate
+        # mention itself: "برية زعترة جنوب بيت لحم" must not pin to the city.
+        if not gov_ok and (name in _GOV_TOKENS or name in _GOV_SINGLE
+                           or name == normalize("رام الله")):
+            return
+        if not gov_ok and all(_ends_name(t, True) for t in parts):
+            return
+        seen.add(name)
+        found.append((name, how, pos))
+
+    def capture(i: int, how: str, gov_head: bool) -> None:
+        """The name after the word at i. A governorate right after the word is
+        the name itself ("مدينة نابلس") unless the word is a cue — "شارع نابلس"
+        is a street named after the city, not the city."""
         head = toks[i + 1:i + 3]
         if head and head[0] in _GOV_TOKENS:
+            if not gov_head:
+                return
             two = " ".join(head)
             if two in _GOV_TOKENS or normalize("رام الله") == two:
-                name = two
-                break
-            name = head[0]
-            break
-
+                add([two], how, i, gov_ok=True)
+            else:
+                add([head[0]], how, i, gov_ok=True)
+            return
         parts: list[str] = []
-        for nxt in toks[i + 1:i + 4]:
-            # A fused waw ends the name: "قرية جنيد والقرى المحيطة" must give
-            # "جنيد", not "جنيد والقري المحيطه".
-            if (nxt in _STOP_TOKENS or _is_place_word(nxt) or len(nxt) < 2
-                    or nxt.isdigit()
-                    or (nxt.startswith("و") and _stops(nxt[1:]))):
+        j = i + 1
+        while j < n and len(parts) < 3:
+            nxt = toks[j]
+            if _ends_name(nxt, first=not parts):
                 break
+            if parts and nxt.startswith("و") and len(nxt) > 3:
+                # A conjunction: the first name ends, a second begins.
+                add(parts, how, i)
+                rest = [nxt[1:]]
+                k = j + 1
+                while (k < n and len(rest) < 3 and not _ends_name(toks[k], False)
+                       and not (toks[k].startswith("و") and len(toks[k]) > 3)):
+                    rest.append(toks[k])
+                    k += 1
+                add(rest, "conjunct", j)
+                return
             parts.append(nxt)
+            j += 1
         if parts:
-            name = " ".join(parts)
-            break
+            add(parts, how, i)
 
-    # Governorate, wherever it appears — but only as its own word (see
-    # _find_governorate for the النابلسي/#37 failure). Recorded separately from
-    # the name so a village keeps its admin2 context for disambiguation —
-    # several West Bank villages share a name across governorates.
+    # ── 1. settlement words, dual forms, cue words ────────────────────────────
+    for i, t in enumerate(toks):
+        is_settlement = _is_place_word(t) or _word_class(t, _DUAL_WORDS)
+        if not is_settlement and not _word_class(t, _CUE_WORDS):
+            continue
+        if is_settlement:
+            # ORIGIN IS NOT SITE. "اعتقل الشاب محمد من قرية المغير" states where
+            # the man is FROM; the arrest happened wherever the rest of the
+            # sentence says. Round 3 measured this as a distinct failure class —
+            # an arrest at مفرق فصايل was pinned to المغير, the arrested man's
+            # home village — and 12 of 20 round-3 failures were place
+            # resolution. When the place word follows من and a person stands
+            # just before it, the candidate is a residence: skip it, and keep
+            # the later readers off those tokens too. A troop withdrawal
+            # ("انسحبت قوات الاحتلال من قرية X") survives: قوات is not a person.
+            if (i > 0 and toks[i - 1] in ("من", "ومن")
+                    and any(_is_person(p) for p in toks[max(0, i - 5):i - 1])):
+                skipped.update(range(i, i + 4))
+                continue
+            if _bare(t) in _STATION_WORDS:
+                capture(i, "station_word", True)
+            else:
+                capture(i, "dual" if _word_class(t, _DUAL_WORDS) else "place_word", True)
+        else:
+            # "حي" is also the adjective in "رصاص حي" (live fire).
+            if _bare(t) == "حي" and i > 0 and "رصاص" in toks[i - 1]:
+                continue
+            capture(i, "cue", False)
+
+    # ── 2. the tokens before "<bearing> <governorate>" ────────────────────────
+    j = 0
+    while j < n:
+        if toks[j] not in BEARING_WORDS:
+            j += 1
+            continue
+        k = j
+        while k + 1 < n and toks[k + 1] in BEARING_WORDS:
+            k += 1
+        after = toks[k + 1:k + 3]
+        anchored = bool(after) and (after[0] in _GOV_SINGLE
+                                    or " ".join(after) in _GOV_PAIR_NAMES
+                                    or after[0] in ("المدينه", "مدينه"))
+        if anchored:
+            parts: list[str] = []
+            i = j - 1
+            while i >= 0 and len(parts) < 3:
+                tok = toks[i]
+                if (i in skipped or _is_person(tok) or _is_place_word(tok)
+                        or _word_class(tok, _DUAL_WORDS) or _word_class(tok, _CUE_WORDS)
+                        or _ends_name(tok, first=not parts)):
+                    break
+                if tok.startswith("و") and len(tok) > 3:
+                    parts.insert(0, tok[1:])
+                    break
+                parts.insert(0, tok)
+                i -= 1
+            # "في مسافر يطا جنوب الخليل": a region, not the town of Yatta.
+            if parts and (i >= 0 and toks[i] in _REGION_HEADS or parts[0] in _REGION_HEADS):
+                parts = []
+            if parts and " ".join(parts) not in seen:
+                for length in range(len(parts), 0, -1):
+                    add(parts[-length:], "bearing", j)
+        j = k + 1
+
+    # ── 3. toponym prefixes ───────────────────────────────────────────────────
+    for i, t in enumerate(toks):
+        if i in skipped or i + 1 >= n:
+            continue
+        bare = _bare(t)
+        if bare not in _NAME_PREFIXES:
+            continue
+        # The same residence guard as reader 1: "شابا من بيت أمر ويداهم
+        # منازل في تفوح" arrests a man FROM Beit Ummar in Tuffah.
+        if (i > 0 and toks[i - 1] in ("من", "ومن")
+                and any(_is_person(q) for q in toks[max(0, i - 5):i - 1])):
+            continue
+        nxt = toks[i + 1]
+        if _ends_name(nxt, True) or _is_person(nxt) or _is_place_word(nxt):
+            continue
+        add([bare, nxt], "prefix", i)
+        if (bare in ("خربه", "خله", "عزبه", "عرب") and i + 2 < n
+                and not _ends_name(toks[i + 2], False)
+                and not toks[i + 2].startswith("و")):
+            add([bare, nxt, toks[i + 2]], "prefix", i)
+
+    # ── 4. "بين X وY" ─────────────────────────────────────────────────────────
+    for i, t in enumerate(toks):
+        if t != "بين" or i + 1 >= n:
+            continue
+        if _is_place_word(toks[i + 1]) or _word_class(toks[i + 1], _DUAL_WORDS):
+            continue                                    # reader 1 has it
+        parts = []
+        j = i + 1
+        while j < n and len(parts) < 3:
+            tok = toks[j]
+            if _ends_name(tok, first=not parts) or _is_person(tok):
+                break
+            if parts and tok.startswith("و") and len(tok) > 3:
+                break
+            parts.append(tok)
+            j += 1
+        if not parts or j >= n or not toks[j].startswith("و") or len(toks[j]) < 4:
+            continue
+        add(parts, "between", i)
+        rest = [toks[j][1:]]
+        k = j + 1
+        while k < n and len(rest) < 3 and not _ends_name(toks[k], False):
+            rest.append(toks[k])
+            k += 1
+        add(rest, "between", j)
+
+    found.sort(key=lambda f: (_HOW_RANK[f[1]], f[2]))
     gov = _find_governorate(toks)
-    return name, gov
+    return [(name, how) for name, how, _pos in found], gov
+
+
+def _extract_place(text: str) -> tuple[str | None, str | None]:
+    """(place name, governorate) — the most trusted candidate, for callers and
+    tests that want one answer; `_extract_places` returns them all."""
+    cands, gov = _extract_places(text)
+    return (cands[0][0] if cands else None), gov
 
 
 def read(text: str | None) -> NewsReading:
@@ -614,7 +848,8 @@ def read(text: str | None) -> NewsReading:
             return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
                                matched=fun.group(0)[:60])
 
-    place_text, gov = _extract_place(norm)
+    candidates, gov = _extract_places(norm)
+    place_text = candidates[0][0] if candidates else None
     if not place_text and not gov:
         # An action with nowhere to put it is not usable by anything that
         # answers "what is happening near me".
@@ -629,4 +864,5 @@ def read(text: str | None) -> NewsReading:
         governorate=gov, confidence=conf, matched=inc[1],
         is_closure=inc[0] in ("closure", "siege"),
         evidence=[inc[1]],
+        place_candidates=candidates,
     )
