@@ -5,7 +5,7 @@ One server, two surfaces over the same data and the same code path:
 * **MCP over HTTP** — `POST https://live-api.zaidlab.xyz/mcp` (JSON-RPC 2.0, stateless, no session to resume)
 * **REST** — `https://live-api.zaidlab.xyz/v2/...` (same numbers, for callers without an MCP client)
 
-27 tools. No write path: an agent cannot file a report, ever, by design. Read the
+28 tools. No write path: an agent cannot file a report, ever, by design. Read the
 `coverage` tool first — it says what this system holds and, more usefully, what it
 holds nothing for.
 
@@ -25,7 +25,10 @@ Use it as a header, or appended to the url if your client's UI takes only a url:
 
 It is shared, so it carries a ceiling: **5,000 calls a day across everyone using
 it**, reset at midnight UTC. Hit that and you get `429` until the day rolls over.
-The data behind it is the full read surface — 27 tools, nothing withheld. It is
+The data behind it is the full read surface — 28 tools, and every tool a paying
+partner gets. What differs is not access but redistribution: `latest_news` and
+`search` return an excerpt of a channel's wording to every external caller (§8),
+because those words are not ours to republish. It is
 also printed in the `401` body, so anyone who finds the endpoint by themselves
 can start without asking.
 
@@ -97,7 +100,8 @@ Corporation's monthly maximum for the West Bank, confirmed only when two
 independent outlets agree and one names the Corporation), `latest_news`,
 `search`, `stream_info`.
 
-**Meta** — `coverage`, `place_profile`.
+**Meta** — `coverage`, `place_profile`, `licence_tools` (what each tool above
+may hand you, and in what form — see §8).
 
 ## 4. The question this was built for
 
@@ -193,6 +197,33 @@ rather than a person.
   each one's obligations, and `coverage` names each source.
 * Attribution string to carry: *"Data: Palestine Data Platform, processed from
   public channel reports; Gaza and West Bank series via Tech for Palestine."*
+
+### What you may carry away, per tool
+
+Call **`licence_tools`** (or `GET /v2/licence/tools`) before you republish
+anything from here. It grades every public tool and tells you which of four
+things you are holding. Grades are read from the source register at call time,
+so that table is authoritative and this paragraph is only the shape of it.
+
+| tier | what it means |
+|---|---|
+| `full` | our own derived observation — the live tracker. Yours to carry, with attribution. |
+| `share-alike` (still `full`) | reached an ODbL row (OpenStreetMap fuel stations). Sellable, but a derived **database** must be released under ODbL. |
+| `excerpt` | somebody else's **wording**. See below. |
+| `filtered` | databank rows, each carrying its own licence. |
+| `cited_fact_only` | a third party's measurement we hold no redistribution right to (IODA connectivity). Cite it; do not republish it. |
+
+**`latest_news` and `search` return an excerpt, not the message.** Every channel
+feeding them is graded `no-redistribution` — the words are the channels' own
+copyright, and a key we issue cannot grant a licence we do not hold. You get the
+first 250 characters, the source name and the timestamp, which is a citation;
+each item says `excerpted: true` and `full_text_chars`, and the payload's
+`licence.refused` states how many were cut and why. Nothing is silently short.
+If your product needs full bodies, that is a permission conversation with the
+channels, not a key change.
+
+A grade says what you may **redistribute**, not what you may **read**.
+Everything on this server is readable; the cut is only on carrying it away.
 
 ## 9. Ten calls to try first
 
