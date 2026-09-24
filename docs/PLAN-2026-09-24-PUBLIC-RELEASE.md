@@ -298,3 +298,9 @@ Arabic key but no Arabic name now display it ("هدم في Bayt Rima" → بيت
 the current tree, so **HANDS §1b (the serving-resolver restart) is done — by this accident, not by Zaid's hand**; the
 per-type precision answers above are therefore live too. Lesson recorded: never kill by a pattern the production unit
 also matches; use the dev instance's port/pid.
+2026-09-24 20:04 UTC · repository published (private) · done · proof: https://github.com/Zaidroid/palestine-v2, `master`, 183
+commits, tree clean. Audit before the push: `.env`, `.keys/`, the Telegram session and the usage ledgers were never committed;
+no DB password, api_hash or private key in any commit; the one key in history is the deliberately published public test key
+(`docs/PARTNER-API.md`, f0fe881). The nightly run ledger `ops/databank-runs.ndjson` is no longer tracked; `CLAUDE.md` tells a
+session away from main-server what it can and cannot run. The GitHub CLI lives in `~/.local/bin/gh` (logged in as Zaidroid,
+https); an SSH key `~/.ssh/github-main-server` exists unused. v1 (`/opt/stacks/palestine`) is not in this repo.
