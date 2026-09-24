@@ -335,7 +335,8 @@ def insights(d: dict) -> str:
     name = scope.get("name_en") or scope.get("name") or scope.get("query") or "that place"
     out = (f"Last {scope.get('days')} days around {name} "
            f"({scope.get('radius_km'):g} km): {ck.get('readings', 0):,} checkpoint "
-           f"readings across {ck.get('places', 0)} checkpoints")
+           f"readings across "
+           f"{ck.get('places_in_window', ck.get('places', 0))} checkpoints")
     now = ck.get("now") or {}
     definite = {k: v for k, v in now.items() if k != "unknown"}
     if definite:

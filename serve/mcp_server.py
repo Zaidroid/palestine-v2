@@ -249,17 +249,26 @@ def insights(place: str | None = None, lat: float | None = None,
     name = (d.get("scope") or {}).get("name") or place
     ck = d.get("checkpoints") or {}
     inc = d.get("incidents") or {}
+    # TWO UNIVERSES, SAID AS TWO. The window's count and the now-count are
+    # different sets — a checkpoint can be tracked now with no reading inside the
+    # window — and the old sentence put "52 checkpoints" in front of a breakdown
+    # that added up to 63. Both numbers are true; each now carries its own
+    # subject, so the arithmetic in the sentence matches the number it follows.
     parts = [f"آخر {days} يوم حول {name} (نطاق {radius_km:g} كم): "
-             f"{ck.get('readings', 0):,} قراءة عن {ck.get('places', 0)} حاجز"]
+             f"{ck.get('readings', 0):,} قراءة عن "
+             f"{ck.get('places_in_window', ck.get('places', 0))} حاجز"]
 
     now = ck.get("now") or {}
     definite = {k: v for k, v in now.items() if k != "unknown"}
+    tracked_now = ck.get("places_now")
+    head = (f"الآن نتابع {tracked_now} حاجز" if tracked_now
+            else "الآن")
     if definite:
         said = "، ".join(f"{_ar_value(k)} {v}" for k, v in
                          sorted(definite.items(), key=lambda kv: -kv[1]))
-        parts.append(f"الآن {sum(definite.values())} حاجز بقراءة محددة: {said}")
+        parts.append(f"{head}: {sum(definite.values())} بقراءة محددة ({said})")
     if ck.get("unknown_now"):
-        parts.append(f"{ck['unknown_now']} حاجز بلا قراءة حديثة")
+        parts.append(f"و{ck['unknown_now']} بلا قراءة حديثة")
     fresh = ck.get("freshest_reading_minutes")
     if fresh is not None:
         parts.append(f"أحدث قراءة عمرها {int(fresh)} دقيقة")

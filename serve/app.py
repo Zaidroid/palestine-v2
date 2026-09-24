@@ -1199,13 +1199,19 @@ presence AS (
      AND o.observed_at >= now() - make_interval(days => %(days)s)
    GROUP BY 1, 2)
 SELECT
-  (SELECT count(DISTINCT place_id) FROM win)                       AS places,
+  -- `places_in_window` (readings inside the window) and `places_now` (a current
+  -- serving row at all) are DIFFERENT UNIVERSES and must not be printed as one.
+  -- Measured 2026-09-24 around Ramallah: 52 in the window against 63 tracked
+  -- now, while the prose said "52 checkpoints" and then "31 have a definite
+  -- reading … 32 do not" — 31+32=63, so the sentence contradicted the number in
+  -- front of it. Both are true; they answer different questions.
+  (SELECT count(DISTINCT place_id) FROM win)                       AS places_in_window,
+  (SELECT count(*) FROM now_rows)                                  AS places_now,
   (SELECT count(*) FROM win)                                       AS readings,
   (SELECT jsonb_object_agg(v.value, v.n) FROM (
       SELECT value, count(*) n FROM win GROUP BY 1) v)             AS over_window,
   (SELECT jsonb_object_agg(n.value, n.n) FROM (
       SELECT value, count(*) n FROM now_rows GROUP BY 1) n)        AS now_snapshot,
-  (SELECT count(*) FROM now_rows)                                  AS places_now,
   (SELECT min(age_minutes) FROM now_rows)                          AS freshest_minutes,
   (SELECT count(*) FROM now_rows WHERE value = 'unknown')          AS unknown_now,
   (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.readings DESC) FROM (
@@ -1214,16 +1220,42 @@ SELECT
              min(extract(epoch FROM now() - observed_at)/60)::int AS last_seen_minutes
         FROM win GROUP BY place_id, name_ar
        ORDER BY count(*) DESC LIMIT 8) t)                          AS most_reported,
-  (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.readings DESC) FROM (
-      SELECT name_ar, count(*) readings, count(DISTINCT value) distinct_values
-        FROM win GROUP BY place_id, name_ar
-       HAVING count(DISTINCT value) > 1
-       ORDER BY count(DISTINCT value) DESC, count(*) DESC LIMIT 8) t) AS changing,
+  (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.transitions DESC, t.readings DESC)
+     FROM (
+      -- CHANGING measures CHANGE, not variety. The old version ordered places
+      -- by how many DISTINCT values they showed, which in practice returned the
+      -- same eight places in the same order as `most_reported`: how often a
+      -- place is reported and how many different things it said are correlated,
+      -- so the second list added nothing. A traveller reading `changing` wants
+      -- the places that FLIPPED — open, closed, open again — so it now counts
+      -- transitions over time and reports them as `transitions`, keeping
+      -- `distinct_values` beside it for context.
+      SELECT name_ar, count(*) AS readings,
+             count(*) FILTER (WHERE prev_value IS NOT NULL
+                                AND value IS DISTINCT FROM prev_value)
+               AS transitions,
+             count(DISTINCT value) AS distinct_values
+        FROM (SELECT name_ar, value, observed_at,
+                     lag(value) OVER (PARTITION BY place_id
+                                      ORDER BY observed_at) AS prev_value
+                FROM win) w
+       GROUP BY name_ar
+      HAVING count(*) FILTER (WHERE prev_value IS NOT NULL
+                                AND value IS DISTINCT FROM prev_value) > 0
+       ORDER BY transitions DESC, readings DESC LIMIT 8) t)          AS changing,
   (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.n DESC) FROM (
       SELECT extract(hour FROM observed_at AT TIME ZONE 'Asia/Hebron')::int AS hour,
              count(*) n FROM win GROUP BY 1
        ORDER BY n DESC LIMIT 5) t)                                 AS busiest_hours,
-  (SELECT jsonb_object_agg(direction, n) FROM dirs)                AS directions,
+  -- NOT A PARTITION, AND IT MUST NOT LOOK LIKE ONE. `readings_total` counts
+  -- direction='both' rows; inbound and outbound are recorded as SEPARATE rows
+  -- for the same readings, so they overlap the total rather than dividing it.
+  -- Measured: {both: 12566, inbound: 439, outbound: 623} against readings 12566
+  -- — 439+623+12566 = 13628, which reads as arithmetic that does not add up.
+  -- 'both' is therefore removed from this map: what is left is explicitly the
+  -- directional subset, and nothing here can be mistaken for a total.
+  (SELECT jsonb_object_agg(direction, n) FROM dirs
+    WHERE direction <> 'both')                                     AS directional_readings,
   (SELECT jsonb_agg(to_jsonb(t)) FROM (
       SELECT state_kind, value, n FROM presence) t)                AS presence
 """
@@ -1361,14 +1393,30 @@ def insights(
                   "window_hours": days * 24},
         "as_of": datetime.now(timezone.utc).isoformat(),
         "checkpoints": {
-            "places": ck["places"], "readings": ck["readings"],
+            # Named apart so a caller cannot read one as the other: the first is
+            # the window's universe, the second is what is tracked right now.
+            "places_in_window": ck["places_in_window"],
+            "readings": ck["readings"],
             "over_window": ck["over_window"] or {},
-            "now": ck["now_snapshot"] or {}, "places_now": ck["places_now"],
+            "now": ck["now_snapshot"] or {},
+            "places_now": ck["places_now"],
             "unknown_now": ck["unknown_now"],
             "freshest_reading_minutes": ck["freshest_minutes"],
-            "directions": ck["directions"] or {},
+            # The directional subset, with 'both' removed: these OVERLAP the
+            # reading total rather than dividing it, and the key now says so.
+            "directional_readings": ck["directional_readings"] or {},
+            "direction_note": ("`directions` is not a partition of `readings`. "
+                               "A reading is recorded once as direction='both' "
+                               "and separately as inbound/outbound where the "
+                               "report distinguished them, so these counts "
+                               "overlap the total and never sum to it."),
             "most_reported": ck["most_reported"] or [],
             "changing": ck["changing"] or [],
+            "changing_note": ("`changing` ranks by TRANSITIONS over the window "
+                              "(the count of times a place's reported value "
+                              "differed from its previous reading), not by how "
+                              "many readings it has — how busy a place is and "
+                              "how much it changes are different questions."),
             "busiest_hours_hebron": ck["busiest_hours"] or [],
             "presence": presence,
         },
