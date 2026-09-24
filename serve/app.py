@@ -2101,11 +2101,39 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
             "staleness_band": r["staleness_band"],
             "independent_sources": r["independent_sources"],
             "basis": r["basis"]} for r in rows]
+
+    # A BAND IS ABOUT RHYTHM, NOT CURRENCY — and printed bare the two read as a
+    # contradiction. `value` is gated by three separate rules (confidence below
+    # its floor, an expired band, and the kind's `max_assert_seconds` ceiling)
+    # while `staleness_band` is gated by none of them, so `value: unknown` beside
+    # `staleness_band: live` is possible BY CONSTRUCTION. Measured 2026-09-24 on
+    # King Hussein Bridge: value `unknown`, band `live`, age 691 minutes — its
+    # half-life makes eleven and a half hours count as `live` for reporting
+    # rhythm, while the assert ceiling withdrew the value long before. Both facts
+    # are true; neither is wrong; what was missing is that the payload never said
+    # what the band is FOR.
+    for c in out:
+        if c["value"] == "unknown" and c["staleness_band"] in (
+                "live", "recent", "stale"):
+            c["value_withheld_because"] = (
+                "still being reported at this place's own rhythm, but no value "
+                "is assertable: its confidence has decayed below the floor for "
+                "this kind, or its age has passed the kind's assert ceiling. "
+                "`staleness_band` is not a claim that the reading is current.")
+
     known = [c for c in out if c["value"] != "unknown"]
     return {
         "crossings": out,
         "total": len(out), "with_a_current_reading": len(known),
         "vocabulary": ["open", "partial", "closed"],
+        "band_note": ("`staleness_band` describes whether a place is still being "
+                      "reported at its OWN rhythm — a crossing reported twice a "
+                      "day reads `live` at an age where one reported every few "
+                      "minutes reads `stale`. It is never a claim that a value is "
+                      "current: `value` is what may be asserted, and it is gated "
+                      "separately by the confidence floor and the kind's assert "
+                      "ceiling. Where the two look inconsistent, "
+                      "`value_withheld_because` states why."),
         "note": ("`partial` means open for some traffic only — medical cases, "
                  "aid lorries, a named list. It is never rounded up to `open`. "
                  "`crossing_status` still has no source of its own, so a "

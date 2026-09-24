@@ -591,6 +591,11 @@ def crossings(area: str | None = None) -> dict:
     say = "، ".join(f"{c['name']}: {c['value']}" for c in known[:6])
     return {"answer": say, "count": len(items), "crossings": items,
             "with_a_current_reading": len(known),
+            # Passed through so a caller can tell WHY a reading is withheld while
+            # its band still reads fresh — the two are gated by different rules,
+            # and bare they look like a contradiction (measured on King Hussein
+            # Bridge: value `unknown` beside band `live` at 691 minutes).
+            "band_note": d.get("band_note"),
             "note": ("Where basis is `checkpoint_flow` the reading is this "
                      "system's own checkpoint observation, not a crossing "
                      "authority's statement.")}
