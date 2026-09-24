@@ -238,3 +238,19 @@ dropped, 0 right rows dropped, 10 type moves to re-judge (`ops/incident-precisio
 2026-09-24 17:15 UTC · HANDS §1 · done · proof: `systemctl is-active palestine-v2-api` → active; `/health` ok; live
 `/v2/route/between` رام الله→نابلس → `unverified` with the reason; `/mcp` tools/list → 16, serverInfo `palestine-data`.
 P0-A/B/C are LIVE on https://live-api.zaidlab.xyz. Remaining hands: §2–§6.
+2026-09-24 18:05 UTC · P0-C.1b place extraction + gazetteer · done (code, commit e6da6b7; corpus re-read running) · proof:
+measured before: 1,414 of 5,080 news events governorate-only (27.8 %) — 936 with NO name read, 478 with a name the
+gazetteer failed (`ops/place_measure.py`, read-only). Root causes found and fixed: (1) the reader took only the first
+settlement word — now every candidate: settlement words, duals, site words, "<name> جنوب نابلس", toponym prefixes, "بين
+X وY"; (2) two admin2 code schemes in `place` (migration 077: 187 servable rows re-coded from the polygons; the
+fuller-form village lookup had been dead since it landed); (3) the governorate's bare Arabic name lives on the city
+row, so the twin check never fired — 223 Ramallah reports sat on Jenin's المغير; (4) 457 of 1,443 servable localities
+have no Arabic key at all — `ops/promote_named_localities.py` promoted 8 Open Maps rows, 23 aliases, 14 twin keys
+(evidence-driven from the corpus, dry-run first); (5) `event.claim_count` was 4× inflated by the re-reads (5,069 of
+5,082 events; 34,044 vs 8,528 real) — now derived from the claims at the end of each run; (6) one run at a time (pg
+advisory lock) because a corpus re-read outlives the 5-min timer. Projection (`--scope gov_only|named|unlocated`):
+named 72.2 % → 83.4 % (4,237 of 5,081); 642 of the 1,414 now named; 590 named events move (المغير 222 → Ramallah's
+row, برقا 70, camps over checkpoints 62); 55 demoted honestly; 70 new placements hand-checked → 66 right (94 %).
+Tests: `tests/test_place_extraction.py` (16) + `tests/test_place_locate.py` (9) + test_news 75 green. NOTE: killing the
+timer's own 1.8.0 re-read (it would have hit `TimeoutStartSec=900` and rolled back in a loop) fired one ntfy alert
+at 18:04 UTC — expected, see HANDS §7.
