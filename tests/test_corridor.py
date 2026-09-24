@@ -17,7 +17,8 @@ sys.path.insert(0, str(ROOT))
 
 from resolve.corridor import (CORRIDOR_METRES, ENDS_KM,   # noqa: E402
                               UNVERIFIED_GAP_KM, CheckpointOnRoute,
-                              _closures_at_ends, _score, decode_polyline)
+                              _closures_at_ends, _score, decode_polyline,
+                              doubt_records)
 
 
 # Captured from our Valhalla for a short road inside Nablus.
@@ -228,3 +229,36 @@ def test_the_corridor_buffer_is_wide_enough_for_registry_error():
     unambiguously on that road, so anything under 250 drops a checkpoint that
     matters. Registry coordinates are approximate; the slack is for them."""
     assert 250 <= CORRIDOR_METRES <= 400
+
+
+# ── the reasons are STRUCTURED so both languages can say them ────────────────
+
+def test_doubts_are_records_a_renderer_can_speak():
+    recs = doubt_records(_coverage(26.8), [_miss("عين سينيا"), _miss("حوارة", along=0.99)],
+                         distance_km=53.2)
+    kinds = [r["kind"] for r in recs]
+    assert kinds[0] == "blind_stretch" and recs[0]["km"] == 26.8
+    ends = {r["name"]: r["end"] for r in recs if r["kind"] == "exit_closure"}
+    assert ends == {"عين سينيا": "origin", "حوارة": "destination"}
+
+
+def test_exit_closures_are_uncapped_in_the_payload_and_capped_in_the_sentence():
+    many = [_miss(f"cp{i}", off_m=500 * (i + 1), along=0.01) for i in range(6)]
+    assert len(_closures_at_ends(many, distance_km=53.2)) == 3
+    assert len(_closures_at_ends(many, distance_km=53.2, cap=None)) == 6
+
+
+def test_both_spoken_answers_name_the_exit_closure_and_the_cause():
+    """The audit's Ramallah->Nablus case, as the renderers see it. The reason a
+    route is unverified lived in `summary`, which neither answer used."""
+    from serve import mcp_en
+    payload = {"verdict": "unverified", "blocked_at": [], "duration_minutes": 51.4,
+               "routes": [{"known": 2, "checkpoints_on_route": 8, "coverage": {}}],
+               "passes": [], "near_misses": [],
+               "doubts": [{"kind": "blind_stretch", "km": 26.8, "from_km": 0, "to_km": 26.8},
+                          {"kind": "exit_closure", "name": "عين سينيا", "name_en": "Ein Sinya",
+                           "flow": "closed", "off_route_m": 2327, "age_minutes": 18,
+                           "end": "origin"}]}
+    en = mcp_en.can_i_travel(payload)
+    assert en.startswith("Cannot confirm this route is open")
+    assert "Ein Sinya" in en and "out of the origin" in en and "no tracked checkpoint" in en

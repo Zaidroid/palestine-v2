@@ -215,10 +215,8 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
 
     return {"answer": answer, "name": nm, "direction": direction,
             "match": d.get("match"),
-            "staleness_note": ("The band is relative to this checkpoint's own "
-                               "reporting rhythm, not a fixed age: a place that "
-                               "is reported every few minutes reads `stale` at "
-                               "an age where a quiet one still reads `live`."),
+            "staleness_note": ("band is relative to this checkpoint's own reporting "
+                               "rhythm, not a fixed age"),
             "flow": d["flow"], "passable": d["passable"],
             "last_known_flow": d.get("last_known_flow"),
             "age_minutes": d.get("age_minutes"),
@@ -926,7 +924,10 @@ def can_i_travel(origin: str, destination: str) -> dict:
     # journey is their call. It is named, with its distance and age, in the
     # sentence a traveller hears.
     nm = best.get("near_misses") or []
-    blocking_nm = [m for m in nm if m.get("flow") == "closed"]
+    # An exit closure is already the stated REASON; naming it again as a
+    # "nearby closure" reads as two closures.
+    exit_ids = {x.get("name") for x in (best.get("exit_closures") or [])}
+    blocking_nm = [m for m in nm if m.get("flow") == "closed" and m.get("name") not in exit_ids]
     near_note = ""
     if blocking_nm:
         w = blocking_nm[0]
@@ -955,7 +956,25 @@ def can_i_travel(origin: str, destination: str) -> dict:
                       f"هالطريق ({cov['longest_gap_from_km']:.0f} إلى "
                       f"{cov['longest_gap_to_km']:.0f} كيلو)، فهالمسافة بلا تحقّق.")
 
-    return {"answer": f"{say}{detail}. "
+    # WHY IT IS UNVERIFIED, SAID FIRST. The reasons lived in `summary`, which no
+    # spoken answer used, so "ما بقدر أأكد" arrived with no cause attached.
+    doubt_note = ""
+    exits = [x for x in (best.get("doubts") or []) if x.get("kind") == "exit_closure"]
+    if best.get("verdict") == "unverified":
+        why = []
+        if exits:
+            why.append("إغلاق " + "، و".join(
+                f"عند {x['name']} على طريق "
+                + (f"الخروج من {origin}" if x["end"] == "origin" else f"الدخول لـ{destination}")
+                + f" ({int(x['off_route_m'])} متر عن المسار"
+                + (f"، {_age_ar(int(x['age_minutes']))}" if x.get("age_minutes") is not None else "")
+                + ")" for x in exits[:3]))
+        if any(x.get("kind") == "blind_stretch" for x in best.get("doubts") or []):
+            why.append("نص الطريق تقريباً بلا حاجز متابَع")
+        if why:
+            doubt_note = " السبب: " + "؛ و".join(why) + " — تأكد قبل ما تطلع."
+
+    return {"answer": f"{say}{detail}.{doubt_note} "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
                       f"{pass_note}{cover_note}{near_note}",
             "verdict": best["verdict"],
@@ -987,14 +1006,20 @@ def can_i_travel(origin: str, destination: str) -> dict:
                             for c in (best.get("checkpoints") or [])],
             "oldest_known_minutes": best.get("oldest_known_minutes"),
             "near_misses": nm,
+            # Closures on the way OUT of the origin or INTO the destination,
+            # in full: the audit's finding was that these decided the journey
+            # and the corridor could not see them.
+            "exit_closures": best.get("exit_closures") or [],
+            "doubts": best.get("doubts") or [],
             # Each alternate carries its OWN coverage: the primary here is blind
             # for 26.8 km and the alternate for 52 km, so "how much is known"
             # differs per route and collapsing it to one number would hide the
             # better-watched option — the same reason ranking by time rather than
             # by our confidence is deliberate.
-            "routes": [{k: r[k] for k in ("verdict", "duration_minutes", "distance_km",
-                                          "known", "checkpoints_on_route",
-                                          "blocked_at", "unreported", "coverage")}
+            "routes": [{k: r.get(k) for k in ("verdict", "duration_minutes", "distance_km",
+                                              "known", "checkpoints_on_route",
+                                              "blocked_at", "unreported", "coverage",
+                                              "exit_closures", "doubts")}
                        for r in rs],
             "caveat": "one confirmed closure blocks a route; unreported checkpoints "
                       "never block and are always named. `checkpoints` is in travel "
@@ -1082,6 +1107,9 @@ def what_correlates_with(indicator: str, place: str | None = None,
             **d}
 
 
+SERIES_POINTS = 60      # newest points a series carries in a tool reply
+
+
 def compare(indicators: str, place: str | None = None) -> dict:
     """Two to six series side by side, each keeping its own unit.
 
@@ -1096,7 +1124,19 @@ def compare(indicators: str, place: str | None = None) -> dict:
             place_id = g.get("place_id")
     d = api("/v2/databank/compare", indicators=indicators, place_id=place_id)
     ss = d.get("series", [])
-    bits = [f"{s['indicator']} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'})"
+    # A MODEL READS THIS, NOT A CHART. Thousands of points per series is the
+    # route's job (a frontend draws them); the tool keeps the newest
+    # SERIES_POINTS per series and says how many it left out, with first/last
+    # dates so the span is not lost with the rows.
+    for s_ in ss:
+        pts = s_.get("points") or []
+        if pts:
+            s_["first"], s_["last"] = pts[0].get("at"), pts[-1].get("at")
+        if len(pts) > SERIES_POINTS:
+            s_["points_omitted"] = len(pts) - SERIES_POINTS
+            s_["points"] = pts[-SERIES_POINTS:]
+    bits = [f"{s['indicator']} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'}"
+            + (f"، آخرها {str(s.get('last'))[:10]}" if s.get("last") else "") + ")"
             for s in ss]
     ov = d.get("overlap") or {}
     return {"answer": ("مقارنة: " + "، ".join(bits) +

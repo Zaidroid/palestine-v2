@@ -261,6 +261,14 @@ class Corridor:
     unreported: list = field(default_factory=list)
     cautions: list = field(default_factory=list)
     near_misses: list = field(default_factory=list)
+    # Closures just off the route in its first/last ENDS_KM — the roads you
+    # take to reach the corridor or leave it. Named in full (no cap), never
+    # merged into `blocked_at` (they are not ON the route) or `near_misses`
+    # (which is every closure/congestion along the whole line).
+    exit_closures: list = field(default_factory=list)
+    # Why an otherwise-open route reads `unverified`, structured for the
+    # renderers: blind_stretch / exit_closure records.
+    doubts: list = field(default_factory=list)
     checkpoints: list = field(default_factory=list)
     # How much of this drive anything actually watches, and which towns it goes
     # through. See _corridor_for: the verdict is a claim about the whole journey
@@ -383,6 +391,27 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
                               if unknown else "."))
 
 
+def doubt_records(coverage: dict | None, near_misses: list | None,
+                  distance_km: float | None) -> list[dict]:
+    """The same reasons as `_doubts`, STRUCTURED, so both spoken answers can
+    render them in their own language. Until 2026-09-24 the reasons existed
+    only in the English `summary`, which neither the Arabic nor the English
+    MCP answer used: a route read `unverified` and never said why."""
+    out: list[dict] = []
+    gap = float((coverage or {}).get("longest_gap_km") or 0.0)
+    if gap >= UNVERIFIED_GAP_KM:
+        out.append({"kind": "blind_stretch", "km": round(gap, 1),
+                    "from_km": (coverage or {}).get("longest_gap_from_km"),
+                    "to_km": (coverage or {}).get("longest_gap_to_km")})
+    for m in _closures_at_ends(near_misses, distance_km):
+        out.append({"kind": "exit_closure", "name": m.get("name"),
+                    "name_en": m.get("name_en"), "flow": m.get("flow"),
+                    "off_route_m": m.get("off_route_m"),
+                    "age_minutes": m.get("age_minutes"),
+                    "end": "origin" if (m.get("along") or 0) <= 0.5 else "destination"})
+    return out
+
+
 def _doubts(coverage: dict | None, near_misses: list | None,
             distance_km: float | None) -> list[str]:
     """Reasons an otherwise-open route cannot be called open. Empty means clean."""
@@ -402,12 +431,16 @@ def _doubts(coverage: dict | None, near_misses: list | None,
     return out
 
 
-def _closures_at_ends(near_misses: list | None, distance_km: float | None) -> list[dict]:
+def _closures_at_ends(near_misses: list | None, distance_km: float | None,
+                      cap: int | None = 3) -> list[dict]:
     """Near-miss CLOSURES sitting in the first or last ENDS_KM of the route.
 
     Congestion is excluded deliberately: a busy junction near town is the
     normal state of the road and would fire on almost every trip, which would
     make `unverified` meaningless. A closure is an event.
+
+    `cap` limits the SPOKEN list (a briefing, not a directory); pass None for
+    the full list that travels as `exit_closures` in the payload.
     """
     if not near_misses or not distance_km:
         return []
@@ -422,7 +455,8 @@ def _closures_at_ends(near_misses: list | None, distance_km: float | None) -> li
         if along <= frac or along >= (1.0 - frac):
             out.append(m)
     # Nearest to the alignment first — the most likely to actually be on the way.
-    return sorted(out, key=lambda m: m["off_route_m"])[:3]
+    out = sorted(out, key=lambda m: m["off_route_m"])
+    return out[:cap] if cap else out
 
 
 def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
@@ -603,6 +637,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         cautions=[{"place": c.name, "seen": p["kind"], "age_minutes": p["age_minutes"]}
                   for c in cps for p in c.presence],
         near_misses=near_misses,
+        exit_closures=_closures_at_ends(near_misses, dist, cap=None),
+        doubts=doubt_records(coverage, near_misses, dist) if verdict == "unverified" else [],
         checkpoints=cps, shape=leg["shape"], is_alternate=is_alternate)
 
 

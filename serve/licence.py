@@ -117,24 +117,18 @@ PROPAGATING_GROUPS = (GROUP_GEO_ANY, GROUP_GEO_CHECKPOINT)
 # it — attribution is owed, your database is your own). Getting this backwards
 # either burdens a partner with a licence they do not owe, or hides one they do.
 _OSM_PRODUCED_WORK = (
-    "Distances and route geometry here are computed over OpenStreetMap road "
-    "data, which ODbL treats as a PRODUCED WORK: the '© OpenStreetMap "
-    "contributors' attribution is owed and travels in `source`/`attribution`, "
-    "but it places no ODbL obligation on a database you build from these "
-    "numbers. This platform's own checkpoint coordinates are a separate case — "
-    "they come from its own registry, not from OSM.")
+    "Distances, durations and route geometry are computed over OpenStreetMap "
+    "roads: a PRODUCED WORK under ODbL — '© OpenStreetMap contributors' is owed, "
+    "no ODbL obligation lands on a database you build from these numbers.")
 
 # The same obligation, minus a datum this tool does not return. `checkpoints_near`
 # puts a `km` on each row but no route geometry, and the shared text above claims
 # both — so reusing it here would assert an obligation against data the payload
 # never carries, which is the defect this whole licence layer exists to prevent.
 _OSM_DISTANCES_ONLY = (
-    "The `km` on each row is a distance computed along OpenStreetMap road data, "
-    "which ODbL treats as a PRODUCED WORK: the '© OpenStreetMap contributors' "
-    "attribution is owed and travels in `source`/`attribution`, but it places no "
-    "ODbL obligation on a database you build from these numbers. This tool "
-    "returns no route geometry. This platform's own checkpoint coordinates are a "
-    "separate case — they come from its own registry, not from OSM.")
+    "The per-row `km` is computed over OpenStreetMap roads: a PRODUCED WORK "
+    "under ODbL — attribution owed, no obligation on your database. This tool "
+    "returns no route geometry; the coordinates are this platform's own registry.")
 
 TOOLS: dict[str, dict] = {
     # ── the live tracker: our own reductions. The clean core. ──
@@ -148,45 +142,26 @@ TOOLS: dict[str, dict] = {
     "checkpoint_status":   {"emits": DERIVED,
                             "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT]},
     "checkpoints_near":    {"emits": DERIVED, "sources": [GROUP_STATE],
-                            "obligations": [_OSM_DISTANCES_ONLY],
-                            "note": "the `km` on each row is a distance over "
-                                    "OpenStreetMap road geometry, which is why "
-                                    "the attribution credits OSM even though the "
-                                    "coordinates themselves are this platform's "
-                                    "own checkpoint registry (provenance "
-                                    "v1_checkpoints, graded open)."},
+                            "obligations": [_OSM_DISTANCES_ONLY]},
     "checkpoints_summary": {"emits": DERIVED,
                             "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT]},
     "can_i_travel":        {"emits": DERIVED, "sources": [GROUP_STATE],
-                            "obligations": [
-                                "Distances, durations and route geometry are "
-                                "computed over OpenStreetMap road data by Valhalla. "
-                                "ODbL calls that a PRODUCED WORK: the attribution "
-                                "below is owed, but it does not place an ODbL "
-                                "obligation on a database YOU build from these "
-                                "numbers. Copying OSM's data itself would — which "
-                                "is why the fuel-station rows ARE graded "
-                                "share-alike."],
-                            "note": "the payload carries no geometry — verified "
-                                    "2026-09-24: a verdict, named checkpoints, a "
-                                    "distance and a duration."},
+                            "obligations": [_OSM_PRODUCED_WORK],
+                            "note": "carries no geometry: a verdict, named checkpoints, "
+                                    "a distance and a duration."},
     "crossings":           {"emits": DERIVED,
                             "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT]},
     "incidents_near":      {"emits": DERIVED,
                             "sources": [GROUP_STATE, GROUP_GEO_ANY],
-                            "note": "echoes the coordinates of the place name it "
-                                    "resolved, which may be an ODbL locality."},
+                            "note": "echoes the resolved place's coordinates, which may "
+                                    "be an ODbL locality."},
     "incidents_summary":   {"emits": DERIVED, "sources": [GROUP_STATE]},
     "fuel_prices":         {"emits": DERIVED, "sources": [GROUP_STATE],
-                            "note": "the believed price is our reduction of two "
-                                    "independent outlets; the Petroleum "
-                                    "Corporation's figure itself is an official "
-                                    "act, not a licensed dataset."},
+                            "note": "our reduction of two independent outlets; the "
+                                    "official ceiling itself is an act, not a dataset."},
     "where_is":            {"emits": DERIVED, "sources": [GROUP_GEO_ANY],
-                            "note": "resolves any place name and returns its "
-                                    "coordinates, so it can hand back an ODbL "
-                                    "locality centroid: 2,584 of the gazetteer's "
-                                    "located places are Palestine Open Maps."},
+                            "note": "may hand back an ODbL locality centroid (Palestine "
+                                    "Open Maps rows)."},
     "place_history":       {"emits": DERIVED, "sources": [GROUP_STATE]},
     "place_pattern":       {"emits": DERIVED, "sources": [GROUP_STATE]},
     "area_history":        {"emits": DERIVED, "sources": [GROUP_STATE]},
@@ -195,32 +170,17 @@ TOOLS: dict[str, dict] = {
                             "note": "the scope block echoes the resolved place's "
                                     "coordinates, which may be an ODbL locality."},
     "stream_info":         {"emits": METADATA, "sources": []},
-    "about":               {"emits": METADATA, "sources": [],
-                            "note": "the overview of this system: counts of what it "
-                                    "holds and lacks, reduced from coverage, the gap "
-                                    "radar and the stream status."},
-    "coverage":            {"emits": METADATA, "sources": [],
-                            "note": "metadata about this system, not data from "
-                                    "anyone's dataset."},
-    "licenses":            {"emits": METADATA, "sources": [],
-                            "note": "the licence register itself: our own record "
-                                    "of what we read and when."},
-    "licence_tools":       {"emits": METADATA, "sources": [],
-                            "note": "this grading table. Our own policy record, "
-                                    "and the first tool that had to grade "
-                                    "itself — the coverage test caught it "
-                                    "missing, which is the gate working."},
-    "data_gaps":           {"emits": METADATA, "sources": [],
-                            "note": "freshness measurements of our own holdings."},
+    "about":               {"emits": METADATA, "sources": []},
+    "coverage":            {"emits": METADATA, "sources": []},
+    "licenses":            {"emits": METADATA, "sources": []},
+    "licence_tools":       {"emits": METADATA, "sources": []},
+    "data_gaps":           {"emits": METADATA, "sources": []},
 
     # ── a third party's measurement, served with their grade ──
     "weather_now":      {"emits": MEASURED, "sources": ["open_meteo"]},
     "connectivity_now": {"emits": MEASURED, "sources": ["ioda"],
-                         "note": "IODA state All Rights Reserved on every API "
-                                 "response and a letter is drafted, not sent "
-                                 "(source_permission: ioda, not_asked). The "
-                                 "measurement is served with attribution as a "
-                                 "cited fact; it is not ours to redistribute."},
+                         "note": "IODA: All Rights Reserved, permission not yet asked; "
+                                 "served as a cited fact, not ours to redistribute."},
 
     # ── a third party's WORDING, reproduced. The only class that gets cut. ──
     "latest_news": {"emits": VERBATIM, "sources": [GROUP_CLAIM],
@@ -238,32 +198,18 @@ TOOLS: dict[str, dict] = {
     # ── both tiers in one call ──
     "place_profile": {"emits": DERIVED,
                       "sources": [GROUP_STATE, GROUP_GEO_ANY],
-                      "note": "joins live state and history; both are derived "
-                              "observations, not reproduced text. It resolves a "
-                              "place name, so the gazetteer's grade travels with "
-                              "it, AND when the place has incidents each incident "
-                              "row carries its own latitude and longitude — so "
-                              "this payload DOES carry coordinates and must not "
-                              "be described as if it did not."},
+                      "note": "resolves a place name and its incident rows carry "
+                              "lat/lon, so this payload DOES carry coordinates."},
 }
 
+# One line per class. The long form lives in /v2/licence/tools; the per-call
+# block is read on every reply and was 40-60 % of a short payload.
 _EMIT_NOTE = {
-    DERIVED: ("This system's own derived observation, computed from many "
-              "reports. The reports are other people's; the reduction is ours "
-              "and carries no third party's licence."),
-    MEASURED: ("A third party's measurement, served as a cited fact with their "
-               "attribution. Their grade governs what you may do with it."),
-    VERBATIM: ("Somebody else's wording, reproduced. The channels hold their "
-               "own copyright and we hold no licence to republish them, so the "
-               "partner tier receives an excerpt and a pointer, never the body."),
-    DATABANK: ("Historical rows, each graded in the database. Per-row licences "
-               "and their obligations are in `licenses` / "
-               "/v2/databank/licenses."),
-    METADATA: ("This describes THIS SYSTEM, not the country — what it holds, "
-               "what it cannot answer, whose terms nobody has read, what this "
-               "grading table says. No third party's data is being served, so "
-               "no third party's licence attaches; the counts are ours and "
-               "come with the caveats printed beside them."),
+    DERIVED: "our own reduction over other people's claims; carries no third party's licence",
+    MEASURED: "a third party's measurement served as a cited fact; their grade governs reuse",
+    VERBATIM: "somebody else's wording; the partner tier gets an excerpt and a pointer, never the body",
+    DATABANK: "historical rows graded per source; see licence(scope=sources)",
+    METADATA: "describes this system itself, not the country; no third party's data is served",
 }
 
 # Said out loud on every share-alike payload, because a grade that names a
@@ -271,9 +217,8 @@ _EMIT_NOTE = {
 # after they have shipped. `full` and `share-alike` are both sellable; only one
 # of them travels into the database the partner builds.
 _SHARE_ALIKE_OBLIGATION = (
-    "SHARE-ALIKE: this is sellable, but a DERIVED DATABASE built on it must be "
-    "released under the same licence (ODbL / CC-BY-SA). Copying the numbers into "
-    "a product is fine; treating the output as a database you own is not.")
+    "SHARE-ALIKE: sellable, but a DERIVED DATABASE built on it must carry the "
+    "same licence (ODbL / CC-BY-SA); copying numbers into a product is fine.")
 
 
 def _worst(grades: list[str]) -> str:
@@ -504,7 +449,7 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
     emits = spec["emits"]
     block: dict[str, Any] = {"tool": shown_as or tool, "graded": True, "emits": emits,
                              "emits_note": _EMIT_NOTE[emits], "tier": tier,
-                             "table": "/v2/licence/tools"}
+                             "ref": f"/v2/licence/tools#{tool}"}
     if shown_as and shown_as != tool:
         # The caller used a public façade name; the grade is the answering
         # tool's, and saying which one keeps /v2/licence/tools readable.
@@ -552,12 +497,9 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             block["excerpted_items"] = cut
             block["excerpt_chars"] = EXCERPT_CHARS
             block["refused"] = (
-                f"{cut} of {len(items)} message bodies were cut to "
-                f"{EXCERPT_CHARS} characters. The channels hold their own "
-                "copyright and every source feeding this tool is graded "
-                "`no-redistribution`, so the wording is not ours to republish. "
-                "The excerpt, the source name and the timestamp are a citation; "
-                "the body is not.")
+                f"{cut} of {len(items)} message bodies cut to {EXCERPT_CHARS} "
+                "characters: every source here is graded no-redistribution, so "
+                "the excerpt, source and time are a citation and the body is not.")
             # The spoken answer quotes the newest message, so it carries the
             # same cut. An `answer` that reproduces in full what the payload
             # withheld is the whole control defeated by one f-string.

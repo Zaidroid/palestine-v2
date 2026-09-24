@@ -2417,11 +2417,18 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
     m = meta[0] if meta else {"concept_key": None, "measure_kind": None,
                               "polarity": None, "grain": None,
                               "place_grain": None, "canonical_unit": None}
+    # Attribution travels ONCE per series. It used to travel on every point:
+    # two food-price series came back as 429 KB, of which the numbers were a
+    # few kilobytes and the rest was the same sentence repeated per row.
+    sources = sorted({p["source_name"] for p in pts if p["source_name"]})
+    attribution = sorted({p["attribution_text"] for p in pts if p["attribution_text"]})
+    for p in pts:
+        p.pop("source_name", None)
+        p.pop("attribution_text", None)
     return {**m, "known": bool(meta), "indicator": indicator,
             "points": pts, "n": len(pts),
-            "source_names": {p["source_name"] for p in pts},
-            "attribution": sorted({p["attribution_text"] for p in pts
-                                   if p["attribution_text"]})}
+            "sources": sources, "source_names": set(sources),
+            "attribution": attribution}
 
 
 @app.get("/v2/databank/compare", tags=["databank"])

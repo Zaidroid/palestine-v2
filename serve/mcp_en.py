@@ -130,6 +130,19 @@ def can_i_travel(d: dict) -> str:
     out = say
     if d.get("blocked_at"):
         out += " — blocked at " + ", ".join(d["blocked_at"][:2])
+    if d.get("verdict") == "unverified":
+        why = []
+        exits = [x for x in (d.get("doubts") or []) if x.get("kind") == "exit_closure"]
+        if exits:
+            why.append("a closure on the way " + "; ".join(
+                f"{'out of the origin' if x['end'] == 'origin' else 'into the destination'} at "
+                f"{x.get('name_en') or x.get('name')} ({int(x['off_route_m'])} m off the route"
+                + (f", {_age(x['age_minutes'])}" if x.get("age_minutes") is not None else "") + ")"
+                for x in exits[:3]))
+        if any(x.get("kind") == "blind_stretch" for x in d.get("doubts") or []):
+            why.append("most of the route has no tracked checkpoint")
+        if why:
+            out += " — because " + "; and ".join(why) + ". Check before travelling"
     mins = d.get("duration_minutes")
     if mins:
         out += f". {round(mins)} min driving"
@@ -160,7 +173,9 @@ def can_i_travel(d: dict) -> str:
     # English reader was told "probably passable" with no mention of the closed
     # checkpoint 2 km away while an Arabic reader was told about it. Two answers
     # built from the same fields must carry the same facts.
-    nm = [m for m in (d.get("near_misses") or []) if m.get("flow") == "closed"]
+    exit_ids = {x.get("name") for x in (d.get("exit_closures") or [])}
+    nm = [m for m in (d.get("near_misses") or [])
+          if m.get("flow") == "closed" and m.get("name") not in exit_ids]
     if nm:
         w = nm[0]
         age = w.get("age_minutes")
