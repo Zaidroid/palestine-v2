@@ -604,18 +604,24 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         nm = (par or pen or "").strip()
         if not nm or any(x in _fold_ar(nm) for x in _PASSES_NOISE):
             continue
-        cands.append((float(palong), int(poff), nm, pen))
+        cands.append((float(palong), int(poff), nm, pen, bool((par or "").strip())))
+    # A PALESTINIAN TRAVELLER NAVIGATES BY THE NAMES THE ROAD SIGNS AND THE
+    # CHANNELS USE. Within a slice, a place that has an Arabic name in the
+    # gazetteer outranks one that has only a Latin one: the audit's
+    # Ramallah->Nablus answer read "passes Ofra, Yabrud, Mevo Shillo, Givat
+    # harel" — three of them settlements the traveller cannot enter, chosen
+    # only because they sat nearest the alignment. The registry does not flag
+    # settlements, so this is a preference, not a claim about what a place is.
     PASS_BUCKETS = 8
     chosen: dict[int, tuple] = {}
     seen_folded = set()
-    for along, poff, nm, pen in cands:
+    for along, poff, nm, pen, has_ar in sorted(cands, key=lambda c: (not c[4], c[1])):
         b = min(PASS_BUCKETS - 1, int(along * PASS_BUCKETS))
         key = _fold_ar(nm).strip().lower()
-        if key in seen_folded:
+        if key in seen_folded or b in chosen:
             continue
-        if b not in chosen or poff < chosen[b][1]:
-            chosen[b] = (along, poff, nm, pen)
-            seen_folded.add(key)
+        chosen[b] = (along, poff, nm, pen)
+        seen_folded.add(key)
     passes = [{"name": nm, "name_en": pen,
                "along": round(along, 3), "km": round(dist * along, 1),
                "off_m": poff}

@@ -214,3 +214,20 @@ Order: P0 (week 1) → P1 (weeks 2–3) → P2 (weeks 3–4) → P3 (after). Eve
 (`unverified` verdict, ENDS_KM/UNVERIFIED_GAP_KM, coverage before verdict), migration 075 and the alias backfill landed;
 two scratch probes that wrote into the production usage ledger removed; `tmp/` and `ops/mcp-accuracy.json` ignored.
 56 tests green on the corridor/route/MCP files. **NOT LIVE until `palestine-v2-api` is restarted (Zaid, HANDS §1).**
+
+2026-09-24 17:05 UTC · P0-A.1 · done · proof: `5d598bd`; `tools/list` → 16 names; test_facades 33 passed. Palestine Data
+— live + databank; façade table + `route()` on both transports; 28 old names alias; every parameter described,
+defaults declared; `about` composite (headline says how many supply lines FAIL).
+2026-09-24 17:05 UTC · P0-A.2/A.4 · done · proof: `6f95df9`; test_headlines 16 passed. Databank latest-figure headline;
+crossings names the no-source crossings; place_history/area_history/stream/latest_news headlines; fires apart from
+incidents; `src:N` → source keys; five English renderers added; EN carries fuzzy doubt + direction split; trend no None.
+2026-09-24 17:05 UTC · P0-A.3 + P0-B.2/3 · done · proof: `978ca3b`; licence block 267–390 B (was ≤1 KB), series 6 KB (was
+228 KB); route `doubts` + `exit_closures` spoken in both languages (live on dev: "إغلاق عند بيت ايل على طريق الخروج من
+رام الله (2014 متر، قبل 3 ساعة)؛ ونص الطريق تقريباً بلا حاجز متابَع").
+2026-09-24 17:05 UTC · P0-C · done (measured) · proof: `ae86ea7` + follow-up; classifier 1.7.1; migration 076 applied;
+4,684 events keyed, 0 duplicate keys; the timer's first 1.7 pass read 33,621 claims in 93 s → 5,103 events, 1,134
+corroborated, 88 `land_levelling`; **round-7 projection 0.717 → 0.83 (death 0.35 → ≥0.85)**
+(`ops/rescore_round.py 7`, `ops/incident-precision-round7-rescored-1.7.1.json`); placement 28 % governorate-only
+(unchanged: extraction is the lever, P0-C.1b remains). NOT a new round: gold round 8 on the seat is next (Z-2).
+2026-09-24 17:05 UTC · hands · waiting on Zaid · `docs/HANDS-2026-09-24.md` §1 (API restart — nothing serving-side is
+live until then), §2 (v1 budget), §3 (retire 7 dead v1 steps), §4 (backup key), §5 (letters), §6 (UCDP terms).

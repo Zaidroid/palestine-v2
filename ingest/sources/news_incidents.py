@@ -118,7 +118,7 @@ CLASSIFIER = "news"
 # in normalize(). Round 5's 163 claims are tuning data now — 1.6 has NO
 # held-out precision until round 6. Closure at 1.5 measured 0.875 (was
 # 0.167 in round 3); the rewrite held on disjoint data.
-CLASSIFIER_VERSION = "1.7"
+CLASSIFIER_VERSION = "1.7.1"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two

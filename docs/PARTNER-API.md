@@ -5,8 +5,9 @@ One server, two surfaces over the same data and the same code path:
 * **MCP over HTTP** — `POST https://live-api.zaidlab.xyz/mcp` (JSON-RPC 2.0, stateless, no session to resume)
 * **REST** — `https://live-api.zaidlab.xyz/v2/...` (same numbers, for callers without an MCP client)
 
-28 tools. No write path: an agent cannot file a report, ever, by design. Read the
-`coverage` tool first — it says what this system holds and, more usefully, what it
+16 tools (since 2026-09-24; the 28 earlier names still answer as aliases for one
+release, off the menu). No write path: an agent cannot file a report, ever, by design.
+Call `about` first — it says what this system holds and, more usefully, what it
 holds nothing for.
 
 ---
@@ -25,7 +26,7 @@ Use it as a header, or appended to the url if your client's UI takes only a url:
 
 It is shared, so it carries a ceiling: **5,000 calls a day across everyone using
 it**, reset at midnight UTC. Hit that and you get `429` until the day rolls over.
-The data behind it is the full read surface — 28 tools, and every tool a paying
+The data behind it is the full read surface — 16 tools, and every tool a paying
 partner gets. What differs is not access but redistribution: `latest_news` and
 `search` return an excerpt of a channel's wording to every external caller (§8),
 because those words are not ours to republish. It is
@@ -138,7 +139,7 @@ Corporation's monthly maximum for the West Bank, confirmed only when two
 independent outlets agree and one names the Corporation), `latest_news`,
 `search`, `stream_info`.
 
-**Meta** — `coverage`, `place_profile`, `licence_tools` (what each tool above
+**Meta** — `about` (coverage, gaps, stream), `place`, `licence` (what each tool above
 may hand you, and in what form — see §8).
 
 ## 4. The question this was built for

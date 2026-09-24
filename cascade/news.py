@@ -331,11 +331,23 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # real word. "رحيل" (passing) sits inside "ترحيل" (DEPORTATION) — which is
     # an incident this system exists to record.
     ("commentary", r"(بقلم|\bراي\b|تحليل|\bمقال\b|\bالذكري\b|\bذكري\b|\bرحيل\b|"
+                   # A FEATURE about a place is not an event in it (round 7:
+                   # "Aaba east of Jenin under siege and demolition.. the council
+                   # head talks about", "the camp of steadfastness despite the
+                   # checkpoints", "a battle of existence").
+                   # "يتحدث عن" was tried and removed: it rejected testimony
+                   # about an ONGOING siege as often as a feature (2 vs 2).
+                   r"معركه\s+وجود|يضيق\s+الخناق|"
+                   r"لم\s+تعد\s+المسافه|يلتهم\s+الاستيطان|"
                    r"حكاية شهيد|تابعونا|اشترك|قناتنا|هل بات|كيف يحاول|"
                    r"في مثل هذا اليوم|رساله صمود)"),
     # Institutional statements rather than a located happening.
     ("statement", r"(نادي الاسير|نادي الأسير|تصريح|بيان صحفي|وزارة الصحة تعلن|"
-                  r"تنعى|تدين|تستنكر|طالب\w* ب|دعا\w* الى|ناشد)"),
+                  r"تنعى|تدين|تستنكر|طالب\w* ب|دعا\w* الى|ناشد|"
+                  # First-person-plural statements and calls to action are a
+                  # faction speaking, not a field report.
+                  r"\bندين\b|\bنستنكر\b|\bنؤكد\b|توجهوا\s+الي|كونوا\s+سندا|فكوا\s+حصار|"
+                  r"اعتداءات\s+(?:المتكرره|المتكررة|متصاعده|متصاعدة))"),
 ]
 
 # ── where ────────────────────────────────────────────────────────────────────
@@ -490,8 +502,21 @@ _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
 # ("body"): a fresh death report often says where the body was taken.
 _FUNERAL_RE = re.compile(_norm_pat(
     r"(تشييع|شيعت|شيع\s+جثمان|[يت]شيع\w*|جنازه|جنازة|موكب\s+(?:الشهيد|جنازه|جنازة|تشييع)|"
-    r"\bنعي\b|[يت]نعي|ينعي|تنعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|"
-    r"ذكري\s+(?:استشهاد|رحيل)|الذكري\s+ال\S+\s+لاستشهاد)"))
+    r"\bنعي\b|[يت]نعي|ينعي|تنعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|يوم\s+الوداع|"
+    r"ذكري\s+(?:استشهاد|رحيل)|الذكري\s+ال\S+\s+لاستشهاد|"
+    # A EULOGY: a faction or a family "zaffs" (announces) its martyr — the
+    # report of the killing came earlier, from a news channel. Round 7's
+    # eleven wrong death rows were nine of these.
+    r"\bتزف\b|\bيزف\b|\bنزف\b|تزف\w*\s+(?:حركه|حركة|كتائب|الكتله|الكتلة|سرايا)|"
+    r"الشهيد\s+المجاهد|شهيدها\s+المجاهد|المجاهد\s+الشهيد|ابنها\s+البار|ابنه\s+البار|"
+    r"القائد\s+الشهيد|القامه\s+الفلسطينيه|تقبل\s+الله|تقبله\s+الله|رحمه\s+الله|"
+    # NOT a bare relative clause ("الشهيد X الذي ارتقى برصاص الاحتلال" is how a
+    # plain report names the man, and rejecting it cost a real death in
+    # round 7); the eulogy is recognised by its honorifics and its media.
+    # Memorial media and back-story: an earlier video, a song, chants, a year.
+    r"فيديو\s+سابق|مقطع\s+سابق|كلمات\s+الشهيد|وصيه\s+الشهيد|انشوده|الانشوده|قصيده|"
+    r"هتافات|زغرتي|اقمار\s+في\s+سماء|شيخ\s+المطاردين|"
+    r"(?:عام|سنه|سنة)\s+20[0-2][0-9]\b)"))
 _REJECT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in REJECT_PATTERNS]
 
 
