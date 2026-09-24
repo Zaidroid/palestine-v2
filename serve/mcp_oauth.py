@@ -106,6 +106,30 @@ def _partner_key_ok(key: str) -> str | None:
     return rec.get("name") if rec else None
 
 
+def _test_key_note() -> str:
+    """Name the published test key on the consent page.
+
+    A tester who already walked the OAuth discovery flow is sitting on this page
+    with a password box and nothing to type into it, and the page previously
+    told them only that a key exists. Read from the key file like every other
+    key, so publishing or rotating it is one edit and this page follows; empty
+    string when nothing is published, because the page must not name a key that
+    does not work.
+    """
+    try:
+        from serve.mcp_http import _public_test_record
+        hit = _public_test_record()
+    except Exception:                                            # noqa: BLE001
+        return ""
+    if not hit:
+        return ""
+    key, rec = hit
+    return ('<p class="who">Testing? Use the public key '
+            '<code>%s</code> — shared, no signup, %s calls a day across everyone '
+            'using it.</p>' % (html.escape(key),
+                               f"{int(rec.get('daily_quota') or 0):,}"))
+
+
 def valid_token(token: str) -> bool:
     if not token:
         return False
@@ -230,6 +254,7 @@ checkpoint, incident and road data.</p>
 </form>
 <p class="who">No account, no password, nothing stored about you. The key says
 which integration is calling, for rate limiting and attribution.</p>
+{test_note}
 </main></body></html>"""
 
 
@@ -252,6 +277,7 @@ def authorize_page(request: Request) -> HTMLResponse:
     name = (client or {}).get("client_name") or "An application"
     return HTMLResponse(_PAGE.format(client=html.escape(name),
                                      action="/authorize",
+                                     test_note=_test_key_note(),
                                      hidden=_hidden(params, "state") +
                                             _hidden({"state": params["state"]}, "")))
 
@@ -275,6 +301,7 @@ async def authorize_submit(request: Request):
             _PAGE.replace("Connect</button>", "Try again</button>")
                  .replace("Partner key", "That key was not recognised — partner key")
                  .format(client=html.escape(client["client_name"]), action="/authorize",
+                         test_note=_test_key_note(),
                          hidden=_hidden({k: str(v) for k, v in form.items()}, "key")),
             status_code=401)
     code = secrets.token_urlsafe(32)

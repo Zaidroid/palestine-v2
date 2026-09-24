@@ -468,6 +468,52 @@ def _quota_exceeded(record: dict) -> bool:
     return n >= quota
 
 
+PUBLIC_KEY_NAME = "public-test"
+
+
+def _public_test_record() -> tuple[str, dict] | None:
+    """(key, record) for the published test key, or None if there is not one.
+
+    Published means it is printed in the 401 body and named on the OAuth consent
+    page, so a tester needs to ask nobody before trying the server. It is still
+    an ordinary entry: quota'd, attributable by name, and revoked by editing the
+    file — an open door cannot be un-opened later, this is the shape that stays
+    open on purpose.
+
+    Read rather than written down in code, so publishing or rotating it stays a
+    one-line file edit. Absent, the sentence goes away entirely: a 401 must never
+    advertise a key that does not work.
+    """
+    for key, rec in _partner_keys().items():
+        if rec.get("name") == PUBLIC_KEY_NAME:
+            return key, rec
+    return None
+
+
+def _public_test_key() -> str | None:
+    hit = _public_test_record()
+    return hit[0] if hit else None
+
+
+def _no_key_message() -> str:
+    """The 401 body — a tester should be able to act on it without asking us."""
+    hit = _public_test_record()
+    if hit:
+        key, rec = hit
+        head = ("To test it, use the public key `%s` (%s calls a day, shared, no "
+                "signup) as `Authorization: Bearer <key>` or `X-Api-Key`, or "
+                "connect through OAuth at "
+                "/.well-known/oauth-protected-resource."
+                % (key, f"{int(rec.get('daily_quota') or 0):,}"))
+    else:
+        head = ("Send a key as `Authorization: Bearer <key>` or `X-Api-Key`, or "
+                "connect through OAuth at "
+                "/.well-known/oauth-protected-resource.")
+    return ("this endpoint needs a key. " + head +
+            " For a key of your own, ask us — the data is free to read, we only "
+            "need to know who is calling.")
+
+
 # A key in a url must not become a key in a log file. uvicorn's access record
 # carries the full path as a positional argument, so the scrub is on the args.
 class _ScrubKeys(logging.Filter):
@@ -524,11 +570,7 @@ async def mcp_endpoint(request: Request) -> Response:
         elif key and oauth.valid_token(key):
             pass                          # an OAuth token from /token, per client
         else:
-            return _unauthenticated(
-                "this endpoint needs a partner key: send it as "
-                "`Authorization: Bearer <key>` or `X-Api-Key`, or connect through "
-                "OAuth at /.well-known/oauth-protected-resource. Ask us for a key — "
-                "the data is free to read, we only need to know who is calling.")
+            return _unauthenticated(_no_key_message())
 
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(

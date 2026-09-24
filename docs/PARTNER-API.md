@@ -13,15 +13,24 @@ holds nothing for.
 
 ## 1. Authentication
 
-Send the key once per request, either way:
+**Testing? There is a published key. No signup, no email.**
 
-    Authorization: Bearer <key>
-    X-Api-Key: <key>
+    pv2_1fd90b4e9ca4f43149a92d5198479d78
 
-A client whose UI takes a single URL and has no header field (Claude's connector
-UI is one) appends it instead:
+Use it as a header, or appended to the url if your client's UI takes only a url:
 
-    https://live-api.zaidlab.xyz/mcp?key=<key>
+    Authorization: Bearer pv2_1fd90b4e9ca4f43149a92d5198479d78
+    X-Api-Key: pv2_1fd90b4e9ca4f43149a92d5198479d78
+    https://live-api.zaidlab.xyz/mcp?key=pv2_1fd90b4e9ca4f43149a92d5198479d78
+
+It is shared, so it carries a ceiling: **5,000 calls a day across everyone using
+it**, reset at midnight UTC. Hit that and you get `429` until the day rolls over.
+The data behind it is the full read surface — 27 tools, nothing withheld. It is
+also printed in the `401` body, so anyone who finds the endpoint by themselves
+can start without asking.
+
+For anything real, ask us for your own key. One key per integration, so traffic
+is attributable and a leak is one revocation rather than an outage.
 
 A missing or unknown key returns `401` with the reason in the JSON-RPC error body.
 Keys are read from a file on every request, so revocation takes effect without a
