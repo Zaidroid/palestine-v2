@@ -545,3 +545,64 @@ An external reviewer ran all 27 tools over the public endpoint and hand-checked 
 **What this does NOT fix, and it is the honest half of the story:** the rebuild corrects the SHAPE of the incident record, not the CLASSIFIER. The obituary/funeral problem (ZAID-9's 36-of-51 wrong rows) and the misclassifications the reviewer saw at 15:14/15:15 — a bulldozing in al-Mazra'a al-Gharbiya filed as a demolition in Ramallah, an iron gate near Beit Ur filed as a settler attack in al-Bireh — are untouched, and the precision number is still 0.717 against its 0.80 gate. Merging better makes the counts truer; it does not make the labels right, and the two must not be confused when the accuracy line is written.
 
 **One process note worth keeping:** the rebuild reports its own reasoning on every run (claims read, verdicts, located, dropped, events), which is what made the before/after comparable at all. Anyone running it again should capture that line before and after rather than only the event count.
+
+
+### 2026-09-24 · The route verdict now says which road it is and where it cannot see (`9e3e551`)
+
+**The task.** The second external pass called this the most serious defect left:
+`can_i_travel` returns "likely open" on Ramallah->Nablus while every obvious exit is
+closed (Ein Siniya shut 3 minutes earlier with a shooting 20 minutes before it, Beit
+El and Silwad also closed), all three visible only in the near-miss list 2-2.6 km off
+the route, and the English answer not mentioning them at all. Its diagnosis offered
+two options: "either it takes a real bypass road, or the corridor it checks is too
+narrow."
+
+**Measured before changing anything** — `ops/route_coverage_measure.py`, committed as
+a repeatable instrument:
+
+    primary   53.2 km, 51 min — first ON-ROUTE checkpoint at 26.9 km along
+    alternate 69.4 km, 66 min — first ON-ROUTE checkpoint at 52.0 km along
+    checkpoints within 5 km of the primary: 57
+
+Neither option was right. The route is not bypassing — it runs Route 60 through
+Beitunia DCO (2.7 km off the alignment), Beit El (2.0 km), **Ofra junction (385 m)**,
+Ein Siniya (2.3 km), Sinjil, Turmusaya, with 34 tracked checkpoints inside 3 km. And
+the corridor is not fixed by widening: `CORRIDOR_METRES = 300` is a tube around a road
+alignment while the checkpoints that decide a journey sit on junctions and slip roads
+a few hundred metres off it, so Ofra was invisible by **85 metres**. Widening to 3 km
+would collapse the on-route and near-miss bands into each other and destroy the
+named-not-promoted distinction that makes the near-miss list honest.
+
+**The fix is on the verdict, not the geometry.** `Corridor.coverage` carries
+`distance_km`, `coverage_fraction`, `covered_km`, `longest_gap_km`/`_from_km`/`_to_km`,
+`checkpoints_on_route` and `verdict_covers`. The blind stretch is stated inside the
+verdict sentence in both languages — "ما في حاجز مسجّل على 27 كيلو من هالطريق (0 إلى 27
+كيلو)، فهالمسافة بلا تحقّق" / "No checkpoint is tracked for 27 km of this route (0 to
+27 km in), so that stretch is unverified." Each entry in `routes` carries its own
+coverage (primary blind 26.8 km, alternate 52.2 km) so a longer route can be the
+better-watched one. `Corridor.passes` names the towns in travel order — Ramallah,
+Ofra, Yabrud, Mevo Shillo, Givat harel, Za'tara, Quzah, Nablus — sampled one per equal
+slice because the first-N-by-position attempt returned twelve Ramallah city-centre POIs
+and stopped at km 3 with 228 named places within 1.5 km of the northern exits.
+
+**Two rendering defects fixed in the same pass, both the same shape.** The English
+answer omitted the closures the Arabic one named; then the English waypoint sentence
+read `passes` off the per-route allowlist, which does not carry it, and silently
+dropped the waypoints. One-language-only defects recurred twice in one function —
+the lesson is in the skill: diff what each answer NAMES, not whether it renders.
+
+**Licence layer, same pass, my own error:** `checkpoint_status` and
+`checkpoints_summary` carried the OSM Produced-Work obligation while returning no
+distance and no geometry. Removed, and `checkpoints_near` got wording matching its
+actual datum (`km`, no geometry). The guard test asserted `len(declared) >= 3`, which
+passed only while the obligation sat on tools that had not earned it — it now asserts
+membership, not a count.
+
+**Verified:** 78 passed across `test_licence_tier`, `test_route_omissions`,
+`test_corridor`, `test_mcp_http`. Live: coverage `coverage_fraction 0.5`,
+`longest_gap_km 26.8`, `verdict_covers "part of the route"`; both answers naming the
+waypoints, the blind stretch and the Beit El closure.
+
+**Still open, unchanged:** the villages-to-governorate resolver (1,341 of 4,643 located
+incidents, 29%), the misclassifications, and the obituary gate that is where 0.717 ->
+0.896 comes from.
