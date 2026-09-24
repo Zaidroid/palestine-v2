@@ -445,3 +445,64 @@ for every tool that takes a name: the match score travels in the payload, a
 non-exact match says so inside the answer, and below 0.8 the doubt leads the
 sentence rather than trailing it. An approximate answer that announces itself is
 usable; one that sounds exact is the failure this whole system exists to prevent.
+
+## 2026-09-24 · The incident duplication is PLACE IDENTITY, not the time window (needs Zaid)
+
+An external pass reported that the village of حبلة (Habla) showed as five separate
+raid events from four channels, while a Qalandiya arrest correctly carried two
+sources on one event. Verified live and the cause is not what it looks like.
+
+**The window is innocent.** `DEDUP_WINDOW` is 90 minutes and the five reports span
+95 minutes with gaps of 5.2, 76.1, 7.9 and 5.8 minutes. Grouped by time alone they
+are one event carrying four independent channels — `_confidence(4)` = 0.96 against
+`_confidence(1)` = 0.7. So the split cost real corroboration, not just tidiness.
+
+**The actual cause: the registry holds five rows named حبلة.**
+
+    610   locality  Hablah              v1_known_locations       32.16523, 34.97748
+    1381  locality  Jabal ar Rahmah     v1_known_locations       31.52290, 35.09568
+    1713  checkpoint Habla              v1_checkpoints           32.17200, 34.99000
+    1986  station   Hablah Gas Station  osm_fuel_stations        32.16103, 34.98331
+    5333  locality  Habla               palopenmaps             32.16430, 34.97826
+
+The merge key is `(incident_type, place_id)`, so five reports resolving to five
+different rows can never group. The event at 610 and the event at 5333 are the
+same village twice — one is the ODbL Palestine Open Maps row and one is v1's own,
+about 100 m apart, and the second is `servable = false`. 1713 is the checkpoint
+700 m up the road from the village. All five carry the same Arabic name.
+
+Two further defects visible in that list, both real and both separate:
+
+* **1381 is misnamed.** Its Arabic name is حبلة and its English name is "Jabal ar
+  Rahmah", which is a different place ~80 km south. Some alias put a Habla
+  spelling on an unrelated row, and a report naming حبلة could resolve to a
+  village in the Hebron hills.
+* **A checkpoint and its village are separate identities.** 1713 (checkpoint) vs
+  610 (locality) are 700 m apart and share a name. Whether a raid report should
+  group with a checkpoint report is a question about what an "incident at X"
+  means, not a code question.
+
+**Why this needs Zaid and not a patch:** any fix here changes what a partner sees
+as ONE incident and what confidence it carries, and the two obvious fixes disagree
+in opposite directions. Grouping by name collapses genuinely distinct places that
+share a spelling (the registry has several: `دير استيا` ×3, `النبي يونس` ×2);
+grouping by id keeps five Hablas. I am not picking that for him.
+
+**Options, with their cost:**
+
+1. **Resolve incidents to the locality only** — never the checkpoint or station
+   row. A raid happens at a settlement; the checkpoint row is where a checkpoint
+   is. Cheap, no radius to tune, and it makes most of the duplication disappear.
+   Cost: an incident that genuinely happened AT a checkpoint loses that precision.
+2. **Group same-name rows within a radius** (say 1 km) at merge time. Keeps the
+   checkpoints and catches the palopenmaps/v1 duplicate. Cost: a radius that has
+   to be defended, and it will sometimes merge two real places that share a name.
+3. **Fix the gazetteer** — merge the duplicate rows (610/5333, and the misnamed
+   1381) and make one row per place. The correct answer, and the largest job: it
+   touches `place_merge`, every alias, and any event already pointing at the
+   loser row.
+
+Recommendation: (3) as the real fix, (1) as the cheap immediate rule for the
+incident pipeline while (3) is done, because (2)'s radius is the kind of number
+that gets tuned until the output looks right. But the choice is about what a
+partner is told "one incident" means, so it is Zaid's.

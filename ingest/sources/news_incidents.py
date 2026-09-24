@@ -125,6 +125,37 @@ SINGLE_SOURCE_TRUST = 0.70
 MAX_CONFIDENCE = 0.97
 
 
+def cluster_by_window(members: list[tuple], window: timedelta) -> list[list[tuple]]:
+    """Group one (type, place)'s reports into events.
+
+    CHAINS ON THE NEIGHBOUR, NOT ON THE FIRST MEMBER OF THE CLUSTER. The original
+    compared every report against `cluster[0][1]`, so a cluster's boundary
+    depended on when its EARLIEST report happened to arrive: a steady stream at
+    T, T+60m, T+120m split into two events at a 90-minute window, while the same
+    stream starting an hour later stayed whole. Deduplication whose result turns
+    on arrival luck is not a rule.
+
+    The trade-off is deliberate and worth stating: chaining can merge a long
+    stream into one event, so two genuinely separate incidents 3 hours apart with
+    a trickle of reports between them become one. For an incident feed that is
+    the right error to make — the alternative understates corroboration on
+    exactly the events that are most reported, which is the wrong way to be
+    wrong.
+    """
+    out: list[list[tuple]] = []
+    cur: list[tuple] = []
+    prev_ts = None
+    for m in sorted(members, key=lambda x: x[1]):
+        if cur and prev_ts is not None and m[1] - prev_ts > window:
+            out.append(cur)
+            cur = []
+        cur.append(m)
+        prev_ts = m[1]
+    if cur:
+        out.append(cur)
+    return out
+
+
 def _confidence(groups: int) -> float:
     return round(min(MAX_CONFIDENCE, 1 - (1 - SINGLE_SOURCE_TRUST) ** max(groups, 1)), 4)
 
@@ -250,14 +281,7 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
         # Split each group into time-windowed clusters; each cluster is an event.
         events = []
         for (itype, place_id), members in groups.items():
-            members.sort(key=lambda m: m[1])
-            cluster: list[tuple] = []
-            for m in members:
-                if cluster and m[1] - cluster[0][1] > DEDUP_WINDOW:
-                    events.append((itype, place_id, cluster))
-                    cluster = []
-                cluster.append(m)
-            if cluster:
+            for cluster in cluster_by_window(members, DEDUP_WINDOW):
                 events.append((itype, place_id, cluster))
 
         stats["events"] = len(events)
