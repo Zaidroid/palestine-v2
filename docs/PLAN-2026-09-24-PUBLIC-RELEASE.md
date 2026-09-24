@@ -235,3 +235,6 @@ live until then), §2 (v1 budget), §3 (retire 7 dead v1 steps), §4 (backup key
 33,629 claims → 5,078 events from 8,523 reports, 1,123 corroborated, no errors, 26.6 s CPU (the timer runs the tree, so
 classification is live; serving is not until HANDS §1). Round-7 projection under the final rules: 0.826, 21 wrong rows
 dropped, 0 right rows dropped, 10 type moves to re-judge (`ops/incident-precision-round7-rescored-1.7.1.json`).
+2026-09-24 17:15 UTC · HANDS §1 · done · proof: `systemctl is-active palestine-v2-api` → active; `/health` ok; live
+`/v2/route/between` رام الله→نابلس → `unverified` with the reason; `/mcp` tools/list → 16, serverInfo `palestine-data`.
+P0-A/B/C are LIVE on https://live-api.zaidlab.xyz. Remaining hands: §2–§6.
