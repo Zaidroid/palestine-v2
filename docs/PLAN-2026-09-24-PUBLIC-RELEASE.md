@@ -231,3 +231,7 @@ corroborated, 88 `land_levelling`; **round-7 projection 0.717 → 0.83 (death 0.
 (unchanged: extraction is the lever, P0-C.1b remains). NOT a new round: gold round 8 on the seat is next (Z-2).
 2026-09-24 17:05 UTC · hands · waiting on Zaid · `docs/HANDS-2026-09-24.md` §1 (API restart — nothing serving-side is
 live until then), §2 (v1 budget), §3 (retire 7 dead v1 steps), §4 (backup key), §5 (letters), §6 (UCDP terms).
+2026-09-24 16:59 UTC · P0-C live · done · proof: journal `palestine-v2-news.service` 16:57:35→16:59:19 — classifier 1.7.1 read
+33,629 claims → 5,078 events from 8,523 reports, 1,123 corroborated, no errors, 26.6 s CPU (the timer runs the tree, so
+classification is live; serving is not until HANDS §1). Round-7 projection under the final rules: 0.826, 21 wrong rows
+dropped, 0 right rows dropped, 10 type moves to re-judge (`ops/incident-precision-round7-rescored-1.7.1.json`).
