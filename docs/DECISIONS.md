@@ -553,3 +553,61 @@ needs a distance rule, and the same-name station rows at the top of a name-only
 list (ديليك ×8, محطة غاز ×4, كازية ×3) are exactly why a name-based rule must not
 be used for kind='station'. That is ZAID-12's real content now: whether to extend
 the merge to near duplicates, and whether stations are exempt.
+
+
+---
+
+## The route verdict is blind for half the Ramallah-Nablus drive, and the corridor
+## is why (2026-09-24)
+
+An external pass reported the most serious remaining defect as: `can_i_travel`
+returns "likely open" on Ramallah->Nablus at 15:27 while Ein Siniya was closed 12
+minutes earlier by two sources, and concluded "either it takes a real bypass road,
+or the corridor it checks is too narrow." Those are different defects with
+different fixes, so it was measured (tmp/corridor_measure.py) instead of guessed.
+
+**It is neither, and it is worse.** Projecting every tracked checkpoint onto the
+actual polyline:
+
+    primary   53.2 km, 51 min — first ON-ROUTE checkpoint at 26.9 km along
+    alternate 69.4 km, 66 min — first ON-ROUTE checkpoint at 52.0 km along
+
+The first half of the primary drive is covered by nothing. But the route is NOT
+bypassing: it runs Route 60 through Beitunia DCO (2.7 km off the alignment),
+Beit El (2.0 km), **Ofra junction (385 m)**, Ein Siniya (2.3 km), Sinjil,
+Turmusaya. Thirty-four tracked checkpoints lie within 3 km of it.
+
+**Ofra junction is 385 m from the centreline against a 300 m corridor — invisible
+by 85 metres.** `CORRIDOR_METRES = 300` is a tube around a road alignment, and the
+checkpoints that decide whether you can drive are on the junctions and slip roads
+a few hundred metres off it. Widening the tube is not the fix: at 3 km the
+on-route and near-miss bands collapse into each other and the distinction that
+makes "named, not promoted" honest disappears.
+
+**The fix is that the verdict stops implying coverage it does not have.** The
+longest blind stretch now travels with it, in kilometres and with an explicit
+position, and `verdict_covers` says whether it speaks for the whole route or part
+of it. A verdict about a road nobody watched half of has to say so in the sentence
+that carries the verdict, not in a field a caller may never read.
+
+**Also decided: ZAID-12 is closed and its merge question is WITHDRAWN.** Zaid:
+"it should be a smarter system, the text in any message from any source usually
+mentions the village or the checkpoint in the report." He was pointing at a code
+defect rather than answering a policy question, and he was right: the classifier
+silently substituted the GOVERNORATE when a village name failed to resolve, which
+is how land bulldozed in المزرعة الغربية was served as "a demolition in Ramallah,
+pinned to the city centre". There is no identity policy to pick, and extending
+`place_merge` to near-duplicate rows is not needed — events now carry
+`place_precision` and the name the channel wrote, and grouping keys on that name.
+
+**Still open, and the measured reason:** after the rebuild, 3,302 events resolved
+by their named place and **1,341 fell back to the governorate** — 29% of located
+incidents still cannot resolve the name they were reported under. The data says
+why: `بيت عور` does not resolve while `بيت عور التحتا` does, so the resolver must
+try the fuller forms the message offers before giving up on the name.
+
+**Trap for whoever measures this next:** `decode_polyline` returns **(lon, lat)**,
+not (lat, lon). Consuming it as (lat, lon) swaps the axes, every distance comes out
+enormous, and the result reads as "no checkpoints anywhere near this route" —
+which looks exactly like a quiet corridor rather than a bug. It produced a
+confident, entirely wrong first measurement of this very corridor.

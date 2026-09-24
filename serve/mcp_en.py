@@ -113,6 +113,40 @@ def can_i_travel(d: dict) -> str:
     r0 = routes[0]
     out += (f". {r0.get('known', 0)} of {r0.get('checkpoints_on_route', 0)} "
             f"checkpoints on it have recent reports.")
+    # WHICH ROAD THIS IS, AND WHERE THE VERDICT IS BLIND. Both qualify the
+    # sentence above, so they follow it — and the measured case is in
+    # resolve/corridor.py:_corridor_for: 53 km with the first on-route checkpoint
+    # at 26.9 km, which "2 of 8 have recent reports" cannot convey.
+    # `passes` and `coverage` are TOP-LEVEL on the payload; the per-route dict is
+    # a skinny allowlist that carries `coverage` only. Reading `passes` off
+    # routes[0] silently returned nothing, so the English answer dropped the
+    # waypoints the Arabic one names — the same one-language-only defect this
+    # function was just fixed for, one line further down.
+    waypoints = [w.get("name_en") or w["name"] for w in (d.get("passes") or [])][:5]
+    if waypoints:
+        out += f" It passes {', '.join(waypoints)}."
+    cov = (d.get("routes") or [{}])[0].get("coverage") or {}
+    if cov.get("longest_gap_km") and cov.get("coverage_fraction", 1.0) < 0.8:
+        out += (f" No checkpoint is tracked for {cov['longest_gap_km']:.0f} km of "
+                f"this route ({cov['longest_gap_from_km']:.0f} to "
+                f"{cov['longest_gap_to_km']:.0f} km in), so that stretch is "
+                f"unverified.")
+    # THE ENGLISH ANSWER HAS TO SAY WHAT THE ARABIC ONE SAYS. The Arabic sentence
+    # names a closure just outside the corridor; the English one did not, so an
+    # English reader was told "probably passable" with no mention of the closed
+    # checkpoint 2 km away while an Arabic reader was told about it. Two answers
+    # built from the same fields must carry the same facts.
+    nm = [m for m in (d.get("near_misses") or []) if m.get("flow") == "closed"]
+    if nm:
+        w = nm[0]
+        age = w.get("age_minutes")
+        when = f" {int(age)} minutes ago" if age is not None else ""
+        others = len(nm) - 1
+        extra = (f" and {others} more nearby closures" if others > 1
+                 else " and one more nearby" if others == 1 else "")
+        out += (f" Warning: {w.get('name_en') or w.get('name')} was closed{when}, "
+                f"{w.get('off_route_m')} m off this route — it may not stop you, "
+                f"but know it{extra}.")
     return out
 
 

@@ -417,6 +417,13 @@ INCIDENT_AR = {
     "raid": "اقتحام", "settler_attack": "اعتداء مستوطنين", "closure": "إغلاق",
     "siege": "حصار", "arrest": "اعتقالات", "injury": "إصابات",
     "shooting": "إطلاق نار", "demolition": "هدم", "death": "استشهاد",
+    # Kept in step with _AR_EVENTS above by hand, and it had drifted: this map is
+    # the COUNTING register ("5 اعتقالات"), that one phrases a single event
+    # ("اعتقال"), so they are two maps on purpose — but a missing key falls
+    # through as the raw English label, which is how the Arabic incidents_summary
+    # was counting "fire_detection" in the middle of an Arabic sentence while the
+    # Arabic insights answer translated it. Every key in one belongs in both.
+    "fire_detection": "حرائق",
 }
 
 
@@ -755,9 +762,25 @@ def can_i_travel(origin: str, destination: str) -> dict:
                      f"{w['off_route_m']} متر من هالطريق — يمكن ما يوقفك، "
                      f"بس اعرفه{extra}.")
 
+    # WHERE THE VERDICT IS BLIND. A verdict about a road nobody watched half of
+    # has to say so in the sentence that carries the verdict, not in a field the
+    # caller may never read.
+    # WHICH ROAD THIS IS, said out loud. The external pass asked for it directly:
+    # a verdict a traveller cannot place is not actionable, and naming the
+    # waypoints lets them judge the route themselves instead of trusting a word.
+    waypoints = [w["name"] for w in (best.get("passes") or [])][:5]
+    pass_note = (f" يمر عبر: {'، '.join(waypoints)}." if waypoints else "")
+
+    cov = best.get("coverage") or {}
+    cover_note = ""
+    if cov.get("longest_gap_km") and cov.get("coverage_fraction", 1.0) < 0.8:
+        cover_note = (f" ما في حاجز مسجّل على {cov['longest_gap_km']:.0f} كيلو من "
+                      f"هالطريق ({cov['longest_gap_from_km']:.0f} إلى "
+                      f"{cov['longest_gap_to_km']:.0f} كيلو)، فهالمسافة بلا تحقّق.")
+
     return {"answer": f"{say}{detail}. "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
-                      f"{near_note}",
+                      f"{pass_note}{cover_note}{near_note}",
             "verdict": best["verdict"],
             "duration_minutes": best["duration_minutes"],
             "distance_km": best["distance_km"],
@@ -765,6 +788,13 @@ def can_i_travel(origin: str, destination: str) -> dict:
             "congested_at": best["slow_at"],
             "not_reported_recently": best["unreported"],
             "cautions": best["cautions"],
+            # HOW MUCH OF THE DRIVE THE VERDICT SPEAKS FOR, and which towns it
+            # goes through. See resolve/corridor.py:_corridor_for. "2 of 8
+            # checkpoints have recent reports" cannot tell a traveller that the
+            # first 27 of 53 km are watched by nothing — and that is the reading
+            # an external pass flagged as the most serious one left.
+            "coverage": best.get("coverage") or {},
+            "passes": best.get("passes") or [],
             # The ORDERED list the tool's own description promises, in travel
             # order, each with its flow and AGE. It was in
             # resolve/corridor.py:Corridor.checkpoints all along and the
@@ -780,9 +810,15 @@ def can_i_travel(origin: str, destination: str) -> dict:
                             for c in (best.get("checkpoints") or [])],
             "oldest_known_minutes": best.get("oldest_known_minutes"),
             "near_misses": nm,
+            # Each alternate carries its OWN coverage: the primary here is blind
+            # for 26.8 km and the alternate for 52 km, so "how much is known"
+            # differs per route and collapsing it to one number would hide the
+            # better-watched option — the same reason ranking by time rather than
+            # by our confidence is deliberate.
             "routes": [{k: r[k] for k in ("verdict", "duration_minutes", "distance_km",
                                           "known", "checkpoints_on_route",
-                                          "blocked_at", "unreported")} for r in rs],
+                                          "blocked_at", "unreported", "coverage")}
+                       for r in rs],
             "caveat": "one confirmed closure blocks a route; unreported checkpoints "
                       "never block and are always named. `checkpoints` is in travel "
                       "order with each reading's age; `near_misses` are closures and "

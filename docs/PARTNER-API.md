@@ -95,6 +95,44 @@ each dataset's licence obliges).
 **Getting around** — `can_i_travel` (route plus the checkpoints on it),
 `where_is`, `crossings` (Rafah, Kerem Shalom, Allenby, King Hussein).
 
+### Reading a route verdict
+
+`can_i_travel` returns a verdict per route, and **the verdict does not speak for
+parts of the road nobody watched**. Read it with its coverage block:
+
+    "coverage": {
+      "distance_km": 53.3,
+      "checkpoints_on_route": 8,
+      "coverage_fraction": 0.5,
+      "covered_km": 26.5,
+      "longest_gap_km": 26.8,
+      "longest_gap_from_km": 0.0,
+      "longest_gap_to_km": 26.8,
+      "verdict_covers": "part of the route"
+    }
+
+Checkpoints are matched to a route by proximity to its geometry, and on
+Ramallah–Nablus the first one sits 26.9 km into a 53 km drive. The verdict is
+therefore a claim about the whole journey while the evidence covers half of it,
+so `coverage` names the blind stretch in kilometres and the `answer` sentences say
+it out loud in both languages. `verdict_covers` is `the whole route` or `part of
+the route`; treat the latter as "not verified here", not as "clear".
+
+Also returned:
+
+* `passes` — the towns the route actually goes through, in travel order, one per
+  equal slice of the route, each with `km` along and `off_m` lateral offset. This
+  is what lets a reader judge the route rather than trust a word; it is sampled
+  rather than exhaustive (the route passes 228 named places within 1.5 km).
+* `near_misses` — closures and congestion just outside the scored corridor, with
+  distance and age. Named in the `answer`, never promoted onto the route: whether
+  a checkpoint 2 km off the alignment is on somebody's journey is their call.
+* `checkpoints` — in travel order, each with its flow, age and sources.
+
+Each entry in `routes` carries its own `coverage`, so a longer alternate can be
+the better-watched one. Routes rank by verdict then by time, never by how much we
+happen to know about them.
+
 **Conditions** — `weather_now`, `connectivity_now`, `fuel_prices` (the Petroleum
 Corporation's monthly maximum for the West Bank, confirmed only when two
 independent outlets agree and one names the Corporation), `latest_news`,

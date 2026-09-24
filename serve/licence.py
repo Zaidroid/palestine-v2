@@ -124,13 +124,31 @@ _OSM_PRODUCED_WORK = (
     "numbers. This platform's own checkpoint coordinates are a separate case — "
     "they come from its own registry, not from OSM.")
 
+# The same obligation, minus a datum this tool does not return. `checkpoints_near`
+# puts a `km` on each row but no route geometry, and the shared text above claims
+# both — so reusing it here would assert an obligation against data the payload
+# never carries, which is the defect this whole licence layer exists to prevent.
+_OSM_DISTANCES_ONLY = (
+    "The `km` on each row is a distance computed along OpenStreetMap road data, "
+    "which ODbL treats as a PRODUCED WORK: the '© OpenStreetMap contributors' "
+    "attribution is owed and travels in `source`/`attribution`, but it places no "
+    "ODbL obligation on a database you build from these numbers. This tool "
+    "returns no route geometry. This platform's own checkpoint coordinates are a "
+    "separate case — they come from its own registry, not from OSM.")
+
 TOOLS: dict[str, dict] = {
     # ── the live tracker: our own reductions. The clean core. ──
+    # The OSM Produced-Work obligation belongs ONLY on the tools that actually
+    # return a distance or route geometry. It was attached to checkpoint_status
+    # and checkpoints_summary too, which return neither — measured 2026-09-24:
+    # `checkpoints_near` carries `km` per row, `checkpoint_status` and
+    # `checkpoints_summary` carry no distance field at all. An obligation
+    # asserted where no such datum exists is the same defect as a licence claim
+    # the payload cannot support, pointed the other way.
     "checkpoint_status":   {"emits": DERIVED,
-                            "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT],
-                            "obligations": [_OSM_PRODUCED_WORK]},
+                            "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT]},
     "checkpoints_near":    {"emits": DERIVED, "sources": [GROUP_STATE],
-                            "obligations": [_OSM_PRODUCED_WORK],
+                            "obligations": [_OSM_DISTANCES_ONLY],
                             "note": "the `km` on each row is a distance over "
                                     "OpenStreetMap road geometry, which is why "
                                     "the attribution credits OSM even though the "
@@ -138,8 +156,7 @@ TOOLS: dict[str, dict] = {
                                     "own checkpoint registry (provenance "
                                     "v1_checkpoints, graded open)."},
     "checkpoints_summary": {"emits": DERIVED,
-                            "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT],
-                            "obligations": [_OSM_PRODUCED_WORK]},
+                            "sources": [GROUP_STATE, GROUP_GEO_CHECKPOINT]},
     "can_i_travel":        {"emits": DERIVED, "sources": [GROUP_STATE],
                             "obligations": [
                                 "Distances, durations and route geometry are "

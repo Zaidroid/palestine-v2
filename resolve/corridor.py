@@ -137,6 +137,64 @@ SELECT place_id, state_kind, value, age_minutes
    AND value <> 'unknown'
 """
 
+# WHICH TOWNS THE ROUTE ACTUALLY GOES THROUGH.
+#
+# The external pass asked for this and the reason is sound: a verdict about a
+# road is unusable if the reader cannot tell WHICH road. "Probably passable" on a
+# 53 km drive means nothing; "passes Surda, Bir Zeit, Sinjil, then Za'tara" lets
+# them judge. Built from our OWN gazetteer rather than a geocoder we do not have.
+#
+# Fuel stations and neighbourhoods are excluded: `محطة ...` rows are a third of
+# the gazetteer and 228 named places sit within 1.5 km of this one route, so an
+# unfiltered list is a wall of petrol stations in Ramallah's city centre.
+PASSES_METRES = 1500
+# POIs, not places. Matching is SUBSTRING, not prefix: "Fuel station (OSM
+# 4976038228)" is an OSM row with an English name and a prefix test let it
+# through into a list of Palestinian towns.
+#
+# Matching is also FOLDED, because Arabic orthography defeats a literal list:
+# "محطة بنزين" and "محطه بنزين سونول" are the same word written two ways and only
+# the first was caught, so a petrol station made it into the answer sentence.
+# The fold also collapses the البيرة/البيره spelling pairs that appeared as two
+# separate waypoints 300 m apart.
+def _fold_ar(x: str) -> str:
+    for a, b in (("ة", "ه"), ("أ", "ا"), ("إ", "ا"), ("آ", "ا"), ("ى", "ي"),
+                 ("ـ", "")):
+        x = x.replace(a, b)
+    return x
+
+
+_PASSES_NOISE = tuple(_fold_ar(n) for n in ("محطة", "كازية", "Fuel station", "fuel", "park", "Park",
+                 "حديقة", "البلدة القديمة", "المنطقة الصناعية", "إسكان", "شارع",
+                 "دوار", "منتزه", "مطعم", "مسجد", "جامع", "مدرسة", "مستشفى",
+                 "ملعب", "مقبرة", "مخبز", "سوبرماركت", "عيادة", "صيدلية",
+                 "UNRWA", "Camp", "refugee", "Crossing", "crossing",
+                 # Fuel brands and junctions. "Paz", "Sonol" and "Delek" are
+                 # forecourts, not places, and "إشارات" is a set of traffic
+                 # lights — all of them hug the alignment more tightly than the
+                 # town they serve, so picking the CLOSEST candidate per slice
+                 # favoured them over the towns the list exists to name.
+                 "Paz", "Sonol", "Delek", "Dor Alon", "Yellow", "Sde",
+                 "إشارات", "اشارات", "junction", "Junction", "צומת",
+                 "מחלף", "Interchange", "מרכז", "Center", "Centre",
+                 # The same forecourts in Hebrew script, which the Latin brand
+                 # list above does not catch: "סונול" is Sonol.
+                 "סונול", "פז", "דלק", "דור אלון", "ח'רבת", "Khirbet", "Khirbat",
+                 "بنزين", "بترول", "غاز", "Petrol", "Gas", "غسيل"))
+
+PASSES_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
+SELECT p.name_ar, p.name_en,
+       ST_LineLocatePoint(line.m, p.centroid::geometry) AS along,
+       round(ST_Distance(p.centroid, line.g)::numeric)  AS off_m
+  FROM place p, line
+ WHERE p.merged_into IS NULL
+   AND COALESCE(p.servable, true)
+   AND p.kind <> 'checkpoint'
+   AND ST_DWithin(p.centroid, line.g, %(near)s)
+ ORDER BY along
+"""
+
 BLOCKING = "closed"
 SLOWING = ("congested", "slow")
 
@@ -156,6 +214,12 @@ class CheckpointOnRoute:
     independent_sources: int | None = None
     directions: dict = field(default_factory=dict)
     presence: list = field(default_factory=list)
+    # The English name travels with the point. It was selected by the corridor
+    # query and then dropped because this dataclass had no field for it, so every
+    # ON-ROUTE checkpoint came back with `name_en: null` while the near-miss list
+    # (built separately) was fully translated — an Arabic-only list for the step
+    # that matters most, in a payload the docs promise is bilingual.
+    name_en: str | None = None
 
 
 @dataclass
@@ -175,6 +239,11 @@ class Corridor:
     cautions: list = field(default_factory=list)
     near_misses: list = field(default_factory=list)
     checkpoints: list = field(default_factory=list)
+    # How much of this drive anything actually watches, and which towns it goes
+    # through. See _corridor_for: the verdict is a claim about the whole journey
+    # but the checkpoints are only where they are.
+    coverage: dict = field(default_factory=dict)
+    passes: list = field(default_factory=list)
     shape: str = ""
     is_alternate: bool = False
 
@@ -307,6 +376,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                                   int(off), float(lat), float(lon))
             by_id[pid] = c
         v = flow or "unknown"
+        if en and not c.name_en:
+            c.name_en = en
         if direction:
             c.directions[direction] = v
         if order.get(v, -1) > order.get(c.flow, -1):
@@ -331,8 +402,77 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
 
     verdict, summary = _score(cps)
     known = [c for c in cps if c.flow != "unknown"]
+
+    # ── HOW MUCH OF THIS DRIVE ANYTHING ACTUALLY WATCHES ──
+    #
+    # The verdict is a claim about the WHOLE journey; the checkpoints are only
+    # where they are. Measured 2026-09-24 on Ramallah->Nablus: 53.2 km, and the
+    # first ON-ROUTE checkpoint sat at 26.9 km — so half the drive was watched by
+    # nothing and the tool still opened with "probably passable". "2 of 8
+    # checkpoints have recent reports" does not convey that, because the reader
+    # cannot see WHERE on the 53 km those two are. So the longest blind stretch
+    # travels with the verdict, in kilometres, with an explicit section:
+    # unverified.
+    dist = float(trip["summary"]["length"])
+    marks = sorted([0.0] + [c.along for c in cps if 0.0 <= c.along <= 1.0] + [1.0])
+    segs = [(marks[i + 1] - marks[i], marks[i], marks[i + 1])
+            for i in range(len(marks) - 1)]
+    gap_frac, gap_a, gap_b = max(segs) if segs else (1.0, 0.0, 1.0)
+    coverage = {
+        "distance_km": round(dist, 1),
+        "checkpoints_on_route": len(cps),
+        "coverage_fraction": round(1.0 - gap_frac, 2),
+        "covered_km": round(dist * (1.0 - gap_frac), 1),
+        "longest_gap_km": round(dist * gap_frac, 1),
+        "longest_gap_from_km": round(dist * gap_a, 1),
+        "longest_gap_to_km": round(dist * gap_b, 1),
+    }
+    # A verdict that speaks for a route it cannot see half of is the defect, not
+    # the numbers behind it. Say which it is rather than leaving the reader to
+    # infer it from a fraction.
+    coverage["verdict_covers"] = ("the whole route"
+                                  if coverage["coverage_fraction"] >= 0.8
+                                  else "part of the route")
+    if coverage["coverage_fraction"] < 0.8 and coverage["longest_gap_km"] > 0:
+        summary += (f" No checkpoint is tracked for {coverage['longest_gap_km']:.0f}"
+                    f" km of this route ({coverage['longest_gap_from_km']:.0f}-"
+                    f"{coverage['longest_gap_to_km']:.0f} km in), so that stretch is"
+                    f" unverified — the verdict covers the rest.")
+
+    with conn.cursor() as cur:
+        cur.execute(PASSES_SQL, {"wkt": wkt, "near": PASSES_METRES})
+        pass_rows = cur.fetchall()
+    # Spread the sample along the route instead of taking the first N by
+    # position. 228 named places sit within 1.5 km of Ramallah->Nablus and the
+    # first twelve are all Ramallah and al-Bireh city-centre POIs — a list that
+    # stops at km 3 answers nothing about a 53 km drive. One representative per
+    # equal slice of the route, choosing the place CLOSEST to the alignment in
+    # each slice, is what "which towns does it go through" actually asks.
+    cands = []
+    for par, pen, palong, poff in pass_rows:
+        nm = (par or pen or "").strip()
+        if not nm or any(x in _fold_ar(nm) for x in _PASSES_NOISE):
+            continue
+        cands.append((float(palong), int(poff), nm, pen))
+    PASS_BUCKETS = 8
+    chosen: dict[int, tuple] = {}
+    seen_folded = set()
+    for along, poff, nm, pen in cands:
+        b = min(PASS_BUCKETS - 1, int(along * PASS_BUCKETS))
+        key = _fold_ar(nm).strip().lower()
+        if key in seen_folded:
+            continue
+        if b not in chosen or poff < chosen[b][1]:
+            chosen[b] = (along, poff, nm, pen)
+            seen_folded.add(key)
+    passes = [{"name": nm, "name_en": pen,
+               "along": round(along, 3), "km": round(dist * along, 1),
+               "off_m": poff}
+              for _b, (along, poff, nm, pen) in sorted(chosen.items())]
+
     return Corridor(
         verdict=verdict, summary=summary,
+        coverage=coverage, passes=passes,
         distance_km=round(trip["summary"]["length"], 1),
         duration_minutes=round(trip["summary"]["time"] / 60, 1),
         checkpoints_on_route=len(cps),

@@ -440,14 +440,36 @@ def test_every_tool_that_carries_an_obligation_says_which_kind_it_is():
 
     Counted from the SPECS, not by calling every tool: most tools need
     arguments, so calling them with none returns an error payload that carries no
-    licence block and the count would silently under-report."""
+    licence block and the count would silently under-report.
+
+    MEMBERSHIP IS THE CLAIM, NOT A COUNT. This used to assert `len >= 3`, which
+    passed only while the obligation sat on three tools — two of which
+    (`checkpoint_status`, `checkpoints_summary`) return no distance and no
+    geometry at all, and a third (`checkpoints_near`) returns distances but no
+    route geometry while its text claimed both. A count cannot tell "we dropped a
+    real obligation" from "we stopped asserting one we never earned", so it
+    guarded nothing: the honest number is 2, and what matters is WHICH two and
+    WHY. An obligation belongs on exactly the tools that return the OSM-derived
+    datum it describes.
+    """
+    # Tools that return a distance or route geometry computed over OSM roads.
+    # Narrow this list only by proving the payload stopped carrying the datum.
+    EXPECTED = {
+        "can_i_travel":      "returns distances AND route geometry",
+        "checkpoints_near":  "returns a per-row `km`, no geometry",
+    }
     declared = {t: spec["obligations"] for t, spec in L.TOOLS.items()
                 if spec.get("obligations")}
-    assert len(declared) >= 3, f"almost nothing declares an obligation: {declared}"
+    assert set(declared) == set(EXPECTED), (
+        "the tools carrying the OSM Produced-Work obligation are not the tools "
+        f"that return OSM-derived geometry: {sorted(set(declared) ^ set(EXPECTED))}")
     for tool, obs in declared.items():
         for ob in obs:
             assert isinstance(ob, str) and len(ob) > 60, (tool, ob)
             assert "PRODUCED WORK" in ob, (tool, ob)
+    # The geometry claim may only appear where geometry is returned.
+    assert "route geometry" in " ".join(declared["can_i_travel"])
+    assert "returns no route geometry" in " ".join(declared["checkpoints_near"])
     # The OTHER kind — the copyleft that travels into a partner's database — is
     # attached from the measured grade rather than declared per tool, because
     # whether it applies is a property of the sources, not of the code. Both
