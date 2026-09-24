@@ -299,30 +299,79 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             occurred = cluster[0][1]
             conf = _confidence(len(units))
             reading = cluster[0][4]
+
+            # JOIN THE EVENT THAT ALREADY EXISTS, rather than minting a new one.
+            # This loop used to be reached with only the claims THIS RUN picked
+            # up, and it never looked at what previous runs had already written —
+            # so five channels reporting one raid over 95 minutes became five
+            # events, each with claim_count=1 and confidence 0.7, when the truth
+            # was one event backed by four independent channels. Measured on
+            # حبلة 2026-09-23: five events (65803/65806/65819/65820/65821), all
+            # on place 610, all `raid`, 20:48→22:23 — split by ingest cycle, not
+            # by time or place. A window that only sees one batch is not a window.
+            #
+            # The window is applied to the SERVER's clock (occurred_at of the
+            # existing event) so a late-arriving report joins the event it
+            # belongs to, and only events this classifier produced are eligible.
             cur.execute("""
-                INSERT INTO event (event_type, place_id, geom, occurred_at,
-                                   occurred_precision, status, confidence,
-                                   claim_count, independent_sources, attrs)
-                -- 'hour', not 'exact': occurred_at is the time the channel
-                -- POSTED, and the incident happened some unknown amount before
-                -- that. Claiming second precision for a report time would be
-                -- the same overreach as quoting a drive time to a station
-                -- located only to its governorate.
-                SELECT %s, %s, p.centroid, %s, 'hour', 'believed', %s, %s, %s, %s
-                FROM place p WHERE p.place_id = %s
-                RETURNING event_id""",
-                (itype, place_id, occurred, conf, len(cluster), len(units),
-                 json.dumps({"classifier": CLASSIFIER,
-                             "classifier_version": CLASSIFIER_VERSION,
-                             "channels": sorted({m[2] for m in cluster}),
-                             "place_text": reading.place_text,
-                             "governorate": reading.governorate,
-                             "matched": reading.matched}, ensure_ascii=False),
-                 place_id))
-            row = cur.fetchone()
-            if not row:
-                continue
-            event_id = row[0]
+                SELECT event_id, claim_count, independent_sources, occurred_at,
+                       attrs->'channels' AS channels
+                  FROM event
+                 WHERE event_type = %s AND place_id = %s
+                   AND status = 'believed'
+                   AND attrs->>'classifier' = %s
+                   AND ABS(EXTRACT(EPOCH FROM (occurred_at - %s::timestamptz)))
+                       <= %s
+                 ORDER BY occurred_at
+                 LIMIT 1""",
+                (itype, place_id, CLASSIFIER, occurred,
+                 DEDUP_WINDOW.total_seconds()))
+            prior = cur.fetchone()
+
+            if prior:
+                event_id, prev_n, _prev_srcs, _prev_at, prev_ch = prior
+                merged_units = set(prev_ch or []) | units
+                # The event KEEPS its earliest report time: that is when the
+                # incident was first reported, and moving it forward would let a
+                # late report make an old incident look new.
+                cur.execute("""
+                    UPDATE event
+                       SET claim_count = %s, independent_sources = %s,
+                           confidence = %s,
+                           attrs = attrs || %s::jsonb
+                     WHERE event_id = %s""",
+                    (prev_n + len(cluster), len(merged_units),
+                     _confidence(len(merged_units)),
+                     json.dumps({"channels": sorted(merged_units),
+                                 "merged_reports": (prev_n + len(cluster))},
+                                ensure_ascii=False),
+                     event_id))
+                stats["events_joined"] = stats.get("events_joined", 0) + 1
+            else:
+                cur.execute("""
+                    INSERT INTO event (event_type, place_id, geom, occurred_at,
+                                       occurred_precision, status, confidence,
+                                       claim_count, independent_sources, attrs)
+                    -- 'hour', not 'exact': occurred_at is the time the channel
+                    -- POSTED, and the incident happened some unknown amount before
+                    -- that. Claiming second precision for a report time would be
+                    -- the same overreach as quoting a drive time to a station
+                    -- located only to its governorate.
+                    SELECT %s, %s, p.centroid, %s, 'hour', 'believed', %s, %s, %s, %s
+                    FROM place p WHERE p.place_id = %s
+                    RETURNING event_id""",
+                    (itype, place_id, occurred, conf, len(cluster), len(units),
+                     json.dumps({"classifier": CLASSIFIER,
+                                 "classifier_version": CLASSIFIER_VERSION,
+                                 "channels": sorted({m[2] for m in cluster}),
+                                 "place_text": reading.place_text,
+                                 "governorate": reading.governorate,
+                                 "matched": reading.matched}, ensure_ascii=False),
+                     place_id))
+                row = cur.fetchone()
+                if not row:
+                    continue
+                event_id = row[0]
             # event_id is the ONE field 005 sanctions updating on a claim; the
             # verdict itself goes to claim_classification, not onto the claim.
             cur.executemany("UPDATE claim SET event_id=%s WHERE claim_id=%s",

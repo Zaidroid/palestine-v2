@@ -67,18 +67,18 @@ def test_members_are_sorted_before_they_are_chained():
     assert len(cluster_by_window([m(120), m(0), m(60)], DEDUP_WINDOW)) == 1
 
 
-def test_the_habla_reports_would_be_one_event_if_the_place_agreed():
-    """The measured case. Five channels reported a raid on Habla between 20:48
-    and 22:24 — gaps of 5, 76, 8 and 6 minutes, total span 95 minutes against a
-    90-minute window. Given ONE place, chaining makes this a single event with
-    four independent sources.
+def test_the_habla_reports_are_one_event_by_time_and_by_place():
+    """The measured case, and a correction. Five channels reported a raid on
+    حبلة between 20:48 and 22:23 — gaps of 5, 76, 8 and 6 minutes, span 95
+    minutes against a 90-minute window. Given one place, chaining makes this a
+    single event with four independent sources.
 
-    It did not, and the reason is not time: `place` holds FIVE rows named حبلة
-    (ids 610 locality/v1, 1381 locality/v1, 1713 checkpoint, 1986 fuel station,
-    5333 locality/palopenmaps), so each report resolved to a different row and
-    the group key (incident_type, place_id) never matched. That is a place
-    IDENTITY question, not a window question, and it is filed rather than
-    guessed at."""
+    An earlier version of this file claimed they split on PLACE IDENTITY, with
+    five registry rows named حبلة. That was wrong and one query falsified it: all
+    five events point at place_id 610, the same row. The real cause was that the
+    window only ever saw ONE ingest batch, so the events were never compared
+    against each other. Both facts are asserted here: the window groups them, and
+    the place never differed."""
     habla = [m(0, "src:38"), m(5.2, "src:34"), m(81.3, "src:37"),
              m(89.2, "src:34"), m(95.0, "src:33")]
     clusters = cluster_by_window(habla, DEDUP_WINDOW)
@@ -87,6 +87,21 @@ def test_the_habla_reports_would_be_one_event_if_the_place_agreed():
     # And the confidence that one event then carries.
     assert _confidence(4) > _confidence(1), (
         "splitting an event across four channels must not LOWER its confidence")
+
+
+def test_the_split_was_cycle_scoping_not_place_identity():
+    """The falsified hypothesis, kept as a test so nobody re-derives it from the
+    five-row name collision. حبلة DOES have five rows (610 locality, 1381
+    locality misnamed, 1713 checkpoint, 1986 station, 5333 locality) — and it did
+    not matter, because all five events resolved to 610. A window applied within
+    a single batch cannot dedup across batches, however many place rows exist."""
+    import inspect
+
+    from ingest.sources import news_incidents as N
+    src = inspect.getsource(N)
+    assert "SELECT event_id, claim_count, independent_sources, occurred_at" in src, \
+        "the join-existing-event lookup is gone; one raid will split again"
+    assert "events_joined" in src, "no record of how many reports joined an event"
 
 
 def test_a_split_event_is_expensive_not_cosmetic():

@@ -506,3 +506,50 @@ Recommendation: (3) as the real fix, (1) as the cheap immediate rule for the
 incident pipeline while (3) is done, because (2)'s radius is the kind of number
 that gets tuned until the output looks right. But the choice is about what a
 partner is told "one incident" means, so it is Zaid's.
+
+## 2026-09-24 · CORRECTION: the incident duplication is INGEST-CYCLE SCOPING, not place identity
+
+I filed the previous entry (and told Zaid) that حبلة's five events were caused by
+five registry rows named حبلة and the merge key `(incident_type, place_id)`. **That
+was wrong, and one query falsified it.**
+
+    SELECT e.event_id, e.place_id, p.kind, p.name_ar, e.occurred_at
+      FROM event e JOIN place p USING (place_id)
+     WHERE e.event_id IN (65803, 65806, 65819, 65820, 65821);
+
+All five events point at **place_id 610** — the same row, same kind, same name.
+The place never differed. The five-row name collision is real (610/1381/1713/1986/
+5333) but it is not what split this raid, and the file/plan entries claiming it
+was are corrected with this note.
+
+**The actual cause: the dedup window only ever saw one batch.** The claim query
+selects *unclassified* claims with a LIMIT, so each scheduled run clusters only
+the handful of reports it just picked up, and the loop that creates events never
+looked at what earlier runs had already written. Five channels reporting one raid
+across 95 minutes arrived in five cycles and became five events — each
+`claim_count=1`, `independent_sources=1`, `confidence=0.7`, when the material was
+one event with four independent channels worth `0.96`. Neither the time window
+nor the place key was at fault: `DEDUP_WINDOW` is 90 minutes and a 95-minute span
+with 5-6 minute gaps groups fine *within* one batch.
+
+**The fix.** Before inserting, the loop now looks for an existing event of the
+same type and place, produced by the same classifier, whose `occurred_at` is
+within `DEDUP_WINDOW`, and JOINS it: `claim_count` grows, `independent_sources`
+becomes the union of channels, `confidence` is recomputed from that union, and
+`occurred_at` keeps the EARLIEST report (moving it forward would let a late report
+make an old incident look new). A separate defect in the same loop is fixed
+alongside: it chained the window on the cluster's FIRST member, so a stream's
+boundary depended on when its earliest report happened to arrive.
+
+**Still open and genuinely place-related, but separately:** the registry holds
+near-duplicate rows — measured, same name + same kind + both servable + within
+300 m: five OSM station pairs at 4-45 m (the same station mapped twice), one
+checkpoint pair at 76 m (حاجز شرق أريحا), and four localities at 147-299 m
+including **جنين twice (23 and 561)** and برقين, جبل المكبر, بيت جالا. Those WILL
+split incidents across duplicates. `resolve/place_merge` reports zero clusters:
+its rule is co-location (IDENTICAL centroid) plus a non-name test, so near
+duplicates with different centroids are out of its reach by design. Extending it
+needs a distance rule, and the same-name station rows at the top of a name-only
+list (ديليك ×8, محطة غاز ×4, كازية ×3) are exactly why a name-based rule must not
+be used for kind='station'. That is ZAID-12's real content now: whether to extend
+the merge to near duplicates, and whether stations are exempt.
