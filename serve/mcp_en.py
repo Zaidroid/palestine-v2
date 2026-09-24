@@ -364,6 +364,29 @@ def insights(d: dict) -> str:
                   "no reading does not mean open.")
 
 
+def licence_tools(d: dict) -> str:
+    c = d.get("partner_tier_counts") or {}
+    bits = []
+    if c.get("full"):
+        bits.append(f"{c['full']} may be carried away whole (our own derived "
+                    f"observations)")
+    if c.get("excerpt"):
+        bits.append(f"{c['excerpt']} return an excerpt only — the channels own "
+                    f"their wording and we hold no licence to republish it")
+    if c.get("filtered"):
+        bits.append(f"{c['filtered']} read the databank, where each row carries "
+                    f"its own licence")
+    if c.get("cited_fact_only"):
+        bits.append(f"{c['cited_fact_only']} may travel as a cited fact only")
+    out = (f"Of {d.get('public_tools')} public tools, {d.get('graded')} are "
+           f"graded: " + "; ".join(bits) + ".")
+    if d.get("ungraded"):
+        out += (f" Warning: {len(d['ungraded'])} tool(s) carry no grade yet — "
+                f"do not redistribute their output.")
+    return out + (" A grade says what you may REDISTRIBUTE, not what you may "
+                  "read.")
+
+
 RENDERERS: dict[str, Callable[[dict], str]] = {
     "fuel_prices": fuel_prices,
     "checkpoint_status": checkpoint_status, "checkpoints_near": checkpoints_near,
@@ -375,6 +398,7 @@ RENDERERS: dict[str, Callable[[dict], str]] = {
     "what_correlates_with": what_correlates_with, "compare": compare,
     "correlate": correlate, "licenses": licenses, "data_gaps": data_gaps,
     "databank": databank, "insights": insights,
+    "licence_tools": licence_tools,
 }
 
 

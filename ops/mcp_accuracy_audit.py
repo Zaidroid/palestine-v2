@@ -250,7 +250,24 @@ def audit_crossings() -> None:
     if not d:
         return
     known = [c for c in d["crossings"] if c.get("value") not in (None, "unknown")]
-    if len(known) != d.get("with_a_current_reading"):
+    # THE NO-SOURCE BRANCH IS A DIFFERENT PAYLOAD, NOT A MISSING FIELD.
+    # When nothing is known the tool answers "no source reports this" and omits
+    # `with_a_current_reading` on purpose — there is no count to state. Comparing
+    # 0 against a key that is correctly absent reported a major finding every
+    # night the crossings feed was quiet, which is a bug in the instrument: what
+    # must be checked there is that the branch agrees with its own premise.
+    if d.get("no_source"):
+        if known:
+            finding("major", "crossings",
+                    "claims no source reports crossing status while carrying "
+                    "known values",
+                    "no known values", len(known))
+        if not d.get("warning"):
+            finding("major", "crossings",
+                    "the no-source branch without its warning — absence of "
+                    "evidence must never read as 'open'",
+                    "a warning", None)
+    elif len(known) != d.get("with_a_current_reading"):
         finding("major", "crossings", "with_a_current_reading != known entries",
                 len(known), d.get("with_a_current_reading"))
     for c in known:

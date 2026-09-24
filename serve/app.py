@@ -831,7 +831,8 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
 
 
 @app.get("/v2/news/latest", tags=["news"])
-def news_latest(area: str | None = None, limit: int = Query(10, ge=1, le=100),
+def news_latest(request: Request, area: str | None = None,
+                limit: int = Query(10, ge=1, le=100),
                 hours: int | None = Query(None, ge=1, le=720),
                 text: str | None = Query(None, min_length=2)) -> dict:
     """Most recent ingested messages, optionally filtered by area, text, window.
@@ -867,10 +868,18 @@ def news_latest(area: str | None = None, limit: int = Query(10, ge=1, le=100),
         FROM claim c JOIN source s ON s.source_id = c.source_id
         WHERE {' AND '.join(where)}
         ORDER BY c.reported_at DESC LIMIT %s""", tuple(params))
-    return {"count": len(rows), "area": area,
-            "items": [{"text": " ".join(r["raw_text"].split())[:500],
-                       "source": r["src"], "source_key": r["src_key"],
-                       "reported_at": r["reported_at"]} for r in rows]}
+    # F-81: the MCP tool over this route is not the only door — this route is
+    # itself public, so a cut applied only in the MCP layer would be decoration.
+    # The tier is decided here, from who is calling, and the MCP layer then sees
+    # an already-honest payload.
+    from serve import licence as L
+    from serve.ratelimit import client_ip, is_local
+    tier = "house" if is_local(client_ip(request)) else "partner"
+    out = {"count": len(rows), "area": area,
+           "items": [{"text": " ".join(r["raw_text"].split())[:500],
+                      "source": r["src"], "source_key": r["src_key"],
+                      "reported_at": r["reported_at"]} for r in rows]}
+    return L.apply("latest_news", out, tier)
 
 
 @app.get("/v2/coverage", tags=["meta"])
@@ -2136,6 +2145,27 @@ def databank_licenses() -> dict:
             "is in that state.",
         "permissions_pending": pending,
     }
+
+
+@app.get("/v2/licence/tools", tags=["meta"])
+def licence_tools() -> dict:
+    """What each public tool may hand a commercial partner, and why (F-81).
+
+    /v2/databank/licenses answers "who owns this row". This answers the question
+    a partner actually has to ask first: "of the things this API will tell me,
+    which may I carry away, and in what form". Migration 066 settled that a
+    credited FACT answering a question is reporting rather than redistribution,
+    so the query tier is unfiltered; that reasoning does not reach a message
+    BODY, which is the channel's own expression and not a cited fact.
+
+    Every grade is read from `source.redistribution` at call time — the same
+    column this system's databank tiers read — so nothing here can quietly
+    disagree with /v2/databank/licenses, and a re-graded source changes this
+    table without a deploy.
+    """
+    from serve import licence as L
+    from serve.mcp_http import PUBLIC_TOOLS
+    return L.table(q_cached, set(PUBLIC_TOOLS))
 
 
 @app.get("/v2/databank/concepts", tags=["databank"])

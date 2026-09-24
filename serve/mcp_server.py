@@ -1057,6 +1057,42 @@ def licenses(source: str | None = None) -> dict:
             "permissions_pending": d["permissions_pending"]}
 
 
+def licence_tools() -> dict:
+    """What each public tool may hand a commercial partner, and in what form.
+
+    `licenses` answers "who owns this row". This answers the question a
+    consumer has to ask BEFORE that one: of the things this server will tell
+    me, which may I carry away, and whole or as a citation?
+    """
+    d = api("/v2/licence/tools")
+    counts = d.get("partner_tier_counts") or {}
+    by_tier: dict[str, list[str]] = {}
+    for t in d.get("tools", []):
+        by_tier.setdefault(t["partner_tier"], []).append(t["tool"])
+    answer = (f"من أصل {d.get('public_tools')} أداة عامة، {d.get('graded')} "
+              f"مصنّفة: ")
+    said = []
+    if counts.get("full"):
+        said.append(f"{counts['full']} أداة يجوز نقل مخرجاتها كاملة "
+                    f"(استنتاجاتنا نحن، لا نصوص غيرنا)")
+    if counts.get("excerpt"):
+        said.append(f"{counts['excerpt']} أداة تُعطي مقتطفاً فقط — نصوص القنوات "
+                    f"ملك أصحابها ولا نملك حق إعادة نشرها")
+    if counts.get("filtered"):
+        said.append(f"{counts['filtered']} أداة على بنك المعلومات، كل صف "
+                    f"بترخيصه")
+    if counts.get("cited_fact_only"):
+        said.append(f"{counts['cited_fact_only']} أداة تُنقل كواقعة مُسندة فقط")
+    answer += "، ".join(said) + "."
+    if d.get("ungraded"):
+        answer += (f" تنبيه: {len(d['ungraded'])} أداة بلا تصنيف بعد — "
+                   f"لا تُعاد نشر مخرجاتها.")
+    return {"answer": answer, **d, "tools_by_tier": by_tier,
+            "caveat": "A grade here says what you may REDISTRIBUTE, not what "
+                      "you may read. Everything on this server is readable; the "
+                      "cut is on carrying it away."}
+
+
 def databank(category: str | None = None, indicator: str | None = None,
              as_of: str | None = None, limit: int = 10) -> dict:
     """The historical databank: 200,000+ observations across 20 categories
@@ -1212,6 +1248,16 @@ TOOLS = {
                      "source": {"type": "string",
                                 "description": "optional: filter to one "
                                                "source key or name"}}}),
+    "licence_tools": (licence_tools,
+                      "What each PUBLIC TOOL may hand a commercial partner, and "
+                      "in what form. `licenses` says who owns a row; this says "
+                      "which of this server's own answers may be carried away "
+                      "whole, which come as a citation only, and why. Our "
+                      "derived observations are ours to give; a channel's "
+                      "message BODY is not, so those tools return an excerpt "
+                      "and say so. Call it before republishing anything from "
+                      "here.",
+                      {"type": "object", "properties": {}}),
     "data_gaps": (data_gaps,
                   "The gap radar: which datasets are stalled/late/dead, "
                   "where the timeline has holes, which supply lines are "

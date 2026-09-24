@@ -54,6 +54,7 @@ from fastapi.responses import JSONResponse
 
 from serve import mcp_oauth as oauth
 from serve import mcp_usage as usage
+from serve import licence
 from serve.mcp_en import add_english
 from serve.mcp_server import API, HOST_ONLY, TOOLS
 
@@ -304,10 +305,16 @@ def _tool_list() -> list[dict]:
             for n, (_, d, s) in PUBLIC_TOOLS.items()]
 
 
-def _handle(msg: dict, ip: str | None = None) -> dict | None:
+def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
 
     Runs on the MCP executor, so it may block.
+
+    `tier` is the LICENCE tier of the caller, not a permission level: everything
+    on this surface is readable by everyone, and the tier decides only what may
+    be carried away (F-81). It defaults to `partner`, the narrower of the two, so
+    a future call path that forgets to pass it cuts too much rather than
+    republishing somebody's article.
     """
     if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0":
         return _err(None, -32600, "not a JSON-RPC 2.0 message")
@@ -389,6 +396,12 @@ def _handle(msg: dict, ip: str | None = None) -> dict | None:
                      not failed, out, ip)
         if not failed:
             out = add_english(name, out)
+        # F-81: the licence block goes on LAST, after the tool and its English
+        # have produced everything they are going to produce, and it enforces
+        # the tier on the payload rather than describing it. A tool function
+        # cannot raise its own tier: the tier is decided from who is calling
+        # (below), never from an argument the caller supplied.
+        out = licence.apply(name, out, tier)
         result = {
             "content": [{"type": "text",
                          "text": json.dumps(out, ensure_ascii=False, default=str)}],
@@ -559,6 +572,15 @@ async def mcp_endpoint(request: Request) -> Response:
     from serve.ratelimit import client_ip, is_local
     ip = client_ip(request)
 
+    # The licence tier (F-81). `house` is this machine's own callers — Fawwaz,
+    # Sameera, the watchdog — who are inside the system rather than consuming
+    # it, and who need the full message body to do the classification work the
+    # published answers are built from. Everyone reaching this endpoint over the
+    # tunnel is `partner`, whatever their key says: the cut is a copyright
+    # question about somebody else's wording, and a key we issued cannot grant
+    # a licence we do not hold.
+    tier = "house" if is_local(ip) else "partner"
+
     if not is_local(ip):
         key = _presented_key(request)
         keys = _partner_keys()
@@ -574,7 +596,7 @@ async def mcp_endpoint(request: Request) -> Response:
 
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(
-        *(loop.run_in_executor(_POOL, _handle, m, ip) for m in msgs)) if r is not None]
+        *(loop.run_in_executor(_POOL, _handle, m, ip, tier) for m in msgs)) if r is not None]
 
     # Nothing but notifications: the spec wants an accepted-with-no-body, and a
     # client that gets `null` back instead treats it as a malformed response.
