@@ -62,3 +62,6 @@ data/raw/ioda/
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)
 tmp/
 ops/mcp-accuracy.json
+
+# nightly databank run ledger: runtime state, appended by every sync; its mtime is a cache key
+ops/databank-runs.ndjson
