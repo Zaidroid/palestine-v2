@@ -264,3 +264,6 @@ Live `/v2/incidents/summary?hours=168`: 755 incidents, 153 located to a governor
 precision of new placements 94 % on a 70-row hand check (a real round-8 gold set is still the next step). The serving
 API keeps the 09-24 17:15 process: it reads the new events live, but its own resolver (place, checkpoint_status) loads
 the 1.8.0 `resolve/geo.py` only at the next restart (HANDS §1b).
+2026-09-24 18:27 UTC · full suite after the re-read · done · proof: `PALESTINE_API=http://127.0.0.1:7870 pytest -q tests`
+(vault schedule tests deselected) → 928 passed, 2 skipped, 0 failed in 8:13. The news timer's tick at 18:07:53 read 1
+claim and finished; the only failed run today is the one killed at 18:04 (the alert Zaid received).
