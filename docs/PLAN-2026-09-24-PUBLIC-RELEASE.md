@@ -267,3 +267,20 @@ the 1.8.0 `resolve/geo.py` only at the next restart (HANDS §1b).
 2026-09-24 18:27 UTC · full suite after the re-read · done · proof: `PALESTINE_API=http://127.0.0.1:7870 pytest -q tests`
 (vault schedule tests deselected) → 928 passed, 2 skipped, 0 failed in 8:13. The news timer's tick at 18:07:53 read 1
 claim and finished; the only failed run today is the one killed at 18:04 (the alert Zaid received).
+2026-09-24 19:00 UTC · P0-C.3 gold round 8 · done (measured; gate FAILED) · proof: `learn/incident_precision.py --sample --round 8
+--per-type-cap 15 --adversarial 50 --rejects 40` → 238 rows (150 core, 48 adversarial, 40 rejects), every row judged by hand
+against the text (`ops/incident-scored-round8.ndjson`, notes on each). `--score --round 8` → **core precision 0.767 [0.69–0.83]**:
+death 0.60, siege 0.60, demolition 0.667, land_levelling 0.667, closure/injury/settler_attack 0.80, raid 0.867,
+arrest/shooting 0.933; adversarial 0.50 (long features 0/5, funerals 4/12, notices 5/10, origin 8/10); miss rate 17.5 % (7 of
+40 rejects real). Failure classes were specific: farewells/obituaries (6 deaths), official statements (5), orders/threats
+(5), roundups/features (7), releases (2), court news, a vigil, a traffic accident; places: street names read as
+governorates (2), a reference town (1), no-governorate twins (2), run-on captures into الأغوار (2). Round 7 re-judged under
+1.8.0 (10 type moves) → 0.805 (`ops/incident-rejudged-round7-1.8.0.ndjson`).
+2026-09-24 19:12 UTC · classifier 1.8.1 (one rule per measured class) · done · proof: commit `6f71d50`; 128 tests green
+(test_news 103 incl. 26 round-8 regressions); projection over round 8 with the 6 type moves re-judged → 0.876
+(`ops/rescore_round.py 8` → `ops/incident-precision-round8-rescored-1.8.1.json`; 35 wrong rows dropped, 2 right rows lost by
+design). Corpus re-read (the timer's own incremental run at 19:08–19:10, then `--rebuild` 19:11–19:20): 33,683 claims →
+incident 9,155 · rejected 15,491 · unclear 9,037 · 5,069 events · named 4,191 / governorate 861 / ambiguous 17 → **named
+82.7 %**; claim_count exact; 0 duplicate keys; المغير 232 on Ramallah's row, 9 on Jenin's; new reject reasons live:
+obituary 222, court 90, propaganda 75, testimony 65. **The honest precision number is round 8's 0.767 until round 9 draws a
+fresh sample of 1.8.1**; the projection is a tuning-set number. Next: round 9 after a week of 1.8.1 output.

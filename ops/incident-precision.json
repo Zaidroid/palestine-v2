@@ -1,136 +1,249 @@
 {
-  "measured_at": "2026-09-21T22:39:01.010287+00:00",
+  "measured_at": "2026-09-24T19:00:22.531965+00:00",
   "overall": {
-    "n": 180,
-    "precision": 0.717,
+    "n": 150,
+    "precision": 0.767,
     "ci95": [
-      0.647,
-      0.777
+      0.693,
+      0.827
     ]
   },
   "per_type": {
     "arrest": {
-      "n": 20,
-      "precision": 0.9,
+      "n": 15,
+      "precision": 0.933,
       "ci95": [
-        0.699,
-        0.972
+        0.702,
+        0.988
       ],
-      "is_incident": "20/20",
-      "type_ok": "20/20",
-      "place_ok": "18/20",
-      "west_bank": "20/20"
-    },
-    "closure": {
-      "n": 20,
-      "precision": 0.75,
-      "ci95": [
-        0.531,
-        0.888
-      ],
-      "is_incident": "18/20",
-      "type_ok": "16/18",
-      "place_ok": "17/18",
-      "west_bank": "18/18"
-    },
-    "death": {
-      "n": 20,
-      "precision": 0.35,
-      "ci95": [
-        0.181,
-        0.567
-      ],
-      "is_incident": "8/20",
-      "type_ok": "8/8",
-      "place_ok": "7/8",
-      "west_bank": "7/8"
-    },
-    "demolition": {
-      "n": 20,
-      "precision": 0.6,
-      "ci95": [
-        0.387,
-        0.781
-      ],
-      "is_incident": "14/20",
-      "type_ok": "12/14",
-      "place_ok": "14/14",
-      "west_bank": "14/14"
-    },
-    "injury": {
-      "n": 20,
-      "precision": 0.75,
-      "ci95": [
-        0.531,
-        0.888
-      ],
-      "is_incident": "17/20",
-      "type_ok": "15/17",
-      "place_ok": "17/17",
-      "west_bank": "17/17"
-    },
-    "raid": {
-      "n": 20,
-      "precision": 0.9,
-      "ci95": [
-        0.699,
-        0.972
-      ],
-      "is_incident": "19/20",
-      "type_ok": "19/19",
-      "place_ok": "18/19",
-      "west_bank": "19/19"
-    },
-    "settler_attack": {
-      "n": 20,
-      "precision": 0.7,
-      "ci95": [
-        0.481,
-        0.855
-      ],
-      "is_incident": "15/20",
+      "is_incident": "15/15",
       "type_ok": "14/15",
       "place_ok": "15/15",
       "west_bank": "15/15"
     },
-    "shooting": {
-      "n": 20,
-      "precision": 0.85,
+    "closure": {
+      "n": 15,
+      "precision": 0.8,
       "ci95": [
-        0.64,
-        0.948
+        0.548,
+        0.93
       ],
-      "is_incident": "19/20",
-      "type_ok": "17/19",
-      "place_ok": "19/19",
-      "west_bank": "19/19"
+      "is_incident": "13/15",
+      "type_ok": "13/13",
+      "place_ok": "12/13",
+      "west_bank": "13/13"
+    },
+    "death": {
+      "n": 15,
+      "precision": 0.6,
+      "ci95": [
+        0.357,
+        0.802
+      ],
+      "is_incident": "9/15",
+      "type_ok": "9/9",
+      "place_ok": "9/9",
+      "west_bank": "9/9"
+    },
+    "demolition": {
+      "n": 15,
+      "precision": 0.667,
+      "ci95": [
+        0.417,
+        0.848
+      ],
+      "is_incident": "11/15",
+      "type_ok": "11/11",
+      "place_ok": "10/11",
+      "west_bank": "11/11"
+    },
+    "injury": {
+      "n": 15,
+      "precision": 0.8,
+      "ci95": [
+        0.548,
+        0.93
+      ],
+      "is_incident": "13/15",
+      "type_ok": "13/13",
+      "place_ok": "12/13",
+      "west_bank": "13/13"
+    },
+    "land_levelling": {
+      "n": 15,
+      "precision": 0.667,
+      "ci95": [
+        0.417,
+        0.848
+      ],
+      "is_incident": "13/15",
+      "type_ok": "11/13",
+      "place_ok": "12/13",
+      "west_bank": "13/13"
+    },
+    "raid": {
+      "n": 15,
+      "precision": 0.867,
+      "ci95": [
+        0.621,
+        0.963
+      ],
+      "is_incident": "15/15",
+      "type_ok": "14/15",
+      "place_ok": "14/15",
+      "west_bank": "15/15"
+    },
+    "settler_attack": {
+      "n": 15,
+      "precision": 0.8,
+      "ci95": [
+        0.548,
+        0.93
+      ],
+      "is_incident": "14/15",
+      "type_ok": "14/14",
+      "place_ok": "12/14",
+      "west_bank": "14/14"
+    },
+    "shooting": {
+      "n": 15,
+      "precision": 0.933,
+      "ci95": [
+        0.702,
+        0.988
+      ],
+      "is_incident": "15/15",
+      "type_ok": "15/15",
+      "place_ok": "14/15",
+      "west_bank": "15/15"
     },
     "siege": {
-      "n": 20,
-      "precision": 0.65,
+      "n": 15,
+      "precision": 0.6,
       "ci95": [
-        0.433,
-        0.819
+        0.357,
+        0.802
       ],
-      "is_incident": "14/20",
-      "type_ok": "13/14",
-      "place_ok": "14/14",
-      "west_bank": "14/14"
+      "is_incident": "12/15",
+      "type_ok": "11/12",
+      "place_ok": "10/12",
+      "west_bank": "12/12"
     }
   },
   "rejects": {
     "n": 40,
-    "were_really_incidents": 12,
-    "miss_rate": 0.3
+    "were_really_incidents": 7,
+    "miss_rate": 0.175
+  },
+  "adversarial": {
+    "all": {
+      "n": 48,
+      "precision": 0.5,
+      "ci95": [
+        0.364,
+        0.636
+      ],
+      "not_incident": 22,
+      "wrong_type": 0,
+      "wrong_place": 2
+    },
+    "by_stratum": {
+      "bulletin": {
+        "n": 1,
+        "precision": 1.0,
+        "ci95": [
+          0.207,
+          1.0
+        ],
+        "not_incident": 0,
+        "wrong_type": 0,
+        "wrong_place": 0
+      },
+      "funeral": {
+        "n": 12,
+        "precision": 0.333,
+        "ci95": [
+          0.138,
+          0.609
+        ],
+        "not_incident": 7,
+        "wrong_type": 0,
+        "wrong_place": 1
+      },
+      "long": {
+        "n": 5,
+        "precision": 0.0,
+        "ci95": [
+          0.0,
+          0.434
+        ],
+        "not_incident": 5,
+        "wrong_type": 0,
+        "wrong_place": 0
+      },
+      "notice": {
+        "n": 10,
+        "precision": 0.5,
+        "ci95": [
+          0.237,
+          0.763
+        ],
+        "not_incident": 5,
+        "wrong_type": 0,
+        "wrong_place": 0
+      },
+      "opinion": {
+        "n": 6,
+        "precision": 0.833,
+        "ci95": [
+          0.436,
+          0.97
+        ],
+        "not_incident": 0,
+        "wrong_type": 0,
+        "wrong_place": 1
+      },
+      "origin": {
+        "n": 10,
+        "precision": 0.8,
+        "ci95": [
+          0.49,
+          0.943
+        ],
+        "not_incident": 2,
+        "wrong_type": 0,
+        "wrong_place": 0
+      },
+      "past": {
+        "n": 4,
+        "precision": 0.25,
+        "ci95": [
+          0.046,
+          0.699
+        ],
+        "not_incident": 3,
+        "wrong_type": 0,
+        "wrong_place": 0
+      }
+    }
+  },
+  "all_served": {
+    "n": 198,
+    "precision": 0.702,
+    "ci95": [
+      0.635,
+      0.761
+    ],
+    "not_incident": 42,
+    "wrong_type": 5,
+    "wrong_place": 12
   },
   "gate": {
     "overall_required": 0.8,
     "per_type_required": 0.6,
     "min_n_to_gate": 5,
     "overall_pass": false,
-    "types_below_floor": [
-      "death"
-    ],
+    "types_below_floor": [],
     "types_unmeasured": [],
     "pass": false
   }
