@@ -39,7 +39,7 @@ import argparse
 import json
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -108,9 +108,42 @@ def _place_map(cur) -> dict[str, int]:
     return {k: pid for k, pid in cur.fetchall() if k}
 
 
+# THE CURSOR IS THIS IMPORTER'S OWN NEWEST ROW (audit F007). It was
+# MAX(observed_at) over every checkpoint_status row, and the crowd writes that
+# kind with now(): one crowd report moved the cursor past v1 rows not yet
+# imported, and they were skipped forever. Scoped to the canonical_key marker
+# only this importer writes (the same scope --full deletes by).
+CURSOR_SQL = """SELECT MAX(observed_at) FROM state_observation
+                 WHERE state_kind = %s AND attrs ? 'canonical_key'"""
+
+# v1 does not insert in message-date order across channels — a catch-up after
+# an outage writes messages dated hours earlier than rows already imported —
+# so a strict `timestamp > cursor` lost them. v1 is re-read OVERLAP behind the
+# cursor and a row already imported is recognised by its v1 identity and
+# skipped. 12 h covers the 8-hour outage the ledger records; a longer one is
+# what `--full` is for.
+OVERLAP = timedelta(hours=12)
+SEEN_SQL = """SELECT attrs->>'channel', attrs->>'msg_id', attrs->>'canonical_key',
+                     attrs->>'v1_direction', attrs->>'raw_line', observed_at
+                FROM state_observation
+               WHERE state_kind = %s AND attrs ? 'canonical_key' AND observed_at >= %s"""
+
+
+def _legacy_attrs(channel, msg_id, key, raw_line, v1status, v1dir) -> dict:
+    return {"channel": channel, "msg_id": msg_id, "canonical_key": key,
+            "raw_line": (raw_line or "")[:300], "v1_status": v1status,
+            "v1_direction": v1dir or None}
+
+
+def _v1_identity(channel, msg_id, key, v1dir, raw_line, observed) -> tuple:
+    """One v1 row, as the archival row stores it (see SEEN_SQL)."""
+    return (channel, None if msg_id is None else str(msg_id), key,
+            v1dir or None, (raw_line or "")[:300], observed)
+
+
 def import_updates(full: bool = False) -> dict:
     stats = {"read": 0, "legacy": 0, "flow": 0, "presence": 0, "absence": 0,
-             "questions": 0, "unparsed": 0, "skipped_no_place": 0,
+             "questions": 0, "unparsed": 0, "skipped_no_place": 0, "already_imported": 0,
              "unmatched_keys": set()}
     rows: list[tuple] = []
 
@@ -143,9 +176,13 @@ def import_updates(full: bool = False) -> dict:
                         (list((LEGACY_KIND, *ALL_KINDS)),))
             since = None
         else:
-            cur.execute("SELECT MAX(observed_at) FROM state_observation WHERE state_kind=%s",
-                        (LEGACY_KIND,))
+            cur.execute(CURSOR_SQL, (LEGACY_KIND,))
             since = cur.fetchone()[0]
+        seen: set[tuple] = set()
+        if since:
+            since = since - OVERLAP
+            cur.execute(SEEN_SQL, (LEGACY_KIND, since))
+            seen = {tuple(r) for r in cur.fetchall()}
 
         db = _ro()
         sql = ("SELECT canonical_key,status,status_raw,direction,source_channel,"
@@ -169,12 +206,13 @@ def import_updates(full: bool = False) -> dict:
                 continue
             if observed.tzinfo is None:
                 observed = observed.replace(tzinfo=timezone.utc)
+            if _v1_identity(channel, msg_id, key, v1dir, raw_line, observed) in seen:
+                stats["already_imported"] += 1
+                continue
 
             source_id = _ensure_channel(cur, channel or "unknown", cache)
             r = read(raw_line)
-            attrs = {"channel": channel, "msg_id": msg_id, "canonical_key": key,
-                     "raw_line": (raw_line or "")[:300], "v1_status": v1status,
-                     "v1_direction": v1dir or None}
+            attrs = _legacy_attrs(channel, msg_id, key, raw_line, v1status, v1dir)
 
             # 1. Archival row — v1's own verdict, every update, no exceptions.
             rows.append((pid, LEGACY_KIND, v1status, status_raw, observed, source_id,
