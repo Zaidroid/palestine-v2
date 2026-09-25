@@ -333,3 +333,136 @@ def test_clearing_scopes_to_the_adjacent_noun():
     # Verb after the noun still clears it; a lone withdrawal still opens.
     vals = {(f.axis, f.value) for f in read("تحت جسر اودلا الجيش انسحب").facts}
     assert ("absence", "idf") in vals and ("flow", "open") in vals
+
+
+# ── audit 2026-09-25 (plan 01-parser): inversions found by the audit ─────────
+#
+# Each input below was run through read() and came out with the opposite sign,
+# or as evidence when it is a question, a condition or a forecast. The helper
+# keeps the AXIS, because "army present" and "army absent" share the value
+# `idf` and facts_of() alone cannot tell them apart.
+
+def axes_of(text: str) -> str:
+    r = read(text)
+    if r.modality != "assertion":
+        return r.modality.upper()
+    return " ".join(f"{f.direction[:3]}:{f.axis}={f.value}"
+                    for f in sorted(r.facts, key=lambda x: (x.direction, x.axis, x.value)))
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER-01/02 (F001, F005) — relative/temporal ما is not a negator
+    ("بعد ما سكروا الحاجز", "bot:flow=closed"),
+    ("زي ما هو مسكر", "bot:flow=closed"),
+    ("حسب ما سمعت مسكر", "bot:flow=closed"),
+    ("بعد ما فتحوا الحاجز سالك", "bot:flow=open"),
+    # …while negating ما still negates
+    ("ما في جيش", "bot:absence=idf"),
+    ("النبي الياس ما زال مغلق", "bot:flow=closed"),
+])
+def test_parser_01_relative_ma_is_not_a_negator(text, expect):
+    assert axes_of(text) == expect
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER-03 (F002) — a negator fused to و is still a negator
+    ("حوارة ومش سالك", "bot:flow=closed"),
+    ("عطارة ومش سالك", "bot:flow=closed"),
+    ("سالك وما في جيش", "bot:absence=idf bot:flow=open"),
+    ("سالك وبدون جيش", "bot:absence=idf bot:flow=open"),
+])
+def test_parser_03_waw_fused_negator(text, expect):
+    assert axes_of(text) == expect
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER (F014, F023) — negated existentials in their common spellings
+    ("مافي جيش على حوارة", "bot:absence=idf"),
+    ("فش جيش", "bot:absence=idf"),
+    ("مفيش ازمه", "bot:flow=open"),
+    ("لا يوجد جيش على حاجز حوارة", "bot:absence=idf"),
+    ("لا يوجد ازمه على حوارة", "bot:flow=open"),
+    ("لا جيش ولا تفتيش", "bot:absence=idf bot:absence=inspection"),
+    ("لا ازمه ولا جيش", "bot:absence=idf bot:flow=open"),
+    ("الجيش مش موجود", "bot:absence=idf"),
+    # "لا" alone before a status adjective is still the discourse "no"
+    ("لا مسكر", "bot:flow=closed"),
+])
+def test_parser_negated_existentials(text, expect):
+    assert axes_of(text) == expect
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER (F022) — "…ولا لا" asks; "…ولا زحمة" reassures
+    ("حوارة سالك ولا لا", "QUESTION"),
+    ("حوارة سالك ولا زحمه", "bot:flow=open"),
+    ("بوابة بورين فاتحه ولا مسكره", "QUESTION"),
+])
+def test_parser_wala_question_vs_reassurance(text, expect):
+    assert axes_of(text) == expect
+
+
+@pytest.mark.parametrize("text", [
+    # PARSER (F006) — uncertainty and conditions are not reports
+    "ما بعرف اذا حوارة سالك",
+    "اذا فتح حوارة بنمشي",
+    "لو سكروا حوارة بنرجع",
+    # PARSER (F013, F024) — forecasts are not reports
+    "راح يسكروا الحاجز",
+    "رح يفتحوا حوارة",
+    "بدهم يسكروا حوارة",
+])
+def test_parser_conditions_and_forecasts_are_not_evidence(text):
+    r = read(text)
+    assert not r.is_evidence, (text, axes_of(text))
+
+
+def test_parser_a_condition_in_a_second_clause_keeps_the_first():
+    assert axes_of("حوارة سالك، اذا بدك تروح") == "bot:flow=open"
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER (F015, F021) — a cleared jam/closure is good news, not the jam
+    ("انتهت الازمه", "bot:flow=open"),
+    ("خلصت الازمه عالحاجز", "bot:flow=open"),
+    ("راحت الازمه", "bot:flow=open"),
+    ("رفعوا الاغلاق عن حوارة", "bot:flow=open"),
+    # the clearing verb AFTER the jam clears the army, not the jam
+    ("ازمه وراح الجيش", "bot:absence=idf bot:flow=congested"),
+])
+def test_parser_cleared_flow_noun(text, expect):
+    assert axes_of(text) == expect
+
+
+def test_parser_a_departure_with_no_obstacle_named_is_not_an_opening():
+    # F024: "الشباب تركوا المكان" — nobody said a road or a checkpoint cleared.
+    assert not read("الشباب تركوا المكان").is_evidence
+
+
+def test_parser_opened_fire_is_not_open():
+    # F019: "فتحوا النار" is gunfire at the checkpoint, never "the checkpoint opened".
+    assert axes_of("فتحوا النار على الشباب عند الحاجز") == "bot:presence=idf"
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER (F020) — closure forms that were missing from the lexicon
+    ("حوارة مسكرين", "bot:flow=closed"),
+    ("حوارة مقفول", "bot:flow=closed"),
+    ("الحاجزين مغلقان", "bot:flow=closed"),
+    ("ممنوع الدخول من حوارة", "inb:flow=closed"),
+    ("منعوا الخروج من حوارة", "out:flow=closed"),
+])
+def test_parser_missing_closure_forms(text, expect):
+    assert axes_of(text) == expect
+
+
+@pytest.mark.parametrize("text,expect", [
+    # PARSER (F003) — per-direction emoji lines; dict order must never decide
+    ("الداخل ✅ الخارج ❌", "inb:flow=open out:flow=closed"),
+    ("حوارة الداخل ✅ الخارج ❌", "inb:flow=open out:flow=closed"),
+    ("✅ الداخل ❌ الخارج", "inb:flow=open out:flow=closed"),
+    # conflicting emoji with no direction: the most restrictive, never dict order
+    ("حوارة ✅❌", "bot:flow=closed"),
+])
+def test_parser_emoji_per_direction(text, expect):
+    assert axes_of(text) == expect
