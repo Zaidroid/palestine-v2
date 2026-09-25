@@ -374,6 +374,23 @@ def can_i_travel(d: dict) -> str:
         out += (f" Warning: {w.get('name_en') or w.get('name')} was closed{when}, "
                 f"{w.get('off_route_m')} m off this route — it may not stop you, "
                 f"but know it{extra}.")
+    # P0-B.4: the rest of Tier 1 on the way — the same facts as the Arabic.
+    inc = d.get("incidents_near") or []
+    if inc:
+        out += (" Near the route in the last 3 hours: " + "; ".join(
+            f"{i['type'].replace('_', ' ')} in {i.get('name_en') or i['name']} "
+            f"({_age(i['age_minutes'])}, {i['off_route_m']} m off the route)" for i in inc[:3]) + ".")
+    rc = d.get("road_closures") or []
+    if rc:
+        out += (" Road closures reported near the route: " + "; ".join(
+            (r.get("name_en") or r["name"]) + (f" ({_age(r['age_minutes'])})" if r.get("age_minutes") is not None else "")
+            for r in rc[:3]) + ".")
+    for end in ("origin", "destination"):
+        obs = [o for o in (d.get("obstacles_at_ends") or []) if o["end"] == end]
+        if obs:
+            o = obs[0]
+            out += (f" Near the {end}: an OCHA-recorded {str(o['type']).lower()} ({o['name']}, "
+                    f"last verified {o['verified']}) {o['metres']} m away — it may block your way out.")
     # WHO WAS SEEN ON THE WAY — searching first (P1-A.2). The route carried
     # these cautions in the payload and neither answer said them.
     seen = seen_on_route(d.get("cautions"))

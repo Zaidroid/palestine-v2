@@ -529,3 +529,11 @@ live payload and fixed: 28 localities v1 had filed on a governorate or a same-na
 "رام الله") re-linked to their own Palestine Open Maps rows (`ops/relink_depopulated_localities.py --apply`, prior place_id
 kept) → Ramle subdistrict 70 → 77, unclassified group 32 → 4; the payload's event_summary no longer offers a sum of 1945
 populations (route change → next API restart).
+2026-09-25 22:05 UTC · P0-B.4 + P0-B.5 route cautions from the rest of Tier 1 + the audit's four cases · done on master,
+waits for the API restart · proof: the route now also reads (a) believed incidents placed on a NAMED place within 2 km in
+the last 3 h (closure/siege/raid/settler attack/shooting) — live on dev: Ramallah→Nablus "قرب الطريق بآخر 3 ساعات: اقتحام
+ببيتا (قبل ساعة، 844 متر عن المسار)" / "raid in Beita (1h ago, 844 m off the route)"; (b) road_closure readings within 3
+km (none current today); (c) OCHA's 431 recorded obstacles (v1's restrictions.geojson, verified 2025-12) — measured: 22 sit
+within 200 m of Road 60 and almost all block a VILLAGE's access to it, so they are named only within 300 m of the origin or
+destination. All three are cautions, never blockers. tests/test_route_audit_cases.py (7): 16:47, 16:24, 15:27 and 09:00
+replayed with the audit's numbers — none reads open, the 09:00 decayed row does not block.

@@ -44,12 +44,17 @@ Being wrong toward "you should check" costs a phone call; being wrong toward
 from __future__ import annotations
 
 import os
+import json
+import math
 import re
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 import httpx
 
 from resolve.db import connect, env_value
+
+ROOT = Path(__file__).resolve().parent.parent
 
 VALHALLA = env_value("VALHALLA_URL", "http://wb-valhalla:8002")
 
@@ -172,6 +177,95 @@ SELECT place_id, state_kind, value, age_minutes
    AND value <> 'unknown'
 """
 
+# ── P0-B.4: the rest of Tier 1 on the way ────────────────────────────────────
+# The route read checkpoints only. Two more things Tier 1 knows are cautions a
+# traveller needs, NEVER blockers (a raid 1 km off the road an hour ago says
+# nothing certain about the road now):
+#   * a recent incident near the line — closure, siege, raid, settler attack or
+#     shooting, believed, within INCIDENT_METRES and INCIDENT_HOURS, and ONLY
+#     where the event is placed on a NAMED place: a governorate-level "siege of
+#     Nablus" would otherwise taint every Nablus route;
+#   * a road_closure reading (locality-level) within NEAR_MISS_METRES.
+INCIDENT_METRES = 2000
+INCIDENT_HOURS = 3
+INCIDENT_TYPES = ("closure", "siege", "raid", "settler_attack", "shooting")
+
+INCIDENTS_NEAR_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
+SELECT e.event_id, e.event_type, p.name_ar, p.name_en,
+       round(ST_Distance(e.geom, line.g)::numeric)                       AS off_route_m,
+       ST_LineLocatePoint(line.m, e.geom::geometry)                      AS along,
+       extract(epoch FROM now() - e.occurred_at) / 60                   AS age_minutes,
+       e.independent_sources
+  FROM event e CROSS JOIN line
+  LEFT JOIN place p ON p.place_id = e.place_id
+ WHERE e.status = 'believed'
+   AND e.event_type = ANY(%(types)s)
+   AND e.attrs->>'place_precision' = 'named'
+   AND e.occurred_at > now() - make_interval(hours => %(hours)s)
+   AND e.occurred_at <= now() + interval '10 minutes'
+   AND e.geom IS NOT NULL
+   AND ST_DWithin(e.geom, line.g, %(near)s)
+ ORDER BY e.occurred_at DESC
+ LIMIT 12
+"""
+
+ROAD_CLOSURE_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
+SELECT p.place_id, p.name_ar, p.name_en, s.value, s.age_minutes, s.independent_sources,
+       round(ST_Distance(p.centroid, line.g)::numeric)                   AS off_route_m,
+       ST_LineLocatePoint(line.m, p.centroid::geometry)                  AS along
+  FROM state_serving s JOIN place p ON p.place_id = s.place_id CROSS JOIN line
+ WHERE s.state_kind = 'road_closure' AND s.value NOT IN ('unknown', 'open')
+   AND p.centroid IS NOT NULL
+   AND ST_DWithin(p.centroid, line.g, %(near)s)
+ ORDER BY s.age_minutes
+ LIMIT 8
+"""
+
+# OCHA's recorded physical obstacles (earthmounds, closed road gates, road
+# blocks: 431 points, last verified 2025-12; copied from v1's restrictions
+# file). MEASURED on Ramallah->Nablus: 22 sit within 200 m of the route and
+# almost all block a VILLAGE's access to Road 60, not Road 60 itself, so listing
+# them along the line would be noise. They matter at the ENDS: leaving from a
+# village whose road out is shut is the traveller's problem. Named within
+# OBSTACLE_ENDS_METRES of the origin or the destination only.
+OBSTACLES_FILE = ROOT / "data" / "restrictions" / "ocha-closure-points-2025-12.geojson"
+OBSTACLE_ENDS_METRES = 300
+_OBSTACLES: list | None = None
+
+
+def _obstacles() -> list[dict]:
+    global _OBSTACLES
+    if _OBSTACLES is None:
+        try:
+            feats = json.loads(OBSTACLES_FILE.read_text())["features"]
+            _OBSTACLES = [{"name": f["properties"].get("name"),
+                           "type": f["properties"].get("closure_type"),
+                           "verified": f["properties"].get("last_verified"),
+                           "lon": f["geometry"]["coordinates"][0],
+                           "lat": f["geometry"]["coordinates"][1]} for f in feats]
+        except Exception:                                      # noqa: BLE001
+            _OBSTACLES = []
+    return _OBSTACLES
+
+
+def _metres(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    kx = 111320 * math.cos(math.radians((lat1 + lat2) / 2))
+    return math.hypot((lon1 - lon2) * kx, (lat1 - lat2) * 110540)
+
+
+def obstacles_at_ends(origin_lonlat: tuple[float, float],
+                      dest_lonlat: tuple[float, float]) -> list[dict]:
+    out = []
+    for end, (lon, lat) in (("origin", origin_lonlat), ("destination", dest_lonlat)):
+        for o in _obstacles():
+            m = _metres(lat, lon, o["lat"], o["lon"])
+            if m <= OBSTACLE_ENDS_METRES:
+                out.append({**o, "end": end, "metres": int(m)})
+    return sorted(out, key=lambda o: o["metres"])
+
+
 # WHICH TOWNS THE ROUTE ACTUALLY GOES THROUGH.
 #
 # The external pass asked for this and the reason is sound: a verdict about a
@@ -278,6 +372,10 @@ class Corridor:
     # merged into `blocked_at` (they are not ON the route) or `near_misses`
     # (which is every closure/congestion along the whole line).
     exit_closures: list = field(default_factory=list)
+    # P0-B.4: cautions from the rest of Tier 1, never blockers.
+    incidents_near: list = field(default_factory=list)
+    road_closures: list = field(default_factory=list)
+    obstacles_at_ends: list = field(default_factory=list)
     # Why an otherwise-open route reads `unverified`, structured for the
     # renderers: blind_stretch / exit_closure records.
     doubts: list = field(default_factory=list)
@@ -560,6 +658,12 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         cur.execute(NEAR_MISS_SQL, {"wkt": wkt, "buf": CORRIDOR_METRES,
                                     "near": NEAR_MISS_METRES})
         near_rows = cur.fetchall()
+        cur.execute(INCIDENTS_NEAR_SQL, {"wkt": wkt, "near": INCIDENT_METRES,
+                                         "hours": INCIDENT_HOURS,
+                                         "types": list(INCIDENT_TYPES)})
+        incident_rows = cur.fetchall()
+        cur.execute(ROAD_CLOSURE_SQL, {"wkt": wkt, "near": NEAR_MISS_METRES})
+        road_rows = cur.fetchall()
 
     # One place can appear several times (per direction, and once per reading).
     # Keep the most severe, then the best-corroborated, then the FRESHEST: on
@@ -751,6 +855,16 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                   for c in cps for p in c.presence],
         near_misses=near_misses,
         exit_closures=_closures_at_ends(near_misses, dist, cap=None),
+        incidents_near=[{"event_id": r[0], "type": r[1], "name": r[2] or r[3],
+                         "name_en": r[3], "off_route_m": int(r[4]),
+                         "along": round(float(r[5]), 3),
+                         "age_minutes": max(0, int(r[6])), "independent_sources": r[7]}
+                        for r in incident_rows],
+        road_closures=[{"place_id": r[0], "name": r[1] or r[2], "name_en": r[2],
+                        "value": r[3], "age_minutes": float(r[4]) if r[4] is not None else None,
+                        "independent_sources": r[5], "off_route_m": int(r[6]),
+                        "along": round(float(r[7]), 3)} for r in road_rows],
+        obstacles_at_ends=obstacles_at_ends(pts[0], pts[-1]),
         doubts=(doubt_records(coverage, near_misses, dist)
                 if verdict in ("unverified", "slow") else []),
         checkpoints=cps, shape=leg["shape"], is_alternate=is_alternate)

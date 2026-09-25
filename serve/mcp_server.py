@@ -1115,6 +1115,33 @@ def stream_info() -> dict:
             **d}
 
 
+_OBSTACLE_AR = {"Earthmound": "سدّة ترابية", "Closed Road Gate": "بوابة طريق مسكّرة",
+                "Road Block": "حاجز طريق"}
+
+
+def _tier1_cautions_ar(best: dict, origin: str, destination: str) -> str:
+    """P0-B.4: what the rest of Tier 1 knows on the way — never a blocker."""
+    out = ""
+    inc = best.get("incidents_near") or []
+    if inc:
+        out += (" قرب الطريق بآخر 3 ساعات: " + "، ".join(
+            f"{_ar_event(i['type'])} ب{i['name']} ({_age_ar(i['age_minutes'])}، "
+            f"{i['off_route_m']} متر عن المسار)" for i in inc[:3]) + ".")
+    rc = best.get("road_closures") or []
+    if rc:
+        out += (" إغلاق طرق مبلّغ عنه قرب المسار: " + "، ".join(
+            f"{r['name']}" + (f" ({_age_ar(int(r['age_minutes']))})" if r.get("age_minutes") is not None else "")
+            for r in rc[:3]) + ".")
+    for end, place in (("origin", origin), ("destination", destination)):
+        obs = [o for o in (best.get("obstacles_at_ends") or []) if o["end"] == end]
+        if obs:
+            o = obs[0]
+            out += (f" قرب {'نقطة الانطلاق من' if end == 'origin' else 'الوصول لـ'}{place}: "
+                    f"{_OBSTACLE_AR.get(o['type'], o['type'])} سجّلتها أوتشا ({o['name']}، "
+                    f"آخر تحقق {o['verified']}) على بعد {o['metres']} متر — ممكن تكون مسكّرة طريقك.")
+    return out
+
+
 def can_i_travel(origin: str, destination: str) -> dict:
     """Route-level answer: can I get from A to B right now, and if not, how."""
     d = api("/v2/route/between", origin=origin, destination=destination, alternates=2)
@@ -1235,7 +1262,8 @@ def can_i_travel(origin: str, destination: str) -> dict:
 
     return {"answer": f"{say}{detail}.{doubt_note} "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
-                      f"{fresh_note}{pass_note}{cover_note}{near_note}{seen_note}",
+                      f"{fresh_note}{pass_note}{cover_note}{near_note}{seen_note}"
+                      f"{_tier1_cautions_ar(best, origin, destination)}",
             "verdict": best["verdict"],
             "freshest_reading_minutes": freshest,
             "duration_minutes": best["duration_minutes"],
@@ -1270,6 +1298,12 @@ def can_i_travel(origin: str, destination: str) -> dict:
             # in full: the audit's finding was that these decided the journey
             # and the corridor could not see them.
             "exit_closures": best.get("exit_closures") or [],
+            # P0-B.4: cautions from the rest of Tier 1 — incidents placed on a
+            # named place within 2 km in the last 3 h, road-closure readings,
+            # and OCHA-recorded obstacles at the two ends. Never blockers.
+            "incidents_near": best.get("incidents_near") or [],
+            "road_closures": best.get("road_closures") or [],
+            "obstacles_at_ends": best.get("obstacles_at_ends") or [],
             "doubts": best.get("doubts") or [],
             # Each alternate carries its OWN coverage: the primary here is blind
             # for 26.8 km and the alternate for 52 km, so "how much is known"
