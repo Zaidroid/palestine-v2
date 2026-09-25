@@ -50,6 +50,17 @@
 > **Areas 13 learning + 15 webapp landed (`908d08d`):** the web pages (`serve/webapp/`) and the audit path are served by the
 > API — they go live with the next `restart palestine-v2-api`; the learning jobs run the tree at their next tick.
 >
+> **P1-A.1b (17:40 UTC) — migration 081, palhub's names on checkpoint rows:** the loader guard is live at its next tick
+> (a palhub name it cannot put on a checkpoint/crossing/road row is no longer written anywhere — it is counted and printed
+> as unresolved), so until 081 is applied ~54 palhub points go unwritten and the towns they used to land on decay out of
+> `checkpoint_serving` (that is the honest state: those rows were towns listed as checkpoints). **Apply it:**
+> ```
+> cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh
+> ```
+> Rollback is exact and written in the file's header. After it, the next palhub tick (≤ 5 min) puts 174 of 191 palhub names
+> on checkpoint rows; `PALESTINE_API=http://127.0.0.1:7871 .venv/bin/python -m pytest -q tests/test_palhub_names.py`
+> should read 5 passed, and `checkpoint_serving` should show 0 rows whose place_kind is not checkpoint/crossing/road.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

@@ -52,6 +52,7 @@ sys.path.insert(0, str(ROOT))
 from cascade.palhub_roads import is_bulletin, parse       # noqa: E402
 from resolve.belief import refresh as belief_refresh      # noqa: E402
 from resolve.db import connect                            # noqa: E402
+from resolve.arabic import normalize                      # noqa: E402
 from resolve.geo import _Ambiguous, resolve_for_state_kind, resolve_place  # noqa: E402
 
 SOURCE_KEY = "tg_palhubapproad"
@@ -148,7 +149,63 @@ def _area_map(cur) -> dict[str, str]:
     return out
 
 
-def _resolve(conn, name, admin2, cache=None):
+# A CHECKPOINT READING LIVES ON A CHECKPOINT ROW (migration 081, P1-A.1b).
+#
+# The fallback below used to be the general resolver, which answered "بوابة
+# دير دبوان" with Dayr Dibwan the VILLAGE at 0.89 when no checkpoint row bore
+# that name. The reading was stored, believed, and could never meet a channel's
+# report of the same gate (the 035 bug class); 54 of palhub's ~190 names went
+# that way, and once the earn-out made them assertions, checkpoint_serving
+# listed towns as checkpoints. Now: a place is accepted only if it IS a
+# checkpoint or crossing; a name the gazetteer cannot put on one is counted
+# and printed as unresolved, which is honest and visible. Palhub's exact
+# wording is declared on the row it means (`place.attrs.palhub_names`, 081),
+# and that declaration is consulted before any resolver.
+# 'road' is v1's kind for a junction, a bridge or an underpass the channels
+# report like a checkpoint (اشارات زعترة, جسر حلحول); those rows are served
+# and corroborated exactly like checkpoints, so a palhub reading may land there.
+ACCEPTED_KINDS = ("checkpoint", "crossing", "road")
+
+DECLARED_SQL = """
+SELECT n, p.place_id
+  FROM place p, jsonb_array_elements_text(p.attrs->'palhub_names') n
+ WHERE p.kind = ANY(%s) AND p.servable AND p.merged_into IS NULL
+   AND p.attrs ? 'palhub_names'
+"""
+
+
+class _Declared:
+    """The row palhub's exact wording was declared to mean."""
+    __slots__ = ("place_id", "kind", "confidence", "method")
+
+    def __init__(self, place_id: int):
+        self.place_id = place_id
+        self.kind = "checkpoint"
+        self.confidence = 1.0
+        self.method = "declared"
+
+
+def _declared_names(cur) -> dict[str, int]:
+    """normalize(name) -> place_id, read once per run: every accepted row's own
+    name where that name is unique among accepted rows (the kind-aware
+    resolver sees only kind='checkpoint', so 'جسر اودلا' the bridge and
+    'اشارات شيلو' the junction were invisible to it), then palhub's declared
+    wording (`attrs.palhub_names`, migration 081), which wins."""
+    cur.execute("SELECT place_id, name_ar, name_en FROM place WHERE kind = ANY(%s) "
+                "AND servable AND merged_into IS NULL", (list(ACCEPTED_KINDS),))
+    seen: dict[str, set[int]] = {}
+    for pid, ar, en in cur.fetchall():
+        for nm in (ar, en):
+            k = normalize(nm) if nm else ""
+            if k:
+                seen.setdefault(k, set()).add(pid)
+    out = {k: next(iter(v)) for k, v in seen.items() if len(v) == 1}
+    cur.execute(DECLARED_SQL, (list(ACCEPTED_KINDS),))
+    out.update({normalize(n): pid for n, pid in cur.fetchall()})
+    return out
+
+
+def _resolve(conn, name, admin2, cache=None, declared=None):
     """Checkpoint place for a palhub name, preferring one inside the area.
 
     Cached per (name, area). Palhub restates the same 184 names every two
@@ -159,23 +216,40 @@ def _resolve(conn, name, admin2, cache=None):
     if cache is not None:
         ck = (name, admin2)
         if ck not in cache:
-            cache[ck] = _resolve_uncached(conn, name, admin2)
+            cache[ck] = _resolve_uncached(conn, name, admin2, declared)
         return cache[ck]
-    return _resolve_uncached(conn, name, admin2)
+    return _resolve_uncached(conn, name, admin2, declared)
 
 
-def _resolve_uncached(conn, name: str, admin2: str | None):
+def _on_a_checkpoint(r) -> bool:
+    return (r is not None and getattr(r, "confidence", 0) >= 0.55
+            and getattr(r, "kind", None) in ACCEPTED_KINDS)
+
+
+def _resolve_uncached(conn, name: str, admin2: str | None, declared=None):
+    pid = (declared or {}).get(normalize(name))
+    if pid:
+        return _Declared(pid)
     try:
         r = resolve_for_state_kind(conn, name, STATE_KIND)
-        if r and getattr(r, "confidence", 0) >= 0.55:
+        if _on_a_checkpoint(r):
             return r
-    except _Ambiguous:
-        pass                       # the area context below may settle it
+    except _Ambiguous as e:
+        # Two checkpoint rows carry the name; the bulletin's area settles it
+        # when exactly one of them sits in that governorate.
+        if admin2:
+            ids = [pid for pid, _ in e.options]
+            with conn.cursor() as cur:
+                cur.execute("SELECT place_id FROM place WHERE place_id = ANY(%s) "
+                            "AND admin2_pcode = %s", (ids, admin2))
+                inside = [row[0] for row in cur.fetchall()]
+            if len(inside) == 1:
+                return _Declared(inside[0])
     ctx = {"prefer_kind": "checkpoint"}
     if admin2:
         ctx["admin2_pcode"] = admin2
     r = resolve_place(name, ctx, conn=conn, learn=False)
-    return r if r and r.confidence >= 0.55 else None
+    return r if _on_a_checkpoint(r) else None
 
 
 LAST_SQL = """
@@ -219,6 +293,7 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
     with connect() as conn, conn.cursor() as cur:
         source_id = _ensure_source(cur)
         areas = _area_map(cur)
+        declared = _declared_names(cur)
 
         # What this source has already said, so an unchanged restatement can be
         # skipped without another query per checkpoint.
@@ -258,7 +333,7 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
 
             for rd in b.readings:
                 stats["readings"] += 1
-                place = _resolve(conn, rd.name, admin2, place_cache)
+                place = _resolve(conn, rd.name, admin2, place_cache, declared)
                 if place is None:
                     stats["unresolved"] += 1
                     unresolved[rd.name] = unresolved.get(rd.name, 0) + 1

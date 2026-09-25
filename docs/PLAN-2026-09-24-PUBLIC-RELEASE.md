@@ -440,3 +440,16 @@ quarantined); `checkpoint_serving` known 95 of 251 (0.38) → **167 of 287 (0.58
 is the 49 palhub places that resolve to non-servable rows (alias/promotion backfill, P1-A.1 second half). The watchdog now
 records known-fraction + direction share every run (`ops_heartbeat` 'coverage', `ops/coverage.ndjson`). Watch: palhub's
 closed agrees with channels 0.65 (control 0.78) — the weekly measure-review keeps measuring every palhub row by class.
+2026-09-25 17:40 UTC · P1-A.1b palhub names land on CHECKPOINT rows (migration 081 + loader guard) · partial (waits
+for `db/migrate.sh`) · proof: the latest bulletins name 191 points; before: 113 on a checkpoint row, 25 unresolved,
+54 on the TOWN the point is named after (the loader's fallback was the general resolver — the 035 bug class), and since
+decision A those town rows carried assertions: at 17:00 `checkpoint_serving` listed 55 towns/roads/a fuel station as
+checkpoints, 47 of its 177 "known" rows (the honest known fraction was 130/237 = 0.55, not 0.58). Now: the loader accepts
+only checkpoint/crossing/road rows (a name it cannot put on one is counted + printed as unresolved), reads palhub's exact
+wording declared on the row it means (`place.attrs.palhub_names`) and every accepted row's own name first; 081 declares 27
+names on existing rows (junctions, bridges, the gate at the town's entrance), creates 34 checkpoint rows anchored at the
+town centroid (`geo_precision approx-anchor`) + checkpoint 300 by hand, moves the last 2 days of readings (6,310 rows,
+inside the uncompressed chunks), re-quarantines the 2 that had nowhere to go, drops the towns' beliefs. Rolled-back dry
+run with a belief rebuild: 273 rows, 0 off-kind, known 161 (0.59) at once; with the new loader 174 of 191 names resolve,
+17 stay unresolved on purpose (no row, no anchor — listed in the migration). Tests: `tests/test_palhub_names.py` (5; four
+skip until 081). Zaid's hand: `cd ~/palestine-v2 && db/migrate.sh` (HANDS-NEEDED top).
