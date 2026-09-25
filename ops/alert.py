@@ -189,23 +189,70 @@ def _job_of(unit: str) -> str | None:
     return None
 
 
-def sweep(last_ok: dict[str, str]) -> list[str]:
-    """One-time reconciliation: resolve every open unit alarm whose job has a
-    heartbeat `last_ok` newer than the alarm (ISO timestamps). Silent — 600
-    recoveries are a ledger fact, not 600 notifications."""
+def _job_for(unit: str, jobs: dict[str, str]) -> str | None:
+    """The heartbeat job a unit reports as: exact name, else the one job whose
+    name contains it (palestine-v2-poller.service -> telegram-poller,
+    -external -> ingest-external, -crowd -> crowd-refresh)."""
+    short = _job_of(unit)
+    if not short:
+        return None
+    if short in jobs:
+        return short
+    hits = [j for j in jobs if short in j]
+    return hits[0] if len(hits) == 1 else None
+
+
+def sweep(last_ok: dict[str, str], retired: dict[str, str] | None = None,
+          systemd_ok_after=None) -> list[str]:
+    """One-time reconciliation of the OnFailure pile: resolve every open unit
+    alarm whose job has since run ok (heartbeat `last_ok` newer than the
+    alarm), whose job was retired, or — for a unit with no heartbeat — whose
+    latest systemd run ended in success after the alarm (`systemd_ok_after(unit,
+    ts) -> bool`). Silent: 600 recoveries are a ledger fact, not 600 notifications."""
+    retired = retired or {}
     done: list[str] = []
     newest: dict[str, str] = {}
     for r in open_alerts():
         u = r.get("unit") or ""
         if u:
             newest[u] = max(newest.get(u, ""), r["ts"])
+    jobs = {**last_ok, **retired}
     for unit, ts in sorted(newest.items()):
-        job = _job_of(unit)
-        ok = last_ok.get(job or "")
-        if ok and ok > ts:
-            resolve(unit, f"sweep: the job ran ok at {ok[:19]}Z, after this alarm", notify=False)
+        job = _job_for(unit, jobs)
+        why = None
+        if job and job in retired:
+            why = f"sweep: the job {job} was retired on {retired[job][:10]}"
+        elif job and last_ok.get(job, "") > ts:
+            why = f"sweep: the job ran ok at {last_ok[job][:19]}Z, after this alarm"
+        elif systemd_ok_after is not None and _job_of(unit) and systemd_ok_after(unit, ts):
+            why = "sweep: systemd's latest run of the unit ended in success after this alarm"
+        if why:
+            resolve(unit, why, notify=False)
             done.append(unit)
     return done
+
+
+def _systemd_ok_after(unit: str, ts: str) -> bool:
+    """True when systemd's latest run of `unit` ended in success after `ts`."""
+    try:
+        cp = subprocess.run(["systemctl", "show", unit, "-p", "Result,ExecMainStartTimestamp,ExecMainExitTimestamp"],
+                            capture_output=True, text=True, timeout=10)
+    except Exception:
+        return False
+    props = dict(line.split("=", 1) for line in cp.stdout.splitlines() if "=" in line)
+    if props.get("Result") != "success":
+        return False
+    from datetime import datetime as _dt
+    for key in ("ExecMainExitTimestamp", "ExecMainStartTimestamp"):
+        raw = props.get(key, "").strip()
+        if not raw:
+            continue
+        try:
+            when = _dt.strptime(raw, "%a %Y-%m-%d %H:%M:%S %Z").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        return when.isoformat() > ts
+    return False
 
 
 def _read_log() -> tuple[list[dict], int]:
@@ -285,9 +332,11 @@ def main() -> int:
     if a.sweep:
         from resolve.db import connect
         with connect() as conn, conn.cursor() as cur:
-            cur.execute("SELECT name, last_ok FROM ops_heartbeat WHERE last_ok IS NOT NULL")
-            last_ok = {n: t.isoformat() for n, t in cur.fetchall()}
-        done = sweep(last_ok)
+            cur.execute("SELECT name, last_ok, retired_at FROM ops_heartbeat")
+            rows = cur.fetchall()
+        last_ok = {n: t.isoformat() for n, t, _ in rows if t}
+        retired = {n: r.isoformat() for n, _, r in rows if r}
+        done = sweep(last_ok, retired, _systemd_ok_after)
         print(f"resolved {len(done)} unit alarm(s)" + (": " + ", ".join(done) if done else ""))
         return 0
 

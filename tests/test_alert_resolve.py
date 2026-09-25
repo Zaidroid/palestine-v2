@@ -38,10 +38,21 @@ def test_sweep_resolves_only_alarms_older_than_the_last_ok(tmp_path, monkeypatch
         {"ts": "2026-09-20T02:00:00+00:00", "unit": "palestine-v2-fuel.service"},
         {"ts": "2026-09-25T02:33:57+00:00", "unit": "palestine-v2-backup.service"},
         {"ts": "2026-09-25T03:00:00+00:00", "unit": "watchdog:feed:checkpoint_status"}])
-    done = A.sweep({"fuel": "2026-09-24T00:00:00+00:00", "backup": "2026-09-24T02:31:50+00:00"})
-    assert done == ["palestine-v2-fuel.service"]
+    done = A.sweep({"ingest-fuel": "2026-09-24T00:00:00+00:00", "backup": "2026-09-24T02:31:50+00:00"})
+    assert done == ["palestine-v2-fuel.service"]          # matched by containment
     left = {r["unit"] for r in A.open_alerts()}
     assert left == {"palestine-v2-backup.service", "watchdog:feed:checkpoint_status"}
+
+
+def test_sweep_uses_retirement_and_systemd_when_no_heartbeat_speaks(tmp_path, monkeypatch):
+    _ledger(tmp_path, monkeypatch, [
+        {"ts": "2026-08-07T20:06:41+00:00", "unit": "palestine-v2-fuel.service"},
+        {"ts": "2026-09-01T00:00:00+00:00", "unit": "palestine-v2-external.service"},
+        {"ts": "2026-09-25T03:00:00+00:00", "unit": "palestine-v2-api.service"}])
+    done = A.sweep({}, {"ingest-fuel": "2026-09-23T07:40:12+00:00"},
+                   systemd_ok_after=lambda unit, ts: unit == "palestine-v2-external.service")
+    assert done == ["palestine-v2-external.service", "palestine-v2-fuel.service"]
+    assert {r["unit"] for r in A.open_alerts()} == {"palestine-v2-api.service"}
 
 
 def test_wrapper_resolves_on_success_only():
