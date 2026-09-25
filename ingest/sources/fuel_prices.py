@@ -54,7 +54,8 @@ BRONZE_KEY = "fuel_prices_web"
 
 # Verified reachable 2026-09-23 (HTTP 200, items present). qudsn and palinfo
 # are read by rss_news already; they are read here too because this reader
-# needs the article, not the summary.
+# needs the article, not the summary. Both readings of one of them are ONE
+# independence unit — see newsroom_units.
 FEEDS: list[str] = [
     "https://www.raya.ps/rss",
     "https://www.alquds.com/rss",
@@ -74,6 +75,9 @@ CLAIM_TOPIC = r"(بنزين|سولار|السولار|الكاز|المحروق�
 MAX_ARTICLES_PER_RUN = 25
 RETRY_EMPTY_EVERY = timedelta(hours=2)
 RETRY_EMPTY_FOR = timedelta(days=2)
+# The collector's cadence (ops/ingest-external.sh, every 15 minutes). A retry
+# is due only in the first tick of each RETRY_EMPTY_EVERY slot — see _due.
+TICK = timedelta(minutes=15)
 CLAIM_LOOKBACK = timedelta(days=3)
 
 
@@ -95,6 +99,10 @@ def article_text(page: str) -> str:
     page = _DROP.sub(" ", page)
     title = re.search(r"<title[^>]*>(.*?)</title>", page, re.S | re.I)
     parts = [htmllib.unescape(_TAG.sub(" ", title.group(1))).strip()] if title else []
+    # Asked once per page. It sat inside the row loop, and with no shekel
+    # header on the page the pattern walks tags from every <td> to the end of
+    # the document — one full-page walk per numeric two-cell row.
+    shekel_table = None
     for tag, inner in _BLOCK.findall(page):
         if tag.lower() == "tr":
             # A price table row ("بنزين 95 | 7.99") becomes "بنزين 95: 7.99
@@ -105,9 +113,11 @@ def article_text(page: str) -> str:
             cells = [re.sub(r"\s+", " ", htmllib.unescape(_TAG.sub(" ", c))).strip()
                      for c in _CELL.findall(inner)]
             cells = [c for c in cells if c]
-            if len(cells) == 2 and re.fullmatch(r"\d{1,3}(?:[.,]\d{1,2})?", cells[1]) \
-                    and _SHEKEL_TABLE.search(page):
-                parts.append(f"{cells[0]}: {cells[1]} شيكل")
+            if len(cells) == 2 and re.fullmatch(r"\d{1,3}(?:[.,]\d{1,2})?", cells[1]):
+                if shekel_table is None:
+                    shekel_table = bool(_SHEKEL_TABLE.search(page))
+                if shekel_table:
+                    parts.append(f"{cells[0]}: {cells[1]} شيكل")
             continue
         t = re.sub(r"\s+", " ", htmllib.unescape(_TAG.sub(" ", inner))).strip()
         if t:
@@ -132,6 +142,10 @@ def published_from_page(page: str) -> datetime | None:
 
 
 # ── one transcription ────────────────────────────────────────────────────────
+
+def _domain(url: str) -> str:
+    return urlparse(url).netloc.lower().removeprefix("www.")
+
 
 def _row(ann: fuel_price.Announcement, *, outlet: str, unit: str, text: str,
          url: str | None, published: datetime | None, source_id: int | None = None,
@@ -173,7 +187,7 @@ def read_article(client: httpx.Client, url: str, published: datetime | None) -> 
     text = article_text(page)
     local_day = published.astimezone(timezone(timedelta(hours=3))).date() if published else None
     ann = fuel_price.parse(text, local_day)
-    domain = urlparse(url).netloc.lower().removeprefix("www.")
+    domain = _domain(url)
     return _row(ann, outlet=domain, unit=f"web:{domain}", text=text, url=url,
                 published=published, bronze_ref=ref.ref)
 
@@ -215,16 +229,50 @@ def candidate_items(client: httpx.Client, stats: dict) -> list[tuple[str, dateti
 
 def _due(cur, url: str, now: datetime) -> bool:
     """Fetch a page once per reader version. A page that yielded no list yet is
-    retried every two hours for two days (headline first, list after)."""
-    cur.execute("""SELECT min(fetched_at), max(fetched_at), bool_or(verdict = 'prices')
+    retried every two hours for two days (headline first, list after).
+
+    THE RETRY WAS EVERY FIFTEEN MINUTES, NOT EVERY TWO HOURS. It asked "has
+    RETRY_EMPTY_EVERY passed since max(fetched_at)?" — but a retried page whose
+    text has not changed hashes the same, its INSERT hits ON CONFLICT DO
+    NOTHING, and max(fetched_at) never moves. So from hour two to day two
+    every tick refetched every empty page: ~184 fetches of an outlet's page
+    instead of 24, each one counted against MAX_ARTICLES_PER_RUN, where a
+    handful of them could crowd out a genuinely new list. Nothing records an
+    attempt that changed nothing (fuel_price_report is one row per reading),
+    so the schedule is read from the first fetch alone: a retry is due in the
+    first tick of each two-hour slot after it, which needs no memory of the
+    attempts in between.
+    """
+    cur.execute("""SELECT min(fetched_at), bool_or(verdict = 'prices')
                      FROM fuel_price_report WHERE url = %s AND reader_version = %s""",
                 (url, fuel_price.VERSION))
-    first, last, got = cur.fetchone()
+    first, got = cur.fetchone()
     if first is None:
         return True
     if got:
         return False
-    return now - first < RETRY_EMPTY_FOR and now - last >= RETRY_EMPTY_EVERY
+    elapsed = now - first
+    return (RETRY_EMPTY_EVERY <= elapsed < RETRY_EMPTY_FOR
+            and elapsed % RETRY_EMPTY_EVERY < TICK)
+
+
+def newsroom_units() -> dict[str, str]:
+    """Claim source key -> the web unit of the SAME newsroom.
+
+    ONE OUTLET CORROBORATED ITSELF. qudsn.co and palinfo.com are read twice:
+    here as web pages (unit `web:qudsn.co`) and by rss_news as claims (source
+    `rss_qudsn`, unit `src:<id>` — nothing ever gives an RSS source an
+    independence group). A price in the lede of one Quds News article was
+    therefore two units and two stated texts, and fuel_price_believed took
+    one newsroom's word as the two-outlet agreement it requires — replayed
+    against the real 073 views: `units=2, outlets {qudsn.co, rss_qudsn}`.
+    The unit is the publisher, not the transport, so both readings of an
+    outlet collapse to its web unit. The map is read from rss_news.FEEDS,
+    the list that creates those sources, so a feed added there cannot
+    reopen the hole.
+    """
+    from ingest.sources import rss_news
+    return {f["key"]: f"web:{_domain(f['url'])}" for f in rss_news.FEEDS}
 
 
 def claim_rows(cur) -> list[dict]:
@@ -235,12 +283,14 @@ def claim_rows(cur) -> list[dict]:
          WHERE c.reported_at > now() - %s
            AND c.raw_text ~ '(شيكل|شيقل)' AND c.raw_text ~ '{CLAIM_TOPIC}'""",
                 (CLAIM_LOOKBACK,))
+    same_newsroom = newsroom_units()
     rows = []
     for claim_id, text, reported, source_id, key, unit in cur.fetchall():
         day = reported.astimezone(timezone(timedelta(hours=3))).date()
         ann = fuel_price.parse(text, day)
-        rows.append(_row(ann, outlet=key, unit=unit, text=text, url=None,
-                         published=reported, source_id=source_id, claim_id=claim_id))
+        rows.append(_row(ann, outlet=key, unit=same_newsroom.get(key, unit), text=text,
+                         url=None, published=reported, source_id=source_id,
+                         claim_id=claim_id))
     return rows
 
 

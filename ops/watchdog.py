@@ -4,9 +4,21 @@
     .venv/bin/python -m ops.watchdog --dry-run   # check; never alarm
     .venv/bin/python -m ops.watchdog --json
 
-Exit 0 when everything is within its own expected cadence, 1 when something is
-not. Faults are recorded through ops/alert.py, de-duplicated so a fault that
-persists for a week produces one alarm rather than two thousand.
+Exit 0 when everything is within its own expected cadence, 3 when it FOUND
+something that is not, 1 when the watchdog itself could not finish. Faults are
+recorded through ops/alert.py, de-duplicated so a fault that persists for a
+week produces one alarm rather than two thousand.
+
+WHY "FOUND A FAULT" IS NOT EXIT 1
+It was, and 1 is also what Python exits with on any uncaught exception. The
+unit said SuccessExitStatus=0 1 and the heartbeat wrapper said OK_EXIT_CODES=1
+— both correct for "ran and found a fault", and both therefore recorded a
+watchdog that CRASHED as a watchdog that ran fine. A Postgres restart that
+makes job_checks() raise, a /status body that is a JSON array: a traceback,
+exit 1, a success beat, no alarm raised or resolved, every family only the
+watchdog judges unwatched — and nothing anywhere saying so, which is the
+nine-day shape of 2026-08-08..17 with the torn line replaced by any other
+exception. A fault found is now 3; a crash is 1 and nothing maps it to success.
 
 WHAT PROMPTED THIS, AND WHAT IT MEANS
 On 2026-08-01 the Telegram poller lost its connection at 08:35 and ran for
@@ -59,6 +71,7 @@ import json
 import os
 import sys
 import time
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -67,7 +80,8 @@ sys.path.insert(0, str(ROOT))
 import psycopg                                          # noqa: E402
 from psycopg.rows import dict_row                       # noqa: E402
 
-from ops.alert import open_alerts, raise_alert, resolve  # noqa: E402
+from ops.alert import (delivery_health, open_alerts,    # noqa: E402
+                       raise_alert, redeliver_undelivered, resolve)
 from resolve.db import dsn, env_value                   # noqa: E402
 
 # Cadence is measured over three weeks ending six hours ago; the last six hours
@@ -178,7 +192,15 @@ EXPECTED_JOBS = {
     # analyst/loop.py's INTERVAL/GRACE — tests/test_analyst.py asserts the two
     # agree, the same way test_watchdog does it for the wrapped jobs.
     "analyst":           (60, 900),
+    # The Valhalla IP sync (ops/sync-valhalla-ip.sh), every 15 minutes. It is
+    # the fixer for the eleven-hour routing outage of 2026-08-07 and it ran
+    # unwatched — no heartbeat, no OnFailure — so an API restart that failed
+    # after .env was rewritten left routing dead behind a green board.
+    "valhalla-ip":       (900, 1800),
 }
+
+# ops/watchdog.sh maps this to success for systemd; see the module docstring.
+FAULTS_FOUND = 3
 
 # State kinds that are no longer collected. Their observations stay in the
 # database; the watchdog stops judging their freshness. Mirrors
@@ -231,6 +253,17 @@ DEPENDENCIES = {
         3600, "v1's checkpoint parser writes this; checkpoints stop if it does"),
 }
 
+# QUARANTINED ROWS ARE NOT ARRIVALS OF THE FEED. palhub writes checkpoint_flow
+# every five minutes as `quarantined` (migration 033: collected, never
+# believed — 72,763 readings in the week to 2026-09-24 moved nothing served).
+# Counting them made the served checkpoint_flow feed read `ok`, age three
+# minutes, for as long as palhub kept posting — however long v1's road
+# channels, the only source belief counts, had been dark. The rhythm, the
+# ceiling and the freshness are all measured on the rows that can reach a
+# served answer; `question`/`unparsed` stay in because they are the same
+# channels speaking, which is what "is the source alive" asks.
+_JUDGED = "modality <> 'quarantined'"
+
 CADENCE_SQL = f"""
 WITH arrival AS (
   -- One batch write is one arrival, not six hundred. Without the bucket, gaps
@@ -240,6 +273,7 @@ WITH arrival AS (
     FROM state_observation
    WHERE observed_at >  now() - interval '{BASELINE_DAYS} days'
      AND observed_at <= now() - interval '{JUDGE_HOURS} hours'
+     AND {_JUDGED}
    GROUP BY 1, 2
 ), gaps AS (
   SELECT state_kind, t,
@@ -265,6 +299,7 @@ WITH arrival AS (
   SELECT state_kind, date_trunc('minute', observed_at) AS t
     FROM state_observation
    WHERE observed_at > now() - interval '{CEILING_DAYS} days'
+     AND {_JUDGED}
    GROUP BY 1, 2
 ), gaps AS (
   SELECT state_kind, t - lag(t) OVER (PARTITION BY state_kind ORDER BY t) AS gap
@@ -278,12 +313,22 @@ SELECT state_kind,
  GROUP BY 1
 """
 
-CURRENT_SQL = """
-SELECT state_kind,
-       max(observed_at)                                              AS latest,
-       extract(epoch FROM (now() - max(observed_at)))                AS age_seconds
-  FROM state_observation
- GROUP BY 1
+# One probe per configured kind rather than `max() GROUP BY` over the whole
+# hypertable: Postgres has no loose index scan, so the grouped form read every
+# chunk on every /health call, a cost that grows without bound under the
+# no-retention rule. Each probe below is an index-ordered LIMIT 1 on
+# (state_kind, observed_at DESC) that stops at the newest judged row. Kinds
+# with no judged row at all are left out, as the grouped form left them out.
+CURRENT_SQL = f"""
+SELECT k.state_kind,
+       o.latest,
+       extract(epoch FROM (now() - o.latest))                        AS age_seconds
+  FROM state_kind_config k
+  CROSS JOIN LATERAL (
+        SELECT max(observed_at) AS latest
+          FROM state_observation s
+         WHERE s.state_kind = k.state_kind AND s.{_JUDGED}) o
+ WHERE o.latest IS NOT NULL
 """
 
 JOB_SQL = "SELECT * FROM ops_heartbeat_status ORDER BY name"
@@ -370,15 +415,39 @@ def job_checks() -> list[dict]:
     for r in _q(JOB_SQL):
         status = r["status"]
         seen.add(r["name"])
+        fault = status in ("failing", "not_running", "never_succeeded")
+        detail = r["last_error"] or ""
+        # `unmonitored` means the row carries no cadence. For a job on the
+        # expected list that is a hole, not a state: a first-ever `--fail`
+        # written without --interval (the maintainer's seat-probe path did
+        # exactly that) inserts NULL, and from then on the job could fail
+        # every week without ever being judged — present, so never
+        # `never_reported`, and unmonitored, so never a fault.
+        if status == "unmonitored" and r["name"] in EXPECTED_JOBS:
+            fault = True
+            iv, gr = EXPECTED_JOBS[r["name"]]
+            detail = (f"its heartbeat row has no cadence, so nothing judges it "
+                      f"(registered at {iv}s + {gr}s grace)"
+                      + (f"; last error: {detail}" if detail else ""))
+        elif not detail and status in ("failing", "not_running"):
+            # No error text is itself information. The wrapper stamps the
+            # attempt before the job runs and the outcome after, so an
+            # attempt with no outcome is a run that never came back.
+            att = r.get("attempt_age_minutes")
+            att = f"{float(att):.0f}m ago" if att is not None else "at an unknown time"
+            detail = (f"last attempt {att} recorded no outcome — killed before it "
+                      f"finished (journal: 'result: timeout'?) or still running"
+                      if status == "failing" else
+                      f"last attempt {att} — the scheduler is not starting it")
         out.append({
             "check": "job",
             "name": r["name"],
             "status": status,
-            "fault": status in ("failing", "not_running", "never_succeeded"),
+            "fault": fault,
             "age_minutes": float(r["ok_age_minutes"]) if r["ok_age_minutes"] is not None else None,
             "expected_seconds": r["expected_interval_seconds"],
             "consecutive_failures": r["consecutive_failures"],
-            "detail": r["last_error"] or "",
+            "detail": detail,
         })
 
     # A job on the expected list with no row at all has never reported once.
@@ -651,9 +720,13 @@ def routing_check() -> list[dict]:
                            f"is listening but it is not Valhalla; check for a "
                            f"port collision before assuming an outage"}]
     try:
-        version = r.json().get("version")
+        payload = r.json()
     except ValueError:
-        version = None
+        payload = None
+    # A 200 whose body is JSON but not an object (a list, a bare string) used
+    # to raise AttributeError here and take the whole watchdog run down with
+    # it. It is a different application answering, which is what this says.
+    version = payload.get("version") if isinstance(payload, dict) else None
     if not version:
         return [{**row, "status": "wrong-service", "fault": True,
                  "detail": f"{url}/status answered 200 but names no valhalla "
@@ -769,8 +842,71 @@ def fuel_price_check() -> list[dict]:
              "age_minutes": None, "fault": fault, "detail": detail}]
 
 
+def doorbell_check() -> list[dict]:
+    """F286 — is anybody hearing the alarms this board raises?
+
+    The only proof the channel worked was a `--test` run by hand. A rotated
+    ntfy token answers 403 to every push, the ledger records `delivered:
+    false` once per alarm, and the board stays exactly as green as it was.
+    Judged from the delivery receipts the alarms already leave behind.
+    """
+    row = {"check": "dep", "name": "doorbell", "age_minutes": None,
+           "threshold_minutes": None}
+    try:
+        h = delivery_health()
+    except Exception as exc:                                    # noqa: BLE001
+        return [{**row, "status": "unreadable", "fault": True,
+                 "detail": f"the alarm ledger cannot be read: {exc}"}]
+    last = h.get("last") or {}
+    if not h["ok"]:
+        return [{**row, "status": "failing", "fault": True,
+                 "detail": f"the last {h['checked']} alarm deliveries all failed "
+                           f"({'; '.join(h.get('reasons') or [])[:160]}) — alarms "
+                           f"are recorded in ops/alerts.ndjson and reach nobody; "
+                           f"fix the channel, then `python -m ops.alert --test`"}]
+    if not last:
+        return [{**row, "status": "unproven", "fault": False,
+                 "detail": "no delivery on record yet"}]
+    return [{**row, "status": "ok", "fault": False,
+             "detail": f"last delivery {'ok' if last.get('delivered') else 'failed'} "
+                       f"via {last.get('channel', '?')} at {str(last.get('ts', ''))[:16]}"}]
+
+
 def _already_open(key: str) -> bool:
     return any(r.get("unit") == key for r in open_alerts())
+
+
+def _key(r: dict) -> str:
+    return f"watchdog:{r['check']}:{r['name']}"
+
+
+def reconcile(rows: list[dict]) -> None:
+    """Raise what is newly faulting, close what has recovered, re-send what
+    was never heard."""
+    faults = [r for r in rows if r["fault"]]
+    faulting = {_key(r) for r in faults}
+    for key in sorted(faulting):
+        if not _already_open(key):
+            r = next(x for x in faults if _key(x) == key)
+            raise_alert(key, f"{r['status']} — {r['detail']}")
+    # F285 — `collector_down` is NOT a recovery. It is a stale feed that is not
+    # reported separately because its collector's own alarm covers it. It used
+    # to fall into the loop below and close an open feed alarm with "check
+    # returned to within cadence" and a 🟢 push while the feed was exactly as
+    # silent as before — then re-raise it the moment the collector healed. A
+    # held alarm stays open, and says nothing new, until the feed itself moves.
+    held = {_key(r) for r in rows if r.get("status") == "collector_down"}
+    # Everything this watchdog raised that is now green gets closed. These
+    # are conditions, not events: see ops.alert.resolve for why leaving
+    # them red is worse than closing them. Once per key, however many open
+    # records it has.
+    for unit in sorted({r.get("unit", "") for r in open_alerts()}):
+        if unit.startswith("watchdog:") and unit not in faulting and unit not in held:
+            resolve(unit, "check returned to within cadence")
+            print(f"resolved {unit}")
+    for d in redeliver_undelivered():
+        print(f"re-sent {d['delivery_of']}: "
+              f"{'delivered' if d['delivered'] else 'FAILED ' + d.get('reason', '')}")
 
 
 def main() -> int:
@@ -778,12 +914,26 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="report, never alarm")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
+    try:
+        return _run(a)
+    except Exception:                                           # noqa: BLE001
+        # A crash is not a finding. Print the traceback where the report would
+        # have been and exit 1, which neither the unit nor the heartbeat
+        # wrapper accepts as success any more — so OnFailure fires and the
+        # `watchdog` row goes `failing` instead of beating green over a run
+        # that checked nothing.
+        traceback.print_exc()
+        print("\nwatchdog did NOT finish: nothing above was raised, resolved or "
+              "re-sent this run", file=sys.stderr)
+        return 1
 
+
+def _run(a: argparse.Namespace) -> int:
     jobs = job_checks()
     # The watchdog re-measures; /health reads what the watchdog recorded.
     feeds = feed_checks(jobs, measure_cadence())
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
-            + minimax_check() + fuel_price_check() + feeds)
+            + minimax_check() + fuel_price_check() + doorbell_check() + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:
@@ -797,24 +947,11 @@ def main() -> int:
             print(f"{mark:<4}{r['name']:<24}{r['status']:<16}{age:>9}  {r['detail'][:70]}")
 
     if not a.dry_run:
-        faulting = {f"watchdog:{r['check']}:{r['name']}" for r in faults}
-        for key in faulting:
-            if not _already_open(key):
-                r = next(x for x in faults
-                         if f"watchdog:{x['check']}:{x['name']}" == key)
-                raise_alert(key, f"{r['status']} — {r['detail']}")
-        # Everything this watchdog raised that is now green gets closed. These
-        # are conditions, not events: see ops.alert.resolve for why leaving
-        # them red is worse than closing them.
-        for r in open_alerts():
-            unit = r.get("unit", "")
-            if unit.startswith("watchdog:") and unit not in faulting:
-                resolve(unit, "check returned to within cadence")
-                print(f"resolved {unit}")
+        reconcile(rows)
 
     if faults:
         print(f"\n{len(faults)} fault(s)", file=sys.stderr)
-        return 1
+        return FAULTS_FOUND
     print(f"\nall {len(rows)} checks within cadence")
     return 0
 

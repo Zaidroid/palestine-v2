@@ -53,13 +53,19 @@ MIN_PAIRS_PER_BUCKET = 50
 HALF_LIFE_GRID = tuple(60 * m for m in
                        (2, 3, 5, 8, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360, 480, 720))
 
+# `until` (optional) cuts the history BEFORE the pairs are formed, so no pair
+# reaches across it: learn/accuracy.py fits on everything before the window it
+# judges and replays that fit, which is the "a threshold learned from history
+# must hold out the window it judges" rule (HANDOFF §4; audit F234). NULL is the
+# nightly serving fit, over all history, exactly as before.
 PAIRS_SQL = """
 WITH seq AS (
   SELECT place_id, direction, value, observed_at,
          LEAD(value)       OVER w AS next_value,
          LEAD(observed_at) OVER w AS next_at
   FROM state_observation
-  WHERE state_kind = %s AND modality = 'assertion'
+  WHERE state_kind = %(kind)s AND modality = 'assertion'
+    AND (%(until)s::timestamptz IS NULL OR observed_at < %(until)s::timestamptz)
   WINDOW w AS (PARTITION BY place_id, direction ORDER BY observed_at)
 )
 SELECT value,
@@ -109,39 +115,66 @@ def fit(pts: list[tuple[int, int, float]]) -> tuple[int, float, float] | None:
     return best[1], best[2], p0
 
 
+def fit_values(pairs) -> list[dict]:
+    """[(value, gap, same)] -> one result per value, fitted or refused in words.
+
+    A STATE WITH ONE VALUE IS NOT A MEASUREMENT (audit F116; HANDOFF §4). If
+    only one value has enough pairs to fit, every pair of it is X -> X by
+    construction, p_same sits at ~1.0 in every bucket, and the fit reports a
+    persistence the world never had a chance to contradict — the exact fit that
+    once served `checkpoint_police = present` at 0.85 to the 45-minute cap
+    (025:259-263). The trap was documented and one CLI flag away; it is refused
+    here, for every value of the kind, before any curve is fitted.
+    """
+    by_value: dict[str, list[tuple[int, int]]] = {}
+    for value, gap, same in pairs:
+        by_value.setdefault(value, []).append((gap, same))
+    measurable = [v for v, rows in by_value.items() if len(rows) >= MIN_PAIRS_PER_VALUE]
+    results = []
+    for value, rows in sorted(by_value.items(), key=lambda kv: -len(kv[1])):
+        if len(rows) < MIN_PAIRS_PER_VALUE:
+            results.append({"value": value, "n": len(rows), "fitted": False,
+                            "reason": f"only {len(rows)} pairs"})
+            continue
+        if len(measurable) < 2:
+            results.append({"value": value, "n": len(rows), "fitted": False,
+                            "reason": (f"single-valued state: no other value has "
+                                       f"{MIN_PAIRS_PER_VALUE} pairs, so persistence "
+                                       f"cannot be told from having no alternative")})
+            continue
+        pts = curve(rows)
+        f = fit(pts)
+        if not f:
+            results.append({"value": value, "n": len(rows), "fitted": False,
+                            "reason": "too few populated buckets"})
+            continue
+        H, asym, p0 = f
+        results.append({"value": value, "n": len(rows), "fitted": True,
+                        "half_life": H, "asymptote": asym, "p0": p0,
+                        "curve": pts})
+    return results
+
+
+def pairs(cur, state_kind: str, until=None) -> list[tuple]:
+    cur.execute(PAIRS_SQL, {"kind": state_kind, "until": until})
+    return cur.fetchall()
+
+
 def run(state_kind: str, apply_changes: bool) -> list[dict]:
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(PAIRS_SQL, (state_kind,))
-        by_value: dict[str, list[tuple[int, int]]] = {}
-        for value, gap, same in cur.fetchall():
-            by_value.setdefault(value, []).append((gap, same))
-
-        results = []
-        for value, rows in sorted(by_value.items(), key=lambda kv: -len(kv[1])):
-            if len(rows) < MIN_PAIRS_PER_VALUE:
-                results.append({"value": value, "n": len(rows), "fitted": False,
-                                "reason": f"only {len(rows)} pairs"})
+        results = fit_values(pairs(cur, state_kind))
+        for r in results:
+            if not (r["fitted"] and apply_changes):
                 continue
-            pts = curve(rows)
-            f = fit(pts)
-            if not f:
-                results.append({"value": value, "n": len(rows), "fitted": False,
-                                "reason": "too few populated buckets"})
-                continue
-            H, asym, p0 = f
-            results.append({"value": value, "n": len(rows), "fitted": True,
-                            "half_life": H, "asymptote": asym, "p0": p0,
-                            "curve": pts})
-            if apply_changes:
-                cur.execute("""
-                    INSERT INTO state_value_decay
-                      (state_kind,value,p0,asymptote,half_life_seconds,observations,computed_at)
-                    VALUES (%s,%s,%s,%s,%s,%s,now())
-                    ON CONFLICT (state_kind,value) DO UPDATE SET
-                      p0=EXCLUDED.p0, asymptote=EXCLUDED.asymptote,
-                      half_life_seconds=EXCLUDED.half_life_seconds,
-                      observations=EXCLUDED.observations, computed_at=now()""",
-                    (state_kind, value, p0, asym, H, len(rows)))
+            cur.execute("""
+                INSERT INTO state_value_decay
+                  (state_kind,value,p0,asymptote,half_life_seconds,observations,computed_at)
+                VALUES (%s,%s,%s,%s,%s,%s,now())
+                ON CONFLICT (state_kind,value) DO UPDATE SET
+                  p0=EXCLUDED.p0, asymptote=EXCLUDED.asymptote,
+                  half_life_seconds=EXCLUDED.half_life_seconds,
+                  observations=EXCLUDED.observations, computed_at=now()""",
+                (state_kind, r["value"], r["p0"], r["asymptote"], r["half_life"], r["n"]))
         if apply_changes:
             conn.commit()
     return results

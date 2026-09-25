@@ -124,6 +124,12 @@ def ingest(dry_run: bool = False) -> dict:
                 # Telegram poller follows for a dead channel.
                 stats["errors"].append(f"{feed['key']}: {type(exc).__name__}: {exc}")
                 continue
+            if not items:
+                # A live news feed always carries items. Zero is a feed that
+                # moved or broke and still answers 200 — WAFA and Maan both
+                # moved theirs — and counted as a success it goes dark silently.
+                stats["errors"].append(f"{feed['key']}: 0 items")
+                continue
             stats["feeds"] += 1
             stats["items"] += len(items)
             source_id = _ensure_source(cur, feed)
@@ -192,7 +198,12 @@ def main() -> int:
         print(f"  FEED FAILED {e}")
     if a.dry_run:
         print("(dry run — nothing written)")
-    return 0
+    # Non-zero when any feed failed. It used to be 0 regardless, and
+    # ops/ingest-external.sh counts a step as failed only on a non-zero exit,
+    # so a dead feed was recorded as a success and OnFailure could not fire.
+    # The other feeds were still read and written above: one bad feed still
+    # does not stop the rest, it just no longer goes unreported.
+    return 1 if s["errors"] else 0
 
 
 if __name__ == "__main__":

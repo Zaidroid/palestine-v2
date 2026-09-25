@@ -101,7 +101,13 @@ NTFY_TOKEN_KEY = "ntfy_token"
 
 # The watchdog's own fault mark (ops/watchdog.py marks a fault with `!!`). A
 # high-priority push is the one that is allowed to make a sound.
+#
+# Kept for callers that pass a marked line, but it is NOT how alarms get their
+# priority: the mark lives in the watchdog's console table and never reached
+# an alarm's text, so every real alarm went out at `default`. Callers now say
+# `priority=` (ops/alert.py passes "high"); the mark is only the fallback.
 NTFY_HIGH_MARK = "!!"
+NTFY_PRIORITIES = ("min", "low", "default", "high", "urgent")
 
 
 # Other .env files to search, in order, after this project's own.
@@ -209,13 +215,17 @@ def configured() -> bool:
     return ntfy_configured() or bool(_env(TOKEN_VAR) and _env(CHAT_VAR))
 
 
-def _send_ntfy(text: str, *, silent: bool = False) -> dict:
+def _send_ntfy(text: str, *, silent: bool = False,
+               priority: str | None = None) -> dict:
     """Publish to the house ntfy. Returns {ok, reason, channel, id?}."""
     url, topic, token = _ntfy_config()
     if not url or not topic:
         return {"ok": False, "reason": "unconfigured (NTFY_URL/NTFY_TOPIC)",
                 "channel": "ntfy"}
-    priority = "min" if silent else ("high" if NTFY_HIGH_MARK in text else "default")
+    if silent:
+        priority = "min"
+    elif priority not in NTFY_PRIORITIES:
+        priority = "high" if NTFY_HIGH_MARK in text else "default"
     # Header values travel as latin-1 on the wire. Pass the real UTF-8 BYTES
     # through that codec rather than letting urllib encode the string, or a
     # title carrying an Arabic place name arrives as invalid UTF-8 and ntfy
@@ -260,15 +270,17 @@ def _send_ntfy(text: str, *, silent: bool = False) -> dict:
                 "channel": "ntfy", "topic": topic}
 
 
-def send(text: str, *, silent: bool = False) -> dict:
+def send(text: str, *, silent: bool = False, priority: str | None = None) -> dict:
     """Deliver `text` to a human. Returns {ok, reason, channel, id?}.
 
     ntfy first: it is the channel that is actually configured here and the one
     Zaid's phone is subscribed to. Telegram is the fallback it always was —
     a second road when its pair is set, silently skipped when it is not.
     Never raises, in either direction.
+
+    `priority` is ntfy's (min/low/default/high/urgent); `silent` wins over it.
     """
-    n = _send_ntfy(text, silent=silent)
+    n = _send_ntfy(text, silent=silent, priority=priority)
     if n["ok"]:
         return n
     if not (_env(TOKEN_VAR) and _env(CHAT_VAR)):

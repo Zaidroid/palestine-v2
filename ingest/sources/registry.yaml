@@ -4,15 +4,33 @@
 # (framework.BaseFetcher refuses to construct otherwise). `commercial_use: false`
 # sources are loop-only: they may score our accuracy, never appear in a response.
 #
-# status: active | planned  — planned entries are contracts written ahead of code.
-
+# status: active | planned | superseded — planned entries are contracts written
+# ahead of code; superseded ones name what replaced them.
+#
+# WHAT THIS FILE GOVERNS TODAY (read 2026-09-25, not assumed). The contract is
+# enforced only on BaseFetcher subclasses, and there is one: osm_fuel.py
+# (`osm_fuel_stations`). Everything else runs outside it:
+#   * the live Telegram tier — ingest/telegram_poller.py polls the channels named
+#     in V2_TELEGRAM_CHANNELS (.env) and writes one `source` row per channel
+#     (tg_<channel>, license NONE, commercial_use false, authority_rank 4);
+#   * the RSS feeds — the FEEDS list in ingest/sources/rss_news.py;
+#   * connectivity, fires, weather, power, fuel prices — ingest/sources/*.py,
+#     each inserting its own `source` row;
+#   * the databank — reviewed specs in db/mappings/*.yaml, loaded by
+#     ingest/databank.py.
+# For all of those the `source` table is the licence record of truth: the
+# migrations that read publishers' terms (050, 053, 058, 063–067) write there,
+# and the API serves from there. Where an entry below shares a key with a
+# `source` row, its licence was corrected on 2026-09-25 to match that row, with
+# the migration named; other values were left as written.
 sources:
 
   # ── Live tier ─────────────────────────────────────────────────────────────
   - key: telegram_security
     name: Telegram security channels
     kind: telegram
-    status: planned            # Phase 1, gated on the session decision (TRAP-1)
+    status: superseded         # by ingest/telegram_poller.py (one source row per
+                               # channel, tg_<channel>); nothing reads this entry
     license: {spdx: NONE, commercial_use: false}
     attribution: "Telegram channel authors"
     authority_rank: 5
@@ -25,7 +43,7 @@ sources:
   - key: telegram_checkpoints
     name: Telegram roads/checkpoint channels
     kind: telegram
-    status: planned
+    status: superseded         # by ingest/telegram_poller.py, as above
     license: {spdx: NONE, commercial_use: false}
     attribution: "Telegram channel authors"
     authority_rank: 5
@@ -35,7 +53,8 @@ sources:
   - key: telegram_fuel
     name: Telegram fuel/commerce channels
     kind: telegram
-    status: planned            # Phase 1 primary signal
+    status: superseded         # by ingest/telegram_poller.py; fuel availability
+                               # itself was retired 2026-09-23 (migration 070)
     license: {spdx: NONE, commercial_use: false}
     attribution: "Telegram channel authors"
     authority_rank: 5
@@ -55,8 +74,11 @@ sources:
   - key: nasa_firms
     name: NASA FIRMS VIIRS active fire
     kind: satellite
-    status: planned
-    license: {spdx: NASA-Open, commercial_use: true}
+    status: active             # ingest/sources/fires.py, every 15 min via
+                               # ops/ingest-external.sh once FIRMS_MAP_KEY is set;
+                               # not a BaseFetcher, so this entry is not enforced
+    # CC0-1.0 is what fires.py writes to its `source` row (`_ensure_source`).
+    license: {spdx: CC0-1.0, commercial_use: true}
     attribution: "NASA FIRMS / LANCE"
     authority_rank: 3
     cadence: 12h
@@ -76,9 +98,14 @@ sources:
   - key: ioda
     name: IODA internet outage detection
     kind: api
-    status: planned
-    license: {spdx: CC-BY-4.0, commercial_use: true}
-    attribution: "IODA, Georgia Tech Internet Intelligence Lab"
+    status: active             # ingest/sources/connectivity.py (every 15 min) and
+                               # ops/fetch_ioda.py (nightly databank); neither is a
+                               # BaseFetcher, so this entry is not enforced
+    # Terms READ 2026-08-08 (migration 067): every IODA API response states "All
+    # Rights Reserved". Not CC-BY; queryable with credit, excluded from bulk
+    # export, and a letter (db/scout/letters/ioda.md) is the way to more.
+    license: {spdx: LicenseRef-IODA-All-Rights-Reserved, commercial_use: false}
+    attribution: "Internet outage detection: IODA, Georgia Tech Internet Intelligence Lab. Copyright (c) 2021-2025 Georgia Tech Research Corporation."
     authority_rank: 3
     cadence: hourly
     allow_empty: true          # no outage is the good case
@@ -151,7 +178,9 @@ sources:
     name: ReliefWeb API
     kind: api
     status: planned
-    license: {spdx: CC-BY-3.0-IGO, commercial_use: true}
+    # As recorded in `source` by migration 042; its terms have not been read
+    # (terms_verified_at is NULL), so this is a label, not a licence.
+    license: {spdx: metadata-free-with-attribution, commercial_use: true}
     attribution: "ReliefWeb / UN OCHA"
     authority_rank: 4
     cadence: hourly
@@ -190,9 +219,12 @@ sources:
   - key: tech4palestine
     name: Tech For Palestine datasets
     kind: api
-    status: planned
-    license: {spdx: CC-BY-4.0, commercial_use: true}
-    attribution: "Tech For Palestine"
+    status: active             # ops/fetch_t4p.py nightly (ops/databank-sync.sh),
+                               # loaded through db/mappings — not a BaseFetcher
+    # Terms READ 2026-08-05 (migration 050): the repository LICENSE is the
+    # Unlicense — public domain; credit is given by choice.
+    license: {spdx: Unlicense, commercial_use: true}
+    attribution: "Data: Tech4Palestine (data.techforpalestine.org), public domain (Unlicense); credited by choice."
     authority_rank: 3
     cadence: daily
     expect: {min_records: 100}
@@ -216,7 +248,10 @@ sources:
     name: B'Tselem fatality database
     kind: file
     status: planned
-    license: {spdx: CC-BY-NC-4.0, commercial_use: false}
+    # Terms READ 2026-08-05 (migration 050): a bespoke licence STRICTER than
+    # CC-BY-NC — bulk use "requires express written consent" — graded
+    # no-redistribution (053); the bulk ask is the btselem_bulk letter.
+    license: {spdx: LicenseRef-BTselem, commercial_use: false}
     attribution: "B'Tselem"
     authority_rank: 4
     cadence: monthly

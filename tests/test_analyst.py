@@ -447,3 +447,107 @@ def test_no_writer_states_a_language_it_did_not_measure():
         insert = insert[:insert.index("RETURNING")]
         assert "'ar'" not in insert, f"{rel} states a language it did not measure"
         assert "detect_quietly" in body, f"{rel} does not measure the language"
+
+
+# ── an organ that fails every claim is not a healthy tick (audit F231) ───────
+
+def test_an_organ_failing_every_read_fails_the_heartbeat(monkeypatch):
+    """Per-claim exceptions are rows and never failed the tick, so an organ
+    that raised on all 200 claims of every tick beat `ok`, and the heartbeat's
+    rates were organ A's. The series it feeds would freeze behind a green
+    board."""
+    report = {"processed": 0, "errors": 200, "per_minute": 0.0, "skipped": 0,
+              "seconds": 1.0, "organs": {"lang": {"read": 0, "scanned": 0},
+                                         "moh": {"read": 0, "scanned": 200}},
+              "pc": {"available": True, "detail": "not asked"},
+              "backlog": {},
+              "health": {"lang": {"runs_1h": 50, "ok_1h": 50, "errors_1h": 0,
+                                  "success_rate_1h": 1.0},
+                         "moh": {"runs_1h": 200, "ok_1h": 0, "errors_1h": 200,
+                                 "success_rate_1h": 0.0}}}
+    beats, fails = [], []
+    monkeypatch.setattr(loop, "tick", lambda organs: report)
+    monkeypatch.setattr(loop, "beat", lambda *a, **k: beats.append(a))
+    monkeypatch.setattr(loop, "fail", lambda *a, **k: fails.append(a))
+    assert loop.run(once=True, organs=[]) == 0
+    assert beats == [], "a failing organ beat ok"
+    assert fails and "moh" in fails[0][1]
+
+    d = loop._detail(report)
+    assert d["success_rate_1h"] == 0.0, "the headline rate is the worst organ's"
+    assert d["organs"]["moh"]["errors_1h"] == 200
+
+
+def test_one_bad_claim_in_an_hour_is_not_an_outage(monkeypatch):
+    report = {"processed": 40, "errors": 1, "per_minute": 40.0, "skipped": 0,
+              "seconds": 1.0, "organs": {}, "pc": {"available": True, "detail": ""},
+              "backlog": {},
+              "health": {"lang": {"runs_1h": 41, "ok_1h": 40, "errors_1h": 1,
+                                  "success_rate_1h": 0.9756}}}
+    beats, fails = [], []
+    monkeypatch.setattr(loop, "tick", lambda organs: report)
+    monkeypatch.setattr(loop, "beat", lambda *a, **k: beats.append(a))
+    monkeypatch.setattr(loop, "fail", lambda *a, **k: fails.append(a))
+    loop.run(once=True, organs=[])
+    assert beats and not fails
+
+
+def test_a_claim_that_errored_is_read_again_and_the_cursor_does_not_move_for_it(monkeypatch):
+    """The watermark passes a claim whether the organ answered or raised, so
+    before this nothing an organ raised on was ever read again — not even
+    after the bug was fixed."""
+    organ, moved, recorded = _Organ(), [], []
+    _stub_store(monkeypatch, [], moved)
+    monkeypatch.setattr(store, "fetch_retries",
+                        lambda cur, name, version, limit=200: [{"claim_id": 41, "ingested_at": "t"}])
+    monkeypatch.setattr(store, "record_run", lambda cur, **kw: recorded.append(kw["outcome"]))
+    report = loop.tick([organ], probe=lambda: (True, ""))
+    assert organ.seen == [41]
+    assert recorded == ["ok"]
+    assert moved == [], "a retry must not move the cursor"
+    assert report["organs"]["_t_model"]["retried"] == 1
+
+
+def test_retries_are_bounded_per_organ_version(tx):
+    with tx.cursor() as cur:
+        sid = _source(cur)
+        claim = _claim(cur, sid, "خبر لم يُقرأ بسبب خطأ")
+        cid = claim["claim_id"]
+
+        def retried(version):
+            return cid in {c["claim_id"] for c in
+                           store.fetch_retries(cur, "_t_retry", version, limit=10_000)}
+
+        assert not retried("r/1"), "a claim that never errored is not a retry"
+        for n in range(store.MAX_ATTEMPTS):
+            store.record_run(cur, claim_id=cid, organ="_t_retry",
+                             organ_version="r/1", outcome="error", error="boom")
+            assert retried("r/1") == (n + 1 < store.MAX_ATTEMPTS)
+        assert retried("r/2"), "a fixed organ (new version) re-reads it"
+        store.record_run(cur, claim_id=cid, organ="_t_retry",
+                         organ_version="r/2", outcome="ok")
+        assert not retried("r/2"), "once read, never retried"
+
+
+# ── the cursor passes only settled rows (audit F233) ─────────────────────────
+
+def test_the_cursor_never_passes_a_row_a_slower_writer_may_still_commit_behind(tx):
+    """claim.ingested_at is the WRITER's transaction start. A claim stamped
+    moments ago may belong to a writer that has not committed its older
+    siblings yet; reading it moves the watermark past rows that will commit
+    behind it and are then never read. A batch stops short of the settle
+    window, so what it passes is what can no longer arrive."""
+    with tx.cursor() as cur:
+        sid = _source(cur)
+        cur.execute("""INSERT INTO claim (source_id, external_id, raw_ref, raw_text,
+                                          lang, claim_type, reported_at, ingested_at)
+                       VALUES (%s,'settled','test:ref','old enough','ar','unclassified',
+                               now(), now() - interval '70 minutes'),
+                              (%s,'fresh','test:ref','too fresh','ar','unclassified',
+                               now(), now() - interval '30 seconds')
+                       RETURNING claim_id, ingested_at""", (sid, sid))
+        (settled_id, settled_at), (fresh_id, _) = cur.fetchall()
+        after = (settled_at - __import__("datetime").timedelta(microseconds=1), 0)
+        got = [c["claim_id"] for c in store.fetch_batch(cur, after, limit=10_000)]
+    assert settled_id in got
+    assert fresh_id not in got

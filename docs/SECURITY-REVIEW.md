@@ -3,7 +3,10 @@
 Scope: `https://live-api.zaidlab.xyz` as Thaura will reach it — the MCP endpoint
 at `/mcp`, the public REST surface at `/v2/...`, the OAuth discovery endpoints,
 and the key gate in front of them. Reviewed 2026-09-24, after F-80 (the door) and
-F-81 (what may leave the building).
+F-81 (what may leave the building). Amended 2026-09-25 where the surface had
+moved under it (the 16-name tool menu) or where a claim was wider than the code
+(§1, §6, §8) — each amendment is marked, and nothing proved on 09-24 was
+re-probed live for it.
 
 Every item below is either **proved** by a live probe or a test, or **accepted**
 with the reason it is not worth closing now. Nothing is left implied. The
@@ -24,11 +27,16 @@ assertions that keep these claims honest live in
 **Accepted: the read API is not key-gated and never was.** The key gates `/mcp`,
 which is the agent surface a partner integrates; `/v2/...` is a public read
 endpoint, and gating it would break every existing browser client for no gain —
-there is nothing to protect but data we intend to publish. The key buys
-attribution, a quota and revocation, not exclusivity. What changed under F-81 is
-not *access* but *redistribution*: the licence tier is applied per caller, and
-`latest_news` / `search` return an excerpt to every external caller (§8 of
-`PARTNER-API.md`).
+what it serves is data we intend to publish. The key buys attribution, a quota
+and revocation, not exclusivity. What changed under F-81 is not *access* but
+*redistribution*: the licence tier is applied per caller, and `news` (the
+façade over `latest_news` / `search`) returns an excerpt to every external
+caller (§8 of `PARTNER-API.md`).
+
+*Amended 2026-09-25:* "nothing to protect but data we intend to publish" was
+the 09-24 wording and it is too wide. Two things a stranger can reach are not
+publication: the crowd write path (§6), and the text of crowd notes, which the
+`news` route serves back like any other claim (§8).
 
 ## 2. The three host-only tools
 
@@ -38,7 +46,12 @@ the host; over the open internet that is infrastructure detail handed to a
 stranger, answering a question nobody outside asked.
 
 **Proved, from the open internet, with a valid key:**
-* `tools/list` returns **28** tools and none of the three (`listed: false` ×3).
+* `tools/list` returns **16** tools and none of the three (`listed: false` ×3).
+  *Amended 2026-09-25:* the 09-24 probe read 28, the menu before the P0-A
+  façades; 16 is `serve/mcp_facades.LISTED`, and the host-only test below walks
+  the same list. The 19 absorbed names (`ABSORBED`) are not on the menu but
+  still answer by name for one release — an enumeration reader should know the
+  callable set is 16 + 19, all of it public data, none of it host-only.
 * Calling each by name returns **`-32601`** with the message "is not served over
   HTTP" — absent from the menu is not the same as unreachable, so the name is
   refused too.
@@ -63,7 +76,7 @@ Two defects were found and fixed rather than accepted:
 
 - **`/v2/databank/licenses` was never cached.** Five whole-dataset aggregates
   over 206k serving rows on every call — and it is the route the `licenses` tool
-  calls. Now `q_cached`, keyed on the databank sync watermark, so a nightly load
+  (today `licence(scope=sources)`) calls. Now `q_cached`, keyed on the databank sync watermark, so a nightly load
   invalidates it immediately. Warm serial 4.0 s → 0.01 s; under ten concurrent
   callers the median went 5.59 s → 0.11 s.
 
@@ -126,13 +139,33 @@ endpoint tests fine with curl.
 
 ## 6. The write surface
 
-**No write path is exposed to agents.** The crowd endpoints (`/v2/crowd/register`,
+**No tool files a report.** The crowd endpoints (`/v2/crowd/register`,
 `/v2/crowd/report`) exist for browsers and are reachable by anyone — a deliberate
 push target, not an oversight. The structural mitigation is that every unverified
 submitter shares **one** independence unit and scores `0.85 × 0.20 = 0.17`, below
 every confidence floor, so a thousand registrations carry the weight of one
 anonymous stranger. An agent cannot reach them at all: no MCP tool contains
 `report`, `submit`, `register` or `crowd`, asserted by test.
+
+*Amended 2026-09-25 — two writes the 09-24 sentence "no write path is exposed to
+agents" did not count:*
+
+* **A crowd report's free-text note becomes a served claim.** `crowd/engine.py`
+  writes the report as a `claim` whose `raw_text` carries the note, and
+  `/v2/news` (behind the `news` tool) selects every claim over 30 characters,
+  crowd claims included. So anyone who registers can put up to a note's worth
+  of their own words into what the news surface serves (excerpted to 250
+  characters for partners). The belief weight is still 0.17; the *text* is not
+  weighted at all.
+* **`insights` learns place aliases.** `/v2/insights` calls
+  `resolve_place(place)` with the default `learn=True`, so a place name an agent
+  sends bumps `place_alias.hits` and, on a contains-match, records an observed
+  alias (`resolve/geo.py` `_bump` / `_observe`). Every other tool route resolves
+  with `learn=False`. It is a small write, but it is a write an agent's
+  arguments cause, and the PLAN's P0-A.2 already asks for `learn=false` here.
+
+Both are open items, not accepted risks; neither is in this review's proof
+column.
 
 ## 7. Published by design, and known
 
@@ -155,7 +188,19 @@ anonymous stranger. An agent cannot reach them at all: no MCP tool contains
 Injecting hostile content into the corpus that gets served back (a channel
 writing a payload that survives into an `answer`) is a real class this note does
 not close: it is about ingestion trust rather than the HTTP surface. Filed for
-the next pass with the classifier work.
+the next pass with the classifier work. *Amended 2026-09-25:* the class does not
+need a channel — the crowd note in §6 reaches the same `news` surface through a
+public POST.
+
+**The OAuth token path was not reviewed on 09-24, and it is weaker than the key
+path** (found 2026-09-25, `serve/mcp_oauth.py` / `serve/mcp_http.py` as they
+stand): a token issued with a partner key is not revoked when the key is removed
+from the key file; token callers are not counted against the key's daily quota,
+so the published test key's 5,000/day ceiling does not bind a connector
+authorised with it (the per-IP limiter still does); refresh tokens are
+re-accepted without an enforced lifetime and are not retired on use; and a code
+issued without a PKCE challenge exchanges without a verifier. PARTNER-API §1
+states the same list to partners. PLAN §7 P1-C.4 is the fix.
 
 ## 9. Residual risk, stated plainly
 
@@ -167,4 +212,6 @@ the next pass with the classifier work.
 2. The read API is unauthenticated, so scraping is bounded by rate and licence
    rather than by a key. F-81's per-caller licence tier is what makes the
    distinction meaningful now.
-3. Ingestion trust (§8) is unaddressed here.
+3. Ingestion trust (§8) is unaddressed here, and so is the OAuth token path (§8).
+4. Two writes are reachable by strangers or agents today (§6): the crowd note
+   into the `news` surface, and alias learning through `insights`.

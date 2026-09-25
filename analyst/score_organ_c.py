@@ -14,6 +14,17 @@ CORRECTLY against the gold reader, and — separately, because it is a different
 failure — how often it produced a number where the bulletin states none. Row
 level is reported too: how many bulletins it read completely right.
 
+WHAT THAT NUMBER IS NOT (audit F230, 2026-09-25)
+The gold "truth" is the deterministic reader's own output (settled by the
+validator) on every row; a human read the text of only the `read` rows. So on
+the `arithmetic` rows a model's "correct" means "agrees with organ_c.read()",
+and the headline `rows_exact` is MODEL-READER AGREEMENT — not the model's
+accuracy, and never the reader's. The plan once quoted 196/199 as the parser's
+score; it was the engine role agreeing with the parser. Every summary therefore
+carries `measures` in words and splits `rows_exact` by label_method, so the
+human-read slice (the only part with a truth independent of the reader) has
+its own number.
+
 THE KEY IS NEVER PRINTED. The base URL and the key come from environment
 variables named on the command line, so the caller can source v1's env file and
 pass the name, not the value. A missing key is a refusal, not a retry.
@@ -128,10 +139,17 @@ def score_row(gold: dict, answer: dict) -> dict:
     return out
 
 
+MEASURES = ("agreement with the gold set, whose truth is organ_c.read() settled by "
+            "organ_c.validate(); on label_method=arithmetic rows that is agreement "
+            "with the deterministic reader, not accuracy against the bulletin — only "
+            "label_method=read rows were checked against the text by a human")
+
+
 def summarise(results: list[dict]) -> dict:
     per_field: dict[str, dict[str, int]] = {f: {"correct": 0, "wrong": 0, "invented": 0,
                                                 "abstained": 0} for f in FIELDS}
     answered = wrong_rows = 0
+    by_method: dict[str, dict[str, int]] = {}
     for r in results:
         if not r.get("scored"):
             continue
@@ -140,15 +158,22 @@ def summarise(results: list[dict]) -> dict:
             if field == "row":
                 continue
             per_field[field][verdict] += 1
-        if r["scored"]["row"] != "correct":
+        wrong = r["scored"]["row"] != "correct"
+        if wrong:
             wrong_rows += 1
+        m = by_method.setdefault(r.get("label_method") or "unrecorded",
+                                 {"rows_scored": 0, "rows_exact": 0})
+        m["rows_scored"] += 1
+        m["rows_exact"] += 0 if wrong else 1
     table = {}
     for field, counts in per_field.items():
         n = counts["correct"] + counts["wrong"] + counts["invented"]
         table[field] = {**counts, "compared": n,
                         "precision": round(counts["correct"] / n, 3) if n else None}
-    return {"rows_scored": answered, "rows_wrong": wrong_rows,
-            "rows_exact": answered - wrong_rows, "per_field": table}
+    return {"measures": MEASURES,
+            "rows_scored": answered, "rows_wrong": wrong_rows,
+            "rows_exact": answered - wrong_rows,
+            "by_label_method": by_method, "per_field": table}
 
 
 def main() -> int:
@@ -177,14 +202,16 @@ def main() -> int:
         # Score against what the SERIES says — the settled reading, which carries
         # B3's zero-by-cumulative — not the raw reader. A model that answers 0 on
         # a day the Ministry's own totals prove was 0 is right, not inventing.
-        gold = {}
+        gold, method = {}, {}
         for l in Path(args.gold).read_text(encoding="utf-8").splitlines():
             g = json.loads(l)
             gold[g["claim_id"]] = g.get("settled") or g["reader"]
+            method[g["claim_id"]] = g.get("label_method")
         for role, results in state["rows"].items():
             for r in results:
                 if r.get("answer") and r["claim_id"] in gold:
                     r["scored"] = score_row(gold[r["claim_id"]], r["answer"])
+                    r["label_method"] = method.get(r["claim_id"])
             state["summary"][role] = summarise(results)
         state["rescored_at"] = datetime.now(timezone.utc).isoformat()
         state["rescored_against"] = str(args.gold)
@@ -193,7 +220,9 @@ def main() -> int:
         for role in state["rows"]:
             s = state["summary"][role]
             print(f"== {role} · rescored · {s['rows_scored']} rows · "
-                  f"{s['rows_exact']} exact · {s['rows_wrong']} wrong ==")
+                  f"{s['rows_exact']} agree with the gold reader · {s['rows_wrong']} do not ==")
+            for m, v in s["by_label_method"].items():
+                print(f"   gold rows labelled {m}: {v['rows_exact']}/{v['rows_scored']}")
             for field, v in s["per_field"].items():
                 print(f"   {field:<26} correct {v['correct']:>3}  wrong {v['wrong']:>3}  "
                       f"invented {v['invented']:>3}  precision {v['precision']}")
@@ -252,6 +281,7 @@ def main() -> int:
                 continue
             consecutive_failures = 0
             results.append({"claim_id": row["claim_id"], "latency_ms": res["latency_ms"],
+                            "label_method": row.get("label_method"),
                             "answer": res["json"], "scored": score_row(row["truth"], res["json"])})
             # nothing is written to the databank and no state is mutated: this is a
             # measurement, and its artifact is written incrementally so a paused run
@@ -270,7 +300,9 @@ def main() -> int:
 
         s = state["summary"][role]
         print(f"\n== {role} · {s['rows_scored']} rows scored · "
-              f"{s['rows_exact']} read completely right · status {status} ==")
+              f"{s['rows_exact']} agree with the gold reader on every field · status {status} ==")
+        for m, v in s["by_label_method"].items():
+            print(f"   gold rows labelled {m}: {v['rows_exact']}/{v['rows_scored']}")
         for field, v in s["per_field"].items():
             print(f"   {field:<26} correct {v['correct']:>3}  wrong {v['wrong']:>3}  "
                   f"invented {v['invented']:>3}  abstained {v['abstained']:>3}  "

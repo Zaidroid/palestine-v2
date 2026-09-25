@@ -24,7 +24,15 @@ import unicodedata
 # ── character classes ────────────────────────────────────────────────────────
 _DIACRITICS = re.compile(r"[ً-ٰٟۖ-ۭ]")   # harakat, superscript alef
 _TATWEEL = re.compile(r"ـ")                                   # kashida
-_INNER_DOT = re.compile(r"(?<=[ء-ي])[.·•]+(?=[ء-ي])")
+# A dot run between two Arabic letters, with any tatweel either side of it
+# captured. The tatweel (U+0640) sits inside ء-ي, so this runs BEFORE the
+# tatweel strip, while the evidence of evasion is still in the string.
+_INNER_DOT = re.compile("(?<=[\u0621-\u064a])(\u0640*)([.\u00b7\u2022]+)(\u0640*)(?=[\u0621-\u064a])")
+# Persian letters a Farsi keyboard writes where the gazetteer holds the Arabic
+# ones: ک ی ھ ۀ ە. "بيت لقی" matched nothing (F314).
+_PERSIAN = {"\u06a9": "\u0643", "\u06cc": "\u064a", "\u06be": "\u0647",
+            "\u06c0": "\u0647", "\u06d5": "\u0647"}
+_PERSIAN_RE = re.compile("[" + "".join(_PERSIAN) + "]")
 _ALEF = re.compile(r"[آأإٱ]")                  # آ أ إ ٱ -> ا
 _ALEF_MAQSURA = re.compile(r"ى")                              # ى -> ي
 _TEH_MARBUTA = re.compile(r"ة")                               # ة -> ه
@@ -61,27 +69,92 @@ _PLACE_TYPE_RE: "re.Pattern[str]"  # set below, after normalize() is defined
 _LATIN_NOISE = re.compile(r"^(?:checkpoint|cp|the)\s+", re.I)
 
 
+# Characters that are not letters and not visible, or not words at all.
+#
+# Invisible format characters (Unicode category Cf) — RLM/LRM, the bidi
+# embeddings, overrides and isolates, ZWJ/ZWNJ, the BOM — are DROPPED: they
+# carry no letter, and a name followed by an RLM or split by a ZWJ looked right
+# on screen and matched nothing (F314/F353/F108: RLM/ZWSP/ZWJ/RLI/PDI in 15 of
+# 928 corpus messages). The zero-width SPACE is the one exception: it is a word
+# break, so it becomes a space. cascade/palhub_roads.py and moh_gaza.py each
+# stripped their own bidi table; this is the same rule for everyone.
+#
+# Symbols (categories So/Sk/Sm: emoji, ▫, arrows, 🔴) become a SPACE, never
+# nothing: "🚫حاجز" and "حوارة🔴" are one whitespace-token, and 45 % of corpus
+# messages glue an emoji to an Arabic word. checkpoint_text.tokens() already
+# splits on them ("an emoji between two words separates them exactly as a
+# space does"); normalize now agrees with it. Variation selectors and the
+# keycap mark are combining marks that only restyle the symbol before them, so
+# they go with it. Currency signs (₪) are left alone — prices read them.
+_ZW_SPACE = "\u200b"
+_SYMBOL_CATS = frozenset(("So", "Sk", "Sm"))
+_DROP_MARKS = frozenset(chr(c) for c in (*range(0xFE00, 0xFE10), 0x20E3))
+
+
+# Everything outside ASCII/C1 and the Arabic letters, digits and marks
+# (U+0620-U+06DC, U+06DF-U+06FF) is looked at one character at a time; the
+# common case — plain Arabic and Latin — never leaves the regex engine. U+061C
+# (the Arabic letter mark) and U+06DD (end of ayah) are format characters and
+# U+06DE a symbol, so they fall outside the fast range on purpose.
+_NOT_PLAIN = re.compile("[^\u0000-\u009f\u0620-\u06dc\u06df-\u06ff]")
+
+
+def _clean_char(m: "re.Match[str]") -> str:
+    ch = m.group()
+    if ch == _ZW_SPACE:
+        return " "
+    if ch in _DROP_MARKS:
+        return ""
+    cat = unicodedata.category(ch)
+    if cat == "Cf":
+        return ""
+    return " " if cat in _SYMBOL_CATS else ch
+
+
+def _strip_invisible_and_symbols(s: str) -> str:
+    return _NOT_PLAIN.sub(_clean_char, s)
+
+
+def _inner_dot(m: "re.Match[str]") -> str:
+    """Censorship-evasion dots vs an ellipsis between two words.
+
+    A dot run next to a tatweel ("مسـ.ـتوطن", "الاحتـ..ـلال") or a single bare
+    dot inside a word ("مش.هد") is evasion: removed, so the word is whole
+    again. A bare run of two or more dots — "...", or "…" after NFKC — between
+    two words is a pause: it becomes a space. The rule used to remove every run,
+    which fused "قرية المغير…شرق رام الله" into the candidate المغيرشرق and
+    "حاجز حوارة...مغلق" into حوارهمغلق (F315).
+    """
+    before, dots, after = m.group(1), m.group(2), m.group(3)
+    if before or after or len(dots) == 1:
+        return before + after              # the tatweels go at the next step
+    return " "
+
+
 def normalize(text: str | None) -> str:
     """Conservative normalisation. Idempotent."""
     if not text:
         return ""
     s = unicodedata.normalize("NFKC", text)
+    s = _strip_invisible_and_symbols(s)
     s = _DIACRITICS.sub("", s)
-    s = _TATWEEL.sub("", s)
     # Censorship-evasion dots: channels write "مسـ.ـتوطن" and "الاحـ.ـتلال" to
     # dodge platform filters. Stripping the tatweel leaves "مس.توطن", and the
     # dot then becomes a SPACE at the punctuation step — splitting the word in
     # half, so neither the settler pattern nor the place matcher ever sees it.
     # A real settler attack on a vehicle was rejected as "no incident verb"
-    # this way (round 5, claim 12039). A dot BETWEEN two Arabic letters is
-    # never orthography; removing it reunites the word. Applied before the
-    # punctuation pass, which would otherwise destroy the evidence.
-    s = _INNER_DOT.sub("", s)
-    s = _ALEF.sub("ا", s)
-    s = _ALEF_MAQSURA.sub("ي", s)
-    s = _TEH_MARBUTA.sub("ه", s)
-    s = _HAMZA_WAW.sub("و", s)
-    s = _HAMZA_YEH.sub("ي", s)
+    # this way (round 5, claim 12039). Read BEFORE the tatweel strip, which
+    # would otherwise destroy the evidence that tells evasion from an
+    # ellipsis, and before the punctuation pass. See _inner_dot.
+    if "." in s or "\u00b7" in s or "\u2022" in s:     # the regex costs; a dot is rare
+        s = _INNER_DOT.sub(_inner_dot, s)
+    s = _TATWEEL.sub("", s)
+    s = _PERSIAN_RE.sub(lambda m: _PERSIAN[m.group()], s)
+    s = _ALEF.sub("\u0627", s)
+    s = _ALEF_MAQSURA.sub("\u064a", s)
+    s = _TEH_MARBUTA.sub("\u0647", s)
+    s = _HAMZA_WAW.sub("\u0648", s)
+    s = _HAMZA_YEH.sub("\u064a", s)
     s = _DIGIT_RE.sub(lambda m: _DIGITS[m.group()], s)
     s = _PUNCT.sub(" ", s)
     s = _WS.sub(" ", s)
@@ -110,9 +183,12 @@ def fold(text: str | None) -> str:
         if new == s:
             break
         s = new
-    # Article again — the place-type strip can expose a fresh one
-    # ("حاجز القدس" -> "القدس" -> "قدس").
-    s = " ".join(_strip_article(tok) for tok in s.split())
+    # NO second article pass. The place-type strip removes whole leading
+    # tokens only (the pattern ends in \s+), so every token left was already
+    # article-stripped above ("حاجز القدس" is "حاجز قدس" before the strip).
+    # A second pass could therefore only strip a stem that merely BEGINS like
+    # an article: الوالجة -> والجه -> جه, الفالوجة -> فالوجه -> وجه ("face"),
+    # an exact-matchable key for an ordinary word (F522).
     return _WS.sub(" ", s).strip()
 
 

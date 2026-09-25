@@ -9,8 +9,9 @@ User=zaid
 WorkingDirectory=/home/zaid/palestine-v2
 ExecStart=/home/zaid/palestine-v2/ops/watchdog.sh
 TimeoutStartSec=300
-# The watchdog exits 1 when it finds a fault. That is a successful RUN with a
-# bad RESULT, and systemd cannot tell the difference — without this, every
-# detected fault would also mark the watchdog itself as failed, raising a
-# second alarm about the alarm. SuccessExitStatus keeps the two apart.
-SuccessExitStatus=0 1
+# No SuccessExitStatus. It read `0 1` because the watchdog exited 1 when it
+# FOUND a fault — and 1 is also Python's exit on any crash, so a watchdog that
+# died mid-run was recorded as a success and OnFailure could never fire.
+# ops/watchdog.sh now exits 0 for "ran, found faults" (the watchdog raised
+# them itself) and 70 for "did not finish", so the default — only 0 is
+# success — is exactly right, and a crash alarms.

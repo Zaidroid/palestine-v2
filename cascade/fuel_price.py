@@ -41,7 +41,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-VERSION = "fuel_price@4"
+VERSION = "fuel_price@5"
 
 LITRE_PRODUCTS = ("gasoline_95", "gasoline_98", "diesel", "kerosene")
 LPG_SIZES = {"2.5": "lpg_2_5kg", "5": "lpg_5kg", "12": "lpg_12kg", "48": "lpg_48kg"}
@@ -94,9 +94,21 @@ _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹٫", "012345678
 _TASHKEEL = re.compile(r"[\u064B-\u0652\u0640]")     # harakat + tatweel
 
 
+# A DECIMAL COMMA IS A DECIMAL POINT. "البنزين 95 بسعر 8,15 شيكلا والسولار
+# 8,39 شيكلا" (or with the Arabic comma, "8،15") was split at the comma as a
+# clause boundary before _PRICE ever saw the number, and the tail
+# "15 شيكلا والسولار 8" read as diesel = 15.0 — inside diesel's bounds, one
+# product and one number, so recorded as a STATED reading. A comma between a
+# 1-3 digit number with no decimal of its own and one or two digits that end
+# the number is a decimal separator; "1,230" (three digits after) and
+# "8.15،9.21" (a list of two prices) are left alone.
+_DECIMAL_COMMA = re.compile(r"(?<![\d.,،])(\d{1,3})[,،](\d{1,2})(?![\d.,،])")
+
+
 def normalise(text: str) -> str:
     t = _TASHKEEL.sub("", text.translate(_DIGITS))
     t = t.replace("\u00a0", " ").replace("\u200f", "").replace("\u200e", "")
+    t = _DECIMAL_COMMA.sub(r"\1.\2", t)
     return re.sub(r"[ \t]+", " ", t)
 
 
@@ -106,10 +118,27 @@ def normalise(text: str) -> str:
 ATTRIBUTION = re.compile(
     r"الهيئة العامة للبترول|هيئة البترول|وزارة المالية والتخطيط|المالية الفلسطينية")
 # A sentence that talks about a price without announcing it.
+#
+# كان AND سابق ARE WORDS, NOT SUBSTRINGS. "كان " matched inside مكان, السكان
+# and بالإمكان, and "سابق" inside مسابقة, so "سعر لتر بنزين 95 في مكان البيع
+# 8.15 شيكل" threw the whole list away (HANDOFF §4: short Arabic substrings
+# inside common words). They are anchored to word edges, prefixes allowed
+# ("وكانت ... في حينه", "السعر السابق") because those are the measured forms.
 _NOT_AN_ANNOUNCEMENT = re.compile(
     r"غير صحيح|لا صحة|شائع|إشاع|اشاع|مفبرك|يتم تداول|لم تصدر|أن تصدر|ان تصدر"
-    r"|كانت|كان |في حينه|سابق|الأعلى منذ|الأدنى منذ|منذ \d+ ?عام"
+    rf"|(?<!{_A})[وف]?كان(?:ت|وا)?(?!{_A})|في حينه|(?<!{_A})(?:[وب]?ال|[وب])?سابق"
+    r"|الأعلى منذ|الأدنى منذ|منذ \d+ ?عام"
     r"|إسرائيل|اسرائيل|الإسرائيلي|الاسرائيلي|أغورة|اغورة|الخدمة الذاتية")
+# THE CORPORATION'S OWN EXPLANATION OF ITS PRICE IS NOT AN ISRAELI PRICE.
+# raya.ps's April list (2026-03-31) carries all four litre prices in one
+# sentence that begins "... واعتماد الأسعار على سعر الأسواق الإسرائيلية كونها
+# المزوّد الرئيسي ..., فإن سعر لتر البنزين 95 ... سيباع بـ7.90 شيقلا" — and the
+# sentence was skipped whole for "الإسرائيلية", so the reader kept only the
+# cylinder. Only that dependence phrase is excused, and only for the Israel
+# test; an Israeli price stated anywhere else in the sentence still skips it.
+_PRICED_ON_ISRAELI_MARKET = re.compile(
+    r"(?:اعتماد|ارتباط|مرتبط\S*|ترتبط|يرتبط|تعتمد|يعتمد)\s+(?:ال[أا]سعار\s+)?"
+    r"(?:على|ب)\s*(?:سعر\s+|[أا]سعار\s+)?(?:ال)?(?:[أا]سواق|سوق)\s+(?:ال)?[إا]سرائيلي[ةه]?")
 # "ليصبح 7.65 بدلاً من 8.15" — the second number is the OLD price. So is a
 # change "بمقدار 20 أغورة" / "بقيمة شيكل": a delta is not a price.
 _OLD_OR_DELTA = re.compile(
@@ -188,6 +217,21 @@ _D_MONTH = re.compile(
     rf"(?:\s*[/\\-]\s*(?:{_MONTH_ALT}))?(?:\s*(?:لعام\s*)?(\d{{4}}))?")
 _D_THIS_MONTH = re.compile(r"(?<!\d)(\d{1,2})\s*(?:من\s*)?(?:ال)?شهر\s*(?:ال)?(?:جاري|حالي)")
 _EFFECTIVE_REACH = 50
+# What may sit between the two days of a midnight boundary ("31 آب/1 أيلول",
+# "31 آب - 1 أيلول", "31 آب و 1 أيلول"). Always matches, possibly empty.
+_BOUNDARY = re.compile(r"\s*(?:[/\\-]|و)?\s*")
+
+
+def _d_month_date(m: re.Match, published: date | None) -> date | None:
+    day = 1 if m.group(1) in ("أول", "اول") else int(m.group(1))
+    month = _MONTH_NUM[m.group(2)]
+    y = _year_for(month, published, m.group(3))
+    if not y:
+        return None
+    try:
+        return date(y, month, day)
+    except ValueError:
+        return None
 
 
 def effective_from(text: str, published: date | None) -> date | None:
@@ -202,14 +246,22 @@ def effective_from(text: str, published: date | None) -> date | None:
                 continue
         m = _D_MONTH.search(tail)
         if m:
-            day = 1 if m.group(1) in ("أول", "اول") else int(m.group(1))
-            month = _MONTH_NUM[m.group(2)]
-            y = _year_for(month, published, m.group(3))
-            if y:
-                try:
-                    return date(y, month, day)
-                except ValueError:
-                    continue
+            got = _d_month_date(m, published)
+            # "منتصف ليلة 31 آب/1 أيلول" names the midnight BETWEEN two days,
+            # and the list governs the second. Reading the first dated every
+            # list announced that way a day early — and an October list
+            # published on 30 Sep as "30 أيلول/1 تشرين الأول" would be filed
+            # under September, leaving October `awaiting_list`. Only a pair
+            # of CONSECUTIVE days is a midnight boundary; "1 أيلول - 30
+            # أيلول" is a range and keeps its start.
+            nxt = _D_MONTH.match(tail, m.end() + len(_BOUNDARY.match(tail, m.end()).group(0)))
+            if got and nxt:
+                later = _d_month_date(nxt, published)
+                if later and later - got == timedelta(days=1):
+                    got = later
+            if got:
+                return got
+            continue
         m = _D_THIS_MONTH.search(tail)
         if m and published:
             try:
@@ -265,11 +317,15 @@ def read_prices(text: str) -> tuple[dict[str, float], list[str], dict[str, dict]
     notes: list[str] = []
     evidence: dict[str, dict] = {}
     for sentence in _sentences(text):
-        if _NOT_AN_ANNOUNCEMENT.search(sentence):
+        # The old price and the delta come out FIRST: "بمقدار 20 أغورة ليصبح
+        # 8.15 شيكل" is a rise announced in agorot, and with the delta still
+        # in the sentence its "أغورة" made the negative filter throw away the
+        # new price the sentence exists to state.
+        sentence = _OLD_OR_DELTA.sub(" ", sentence)
+        if _NOT_AN_ANNOUNCEMENT.search(_PRICED_ON_ISRAELI_MARKET.sub(" ", sentence)):
             if _PRICE.search(sentence):
                 notes.append(f"sentence skipped (not an announcement): {sentence.strip()[:80]}")
             continue
-        sentence = _OLD_OR_DELTA.sub(" ", sentence)
         cylinder_context = False
         for clause in _clauses(sentence):
             products = _products_in(clause, cylinder_context)

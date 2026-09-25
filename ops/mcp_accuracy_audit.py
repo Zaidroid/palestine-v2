@@ -17,8 +17,19 @@ Findings JSON: ops/mcp-accuracy.json
 
 Nightly the unit runs it with alerting on; a critical finding pages the phone
 once and stays open until a run comes back clean, which is the same shape as
-the Gaza cross-check. The watchdog watches the ARTIFACT for staleness, so a job
-that stops running at all is noticed too — one paging path each, no overlap.
+the Gaza cross-check. The watchdog judges the `mcp-audit` HEARTBEAT that
+ops/mcp-audit.sh writes around the run (not the artifact's age), so a job that
+stops running at all is noticed too — one paging path each, no overlap.
+
+THE TOOLS ARE CALLED THE WAY A CLIENT CALLS THEM (audit F243, 2026-09-25)
+`check()` used to call the tool function directly. `answer_en` is attached by
+the transports (serve/mcp_en.add_english, after serve/mcp_facades.route), so
+every English check below ran on an empty string and could never fire, and a
+façade name was never routed at all — the night of 09-23/24 this read 0/0/0
+while a black-box pass rated four tools broken. `check()` now goes through the
+same route() and add_english the stdio transport uses. The licence block
+(licence.apply) is still not applied: it depends on the caller's tier, and the
+arithmetic here is about the payload, not about what a tier may see.
 """
 from __future__ import annotations
 
@@ -33,6 +44,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from serve.app import q                                          # noqa: E402
+from serve.mcp_en import add_english                             # noqa: E402
+from serve.mcp_facades import route                              # noqa: E402
 from serve.mcp_server import TOOLS                               # noqa: E402
 
 FINDINGS: list[dict] = []
@@ -44,8 +57,11 @@ def finding(sev: str, tool: str, claim: str, expected, got, evidence: str = "") 
 
 
 def check(tool: str, args: dict) -> dict | None:
+    """Call `tool` as a transport does: route a public (façade) name to the
+    tool that answers, call it, and attach the English the client receives."""
     try:
-        return TOOLS[tool][0](**args)
+        target, targs = route(tool, args)
+        return add_english(target, TOOLS[target][0](**targs))
     except Exception as exc:                                     # noqa: BLE001
         finding("critical", tool, "tool raised", "a payload",
                 f"{type(exc).__name__}: {exc}", traceback.format_exc()[-400:])
@@ -416,9 +432,13 @@ def audit_edges() -> None:
         d = check(tool, args)
         if d is None:
             continue
-        if d.get("found") is False or d.get("count") == 0 or "answer" in d:
-            if not d.get("answer"):
-                finding("major", tool, "refusal without words", "an answer", d)
+        # Unconditional (audit F488): the old test fired only when the payload
+        # happened to carry `found`, `count` or `answer`, so a bare `{}` or
+        # `{"results": []}` for a place that does not exist — exactly the reply
+        # this probe exists to catch — passed silently.
+        if not isinstance(d, dict) or not (isinstance(d.get("answer"), str)
+                                           and d["answer"].strip()):
+            finding("major", tool, "refusal without words", "an answer", d)
     for tool, args in (("insights", {"place": "رام الله", "days": 365, "radius_km": 60}),
                        ("checkpoints_near", {"place": "نابلس", "radius_km": 60, "limit": 1}),
                        ("incidents_summary", {"hours": 24})):
@@ -441,26 +461,37 @@ def _dupes(names: list[str]) -> dict:
 ARTIFACTS = ("None", "nan", "NaN", "undefined", "[object", "null,")
 
 
+RENDER_PROBES = {
+    "coverage": {}, "checkpoints_summary": {}, "incidents_summary": {"hours": 24},
+    "weather_now": {}, "fuel_prices": {}, "crossings": {},
+    "connectivity_now": {}, "data_gaps": {}, "licenses": {}, "databank": {},
+    "latest_news": {"limit": 3}, "search": {"text": "حاجز", "hours": 24},
+    "area_history": {"days": 7}, "insights": {"place": "نابلس", "days": 7},
+    "place_pattern": {"place": "نابلس"}, "place_history": {"place": "نابلس"},
+    "place_profile": {"place": "نابلس"}, "where_is": {"place": "نابلس"},
+    "checkpoints_near": {"place": "نابلس", "limit": 3},
+    "checkpoint_status": {"name": "حوارة"},
+    "incidents_near": {"place": "نابلس", "hours": 168, "limit": 3},
+    "trend": {"indicator": "casualties.annual_total"},
+    "can_i_travel": {"origin": "رام الله", "destination": "نابلس"},
+}
+
+
 def audit_renderer_artifacts() -> None:
     """Cheap and general: a sentence that contains "None" or "nan" is a
     formatting bug the reader sees, wherever it comes from. This is what caught
     "In the last Noneh" — as a class rather than one occurrence."""
-    probes = {
-        "coverage": {}, "checkpoints_summary": {}, "incidents_summary": {"hours": 24},
-        "weather_now": {}, "fuels": {}, "fuel_prices": {}, "crossings": {},
-        "connectivity_now": {}, "data_gaps": {}, "licenses": {}, "databank": {},
-        "latest_news": {"limit": 3}, "search": {"text": "حاجز", "hours": 24},
-        "area_history": {"days": 7}, "insights": {"place": "نابلس", "days": 7},
-        "place_pattern": {"place": "نابلس"}, "place_history": {"place": "نابلس"},
-        "place_profile": {"place": "نابلس"}, "where_is": {"place": "نابلس"},
-        "checkpoints_near": {"place": "نابلس", "limit": 3},
-        "checkpoint_status": {"name": "حوارة"},
-        "incidents_near": {"place": "نابلس", "hours": 168, "limit": 3},
-        "trend": {"indicator": "casualties.annual_total"},
-        "can_i_travel": {"origin": "رام الله", "destination": "نابلس"},
-    }
-    for tool, args in probes.items():
-        if tool not in TOOLS:
+    for tool, args in RENDER_PROBES.items():
+        # A probe for a tool that no longer exists is a coverage claim that is
+        # not true (audit F489: `fuels` was skipped here silently every night).
+        # It is said out loud, as a minor, until the probe list is corrected.
+        try:
+            target = route(tool, args)[0]
+        except TypeError:
+            target = None
+        if target not in TOOLS:
+            finding("minor", "audit", f"probe names no tool: {tool}",
+                    "a tool in TOOLS or a façade", None)
             continue
         d = check(tool, args)
         if not isinstance(d, dict):
@@ -475,6 +506,16 @@ def audit_renderer_artifacts() -> None:
 
 
 ALERT_UNIT = "palestine-v2:mcp-audit"
+
+
+def verdict(findings: list[dict]) -> dict:
+    """The artifact ops/mcp-accuracy.json carries. Built here, not inline in
+    main(), so its shape is testable on a checkout where the gitignored file
+    has never been written (audit F492/F583)."""
+    counts = {sev: sum(1 for f in findings if f.get("severity") == sev)
+              for sev in ("critical", "major", "minor")}
+    return {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "counts": counts, "findings": list(findings)}
 
 
 def page(crit: list[dict]) -> None:
@@ -523,10 +564,7 @@ def main() -> int:
               f"        expected {str(f['expected'])[:110]}\n"
               f"        got      {str(f['got'])[:110]}")
     (ROOT / "ops" / "mcp-accuracy.json").write_text(
-        json.dumps({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                    "counts": {"critical": len(crit), "major": len(major),
-                               "minor": len(minor)},
-                    "findings": FINDINGS}, indent=1, default=str))
+        json.dumps(verdict(FINDINGS), indent=1, default=str))
 
     if not a.no_alert:
         page(crit)

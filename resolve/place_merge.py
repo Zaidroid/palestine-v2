@@ -32,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cascade.checkpoint_text import (CLEARING_WORDS, FLOW_WORDS, PRESENCE_WORDS,
                                      tokens)
-from resolve.arabic import fold_for_match, normalize
+from resolve.arabic import fold_for_match, is_generic_alias, normalize
 from resolve.db import connect
 
 CHECKPOINT_KINDS = ("checkpoint", "crossing", "road")
@@ -139,9 +139,62 @@ def plan(cur) -> list[dict]:
     return out
 
 
+def move_evidence(cur, fid: int, canon: int) -> int:
+    """Re-point a fragment's observations at the canonical place.
+
+    The fragment an observation came from is kept on the row: a merge later
+    judged wrong (the ranking once elected الكونتير, 2 obs, over الكونتينر,
+    1,304) must be undoable without re-parsing raw lines (F540). The FIRST
+    pre-merge id survives a chain of merges.
+    """
+    cur.execute("""UPDATE state_observation
+                      SET place_id = %s,
+                          attrs = attrs || jsonb_build_object(
+                              'place_id_before_merge',
+                              COALESCE(attrs->'place_id_before_merge', to_jsonb(place_id)),
+                              'merged_by', 'place_merge')
+                   WHERE place_id=%s""", (canon, fid))
+    moved = cur.rowcount
+    cur.execute("DELETE FROM state_current WHERE place_id=%s", (fid,))
+    cur.execute("DELETE FROM place_state_cadence WHERE place_id=%s", (fid,))
+    return moved
+
+
+def keep_spellings(cur, frag: dict, canon: int, stats: dict) -> None:
+    """Index a fragment's spellings against the canonical row — FIRST WRITER
+    WINS, like every other loader.
+
+    This was `ON CONFLICT (alias_norm) DO UPDATE SET place_id = canonical`,
+    which repointed a key whoever owned it. `related()` merges "قلقيلية" into
+    "مدخل قلقيلية" (they share a token), so the TOWN's curated key would have
+    moved to the entrance checkpoint, and "اقتحام قلقيلية", insights and
+    route_between would have answered with a gate — origin still
+    'checkpoint_db', nothing recording the move (F316, 2026-09-25). The keys
+    the fragment itself owned are already repointed by apply(); a key owned
+    by anyone else stays theirs and is reported, never taken.
+    """
+    for nm in (frag["name_ar"], frag["name_en"], frag["v1key"]):
+        key = normalize(nm)
+        if not key or is_not_a_name(nm) or is_generic_alias(key):
+            continue
+        cur.execute("""INSERT INTO place_alias (alias_norm, place_id, origin, confidence)
+                       VALUES (%s,%s,'checkpoint_db',0.6)
+                       ON CONFLICT (alias_norm) DO NOTHING""", (key, canon))
+        if cur.rowcount:
+            stats["aliases"] += cur.rowcount
+            continue
+        cur.execute("""SELECT a.place_id FROM place_alias a
+                        JOIN place p0 ON p0.place_id = a.place_id
+                       WHERE a.alias_norm = %s
+                         AND COALESCE(p0.merged_into, p0.place_id) <> %s""", (key, canon))
+        other = cur.fetchone()
+        if other:
+            stats.setdefault("keys_left_with_owner", []).append((key, other[0]))
+
+
 def apply(cur, groups: list[dict]) -> dict:
     stats = {"clusters": 0, "fragments": 0, "observations_moved": 0,
-             "aliases": 0, "aliases_repointed": 0}
+             "aliases": 0, "aliases_repointed": 0, "keys_left_with_owner": []}
     for g in groups:
         canon = g["canonical"]["place_id"]
         for frag in g["fragments"]:
@@ -149,11 +202,7 @@ def apply(cur, groups: list[dict]) -> dict:
             # Re-point evidence at the canonical place BEFORE marking the
             # fragment, so a crash mid-run cannot strand observations on a row
             # that is no longer servable.
-            cur.execute("""UPDATE state_observation SET place_id=%s
-                           WHERE place_id=%s""", (canon, fid))
-            stats["observations_moved"] += cur.rowcount
-            cur.execute("DELETE FROM state_current WHERE place_id=%s", (fid,))
-            cur.execute("DELETE FROM place_state_cadence WHERE place_id=%s", (fid,))
+            stats["observations_moved"] += move_evidence(cur, fid, canon)
 
             # Aliases must follow the merge. P0.16 already indexed every
             # fragment's spellings against the FRAGMENT row, so without this
@@ -167,15 +216,7 @@ def apply(cur, groups: list[dict]) -> dict:
             # Keep every spelling as a way IN. A fragment name that is a whole
             # sentence is not indexed — it would match far too much — but a
             # variant spelling is exactly what we want to catch next time.
-            for nm in (frag["name_ar"], frag["name_en"], frag["v1key"]):
-                key = normalize(nm)
-                if not key or is_not_a_name(nm):
-                    continue
-                cur.execute("""INSERT INTO place_alias (alias_norm, place_id, origin, confidence)
-                               VALUES (%s,%s,'checkpoint_db',0.6)
-                               ON CONFLICT (alias_norm) DO UPDATE SET place_id=EXCLUDED.place_id""",
-                            (key, canon))
-                stats["aliases"] += cur.rowcount
+            keep_spellings(cur, frag, canon, stats)
 
             cur.execute("""UPDATE place SET merged_into=%s, servable=false,
                                   quality_note=%s, updated_at=now()
@@ -219,6 +260,21 @@ def main() -> int:
                 print(f"    <- [{tag:<8}] {f['name_ar']}  ({f['obs']} obs)")
             if len(g["fragments"]) > 4:
                 print(f"    <- … {len(g['fragments']) - 4} more")
+            # Keys a fragment's names would have taken from a place OUTSIDE the
+            # cluster: they stay with their owner. Said before --apply, so a
+            # town-named fragment is a visible question, not a silent move.
+            for f in g["fragments"]:
+                for nm in (f["name_ar"], f["name_en"], f["v1key"]):
+                    key = normalize(nm)
+                    if not key or is_not_a_name(nm):
+                        continue
+                    cur.execute("""SELECT a.place_id, p.name_ar, p.kind::text
+                                     FROM place_alias a JOIN place p ON p.place_id = a.place_id
+                                    WHERE a.alias_norm = %s AND a.place_id <> ALL(%s)""",
+                                (key, [c["place_id"]] + [x["place_id"] for x in g["fragments"]]))
+                    row = cur.fetchone()
+                    if row:
+                        print(f"    !! key {key!r} stays with {row[2]} {row[0]} {row[1]!r}")
 
         if not a.apply:
             print("\n(dry run — pass --apply to write)")
@@ -228,7 +284,8 @@ def main() -> int:
         print(f"\nmerged {stats['fragments']} fragments in {stats['clusters']} clusters · "
               f"moved {stats['observations_moved']} observations · "
               f"repointed {stats['aliases_repointed']} aliases · "
-              f"added {stats['aliases']}")
+              f"added {stats['aliases']} · "
+              f"left {len(stats['keys_left_with_owner'])} keys with their owner")
         print(f"also unservable: {stats['unservable_names']} lone names that are reports")
     return 0
 

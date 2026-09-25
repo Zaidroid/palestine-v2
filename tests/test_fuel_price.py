@@ -115,3 +115,80 @@ def test_a_price_table_is_read_only_when_the_table_names_its_unit():
                         "lpg_5kg": 36.0, "lpg_12kg": 85.0, "lpg_48kg": 340.0}
     unitless = page.replace("السعر/ شيكل", "السعر")
     assert fp.parse(article_text(unitless), date(2026, 8, 1)).verdict != "prices"
+
+
+# ── 2026-09-25 audit: fuel_price@5 ───────────────────────────────────────────
+
+@pytest.mark.parametrize("comma", [",", "،"])
+def test_a_decimal_comma_is_a_decimal_point(comma):
+    """F174. The comma was a clause boundary before it was a decimal, so
+    "8,15 شيكلا والسولار 8,39" left the clause "15 شيكلا والسولار 8" and
+    diesel was recorded as a STATED 15.0 — inside its bounds."""
+    a = fp.parse("أعلنت الهيئة العامة للبترول ... اعتبارا من 1 أيلول 2026: البنزين 95 "
+                 f"بسعر 8{comma}15 شيكلا والسولار 8{comma}39 شيكلا.", date(2026, 8, 31))
+    assert a.verdict == "prices"
+    assert a.prices == {"gasoline_95": 8.15, "diesel": 8.39}
+
+
+def test_a_thousands_comma_and_a_list_of_prices_are_not_decimals():
+    assert fp.normalise("1,230 شيكل") == "1,230 شيكل"
+    assert fp.normalise("8.15،9.21") == "8.15،9.21"
+    assert fp.normalise("أسطوانة 2,5 كغم") == "أسطوانة 2.5 كغم"
+
+
+def test_a_list_announced_for_the_midnight_between_two_days_governs_the_second():
+    """F173. "منتصف ليلة 31 آب/1 أيلول" took the first day-month, so the list
+    was dated 31 Aug — and an October list worded the same way on 30 Sep
+    would be filed under September, leaving October `awaiting_list`."""
+    a = fp.parse("أعلنت الهيئة العامة للبترول … اعتبارا من منتصف ليلة 31 آب/1 أيلول 2026: "
+                 "بنزين 95: 8.15 شيكل.", date(2026, 8, 31))
+    assert a.effective_from == date(2026, 9, 1)
+    oct_ = fp.parse("أعلنت الهيئة العامة للبترول اعتبارا من منتصف ليلة 30 أيلول/1 تشرين الأول "
+                    "2026: بنزين 95: 8.15 شيكل.", date(2026, 9, 30))
+    assert oct_.effective_from == date(2026, 10, 1) and oct_.period_month == date(2026, 10, 1)
+
+
+def test_a_date_range_keeps_its_start():
+    """Only CONSECUTIVE days are a midnight boundary; a range is not one."""
+    a = fp.parse("أعلنت الهيئة العامة للبترول اعتبارا من 1 أيلول - 30 أيلول 2026: "
+                 "بنزين 95: 8.15 شيكل.", date(2026, 8, 31))
+    assert a.effective_from == date(2026, 9, 1)
+
+
+@pytest.mark.parametrize("text", [
+    # "كان " matched inside مكان
+    "أعلنت الهيئة العامة للبترول اعتبارا من 1 أيلول 2026: سعر لتر بنزين 95 في مكان البيع 8.15 شيكل",
+    # a rise stated in agorot: the delta is stripped, the new price stands
+    "أعلنت الهيئة العامة للبترول اعتبارا من 1 أيلول 2026: رفع سعر لتر بنزين 95 بمقدار 20 أغورة ليصبح 8.15 شيكل",
+])
+def test_a_word_inside_another_word_does_not_throw_the_list_away(text):
+    """F175. The sentence filter matched short substrings anywhere."""
+    a = fp.parse(text, date(2026, 8, 31))
+    assert a.verdict == "prices" and a.prices == {"gasoline_95": 8.15}
+
+
+def test_the_corporations_israeli_market_explanation_does_not_hide_its_prices():
+    """F175. raya.ps's April list states all four litre prices in the sentence
+    that explains they follow "سعر الأسواق الإسرائيلية"; it was skipped whole
+    and only the cylinder was read."""
+    a = _read("raya.ps/news/1214890")
+    assert a.verdict == "prices"
+    assert a.prices == {"gasoline_95": 7.9, "gasoline_98": 8.86, "diesel": 8.4,
+                        "kerosene": 8.4, "lpg_12kg": 95.0}
+
+
+def test_an_israeli_price_in_a_palestinian_sentence_is_still_refused():
+    """The excuse covers only the dependence phrase. A sentence that STATES a
+    price in Israel is still not an announcement of the West Bank's."""
+    a = fp.parse("أعلنت الهيئة العامة للبترول اعتبارا من 1 أيلول 2026 أسعار المحروقات. "
+                 "وفي إسرائيل، بنزين 95 بـ 7.75 شيكل.", date(2026, 8, 31))
+    assert "gasoline_95" not in a.prices
+    b = fp.parse("أعلنت الهيئة العامة للبترول اعتبارا من 1 أيلول 2026، وكانت أسعار "
+                 "الأسواق الإسرائيلية أعلى، بنزين 95 بـ 7.75 شيكل.", date(2026, 8, 31))
+    assert "gasoline_95" not in b.prices
+
+
+def test_kanun_the_month_is_not_kana_the_verb():
+    a = fp.parse("أعلنت الهيئة العامة للبترول اعتبارا من 1 كانون الثاني 2027: بنزين 95: 8.15 شيكل.",
+                 date(2026, 12, 31))
+    assert a.verdict == "prices" and a.effective_from == date(2027, 1, 1)

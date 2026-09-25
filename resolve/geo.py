@@ -12,10 +12,20 @@ Strategy, in order — first hit wins:
   2. containment   (a known alias inside a phrase) confidence 0.70–0.85
   3. fuzzy trigram (similarity >= threshold)       confidence 0.50–0.75
 
-The resolver LEARNS: every successful resolution bumps `place_alias.hits`, and
-a phrase that resolved by containment or fuzzy match is written back as an
-`origin='observed'` alias, so the next occurrence is an exact hit. This is the
-mechanism that makes coverage improve without anyone labelling anything.
+The resolver CAN learn, and by default does not. With `learn=True` a
+successful resolution bumps `place_alias.hits`, and a phrase that resolved by
+containment with confidence >= LEARN_MIN_CONF is written back as an
+`origin='observed'` alias. It used to be the default, so every public probe of
+/v2/insights and every crowd or palhub fallback wrote permanent aliases, and
+the exact branch then served those guesses as method 'exact' at 0.89+ to every
+later caller, the incident classifier included (F071, 2026-09-25). Now:
+
+  * learning is opt-in, for a trusted caller that names itself by passing
+    `learn=True` (no caller in serve/, crowd/ or ingest/ does today);
+  * a fuzzy match is never written back — a guess is not a spelling;
+  * an observed alias is served as method 'observed', at no more than the
+    confidence it was stored with;
+  * resolve_place never commits a transaction it does not own.
 """
 from __future__ import annotations
 
@@ -44,6 +54,9 @@ FUZZY_MARGIN = 0.08       # winner must beat runner-up by this much, else ambigu
 MIN_LEN = 2               # two letters resolve by EXACT alias only (تل, جت);
                           # containment and fuzzy keep their own floors
 FUZZY_CONF_FLOOR = 0.55   # fuzzy is last-resort; below this, answer "unknown"
+LEARN_MIN_CONF = 0.75     # a containment phrase is written back only at or above
+                          # this (the alias covers >= 2/3 of the phrase), and
+                          # only by a caller that passed learn=True
 
 
 @dataclass(frozen=True)
@@ -60,6 +73,9 @@ class Resolution:
     admin2_pcode: str | None = None
     oslo_area: str | None = None
     ambiguous_with: int = 0     # runner-up count when the decision was close
+    # (place_id, admin2_pcode, name_ar) of every place that carries this exact
+    # name when nothing in the context decided between them (a twin village).
+    alternatives: tuple = ()
 
 
 # The alias join FOLLOWS MERGES. place_merge collapses v1's sentence-shaped
@@ -70,21 +86,34 @@ class Resolution:
 # AFTER the merge had supposedly closed those rows.
 _SELECT = """
     SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
-           p.admin1_pcode, p.admin2_pcode, p.oslo_area, a.alias_norm, a.confidence
+           p.admin1_pcode, p.admin2_pcode, p.oslo_area, a.alias_norm, a.confidence,
+           a.origin
     FROM place_alias a
     JOIN place p0 ON p0.place_id = a.place_id
     JOIN place p  ON p.place_id = COALESCE(p0.merged_into, p0.place_id)
 """
 
 
-def _mk(row, method: str, confidence: float, ambiguous: int = 0) -> Resolution:
-    (pid, ar, en, kind, a1, a2, oslo, alias, _ac) = row
+def _mk(row, method: str, confidence: float, ambiguous: int = 0,
+        alternatives: tuple = ()) -> Resolution:
+    (pid, ar, en, kind, a1, a2, oslo, alias, _ac, _origin) = row[:10]
     return Resolution(
         place_id=pid, name_ar=ar, name_en=en, kind=kind,
         precision=KIND_PRECISION.get(kind, "unknown"),
         confidence=round(confidence, 3), method=method, matched_alias=alias,
         admin1_pcode=a1, admin2_pcode=a2, oslo_area=oslo, ambiguous_with=ambiguous,
+        alternatives=alternatives,
     )
+
+
+def _as_served(row, method: str, conf: float) -> tuple[str, float]:
+    """An observed alias is a spelling the resolver once GUESSED (or a feed
+    stated): serve it as what it is, at no more than the confidence it was
+    stored with. The exact branch used to hand it out as method 'exact' at
+    0.89-0.96, so a containment guess made once became a certainty (F071)."""
+    if row[9] == "observed":
+        return "observed", min(conf, float(row[8] or 0))
+    return method, conf
 
 
 _ADMIN_PCODE: dict[str, str | None] = {}
@@ -127,23 +156,67 @@ def governorate_pcode(cur, name: str | None) -> str | None:
     return None
 
 
-def _twin_in(cur, keys: list[str], admin2: str):
-    """A promoted twin of a name whose alias belongs to a place elsewhere.
+def _twins(cur, keys: list[str], exclude: set[int]) -> list[tuple]:
+    """Promoted twins of names whose alias belongs to a place elsewhere.
 
     `place_alias.alias_norm` is unique, so the second المغير (Ramallah's) can
     never hold the key the first one (Jenin's) already has. A row promoted as a
-    twin carries its keys in `attrs.twin_keys` instead, and is reachable only
-    through the governorate hint — which is exactly when the alias's owner is
-    the wrong answer. Returns a row shaped like `_SELECT`'s, or None.
+    twin carries its keys in `attrs.twin_keys` instead (see
+    ops/promote_named_localities.py). Returns rows shaped like `_SELECT`'s,
+    the alias column set to the probe key the twin carries, origin 'twin'.
+
+    Read on EVERY exact hit, not only when a governorate hint is present: the
+    hint-less callers (/v2/geo/resolve, /v2/insights, route_between, the news
+    area) got Jenin's المغير at ~0.96 with ambiguous_with=0 and no sign that a
+    second place of that name exists (F070). The `attrs ? 'twin_keys'`
+    predicate matches migration 090's partial index.
     """
+    if not keys:
+        return []
     cur.execute("""
         SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
-               p.admin1_pcode, p.admin2_pcode, p.oslo_area, %s, 0.9
+               p.admin1_pcode, p.admin2_pcode, p.oslo_area,
+               ARRAY(SELECT jsonb_array_elements_text(p.attrs->'twin_keys'))
           FROM place p
-         WHERE p.servable AND p.merged_into IS NULL AND p.admin2_pcode = %s
-           AND p.attrs->'twin_keys' ?| %s
-         ORDER BY p.place_id LIMIT 1""", (keys[0], admin2, keys))
-    return cur.fetchone()
+         WHERE p.servable AND p.merged_into IS NULL
+           AND p.attrs ? 'twin_keys' AND p.attrs->'twin_keys' ?| %s
+         ORDER BY p.place_id""", (list(keys),))
+    out = []
+    for pid, ar, en, kind, a1, a2, oslo, carried in cur.fetchall():
+        if pid in exclude:
+            continue
+        key = next((k for k in keys if k in (carried or [])), keys[0])
+        out.append((pid, ar, en, kind, a1, a2, oslo, key, 0.9, "twin"))
+    return out
+
+
+def _homonyms(key: str, rows, twins) -> list[tuple]:
+    """Every distinct place that carries `key` itself: its alias owner and the
+    twins holding it in attrs. One place, one row."""
+    seen: dict[int, tuple] = {}
+    for r in (*rows, *twins):
+        if r[7] == key and r[0] not in seen:
+            seen[r[0]] = r
+    return list(seen.values())
+
+
+def _decide_homonyms(best, homonyms, want_a2, conf: float):
+    """(confidence, ambiguous_with, alternatives) once twins are counted.
+
+    Settled when the governorate hint names exactly one of the places that
+    carry the name and the answer is that one. Otherwise each is as likely as
+    the other, so the answer says so: confidence divided by their number (two
+    twins put an exact 0.96 at 0.48, under the crowd's and palhub's 0.55 floor,
+    so a report is declined rather than filed on the wrong village) and the
+    alternatives named for the caller to show.
+    """
+    if len(homonyms) < 2:
+        return conf, 0, ()
+    in_hint = [h for h in homonyms if want_a2 and h[5] == want_a2]
+    if len(in_hint) == 1 and in_hint[0][0] == best[0]:
+        return conf, 0, ()
+    alts = tuple((h[0], h[5], h[1]) for h in homonyms)
+    return conf / len(homonyms), len(homonyms) - 1, alts
 
 
 def _with_admin_pcode(cur, context: dict | None) -> dict | None:
@@ -177,6 +250,26 @@ def _swap_ending(key: str) -> str | None:
     return None
 
 
+def _literal_first(rows, faithful: list[str], context: dict | None):
+    """Rows matched by the text's own spellings, unless the caller's stated
+    kind/governorate is met only by a row a derived probe found (F523)."""
+    lit = [r for r in rows if r[7] in faithful]
+    if not lit or len(lit) == len(rows):
+        return rows
+    ctx = context or {}
+    want_kind, want_a2 = ctx.get("prefer_kind"), ctx.get("admin2_pcode")
+    if not (want_kind or want_a2):
+        return lit
+
+    def meets(r) -> bool:
+        return ((not want_kind or r[3] == want_kind)
+                and (not want_a2 or r[5] == want_a2))
+
+    if not any(meets(r) for r in lit) and any(meets(r) for r in rows):
+        return rows
+    return lit
+
+
 def _prefer(rows, context: dict | None):
     """Tie-break among equally-good matches.
 
@@ -190,7 +283,7 @@ def _prefer(rows, context: dict | None):
     want_kind = ctx.get("prefer_kind")
 
     def score(r):
-        _pid, _ar, _en, kind, a1, a2, _oslo, _alias, ac = r
+        kind, a2, ac = r[3], r[5], r[8]
         s = 0.0
         if want_kind and kind == want_kind:
             s += 3.0
@@ -206,7 +299,7 @@ def _prefer(rows, context: dict | None):
 
 
 def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
-                  learn: bool = True, fuzzy: bool = True,
+                  learn: bool = False, fuzzy: bool = True,
                   contain: bool = True) -> Resolution | None:
     """Resolve a free-text place phrase. Returns None when nothing is confident.
 
@@ -214,6 +307,10 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
     contained-alias branch: a caller whose phrase is a guess (a token that
     merely sits before "جنوب نابلس", or after "أبو") must not be handed the
     nearest-looking alias for it.
+
+    `learn=True` is for a trusted caller only (see the module docstring). Its
+    writes join the caller's transaction when `conn` is given — the caller
+    commits — and are committed here only on a connection opened here.
     """
     if not text or len(text.strip()) < MIN_LEN:
         return None
@@ -223,9 +320,18 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
         from resolve.db import connect
         cm = connect()
         conn = cm.__enter__()
+
+    def learned() -> None:
+        # Never commit a transaction the caller owns: palhub_roads' whole
+        # batch was committed mid-loop, before its ingest_seen row existed,
+        # and --dry-run wrote hits and aliases (F071).
+        if own:
+            conn.commit()
+
     try:
         with conn.cursor() as cur:
             context = _with_admin_pcode(cur, context)
+            want_a2 = (context or {}).get("admin2_pcode")
             probe = fold_for_match(text)
             # Order matters: variants first (most faithful), then the
             # generic-stripped probe. A phrase that reduces to nothing but
@@ -234,13 +340,15 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             # -> "طولكرم". Additive, never a replacement — "بيت لحم" must not
             # become "يت لحم".
             unprep = " ".join(strip_preposition(t) or t for t in probe.split()) if probe else ""
-            keys = [k for k in (*variants(text), probe, unprep) if k and len(k) >= 2]
-            keys += [sw for sw in (_swap_ending(k) for k in list(keys)) if sw]
-            if not keys:
-                return None
+            faithful = [k for k in (*variants(text), probe) if k and len(k) >= 2]
+            derived = [k for k in (unprep,) if k and len(k) >= 2]
+            derived += [sw for sw in (_swap_ending(k) for k in (*faithful, *derived)) if sw]
             seen_k: set[str] = set()
-            keys = [k for k in keys
-                    if not is_generic_alias(k) and not (k in seen_k or seen_k.add(k))]
+            faithful = [k for k in faithful
+                        if not is_generic_alias(k) and not (k in seen_k or seen_k.add(k))]
+            derived = [k for k in derived
+                       if not is_generic_alias(k) and not (k in seen_k or seen_k.add(k))]
+            keys = faithful + derived
             if not keys:
                 return None
 
@@ -248,21 +356,36 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             cur.execute(_SELECT + " WHERE a.alias_norm = ANY(%s)", (keys,))
             rows = cur.fetchall()
             if rows:
+                # A derived probe (preposition stripped, ending swapped) is an
+                # extra way IN, not a competitor of the literal spelling: with
+                # both in one ranking, a checkpoint owning the swapped "بيته"
+                # beat the village the text named, "بيتا", on kind alone
+                # (F523). It still answers when the text's own spellings
+                # matched nothing — and when the caller SAID which kind or
+                # governorate it wants and only the derived match is that: the
+                # swap exists for "channels write عنزا where the gazetteer
+                # holds عنزه", and a station that took the other spelling first
+                # must not win the classifier's prefer_kind=locality call.
+                rows = _literal_first(rows, faithful, context)
+                twins = _twins(cur, keys, {r[0] for r in rows})
                 ranked = _prefer(rows, context)
-                want_a2 = (context or {}).get("admin2_pcode")
                 if want_a2 and not any(r[5] == want_a2 for r in ranked):
-                    twin = _twin_in(cur, keys, want_a2)
-                    if twin:
-                        ranked = [twin]
+                    in_hint = [t for t in twins if t[5] == want_a2]
+                    if in_hint:
+                        ranked = _prefer(in_hint, context)
                 best = ranked[0]
                 # A fold-only hit is slightly weaker than a normalize hit: folding
                 # discards information, so the match is less specific.
                 exact_on_norm = best[7] == normalize(text)
                 conf = min(0.98, (0.92 if exact_on_norm else 0.85) + float(best[8] or 0) * 0.05)
-                if learn:
+                method, conf = _as_served(best, "exact", conf)
+                conf, twin_amb, alts = _decide_homonyms(
+                    best, _homonyms(best[7], rows, twins), want_a2, conf)
+                if learn and best[9] != "twin":
                     _bump(cur, best[7])
-                    conn.commit()
-                return _mk(best, "exact", conf, max(0, len(ranked) - 1))
+                    learned()
+                ambiguous = max(len({r[0] for r in ranked}) - 1, twin_amb)
+                return _mk(best, method, conf, ambiguous, alts)
 
             # Two letters are a name only when an alias says so exactly.
             if len(normalize(text)) < 3 or not contain:
@@ -315,19 +438,41 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
                     return (length_s * 1.0 + pos_s * 0.35) * KIND_W.get(kind, 0.9)
 
                 rows = [r for r in rows if not is_generic_alias(r[7])]
+                # A generic key (written by an old learning path or a merge) can
+                # be the only whole-word hit; with it filtered there is nothing
+                # left to rank, and rows[0] raised IndexError on "اغلاق بمدخل"
+                # (F524). Same answer as when no hit is a whole word.
+                if not rows:
+                    return None
                 rows.sort(key=cscore, reverse=True)
                 top = cscore(rows[0])
                 close = [r for r in rows if top - cscore(r) < 0.05]
                 ranked = _prefer(close, context)
                 best = ranked[0]
+                # The contained name may be a twin's as well: "اقتحام المغير" is
+                # no less ambiguous than "المغير" (F070/F171). Same rule as the
+                # exact branch, including the governorate hint.
+                twins = _twins(cur, [best[7]], {r[0] for r in close})
+                if want_a2 and best[5] != want_a2:
+                    in_hint = [t for t in twins if t[5] == want_a2]
+                    if in_hint:
+                        best = _prefer(in_hint, context)[0]
                 # Coverage now only shapes confidence; it never rejects.
                 coverage = len(best[7]) / plen
                 conf = min(0.85, 0.55 + coverage * 0.30)
-                if learn:
+                method, conf = _as_served(best, "contains", conf)
+                conf, twin_amb, alts = _decide_homonyms(
+                    best, _homonyms(best[7], close, twins), want_a2, conf)
+                if learn and best[9] != "twin":
                     _bump(cur, best[7])
-                    _observe(cur, folded, best[0], conf)
-                    conn.commit()
-                return _mk(best, "contains", conf, max(0, len({r[0] for r in ranked}) - 1))
+                    # Only a confident, unambiguous containment becomes a
+                    # spelling; a low-coverage or twin guess would outlive the
+                    # context that made it plausible.
+                    if conf >= LEARN_MIN_CONF and not alts:
+                        _observe(cur, folded, best[0], conf)
+                    learned()
+                ambiguous = max(len({r[0] for r in ranked}) - 1, twin_amb)
+                return _mk(best, method, conf, ambiguous, alts)
 
             # ── 3. fuzzy ──────────────────────────────────────────────────────
             if not fuzzy:
@@ -338,7 +483,7 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             cur.execute("""
                 SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
                        p.admin1_pcode, p.admin2_pcode, p.oslo_area,
-                       a.alias_norm, a.confidence,
+                       a.alias_norm, a.confidence, a.origin,
                        similarity(a.alias_norm, %s) AS sim
                 FROM place_alias a
                 JOIN place p0 ON p0.place_id = a.place_id
@@ -349,9 +494,9 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             rows = cur.fetchall()
             if not rows:
                 return None
-            top_sim = float(rows[0][9])
-            close = [r for r in rows if top_sim - float(r[9]) < FUZZY_MARGIN]
-            ranked = _prefer([r[:9] for r in close], context)
+            top_sim = float(rows[0][10])
+            close = [r for r in rows if top_sim - float(r[10]) < FUZZY_MARGIN]
+            ranked = _prefer([r[:10] for r in close], context)
             best = ranked[0]
             # Ambiguity is a real answer: several distinct places matched equally
             # well, so report lower confidence rather than guessing confidently.
@@ -364,11 +509,14 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             # nothing and removes a whole class of false positive.
             if conf < FUZZY_CONF_FLOOR:
                 return None
+            method, conf = _as_served(best, "fuzzy", conf)
             if learn and distinct == 1:
+                # The matched alias earned a hit; the typed phrase does NOT
+                # become an alias. A fuzzy match is a guess, and written back it
+                # would be served on the next call as a spelling (F071).
                 _bump(cur, best[7])
-                _observe(cur, fz, best[0], conf)
-                conn.commit()
-            return _mk(best, "fuzzy", conf, distinct - 1)
+                learned()
+            return _mk(best, method, conf, distinct - 1)
     finally:
         if own:
             cm.__exit__(None, None, None)
@@ -403,7 +551,10 @@ def _observe(cur, alias_norm: str, place_id: int, confidence: float) -> None:
     """Write back a newly-seen spelling so the next occurrence resolves exactly.
     Only for keys long enough to be meaningful, and never overwriting an
     existing alias — a fuzzy guess must not displace a curated mapping."""
-    if not alias_norm or len(alias_norm) < 4:
+    # A generic noun ("مدخل", "منطقه") must never become a key: once written,
+    # it is the only whole-word hit for every phrase that contains the plain
+    # word (F524). The loaders have always refused them; so does this path.
+    if not alias_norm or len(alias_norm) < 4 or is_generic_alias(alias_norm):
         return
     cur.execute("""
         INSERT INTO place_alias (alias_norm, place_id, confidence, origin, hits)
@@ -414,7 +565,7 @@ def _observe(cur, alias_norm: str, place_id: int, confidence: float) -> None:
 def resolve_many(texts: Iterable[str], context: dict | None = None) -> list[Resolution | None]:
     from resolve.db import connect
     with connect() as conn:
-        return [resolve_place(t, context, conn=conn) for t in texts]
+        return [resolve_place(t, context, conn=conn, learn=False) for t in texts]
 
 
 # ── kind-aware resolution ────────────────────────────────────────────────────
@@ -454,6 +605,12 @@ def _prefer_place_kinds(conn=None) -> dict:
             with connect() as own, own.cursor() as cur:
                 cur.execute(sql)
                 rows = cur.fetchall()
+        if not rows:
+            # Nothing configured yet (a migration in flight, the column still
+            # NULL). Memoising {} sent every kind-scoped call to the generic
+            # resolver — the town, not the checkpoint — until the next restart,
+            # while the comment below promised a retry (F525).
+            return {}
         _PLACE_KIND_CACHE = dict(rows)
     except Exception:                                   # noqa: BLE001
         # A database hiccup must not turn every resolution into the generic
@@ -558,5 +715,7 @@ def resolve_for_state_kind(conn, place: str, state_kind: str):
             # submitter is the only one who knows which they meant.
             raise _Ambiguous([(pid, ar or en) for pid, ar, en in hits])
 
+    # learn=False, stated: the crowd, palhub_roads and /v2/geo/resolve all
+    # reach this line, and none of them is a trusted teacher (F071).
     return resolve_place(place, {"prefer_kind": want} if want else None,
-                         conn=conn)
+                         conn=conn, learn=False)

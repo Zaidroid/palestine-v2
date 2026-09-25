@@ -41,13 +41,18 @@ def test_expected_jobs_match_the_cadence_each_script_reports():
     safe-looking direction if the interval got shorter. The duplication only
     earns its keep if something checks it, so this is that something.
     """
-    pattern = re.compile(r"with-heartbeat\.sh\s+(\S+)\s+(\d+)\s+(\d+)")
+    # `"?` because most scripts write `"$(dirname "$0")/with-heartbeat.sh" name`
+    # — without it the pattern silently skipped backup, restore-test,
+    # classify-news, measure-accuracy, sync-checkpoints and mcp-audit.
+    pattern = re.compile(r'with-heartbeat\.sh"?\s+(\S+)\s+(\d+)\s+(\d+)')
     found: dict[str, tuple[int, int]] = {}
     for sh in (ROOT / "ops").glob("*.sh"):
         for name, iv, gr in pattern.findall(sh.read_text()):
             found[name] = (int(iv), int(gr))
 
     assert found, "no wrapped jobs found — has with-heartbeat.sh been renamed?"
+    for name in ("backup", "sync-checkpoints", "mcp-audit", "valhalla-ip"):
+        assert name in found, f"{name}'s wrapper line was not read — the pattern drifted"
     for name, (iv, gr) in found.items():
         assert name in EXPECTED_JOBS, f"{name} is wrapped but not in EXPECTED_JOBS"
         assert EXPECTED_JOBS[name] == (iv, gr), (
@@ -612,16 +617,25 @@ def test_alert_is_recorded_even_when_delivery_fails(monkeypatch, tmp_path):
     assert "some-unit" in written, "the alarm was lost when delivery failed"
 
 
-def test_recovery_is_delivered_silently():
+def test_recovery_is_delivered_silently(monkeypatch, tmp_path):
     """A channel that only reports failures cannot distinguish "it recovered"
     from "still broken, gone quiet" — and the second reading is the one that
-    gets ignored. Silent so good news never wakes anybody."""
-    import inspect
+    gets ignored. Silent so good news never wakes anybody.
 
+    Exercised, not read: this used to grep resolve()'s source for `_notify`
+    and `silent=True`, which a comment containing those words satisfies."""
     from ops import alert
-    src = inspect.getsource(alert.resolve)
-    assert "_notify" in src, "recoveries are not delivered"
-    assert "silent=True" in src, "recovery notifications must not make a sound"
+    monkeypatch.setattr(alert, "ALERTS", tmp_path / "a.ndjson")
+    sent = []
+    monkeypatch.setattr(alert, "_notify",
+                        lambda text, **kw: sent.append((text, kw)) or
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": "r1"})
+    alert.raise_alert("watchdog:job:poller", "not_running")
+    alert.resolve("watchdog:job:poller", "back within cadence")
+    assert len(sent) == 2, "the recovery was not delivered"
+    text, kw = sent[-1]
+    assert "recovered" in text and "watchdog:job:poller" in text
+    assert kw.get("silent") is True, "recovery notifications must not make a sound"
 
 
 def test_unconfigured_is_a_normal_state_not_a_crash(monkeypatch):
@@ -807,3 +821,399 @@ def test_a_broken_price_query_cannot_take_the_watchdog_down(monkeypatch):
     monkeypatch.setattr(w, "_q", boom)
     r = w.fuel_price_check()[0]
     assert r["status"] == "unreadable" and r["fault"] is True
+
+
+# ── F069: a crash is not a finding ────────────────────────────────────────────
+# `if faults: return 1` and an uncaught exception both exited 1, and the unit
+# (SuccessExitStatus=0 1) and the wrapper (OK_EXIT_CODES=1) both called 1 a
+# success — so a watchdog that died before checking anything beat green.
+
+def _board(monkeypatch, jobs=(), feeds=(), extra=()):
+    """Run main() over fabricated check results; no DB, no network."""
+    monkeypatch.setattr(watchdog, "job_checks", lambda: list(jobs))
+    monkeypatch.setattr(watchdog, "measure_cadence", lambda: {})
+    monkeypatch.setattr(watchdog, "feed_checks", lambda j, c=None: list(feeds))
+    for name in ("capacity_check", "dependency_checks", "routing_check",
+                 "minimax_check", "fuel_price_check"):
+        monkeypatch.setattr(watchdog, name, lambda: [])
+    monkeypatch.setattr(watchdog, "doorbell_check", lambda: list(extra), raising=False)
+
+
+def _main(monkeypatch, *args):
+    monkeypatch.setattr(sys, "argv", ["ops.watchdog", *args])
+    return watchdog.main()
+
+
+def test_a_watchdog_that_crashes_does_not_exit_like_one_that_found_a_fault(monkeypatch):
+    import psycopg
+
+    def db_down():
+        raise psycopg.OperationalError("connection refused")
+
+    _board(monkeypatch)
+    monkeypatch.setattr(watchdog, "job_checks", db_down)
+    assert _main(monkeypatch, "--dry-run") == 1, "a crash must exit 1, and be caught to say so"
+
+    _board(monkeypatch, jobs=[{"check": "job", "name": "poller", "status": "not_running",
+                               "fault": True, "age_minutes": 99, "detail": "x"}])
+    found = _main(monkeypatch, "--dry-run")
+    assert found == watchdog.FAULTS_FOUND == 3, "a fault FOUND must not share the crash's code"
+
+    _board(monkeypatch)
+    assert _main(monkeypatch, "--dry-run") == 0
+
+
+def test_a_status_body_that_is_not_an_object_is_a_finding_not_a_crash(monkeypatch):
+    """`r.json().get("version")` raised AttributeError on a JSON array and took
+    the whole run — every other check's alarms with it — down."""
+    import httpx
+
+    class R:
+        status_code = 200
+
+        def json(self):
+            return ["not", "valhalla"]
+
+    monkeypatch.setattr(httpx, "get", lambda *a, **k: R())
+    row = watchdog.routing_check()[0]
+    assert row["status"] == "wrong-service" and row["fault"] is True
+
+
+# ── F285: a collector going down is not the feed recovering ──────────────────
+
+@pytest.fixture()
+def quiet_alerts(alerts, monkeypatch):
+    """The ledger fixture with delivery stubbed: no test pushes to a phone."""
+    sent = []
+    monkeypatch.setattr(alert, "_notify",
+                        lambda text, **kw: sent.append((text, kw)) or
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": f"m{len(sent)}"})
+    monkeypatch.setattr(watchdog, "open_alerts", alert.open_alerts)
+    return sent
+
+
+def test_a_stale_feed_keeps_its_alarm_when_its_collector_goes_down(quiet_alerts, monkeypatch):
+    """checkpoint_status silent for 3 h (alarm open); then sync-checkpoints
+    fails twice on a locked SQLite. The feed flips to `collector_down` — not a
+    fault, because the collector's own alarm covers it — and that used to
+    RESOLVE the feed alarm with 'check returned to within cadence' and a 🟢
+    push while the feed was exactly as silent as before."""
+    alert.raise_alert("watchdog:feed:checkpoint_status", "silent — 180m")
+    _board(monkeypatch,
+           jobs=[{"check": "job", "name": "sync-checkpoints", "status": "failing",
+                  "fault": True, "age_minutes": 30, "detail": "exited 1"}],
+           feeds=[{"check": "feed", "name": "checkpoint_status", "status": "collector_down",
+                   "fault": False, "age_minutes": 200,
+                   "detail": "stale, but sync-checkpoints is already reported"}])
+    _main(monkeypatch)
+    still_open = {r["unit"] for r in alert.open_alerts()}
+    assert "watchdog:feed:checkpoint_status" in still_open, "a still-stale feed was 'recovered'"
+    assert not any("recovered" in t for t, _ in quiet_alerts)
+
+    # When the feed itself comes back, it does close.
+    _board(monkeypatch, feeds=[{"check": "feed", "name": "checkpoint_status",
+                                "status": "ok", "fault": False, "age_minutes": 1,
+                                "detail": ""}])
+    _main(monkeypatch)
+    assert alert.open_alerts() == []
+
+
+def test_a_key_open_twice_is_resolved_once(quiet_alerts, monkeypatch):
+    for _ in range(2):
+        with alert.ALERTS.open("a") as fh:
+            fh.write(json.dumps({"ts": "2026-09-25T00:00:00+00:00",
+                                 "unit": "watchdog:dep:valhalla", "detail": "x"}) + "\n")
+    _board(monkeypatch)
+    _main(monkeypatch)
+    lines = [json.loads(x) for x in alert.ALERTS.read_text().splitlines()]
+    assert sum(1 for x in lines if x.get("resolves")) == 1
+
+
+# ── F286: an alarm nobody heard is re-sent, and a dead doorbell is a fault ────
+
+def test_an_undelivered_alarm_is_re_sent_on_a_backoff(alerts, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    outcomes = [{"ok": False, "reason": "HTTP 403: forbidden", "channel": "ntfy"},
+                {"ok": True, "reason": "", "channel": "ntfy", "id": "m2"}]
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw: outcomes.pop(0))
+    rec = alert.raise_alert("watchdog:job:telegram-poller", "not_running — 31m")
+    assert rec["delivered"] is False
+    t0 = datetime.fromisoformat(rec["ts"])
+    assert alert.redeliver_undelivered(t0 + timedelta(minutes=5)) == [], "backoff first"
+    sent = alert.redeliver_undelivered(t0 + timedelta(minutes=31))
+    assert len(sent) == 1 and sent[0]["delivered"] is True
+    assert sent[0]["alarm_ts"] == rec["ts"]
+    assert alert.redeliver_undelivered(t0 + timedelta(hours=5)) == [], \
+        "once it has reached someone it is done"
+    assert [r["unit"] for r in alert.open_alerts()] == ["watchdog:job:telegram-poller"]
+
+
+def test_an_unconfigured_channel_is_not_retried_forever(alerts, monkeypatch):
+    from datetime import datetime, timedelta
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw:
+                        {"ok": False, "reason": "unconfigured (NTFY_URL/NTFY_TOPIC)"})
+    rec = alert.raise_alert("unit-a", "boom")
+    later = datetime.fromisoformat(rec["ts"]) + timedelta(hours=2)
+    assert alert.redeliver_undelivered(later) == []
+
+
+def test_the_doorbell_row_faults_when_the_last_deliveries_all_failed(alerts, monkeypatch):
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw:
+                        {"ok": False, "reason": "HTTP 403: forbidden", "channel": "ntfy"})
+    for i in range(alert.DOORBELL_RECEIPTS):
+        alert.raise_alert(f"unit-{i}", "boom")
+    row = watchdog.doorbell_check()[0]
+    assert row["fault"] is True and "403" in row["detail"]
+
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw:
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": "ok1"})
+    alert.raise_alert("unit-x", "boom")
+    assert watchdog.doorbell_check()[0]["fault"] is False
+
+
+def test_an_empty_ledger_is_unproven_not_broken(alerts):
+    row = watchdog.doorbell_check()[0]
+    assert row["fault"] is False and row["status"] == "unproven"
+
+
+# ── F273: an OnFailure storm pushes once, not thirty times an hour ───────────
+
+def _onfailure(monkeypatch, unit):
+    monkeypatch.setattr(sys, "argv", ["ops.alert", unit, "exited 1"])
+    return alert.main()
+
+
+def test_a_unit_failing_every_two_minutes_pushes_once_an_hour(alerts, monkeypatch):
+    sent = []
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw: sent.append(text) or
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": str(len(sent))})
+    for _ in range(30):
+        _onfailure(monkeypatch, "palestine-v2-checkpoints.service")
+    assert len(sent) == 1, f"{len(sent)} pushes for one failing unit"
+    alarms = [r for r in alert.open_alerts()
+              if r["unit"] == "palestine-v2-checkpoints.service"]
+    assert len(alarms) == 30, "every failure is still RECORDED"
+    assert sum(1 for r in alarms if r.get("suppressed")) == 29
+
+    # A different unit is a different alarm.
+    _onfailure(monkeypatch, "palestine-v2-crowd.service")
+    assert len(sent) == 2
+
+
+def test_a_repeat_after_an_undelivered_push_is_pushed(alerts, monkeypatch):
+    """Only a push that REACHED someone may quiet its repeats."""
+    results = [{"ok": False, "reason": "URLError", "channel": "ntfy"},
+               {"ok": True, "reason": "", "channel": "ntfy", "id": "2"}]
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw: results.pop(0))
+    _onfailure(monkeypatch, "palestine-v2-news.service")
+    _onfailure(monkeypatch, "palestine-v2-news.service")
+    assert results == [], "the second failure must be pushed when the first was not heard"
+
+
+def test_the_quiet_window_expires_into_a_reminder(alerts, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    sent = []
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw: sent.append(text) or
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": "x"})
+    old = (datetime.now(timezone.utc)
+           - timedelta(seconds=alert.REPEAT_QUIET_SECONDS + 60)).isoformat()
+    with alerts.open("a") as fh:
+        fh.write(json.dumps({"ts": old, "unit": "u.service", "detail": "x"}) + "\n")
+        fh.write(json.dumps({"ts": old, "delivery_of": "u.service",
+                             "delivered": True, "channel": "ntfy"}) + "\n")
+    _onfailure(monkeypatch, "u.service")
+    assert len(sent) == 1, "an hour on, a still-failing unit reminds once"
+
+
+def test_the_watchdog_path_is_not_quieted(alerts, monkeypatch):
+    """Dedup is for OnFailure EVENTS; the watchdog raises a key only when it is
+    not already open, so a raise from it always pushes."""
+    sent = []
+    monkeypatch.setattr(alert, "_notify", lambda text, **kw: sent.append(text) or
+                        {"ok": True, "reason": "", "channel": "ntfy", "id": "x"})
+    alert.raise_alert("watchdog:job:x", "a")
+    alert.raise_alert("watchdog:job:x", "b")
+    assert len(sent) == 2
+
+
+# ── F510: an alarm is allowed to make a sound ────────────────────────────────
+
+def test_every_alarm_is_pushed_at_high_priority(alerts, monkeypatch):
+    """The high path keyed on `!!`, the watchdog's CONSOLE mark, which never
+    appears in an alarm's text — so every real alarm went out at `default`."""
+    from ops import notify
+
+    class Resp:
+        status = 200
+
+        def read(self):
+            return b'{"id":"p1"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    seen = []
+
+    def fake_urlopen(req, timeout=None):
+        seen.append({k.lower(): v for k, v in req.header_items()}.get("priority"))
+        return Resp()
+
+    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(notify, "_env", lambda n: None)
+    monkeypatch.setattr(notify, "NTFY_TOKEN_FILE_DEFAULT", Path("/nonexistent"))
+    alert.raise_alert("watchdog:job:telegram-poller", "not_running — 31m since last beat")
+    assert seen == ["high"]
+    alert.resolve("watchdog:job:telegram-poller", "back")
+    assert seen[-1] == "min", "a recovery stays silent"
+
+
+# ── the heartbeat detail: say why, and judge what the registry expects ───────
+
+def _job_row(**kw):
+    row = {"name": "classify-news", "status": "ok", "ok_age_minutes": 1,
+           "attempt_age_minutes": 1, "expected_interval_seconds": 300,
+           "consecutive_failures": 0, "last_error": None}
+    row.update(kw)
+    return row
+
+
+def test_a_job_killed_mid_run_says_so_instead_of_nothing(monkeypatch):
+    """F287: the wrapper stamps the attempt first; an attempt with no outcome
+    is a run that never came back. `failing — ` with an empty reason sent the
+    responder nowhere."""
+    monkeypatch.setattr(watchdog, "_q", lambda sql: [
+        _job_row(status="failing", ok_age_minutes=40, attempt_age_minutes=3)])
+    row = next(r for r in job_checks() if r["name"] == "classify-news")
+    assert row["fault"] is True
+    assert "no outcome" in row["detail"] and "3m ago" in row["detail"]
+
+
+def test_an_expected_job_with_no_cadence_is_a_fault_not_unmonitored(monkeypatch):
+    """F508: `ops.heartbeat maintain --fail ...` without --interval on a fresh
+    row inserted NULL, the view said `unmonitored`, and that was never a fault
+    — a maintainer capped every Monday would read green forever."""
+    monkeypatch.setattr(watchdog, "_q", lambda sql: [
+        _job_row(name="maintain", status="unmonitored", expected_interval_seconds=None,
+                 last_error="seat probe, model claude-opus-5: spend-limit (rc 1)")])
+    row = next(r for r in job_checks() if r["name"] == "maintain")
+    assert row["fault"] is True
+    assert "no cadence" in row["detail"] and "spend-limit" in row["detail"]
+
+
+def test_an_unregistered_unmonitored_row_is_still_not_judged(monkeypatch):
+    monkeypatch.setattr(watchdog, "_q", lambda sql: [
+        _job_row(name="some-hand-run", status="unmonitored", expected_interval_seconds=None)])
+    row = next(r for r in job_checks() if r["name"] == "some-hand-run")
+    assert row["fault"] is False
+
+
+# ── against the database: the SQL itself, in a rolled-back transaction ──────
+
+@pytest.fixture()
+def db():
+    """A transaction that is always rolled back. Never commits."""
+    import psycopg
+    from resolve.db import dsn
+    conn = psycopg.connect(dsn())
+    try:
+        yield conn
+    finally:
+        conn.rollback()
+        conn.close()
+
+
+def _fixture_kind(db, kind):
+    with db.cursor() as cur:
+        cur.execute("""INSERT INTO state_kind_config (state_kind, half_life_seconds)
+                       VALUES (%s, 3600) ON CONFLICT (state_kind) DO NOTHING""", (kind,))
+        cur.execute("""INSERT INTO place (kind, name_en, geom)
+                       VALUES ('checkpoint', 'T_watchdog',
+                               ST_SetSRID(ST_MakePoint(35.2, 32.2), 4326))
+                       RETURNING place_id""")
+        place = cur.fetchone()[0]
+        cur.execute("""INSERT INTO source (key, name, kind, license_spdx, commercial_use,
+                                           attribution_text, authority_rank)
+                       VALUES ('t_watchdog_src', 't', 'telegram', 'NONE', false, 't', 5)
+                       RETURNING source_id""")
+        return place, cur.fetchone()[0]
+
+
+def _arrive(cur, place, source, kind, ages_minutes, modality="assertion"):
+    cur.executemany(
+        """INSERT INTO state_observation (place_id, state_kind, value, observed_at,
+                                          source_id, modality)
+           VALUES (%s, %s, 'open', now() - make_interval(mins => %s), %s, %s)""",
+        [(place, kind, m, source, modality) for m in ages_minutes])
+
+
+def test_quarantined_rows_do_not_keep_a_served_feed_fresh(db):
+    """F284: palhub writes checkpoint_flow every five minutes as `quarantined`;
+    the served stream is v1's assertions. With v1 dark for ten hours, the feed
+    must read ten hours old — not five minutes."""
+    from psycopg.rows import dict_row
+    kind = "_t_watchdog_flow"
+    with db.cursor(row_factory=dict_row) as cur:
+        place, src = _fixture_kind(db, kind)
+        _arrive(cur, place, src, kind, [600, 700, 800])                  # v1, dark 10 h
+        _arrive(cur, place, src, kind, [5, 10, 15], modality="quarantined")  # palhub
+        cur.execute(watchdog.CURRENT_SQL)
+        row = next(r for r in cur.fetchall() if r["state_kind"] == kind)
+        assert round(float(row["age_seconds"]) / 60) == 600
+
+        cur.execute(watchdog.CEILING_SQL)
+        ceil = next(r for r in cur.fetchall() if r["state_kind"] == kind)
+        assert int(ceil["arrivals"]) == 2, "quarantined arrivals counted in the ceiling"
+
+
+def test_a_kind_with_only_quarantined_rows_is_not_a_fresh_feed(db):
+    from psycopg.rows import dict_row
+    kind = "_t_watchdog_quarantine_only"
+    with db.cursor(row_factory=dict_row) as cur:
+        place, src = _fixture_kind(db, kind)
+        _arrive(cur, place, src, kind, [1, 2], modality="quarantined")
+        cur.execute(watchdog.CURRENT_SQL)
+        assert kind not in {r["state_kind"] for r in cur.fetchall()}
+
+
+def test_the_baseline_holds_out_the_window_it_judges_measured(db):
+    """F588: behaviour, not an f-string. Hourly arrivals for four days, then a
+    burst every minute inside the last JUDGE_HOURS — the kind of change the
+    judged window is for. Held out, the baseline still reads one hour; had the
+    burst leaked in, the median gap would collapse to a minute."""
+    from psycopg.rows import dict_row
+    kind = "_t_watchdog_cadence"
+    judge = watchdog.JUDGE_HOURS * 60
+    baseline = [judge + 60 * h for h in range(1, 97)]              # hourly, 4 days
+    burst = list(range(1, judge - 1))                              # every minute
+    with db.cursor(row_factory=dict_row) as cur:
+        place, src = _fixture_kind(db, kind)
+        _arrive(cur, place, src, kind, baseline + burst)
+        _arrive(cur, place, src, kind, [judge + 30], modality="quarantined")
+        cur.execute(watchdog.CADENCE_SQL)
+        row = next(r for r in cur.fetchall() if r["state_kind"] == kind)
+        assert int(row["arrivals"]) == len(baseline) - 1
+        assert float(row["p50"]) == 3600.0
+
+
+def test_a_stamped_attempt_turns_a_killed_job_into_failing(db):
+    """F287 at the view: last_ok and last_attempt both stale read `not_running`
+    ("the scheduler stopped"); the attempt the wrapper now stamps before the
+    run makes the same killed job read `failing`, which is what it is."""
+    from ops.heartbeat import UPSERT_ATTEMPT
+    with db.cursor() as cur:
+        cur.execute("""INSERT INTO ops_heartbeat (name, last_ok, last_attempt,
+                                                  expected_interval_seconds, grace_seconds)
+                       VALUES ('_t_killed', now() - interval '2 hours',
+                               now() - interval '2 hours', 300, 900)""")
+        cur.execute("SELECT status FROM ops_heartbeat_status WHERE name = '_t_killed'")
+        assert cur.fetchone()[0] == "not_running"
+        cur.execute(UPSERT_ATTEMPT, ("_t_killed", 300, 900))
+        cur.execute("""SELECT status, last_ok < now() - interval '1 hour',
+                              consecutive_failures
+                         FROM ops_heartbeat_status WHERE name = '_t_killed'""")
+        status, still_stale, failures = cur.fetchone()
+        assert status == "failing"
+        assert still_stale and failures == 0, "an attempt is neither a success nor a failure"

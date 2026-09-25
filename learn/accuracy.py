@@ -10,11 +10,33 @@ assertion rather than a measurement.
 HOW IT WORKS
 For each observation, reconstruct the belief that would have been served at the
 instant just before it arrived, then check the two against each other. The
-reconstruction replays the real serving logic at the historical timestamp —
+reconstruction replays the serving GATES at the historical timestamp —
 measured persistence, the confidence floor, the staleness band and
 max_assert_seconds — which is possible only because those functions all take
 `at` explicitly instead of reading now(). A backtest that scored the CURRENT
 contents of state_current would measure nothing: those rows are the answer.
+
+WHAT THE NUMBER IS, EXACTLY (audit F235, 2026-09-25)
+It is SINGLE-UNIT GATE PRECISION: the belief under test is the latest report
+from ONE other independence unit, with a flat `base` of SINGLE_SOURCE_TRUST.
+It is not the belief resolve/belief.py serves — that one is a per-unit noisy-OR
+over every agreeing unit, weighted by each unit's measured trust_weight and
+discounted for dissent, and this harness does not reconstruct it. Every line
+this writes says so (`belief_model`). And because consecutive reports at one
+place are scored against the same prior belief, pairs are not independent: the
+interval (`ci95`) is a Wilson interval over DISTINCT beliefs (place, direction,
+belief_at), not over pairs, which would be too narrow.
+
+THE WINDOW IT JUDGES IS HELD OUT OF THE FIT IT REPLAYS (audit F234)
+The decay curves (p0 / asymptote / half-life per value) are refitted nightly on
+all history, the judged week included, and the gates are built on them. Replaying
+tonight's fit over the week it was fitted on lets the fit absorb a change before
+it is measured — the number cannot fall as far as reality did. So by default
+the curves are refitted here on history strictly BEFORE the window
+(learn.state_persistence with `until`), and those are replayed; `--in-sample`
+replays the serving table instead, for comparison. The per-place cadence
+(`place_state_cadence`, a median reporting gap that only sets the staleness band
+and the fallback half-life) is still read as served, and the line says that too.
 
 Only readings the system would actually have ASSERTED are counted. That is what
 precision means here — of the things we were willing to say out loud, how many
@@ -47,15 +69,21 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from math import sqrt
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from resolve.db import connect
+from learn import state_persistence  # noqa: E402
+from resolve.db import connect  # noqa: E402
 
 OUT = ROOT / "ops" / "accuracy.ndjson"
+
+BELIEF_MODEL = ("single_unit_latest: the latest report from ONE other "
+                "independence unit at a flat base trust — not belief.py's "
+                "trust-weighted noisy-OR over every agreeing unit")
 
 # Trust in a single independent group — the belief under test is always the
 # latest report from ONE unit, so this matches what state_current would hold.
@@ -73,7 +101,7 @@ FROM state_observation o
 JOIN source s USING (source_id)
 WHERE o.state_kind = %(kind)s
   AND o.modality = 'assertion'
-  AND o.observed_at > now() - make_interval(days => %(days)s)
+  AND o.observed_at > %(since)s
 ORDER BY o.place_id, o.direction, o.observed_at
 """
 
@@ -87,14 +115,15 @@ SELECT belief, truth, elapsed_s, conf,
        (conf >= confidence_floor
         AND elapsed_s < hl * 8
         AND (max_assert_seconds IS NULL OR elapsed_s <= max_assert_seconds)) AS asserted,
-       (belief = truth) AS hit
+       (belief = truth) AS hit,
+       place_id, direction, belief_at
 FROM (
-  SELECT pr.belief, pr.truth,
+  SELECT pr.belief, pr.truth, pr.place_id, pr.direction, pr.belief_at,
          EXTRACT(EPOCH FROM (pr.t - pr.belief_at))          AS elapsed_s,
          COALESCE(c.half_life_seconds, k.half_life_seconds) AS hl,
          k.confidence_floor, k.max_assert_seconds,
          (%(base)s * CASE
-            WHEN d.state_kind IS NULL THEN
+            WHEN d.value IS NULL THEN
               state_confidence(1.0::real, pr.belief_at,
                                COALESCE(c.half_life_seconds, k.half_life_seconds), pr.t)
             WHEN d.p0 <= 0.5 THEN
@@ -110,10 +139,17 @@ FROM (
   LEFT JOIN place_state_cadence c ON c.place_id   = pr.place_id
                                  AND c.state_kind = %(kind)s
                                  AND c.direction  = pr.direction
-  LEFT JOIN state_value_decay d   ON d.state_kind = %(kind)s
-                                 AND d.value      = pr.belief
+  {decay}
 ) x
 """
+
+# Where the decay curves come from: the table serving reads (in-sample), or the
+# curves refitted on history before the window (held out). Same columns either way.
+DECAY_SERVING = """LEFT JOIN state_value_decay d   ON d.state_kind = %(kind)s
+                                 AND d.value      = pr.belief"""
+DECAY_HELD_OUT = """LEFT JOIN unnest(%(d_value)s::text[], %(d_p0)s::real[],
+                   %(d_asym)s::real[], %(d_hl)s::int[])
+       AS d(value, p0, asymptote, half_life_seconds) ON d.value = pr.belief"""
 
 
 def _pair(obs: list[tuple], cross_unit: bool) -> list[tuple]:
@@ -140,42 +176,111 @@ def _pair(obs: list[tuple], cross_unit: bool) -> list[tuple]:
     return out
 
 
-def backtest(kind: str, days: int, cross_unit: bool,
-             base: float = SINGLE_SOURCE_TRUST) -> dict:
-    with connect() as conn, conn.cursor() as cur:
-        cur.execute(OBS_SQL, {"kind": kind, "days": days})
-        pairs = _pair(cur.fetchall(), cross_unit)
-        if not pairs:
-            return {"state_kind": kind, "window_days": days, "pairs_examined": 0,
-                    "mode": "independent" if cross_unit else "self_consistency",
-                    "would_have_asserted": 0, "correct": 0,
-                    "precision": None, "coverage": None,
-                    "calibration": {}, "by_value": {}, "by_age": {}}
-        cols = list(zip(*pairs))
-        cur.execute(GATES_SQL, {
-            "kind": kind, "base": base,
-            "place_ids": list(cols[0]), "directions": list(cols[1]),
-            "beliefs": list(cols[2]), "truths": list(cols[3]),
-            "belief_ats": list(cols[4]), "ts": list(cols[5])})
-        rows = cur.fetchall()
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
+    if n <= 0:
+        return None
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return (round(max(0.0, c - h), 4), round(min(1.0, c + h), 4))
 
+
+def held_out_decay(cur, kind: str, until) -> dict[str, tuple[float, float, int]]:
+    """value -> (p0, asymptote, half_life_s), fitted on history before `until`.
+
+    The same fitter the nightly learn uses (learn.state_persistence), pointed
+    at history that ends where the judged window begins, so the curves being
+    replayed have never seen the reports they are judged against."""
+    out = {}
+    for r in state_persistence.fit_values(state_persistence.pairs(cur, kind, until)):
+        if r["fitted"]:
+            out[r["value"]] = (float(r["p0"]), float(r["asymptote"]), int(r["half_life"]))
+    return out
+
+
+def backtest(kind: str, days: int, cross_unit: bool,
+             base: float = SINGLE_SOURCE_TRUST, held_out: bool = True) -> dict:
+    with connect() as conn, conn.cursor() as cur:
+        return _backtest(cur, kind, days, cross_unit, base, held_out)
+
+
+def _backtest(cur, kind: str, days: int, cross_unit: bool,
+              base: float = SINGLE_SOURCE_TRUST, held_out: bool = True,
+              now: datetime | None = None) -> dict:
+    since = (now or datetime.now(timezone.utc)) - timedelta(days=days)
+    decay: dict = {}
+    if held_out:
+        decay = held_out_decay(cur, kind, since)
+        fit_note = {"mode": "held_out", "fitted_before": since.isoformat(),
+                    "values": sorted(decay)}
+    else:
+        fit_note = {"mode": "in_sample",
+                    "note": "the serving state_value_decay, fitted on all history "
+                            "including the judged window"}
+    fit_note["cadence"] = "place_state_cadence as served (in-sample)"
+    empty = {"state_kind": kind, "window_days": days, "pairs_examined": 0,
+             "mode": "independent" if cross_unit else "self_consistency",
+             "belief_model": BELIEF_MODEL, "decay_fit": fit_note,
+             "would_have_asserted": 0, "correct": 0,
+             "precision": None, "ci95": None, "distinct_beliefs_asserted": 0,
+             "coverage": None, "calibration": {}, "by_value": {}, "by_age": {}}
+
+    cur.execute(OBS_SQL, {"kind": kind, "since": since})
+    pairs = _pair(cur.fetchall(), cross_unit)
+    if not pairs:
+        return empty
+    cols = list(zip(*pairs))
+    params = {
+        "kind": kind, "base": base,
+        "place_ids": list(cols[0]), "directions": list(cols[1]),
+        "beliefs": list(cols[2]), "truths": list(cols[3]),
+        "belief_ats": list(cols[4]), "ts": list(cols[5])}
+    if held_out:
+        vals = sorted(decay)
+        params.update({"d_value": vals,
+                       "d_p0": [decay[v][0] for v in vals],
+                       "d_asym": [decay[v][1] for v in vals],
+                       "d_hl": [decay[v][2] for v in vals]})
+    cur.execute(GATES_SQL.format(decay=DECAY_HELD_OUT if held_out else DECAY_SERVING),
+                params)
+    rows = cur.fetchall()
+    out = summarise(rows)
+    return {"state_kind": kind,
+            "mode": "independent" if cross_unit else "self_consistency",
+            "belief_model": BELIEF_MODEL, "decay_fit": fit_note,
+            "window_days": days, **out}
+
+
+def summarise(rows: list[tuple]) -> dict:
+    """GATES_SQL rows -> the reported numbers. Rows are
+    (belief, truth, elapsed_s, conf, asserted, hit, place_id, direction, belief_at)."""
     served = [r for r in rows if r[4]]
     hits = sum(1 for r in served if r[5])
+    # One vote per DISTINCT belief for the interval: every report that follows
+    # one belief is scored against that same belief, so n pairs are far fewer
+    # than n independent trials. A belief's share of hits is its vote.
+    per_belief: dict[tuple, list[int]] = {}
+    for r in served:
+        agg = per_belief.setdefault((r[6], r[7], r[8]), [0, 0])
+        agg[0] += 1
+        agg[1] += int(r[5])
+    n_eff = len(per_belief)
+    k_eff = round(sum(h / n for n, h in per_belief.values()))
     out: dict = {
-        "state_kind": kind,
-        "mode": "independent" if cross_unit else "self_consistency",
-        "window_days": days,
         "pairs_examined": len(rows),
         "would_have_asserted": len(served),
         "correct": hits,
         "precision": round(hits / len(served), 4) if served else None,
+        "distinct_beliefs_asserted": n_eff,
+        "ci95": _wilson(k_eff, n_eff),
         "coverage": round(len(served) / len(rows), 4) if rows else None,
     }
 
     # Calibration. The confidence model is only worth having if a stated 0.6
     # means roughly 60% — this is the check that would catch it being decorative.
     buckets: dict[str, list[int]] = {}
-    for _, _, _, conf, asserted, hit in rows:
+    for _, _, _, conf, asserted, hit, *_ in rows:
         if not asserted:
             continue
         b = f"{int(float(conf) * 10) / 10:.1f}"
@@ -188,7 +293,7 @@ def backtest(kind: str, days: int, cross_unit: bool,
     # Precision by value: a high average can hide one value being badly wrong,
     # and `closed` being wrong is the expensive direction.
     per_value: dict[str, list[int]] = {}
-    for belief, _, _, _, asserted, hit in rows:
+    for belief, _, _, _, asserted, hit, *_ in rows:
         if not asserted:
             continue
         agg = per_value.setdefault(belief, [0, 0])
@@ -201,7 +306,7 @@ def backtest(kind: str, days: int, cross_unit: bool,
     bands = [(0, 900, "<15m"), (900, 3600, "15-60m"), (3600, 10800, "1-3h"),
              (10800, 21600, "3-6h"), (21600, 10 ** 9, ">6h")]
     per_age: dict[str, list[int]] = {}
-    for _, _, elapsed, _, asserted, hit in rows:
+    for _, _, elapsed, _, asserted, hit, *_ in rows:
         if not asserted:
             continue
         for lo, hi, lbl in bands:
@@ -224,15 +329,28 @@ def main() -> int:
                     help="single-unit trust to replay the gates with. Loop A "
                          "(learn/reliability.py) measures what this should be; "
                          "sweeping it shows what raising it costs in precision.")
+    ap.add_argument("--in-sample", action="store_true",
+                    help="replay the serving decay table (fitted on the judged "
+                         "window too) instead of a fit held out of it")
     a = ap.parse_args()
 
+    # A retired kind (migration 070: fuel availability, 2026-09-23) has no
+    # collector; backtesting it appended a null-precision line every night that
+    # a reader had to know to ignore (audit F489). Asked of the config, so the
+    # next retirement needs no edit here.
     targets = [("checkpoint_flow", True), ("fuel_diesel", False),
                ("fuel_gasoline", False)]
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT state_kind FROM state_kind_config WHERE retired_at IS NOT NULL")
+        retired = {r[0] for r in cur.fetchall()}
+    for kind in sorted(retired & {k for k, _ in targets}):
+        print(f"  {kind}: retired in state_kind_config — not measured")
+    targets = [(k, c) for k, c in targets if k not in retired]
     stamp = datetime.now(timezone.utc).isoformat()
     results = []
 
     for kind, cross in targets:
-        r = backtest(kind, a.days, cross, a.base)
+        r = backtest(kind, a.days, cross, a.base, held_out=not a.in_sample)
         r["measured_at"] = stamp
         results.append(r)
 
@@ -249,7 +367,13 @@ def main() -> int:
             print("  nothing asserted; no precision to report")
             continue
         verdict = "PASS" if r["precision"] >= 0.80 else "BELOW 0.80"
-        print(f"  precision           {r['precision']:.3f}   [{verdict}]")
+        ci = r.get("ci95")
+        ci_txt = f" 95% CI {ci[0]:.3f}-{ci[1]:.3f} over {r['distinct_beliefs_asserted']} " \
+                 f"distinct beliefs" if ci else ""
+        print(f"  single-unit gate precision {r['precision']:.3f}{ci_txt}   [{verdict}]")
+        print(f"  decay curves: {r['decay_fit']['mode']}"
+              + (f" (fitted before {r['decay_fit']['fitted_before'][:16]})"
+                 if r['decay_fit'].get('fitted_before') else ""))
 
         if r["by_value"]:
             print("  by value:")

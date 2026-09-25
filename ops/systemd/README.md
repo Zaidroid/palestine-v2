@@ -4,9 +4,9 @@ Copies of everything installed under `/etc/systemd/system/palestine-v2-*`.
 
 ## Why these are here
 
-The nightly backup covers the database. It does not cover the twelve unit files
-and eight drop-ins that decide *when anything runs at all* — those lived only in
-`/etc`, owned by root, on the same disk the backups exist to survive losing. A
+The nightly backup covers the database. It does not cover the unit files and
+drop-ins that decide *when anything runs at all* — those lived only in `/etc`,
+owned by root, on the same disk the backups exist to survive losing. A
 restore would have brought back every row and left nothing to collect the next
 one, and the gap would only have been discovered during a rebuild, which is the
 worst moment to discover it.
@@ -14,48 +14,100 @@ worst moment to discover it.
 They are copies, not the installed originals: systemd reads `/etc`. Treat this
 directory as the record, and keep the two in step.
 
+What is here, counted 2026-09-25 (`ls ops/systemd`): 23 service units and 19 timers
+— three daemons (`api`, `poller`, `analyst`), the `alert@` template every
+`OnFailure=` points at, and nineteen timer-driven oneshots — plus the `.d/`
+drop-in directories described below. The count was "twelve unit files and eight
+drop-ins" until 2026-09-25, from the 2026-08-01 system; count again rather than
+trusting this line. Retired units live in `ops/retired/systemd/` (the fuel
+availability pair, 2026-09-23) and are never installed.
+
 ## Installing
 
-    sudo cp ops/systemd/palestine-v2-*.{service,timer} /etc/systemd/system/
-    for d in ops/systemd/*.d; do
+A rebuild follows this block and nothing else, so it enables EVERY timer in
+this directory by glob rather than by a list. The list it replaced (until
+2026-09-25) named the retired `palestine-v2-fuel.timer`, which no longer
+exists here, and never named ten live ones — crowd, databank, gaza, maintain,
+maintain-retry, measure-review, palhub-roads, rollup, scout, valhalla-ip — so a
+restored box ran without belief refresh, the databank sync or Gaza bulletins
+while the operator believed the install was complete.
+
+    cd ~/palestine-v2
+    sudo cp ops/systemd/palestine-v2-*.service ops/systemd/palestine-v2-*.timer \
+            /etc/systemd/system/
+    for d in ops/systemd/palestine-v2-*.d; do
+      # a drop-in for a unit that is not here (a retired one) is not installed
+      [ -e "${d%.d}" ] || { echo "skip $d: no such unit in ops/systemd"; continue; }
       sudo mkdir -p "/etc/systemd/system/$(basename "$d")"
       sudo cp "$d"/*.conf "/etc/systemd/system/$(basename "$d")/"
     done
     sudo systemctl daemon-reload
+    sudo systemctl enable --now palestine-v2-api.service palestine-v2-analyst.service
+    sudo systemctl enable --now $(cd ops/systemd && ls palestine-v2-*.timer)
+    # LAST, and only once data/session/ holds the AUTHORISED Telegram session
+    # (restored from the backup set, or made with ingest.setup_session): a
+    # poller started without one reconnects an unauthorised session, which is
+    # the pattern HANDOFF §1 rule 3 exists to prevent.
     sudo systemctl enable --now palestine-v2-poller.service
-    sudo systemctl enable --now palestine-v2-{checkpoints,news,fuel,external}.timer
-    sudo systemctl enable --now palestine-v2-{backup,restore-test,watchdog}.timer
-    sudo systemctl enable --now palestine-v2-{accuracy,checkpoint-learn}.timer
-    sudo systemctl enable --now palestine-v2-mcp-audit.timer
-    sudo systemctl enable --now palestine-v2-analyst.service
+
+The oneshot services are started by their timers and are not enabled
+themselves; `palestine-v2-maintain-retry.timer` starts
+`palestine-v2-maintain.service` only when no digest has landed in six days.
 
 ## Checking they have not drifted
 
-    diff -r <(ls /etc/systemd/system/palestine-v2-*) <(ls ops/systemd/palestine-v2-*)
-    for f in ops/systemd/palestine-v2-*.{service,timer}; do
-      diff -q "$f" "/etc/systemd/system/$(basename "$f")" || echo "DRIFT: $f"
+Compare every file in both directions — units AND drop-ins — by the path
+relative to each root. (The check that stood here until 2026-09-25 diffed two
+`ls` listings with different path prefixes, so it could never come back clean,
+and it compared `.service`/`.timer` only, so a drop-in installed in `/etc` with
+no copy here — the backup unit's `memory.conf`, DECISIONS F-03 — was invisible.)
+
+    cd ~/palestine-v2/ops/systemd
+    ETC=/etc/systemd/system
+    for f in palestine-v2-*.service palestine-v2-*.timer palestine-v2-*.d/*.conf; do
+      case $f in *.d/*) [ -e "${f%%.d/*}" ] || continue ;; esac   # retired unit's orphan
+      cmp -s "$f" "$ETC/$f" || echo "DRIFT or MISSING in /etc: $f"
     done
+    (cd "$ETC" && ls -d palestine-v2-*.service palestine-v2-*.timer \
+                        palestine-v2-*.d/*.conf 2>/dev/null) |
+      while read -r f; do [ -e "$f" ] || echo "ONLY in /etc: $f"; done
+
+Silence means in step. Nothing runs this on a schedule yet; it is a hand check
+after any unit change.
 
 ## What the drop-ins carry
 
 The `.d/` directories hold the P3.1 wiring, kept separate from the base units so
-the monitoring can be reviewed as one change rather than scattered across twelve
-files:
+the monitoring could be reviewed as one change:
 
-  * `onfailure.conf` — `OnFailure=palestine-v2-alert@%n.service` on every unit.
-    Before this, only the two backup units reported failure; everything else
+  * `onfailure.conf` — `OnFailure=palestine-v2-alert@%n.service`, on the units
+    that predate it: `accuracy`, `api`, `checkpoint-learn`, `checkpoints`,
+    `external`, `news`. Units written later carry the same line inline in the
+    base file; `poller` carries it in `watchdog.conf`. Every service here except
+    the `alert@` template itself has one or the other — check with
+    `grep -l '^OnFailure=' palestine-v2-*.service palestine-v2-*.d/*.conf`.
+    Before P3.1, only the two backup units reported failure; everything else
     failed into the journal, where nothing was reading.
   * `palestine-v2-poller.service.d/watchdog.conf` — `OnFailure=`, plus
     `RestartPreventExitStatus=2`. Exit 2 means the Telegram session is no longer
     authorised; restarting cannot fix that, and reconnecting an unauthorised
-    session repeatedly is exactly what would put the account at risk.
+    session repeatedly is exactly what would put the account at risk. The base
+    unit has NO start limit (`StartLimitIntervalSec=0`) and backs off from 30 s
+    to a 15-minute ceiling instead — a deliberate reversal, 2026-08-02, recorded
+    in the unit's own header: a three-strikes limit killed the poller for
+    seventeen hours.
   * `palestine-v2-poller.service.d/unbuffered.conf` — `PYTHONUNBUFFERED=1`, so a
     long-running service's output reaches the journal before it exits.
+  * `palestine-v2-fuel.service.d/` — an orphan: its unit was retired on
+    2026-09-23 and lives in `ops/retired/systemd/`. The install loop above skips
+    it.
 
-`palestine-v2-watchdog.service` carries `SuccessExitStatus=0 1` in the base unit
-rather than a drop-in: the watchdog exits 1 when it *finds* a fault, which is a
-successful run with a bad result. Without it, every detected fault would also
-mark the watchdog failed and raise a second alarm about the alarm.
+Exit codes that are not failures are declared per unit with
+`SuccessExitStatus=`: `palestine-v2-mcp-audit.service` treats exit 1 ("ran
+fine, found criticals", already paged by the audit's own alert) as success.
+The watchdog no longer does — `ops/watchdog.sh` exits 0 for "ran, found
+faults" and 70 for "did not finish", so a watchdog that crashes now alarms
+instead of being recorded as a success.
 
 ## Alarm delivery (F-04, 2026-09-22)
 
@@ -87,7 +139,13 @@ Set `NTFY_URL=off` to disable ntfy deliberately. Prove the wiring with:
 .venv/bin/python -m ops.alert  --test     # a REAL alarm, down the real path
 ```
 
-## Fuel from the archived cards (F-05, 2026-09-22)
+## Fuel from the archived cards (F-05, 2026-09-22) — RETIRED 2026-09-23
+
+*History, kept as written.* These units were retired with the fuel
+availability vertical on 2026-09-23 (migration 070) and live in
+`ops/retired/systemd/`; nothing below runs any more. What follows is what the
+units did.
+
 
 `palestine-v2-fuel-images.{service,timer}` read `@palhubappfuel`'s rendered
 cards — the tee spool's text bulletins died on 2026-08-28 and the cards are the

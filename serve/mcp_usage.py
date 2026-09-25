@@ -57,10 +57,25 @@ def caller(ip: str | None) -> str:
     return hashlib.sha256(f"{_salt}{day}{ip or '?'}".encode()).hexdigest()[:12]
 
 
+# A coordinate is kept to two decimals — about a kilometre, which still says
+# which town was asked about. At full precision `checkpoints(lat, lon)` asked a
+# few times in a day was a metre-level track of one caller, beside a per-day
+# identity, in a file that is backed up (audit F400). A place NAME stays whole:
+# "everyone asks about حوارة" is the signal this ledger exists for.
+_COORD_KEYS = ("lat", "lon", "lng", "latitude", "longitude")
+COORD_DECIMALS = 2
+
+
 def _args(args: dict) -> dict:
     """Keep what makes the question legible, drop what makes it personal."""
     out = {}
     for k, v in list(args.items())[:8]:
+        if str(k).lower() in _COORD_KEYS and not isinstance(v, bool):
+            try:
+                out[k] = round(float(v), COORD_DECIMALS)
+                continue
+            except (TypeError, ValueError):
+                pass
         if isinstance(v, (int, float, bool)) or v is None:
             out[k] = v
         else:
@@ -124,19 +139,28 @@ def record(tool: str, args: dict, ms: int, ok: bool, out: Any,
 
 
 def _read(days: int) -> list[dict]:
-    if not LEDGER.exists():
-        return []
+    """Rows inside the window, from the rotated file as well as the live one.
+
+    `record` rolls the ledger to `.ndjson.1` at MAX_BYTES; reading only the live
+    file made the week after a rotation look nearly empty, with nothing in the
+    summary to say the rest existed (audit F596).
+    """
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     rows = []
-    for raw in LEDGER.read_text(encoding="utf-8").splitlines():
-        if not raw.strip():
-            continue
+    for path in (LEDGER.with_suffix(".ndjson.1"), LEDGER):
         try:
-            r = json.loads(raw)
-        except json.JSONDecodeError:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
             continue
-        if r.get("ts", "") >= cutoff:
-            rows.append(r)
+        for raw in text.splitlines():
+            if not raw.strip():
+                continue
+            try:
+                r = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if r.get("ts", "") >= cutoff:
+                rows.append(r)
     return rows
 
 
@@ -184,7 +208,7 @@ def summary(days: int = 7) -> dict:
         "errors": sum(1 for r in rows if not r.get("ok")),
         "unmet_calls": sum(1 for r in rows if r.get("unmet")),
         "tools_used": len(by_tool),
-        "tools_never_used": sorted(_all_tools() - set(by_tool)),
+        "tools_never_used": sorted(_all_tools() - {_public(t) for t in by_tool}),
         "by_tool": dict(sorted(by_tool.items(), key=lambda kv: -kv[1]["calls"])),
         "unanswered_demand": unmet_rank[:10],
         "most_asked_about": [{"subject": s, "times": n}
@@ -197,7 +221,21 @@ def summary(days: int = 7) -> dict:
 
 
 def _all_tools() -> set[str]:
-    """The tools this ledger could possibly see — the ledger records the HTTP
-    transport, so the host-only ones are not 'unused', they are unreachable."""
-    from serve.mcp_server import HOST_ONLY, TOOLS
-    return set(TOOLS) - HOST_ONLY
+    """The tools a caller can see — the public menu, in the names the ledger
+    records.
+
+    The HTTP transport records the name the CALLER used, which since the
+    façades (P0-A) is `checkpoints`, `news`, `place`…; the universe used to be
+    the internal names, so `checkpoints_near`, `latest_news` and the other
+    absorbed tools read as "never used" for ever and the façades were not in it
+    at all (audit F597). Host-only tools are unreachable over HTTP, not unused.
+    """
+    from serve.mcp_facades import LISTED
+    return set(LISTED)
+
+
+def _public(tool: str) -> str:
+    """The menu name a recorded call counts towards: an absorbed alias called by
+    its old name still counts as its façade being used."""
+    from serve.mcp_facades import public_name_for
+    return public_name_for(tool) or tool

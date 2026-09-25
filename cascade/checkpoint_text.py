@@ -62,8 +62,15 @@ FLOW_WORDS: dict[str, str] = {
     "فاتح": "open", "فاتحه": "open", "فتح": "open", "فتحت": "open",
     "فتحوا": "open", "فاتحين": "open", "انفتح": "open", "نظيف": "open",
     "ماشي": "open", "ماشيه": "open", "طبيعي": "open", "عادي": "open",
-    # slow
+    # "حوارة سلكت" ("Huwara has cleared"), "الحركة طبيعية" and the alef-less
+    # "فتحو" were unparsed, so the all-clear never refreshed belief and a
+    # stale closure outlived its end (audit 2026-09-25, F431/F097). NOT the
+    # imperfect "تسلك"/"بتسلك": "شوي وبتسلك" is "it'll flow SHORTLY".
+    "سلكت": "open", "طبيعيه": "open", "فتحو": "open",
+    # slow — the hamza spellings are folded at import (below): "بطئ" arrives
+    # as "بطي", "بطيئة" as "بطييه".
     "بطيء": "slow", "بطئ": "slow", "بطيئ": "slow", "بطيه": "slow",
+    "بطيئه": "slow",
     "متقطع": "slow",
     # NOT "شوي". It is a temporal quantifier ("a while", "shortly"), not a
     # speed: "دير شرف فتح من شوي" is "Deir Sharaf opened A WHILE AGO" and
@@ -84,6 +91,21 @@ FLOW_WORDS: dict[str, str] = {
     "مقفل": "closed", "مقفله": "closed", "مسكر": "closed", "مسكره": "closed",
     "موقوف": "closed", "مسدود": "closed", "مسدوده": "closed",
     "سكروا": "closed", "سكر": "closed", "اغلاق": "closed", "مغلقه": "closed",
+    # Dual, plural, participle and verb forms (audit 2026-09-25, F020/F097).
+    # "مفرق جيت وحاجز صرّة مغلقان بالاتجاهين" — a real corpus line (claim 450)
+    # — kept its settlers and LOST its closure; "الحواجز مسكرين", "مقفولة",
+    # "اغلقت قوات الاحتلال حاجز حوارة" and the alef-less "سكرو" were unparsed,
+    # so whatever was served before (often `open`) went on being served, and a
+    # mixed "حوارة وزعترة مغلقان وبيت فوريك سالك" read open.
+    "مغلقان": "closed", "مغلقتان": "closed", "مغلقتين": "closed",
+    "مغلقات": "closed", "مسكرين": "closed", "مسكرات": "closed",
+    "مقفول": "closed", "مقفوله": "closed", "مقفولين": "closed", "مقفلين": "closed",
+    "سكرو": "closed", "سكروه": "closed", "سكروها": "closed", "سكرت": "closed",
+    "اغلق": "closed", "اغلقت": "closed", "اغلقوا": "closed", "اغلقو": "closed",
+    # Present tense as news headlines use it ("الاحتلال يغلق حاجز عورتا").
+    # "راح يغلق" (future) is cut before lookup — see _irrealis_cut.
+    "يغلق": "closed", "تغلق": "closed",
+    "مقطوع": "closed", "مقطوعه": "closed",
 }
 
 PRESENCE_WORDS: dict[str, str] = {
@@ -94,8 +116,25 @@ PRESENCE_WORDS: dict[str, str] = {
     "مستوطنين": "settlers", "مستوطنون": "settlers", "مستوطن": "settlers",
     "مستوطين": "settlers", "قطعان": "settlers",
     "تفتيش": "inspection", "يفتشو": "inspection", "بفتشو": "inspection",
+    # The same verb with its alef ("بفتشوا") was unparsed (F097).
+    "يفتشوا": "inspection", "بفتشوا": "inspection", "بيفتشو": "inspection",
+    "بيفتشوا": "inspection",
     "تدقيق": "inspection", "هويات": "inspection",
 }
+
+# Keys are folded exactly as tokens are. "بطئ" and "بطيئ" sat in the table for
+# months and could never match, because normalize() turns ئ into ي before any
+# lookup (audit F415/F432) — the orthography trap HANDOFF §4 lists first.
+# Built through normalize() at import, as cascade/news.py does, so a raw
+# spelling added above still works.
+FLOW_WORDS = {normalize(k): v for k, v in FLOW_WORDS.items()}
+PRESENCE_WORDS = {normalize(k): v for k, v in PRESENCE_WORDS.items()}
+
+# Flow NOUNS — a state that can be lifted, negated or placed in the past.
+# The adjectives (مسكر, سالك) cannot be "lifted"; these can: "رفع الاغلاق",
+# "خلصت الازمه", "مافي زحمه", "بعد اغلاق ساعتين".
+_STATE_NOUNS = frozenset(["اغلاق", "ازمه", "زحمه", "ازدحام", "اختناق", "تكدس",
+                          "كثافه", "ضغط", "وقفه"])
 
 # Multi-word forms. Checked before single tokens so "نصب حاجز" is read as a
 # newly-erected obstacle while a bare "حاجز" stays what it is — a noun.
@@ -144,19 +183,101 @@ PHRASES: list[tuple[str, str, str]] = [
 CLEARING_WORDS = frozenset([
     "انسحب", "انسحبوا", "انسحبت", "شالو", "شالوا", "شال", "رفعوا", "رفع",
     "ازالوا", "فكوا", "راح", "راحت", "راحوا", "غادر", "غادروا", "تركوا",
-    "خلص", "خلصت", "انتهي", "انتهت", "فتحوه", "فتحوها",
+    "خلص", "خلصت", "انتهي", "انتهت", "فتحوه", "فتحوها", "انفك", "انفكت",
 ])
+
+# Clearing verbs that clear only what stands NEXT to them. Each has a second
+# life that is not a departure (audit 2026-09-25, F013/F024): "راح" is also
+# the future marker ("راح يسكروا الحاجز" — they are GOING TO close it) and
+# "went to" ("الجيش راح عالحاجز"); "تركوا الناس واقفين" is "they left people
+# standing"; "خلص" is the discourse "ok/enough". The line-wide flag let any of
+# them infer `open` from nothing — "they're about to close Huwara" was served
+# as Huwara open.
+_WEAK_CLEARING = frozenset(["راح", "راحت", "راحوا", "تركوا", "خلص", "خلصت",
+                            "انتهي", "انتهت", "انفك", "انفكت"])
+_MOTION = frozenset(["راح", "راحت", "راحوا"])
+# Things a clearing verb can clear, besides presence nouns and _STATE_NOUNS.
+_OBSTACLE_NOUNS = frozenset(["حاجز", "حواجز", "محسوم", "بوابه", "حصار", "سواتر"])
 
 # "لا" is deliberately ABSENT. In Palestinian Arabic an adjective is negated
 # with "مش", not "لا"; before a status word "لا" is nearly always the discourse
 # marker "no" answering someone — "لا مسكر" is "no, it's closed", which the
 # negation rule inverted into "open".
-NEGATORS = frozenset(["مش", "ما", "مو", "بدون", "بلا", "غير"])
+#
+# The fused existentials are PRESENT (audit F023): "مافي جيش", "مفيش جيش",
+# "فش جيش" are how "there is no army" is actually typed, and only the spaced
+# "ما في" was recognised — each read as soldiers PRESENT, and "مافي ازمة" as a
+# jam. A waw fused to any of these ("ومش سالك", "وبدون جيش") is peeled at
+# lookup (_bare), exactly as _lex peels it for lexicon words.
+NEGATORS = frozenset(["مش", "ما", "مو", "بدون", "بلا", "غير",
+                      "مافي", "مافيش", "مفيش", "مافيه", "فش", "فيش"])
+_FUSED_NEG_EXIST = frozenset(["مافي", "مافيش", "مفيش", "مافيه", "فش", "فيش"])
+
+# "ما" after these is the CONJUNCTION, not "not" (audit F001/F005): "بعد ما
+# سكروا الحاجز" is "AFTER they closed the checkpoint", "زي ما هو مسكر" is "closed,
+# as it has been", "حسب ما سمعت مسكر" is "closed, from what I heard" — every one
+# of them was served OPEN. Deliberately NOT "بس" ("بس ما في جيش" is "but there is
+# no army") and NOT "عشان" ("عشان ما يسكروا" is "so they DON'T close").
+_MA_HEADS = frozenset(["بعد", "قبل", "زي", "مثل", "متل", "حسب", "كل", "طول",
+                       "وقت", "اول", "عقب", "لحد", "يوم"])
+
+# What "لا"/"ولا" negate when it stands right before them: "ولا في مستوطنين",
+# "لا يوجد جيش" (the MSA form, F014/F023).
+_EXISTENTIALS = frozenset(["في", "فيه", "يوجد", "توجد", "يوجدش"])
+# A negated existential AFTER the noun: "الجيش مش موجود", "جيش ما في" (F014).
+_NEG_COPULA = frozenset(["مش", "ما", "مو", "غير"])
+_EXIST_AFTER = frozenset(["موجود", "موجوده", "موجودين", "متواجد", "متواجدين",
+                          "في", "فيه", "هون", "هناك"])
 
 # "ما زال" / "لا زالت" mean "STILL", not "not". Reading the particle as a
 # negator turned "النبي الياس ما زال مغلق" ("Nabi Elias is still closed") into
 # open — an inversion on exactly the message that most needed to be right.
 CONTINUATIVES = frozenset(["زال", "زالت", "زالوا", "زالا", "يزال", "تزال"])
+
+# Irrealis: what follows these is not a report of the present (audit F006,
+# F013/F024). "اذا فتح الحاجز خبرونا" ("if the checkpoint opens, tell us") and
+# "راح يسكروا حوارة" ("they are going to close Huwara") were each asserted —
+# the first as open, the second as open by way of "راح" = "left". "لو سمحت"
+# ("please") is not "if".
+_CONDITIONALS = frozenset(["اذا", "ازا", "لو", "بحال"])
+_FUTURE = frozenset(["رح", "راح", "رايح", "رايحين", "رايحه", "بدهم", "بده",
+                     "بدو", "ناوي", "ناويين"])
+# Nouns that merely LOOK imperfect (ت/ي/ن + stem).
+_NOT_IMPERFECT = frozenset(["تفتيش", "تدقيق", "تكدس", "نظيف", "تواجد"])
+
+# "كان مغلق الصبح وهلا سالك" — the closure is the PAST state (F123).
+_PAST = frozenset(["كان", "كانت", "كانوا", "كانو"])
+
+# A negated normalcy adjective is a caution, not a closure (F436): "الوضع غير
+# طبيعي" ("the situation is not normal") was flipped to `closed`.
+_NORMALCY = frozenset(["طبيعي", "طبيعيه", "عادي"])
+
+# "فتح النار" — OPENED FIRE (F019). A shooting at Huwara was served as Huwara
+# open, passable, toward live fire.
+_OPEN_VERBS = frozenset(["فتح", "فتحت", "فتحوا", "فتحو", "فاتح", "فاتحين", "انفتح"])
+_FIRE = frozenset(["النار", "نار", "بالنار", "الرصاص", "رصاص", "النيران", "نيران"])
+
+# "ممنوع الدخول", "منعوا الناس من المرور", "الدخول ممنوع" — passage forbidden is
+# a closure, for the direction the passage names (F020/F097).
+_BAN_WORDS = frozenset(["منع", "منعو", "منعوا", "ممنوع", "يمنع", "يمنعو",
+                        "يمنعوا", "بيمنعو", "بيمنعوا", "بمنعو", "بمنعوا"])
+_PASSAGE = frozenset(["مرور", "دخول", "خروج", "عبور"])
+
+# "وقفة احتجاجية عند حاجز حوارة" is a protest VIGIL, not a traffic standstill
+# (F122).
+_VIGIL = ("احتجاج", "تضامن", "اسناد", "سلمي")
+
+# What may follow an EXISTENTIAL "في حاجز" ("there's a checkpoint at the
+# entrance"). Anything else — a name — makes it the locative "at X checkpoint"
+# (F122/F416): "ازمة في حاجز عطارة" filed an army sighting at 0.92.
+_EXISTENTIAL_TAIL = frozenset(["علي", "ع", "عند", "بين", "هون", "هناك", "جديد",
+                               "طيار", "للجيش", "عسكري", "كمان", "قرب", "جنب",
+                               "تحت", "فوق", "هلا", "هلق", "هسا", "الان", "حاليا"])
+
+# Bare "داخل"/"خارج" before a noun is the preposition "inside/outside" (F416):
+# "الجيش داخل البلد" recorded an explicit inbound direction nobody stated. After
+# "للي" ("for whoever is going in") it is still the direction.
+_RELATIVE_LI = frozenset(["للي", "اللي", "الي", "لي", "ل"])
 
 DIRECTION_WORDS: dict[str, str] = {
     "للداخل": "inbound", "الداخل": "inbound", "داخل": "inbound",
@@ -180,8 +301,13 @@ DIRECTION_WORDS: dict[str, str] = {
 # Emoji are used by several channels as generic ATTENTION markers, not status:
 # "🔴عنبتا تفتيش للخارج، سالك للداخل" is red-dotted but reports a flowing lane.
 # So emoji are consulted only when a clause carries no status word at all.
+#
+# 🟡 is `congested`, as cascade/palhub_roads.py maps it (أزمة متوسطة) and for
+# the reason given there: channels repost Palhub's glyphs, and reading the same
+# glyph as `slow` here made the two lanes contradict each other (audit F433).
 EMOJI_FLOW = {"✅": "open", "🟢": "open", "🟩": "open", "✔": "open", "☑": "open",
-              "🟠": "congested", "🟧": "congested", "🟡": "slow", "🟨": "slow",
+              "🟠": "congested", "🟧": "congested", "🟡": "congested",
+              "🟨": "congested",
               "❌": "closed", "⛔": "closed", "🚫": "closed", "🛑": "closed"}
 
 # Interrogatives that open a question even with no "؟" typed.
@@ -196,16 +322,34 @@ QUESTION_PHRASES = ("شو وضع", "شو اخبار", "شو الوضع", "حدا
                     # "whoever says Awarta is open, give us proof" — was
                     # asserting the jam and the inspection it went on to doubt.
                     "يعطينا دليل", "اعطونا دليل", "مين متاكد", "مش متاكد",
-                    "حدا متاكد")
+                    "حدا متاكد",
+                    # NOT KNOWING is not a report (audit F006/F098). "ما بعرف
+                    # اذا حوارة سالك" ("I don't know if Huwara is open") was
+                    # asserted open at 0.90 — evidence manufactured from the
+                    # absence of knowledge — and "مش عارف سالك" read the مش of
+                    # "مش عارف" as negating سالك: closed.
+                    "ما بعرف", "مابعرف", "ما بنعرف", "حد بعرف", "حدا بعرف",
+                    "حد يعرف", "مين بعرف", "مش عارف", "حدا جرب", "حد جرب",
+                    "مين جرب")
 
 _QMARK = re.compile(r"[؟?]")
+# A link is not text. "حوارة سالك https://t.me/roads?start=1" — the "?" of the
+# query string made the whole report a question (audit F434); channel footers
+# carry such links constantly.
+_URL = re.compile(r"(?:https?://|www\.)\S+|\bt\.me/\S+", re.I)
 # Clause boundaries. NOT ":" — "الداخل: سالك" must stay one clause, because the
 # direction binds to the status across the colon.
 #
 # A STANDALONE waw is split on; a PREFIXED one ("وسالك") is not, because و opens
 # many ordinary words (وادي, وزارة) and splitting inside them would separate a
 # status from its direction. Prefixed waw is handled at lookup time instead.
-_CLAUSE_SPLIT = re.compile(r"[،؛,\n\r]+|\s+[-–—]\s+|\s+و\s+")
+#
+# A sentence end is a boundary too (audit F417): "بدون. مسكر" let the بدون of
+# one sentence flip the status of the next, and read open. But only a dot that
+# is NOT inside a word — "مسـ.ـتوطن" is the censorship dot normalize() rejoins,
+# and "1.5" is a number. NOT "/": "للداخل/للخارج" is one enumerated "both".
+_CLAUSE_SPLIT = re.compile(r"[،؛,\n\r!|]+|\s+[-–—]\s+|\s+و\s+"
+                           r"|(?<![ء-يـ\d])\.+|\.+(?![ء-يـ\d])")
 
 # Article shapes, longest first — same set as resolve.arabic, applied here at
 # LOOKUP time: "للمستوطنين" must find "مستوطنين" in the presence table.
@@ -239,8 +383,9 @@ def tokens(clause: str) -> list[str]:
     return out
 
 
-def _lex(tok: str, table: dict[str, str]) -> str | None:
-    """Look a token up, retrying without a fused article or conjunction.
+def _key(tok: str, table) -> str | None:
+    """The lexicon key a token matches, retrying without a fused article or
+    conjunction. `table` is anything supporting `in`.
 
     Written as a fallback chain rather than by pre-stripping every token: the
     bare form is authoritative where it exists, and stripping unconditionally
@@ -248,12 +393,12 @@ def _lex(tok: str, table: dict[str, str]) -> str | None:
     letters.
     """
     if tok in table:
-        return table[tok]
+        return tok
     stripped = _ARTICLE.sub("", tok)
     if len(stripped) >= 3 and stripped in table:
-        return table[stripped]
+        return stripped
     if len(tok) >= 4 and tok[0] == "و" and tok[1:] in table:
-        return table[tok[1:]]
+        return tok[1:]
     # Elongation for emphasis: "محسوووم", "سالكككك", "مسكررر". normalize()
     # strips tatweel but not a genuinely repeated letter, so these missed the
     # lexicon entirely and the line fell through to `unparsed`. Collapsed only
@@ -263,11 +408,38 @@ def _lex(tok: str, table: dict[str, str]) -> str | None:
     collapsed = _ELONGATED.sub(r"\1", tok)
     if collapsed != tok and len(collapsed) >= 3:
         if collapsed in table:
-            return table[collapsed]
+            return collapsed
         stripped = _ARTICLE.sub("", collapsed)
         if len(stripped) >= 3 and stripped in table:
-            return table[stripped]
+            return stripped
     return None
+
+
+def _lex(tok: str, table: dict[str, str]) -> str | None:
+    """Look a token up (see _key)."""
+    k = _key(tok, table)
+    return table[k] if k is not None else None
+
+
+def _bare(tok: str, words) -> str | None:
+    """`tok`, or `tok` without ONE fused waw, if that is in `words`.
+
+    For particles, which never take the article. "ومش سالك" ("and NOT
+    flowing") compared the whole token "ومش" against NEGATORS, missed, and was
+    served OPEN at 0.9 — while _lex had always peeled the same waw off the
+    lexicon words beside it (audit F002).
+    """
+    if tok in words:
+        return tok
+    if len(tok) >= 3 and tok[0] == "و" and tok[1:] in words:
+        return tok[1:]
+    return None
+
+
+def _consumes(tok: str) -> bool:
+    """Does this token take a particle (negator, clearing verb) for itself?"""
+    return bool(_lex(tok, FLOW_WORDS) or _lex(tok, PRESENCE_WORDS)
+                or _bare(tok, CLEARING_WORDS))
 
 
 @dataclass
@@ -323,20 +495,22 @@ def _presplit_waw(raw: str) -> str:
     unconditionally would strand "ازمة" with no direction; never splitting
     would collapse the first example to a single most-restrictive value.
     """
-    toks = raw.split()
-    norms = [normalize(t) for t in toks]
-    dir_pos = [i for i, n in enumerate(norms) if _lex(n, DIRECTION_WORDS)]
+    # The whitespace is KEPT. The line used to be rebuilt with single spaces,
+    # so whenever two direction words were present a line break stopped being
+    # a clause boundary, and a negator ending one line reached the status that
+    # opened the next ("عطارة ما\nسالك للداخل…" read inbound closed).
+    parts = re.split(r"(\s+)", raw)          # words at even indices
+    words = parts[0::2]
+    norms = [normalize(t) for t in words]
+    dir_pos = [i for i, n in enumerate(norms) if n and _lex(n, DIRECTION_WORDS)]
     if len(dir_pos) < 2:
         return raw
-    out: list[str] = []
-    for i, t in enumerate(toks):
-        n = norms[i]
+    for i, n in enumerate(norms):
         if (i > 0 and len(n) >= 4 and n.startswith("و")
                 and (_lex(n[1:], FLOW_WORDS) or _lex(n[1:], PRESENCE_WORDS))
                 and any(p < i for p in dir_pos) and any(p > i for p in dir_pos)):
-            out.append("،")
-        out.append(t)
-    return " ".join(out)
+            parts[2 * i] = "، " + parts[2 * i]
+    return "".join(parts)
 
 
 def _is_question(raw: str, toks: list[str]) -> bool:
@@ -347,11 +521,27 @@ def _is_question(raw: str, toks: list[str]) -> bool:
         return True
     if any(t in QUESTION_OPENERS for t in toks[:2]):
         return True
+    # "…or not?" — "عورتا سالك ولا لا", "سالك ولا مش سالك", "حوارة سالك او لا",
+    # and the same with its tail dropped, "عورتا سالك ولا" (audit F022). The
+    # disjunction rule below needs two DIFFERENT flow values and "لا" is not
+    # one, so the plainest form of the question was asserted as open.
+    for k, t in enumerate(toks):
+        if t in ("ولا", "او"):
+            nxt = toks[k + 1] if k + 1 < len(toks) else None
+            if nxt is None or nxt in ("لا", "لاء", "مش") or nxt in QUESTION_OPENERS:
+                return True
     # Disjunctive question: "بوابة بورين فاتحه ولا مسكره" — "…open OR closed?".
-    # Two opposing flow words joined by "ولا" is a request for the status, not
-    # a report of it, and often carries no question mark.
-    if "ولا" in toks:
-        vals = {v for v in (_lex(t, FLOW_WORDS) for t in toks) if v}
+    # Two opposing flow words joined by "ولا" (or "او") is a request for the
+    # status, not a report of it, and often carries no question mark.
+    #
+    # A word behind "ولا في" does not count: that is the negated existential
+    # ("سالك ولا في زحمة" — "open, and NO jam"), a reassurance that this rule
+    # threw away as a question. "سالك ولا زحمة" stays a question: "open or
+    # jammed?" is at least as likely a reading as "open, no jam".
+    if "ولا" in toks or "او" in toks:
+        vals = {v for i, v in enumerate(_lex(t, FLOW_WORDS) for t in toks)
+                if v and not (i >= 2 and toks[i - 2] in ("لا", "ولا")
+                              and toks[i - 1] in _EXISTENTIALS)}
         if len(vals) >= 2:
             return True
     # An interrogative anywhere in a SHORT line: "عطارة للخارج كيف" is a
@@ -364,8 +554,16 @@ def _direction_positions(toks: list[str]) -> list[tuple[int, str]]:
     out = []
     for i, t in enumerate(toks):
         d = _lex(t, DIRECTION_WORDS)
-        if d:
-            out.append((i, d))
+        if not d:
+            continue
+        # "الجيش داخل البلد" — the preposition "inside the town", not a lane.
+        if (t in ("داخل", "خارج") and i + 1 < len(toks)
+                and (i == 0 or toks[i - 1] not in _RELATIVE_LI)
+                and not (_lex(toks[i + 1], DIRECTION_WORDS)
+                         or _lex(toks[i + 1], FLOW_WORDS)
+                         or _lex(toks[i + 1], PRESENCE_WORDS))):
+            continue
+        out.append((i, d))
     return out
 
 
@@ -468,24 +666,231 @@ def _negated(toks: list[str], i: int) -> bool:
     good news twice over. The بدون belongs to جيش, which sits between them.
     """
     for j in range(max(0, i - 2), i):
-        # "لا" stays out of NEGATORS ("لا مسكر" is "no, it's closed") — but
-        # لا/ولا DIRECTLY before an existential في/فيه is the one shape where
-        # it negates: "ولا في مستوطنين" is "and there are NO settlers", and it
-        # was being read as settlers PRESENT — a caution invented from its own
-        # reassurance, the exact inversion P2.4 exists to prevent.
-        la_fi = (toks[j] in ("لا", "ولا") and j + 1 < len(toks)
-                 and toks[j + 1] in ("في", "فيه"))
-        if toks[j] not in NEGATORS and not la_fi:
+        if not (_neg_particle(toks, j) or _la_before_noun(toks, j, i)):
             continue
-        # "ما زال مغلق" — the particle is continuative, not negating.
-        if j + 1 < len(toks) and toks[j + 1] in CONTINUATIVES:
-            continue
-        # Already spoken for by something closer to it.
-        if any(_lex(t, FLOW_WORDS) or _lex(t, PRESENCE_WORDS)
-               for t in toks[j + 1:i]):
+        # Already spoken for by something closer to it — including a clearing
+        # verb: in "ما انسحب الجيش" the ما negates the WITHDRAWAL, not the army.
+        if any(_consumes(t) for t in toks[j + 1:i]):
             continue
         return True
     return False
+
+
+def _neg_particle(toks: list[str], j: int) -> bool:
+    """Is toks[j] a negating particle where it stands?"""
+    tok = toks[j]
+    nxt = toks[j + 1] if j + 1 < len(toks) else ""
+    neg = _bare(tok, NEGATORS)
+    if neg is None:
+        # "لا" stays out of NEGATORS ("لا مسكر" is "no, it's closed") — but
+        # لا/ولا DIRECTLY before an existential is the one shape where it
+        # negates: "ولا في مستوطنين" is "and there are NO settlers", and it was
+        # being read as settlers PRESENT — a caution invented from its own
+        # reassurance, the exact inversion P2.4 exists to prevent. "لا يوجد"
+        # is the same shape in MSA (audit F014).
+        return tok in ("لا", "ولا") and nxt in _EXISTENTIALS
+    # "ما زال مغلق" — the particle is continuative, not negating.
+    if nxt in CONTINUATIVES:
+        return False
+    # "زي ما هو مسكر" — the conjunction, not "not" (see _MA_HEADS).
+    if neg == "ما" and j > 0 and _bare(toks[j - 1], _MA_HEADS):
+        return False
+    return True
+
+
+def _negatable_noun(tok: str) -> bool:
+    return bool(_lex(tok, PRESENCE_WORDS) or _key(tok, FLOW_WORDS) in _STATE_NOUNS)
+
+
+def _la_before_noun(toks: list[str], j: int, i: int) -> bool:
+    """"لا جيش ولا تفتيش", "ما في ولا جيش", a clause opening "ولا جيش…".
+
+    The correlative "neither X nor Y" and "not a single X" (audit F014/F023):
+    both were read as the army PRESENT. Only before a NOUN — before an
+    adjective "لا" is still the discourse "no" ("لا مسكر") — and only in a
+    shape that cannot be the disjunctive "or": a lone mid-line "سالك ولا جيش"
+    ("open, or army?") is left as it was.
+    """
+    if j != i - 1 or toks[j] not in ("لا", "ولا") or not _negatable_noun(toks[i]):
+        return False
+    if toks[j] == "ولا" and j == 0:
+        return True
+    if sum(t in ("لا", "ولا") for t in toks) >= 2:
+        return True
+    return toks[j] == "ولا" and any(_neg_particle(toks, k) for k in range(j))
+
+
+def _negated_after(toks: list[str], i: int) -> bool:
+    """A negated existential FOLLOWING the noun: "الجيش مش موجود", "جيش ما في"
+    (audit F014). _negated only looks back, so both read as the army PRESENT.
+
+    Consumed like any negator: in "جيش مافي شرطه" the مافي belongs to شرطه.
+    """
+    n = len(toks)
+    k = i + 1
+    if k >= n:
+        return False
+    if _bare(toks[k], _FUSED_NEG_EXIST):
+        rest = k + 1
+    elif k + 1 < n and _bare(toks[k], _NEG_COPULA) and toks[k + 1] in _EXIST_AFTER:
+        rest = k + 2
+    else:
+        return False
+    return rest >= n or not (_lex(toks[rest], FLOW_WORDS)
+                             or _lex(toks[rest], PRESENCE_WORDS))
+
+
+def _is_obstacle(tok: str) -> bool:
+    return bool(_lex(tok, PRESENCE_WORDS) or _key(tok, _OBSTACLE_NOUNS)
+                or _key(tok, FLOW_WORDS) in _STATE_NOUNS)
+
+
+def _imperfect(tok: str) -> bool:
+    """Shaped like an imperfect verb: "يسكروا", "تسكر", "نشوف"."""
+    return len(tok) >= 4 and tok[0] in "يتن" and tok not in _NOT_IMPERFECT
+
+
+def _irrealis_cut(toks: list[str]) -> tuple[int, str | None]:
+    """Index where a conditional or a forecast begins, and which one.
+
+    Everything from that token to the end of the clause is not a report of
+    the present. "حوارة مسكر اذا فتح بخبركم" keeps its closure and drops the
+    hypothetical opening.
+    """
+    n = len(toks)
+    for j, t in enumerate(toks):
+        c = _bare(t, _CONDITIONALS)
+        if c:
+            if c == "لو" and j + 1 < n and toks[j + 1].startswith("سمح"):
+                continue                                  # "لو سمحت" — please
+            return j, "conditional"
+        if t == "حال" and j > 0 and toks[j - 1] == "في":   # "في حال" — in case
+            return j - 1, "conditional"
+        f = _bare(t, _FUTURE)
+        if f:
+            nxt = toks[j + 1] if j + 1 < n else ""
+            # "رح" is only ever the future. "راح"/"بدهم"… are the future only
+            # before a verb: "راح يسكروا", "راح الجيش يسكر" — not "راح الجيش"
+            # (the army left) or "بدهم هويات" (they want IDs).
+            if (f == "رح" or _imperfect(nxt)
+                    or (_lex(nxt, PRESENCE_WORDS) and j + 2 < n
+                        and _imperfect(toks[j + 2]))):
+                return j, "forecast"
+    return n, None
+
+
+def _clears(toks: list[str], j: int) -> bool:
+    """Is toks[j] a clearing verb used as one here?"""
+    verb = _bare(toks[j], CLEARING_WORDS)
+    if verb is None:
+        return False
+    # "ما انسحب الجيش", "الجيش لسا ما راح" — the army did NOT leave. Served as
+    # the army absent and the road open (found by this audit).
+    if j > 0 and (_neg_particle(toks, j - 1) or toks[j - 1] == "لم"):
+        return False
+    nxt = toks[j + 1] if j + 1 < len(toks) else ""
+    # "الجيش راح عالحاجز" — went TO the checkpoint.
+    if verb in _MOTION and (nxt in ("ع", "عند", "لعند")
+                            or nxt.startswith(("عال", "عل", "لل"))):
+        return False
+    if verb in _WEAK_CLEARING:
+        near = toks[max(0, j - 2):j] + toks[j + 1:j + 3]
+        if not any(_is_obstacle(t) for t in near):
+            return False
+    return True
+
+
+def _clears_noun(toks: list[str], i: int) -> bool:
+    """A clearing verb that belongs to the flow noun at toks[i].
+
+    "تم رفع الاغلاق" / "خلصت الازمة" / "الازمه خلصت" — the closure LIFTED, the
+    jam OVER (audit F021/F015). The noun used to be read as its own value, so
+    the one message a waiting family needs was written `closed` with a fresh
+    timestamp and extended the closure it announced the end of.
+
+    Not when the verb has its own subject after it: in "ازمه وراح الجيش" the
+    army left and the jam did not.
+    """
+    for j in range(max(0, i - 2), i):
+        if _clears(toks, j) and not any(_consumes(t) for t in toks[j + 1:i]):
+            return True
+    for j in range(i + 1, min(len(toks), i + 3)):
+        if (_clears(toks, j) and not any(_consumes(t) for t in toks[i + 1:j])
+                and not (j + 1 < len(toks) and _is_obstacle(toks[j + 1]))):
+            return True
+    return False
+
+
+def _past(toks: list[str], i: int, key: str | None) -> bool:
+    """"كان مغلق" — a state placed in the past; "بعد اغلاق" — after a closure."""
+    for j in range(max(0, i - 2), i):
+        if _bare(toks[j], _PAST) and not any(_consumes(t) for t in toks[j + 1:i]):
+            return True
+    return bool(key in _STATE_NOUNS and i > 0 and _bare(toks[i - 1], ("بعد",)))
+
+
+def _emoji_marks(raw_clause: str) -> list[tuple[int, str]]:
+    """[(index of the word token BEFORE the emoji, flow value)] in text order.
+
+    Counted on the raw clause, word tokens re-derived from the normalised
+    prefix, so the index is the one tokens(normalize(clause)) gives whether or
+    not normalize() keeps emoji.
+    """
+    marks = []
+    for k, ch in enumerate(raw_clause):
+        v = EMOJI_FLOW.get(ch)
+        if v:
+            marks.append((len(tokens(normalize(raw_clause[:k]))) - 1, v))
+    return marks
+
+
+def _bind_emoji(marks: list[tuple[int, str]],
+                dirs: list[tuple[int, str]]) -> list[tuple[str, str]]:
+    """[(value, direction)] — each emoji bound to the direction it stands by.
+
+    "الداخل ✅ الخارج ❌" (inbound OK, outbound closed) is Palhub's own
+    shorthand, reposted by channels. It used to collapse to ONE reading for
+    "both", and whichever emoji came first in EMOJI_FLOW won — ✅, so the closed
+    lane was served open in either text order (audit F003).
+
+    The first thing in the clause fixes the order: "الداخل ✅" (direction then
+    emoji) or "✅ الداخل" (emoji then direction). Adjacent direction words with
+    no emoji between them are one enumerated "both" ("الداخل والخارج ✅").
+    Conflicting emoji on one lane are all kept; read() keeps the most
+    restrictive.
+    """
+    if not dirs:
+        return [(v, "both") for _, v in marks]
+    events = sorted([(p, 1, d) for p, d in dirs]
+                    + [(b + 0.5, 0, v) for b, v in marks])
+    groups: list[tuple[set[str], list[str]]] = []
+    if events[0][1] == 1:
+        for _pos, kind, x in events:
+            if kind == 1:
+                if groups and not groups[-1][1]:
+                    groups[-1][0].add(x)
+                else:
+                    groups.append(({x}, []))
+            else:
+                groups[-1][1].append(x)
+    else:
+        pending: list[str] = []
+        for _pos, kind, x in events:
+            if kind == 0:
+                pending.append(x)
+            elif pending:
+                groups.append(({x}, pending))
+                pending = []
+            else:
+                groups[-1][0].add(x)
+        if pending:
+            groups[-1][1].extend(pending)
+    out = []
+    for ds, vals in groups:
+        d = ("both" if "both" in ds or {"inbound", "outbound"} <= ds
+             else next(iter(ds)))
+        out.extend((v, d) for v in vals)
+    return out
 
 
 _FLIP = {"open": "closed", "closed": "open", "congested": "open", "slow": "open"}

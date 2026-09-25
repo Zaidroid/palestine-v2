@@ -1,0 +1,24 @@
+# Palestine v2 — the Python packages the code imports, and the server it runs.
+#
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# Written 2026-09-25 from the tree's third-party imports, because the README's
+# install line named this file for weeks while it did not exist and the only
+# pinned version anywhere was lingua's, in docs/analyst.md. Pins are the
+# versions the test suite ran on that day (a cloud checkout's `pip freeze`);
+# main-server's .venv is the production record — re-pin from its `pip freeze`
+# when they differ.
+#
+# PYTHON 3.12 OR NEWER: lingua-language-detector 2.2.0 publishes wheels for
+# cp312+ only (`requires_python >= 3.12`), so on 3.11 this file stops at that
+# line. Resolved clean for 3.12 / manylinux x86_64 on 2026-09-25.
+
+fastapi==0.141.1            # serve/ — the API and the MCP-over-HTTP transport
+uvicorn==0.53.0             # ops/systemd/palestine-v2-api.service runs .venv/bin/uvicorn
+httpx==0.28.1               # outbound fetches; also fastapi.testclient
+psycopg[binary]==3.3.6      # resolve/db.py and every loader
+PyYAML==6.0.1               # ingest/ specs, db/mappings, the source registry
+lingua-language-detector==2.2.0   # analyst/lang.py, organ A (pinned 2026-09-19)
+telethon                    # ingest/telegram_poller.py, setup_session.py — unpinned:
+                            # no checkout but main-server has ever run it; pin from there
+pytest==9.1.1               # tests/

@@ -41,6 +41,7 @@ Run:  .venv/bin/python -m ingest.spec              # validate every spec
 from __future__ import annotations
 
 import difflib
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import date
@@ -168,6 +169,40 @@ def _identity_fields(v) -> str | None:
         return (f"unknown identity field(s) {bad} — identity_key_for() renders "
                 f"only {list(IDENTITY_FIELDS)}. A name it cannot render raises "
                 "mid-run, after half the corpus is read")
+    return None
+
+
+REGISTRY_WHEN = ("prefix", "regex", "equals", "not_prefix", "unit")
+
+
+def _registry_when(v) -> str | None:
+    """A registry rule's `when:` — closed like a condition, because
+    ops/load_registry.matches() tests only the keys it knows and then returns
+    bool(when). A misspelt key was therefore not an error but a rule that
+    matched EVERY indicator, first match wins, with nothing left unclassified
+    for max_unclassified to catch."""
+    if not isinstance(v, dict) or not v:
+        return ("must be a non-empty mapping of "
+                f"{list(REGISTRY_WHEN)} — an empty `when` says nothing")
+    bad = [k for k in v if k not in REGISTRY_WHEN]
+    if bad:
+        near = {k: difflib.get_close_matches(str(k), REGISTRY_WHEN, n=1)
+                for k in bad}
+        hint = ", ".join(f"{k!r} (did you mean {n[0]!r}?)" if n else repr(k)
+                         for k, n in near.items())
+        return (f"unknown key(s) {hint} — the loader ignores a key it does not "
+                "know, so this rule would match every indicator")
+    for k in ("prefix", "regex", "equals", "not_prefix"):
+        if k in v and not isinstance(v[k], str):
+            return f"`{k}` must be a string, got {type(v[k]).__name__}"
+    units = v.get("unit", [])
+    if not all(isinstance(u, str) for u in (units if isinstance(units, list) else [units])):
+        return "`unit` must be a string or a list of strings"
+    if "regex" in v:
+        try:
+            re.compile(v["regex"])
+        except re.error as exc:
+            return f"`regex` does not compile: {exc}"
     return None
 
 
@@ -460,7 +495,7 @@ _k("registry.rules[].when", "enforced",
    "{prefix|regex|equals|not_prefix|unit}. `unit` matches the RAW unit "
    "string: health's 1,011 GHO codes cannot have their measure_kind read "
    "off their names, but their units say it exactly", types=(dict,),
-   cls_children="value")
+   check=_registry_when, cls_children="value")
 _k("registry.rules[].notes", "rationale", "", types=(str,))
 _k("registry.rules[].concept", "enforced", "a key in the concept table",
    types=(str,))

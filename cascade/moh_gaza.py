@@ -53,7 +53,13 @@ _SEPS = dict.fromkeys([0x002C, 0x060C, 0x066C, 0x2009, 0x00A0])
 _BIDI = dict.fromkeys([0x200E, 0x200F, 0x061C, 0x202A, 0x202B, 0x202C,
                        0x202D, 0x202E, 0x2066, 0x2067, 0x2068, 0x2069])
 
-IS_REPORT = re.compile(r"التقرير\s+الإحصائي\s+اليوم")
+# THE HAMZA IS OPTIONAL IN EVERY PATTERN HERE. "الإحصائي" and "الاحصائي",
+# "إطلاق" and "اطلاق", "إصابات" and "اصابات" are the same words; one archived
+# bulletin already writes its injuries hamza-less (analyst/organ_c.py). With
+# the hamza required, a day typed without it was not a report at all — no
+# row, nothing in `rejected`, and the feed-age watchdog saw a quiet day rather
+# than a parse miss.
+IS_REPORT = re.compile(r"التقرير\s+ال[إا]حصائي\s+اليوم")
 
 # Section headers decide the tier. Order matters: the most specific first, since
 # the cumulative header also contains the word "العدوان".
@@ -61,15 +67,28 @@ SECTIONS = (
     # NOT "العدد التراكمي" — that phrase opens every cumulative DATA line
     # ("العدد التراكمي للشهداء: 73,356"), so using it as a header pattern made
     # each data line look like a section switch and the largest figures in the
-    # report were silently never emitted.
-    ("cumulative", re.compile(r"الإحصائي[ةه]\s+التراكمي[ةه]|منذ\s+بداي[ةه]\s+العدوان")),
-    ("since_ceasefire", re.compile(r"منذ\s+وقف\s+إطلاق\s+النار")),
+    # report were silently never emitted. "الحصيلة التراكمية" is the header's
+    # other measured spelling (analyst/organ_c.py).
+    ("cumulative", re.compile(r"ال[إا]حصائي[ةه]\s+التراكمي[ةه]|الحصيل[ةه]\s+التراكمي[ةه]"
+                              r"|منذ\s+بداي[ةه]\s+العدوان")),
+    ("since_ceasefire", re.compile(r"منذ\s+وقف\s+[إا]طلاق\s+النار")),
     ("daily", re.compile(r"خلال\s+ال.?\s*24\s*ساع[ةه]|الساعات\s+ال.?\s*24")),
 )
 
+# A LINE THAT OPENS A SECTION THIS PARSER DOES NOT KNOW CLOSES THE ONE BEFORE.
+# The tier used to switch only on the three headers above; any other header
+# fell through with `current` still the previous tier, and `setdefault` then
+# accepted a measure that tier lacked. A daily block followed by the 2025
+# "🔴 منذ استئناف العدوان في 18 مارس 2025:" block filed its running total —
+# 16,000 injuries — as ONE DAY's injuries, the 72,274-in-one-day class of
+# error. A header is a line the Ministry opens with its section marks (🔴,
+# ⭕), or a "منذ ...:" line that ends at its colon. Its numbers are refused
+# and the line is kept in `rejected`, so a new section is a visible miss.
+_HEADER_LIKE = re.compile(r"^[\s*]*(?:🔴|⭕)|منذ[^\n]*:[\s*]*$")
+
 MEASURES = (
-    ("deaths",     re.compile(r"(?:العدد\s+التراكمي\s+ل|إجمالي\s+عدد\s+ال|عدد\s+ال)?شهداء\s*:?\s*([\d]+)")),
-    ("injuries",   re.compile(r"(?:العدد\s+التراكمي\s+ل|إجمالي\s+عدد\s+ال|عدد\s+ال)?إصابات\s*:?\s*([\d]+)")),
+    ("deaths",     re.compile(r"(?:العدد\s+التراكمي\s+ل|[إا]جمالي\s+عدد\s+ال|عدد\s+ال)?شهداء\s*:?\s*([\d]+)")),
+    ("injuries",   re.compile(r"(?:العدد\s+التراكمي\s+ل|[إا]جمالي\s+عدد\s+ال|عدد\s+ال)?[إا]صابات\s*:?\s*([\d]+)")),
     ("recovered",  re.compile(r"حالات\s+الانتشال\s*:?\s*([\d]+)")),
 )
 
@@ -129,6 +148,11 @@ def parse(text: str) -> MohReport:
                 current, matched_header = tier, True
                 break
         if matched_header:
+            continue
+        if _HEADER_LIKE.search(line):
+            if current is not None:
+                r.rejected.append(f"unknown section, its numbers not read: {line[:120]}")
+            current = None
             continue
         if current is None:
             continue

@@ -1,5 +1,7 @@
 /* palestine-v2 design tokens — the single source of truth (docs/DESIGN.md).
-   Doctrine test greps for raw hex outside this file. */
+   Raw hex belongs here; a page may shadow these only in a per-variant :root
+   block (board.html's light scope). Nothing tests that yet — this comment used
+   to claim a doctrine test existed, and none did (audit F605). */
 :root {
   /* ground ladder — warm dark, never pure black */
   --g0: #141110;   /* page */
@@ -9,7 +11,11 @@
 
   --ink: #EDE6DD;
   --ink-muted: #A79A8C;
-  --ink-faint: #6E675F;
+  /* Was #6E675F: 3.2–3.4:1 on the grounds, so the line that says a reading is
+     stale was the first text to wash out in the sun (audit F414). 4.5:1 on
+     g2, 5.0 on g1, 5.3 on g0. The honesty text itself (ages, 'unknown',
+     'last known') uses ink-muted; faint is for chrome. */
+  --ink-faint: #908779;
 
   --accent: #E8A33D;
 
@@ -19,9 +25,20 @@
   --bad: #C25E4C;
   --unknown: #6E675F;
 
+  /* Status pills on a card (g1): the tint and the ink, precomputed. They were
+     `color-mix()` at runtime, which a pre-2023 Android WebView drops — the
+     pill lost its fill on the phones this page is for (audit F602). Values
+     are color-mix(in srgb, <status> 22/20/24%, transparent) over g1. */
+  --ok-bg: #313121;    --ok-ink: #B8C48A;
+  --warn-bg: #42331d;  --warn-ink: #E8C27A;
+  --bad-bg: #442922;   --bad-ink: #E39684;
+
   --hairline: rgba(237, 230, 221, .08);
 
   --r-s: 4px;  --r-m: 8px;  --r-l: 14px;
+
+  /* one hand, bright sun: the smallest thing a thumb is asked to hit */
+  --tap: 44px;
 
   --font-ui: "SF Arabic", "Segoe UI", "Noto Naskh Arabic UI", system-ui, sans-serif;
   --font-num: "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;

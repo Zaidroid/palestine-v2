@@ -64,7 +64,24 @@ from resolve.db import connect                         # noqa: E402
 
 # Two observations more than this apart are not corroborating each other; they
 # are describing two different moments.
+#
+# PER KIND since the audit (F116): a third of the kind's half-life, clamped to
+# [CORROBORATION_WINDOW, CORROBORATION_WINDOW_MAX]. A fixed 30 minutes meant
+# that on crossing_status (12 h half-life) two people reporting Allenby open at
+# 09:00 and 10:00 were never counted together, so a crowd 'open' on a slow kind
+# could never clear P2.4 however many independent witnesses saw it. The floor
+# keeps every checkpoint and fuel kind at exactly 30 minutes (their half-lives
+# are 15-90 min), so nothing that is measured today moves.
+# learn/reliability.py derives its comparison window the same way (1/3).
 CORROBORATION_WINDOW = "30 minutes"
+CORROBORATION_WINDOW_MAX = "6 hours"
+CORROBORATION_FRACTION = 3
+
+# How far ahead of this database's clock an observation may be stamped and
+# still count. Beyond it the stamp is wrong, not early (clock skew, a tz-naive
+# string read as UTC, a date parsed without its year): it is kept, never
+# believed, and never served (migration 080 applies the same tolerance).
+FUTURE_TOLERANCE = "10 minutes"
 
 # P(correct | one independence unit, fresh), MEASURED by the backtest rather
 # than chosen — see learn/accuracy.py and DECISIONS 2026-08-01. The earlier
@@ -96,8 +113,15 @@ MAX_CONFIDENCE = 0.97
 # after a single correct report (0.207), which is this project's standing answer
 # to "how much is one unverified success worth". 0.85 x 0.20 = 0.17, below every
 # confidence floor in state_kind_config (0.25-0.35). A newcomer therefore cannot
-# move a served value alone, and does not need to be stopped by a rule that
-# names newcomers: they simply have not earned it yet.
+# ASSERT a value alone, and does not need to be stopped by a rule that names
+# newcomers: they simply have not earned it yet.
+#
+# That alone did not stop them MOVING one (audit F017): the newest assertion
+# defined the value, so a stranger's 'closed' filed five minutes after a road
+# channel's 'open' replaced it, and 0.17 under the floor served as `unknown` —
+# any checkpoint, any time, from an account anyone can open. Hence the rule in
+# `latest` below: inside one corroboration window, a reading that could not be
+# served on its own does not displace one that can; it is counted as dissent.
 #
 # Not zero, deliberately. Zero would make a crowd report incapable of ever
 # contributing, and Loop A scores submitters by comparing them against the
@@ -106,57 +130,131 @@ MAX_CONFIDENCE = 0.97
 # believed first.
 UNEARNED_CROWD_TRUST = 0.20
 
+# The window, per kind, as SQL over state_kind_config (see CORROBORATION_WINDOW).
+_WINDOW_SQL = (
+    f"LEAST(GREATEST(make_interval(secs => half_life_seconds::float8 / {CORROBORATION_FRACTION}),"
+    f" INTERVAL '{CORROBORATION_WINDOW}'), INTERVAL '{CORROBORATION_WINDOW_MAX}')")
+
+# %(since)s bounds what the statement reads. refresh() passes, per kind,
+# now() - 2 x max_assert_seconds: anything older serves `unknown` whatever we
+# conclude about it, and its state_current row was written while it was still
+# inside the window. It used to be unbounded — every 2 minutes, a DISTINCT ON
+# over the kind's whole history, decompressing every daily chunk to find the
+# newest row per key (audit F291/F120). '-infinity' is the full recompute.
 REFRESH_SQL = f"""
 WITH grp AS (
+  -- A unit's standing is its best witness; `p` is one source's own word.
   SELECT source_id,
          COALESCE(independence_group, 'src:' || source_id::text) AS unit,
-         kind
+         kind,
+         {SINGLE_SOURCE_TRUST} * COALESCE(trust_weight,
+               CASE WHEN kind = 'crowd'
+                    THEN {UNEARNED_CROWD_TRUST} ELSE 1.0 END) AS p
   FROM source
 ),
+cfg AS (
+  SELECT state_kind, confidence_floor AS floor, {_WINDOW_SQL} AS w
+  FROM state_kind_config
+),
+newest AS (
+  -- Ties on observed_at are decided by standing, then by id, never by the
+  -- order a hash join happened to return (audit F428: two sources in the same
+  -- second flipped the served value between refreshes).
+  SELECT DISTINCT ON (o.place_id, o.state_kind, o.direction)
+         o.place_id, o.state_kind, o.direction, o.value, o.observed_at,
+         o.source_id, g.p,
+         COALESCE(k.floor, 0) AS floor,
+         COALESCE(k.w, INTERVAL '{CORROBORATION_WINDOW}') AS w
+  FROM state_observation o
+  JOIN grp g ON g.source_id = o.source_id
+  LEFT JOIN cfg k ON k.state_kind = o.state_kind
+  WHERE o.state_kind = ANY(%(kinds)s) AND o.modality = 'assertion'
+    AND o.observed_at >  %(since)s::timestamptz
+    -- A stamp from the future is wrong, not early. Believing it served it as
+    -- the freshest reading there is AND, through the upsert guard, blocked
+    -- every later correction until the wall clock caught up (F117).
+    AND o.observed_at <= now() + INTERVAL '{FUTURE_TOLERANCE}'
+  ORDER BY o.place_id, o.state_kind, o.direction, o.observed_at DESC,
+           g.p DESC, o.source_id
+),
+-- F017. Recency decides the value — except that inside one corroboration
+-- window, a reading whose own standing is under the kind's floor (it could not
+-- be served on its own) does not displace the last reading that could, when
+-- the two disagree. The weaker reading is not lost: it lands in the window
+-- below and counts as dissent. Past the window it describes a different
+-- moment, and a lone caution is raised exactly as before (P2.4: one person may
+-- raise an alarm alone). The LATERAL runs only for a weak newest reading.
 latest AS (
-  SELECT DISTINCT ON (place_id, state_kind, direction)
-         place_id, state_kind, direction, value, observed_at, source_id
-  FROM state_observation
-  WHERE state_kind = ANY(%(kinds)s) AND modality = 'assertion'
-  ORDER BY place_id, state_kind, direction, observed_at DESC
+  SELECT n.place_id, n.state_kind, n.direction, n.w,
+         COALESCE(s.value, n.value)             AS value,
+         COALESCE(s.observed_at, n.observed_at) AS observed_at,
+         COALESCE(s.source_id, n.source_id)     AS source_id,
+         n.observed_at                          AS upto
+  FROM newest n
+  LEFT JOIN LATERAL (
+    SELECT o.value, o.observed_at, o.source_id
+    FROM state_observation o
+    JOIN grp g ON g.source_id = o.source_id
+    WHERE n.p < n.floor
+      AND o.place_id   = n.place_id
+      AND o.state_kind = n.state_kind
+      AND o.direction  = n.direction
+      AND o.modality   = 'assertion'
+      AND o.observed_at >= n.observed_at - n.w
+      AND o.observed_at <  n.observed_at
+      AND g.p >= n.floor
+    ORDER BY o.observed_at DESC, g.p DESC, o.source_id
+    LIMIT 1
+  ) s ON s.value <> n.value
+),
+-- Every assertion in the moment `latest` describes: the window before it, and
+-- (when a weak reading was held back) up to the newest reading.
+win AS (
+  SELECT l.place_id, l.state_kind, l.direction, l.value AS l_value,
+         o.value, o.observed_at, g.unit, g.kind, g.p
+  FROM latest l
+  JOIN state_observation o
+    ON  o.place_id   = l.place_id
+    AND o.state_kind = l.state_kind
+    AND o.direction  = l.direction
+    AND o.modality   = 'assertion'
+    AND o.observed_at BETWEEN l.observed_at - l.w AND l.upto
+  JOIN grp g ON g.source_id = o.source_id
+),
+-- F429. Dissent is a unit's LAST word in the window, not every word: a unit
+-- that said 'closed' at T-20 and 'open' at T-2 agrees with 'open' now, and was
+-- being counted as contradicting itself.
+unit_last AS (
+  SELECT DISTINCT ON (place_id, state_kind, direction, unit)
+         place_id, state_kind, direction, unit, value, l_value
+  FROM win
+  ORDER BY place_id, state_kind, direction, unit, observed_at DESC, p DESC
 ),
 corr AS (
   SELECT l.place_id, l.state_kind, l.direction, l.value, l.observed_at, l.source_id,
-         COUNT(DISTINCT g.unit) FILTER (WHERE o.value =  l.value) AS agree,
-         COUNT(DISTINCT g.unit) FILTER (WHERE o.value <> l.value) AS disagree,
-         -- Split the agreeing units by whether they are the crowd, so the
-         -- gate below can tell "three strangers said so" from "a stranger
-         -- agreed with the road channels".
-         COUNT(DISTINCT g.unit) FILTER (
-           WHERE o.value = l.value AND g.kind <> 'crowd') AS noncrowd_agree
+         a.agree, a.noncrowd_agree, COALESCE(d.disagree, 0) AS disagree
   FROM latest l
-  JOIN state_observation o
-    ON  o.place_id   = l.place_id
-    AND o.state_kind = l.state_kind
-    AND o.direction  = l.direction
-    AND o.modality   = 'assertion'
-    AND o.observed_at BETWEEN l.observed_at - INTERVAL '{CORROBORATION_WINDOW}'
-                          AND l.observed_at
-  JOIN grp g ON g.source_id = o.source_id
-  GROUP BY 1,2,3,4,5,6
+  JOIN (
+    SELECT place_id, state_kind, direction,
+           COUNT(DISTINCT unit) FILTER (WHERE value = l_value) AS agree,
+           -- Split the agreeing units by whether they are the crowd, so the
+           -- gate below can tell "three strangers said so" from "a stranger
+           -- agreed with the road channels".
+           COUNT(DISTINCT unit) FILTER (
+             WHERE value = l_value AND kind <> 'crowd') AS noncrowd_agree
+    FROM win GROUP BY 1,2,3
+  ) a USING (place_id, state_kind, direction)
+  LEFT JOIN (
+    SELECT place_id, state_kind, direction, COUNT(*) AS disagree
+    FROM unit_last WHERE value <> l_value
+    GROUP BY 1,2,3
+  ) d USING (place_id, state_kind, direction)
 ),
 -- Each agreeing UNIT's own reliability, best-witness-in-group.
 unit_trust AS (
-  SELECT l.place_id, l.state_kind, l.direction, g.unit,
-         MAX({SINGLE_SOURCE_TRUST} * COALESCE(s.trust_weight,
-               CASE WHEN s.kind = 'crowd'
-                    THEN {UNEARNED_CROWD_TRUST} ELSE 1.0 END)) AS p
-  FROM latest l
-  JOIN state_observation o
-    ON  o.place_id   = l.place_id
-    AND o.state_kind = l.state_kind
-    AND o.direction  = l.direction
-    AND o.modality   = 'assertion'
-    AND o.value      = l.value
-    AND o.observed_at BETWEEN l.observed_at - INTERVAL '{CORROBORATION_WINDOW}'
-                          AND l.observed_at
-  JOIN grp g ON g.source_id = o.source_id
-  JOIN source s ON s.source_id = o.source_id
+  SELECT place_id, state_kind, direction, unit, MAX(p) AS p
+  FROM win
+  WHERE value = l_value
   GROUP BY 1,2,3,4
 ),
 -- The actual noisy-OR: 1 - PROD(1 - p_i) over independent agreeing units.
@@ -209,7 +307,15 @@ ON CONFLICT (place_id, state_kind, direction) DO UPDATE SET
   independent_sources = EXCLUDED.independent_sources,
   contradicted_by     = EXCLUDED.contradicted_by,
   updated_at          = now()
+-- Never move backwards onto an older reading — UNLESS the row being replaced
+-- lies inside the window this statement just read, in which case the
+-- statement saw it and decided against it: a future stamp (F117), a weak
+-- reading now held back by F017's rule, an observation since re-marked as a
+-- non-assertion. Under BELIEF_LOCK_SQL this statement's snapshot follows every
+-- earlier writer's commit, so a stale snapshot can no longer land here (the
+-- race the lock below was added for).
 WHERE EXCLUDED.observed_at >= state_current.observed_at
+   OR state_current.observed_at > %(since)s::timestamptz
 """
 
 
@@ -226,18 +332,55 @@ WHERE EXCLUDED.observed_at >= state_current.observed_at
 BELIEF_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext('palestine-v2-belief'))"
 
 
-def refresh(kinds, conn=None) -> int:
-    """Recompute belief for `kinds`. Returns rows written."""
+def _windows(cur, kinds, full: bool = False) -> list[tuple[str, object]]:
+    """(kind, since) for each kind: how far back its refresh must read.
+
+    now() - 2 x max_assert_seconds for a kind that already has belief. The
+    full history ('-infinity') for a kind with no ceiling configured, or with
+    no state_current row at all — the `--full` checkpoint rebuild deletes
+    belief before re-importing, and a bounded refresh would then leave every
+    checkpoint whose last reading is older than the window with no row, i.e.
+    "never recorded" instead of "unknown, last known X". Per kind, so a slow
+    kind's 6-day window never widens a checkpoint kind's 12 hours.
+    """
+    if full:
+        return [(k, "-infinity") for k in kinds]
+    cur.execute("""
+        SELECT u.state_kind,
+               -- as text: psycopg cannot load '-infinity' into a datetime
+               (CASE WHEN k.max_assert_seconds IS NULL
+                       OR NOT EXISTS (SELECT 1 FROM state_current sc
+                                       WHERE sc.state_kind = u.state_kind)
+                     THEN '-infinity'::timestamptz
+                     ELSE now() - make_interval(secs => 2 * k.max_assert_seconds)
+                END)::text
+          FROM unnest(%s::text[]) AS u(state_kind)
+          LEFT JOIN state_kind_config k USING (state_kind)""", (list(kinds),))
+    return cur.fetchall()
+
+
+def _refresh(cur, kinds, full: bool) -> int:
+    cur.execute(BELIEF_LOCK_SQL)
+    n = 0
+    for kind, since in _windows(cur, kinds, full):
+        cur.execute(REFRESH_SQL, {"kinds": [kind], "since": since})
+        n += cur.rowcount
+    return n
+
+
+def refresh(kinds, conn=None, full: bool = False) -> int:
+    """Recompute belief for `kinds`. Returns rows written.
+
+    `full=True` reads each kind's whole history instead of its recent window —
+    the control for the bounded refresh, and the thing to run after anything
+    that rewrites old observations in place.
+    """
     kinds = list(kinds)
     if conn is not None:
         with conn.cursor() as cur:
-            cur.execute(BELIEF_LOCK_SQL)
-            cur.execute(REFRESH_SQL, {"kinds": kinds})
-            return cur.rowcount
+            return _refresh(cur, kinds, full)
     with connect() as own, own.cursor() as cur:
-        cur.execute(BELIEF_LOCK_SQL)
-        cur.execute(REFRESH_SQL, {"kinds": kinds})
-        n = cur.rowcount
+        n = _refresh(cur, kinds, full)
         own.commit()
         return n
 
@@ -260,14 +403,22 @@ def blocked_by_gate(kinds=None) -> list[dict]:
       AND c.agree < COALESCE(k.crowd_min_units, 2)
     ORDER BY c.observed_at DESC
     """
+    out: list[dict] = []
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(sql, {"kinds": list(kinds) if kinds else _crowd_kinds(cur)})
-        cols = [d[0] for d in cur.description]
-        return [dict(zip(cols, r)) for r in cur.fetchall()]
+        for kind, since in _windows(cur, list(kinds) if kinds else _crowd_kinds(cur)):
+            cur.execute(sql, {"kinds": [kind], "since": since})
+            cols = [d[0] for d in cur.description]
+            out += [dict(zip(cols, r)) for r in cur.fetchall()]
+    out.sort(key=lambda r: r["observed_at"], reverse=True)
+    return out
 
 
 def _crowd_kinds(cur) -> list[str]:
-    cur.execute("SELECT state_kind FROM state_kind_config WHERE crowd_reportable")
+    # Not retired (F120): 070 retired fuel availability without clearing
+    # crowd_reportable, so this timer kept rebuilding three dead kinds every
+    # two minutes and the engine kept offering them.
+    cur.execute("""SELECT state_kind FROM state_kind_config
+                    WHERE crowd_reportable AND retired_at IS NULL""")
     return [r[0] for r in cur.fetchall()]
 
 

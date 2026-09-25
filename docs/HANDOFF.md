@@ -3,6 +3,15 @@
 State as of 2026-08-01. Written to survive a context reset: everything here was
 verified, not remembered.
 
+> **Corrected for drift 2026-09-25.** §1 is unchanged — its rules are Zaid's to
+> amend; two mechanisms they mention have moved and are noted directly under
+> them. §2–§7 were re-read against the tree: a fact that stopped being true is
+> marked *superseded* with what replaced it, never deleted, and a count that
+> only the database or a run can give is replaced by the command that gives
+> it. §8 is the record of 2026-08-01 and is left as that day wrote it. The plan
+> is now `docs/PLAN-2026-09-24-PUBLIC-RELEASE.md` (canonical, with the §11
+> ledger); `CLAUDE.md` is the orientation for a session away from main-server.
+
 **Next session's job:** the frontend. Everything it reads is built, public and
 verified — one API at **https://live-api.zaidlab.xyz**, one MCP server, live
 state + history + patterns + an SSE stream + crowd submission.
@@ -11,6 +20,12 @@ P0-P3 and P5 are done; **Gate T1 is 7 of 8**, and the last criterion (T1.8, a
 human can see and export what the system holds) IS the frontend. Do not start
 tier 2 until Gate T1 passes — though P5.1 already did tier 2's admin backfill
 and cross-tier gate on the way past.
+
+*Superseded (2026-09-24, PLAN §5 Z-1):* the first front door is MCP + API + one
+landing/docs page; the human map/app comes later, and T1.8 stays parked behind
+ZAID-2 (`docs/DESIGN.md` "Process state"). Tier 2 was built in the meantime
+(the databank, 2026-08). The next job is whatever the PLAN's §7 and §11 say is
+open.
 
 ---
 
@@ -33,6 +48,26 @@ and cross-tier gate on the way past.
 6. **The API reads `state_serving` / `checkpoint_serving`, never `state_current`.**
 7. **Secrets live in `.env` (chmod 600).** Contains DB password, Telegram
    api_hash, FIRMS key. Never print it; filter greps.
+
+*Two mechanisms the rules above name have moved since they were written
+(noted 2026-09-25; the rules themselves are unchanged and are Zaid's to amend):*
+
+* **Rule 3.** The poller no longer has `StartLimitBurst=3/600s`. On 2026-08-02
+  that limit killed it for seventeen hours after three minutes of network
+  trouble, and it was reversed: `StartLimitIntervalSec=0`, restart with backoff
+  from 30 s to a 15-minute ceiling, and `RestartPreventExitStatus=2` (exit 2 =
+  the session lost its authorisation mid-run → stop, never retry). The unit's
+  own header records why (`ops/systemd/palestine-v2-poller.service`). So there
+  is no `reset-failed` to run: a poller in trouble is a slow restart loop, and
+  the journal and the watchdog's `telegram-poller` row are where it shows.
+  The rule's substance — never storm Telegram, respect FloodWait exactly —
+  is exactly what the backoff serves.
+* **Rule 5.** `claim` has one recorded, argued exception besides `event_id`:
+  organ A writes `claim.lang` and `attrs.lang_detector` (a measurement of the
+  text, stamped with its detector — not something the source said).
+  `docs/analyst.md` "Organ A, and why it may write to an immutable table" is
+  the argument; `analyst/organs.py` and `analyst/backfill_lang.py` are the only
+  writers. Nothing else in a claim is ever updated.
 
 ---
 

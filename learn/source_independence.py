@@ -46,12 +46,29 @@ AGREEMENT_THRESHOLD = 0.98
 MIN_CO_OBSERVATIONS = 100
 WINDOW_SECONDS = 600
 
+# THE CROWD IS NOT THIS MODULE'S TO SEPARATE (audit F004, 2026-09-25).
+# Independence is EARNED by a crowd submitter (migration 030), and the only
+# place it is earned is learn/crowd_independence.py, which also demands a
+# Loop A record (n >= MIN_SCORED) before it lets anyone out. This module used
+# to measure every source and then write `independence_group = NULL` over every
+# source with no peer above 98% — so a submitter that co-observed a channel
+# 100 times while agreeing 80% was lifted out of `crowd:unverified` into a unit
+# of its own ('src:N' in belief) by the nightly --apply, and five such
+# accounts became five units that clear the P2.4 gate on 'open'. So crowd
+# sources, and anything already carrying a `crowd:` group, are left out of the
+# measurement, out of the clustering, and out of the write — each at its own
+# layer, so a stale `source_agreement` row from an older run cannot reach one.
+_NOT_CROWD = ("({a}.kind <> 'crowd' AND NOT starts_with("
+              "COALESCE({a}.independence_group, ''), 'crowd:'))")
+
 MEASURE_SQL = """
 WITH o AS (
-  SELECT place_id, state_kind, direction, source_id, value, observed_at
-  FROM state_observation
-  WHERE state_kind = ANY(%(kinds)s) AND modality = 'assertion'
-    AND observed_at > now() - INTERVAL '90 days'
+  SELECT o.place_id, o.state_kind, o.direction, o.source_id, o.value, o.observed_at
+  FROM state_observation o
+  JOIN source s ON s.source_id = o.source_id
+  WHERE o.state_kind = ANY(%(kinds)s) AND o.modality = 'assertion'
+    AND o.observed_at > now() - INTERVAL '90 days'
+    AND """ + _NOT_CROWD.format(a="s") + """
 ),
 pairs AS (
   SELECT a.source_id AS sa, b.source_id AS sb, a.state_kind,
@@ -103,65 +120,83 @@ class _Union:
             self.parent[hi] = lo
 
 
+def _measure(cur, kinds: list[str]) -> int:
+    cur.execute(MEASURE_SQL, {"kinds": kinds, "win": WINDOW_SECONDS,
+                              "min_co": MIN_CO_OBSERVATIONS})
+    return cur.rowcount
+
+
 def measure(kinds: list[str]) -> int:
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(MEASURE_SQL, {"kinds": kinds, "win": WINDOW_SECONDS,
-                                  "min_co": MIN_CO_OBSERVATIONS})
-        n = cur.rowcount
+        n = _measure(cur, kinds)
         conn.commit()
     return n
 
 
 def cluster(apply_changes: bool) -> dict:
     with connect() as conn, conn.cursor() as cur:
-        cur.execute("""
-            SELECT a.source_a, a.source_b, a.agreement_rate, a.co_observations,
-                   sa.key, sb.key
-            FROM source_agreement a
-            JOIN source sa ON sa.source_id = a.source_a
-            JOIN source sb ON sb.source_id = a.source_b
-            ORDER BY a.agreement_rate DESC""")
-        rows = cur.fetchall()
-
-        uf = _Union()
-        merged: list[tuple[str, str, float, int]] = []
-        for sa, sb, rate, n, ka, kb in rows:
-            uf.find(sa); uf.find(sb)
-            if rate >= AGREEMENT_THRESHOLD and n >= MIN_CO_OBSERVATIONS:
-                uf.union(sa, sb)
-                merged.append((ka, kb, rate, n))
-
-        groups: dict[int, list[int]] = {}
-        for sid in uf.parent:
-            groups.setdefault(uf.find(sid), []).append(sid)
-
-        assignments: list[tuple[str | None, str | None, int]] = []
-        for rep, members in groups.items():
-            if len(members) < 2:
-                # A lone source is independent by definition; clearing any old
-                # group matters, because a channel can stop being a copy.
-                for sid in members:
-                    assignments.append((None, "independent: no peer above threshold", sid))
-                continue
-            cur.execute("SELECT key FROM source WHERE source_id=%s", (rep,))
-            name = f"copyset:{cur.fetchone()[0]}"
-            note = (f"{len(members)} channels agreeing >={AGREEMENT_THRESHOLD:.0%} "
-                    f"over >={MIN_CO_OBSERVATIONS} co-observations")
-            for sid in members:
-                assignments.append((name, note, sid))
-
+        r = _cluster(cur, apply_changes)
         if apply_changes:
-            cur.executemany("""UPDATE source SET independence_group=%s,
-                                      independence_note=%s,
-                                      independence_measured_at=now()
-                               WHERE source_id=%s""", assignments)
             conn.commit()
+    return r
 
-        cur.execute("""SELECT COALESCE(independence_group,'(independent)'),
-                              COUNT(*), string_agg(key, ', ' ORDER BY key)
-                       FROM source WHERE key LIKE 'tg\\_%%'
-                       GROUP BY 1 ORDER BY 2 DESC""")
-        summary = cur.fetchall()
+
+def _cluster(cur, apply_changes: bool) -> dict:
+    """The clustering on a caller's cursor, so a test can run it inside a
+    transaction it rolls back. Commits nothing."""
+    cur.execute("""
+        SELECT a.source_a, a.source_b, a.agreement_rate, a.co_observations,
+               sa.key, sb.key
+        FROM source_agreement a
+        JOIN source sa ON sa.source_id = a.source_a
+        JOIN source sb ON sb.source_id = a.source_b
+        WHERE """ + _NOT_CROWD.format(a="sa") + """
+          AND """ + _NOT_CROWD.format(a="sb") + """
+        ORDER BY a.agreement_rate DESC""")
+    rows = cur.fetchall()
+
+    uf = _Union()
+    merged: list[tuple[str, str, float, int]] = []
+    for sa, sb, rate, n, ka, kb in rows:
+        uf.find(sa); uf.find(sb)
+        if rate >= AGREEMENT_THRESHOLD and n >= MIN_CO_OBSERVATIONS:
+            uf.union(sa, sb)
+            merged.append((ka, kb, rate, n))
+
+    groups: dict[int, list[int]] = {}
+    for sid in uf.parent:
+        groups.setdefault(uf.find(sid), []).append(sid)
+
+    assignments: list[tuple[str | None, str | None, int]] = []
+    for rep, members in groups.items():
+        if len(members) < 2:
+            # A lone source is independent by definition; clearing any old
+            # group matters, because a channel can stop being a copy.
+            for sid in members:
+                assignments.append((None, "independent: no peer above threshold", sid))
+            continue
+        cur.execute("SELECT key FROM source WHERE source_id=%s", (rep,))
+        name = f"copyset:{cur.fetchone()[0]}"
+        note = (f"{len(members)} channels agreeing >={AGREEMENT_THRESHOLD:.0%} "
+                f"over >={MIN_CO_OBSERVATIONS} co-observations")
+        for sid in members:
+            assignments.append((name, note, sid))
+
+    if apply_changes:
+        # The crowd guard again, on the write itself: whatever produced the
+        # assignment list, this statement cannot touch a crowd source.
+        cur.executemany("""UPDATE source SET independence_group=%s,
+                                  independence_note=%s,
+                                  independence_measured_at=now()
+                           WHERE source_id=%s
+                             AND """ + _NOT_CROWD.format(a="source"),
+                        assignments)
+
+    cur.execute("""SELECT COALESCE(independence_group,'(independent)'),
+                          COUNT(*), string_agg(key, ', ' ORDER BY key)
+                   FROM source WHERE key LIKE 'tg\\_%%'
+                   GROUP BY 1 ORDER BY 2 DESC""")
+    summary = cur.fetchall()
     return {"pairs": len(rows), "merged": merged, "groups": groups,
             "summary": summary, "applied": apply_changes}
 

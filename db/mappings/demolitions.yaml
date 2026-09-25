@@ -103,6 +103,18 @@ place:
   # and 'Al Malha' (Bethlehem) at region. 1.0 has teeth here because rung 4 is
   # only reachable by the 18 annual rows and Al Malha — a locality-dimension
   # row that reaches rung 4 is a FAILURE counted by reason, not a resolution.
+  min_located_pct: 0.75
+  # ADDED 2026-09-25 (F028), because "counted by reason" turned out to mean
+  # nothing failed: v1 dropped admin2_pcode from all 516 locality records,
+  # the transformer had no lat/lon rung, and the frozen corpus loaded at
+  # 158/904 = 0.175 located (only East Jerusalem's governorate row) for six
+  # weeks with a green run. Arithmetic on the frozen corpus: 904 rows, of
+  # which 54 are the annual rows (region by design) and 1-2 are Al Malha, so
+  # the ceiling with every coordinate inside a governorate polygon is
+  # ~849/904 = 0.94. The floor sits well under that — the points near the
+  # Green Line or in Area C that no polygon contains are not a failure —
+  # and far above 0.175, which is the regression it exists to catch.
+  # Re-measure with a dry run on main-server before raising it.
 
 stable_id: stable_id      # 534/534 unique
 attrs_passthrough:
@@ -219,18 +231,48 @@ identity:
 
 registry:
   max_unclassified: 0
+  # CORRECTED 2026-09-25 (F132). Both rules used to say `flow, grain: event`
+  # for every demolitions.* indicator, which registered the 516 per-locality
+  # rows — 2009-to-date totals anchored at 2009-01-01 with precision unknown,
+  # see DOUBLE COUNT in the notes — as one day's flow. /indicators then
+  # offered them to any flow sum beside the annual series they duplicate
+  # (14,471 + 14,447 structures), the exact double count this spec warns
+  # about, and correlate read a 17-year total as a daily figure. The locality
+  # rows are what casualties.yaml calls its breakdowns — cumulative over a
+  # period — and only annual_total.* is a flow, one year per row.
   rules:
     - when: {prefix: "demolitions.locality.displaced"}
       concept: displacement.internal
-      measure_kind: flow
+      measure_kind: cumulative   # displaced 2009 → coverage_end, per locality
       polarity: -1
-      grain: event
+      grain: period
       place_grain: locality
       canonical_unit: persons
-    - when: {prefix: "demolitions."}
+    - when: {prefix: "demolitions.locality."}
       concept: demolition
-      measure_kind: flow
+      measure_kind: cumulative   # structures 2009 → coverage_end, per locality
       polarity: -1
-      grain: event
+      grain: period
       place_grain: locality
       canonical_unit: structures
+    - when: {prefix: "demolitions.annual_total.structures"}
+      concept: demolition
+      measure_kind: flow         # one calendar year's demolitions
+      polarity: -1
+      grain: year
+      place_grain: region        # West Bank + East Jerusalem (coverage_area)
+      canonical_unit: structures
+    - when: {prefix: "demolitions.annual_total.displaced"}
+      concept: displacement.internal
+      measure_kind: flow
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {prefix: "demolitions.annual_total."}
+      concept: demolition
+      measure_kind: flow         # .affected — persons, not structures; the
+      polarity: -1               #   old catch-all gave it `structures`
+      grain: year
+      place_grain: region
+      canonical_unit: persons

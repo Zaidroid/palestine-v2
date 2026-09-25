@@ -116,23 +116,33 @@ def test_the_query_cache_cannot_be_grown_without_bound():
     one-line trigger."""
     assert isinstance(A._QUERY_CACHE, type(A.OrderedDict()))
     keep = dict(A._QUERY_CACHE)
+    saved_wm = dict(A._WATERMARK)
+    real_q = A.q
+    # Through `q_cached` itself, with the database stubbed out. This test used
+    # to insert and evict by hand — a reimplementation of the eviction it claimed
+    # to prove — and it passed unchanged against a `q_cached` that never
+    # evicted at all (audit F392, reproduced 2026-09-25).
+    A.q = lambda sql, params=(): []
     try:
         A._QUERY_CACHE.clear()
+        A._WATERMARK["value"], A._WATERMARK["at"] = None, 0.0
         for i in range(A.QUERY_CACHE_MAX + 50):
-            # Write through the real path so the eviction logic runs, not a
-            # reimplementation of it.
-            A._QUERY_CACHE[(f"sql-{i}", (i,))] = (("s", 1), 0.0, [])
-            A._QUERY_CACHE.move_to_end((f"sql-{i}", (i,)))
-            while len(A._QUERY_CACHE) > A.QUERY_CACHE_MAX:
-                A._QUERY_CACHE.popitem(last=False)
+            A.q_cached(f"sql-{i}", (i,))
         assert len(A._QUERY_CACHE) == A.QUERY_CACHE_MAX
         # Least recently used went first, most recent survived.
         assert ("sql-0", (0,)) not in A._QUERY_CACHE
         assert (f"sql-{A.QUERY_CACHE_MAX + 49}",
                 (A.QUERY_CACHE_MAX + 49,)) in A._QUERY_CACHE
+        # A hit refreshes recency, so a key in use is not the one evicted.
+        oldest = next(iter(A._QUERY_CACHE))
+        A.q_cached(*oldest)
+        A.q_cached("sql-new", ("new",))
+        assert oldest in A._QUERY_CACHE
     finally:
+        A.q = real_q
         A._QUERY_CACHE.clear()
         A._QUERY_CACHE.update(keep)
+        A._WATERMARK.update(saved_wm)
 
 
 def test_the_cache_stays_bounded_after_real_requests():
@@ -210,7 +220,9 @@ def test_a_bogus_but_well_formed_category_is_an_empty_answer_not_a_leak():
     """Uppercase and nonsense are not attacks, they are typos: the route answers
     with no rows rather than an error, and nothing about the schema leaks."""
     r = client.get("/v2/databank/PRISONERS")
-    if r.status_code == 200:
-        body = r.json()
-        assert body.get("count", 0) == 0
-        assert "items" in body
+    # Asserted, not assumed: under `if r.status_code == 200:` a 500 or a 404
+    # passed this test vacuously (audit F388).
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body.get("count", 0) == 0
+    assert "items" in body

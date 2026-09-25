@@ -13,6 +13,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from serve import mcp_http
 from serve import mcp_oauth as oauth
 from serve.app import app
 from serve.mcp_http import _KEY_STATE
@@ -26,13 +27,22 @@ GOOD_KEY = "pv2_test_key"
 
 @pytest.fixture(autouse=True)
 def _clean_state(tmp_path, monkeypatch):
-    """Never touch the real .keys/ files from a test."""
+    """Never touch the real .keys/ files from a test.
+
+    The key is written to a real (temporary) key file rather than declared valid
+    by patching `_partner_key_ok`: since the 2026-09-25 audit (F090) every use
+    of a token re-reads the key it was minted from, so a key that exists only
+    in a patched function would — correctly — not keep its token alive.
+    """
+    keys = tmp_path / "partner-keys.json"
+    keys.write_text(json.dumps({"keys": [{"key": GOOD_KEY, "name": "test",
+                                          "daily_quota": 0}]}))
+    monkeypatch.setattr(mcp_http, "KEYS_PATH", keys)
     monkeypatch.setattr(oauth, "STATE_PATH", tmp_path / "oauth-state.json")
     monkeypatch.setattr(oauth, "_STATE", {"clients": {}, "tokens": {}, "refreshes": {}})
     monkeypatch.setattr(oauth, "_CODES", {})
-    monkeypatch.setattr(oauth, "_partner_key_ok",
-                        lambda k: "test" if k == GOOD_KEY else None)
     monkeypatch.setitem(_KEY_STATE, "keys", {})
+    monkeypatch.setitem(_KEY_STATE, "mtime", 0.0)
     yield
 
 
@@ -124,6 +134,25 @@ def test_pkce_is_verified_and_a_replayed_code_is_refused():
                                         "client_id": cid, "redirect_uri": REDIRECT,
                                         "code_verifier": VERIFIER})
     assert again.status_code == 400
+
+
+def test_a_code_is_not_exchanged_without_its_verifier():
+    """PKCE is only a protection if the token endpoint insists on the verifier:
+    a code seen in a redirect must be worthless on its own."""
+    cid = _register()
+    code = _code(cid)
+    r = client.post("/token", data={"grant_type": "authorization_code", "code": code,
+                                    "client_id": cid, "redirect_uri": REDIRECT})
+    assert r.status_code == 400 and r.json()["error"] == "invalid_grant"
+
+
+def test_authorize_without_a_challenge_is_refused_before_a_key_is_asked_for():
+    """PKCE was optional; a client that sent no challenge got a code anyone who
+    saw the redirect could exchange (audit F359/F399)."""
+    cid = _register()
+    page = client.get("/authorize", params={"client_id": cid, "redirect_uri": REDIRECT,
+                                            "state": "xyz", "response_type": "code"})
+    assert page.status_code == 400 and 'name="key"' not in page.text
 
 
 def test_an_unregistered_redirect_uri_is_refused():

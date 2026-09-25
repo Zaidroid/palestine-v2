@@ -46,6 +46,7 @@ sys.path.insert(0, str(ROOT))
 
 import httpx
 
+from resolve.belief import refresh as refresh_belief
 from resolve.db import connect
 from resolve.geo import resolve_place
 
@@ -78,7 +79,14 @@ ANNOUNCED_DATE = re.compile(
 # "الساعة 8:30 صباحا" / "الساعة 1:00 من ظهر" / "الساعه 11:00" — the last
 # spelling appears once in 38 notices, and needing two times to make a window
 # means one unread hour costs the whole notice.
-TIME = re.compile(r"الساع[ةه]\s*(\d{1,2})[:٫،.](\d{2})\s*(صباح\w*|مساء\w*|ظهر\w*|عصر\w*|ليل\w*)?")
+#
+# THE "من" IN "من ظهر" IS PART OF THE MARKER. The marker group used to have to
+# follow the minutes directly, so "12:00 من ظهر" — the notices' own form —
+# left it empty, `_to_24h` turned the bare 12 into 0, and a noon-to-three cut
+# was asserted from MIDNIGHT: twelve hours of "power cut" while the power was
+# on. The `end <= start` rescue only ever repaired an END written that way.
+TIME = re.compile(r"الساع[ةه]\s*(\d{1,2})[:٫،.](\d{2})"
+                  r"(?:\s*(?:(?:من|بعد)\s+(?:ال)?)?(صباح\w*|مساء\w*|ظهر\w*|عصر\w*|ليل\w*))?")
 
 _TAGS = re.compile(r"<script.*?</script>|<style.*?</style>", re.S)
 # The whole anchor, however deeply the headline is nested inside it. Both
@@ -140,6 +148,14 @@ def parse_window(body: str) -> tuple[datetime, datetime] | None:
         return None
     a, b, c = (int(x) for x in d.groups())
     day, month, year = (c, b, a) if a > 31 else (a, b, c)
+    # "الموافق 1/9/26" is 2026, not the year 26. Read as-is it built a window
+    # in year 0026 that was counted as parsed and could never be active — a
+    # real announced cut discovered and then silently never asserted. Any
+    # other year before 2000 is not a date this publisher writes: no window.
+    if 10 <= year < 100:
+        year += 2000
+    if year < 2000:
+        return None
     try:
         (h1, m1, k1), (h2, m2, k2) = times[0], times[1]
         start = datetime(year, month, day, _to_24h(int(h1), int(m1), k1), int(m1),
@@ -250,16 +266,61 @@ def discover_notices(stats: dict | None = None) -> list[tuple[str, str]]:
     return list(seen.items())
 
 
-def load(dry_run: bool = False) -> dict:
+# THE END OF AN ANNOUNCED WINDOW IS WRITTEN DOWN, once per notice.
+#
+# Inside the window a `cut` assertion lands on every tick; outside it nothing
+# was written, and nothing else ever says the cut is over. So the last
+# in-window assertion simply decayed: 0.9 at a 12 h half-life stays above the
+# 0.25 floor for ~22 h, and /v2/services went on listing the place under
+# `power_cuts_active` until the next morning, with a window_end in the past in
+# the same payload — the stale value in confident clothes this module exists
+# to refuse. The notice itself is the evidence that the cut ends: at
+# window_end the value becomes `unknown` — not "power restored", which nobody
+# said and a cut can overrun, but "nothing asserts a cut any more".
+#
+# Stamped AT window_end, not at the run's clock, so a newer reading (another
+# notice's active cut, a crowd report after the window) still wins, and a run
+# that comes late cannot make the end look newer than it is. Written only
+# where this notice's cut was actually asserted, and only once.
+END_OF_WINDOW_SQL = """
+    INSERT INTO state_observation
+      (place_id,state_kind,value,raw_value,observed_at,source_id,confidence,
+       direction,direction_explicit,modality,attrs)
+    SELECT %(place)s, %(kind)s, 'unknown', %(raw)s, %(end)s, %(source)s, 0.9,
+           'both', false, 'assertion', %(attrs)s
+    WHERE EXISTS (SELECT 1 FROM state_observation
+                   WHERE state_kind = %(kind)s AND place_id = %(place)s
+                     AND modality = 'assertion' AND value = 'cut'
+                     AND attrs->>'newsid' = %(nid)s)
+      AND NOT EXISTS (SELECT 1 FROM state_observation
+                       WHERE state_kind = %(kind)s AND place_id = %(place)s
+                         AND modality = 'assertion'
+                         AND attrs->>'newsid' = %(nid)s
+                         AND attrs->>'window_ended' = 'true')"""
+
+
+def load(dry_run: bool = False, *, conn=None, now: datetime | None = None) -> dict:
+    """Discover, record and assert. `conn` and `now` exist for the tests: with
+    a caller's connection nothing is committed here."""
     stats = {"notices": 0, "parsed_window": 0, "resolved": 0, "fetch_failed": 0,
-             "announced": 0, "active_now": 0, "written": 0, "items": []}
+             "announced": 0, "active_now": 0, "written": 0, "ended": 0, "items": []}
     notices = discover_notices(stats)
     stats["notices"] = len(notices)
     if not notices:
         return stats
 
-    now = datetime.now(timezone.utc)
-    with connect() as conn, conn.cursor() as cur:
+    now = now or datetime.now(timezone.utc)
+    if conn is not None:
+        return _load(conn, notices, now, dry_run, stats)
+    with connect() as own:
+        _load(own, notices, now, dry_run, stats)
+        if not dry_run:
+            own.commit()
+    return stats
+
+
+def _load(conn, notices, now: datetime, dry_run: bool, stats: dict) -> dict:
+    with conn.cursor() as cur:
         source_id = _ensure_source(cur)
         for nid, title in notices:
             try:
@@ -314,6 +375,19 @@ def load(dry_run: bool = False) -> dict:
                      STATE_KIND, nid))
                 stats["announced"] += cur.rowcount
 
+            if window and window[1] < now and not dry_run:
+                cur.execute(END_OF_WINDOW_SQL, {
+                    "place": res.place_id, "kind": STATE_KIND, "nid": nid,
+                    "raw": "announced window ended", "end": window[1],
+                    "source": source_id,
+                    "attrs": json.dumps({"newsid": nid, "title": title,
+                                         "window_start": window[0].isoformat(),
+                                         "window_end": window[1].isoformat(),
+                                         "window_ended": True,
+                                         "url": f"{BASE}/?newsid={nid}"},
+                                        ensure_ascii=False)})
+                stats["ended"] += cur.rowcount
+
             if not active:
                 continue
             stats["active_now"] += 1
@@ -333,24 +407,20 @@ def load(dry_run: bool = False) -> dict:
                              "url": f"{BASE}/?newsid={nid}"}, ensure_ascii=False)))
             stats["written"] += 1
 
-        if stats["written"] and not dry_run:
-            # Scoped to power only, for the reason the fuel loader taught us.
-            cur.execute("""
-                INSERT INTO state_current
-                  (place_id,state_kind,direction,value,observed_at,source_id,
-                   base_confidence,independent_sources,contradicted_by,updated_at)
-                SELECT DISTINCT ON (place_id, state_kind)
-                       place_id, state_kind, 'both', value, observed_at, source_id,
-                       confidence, 1, 0, now()
-                FROM state_observation WHERE state_kind = %s
-                ORDER BY place_id, state_kind, observed_at DESC
-                ON CONFLICT (place_id, state_kind, direction) DO UPDATE SET
-                  value=EXCLUDED.value, observed_at=EXCLUDED.observed_at,
-                  source_id=EXCLUDED.source_id, base_confidence=EXCLUDED.base_confidence,
-                  updated_at=now()
-                WHERE EXCLUDED.observed_at >= state_current.observed_at""", (STATE_KIND,))
-        if not dry_run:
-            conn.commit()
+    if (stats["written"] or stats["ended"]) and not dry_run:
+        # BELIEF IS resolve/belief.py's, NOT A PRIVATE REBUILD.
+        # This used to be a `SELECT DISTINCT ON ... ORDER BY observed_at DESC`
+        # over every power observation with NO modality filter, so a notice
+        # for a FUTURE day — recorded as modality 'scheduled', observed_at
+        # = the moment it was found — became the newest "observation" for its
+        # place whenever any other cut was active in the same run, and
+        # /v2/services reported a live cut there, with window_start in the
+        # future in the same payload. 040 promised scheduled rows were
+        # "excluded from belief exactly like a question"; only belief.py kept
+        # that promise, and crowd-refresh's forward-only upsert could never
+        # undo the promotion. One implementation of belief (DECISIONS
+        # 2026-08-01), which counts assertions only.
+        refresh_belief([STATE_KIND], conn=conn)
     return stats
 
 
@@ -360,7 +430,8 @@ def main() -> int:
     a = ap.parse_args()
     s = load(a.dry_run)
     print(f"{s['notices']} cut notices · {s['parsed_window']} with a parsed window · "
-          f"{s['resolved']} located · {s['active_now']} active right now")
+          f"{s['resolved']} located · {s['active_now']} active right now · "
+          f"{s['ended']} windows closed")
     for it in s["items"][:10]:
         w = it["window"]
         when = f"{w[0][:16]} -> {w[1][11:16]}" if w else "window not parsed"

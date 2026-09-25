@@ -16,8 +16,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FILE = ROOT / "ops" / "incident-precision.json"
+# PLAN §6 G3: precision >= 0.80 overall AND every served type >= 0.70. The
+# per-type bar used to be echoed in the payload and never compared, so a round
+# at 0.82 overall with deaths at 0.55 read `passing` — G3 reported as met by the
+# serving layer while its second half failed. Both halves decide the state now.
+# (learn/incident_precision.py still scores against 0.60, the older plan's
+# floor; the served state follows G3 and says which types fail it.)
 GATE_OVERALL = 0.80
 GATE_TYPE = 0.70
+# Below this many scored items a type's precision is not a measurement (one
+# wrong `closure` out of one reads 0.000) — the scorer's own MIN_N_TO_GATE,
+# mirrored so both judge the same types.
+MIN_N_TO_GATE = 5
 
 
 def _serving_version() -> str | None:
@@ -39,6 +49,8 @@ def _load(mtime: float) -> dict | None:
     serving = _serving_version()
     per_type = {k: {"precision": v.get("precision"), "ci95": v.get("ci95"), "n": v.get("n")}
                 for k, v in (r.get("per_type") or {}).items()}
+    failing = gate_failures(per_type)
+    overall_below = (o.get("precision") or 0) < GATE_OVERALL
     out = {
         "round": r.get("round"),
         "measured_at": r.get("measured_at"),
@@ -46,7 +58,9 @@ def _load(mtime: float) -> dict | None:
         "serving_version": serving,
         "overall": {"precision": o.get("precision"), "ci95": o.get("ci95"), "n": o.get("n")},
         "gate": {"overall": GATE_OVERALL, "per_type": GATE_TYPE,
-                 "state": ("below gate" if (o.get("precision") or 0) < GATE_OVERALL else "passing")},
+                 "overall_state": "below gate" if overall_below else "passing",
+                 "failing_types": failing,
+                 "state": "below gate" if (overall_below or failing) else "passing"},
         "per_type": per_type,
         "basis": f"hand-scored sample, ops/incident-precision.json (round {r.get('round')})",
     }
@@ -54,6 +68,16 @@ def _load(mtime: float) -> dict | None:
         out["note"] = (f"measured on classifier {measured}; {serving} is serving and is "
                        f"unmeasured until the next round")
     return out
+
+
+def gate_failures(per_type: dict) -> list[str]:
+    """Measured types under the per-type bar, weakest first, deaths first
+    among equals."""
+    rows = [(v["precision"], 0 if t == "death" else 1, t)
+            for t, v in (per_type or {}).items()
+            if v.get("precision") is not None and (v.get("n") or 0) >= MIN_N_TO_GATE
+            and v["precision"] < GATE_TYPE]
+    return [t for _p, _d, t in sorted(rows)]
 
 
 def incident_precision() -> dict | None:
@@ -96,11 +120,32 @@ def weak_types(by_type: dict, below: float = GATE_OVERALL) -> list[dict]:
     return rows
 
 
-def summary(by_type: dict | None = None) -> dict | None:
+def summary(by_type: dict | None = None,
+            data_versions: list[str] | None = None) -> dict | None:
+    """The precision block for an incident answer.
+
+    `data_versions` are the classifier versions that actually wrote the counted
+    events (read from the events by the caller). `serving_version` is only what
+    the API process imported at start — the classifier timer runs the working
+    tree every five minutes while the API runs the tree it started with — so
+    when the events say otherwise, the note is built from the events.
+    """
     q = incident_precision()
     if not q:
         return None
-    return {"round": q["round"], "measured_version": q["measured_version"],
-            "serving_version": q["serving_version"], "overall": q["overall"],
-            "gate": q["gate"], "weak": weak_types(by_type or {}),
-            "basis": q["basis"], **({"note": q["note"]} if q.get("note") else {})}
+    out = {"round": q["round"], "measured_version": q["measured_version"],
+           "serving_version": q["serving_version"], "overall": q["overall"],
+           "gate": q["gate"], "weak": weak_types(by_type or {}),
+           "basis": q["basis"], **({"note": q["note"]} if q.get("note") else {})}
+    versions = sorted({v for v in (data_versions or []) if v})
+    if versions:
+        out["data_versions"] = versions
+        measured = q["measured_version"]
+        other = [v for v in versions if v != measured]
+        if measured and other:
+            out["note"] = (f"measured on classifier {measured}; events in this "
+                           f"window were classified by {', '.join(versions)}, and "
+                           f"{', '.join(other)} is unmeasured until the next round")
+        elif measured and not other:
+            out.pop("note", None)       # the counted events ARE the measured version
+    return out

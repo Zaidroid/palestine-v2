@@ -32,6 +32,16 @@ reason, written into ops_heartbeat.detail on every cycle, where ops/watchdog.py
 and /health already read every other collector's liveness. A failed tick calls
 `fail()`, which leaves last_ok alone, so "running and failing" and "not running"
 stay the two different problems they are.
+
+A TICK THAT DID NOT RAISE IS NOT A HEALTHY TICK (audit F231, 2026-09-25)
+Per-claim exceptions are rows, and they never failed the tick, so an organ that
+raised on every claim it read beat `ok` all day, with the detail reporting
+organ A's rates only. Now the detail carries every organ's hour, and an organ
+whose success rate over the hour is below MIN_SUCCESS_RATE across at least
+MIN_RUNS_TO_JUDGE runs turns the beat into `fail()` naming it — the watchdog
+then sees `failing` after GRACE, exactly as for a tick that raised. And the
+claims it raised on are read again (store.fetch_retries), a bounded number of
+times per organ version, instead of being left behind the watermark for good.
 """
 from __future__ import annotations
 
@@ -52,6 +62,11 @@ from ops.heartbeat import beat, fail                             # noqa: E402
 HEARTBEAT = "analyst"
 INTERVAL = 60          # seconds between ticks; duplicated in ops/watchdog.py
 GRACE = 900            # and there is a test that says so
+
+# An organ failing more than half of what it reads, over enough runs that the
+# rate is not one bad claim, is an outage of that organ.
+MIN_SUCCESS_RATE = 0.5
+MIN_RUNS_TO_JUDGE = 20
 
 _stop = False
 
@@ -93,14 +108,18 @@ def tick(organs: list, *, probe=backpressure.available) -> dict:
 
         with store.connect() as conn, conn.cursor() as cur:
             after = store.read_watermark(cur, organ.name)
+            retries = store.fetch_retries(cur, organ.name, organ.version)
             batch = store.fetch_batch(cur, after)
             entry["scanned"] = len(batch)
-            if not batch:
+            if retries:
+                entry["retried"] = len(retries)
+            if not batch and not retries:
                 entry["idle"] = "caught up"
                 conn.commit()
                 continue
+            retry_ids = {c["claim_id"] for c in retries}
 
-            for claim in batch:
+            for claim in retries + batch:
                 # One claim, one SAVEPOINT. A claim that blows up must not cost
                 # the forty the organ already answered in this batch — and a
                 # plain rollback() would do exactly that. The failure is
@@ -120,6 +139,13 @@ def tick(organs: list, *, probe=backpressure.available) -> dict:
                                 json_valid=reading.json_valid,
                                 latency_ms=reading.latency_ms,
                                 raw=reading.raw)
+                        elif claim["claim_id"] in retry_ids:
+                            # A retry the organ now declines still counts as an
+                            # attempt, or it would be offered again every tick.
+                            store.record_run(
+                                cur, claim_id=claim["claim_id"],
+                                organ=organ.name, organ_version=organ.version,
+                                outcome="skipped", error="declined on retry")
                 except Exception as exc:                        # noqa: BLE001
                     store.record_run(cur, claim_id=claim["claim_id"],
                                      organ=organ.name,
@@ -133,9 +159,10 @@ def tick(organs: list, *, probe=backpressure.available) -> dict:
                     entry["read"] += 1
                     report["processed"] += 1
 
-            last = batch[-1]
-            store.write_watermark(cur, organ.name, last["ingested_at"],
-                                  last["claim_id"])
+            if batch:
+                last = batch[-1]
+                store.write_watermark(cur, organ.name, last["ingested_at"],
+                                      last["claim_id"])
             conn.commit()
 
     elapsed = max(time.perf_counter() - started, 1e-6)
@@ -148,9 +175,22 @@ def tick(organs: list, *, probe=backpressure.available) -> dict:
     return report
 
 
+_RATES = ("success_rate_1h", "json_valid_rate_1h", "vote_agreement_1h")
+
+
+def _worst(health: dict, key: str) -> float | None:
+    vals = [h.get(key) for h in health.values() if h.get(key) is not None]
+    return min(vals) if vals else None
+
+
 def _detail(report: dict) -> dict:
-    """The heartbeat's payload: small, numeric, and enough to diagnose from."""
-    lang = report.get("health", {}).get("lang", {})
+    """The heartbeat's payload: small, numeric, and enough to diagnose from.
+
+    Every organ's hour, not organ A's alone (the top-level rates used to be
+    read from `lang` only, so a failing organ C would have been invisible in
+    them). The top-level rates are the WORST organ's, because the number a
+    reader glances at should be the one that needs looking at."""
+    health = report.get("health", {})
     return {
         "processed": report["processed"],
         "errors": report["errors"],
@@ -161,10 +201,22 @@ def _detail(report: dict) -> dict:
         # The rates the model organs will fill. Reported as None until an organ
         # produces the denominator — never as 1.0, which would read as a
         # perfect score for work nobody has done.
-        "success_rate_1h": lang.get("success_rate_1h"),
-        "json_valid_rate_1h": lang.get("json_valid_rate_1h"),
-        "vote_agreement_1h": lang.get("vote_agreement_1h"),
+        **{k: _worst(health, k) for k in _RATES},
+        "organs": {name: {k: h.get(k) for k in ("runs_1h", "errors_1h", *_RATES)}
+                   for name, h in health.items()},
     }
+
+
+def _faults(report: dict) -> list[str]:
+    """Organs that are running and failing, in words for ops_heartbeat.last_error."""
+    out = []
+    for name, h in report.get("health", {}).items():
+        rate = h.get("success_rate_1h")
+        judged = (h.get("ok_1h") or 0) + (h.get("errors_1h") or 0)
+        if rate is not None and judged >= MIN_RUNS_TO_JUDGE and rate < MIN_SUCCESS_RATE:
+            out.append(f"organ {name}: {h.get('errors_1h')} errors in {judged} reads "
+                       f"over the last hour (success {rate:.0%})")
+    return out
 
 
 def run(once: bool = False, organs: list | None = None,
@@ -182,11 +234,16 @@ def run(once: bool = False, organs: list | None = None,
             continue
 
         detail = _detail(report)
-        beat(HEARTBEAT, interval, GRACE, detail)
+        faults = _faults(report)
+        if faults:
+            fail(HEARTBEAT, "; ".join(faults), interval, GRACE)
+        else:
+            beat(HEARTBEAT, interval, GRACE, detail)
         if as_json:
             print(json.dumps(report, ensure_ascii=False, indent=2, default=str))
         else:
             per = ", ".join(f"{n}: {e['read']}/{e['scanned']}"
+                            + (f" (+{e['retried']} retried)" if e.get("retried") else "")
                             + (f" paused ({e['paused'][:40]})" if e.get("paused") else "")
                             for n, e in report["organs"].items())
             back = ", ".join(f"{k} {v['pending_claims']}"

@@ -26,8 +26,8 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from resolve.belief import (MAX_CONFIDENCE, REFRESH_SQL,          # noqa: E402
-                            SINGLE_SOURCE_TRUST, UNEARNED_CROWD_TRUST)
+from resolve.belief import (MAX_CONFIDENCE, SINGLE_SOURCE_TRUST,  # noqa: E402
+                            UNEARNED_CROWD_TRUST, refresh)
 from resolve.db import dsn                                        # noqa: E402
 
 # A synthetic kind, configured inside the rolled-back transaction. Using a real
@@ -89,7 +89,9 @@ def _observe(cur, place_id: int, source_id: int, value: str,
 
 
 def _belief(cur, place_id: int):
-    cur.execute(REFRESH_SQL, {"kinds": [KIND]})
+    # Through refresh(), not REFRESH_SQL directly: refresh chooses the window
+    # the statement scans, and the window is part of what is under test.
+    refresh([KIND], conn=cur.connection)
     cur.execute("""SELECT value, base_confidence, independent_sources
                      FROM state_current
                     WHERE place_id=%s AND state_kind=%s AND direction='both'""",
@@ -292,3 +294,313 @@ def test_reassurance_is_gated_on_every_reportable_kind(db):
                           AND coalesce(array_length(crowd_gated_values,1),0)=0""")
         ungated = [r[0] for r in cur.fetchall()]
     assert ungated == [], f"crowd-reportable with nothing gated: {ungated}"
+
+
+# ── 5. a stranger's caution cannot blind a fresh channel reading (F017) ──────
+#
+# Registration is open by decision, and 'closed' is not gated (only the
+# reassuring value is). So until this held, anyone could register and file
+# 'closed' five minutes after a road channel said 'open': the newest assertion
+# alone defined the served value, the stranger's 0.17 replaced the channel's
+# 0.85, and state_serving turned it into `unknown` with 'closed' as the last
+# known value — for every checkpoint, repeatably, until the channel posted
+# again. Wrong in the cautious direction, but wrong, and the documented claim
+# "a newcomer cannot move a served value alone" was false.
+
+def _served(cur, place_id: int):
+    cur.execute("""SELECT value, last_known_value FROM state_serving
+                    WHERE place_id=%s AND state_kind=%s AND direction='both'""",
+                (place_id, KIND))
+    return cur.fetchone()
+
+
+def test_a_strangers_caution_cannot_turn_a_fresh_channel_open_into_unknown(db):
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        ch = _source(cur, "_t_road", "telegram", None)
+        cw = _source(cur, "_t_blinder", "crowd", "crowd:unverified")
+        _observe(cur, pid, ch, "open", ago="5 minutes")
+        _observe(cur, pid, cw, "closed", ago="1 minute")
+        value, conf, _units = _belief(cur, pid)
+        cur.execute("""SELECT contradicted_by FROM state_current
+                        WHERE place_id=%s AND state_kind=%s""", (pid, KIND))
+        dissent = cur.fetchone()[0]
+        served = _served(cur, pid)
+    assert value == "open", "a 0.17 stranger displaced a 0.85 channel reading"
+    assert dissent == 1, "the stranger still counts — as dissent"
+    assert conf == pytest.approx(SINGLE_SOURCE_TRUST * (1 - 0.25 / 2), abs=0.01)
+    assert served[0] == "open"
+
+
+def test_the_caution_still_counts_when_it_arrives_before_the_channel_is_read(db):
+    """An attacker watching the channel posts 'closed' the moment the channel
+    posts 'open', before the importer has read the channel. The crowd row is
+    believed first; the channel's slightly OLDER reading must still be able to
+    take its place — the upsert used to refuse to move observed_at back."""
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        ch = _source(cur, "_t_road_late", "telegram", None)
+        cw = _source(cur, "_t_early_blinder", "crowd", "crowd:unverified")
+        _observe(cur, pid, cw, "closed", ago="1 minute")
+        assert _belief(cur, pid)[0] == "closed"
+        _observe(cur, pid, ch, "open", ago="4 minutes")      # imported late
+        value, _conf, _units = _belief(cur, pid)
+    assert value == "open"
+
+
+def test_a_lone_caution_after_the_window_is_still_raised(db):
+    """The other side, and why the protection is bounded by the corroboration
+    window: forty minutes after the channel spoke, a report of 'closed' is
+    about a different moment. One person may raise an alarm alone (P2.4)."""
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        ch = _source(cur, "_t_road_old", "telegram", None)
+        cw = _source(cur, "_t_witness", "crowd", "crowd:unverified")
+        _observe(cur, pid, ch, "open", ago="45 minutes")
+        _observe(cur, pid, cw, "closed", ago="1 minute")
+        value, conf, _units = _belief(cur, pid)
+    assert value == "closed" and conf < 0.25
+
+
+def test_a_strangers_agreement_still_counts(db):
+    """Only a DISAGREEING weak witness is held back. Agreement is never
+    restricted."""
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        ch = _source(cur, "_t_road_agree", "telegram", None)
+        cw = _source(cur, "_t_agreer", "crowd", "crowd:unverified")
+        _observe(cur, pid, ch, "closed", ago="5 minutes")
+        _observe(cur, pid, cw, "closed", ago="1 minute")
+        value, conf, units = _belief(cur, pid)
+    assert value == "closed" and units == 2
+    assert conf > SINGLE_SOURCE_TRUST
+
+
+# ── 6. dissent is a unit's LAST word, not every word (F429) ──────────────────
+
+def test_a_unit_that_corrected_itself_is_not_dissent(db):
+    """The copyset said 'closed' at T-20 and 'open' at T-2; a7walstreet says
+    'open' at T. Every unit currently agrees. The old count put the copyset
+    in both columns and discounted a reading nobody disputes."""
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        copy = _source(cur, "_t_copyset", "telegram", "copyset")
+        a7 = _source(cur, "_t_a7", "telegram", "a7")
+        _observe(cur, pid, copy, "closed", ago="20 minutes")
+        _observe(cur, pid, copy, "open", ago="2 minutes")
+        _observe(cur, pid, a7, "open", ago="0 minutes")
+        _belief(cur, pid)
+        cur.execute("""SELECT contradicted_by, independent_sources FROM state_current
+                        WHERE place_id=%s AND state_kind=%s""", (pid, KIND))
+        dissent, units = cur.fetchone()
+    assert dissent == 0 and units == 2
+
+
+# ── 7. same second, two values: deterministic (F428) ─────────────────────────
+
+def test_a_tie_on_observed_at_is_decided_by_standing_not_by_chance(db):
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        ch = _source(cur, "_t_tie_ch", "telegram", None)
+        cw = _source(cur, "_t_tie_cw", "crowd", "crowd:unverified")
+        cur.execute("SELECT date_trunc('second', now()) - interval '2 minutes'")
+        at = cur.fetchone()[0]
+        for sid, v in ((cw, "closed"), (ch, "open")):
+            cur.execute("""INSERT INTO state_observation
+                             (place_id,state_kind,value,raw_value,observed_at,
+                              source_id,confidence,direction,modality)
+                           VALUES (%s,%s,%s,%s,%s,%s,0.9,'both','assertion')""",
+                        (pid, KIND, v, v, at, sid))
+        value, _conf, _units = _belief(cur, pid)
+        cur.execute("""SELECT source_id FROM state_current
+                        WHERE place_id=%s AND state_kind=%s""", (pid, KIND))
+        author = cur.fetchone()[0]
+    assert value == "open" and author == ch
+
+
+# ── 8. slow kinds can be corroborated at all (F116) ──────────────────────────
+
+def test_two_witnesses_an_hour_apart_corroborate_a_slow_kind(db):
+    """crossing_status has a 12 h half-life. With a fixed 30-minute window two
+    earned witnesses an hour apart were never counted together, so a crowd
+    'open' on a slow kind could never clear P2.4 however many people saw it."""
+    with db.cursor() as cur:
+        cur.execute("""INSERT INTO state_kind_config
+                         (state_kind, half_life_seconds, confidence_floor,
+                          max_assert_seconds, crowd_reportable, crowd_values,
+                          crowd_gated_values, crowd_min_units)
+                       VALUES (%s, 43200, 0.3, 172800, true,
+                               ARRAY['open','closed'], ARRAY['open'], 2)""",
+                    ("_t_slow_kind",))
+        pid = _place(cur)
+        s1 = _source(cur, "_t_slow1", "crowd", "crowd:slow1", trust=0.9)
+        s2 = _source(cur, "_t_slow2", "crowd", "crowd:slow2", trust=0.9)
+        for sid, ago in ((s1, "70 minutes"), (s2, "5 minutes")):
+            cur.execute(f"""INSERT INTO state_observation
+                              (place_id,state_kind,value,raw_value,observed_at,
+                               source_id,confidence,direction,modality)
+                            VALUES (%s,'_t_slow_kind','open','open',
+                                    now() - interval '{ago}',%s,0.9,'both',
+                                    'assertion')""", (pid, sid))
+        refresh(["_t_slow_kind"], conn=db)
+        cur.execute("""SELECT value, independent_sources FROM state_current
+                        WHERE place_id=%s AND state_kind='_t_slow_kind'""", (pid,))
+        got = cur.fetchone()
+    assert got is not None, "two earned witnesses an hour apart were not enough"
+    assert got == ("open", 2)
+
+
+def test_a_checkpoint_kind_keeps_its_thirty_minute_window(db):
+    """The per-kind window must not widen the fast kinds: 45 minutes apart on
+    a 90-minute half-life is still two moments, not corroboration."""
+    with db.cursor() as cur:
+        _configure(cur)
+        pid = _place(cur)
+        a = _source(cur, "_t_fast_a", "telegram", "fa")
+        b = _source(cur, "_t_fast_b", "telegram", "fb")
+        _observe(cur, pid, a, "closed", ago="45 minutes")
+        _observe(cur, pid, b, "closed", ago="1 minute")
+        _v, _c, units = _belief(cur, pid)
+    assert units == 1
+
+
+# ── 9. retired kinds are not reportable (F120) ───────────────────────────────
+
+def test_a_retired_kind_is_neither_reportable_nor_refreshed_as_crowd(db):
+    """070 retired fuel availability without clearing crowd_reportable, so the
+    crowd refresh kept rebuilding it every two minutes and /v2/crowd/fields
+    kept offering it while /v2/fuel/* answered 410."""
+    from resolve.belief import _crowd_kinds
+    with db.cursor() as cur:
+        _configure(cur)
+        cur.execute("""UPDATE state_kind_config SET retired_at = now(),
+                              retired_reason = 'test'
+                        WHERE state_kind = %s""", (KIND,))
+        kinds = _crowd_kinds(cur)
+    assert KIND not in kinds
+
+
+def test_the_engine_refuses_a_retired_kind(db, monkeypatch):
+    from crowd import engine
+    with db.cursor() as cur:
+        _configure(cur)
+        cur.execute("UPDATE state_kind_config SET retired_at = now() WHERE state_kind=%s",
+                    (KIND,))
+    reg = engine.register("_t_retired_user", conn=db)
+    res = engine.submit(reg["handle"], reg["token"], KIND, "anywhere", "closed",
+                        conn=db)
+    assert res.status == "rejected" and "retired" in res.detail
+
+
+# ── 10. a crowd note is never read as news (F012) ────────────────────────────
+#
+# feeds_incidents defaulted to true and nothing set it false for the crowd, so
+# a registered stranger's free-text note ("قوات الاحتلال تقتحم بلدة حوارة
+# واغلاق مدخل البلدة") was read by the incident classifier within one tick and
+# served as a believed raid plus a road_closure 'closed' — straight past the
+# 0.17 that the belief layer was supposed to hold it to.
+
+def test_a_registered_submitter_does_not_feed_the_incident_classifier(db):
+    from crowd import engine
+    reg = engine.register("_t_note_writer", conn=db)
+    with db.cursor() as cur:
+        cur.execute("SELECT feeds_incidents FROM source WHERE source_id=%s",
+                    (reg["source_id"],))
+        assert cur.fetchone()[0] is False
+
+
+def test_no_crowd_source_can_be_made_to_feed_incidents(db):
+    """Enforced by the schema (079), not by the one writer remembering: a
+    crowd source inserted or updated any other way still reads false."""
+    with db.cursor() as cur:
+        sid = _source(cur, "_t_crowd_raw", "crowd", "crowd:unverified")
+        cur.execute("UPDATE source SET feeds_incidents = true WHERE source_id=%s", (sid,))
+        cur.execute("SELECT feeds_incidents FROM source WHERE source_id=%s", (sid,))
+        assert cur.fetchone()[0] is False
+        cur.execute("""SELECT count(*) FROM source
+                        WHERE kind = 'crowd' AND feeds_incidents""")
+        assert cur.fetchone()[0] == 0
+
+
+# ── 11. what the door checks before writing anything ─────────────────────────
+
+class _FakeRes:
+    """A resolver answer, so the engine's own rule is tested and not the
+    gazetteer (whose exact-alias path also commits its hit counter)."""
+    def __init__(self, place_id, kind, confidence=0.9):
+        self.place_id, self.kind, self.confidence = place_id, kind, confidence
+        self.name_ar, self.name_en = None, "T_town"
+        self.precision, self.method = "town", "fuzzy"
+
+
+def test_a_report_resolved_to_the_wrong_kind_of_place_is_refused(db, monkeypatch):
+    """F109. A misspelt checkpoint name falls through to the general resolver,
+    which PREFERS the kind but does not require it, and the town of the same
+    name comes back at 0.9. The report was accepted onto a locality no channel
+    writes to — the trap 035 was meant to close."""
+    from crowd import engine
+    with db.cursor() as cur:
+        _configure(cur)
+        cur.execute("UPDATE state_kind_config SET place_kind='checkpoint' WHERE state_kind=%s",
+                    (KIND,))
+        cur.execute("""INSERT INTO place (kind, name_en, geom)
+                       VALUES ('locality','T_town',
+                               ST_SetSRID(ST_MakePoint(35.2,32.2),4326))
+                       RETURNING place_id""")
+        town = cur.fetchone()[0]
+    monkeypatch.setattr(engine, "resolve_for_state_kind",
+                        lambda conn, place, kind: _FakeRes(town, "locality"))
+    monkeypatch.setattr(engine.bronze, "put", lambda *a, **k: pytest.fail("wrote bronze"))
+    reg = engine.register("_t_wrong_kind", conn=db)
+    res = engine.submit(reg["handle"], reg["token"], KIND, "T_twon", "closed", conn=db)
+    assert res.status == "rejected" and "locality" in res.detail
+    with db.cursor() as cur:
+        cur.execute("SELECT count(*) FROM state_observation WHERE place_id=%s", (town,))
+        assert cur.fetchone()[0] == 0
+
+
+def test_a_place_that_already_carries_the_kind_is_accepted_whatever_its_kind(db, monkeypatch):
+    """v1's checkpoints include crossings and roads, and channels report
+    checkpoint_flow on them. What matters is that other sources meet the
+    report there, not the label on the row."""
+    from crowd import engine
+
+    class _Ref:
+        ref = "bronze://t/0"
+    with db.cursor() as cur:
+        _configure(cur)
+        cur.execute("UPDATE state_kind_config SET place_kind='checkpoint' WHERE state_kind=%s",
+                    (KIND,))
+        cur.execute("""INSERT INTO place (kind, name_en, geom)
+                       VALUES ('crossing','T_road_cp',
+                               ST_SetSRID(ST_MakePoint(35.2,32.2),4326))
+                       RETURNING place_id""")
+        road = cur.fetchone()[0]
+        ch = _source(cur, "_t_road_ch", "telegram", None)
+        _observe(cur, road, ch, "open", ago="3 hours")
+    monkeypatch.setattr(engine, "resolve_for_state_kind",
+                        lambda conn, place, kind: _FakeRes(road, "crossing"))
+    monkeypatch.setattr(engine.bronze, "put", lambda *a, **k: _Ref())
+    reg = engine.register("_t_right_place", conn=db)
+    res = engine.submit(reg["handle"], reg["token"], KIND, "T_road_cp", "closed", conn=db)
+    assert res.status == "accepted", res.detail
+
+
+def test_an_unbounded_note_is_refused_before_anything_is_written(db, monkeypatch):
+    """F350. Refusal never means deletion — so every refused report is a
+    permanent bronze object, claim and observation, and the note had no
+    length limit at all. A 15 KB note is not a report."""
+    from crowd import engine
+    monkeypatch.setattr(engine.bronze, "put", lambda *a, **k: pytest.fail("wrote bronze"))
+    with db.cursor() as cur:
+        _configure(cur)
+    reg = engine.register("_t_long_note", conn=db)
+    res = engine.submit(reg["handle"], reg["token"], KIND, "anywhere", "closed",
+                        note="ح" * 15000, conn=db)
+    assert res.status == "rejected" and str(engine.NOTE_MAX_CHARS) in res.detail

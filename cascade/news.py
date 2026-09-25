@@ -102,22 +102,84 @@ def _norm_pat(pattern: str) -> str:
 # street closed for paving, a checkpoint shut after a crash, an area sealed
 # with earth berms, gates closed on an ambulance — and drops phones, shops and
 # surnames without naming any of them.
-_CLOSE_VERB = r"(?:[اتين]?غلق\w*|اغلاق|مسكر\w*|سكرت|سكروا|تسكير)"
-_MOVE_OBJECT = (r"(?:شارع|شوارع|طريق|طرق|حاجز|حواجز|بوابه|بوابات|معبر|معابر|"
-                r"مدخل|مداخل|مخرج|منطقه|بلده|قريه|مخيم|مفترق|دوار|جسر|نفق|الحركه)")
-# `[^.،؛]` keeps the two inside one clause: crossing a full stop or a comma is
-# usually crossing into a different sentence about a different thing.
+# BOTH SIDES ARE WHOLE WORDS (1.9.0). The verb and the object used to be bare
+# substrings, so "سكرتير الحركة" (the movement's SECRETARY) was سكرت + الحركه,
+# "اجتماع مغلق تطرق" (a closed meeting DISCUSSED) was غلق + طرق inside تطرق,
+# and each filed a road closure at a named place (audit F099). A fused
+# conjunction/preposition and the article may sit in front, a pronoun suffix
+# behind ("واغلاق مدخلها", "بالسواتر", "شوارعها"); nothing else may.
+_CLOSE_VERB = (r"(?<!\S)[وفبل]{0,2}(?:ال)?"
+               r"(?:[اتين]?غلق\w*|اغلاق\w*|مغلق\w*|مسكر\w*|سكرت|سكروا|تسكير)(?!\S)")
+_OBJ_SUFFIX = r"(?:ات|ين|ان|يها|يه|ها|هم|هما|ه|ي)?"
+_MOVE_OBJECT = (r"(?<!\S)[وفبل]{0,2}(?:(?:ال)?(?:شارع|شوارع|طريق|طرق|طرقات|حاجز|حواجز|"
+                r"بوابه|بوابات|معبر|معابر|مدخل|مداخل|مخرج|منطقه|بلده|قريه|مخيم|"
+                r"مفترق|دوار|جسر|نفق)" + _OBJ_SUFFIX + r"|الحركه)(?!\S)")
+# ONE CLAUSE. The rule was always meant to stop at a sentence boundary, and
+# for its whole life it could not: normalize() turns every . ، ؛ into a space
+# before any pattern runs, so `[^.،؛]` excluded characters the text no longer
+# contained, and "اغلق المحافظ الهاتف. وأعلن ان شارع القدس سيعبد" (the
+# governor hung up the phone. He announced a street will be paved) was a road
+# closure in Beita (audit F099/F471). The closure rule now runs on a copy of
+# the text whose sentence ends survive normalisation as a ¶ token
+# (`_clause_marked`), and the 40-character gap may not cross one. The comma is
+# NOT a boundary: "حاجز عطارة، مغلق بالاتجاهين" is one fact.
 # Installing a gate or earth mound IS the closure it announces: "the army
 # installs an iron gate on the Jariot road near Beit Ur" was filed as a settler
 # attack in al-Bireh (audit, 2026-09-24).
 _INSTALL_BARRIER = (r"(?:تركيب|نصب|وضع|اقامه|اقامة|[يت]نصب|[يت]ركب|[يت]ضع)\s+"
                     r"(?:ال)?(?:بوابه|بوابة|بوابات|ساتر|سواتر|مكعبات|حواجز اسمنتيه|"
                     r"حواجز اسمنتية|كتل اسمنتيه|كتل اسمنتية)")
+# "قطع الطريق على" is also the idiom "to pre-empt": "وزير يقطع الطريق على
+# محاولات المستوطنين" is a minister's statement, not a cut road (F099). It is
+# a road only when what follows على is people or vehicles, or nothing at all.
+_CUT_ROAD = (r"قطع الطريق(?!\s+علي\s+(?!(?:ال)?(?:مواطن|مركب|سيار|مزارع|اهالي|طلب|"
+             r"عمال|سكان|مار)))")
 _CLOSURE_PATTERN = (
-    r"(" + _CLOSE_VERB + r"[^.،؛]{0,40}?" + _MOVE_OBJECT +
-    r"|" + _MOVE_OBJECT + r"[^.،؛]{0,40}?" + _CLOSE_VERB +
+    r"(" + _CLOSE_VERB + r"[^¶]{0,40}?" + _MOVE_OBJECT +
+    r"|" + _MOVE_OBJECT + r"[^¶]{0,40}?" + _CLOSE_VERB +
     r"|" + _INSTALL_BARRIER +
-    r"|منع الحركة|قطع الطريق)")
+    r"|منع الحركة|" + _CUT_ROAD + r")")
+
+# A REOPENING IS NOT A CLOSURE (1.9.0, audit F042). "إعادة فتح حاجز حوارة بعد
+# إغلاقه لساعات" carries a closing verb and a checkpoint, so the rule above
+# read the checkpoint that had just REOPENED as closed, served it as "إغلاق في
+# حوارة قبل 5 دقائق", and wrote road_closure='closed' for it — the inverted
+# sign HANDOFF §4 warns about. A reopening word alone does not overrule a
+# closure ("إعادة فتح حاجز عطارة وإغلاق حاجز عين سينيا" still closes one); it
+# does when every closing verb in the text sits in a PAST frame — after
+# بعد/عقب/إثر/منذ, or in a relative clause ("السواتر التي أغلقت الطريق أمس").
+# No 'open' state is written from it: a reassuring value from one regex over
+# one channel is exactly what the P2.4 gate exists to withhold.
+_REOPEN_RE = re.compile(_norm_pat(
+    r"(?<!\S)[وف]?(?:اعاده|اعادت|اعاد|[يت]عيد\w*)\s+فتح|"
+    r"(?<!\S)[وف]?(?:فتح|فتحت|فتحوا|[يت]فتح\w*)\s+(?:ال)?(?:حاجز|طريق|شارع|بوابه|بوابات|"
+    r"معبر|مدخل|مداخل)|"
+    r"(?<!\S)[وفب]?(?:ال)?(?:ازاله|[يت]زيل\w*|ازال\w*)\s+(?:ال)?(?:ساتر|سواتر|بوابه|"
+    r"بوابات|مكعبات|حواجز|كتل)|"
+    r"الحركه\s+(?:طبيعيه|اعتياديه)"))
+_CLOSE_VERB_RE = re.compile(_CLOSE_VERB)
+_PAST_FRAME_RE = re.compile(
+    r"(?:^|\s)(?:بعد|عقب|اثر|منذ|التي|الذي|اللذين|اللتين|الذين)\s+(?:\S+\s+){0,2}$")
+
+
+def _closure_is_past(clause: str) -> bool:
+    """Every closing verb in the text sits in a past frame (and there is one)."""
+    verbs = list(_CLOSE_VERB_RE.finditer(clause))
+    return bool(verbs) and all(
+        _PAST_FRAME_RE.search(clause[max(0, v.start() - 60):v.start()]) for v in verbs)
+
+
+# Sentence ends that must survive normalize() as a token the closure rule can
+# see. A dot BETWEEN two Arabic letters is the censorship dot ("مسـ.ـتوطن")
+# and normalize() removes it, so it is left alone here; a dot with a space or
+# a non-letter on either side ends a sentence. The colon is kept apart as §:
+# it ends nothing ("حاجز عطارة: مغلق" is one fact), but a faction's name
+# before it ("حماس: ...") is how a statement announces itself.
+_CLAUSE_END_RE = re.compile(r"(?<![ء-ي])\.+|\.+(?![ء-ي])|[؛;!?؟\n]+")
+
+
+def _clause_marked(text: str) -> str:
+    return normalize(_CLAUSE_END_RE.sub(" ¶ ", text).replace(":", " § "))
 
 INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # A VERB of killing, never the bare noun "شهيد". The noun is overwhelmingly
@@ -134,8 +196,11 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # NOT contain the perfective stem — the same trap as اقتحام/اقتحم, found
     # again in the held-out round. "استشهاد الشاب ... متأثراً بجروح" was filed
     # as an INJURY, which is the worst direction for this error to run.
+    # ارتقاء is a whole word and never "ارتقاء بـ": "للارتقاء بمستوى المدارس"
+    # (to RAISE the level of schools) and "الارتقاء بالخدمات" were deaths in
+    # the named town (audit F188/F419).
     ("death",          r"(استشه\w*|ارتقى|ارتقي|قتلت قوات|قتل الاحتلال|اعدمت|أعدمت|"
-                       r"يرتقي شهيد|ارتقاء|"
+                       r"يرتقي شهيد|(?<!\S)[وب]?ارتقاء(?!\s+ب)|"
                        # Round 8: "يغتال عبد الكريم بني جابر .. حصار واشتباكات" was
                        # served as a SIEGE because the killing had no verb here.
                        r"اغتال\w*|[يت]غتال\w*|اغتيال|[يت]عدم\w*|اعدام\w*\s+ميداني|"
@@ -166,19 +231,39 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # cemetery read as "no incident verb". ضرم ("يضرمون النيران"), دشن
     # (founding a new outpost IS the land grab), and ستول (يستولون — the
     # existing ستولا only matched the noun) are round-5 misses too.
-    ("settler_attack", r"(?:(مستوطن\w*|قطعان)(?:\s+\S+){0,5}?\s+\S*"
-                       r"(عتد|هاجم|هجوم|عربد|حرق|شعل|شعال|ضرم|رشق|قتلع|خرب|"
-                       r"حطم|دهس|قتح|سيطر|ستيلا|ستول|دشن|"
+    #
+    # 1.9.0, three more (audit):
+    #  * SETTLERS, NOT A SETTLEMENT. `مستوطن\w*` also matched مستوطنة /
+    #    مستوطنات / مستوطنتي — the settlement — so "قوات الاحتلال تقتحم بلدة
+    #    بورين قرب مستوطنة يتسهار" (the standard locator for Burin) filed an
+    #    ARMY raid as a settler attack, the actor inverted (F190). The actor
+    #    is now a settler form only: مستوطن / مستوطنون / مستوطنين / مستوطنو /
+    #    مستوطني / مستوطنا, whole word.
+    #  * four more hidden verbs: اقتلاع (uprooting), احراق (arson), تخريب
+    #    (vandalism), تحطيم (smashing) put a letter inside their stems قتلع /
+    #    حرق / خرب / حطم, and cutting trees (يقطعون اشجار) had no stem at all
+    #    (F100). قطع is bound to trees: bare it is inside مقطع (a video clip).
+    #  * the quantifiers are BOUNDED. `\w*(?:\s+\S+){0,3}?\s*\S*` over one
+    #    long token backtracked cubically — a 5,100-character "عتدعتد…" post
+    #    held read() for 130 s and a 15 KB one would outlive the timer's
+    #    900 s kill, forever, because the claim is re-read every tick (F077).
+    #    Real tokens are short; read() also drops any token of 60+ characters.
+    ("settler_attack", r"(?:(مستوطن(?:ون|ين|و|ي|ا|ان)?(?!\S)|قطعان)(?:\s+\S{1,30}){0,5}?\s+\S{0,6}"
+                       r"(عتد|هاجم|هجوم|عربد|حرق|حراق|شعل|شعال|ضرم|رشق|قتلع|قتلاع|خرب|خريب|"
+                       r"حطم|حطيم|دهس|قتح|سيطر|ستيلا|ستول|دشن|سرق|"
+                       r"قطع\w{0,4}\s+(?:\S+\s+){0,2}?(?:ال)?(?:اشجار|شجر|اشتال)|"
                        # Round 8 misses: grazing livestock in a village's olive
                        # groves and "desecrating" al-Aqsa are settler incursions.
                        r"مواشيهم|اغنامهم|قطعانهم|باغنام|بمواشي|بقطعان|ستبيح|ستباح|"
                        r"رعي\s+(?:اغنام|مواشي|ابقار|قطعان))"
-                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|ضرم|شعال)\w*"
-                       r"(?:\s+\S+){0,3}?\s*\S*(مستوطن|قطعان))"),
+                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|قتلاع|ضرم|شعال|حراق|خريب|حطيم)\w{0,12}"
+                       r"(?:\s+\S{1,30}){0,3}?\s*\S{0,6}(مستوطن(?:ون|ين|و|ي|ا|ان)?(?!\S)|قطعان))"),
     # A beating by the army is harm without an injury noun: "تعتدي بالضرب على
     # صاحب محل" was rejected as having no incident verb (round 5). Settler
     # beatings keep their actor — settler_attack sits above this entry.
-    ("injury",         r"(اصاب\w*|إصاب\w*|جرح\w*|اصيب|أصيب|اختناق|"
+    # اختناق is also a traffic JAM ("اختناق مروري على حاجز حوارة" — the word
+    # checkpoint_text.py reads as `congested`); a jam is not an injury (F421).
+    ("injury",         r"(اصاب\w*|إصاب\w*|جرح\w*|اصيب|أصيب|اختناق(?!\w*\s+مروري)|"
                        r"[اتين]?عتد\w*\s+بالضرب|اعتداء بالضرب|"
                        r"عتد\w*\s+علي\w*\s+بالضرب|الضرب\s+المبرح)"),
     # Arabic marks person/tense with a PREFIX, so "تقتحم" / "يقتحم" share no
@@ -188,7 +273,9 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # Stem "قتح", not "قتحم": the verbal noun "اقتحام" is ا-ق-ت-ح-ا-م and does
     # not contain the fuller stem, so requiring it dropped every headline that
     # names the raid rather than conjugating it.
-    ("raid",           r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*|"
+    # Not "الداهم": "الخطر الداهم" (the imminent danger) is an adjective, and
+    # it filed a feature about Susiya as a raid (audit F188).
+    ("raid",           r"([اتين]?قتح\w*|(?<!ال)[تي]?داهم\w*|مداهم\w*|توغل\w*|"
                        # A heavy troop deployment in a town's streets is an
                        # incursion (round 8 miss, Anata).
                        r"انتشار\s+(?:مكثف\s+|واسع\s+)?(?:ل?قوات|ل?جنود)\s+الاحتلال|انتشار\s+عسكري)"),
@@ -211,8 +298,21 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     ("demolition",     r"((?<!بنيه )هدم\w*|جرافات)"),
     # NOT "معتقل" — like "شهيد", the participle names a person ("the detained
     # child Muhammad") rather than reporting an arrest.
-    ("arrest",         r"([اتين]عتقل\w*|اعتقالات?)"),
+    # The verbal noun اعتقال is ا-ع-ت-ق-ا-ل and does NOT contain عتقل — the
+    # fourth verbal noun to hide its own verb (اقتحام, استشهاد, اشعال). The old
+    # `اعتقالات?` matched "اعتقالا"/"اعتقالات" and never the bare noun, so the
+    # commonest arrest headline, "اعتقال شاب من بلدة بيتا", was "no incident
+    # verb" (audit F192). Administrative detention is an order for someone
+    # already held, not an arrest.
+    ("arrest",         r"([اتين]عتقل\w*|اعتقال\w*(?!\s+(?:ال)?اداري))"),
     ("siege",          r"(حصار|طوق|محاصرة|[يت]حاصر)"),
+    # Shots fired, written the two ways the first entry cannot read: with the
+    # article ("اطلاق النار تجاه مركبة") and verb-subject-object ("اطلقت قوات
+    # الاحتلال النار"). Both were "no incident verb" (audit F189/F420). LAST
+    # but for closure, deliberately: a casualty, a raid or an arrest in the
+    # same message keeps its label, so this only recovers what was dropped.
+    ("shooting",       r"(اطلاق\s+(?:النار|الرصاص)|اطلق\w*\s+(?:\S+\s+){0,3}?(?:النار|الرصاص)|"
+                       r"[يت]طلق\w*\s+(?:\S+\s+){1,3}?(?:النار|الرصاص))"),
     # `سكر` IS ANCHORED, and this is the single worst defect P1.1 round 3 found.
     #
     # Unanchored `سكر\w*` matches inside `عسكري` — "military" — one of the
@@ -245,7 +345,9 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # landmarks Gaza coverage actually uses. Multi-word phrases only where a
     # single word is ambiguous: الشفاء alone is "recovery" and appears in every
     # get-well wish for a West Bank casualty.
-    ("gaza", r"(غزة|غزه|قطاع غزة|رفح|خان يونس|خانيونس|البريج|النصيرات|"
+    # Not "شارع غزة": a street named after the city is not the city — the
+    # same rule the governorate reader applies to شارع القدس (audit F103).
+    ("gaza", r"((?<!شارع )(?<!طريق )غزه|قطاع غزة|رفح|خان يونس|خانيونس|البريج|النصيرات|"
              r"دير البلح|بيت لاهيا|بيت حانون|جباليا|الشجاعية|المواصي|"
              r"شارع الرشيد|دوار النابلسي|مجمع الشفاء|مستشفى الشفاء|"
              r"كمال عدوان|المستشفى الاندونيسي|المستشفى المعمداني|المعمداني|"
@@ -311,8 +413,16 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # with a lookahead because bare اب sits inside ابو.
     ("statistical", r"(خلال النصف الاول|النصف\s+الاول\s+من\s+20|[\d٠-٩]{3,}\s+اعتداء|"
                     r"خلال العام|خلال الاسبوع الماضي|"
-                    r"خلال الشهر الماضي|احصائيه|إحصائية|حصيله\s+\S+\s+خلال|"
+                    # "احصائية ... حتى اللحظة" is the Red Crescent's running
+                    # count of TODAY's casualties, not a period summary: claim
+                    # 33 (Husan, 14 injured, hand-marked real) was dropped
+                    # here (audit F101).
+                    r"خلال الشهر الماضي|احصاييه(?!(?:\s+\S+){0,12}?\s+حتي\s+(?:اللحظه|الان))|"
+                    r"حصيله\s+\S+\s+خلال|"
                     r"منذ\s+بدايه\s+(?:ال)?عام|"
+                    # A running total since an operation began is a tally,
+                    # reposted as it grows (audit F472).
+                    r"منذ\s+(?:بدايه|بدء)\s+(?:ال)?(?:عمليه|عدوان|حرب|اجتياح)|"
                     r"خلال\s+(?:شهر\s+)?(?:يناير|فبراير|مارس|ابريل|مايو|يونيو|"
                     r"يوليو|اغسطس|سبتمبر|اكتوبر|نوفمبر|ديسمبر|"
                     r"كانون الثاني|شباط|اذار|نيسان|ايار|حزيران|تموز|اب(?!\w)|"
@@ -334,23 +444,38 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     # reports (round 8: five of the twelve funeral-stratum rows).
     ("propaganda", r"(ارث العاروري|رساله الشيخ القائد|قناه ارث)"),
     # Court news: an acquittal months after the assault, a detention extended.
-    ("court", r"([يت]برئ\w*|تبرئه|براءه\s+|تمديد\s+اعتقال|[يت]مدد\w*\s+اعتقال|"
-              r"الحكم\s+علي|[يت]حكم\w*\s+علي|محكمه\s+\S+\s+(?:تقضي|تصدر|ترفض|تقرر))"),
-    # A vigil, a march, a ceremony at the head of the text is the subject.
-    ("gathering", r"^\W*(?:\S+\s+)?(?:وقفه|مسيره|فعاليه|حفل|مهرجان|معرض|ورشه|ندوه|مؤتمر)\b"),
+    # Whole words and a SENTENCE (1.9.0, audit F103): `[يت]برئ\w*` folds to
+    # `[يت]بري\w*`, which is inside تبرير (a justification), and "بعد الحكم على
+    # شقيقه" is an arrest after a brother's sentencing — the arrest is the news.
+    ("court", r"((?<!\S)[وف]?[يت]برئ(?:ان|ون|ه|ها|هم)?(?!\S)|(?<!\S)برات(?!\S)|تبرئه|براءه\s+|"
+              r"تمديد\s+اعتقال|[يت]مدد\w*\s+اعتقال|"
+              r"(?:الحكم|[يت]حكم\w*)\s+علي\s+(?:\S+\s+){0,4}?(?:بالسجن|بالحبس|بغرامه|بالمؤبد|المؤبد)|"
+              r"محكمه\s+\S+\s+(?:تقضي|تصدر|ترفض|تقرر))"),
+    # A vigil, a march, a ceremony at the head of the text is the subject —
+    # unless people were hurt at it: "مسيرة كفر قدوم الاسبوعية: اصابات
+    # بالرصاص خلال قمع الاحتلال" is the weekly march the army fires on, and
+    # its casualties are the event (audit F422). And مسيرة is also a DRONE:
+    # "طائرة مسيرة تستهدف مركبة" is a strike, not a march (F193).
+    ("gathering", r"^\W*(?:(?!طايره|طايرات)\S+\s+)?(?:وقفه|مسيره|فعاليه|حفل|مهرجان|معرض|ورشه|ندوه|مؤتمر)\b"
+                  r"(?!.*?(?:اصاب|اصيب|قمع|رصاص|قنابل))"),
     # Court decisions about future demolitions are legal news, not field
     # events: "the high court rejected 15 petitions" was served as a SHOOTING.
-    ("legal", r"(المحكمه العليا|التماس\w*)"),
+    # Not "خط التماس" / "منطقة التماس" — the SEAM line, where clashes happen
+    # (audit F103).
+    ("legal", r"(المحكمه العليا|(?<!خط )(?<!منطقه )(?<!مناطق )التماس\w*)"),
     # International / national politics.
     #
     # "الجامعة الأمريكية" is a West Bank university, and matching "امريك" inside
     # it rejected a real raid on student housing sheltering people displaced
     # from Jenin camp as foreign news.
-    ("international", r"(ايران|إيران|العراق|الاردن|الأردن|"
+    # اليمن is inside اليمنى — "في قدمه اليمنى", the RIGHT foot, the stock
+    # phrase of every Red Crescent injury bulletin — and الاردن is inside
+    # "غور الاردن", the Jordan VALLEY, which is the West Bank (audit F102).
+    ("international", r"(ايران|إيران|العراق|(?<!غور )(?<!نهر )(?<!وادي )الاردن|"
                       r"(?<!الجامعه )(?<!الجامعه ال)امريك|"
                       r"(?<!الجامعه )(?<!الجامعه ال)أمريك|واشنطن|ترامب|"
                       r"خامنئي|نتنياهو|الكنيست|البيت الابيض|مجلس الامن|الامم المتحدة|"
-                      r"سوريا|لبنان|حزب الله|اليمن|الحوثي)"),
+                      r"سوريا|لبنان|حزب الله|(?<!\S)[وبل]?(?:اليمن|اليمنيه)(?!\S)|الحوثي)"),
     # Commentary, memorials, media promos — not events.
     #
     # SHORT TERMS ARE ANCHORED TO TOKEN BOUNDARIES, and the reason is the worst
@@ -377,16 +502,32 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
                    r"حكاية شهيد|تابعونا|اشترك|قناتنا|هل بات|كيف يحاول|"
                    r"في مثل هذا اليوم|رساله صمود)"),
     # Institutional statements rather than a located happening.
-    ("statement", r"(نادي الاسير|نادي الأسير|تصريح|بيان صحفي|وزارة الصحة تعلن|"
-                  r"تنعى|تدين|تستنكر|طالب\w* ب|دعا\w* الى|ناشد|"
+    #
+    # 1.9.0 (audit F103/F195): four branches were one meaning of a homograph
+    # and matched the other. "طالب ب" is the verb DEMANDED and also a STUDENT
+    # ("تعتقل طالبا بجامعة بيرزيت", "اصابة طالبة بالرصاص"); تصريح is a
+    # statement and also a PERMIT ("بحجة عدم حمله تصريح"); "دعا الى" sat inside
+    # استدعائه الى (a SUMMONS); "توجهوا الى" is the call "go to!" and also
+    # "مستوطنون توجهوا الى قرية المغير", settlers who went. Each is now the
+    # statement reading only. "وزارة الصحة تعلن" is gone: the ministry
+    # announcing a killing is the authoritative death report, and its tallies
+    # are the statistical reject's business.
+    ("statement", r"(نادي الاسير|نادي الأسير|بيان صحفي|"
+                  r"(?:في|خلال)\s+تصريح|تصريح\s+(?:صحفي|له|لها|خاص|رسمي|مكتوب)|(?<!\S)[وب]?(?:ال)?تصريحات(?!\S)|"
+                  r"تنعى|تدين|تستنكر|(?<!\S)[وف]?(?:[يت]طالب\w*|طالبت|طالبوا)\s+ب|"
+                  r"(?<!\S)[وف]?(?:دعا|دعت|دعوا|[يت]دعو|[يت]دعون)\s+الي|ناشد|"
                   # Round 8: a faction official or a party speaking, in the
-                  # third person or the first-person plural.
-                  r"القيادي\s+في|القياديه\s+في|\bحماس\s*:|\bفتح\s*:|الجهاد\s+الاسلامي|"
+                  # third person or the first-person plural. (A faction name
+                  # before a colon is read in read(): normalize() removes the
+                  # colon, so `حماس\s*:` here could never match.)
+                  r"القيادي\s+في|القياديه\s+في|الجهاد\s+الاسلامي|"
                   r"زياره\s+(?:اجراها\s+)?المحامي|تفاصيل\s+ظروف\s+اعتقال|"
                   r"الناطق\s+باسم|المتحدث\s+باسم|\bنحذر\b|\bنبارك\b|\bندعو\b|\bنناشد\b|"
                   # First-person-plural statements and calls to action are a
                   # faction speaking, not a field report.
-                  r"\bندين\b|\bنستنكر\b|\bنؤكد\b|توجهوا\s+الي|كونوا\s+سندا|فكوا\s+حصار|"
+                  r"\bندين\b|\bنستنكر\b|\bنؤكد\b|"
+                  r"(?<!مستوطنون )(?<!المستوطنون )(?<!الذين )(?<!جنود )توجهوا\s+الي|"
+                  r"كونوا\s+سندا|فكوا\s+حصار|"
                   r"اعتداءات\s+(?:المتكرره|المتكررة|متصاعده|متصاعدة))"),
 ]
 
@@ -465,15 +606,31 @@ def _defused(tok: str) -> list[str]:
 # A governorate's name after one of these is a STREET named after the city:
 # "شارع القدس شرق نابلس" is in Nablus, "بمنطقة شارع نابلس" in Tulkarm (round 8,
 # two wrong places).
-_STREET_HEADS = frozenset(["شارع", "طريق", "مدخل"])
+# NOT مدخل (1.9.0, audit F196): "مدخل نابلس الشرقي" is the entrance OF the
+# city — the most movement-relevant closure there is — and skipping it left
+# "الاحتلال يغلق مدخل نابلس الشرقي" with no governorate and no place at all.
+_STREET_HEADS = frozenset(["شارع", "طريق"])
+# A governorate's name inside an ORGANISATION's name locates nothing:
+# "اذاعة القدس: قوات الاحتلال تقتحم بلدة يعبد جنوب غرب جنين" is a Jenin raid
+# reported by a radio station, and "سرايا القدس: اشتباكات ... نور شمس في
+# طولكرم" a Tulkarm clash claimed by an armed wing. Reading القدس from them
+# refused the named village as "outside stated governorate" and pinned the
+# event to Jerusalem (audit F104).
+_ORG_HEADS = frozenset(["سرايا", "اذاعه", "قناه", "شبكه", "صحيفه", "وكاله", "فضاييه"])
 
 
 def _find_governorate(toks: list[str]) -> str | None:
     """First governorate named as a whole word, in canonical normalized form."""
     for i, t in enumerate(toks):
-        if i > 0 and _bare(toks[i - 1]) in _STREET_HEADS:
+        if i > 0 and (_bare(toks[i - 1]) in _STREET_HEADS or toks[i - 1] in _ORG_HEADS):
             continue
-        for cand in _defused(t):
+        readings = _defused(t)
+        for cand in readings:
+            # Only القدس / الخليل / البيرة take the article. "الجنين" is THE
+            # FETUS ("فقدان الجنين بعد احتجازها على حاجز عورتا"), and peeling
+            # its article filed a Huwara-area miscarriage under Jenin (F104).
+            if ("ال" + cand) in readings and ("ال" + cand) not in _GOV_SINGLE:
+                continue
             if cand in _GOV_SINGLE:
                 return cand
             for pair in _GOV_PAIRS:
@@ -499,7 +656,11 @@ def _is_person(tok: str) -> bool:
     return bare in _PERSON_WORDS
 
 # A name stops here. Without this the capture runs on into the next clause.
-_STOP_TOKENS = (BEARING_WORDS | _GOV_TOKENS | PLACE_WORDS | frozenset([
+# Built through normalize(), like every other lexicon compared against
+# normalized tokens: written raw, "على" (normalized: "علي"), "الاسرائيلي"
+# ("الاسراييلي"), "بحماية" and "بؤره" could never match, so "قرية X على الطريق"
+# captured "X علي" and the exact-only readers lost the name (audit F424).
+_STOP_TOKENS = (BEARING_WORDS | _GOV_TOKENS | PLACE_WORDS | frozenset(normalize(w) for w in [
     "قرب", "في", "من", "الي", "الى", "على", "عن", "مع", "بحماية", "خلال",
     "بعد", "قبل", "و", "او", "التي", "الذي", "حيث", "كما", "المحتله",
     "المحتلة", "بالضفه", "الضفه", "الغربيه", "اليوم", "امس", "صباح", "مساء",
@@ -514,6 +675,10 @@ _STOP_TOKENS = (BEARING_WORDS | _GOV_TOKENS | PLACE_WORDS | frozenset([
     "اكثر", "اقل", "فجر", "ظهر", "ليل", "ليله", "الليله", "الماضيه", "الجاريه",
     "الاسرائيلي", "الاسرائيليه", "المستوطنون", "مستوطنون", "مستوطنه",
     "مستوطنات", "بؤره", "الفلسطينيه", "الفلسطيني", "فلسطين",
+    # Causal links that follow a name: "شوارع بلدة بيرزيت، إثر إغلاق الاحتلال
+    # حاجز عطارة" captured "بيرزيت اثر اغلاق" and keyed its event apart from
+    # the channel that wrote "بلدة بيرزيت" (audit F309).
+    "اثر", "إثر", "عقب", "جراء", "بسبب",
 ]))
 
 _WS = re.compile(r"\s+")
@@ -559,6 +724,12 @@ class NewsReading:
     # Every name the text offers, most trusted first, with how it was read
     # (place_word | dual | prefix | bearing | cue | between | conjunct).
     place_candidates: list[tuple[str, str]] = field(default_factory=list)
+    # WHEN, as the text states it (see `_read_when`): 0 = the posting day, 1 =
+    # "أمس", 2 = "أول أمس"; the part of that day if named; and whether the
+    # text says the state has held SINCE then ("مغلق منذ مساء أمس").
+    days_ago: int = 0
+    time_band: str | None = None
+    ongoing: bool = False
 
 
 _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
@@ -577,7 +748,11 @@ _FUNERAL_RE = re.compile(_norm_pat(
     # A EULOGY: a faction or a family "zaffs" (announces) its martyr — the
     # report of the killing came earlier, from a news channel. Round 7's
     # eleven wrong death rows were nine of these.
-    r"\bتزف\b|\bيزف\b|\bنزف\b|تزف\w*\s+(?:حركه|حركة|كتائب|الكتله|الكتلة|سرايا)|"
+    # نزف only in the eulogy frame ("نزف الى شعبنا الشهيد"): bare, it is also
+    # BLEEDING, and "استشهاد الشاب بعد نزف حاد" was dropped as an obituary
+    # (audit F105/F474).
+    r"\bتزف\b|\bيزف\b|\bنزف\s+(?:الي|ل?شعبنا|ل?جماهير|ل?ابناء|الشهيد|البطل|القائد|المجاهد)\b|"
+    r"تزف\w*\s+(?:حركه|حركة|كتائب|الكتله|الكتلة|سرايا)|"
     r"الشهيد\s+المجاهد|شهيدها\s+المجاهد|المجاهد\s+الشهيد|ابنها\s+البار|ابنه\s+البار|"
     r"القائد\s+الشهيد|القامه\s+الفلسطينيه|تقبل\s+الله|تقبله\s+الله|رحمه\s+الله|"
     # NOT a bare relative clause ("الشهيد X الذي ارتقى برصاص الاحتلال" is how a
@@ -596,11 +771,48 @@ _HEAD_FUNERAL_RE = re.compile(_norm_pat(
 _RELEASE_RE = re.compile(_norm_pat(r"^\W*(?:\S+\s+){0,4}?(?:[يت]فرج\w*\s+عن|الافراج\s+عن)"))
 _HARM_RE = re.compile(_norm_pat(r"(بالضرب|تنكيل|اصاب|إصاب|استشه|ارتقي|ارتقى)"))
 _ACCIDENT_RE = re.compile(_norm_pat(r"حادث\s+(?:سير|مروري|طرق|تصادم)"))
-_TESTIMONY_RE = re.compile(_norm_pat(r"([يت]تحدث\w*\s+عن|[يت]روي\s+)"))
-_SIEGE_WORDS_RE = re.compile(_norm_pat(r"(حصار|محاصر)"))
-_RAID_VERB_RE = re.compile(_norm_pat(r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*)"))
+# "مصادر تتحدث عن اعتقال 5 شبان" is a wire's sourcing formula, not a person
+# giving testimony (audit F475).
+_TESTIMONY_RE = re.compile(_norm_pat(
+    r"((?<!مصادر )(?<!محليه )(?<!تقارير )(?<!انباء )(?<!شهود )[يت]تحدث\w*\s+عن|[يت]روي\s+)"))
+_RAID_VERB_RE = re.compile(_norm_pat(r"([اتين]?قتح\w*|(?<!ال)[تي]?داهم\w*|مداهم\w*|توغل\w*)"))
 _ARMY_RE = re.compile(_norm_pat(r"(قوات|جيش|جنود|الاحتلال|شرطه|قوه)"))
-_SETTLER_RE = re.compile(_norm_pat(r"(مستوطن|قطعان)"))
+# Settlers, not a settlement — see the settler_attack entry (F190).
+_SETTLER_RE = re.compile(_norm_pat(r"(مستوطن(?:ون|ين|و|ي|ا|ان)?(?!\S)|قطعان)"))
+# A SIEGE OF A PLACE IS A CLOSURE; A SIEGE OF A HOUSE IS NOT (1.9.0, audit
+# F044). `is_closure` was true for every siege, so "مستوطنون يحاصرون منزلاً في
+# بلدة قصرة" — settlers surrounding one family's home — wrote road_closure=
+# 'closed' for the whole of Qusra, every day of a weeks-long siege. The event
+# stays a siege either way; only a siege whose object is a town, a camp, an
+# area, a road or an entrance is also a movement state.
+_SIEGE_AREA_RE = re.compile(_norm_pat(
+    r"(?:حصار\w*|محاصره|[يت]حاصر\w*|طوق)\s+"
+    r"(?:(?:مشدد|مشددا|خانق|خانقا|كامل|كاملا|محكم|محكما|شامل|شاملا|عسكري|عسكريا|علي)\s+){0,2}"
+    r"(?:ال|لل)?(?:بلده|بلدات|قريه|قري|مخيم|مدينه|منطقه|حاجز|طريق|مدخل|مداخل|محافظه)"))
+# "قصرة تحت الإغلاق والحصار" names no object after the noun: the subject is the
+# place — unless a house is what the text is about ("المنزل تحت الحصار").
+_UNDER_SIEGE_RE = re.compile(_norm_pat(r"تحت\s+(?:ال)?(?:حصار|اغلاق)"))
+_HOUSE_RE = re.compile(_norm_pat(r"(?<!\S)[وفبل]?(?:ال)?(?:منزل\w*|منازل|بنايه|عماره|مبني)"))
+# A death "moments ago" is a fresh report whatever frames it: "وداع القمر
+# إسلام العجوري الذي ارتقى قبل قليل برصاص الاحتلال" (round 8, claim 54949,
+# hand-marked a real death) was dropped as a farewell (audit F105).
+_FRESH_DEATH_RE = re.compile(_norm_pat(
+    r"(?:استشه\w*|ارتقي|ارتقى|قتل\w*)\s+(?:\S+\s+){0,4}?قبل\s+(?:قليل|لحظات|دقائق)"))
+# The death verb inside a relative clause about a martyr's HOUSE or FAMILY
+# ("تداهم منزل الشهيد محمد الذي استشهد الشهر الماضي") names who the house
+# belongs to; the raid is the news (audit F198). Only this frame is demoted —
+# "الشهيد X الذي ارتقى برصاص الاحتلال" on its own is how a plain report names
+# the man (round 7 lost a real death to rejecting it).
+_MARTYR_KIN_TAIL_RE = re.compile(_norm_pat(
+    r"(?:منزل|منازل|بيت|عائله|عايله|والد|والده|ذوي|نجل|شقيق|شقيقه|ابن|ابنه|قبر|ضريح)\s+"
+    r"(?:ال)?شهيد\S*\s+(?:\S+\s+){0,4}?(?:الذي|التي|الذين)\s+$"))
+# A faction's name before a colon at the head is the faction speaking:
+# "فتح: تعلن الحداد العام في نابلس بعد استشهاد ..." was a DEATH in Nablus, and
+# the two branches written for it (`\bحماس\s*:`) could never match once
+# normalize() had removed the colon (audit F423/F473). Read on the
+# clause-marked text, where the colon survives as §.
+_FACTION_HEAD_RE = re.compile(_norm_pat(
+    r"^\W*(?:حركه\s+)?(?:حماس|فتح|الجهاد\s+الاسلامي)\s+§"))
 _HOMES_LEVELLED_RE = re.compile(_norm_pat(
     r"(?:تجريف|[يت]جرف\w*|جرفت)\s+(?:\S+\s+){0,3}?(?:مساكن|منازل|منزل|مسكن|بركسات|بركس|بيوت(?!ا?\s+بلاستيك)ا?)"))
 
@@ -611,6 +823,70 @@ def _first_match(text: str, patterns) -> tuple[str, str] | None:
         if m:
             return label, m.group(0)[:60]
     return None
+
+
+def _first_incident(norm: str, clause: str) -> tuple[str, str] | None:
+    """`_first_match` over INCIDENT_PATTERNS, with the two exceptions the
+    patterns cannot state themselves: `closure` is matched on the
+    clause-marked text so it cannot cross a sentence (F099), and a death verb
+    in a relative clause about a martyr's house or family is not this
+    message's death (F198) — the next death match, or the next type, is."""
+    for label, rx in _INCIDENT_RE:
+        text = clause if label == "closure" else norm
+        for m in rx.finditer(text):
+            if label == "death" and _MARTYR_KIN_TAIL_RE.search(
+                    text[max(0, m.start() - 120):m.start()]):
+                continue
+            return label, m.group(0)[:60]
+    return None
+
+
+# ── when ─────────────────────────────────────────────────────────────────────
+# NO TIME WAS READ FROM THE TEXT (1.9.0, audit F043). An event's time was the
+# moment the channel POSTED, so "أغلق الاحتلال حاجز بيت فوريك مساء أمس", posted
+# at 09:00, was served as a closure "10 minutes ago" and asserted in
+# state_current for a further day. DESIGN's law — age changes the answer — was
+# defeated at the source. This reads only the relative day words the channels
+# actually use; a stated date is left to a later reader.
+#
+# A day word inside a subordinate clause belongs to a DIFFERENT event: "تغلق
+# حاجز عطارة بعد عملية أمس" closes the checkpoint today, after yesterday's
+# attack, and "استشهاد الشاب الذي أصيب أمس" reports today's death of
+# yesterday's casualty. Those are skipped. "منذ أمس" (since yesterday) dates
+# the start and says the state still holds.
+_WHEN_RE = re.compile(_norm_pat(
+    r"(?<!\S)(?:(?P<band>فجر|صباح|(?:بعد\s+)?ظهر|عصر|مساء|ليل|ليله)\s+)?(?:يوم\s+)?"
+    r"(?P<day>اول\s+امس|امس\s+الاول|[وف]?(?:بال)?امس|الليله\s+الماضيه)(?!\S)"))
+_SUBORDINATE_TAIL_RE = re.compile(
+    r"(?:^|\s)(?:بعد|عقب|اثر|جراء|الذي|التي|الذين|اللذين|اللتين|حيث)\s+(?:\S+\s+){0,2}$")
+_SINCE_TAIL_RE = re.compile(r"(?:^|\s)منذ\s+$")
+_BAND_OF = {"فجر": "dawn", "صباح": "morning", "ظهر": "noon", "بعد ظهر": "afternoon",
+            "عصر": "afternoon",
+            "مساء": "evening", "ليل": "night", "ليله": "night"}
+
+
+def _read_when(norm: str) -> tuple[int, str | None, bool]:
+    """(days before the posting day, part of the day, still holding?) for the
+    first day word that dates this message's own event; (0, None, False) when
+    the text dates nothing."""
+    for m in _WHEN_RE.finditer(norm):
+        before = norm[max(0, m.start() - 60):m.start()]
+        if _SUBORDINATE_TAIL_RE.search(before):
+            continue
+        day = m.group("day")
+        if day.startswith("الليله"):
+            days, band = 1, "night"
+        else:
+            days = 2 if "اول" in day else 1
+            band = _BAND_OF.get(m.group("band") or "")
+        return days, band, bool(_SINCE_TAIL_RE.search(before))
+    return 0, None, False
+
+
+# No real word is 60 characters long. A token that is — "عتدعتدعتد…" pasted
+# 1,700 times — only ever feeds backtracking, so it is removed before any
+# pattern sees it (F077; the patterns' own quantifiers are bounded as well).
+_LONG_TOKEN_RE = re.compile(r"\S{60,}")
 
 
 # Dual settlement words name TWO places at once — "بين بلدتي جالود وقصرة" — and
@@ -672,6 +948,9 @@ def _bare(tok: str) -> str:
     return tok
 
 
+_ARABIC_LETTER_RE = re.compile(r"[ء-ي]")
+
+
 def _ends_name(tok: str, first: bool) -> bool:
     """Whether a token ends the name being read, seen through any fused
     conjunction, preposition or article.
@@ -682,6 +961,11 @@ def _ends_name(tok: str, first: bool) -> bool:
     keeps its وادي.
     """
     if len(tok) < 2 or tok.isdigit():
+        return True
+    # A channel handle or any other token with no Arabic letter is never part
+    # of a West Bank name: "بلدة قبلان @News_Nablus1" read "قبلان news
+    # nablus1" (134 of 928 sampled messages end in that handle; F309).
+    if not _ARABIC_LETTER_RE.search(tok):
         return True
     for cand in _defused(tok):
         if (cand in _STOP_TOKENS or cand in PLACE_WORDS or cand in _DUAL_WORDS
@@ -745,7 +1029,11 @@ def _extract_places(text: str) -> tuple[list[tuple[str, str]], str | None]:
         the name itself ("مدينة نابلس") unless the word is a cue — "شارع نابلس"
         is a street named after the city, not the city."""
         head = toks[i + 1:i + 3]
-        if head and head[0] in _GOV_TOKENS:
+        # The two-word governorates are tested whole: "بيت" alone is no
+        # governorate token, so "مدينة بيت لحم" fell through to the name loop,
+        # and add() then refused "بيت لحم" as a bare governorate mention —
+        # Bethlehem city could never be a named place (audit F306).
+        if head and (head[0] in _GOV_TOKENS or " ".join(head) in _GOV_PAIR_NAMES):
             if not gov_head:
                 return
             two = " ".join(head)
@@ -920,13 +1208,18 @@ def read(text: str | None) -> NewsReading:
     if not text or len(text.strip()) < 25:
         return NewsReading(verdict="rejected", reject_reason="too short")
 
-    norm = normalize(text)
+    norm = _LONG_TOKEN_RE.sub(" ", normalize(text))
+    clause = _LONG_TOKEN_RE.sub(" ", _clause_marked(text))
 
     rej = _first_match(norm, _REJECT_RE)
     if rej:
         return NewsReading(verdict="rejected", reject_reason=rej[0], matched=rej[1])
+    fh = _FACTION_HEAD_RE.search(clause)
+    if fh:
+        return NewsReading(verdict="rejected", reject_reason="statement",
+                           matched=fh.group(0)[:60])
 
-    inc = _first_match(norm, _INCIDENT_RE)
+    inc = _first_incident(norm, clause)
     if not inc:
         return NewsReading(verdict="unclear", reject_reason="no incident verb")
 
@@ -937,13 +1230,15 @@ def read(text: str | None) -> NewsReading:
     # and settler-attack reports too (a funeral procession attacked, a raid
     # during a wake), and those are events.
     itype = inc[0]
-    if itype == "death":
+    # A death "moments ago" is the fresh report, however it is framed (F105).
+    fresh_death = _FRESH_DEATH_RE.search(norm)
+    if itype == "death" and not fresh_death:
         fun = _FUNERAL_RE.search(norm)
         if fun:
             return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
                                matched=fun.group(0)[:60])
     head_fun = _HEAD_FUNERAL_RE.search(norm)
-    if head_fun:
+    if head_fun and not fresh_death:
         return NewsReading(verdict="rejected", reject_reason="obituary or funeral",
                            matched=head_fun.group(0)[:60])
     # ROUND 8 (2026-09-24), each class measured on a fresh sample:
@@ -958,9 +1253,13 @@ def read(text: str | None) -> NewsReading:
         return NewsReading(verdict="rejected", reject_reason="traffic accident",
                            matched=_ACCIDENT_RE.search(norm).group(0)[:60])
     # someone TALKING ABOUT harassment is a testimony; kept only for a siege,
-    # where the testimony is the ongoing event (measured 2 vs 2 in round 7);
+    # where the testimony is the ongoing event (measured 2 vs 2 in round 7).
+    # Keyed on the TYPE being served, not on a siege word anywhere: "عابا ...
+    # تحت الحصار والهدم .. رئيس مجلس البلدة يتحدث عن تداعيات" (claim 43181,
+    # hand-marked a statement) kept its testimony alive through the word
+    # الحصار and was served as a settler attack (audit F106);
     tm = _TESTIMONY_RE.search(norm)
-    if tm and not _SIEGE_WORDS_RE.search(norm):
+    if tm and itype != "siege":
         return NewsReading(verdict="rejected", reject_reason="testimony",
                            matched=tm.group(0)[:60])
     # settlers storming homes are a settler attack, not an army raid;
@@ -969,9 +1268,22 @@ def read(text: str | None) -> NewsReading:
         before = norm[:rv.start()] if rv else ""
         if _SETTLER_RE.search(before) and not _ARMY_RE.search(before):
             itype = "settler_attack"
-    # homes bulldozed are a demolition, whatever the verb.
+    # homes bulldozed are a demolition, whatever the verb;
     if itype == "land_levelling" and _HOMES_LEVELLED_RE.search(norm):
         itype = "demolition"
+    # a checkpoint REOPENED after a closure is not a closure (F042). Left
+    # `unclear`, not rejected: it is movement information a later reader may
+    # use, and the claim stays reachable for it.
+    if itype == "closure":
+        ro = _REOPEN_RE.search(norm)
+        if ro and _closure_is_past(clause):
+            return NewsReading(verdict="unclear", reject_reason="reopening",
+                               matched=ro.group(0)[:60])
+    # a closure is a movement state; a siege is one only when it is laid on a
+    # place, not on a house (F044).
+    is_closure = itype == "closure" or (itype == "siege" and bool(
+        _SIEGE_AREA_RE.search(norm)
+        or (_UNDER_SIEGE_RE.search(norm) and not _HOUSE_RE.search(norm))))
 
     candidates, gov = _extract_places(norm)
     place_text = candidates[0][0] if candidates else None
@@ -984,10 +1296,12 @@ def read(text: str | None) -> NewsReading:
     # A named settlement plus its governorate is the strongest shape; a bare
     # governorate locates the report only to admin2 and is worth less.
     conf = 0.80 if (place_text and gov) else (0.70 if place_text else 0.55)
+    days_ago, band, ongoing = _read_when(norm)
     return NewsReading(
         verdict="incident", incident_type=itype, place_text=place_text,
         governorate=gov, confidence=conf, matched=inc[1],
-        is_closure=itype in ("closure", "siege"),
+        is_closure=is_closure,
         evidence=[inc[1]],
         place_candidates=candidates,
+        days_ago=days_ago, time_band=band, ongoing=ongoing,
     )
