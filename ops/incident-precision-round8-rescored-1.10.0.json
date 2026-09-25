@@ -1,0 +1,117 @@
+{
+  "round": "8",
+  "classifier_version": "1.10.0",
+  "served_then": 198,
+  "tally": {
+    "kept_right": 135,
+    "dropped_wrong": 35,
+    "kept_wrong": 19,
+    "dropped_right": 3,
+    "type_moved": 6
+  },
+  "projected_precision": 0.877,
+  "per_type": {
+    "arrest": {
+      "tally": {
+        "kept_right": 20,
+        "dropped_wrong": 1
+      },
+      "projected_precision": 1.0
+    },
+    "closure": {
+      "tally": {
+        "kept_right": 12,
+        "kept_wrong": 3
+      },
+      "projected_precision": 0.8
+    },
+    "death": {
+      "tally": {
+        "kept_right": 10,
+        "dropped_right": 3,
+        "dropped_wrong": 9
+      },
+      "projected_precision": 1.0
+    },
+    "demolition": {
+      "tally": {
+        "kept_right": 13,
+        "kept_wrong": 2,
+        "dropped_wrong": 7
+      },
+      "projected_precision": 0.867
+    },
+    "injury": {
+      "tally": {
+        "kept_right": 12,
+        "dropped_wrong": 3,
+        "kept_wrong": 2
+      },
+      "projected_precision": 0.857
+    },
+    "land_levelling": {
+      "tally": {
+        "dropped_wrong": 3,
+        "type_moved": 3,
+        "kept_right": 13,
+        "kept_wrong": 2
+      },
+      "projected_precision": 0.867
+    },
+    "raid": {
+      "tally": {
+        "kept_right": 18,
+        "type_moved": 1,
+        "kept_wrong": 2,
+        "dropped_wrong": 1
+      },
+      "projected_precision": 0.9
+    },
+    "settler_attack": {
+      "tally": {
+        "kept_right": 14,
+        "kept_wrong": 4,
+        "dropped_wrong": 10
+      },
+      "projected_precision": 0.778
+    },
+    "shooting": {
+      "tally": {
+        "kept_right": 14,
+        "kept_wrong": 1
+      },
+      "projected_precision": 0.933
+    },
+    "siege": {
+      "tally": {
+        "kept_wrong": 3,
+        "type_moved": 2,
+        "kept_right": 9,
+        "dropped_wrong": 1
+      },
+      "projected_precision": 0.75
+    }
+  },
+  "why_dropped_or_moved": {
+    "rejected:obituary or funeral": 10,
+    "rejected:notice not act": 7,
+    "rejected:propaganda": 5,
+    "rejected:statement": 4,
+    "rejected:roundup": 3,
+    "moved:land_levelling->demolition": 2,
+    "rejected:testimony": 2,
+    "rejected:release": 1,
+    "rejected:traffic accident": 1,
+    "rejected:gathering": 1,
+    "moved:land_levelling->settler_attack": 1,
+    "moved:raid->settler_attack": 1,
+    "rejected:court": 1,
+    "moved:siege->closure": 1,
+    "unclear:no resolvable West Bank place": 1,
+    "moved:siege->death": 1,
+    "rejected:statistical": 1,
+    "rejected:history": 1
+  },
+  "rejudged": 0,
+  "note": "projection over the old sample; type_moved rows need a human re-judge"
+}

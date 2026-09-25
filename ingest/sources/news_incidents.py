@@ -37,7 +37,8 @@ import hashlib
 import json
 import sys
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -46,7 +47,7 @@ from dataclasses import dataclass, field
 
 from cascade.news import NewsReading, read
 from resolve.db import connect
-from resolve.arabic import fold_for_match
+from resolve.arabic import fold_for_match, normalize
 from resolve.geo import governorate_pcode, resolve_place
 
 # Reports of the same kind, at the same place, inside this window are one event.
@@ -126,7 +127,7 @@ CLASSIFIER = "news"
 # settler_attack quantifiers are bounded to a word, which ends the cubic
 # backtracking that let one long token stall the timer (F074). Unmeasured
 # until a fresh round is drawn at 1.9.0.
-CLASSIFIER_VERSION = "1.9.0"
+CLASSIFIER_VERSION = "1.10.0"
 
 # One closure observation per (event, source, time). The insert ran after both
 # the join and the insert branch, so every re-read — each version bump without
@@ -362,6 +363,55 @@ def locate(conn, r: NewsReading, stats: Counter | None = None,
     return Located(None, None, first, twins, None, None, rejected)
 
 
+HEBRON = ZoneInfo("Asia/Hebron")
+
+
+def occurred_from(reported_at, when: dict | None):
+    """(occurred_at, precision): the posting time unless the text stated a
+    day or a band (audit F040). A band later than the posting on the same day
+    has not happened yet — the posting time stands."""
+    if not when:
+        return reported_at, "hour"
+    if reported_at.tzinfo is None:
+        reported_at = reported_at.replace(tzinfo=timezone.utc)
+    local = reported_at.astimezone(HEBRON)
+    day = local.date() + timedelta(days=when.get("offset_days") or 0)
+    hour = when.get("hour")
+    if hour is None:
+        t = datetime.combine(day, time(12, 0), tzinfo=HEBRON)
+        return min(t, local).astimezone(timezone.utc), "day"
+    t = datetime.combine(day, time(hour, 0), tzinfo=HEBRON)
+    return min(t, local).astimezone(timezone.utc), "hour"
+
+
+MIRROR_RATIO = 0.90
+
+
+def independent_units(cluster: list[tuple]) -> tuple[set[str], int]:
+    """Units that said it in their own words. Two channels posting the same
+    text minutes apart are one voice: independence_group was never fitted for
+    news channels, so a mirror counted as corroboration (audit F033). Members
+    carry their normalised text at index 7; a member whose text is >= 0.90
+    similar to an earlier member of ANOTHER unit joins that unit. Returns the
+    units kept and how many were collapsed."""
+    from difflib import SequenceMatcher
+    seen: list[tuple[str, str]] = []          # (unit, text)
+    alias: dict[str, str] = {}
+    for m in sorted(cluster, key=lambda x: x[1]):
+        unit, text = m[2], (m[7] if len(m) > 7 else "") or ""
+        if unit in alias:
+            continue
+        for u2, t2 in seen:
+            if u2 != unit and text and t2 and \
+                    SequenceMatcher(None, text[:300], t2[:300]).ratio() >= MIRROR_RATIO:
+                alias[unit] = alias.get(u2, u2)
+                break
+        else:
+            seen.append((unit, text))
+    units = {alias.get(m[2], m[2]) for m in cluster}
+    return units, len({m[2] for m in cluster}) - len(units)
+
+
 def _confidence(groups: int) -> float:
     return round(min(MAX_CONFIDENCE, 1 - (1 - SINGLE_SOURCE_TRUST) ** max(groups, 1)), 4)
 
@@ -408,6 +458,7 @@ SELECT DISTINCT ON (place_id, state_kind)
        confidence, 1, 0, now()
 FROM state_observation
 WHERE state_kind = %(closure)s
+  AND modality = 'assertion'      -- withdrawn/rejected/crowd-gated rows never become belief (audit F072)
 ORDER BY place_id, state_kind, observed_at DESC
 ON CONFLICT (place_id, state_kind, direction) DO UPDATE SET
   value=EXCLUDED.value, observed_at=EXCLUDED.observed_at,
@@ -583,7 +634,8 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
             # stops grouping.
             name_key = fold_for_match(named_place) if named_place else None
             groups.setdefault((r.incident_type, res.place_id, name_key), []).append(
-                (claim_id, reported_at, unit, source_id, r, place_precision, candidates))
+                (claim_id, reported_at, unit, source_id, r, place_precision, candidates,
+                 normalize(text)[:400]))
 
         # Split each group into time-windowed clusters; each cluster is an event.
         events = []
@@ -602,10 +654,14 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
 
         event_by_claim: dict[int, int] = {}
         for itype, place_id, name_key, cluster in events:
-            units = {m[2] for m in cluster}
-            occurred = cluster[0][1]
-            conf = _confidence(len(units))
+            units, mirrors = independent_units(cluster)
+            stats["mirrors_collapsed"] = stats.get("mirrors_collapsed", 0) + mirrors
             reading = cluster[0][4]
+            # The event's time is what the text SAID, if it said (F040);
+            # last_report_at is what the dedup window compares against (F203).
+            occurred, precision = occurred_from(cluster[0][1], reading.when)
+            last_report = max(m[1] for m in cluster)
+            conf = _confidence(len(units))
             # A STABLE IDENTITY. Event ids used to be re-minted on every
             # --rebuild (79,779-84,453 on 2026-09-24 alone), so nothing outside
             # could reference an event. The key is the grouping key plus the
@@ -645,11 +701,15 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                        AND status = 'believed'
                        AND attrs->>'classifier' = %s
                        AND COALESCE(attrs->>'name_key', '') = %s
-                       AND ABS(EXTRACT(EPOCH FROM (occurred_at - %s::timestamptz)))
-                           <= %s
+                       -- against the event's LATEST report, not its first:
+                       -- a stream at 20:00/21:00/22:00/23:00 arriving one
+                       -- tick at a time split at 90 min from 20:00 (F203)
+                       AND ABS(EXTRACT(EPOCH FROM (
+                             COALESCE((attrs->>'last_report_at')::timestamptz, occurred_at)
+                             - %s::timestamptz))) <= %s
                      ORDER BY occurred_at
                      LIMIT 1""",
-                    (itype, place_id, CLASSIFIER, name_key or "", occurred,
+                    (itype, place_id, CLASSIFIER, name_key or "", cluster[0][1],
                      DEDUP_WINDOW.total_seconds()))
                 prior = cur.fetchone()
 
@@ -674,9 +734,12 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                      WHERE event_id = %s""",
                     (prev_n + len(cluster), len(merged_units),
                      _confidence(len(merged_units)),
+                     # NEVER the stable key: the event keeps the key it was
+                     # born with, or the id a partner stored stops resolving
+                     # after one late report (audit F477).
                      json.dumps({"channels": sorted(merged_units),
                                  "merged_reports": (prev_n + len(cluster)),
-                                 "stable_key": stable_key,
+                                 "last_report_at": last_report.isoformat(),
                                  "name_key": name_key or ""},
                                 ensure_ascii=False),
                      event_id))
@@ -691,10 +754,10 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                     -- that. Claiming second precision for a report time would be
                     -- the same overreach as quoting a drive time to a station
                     -- located only to its governorate.
-                    SELECT %s, %s, p.centroid, %s, 'hour', 'believed', %s, %s, %s, %s
+                    SELECT %s, %s, p.centroid, %s, %s, 'believed', %s, %s, %s, %s
                     FROM place p WHERE p.place_id = %s
                     RETURNING event_id""",
-                    (itype, place_id, occurred, conf, len(cluster), len(units),
+                    (itype, place_id, occurred, precision, conf, len(cluster), len(units),
                      json.dumps({"classifier": CLASSIFIER,
                                  "classifier_version": CLASSIFIER_VERSION,
                                  "channels": sorted({m[2] for m in cluster}),
@@ -712,7 +775,11 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                                  "place_precision": (cluster[0][5] or "named"),
                                  "place_candidates": cluster[0][6] or [],
                                  "name_key": name_key or "",
-                                 "stable_key": stable_key},
+                                 "stable_key": stable_key,
+                                 "first_claim_id": min(m[0] for m in cluster),
+                                 "last_report_at": last_report.isoformat(),
+                                 "when_stated": reading.when,
+                                 "mirrors_collapsed": mirrors},
                                 ensure_ascii=False),
                      place_id))
                 row = cur.fetchone()
@@ -727,8 +794,10 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 event_by_claim[m[0]] = event_id
             stats["claims_linked"] += len(cluster)
 
-            # A closure is also a movement STATE and must decay like one.
-            if itype in ("closure", "siege"):
+            # A closure is also a movement STATE and must decay like one. A
+            # siege closes a road only when it is laid on a town, road or
+            # entrance — not on one family's house (F041).
+            if any(m[4].is_closure for m in cluster):
                 reassert_closure_observations(cur, event_id)
                 cur.execute(CLOSURE_OBS_SQL, {
                     "place_id": place_id, "kind": STATE_KIND_CLOSURE,
