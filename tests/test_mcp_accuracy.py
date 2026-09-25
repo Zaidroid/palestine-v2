@@ -66,3 +66,21 @@ def test_the_verdict_file_carries_counts_the_watchdog_and_a_human_can_read():
     assert isinstance(d["findings"], list)
     for f in d["findings"]:
         assert {"severity", "tool", "claim", "expected", "got"} <= set(f)
+
+
+# ── P1-C.5 (2026-09-25): the checks the black-box audit did by hand ─────────
+def test_the_nightly_audit_runs_the_new_families():
+    import inspect
+    from ops import mcp_accuracy_audit as M
+    src = inspect.getsource(M.main)
+    for fn in ("audit_english_inputs", "audit_parity", "audit_cross_tool",
+               "audit_payload_size", "audit_description_drift"):
+        assert fn in src
+    assert '"fuels"' not in inspect.getsource(M.audit_renderer_artifacts)
+
+
+def test_parity_numbers_survive_an_arabic_conjunction():
+    from ops.mcp_accuracy_audit import _numbers
+    assert _numbers("و101 حاجز، و13 خط إمداد") == {"101", "13"}
+    assert _numbers("101 have no recent reading; 13 supply lines") == {"101", "13"}
+    assert _numbers("route B2 and v1.9") == set()

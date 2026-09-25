@@ -102,9 +102,12 @@ def unmet(out: Any) -> bool:
 
 
 def record(tool: str, args: dict, ms: int, ok: bool, out: Any,
-           ip: str | None = None) -> None:
-    """Append one line. Never raises — see the module note."""
-    if os.environ.get("MCP_USAGE_EXEMPT") == "1":      # the audit's own calls (F242)
+           ip: str | None = None, exempt: bool = False) -> None:
+    """Append one line. Never raises — see the module note.
+
+    `exempt`: a LOCAL caller sent `X-Usage-Exempt: 1` (a test run, the nightly
+    audit through HTTP) — P1-C.2. Only this machine may ask not to be counted."""
+    if exempt or os.environ.get("MCP_USAGE_EXEMPT") == "1":      # the audit's own calls (F242)
         return
     try:
         line = json.dumps({
@@ -142,9 +145,26 @@ def _read(days: int) -> list[dict]:
     return rows
 
 
+_PROBE = ("../", "..\\", "/", "%2e%2e")
+
+
+def is_probe(r: dict) -> bool:
+    """A call whose arguments try paths rather than ask a question: 94 databank
+    calls with category '../../health' or 'a/b' (P1-C.2, measured 2026-09-25,
+    from several different callers). Kept in the ledger — they are real
+    traffic — and counted apart, never as demand."""
+    for k in ("category", "indicator", "section"):
+        v = (r.get("args") or {}).get(k)
+        if isinstance(v, str) and any(p in v.lower() for p in _PROBE):
+            return True
+    return False
+
+
 def summary(days: int = 7) -> dict:
     """Aggregates, with the unanswerable questions ranked first."""
     rows = _read(days)
+    probes = [r for r in rows if is_probe(r)]
+    rows = [r for r in rows if not is_probe(r)]
     if not rows:
         return {"calls": 0, "days": days,
                 "note": "no MCP calls recorded in this window"}
@@ -182,6 +202,7 @@ def summary(days: int = 7) -> dict:
     return {
         "days": days,
         "calls": len(rows),
+        "probes_set_apart": len(probes),
         "callers": len({r.get("who") for r in rows}),
         "errors": sum(1 for r in rows if not r.get("ok")),
         "unmet_calls": sum(1 for r in rows if r.get("unmet")),

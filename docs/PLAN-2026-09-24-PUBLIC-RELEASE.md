@@ -552,3 +552,15 @@ defined. (7) scout: 7 sources listed "adopted" with no dataset (ACLED, Insecurit
 HAPI, ReliefWeb) moved to `listed_never_landed`. P1-B.6: the databank cache is keyed on the last load that WROTE rows +
 a watermark that sees inserts and held events; dry runs (2,258 of 3,545 ledger records) no longer invalidate it; TTL 60 s
 → 6 h as a bound; categories warm 0.1 ms. Full suite 1243 passed + 3 by-design test updates.
+2026-09-25 23:15 UTC · P1-C operability (2, 4, 5) · done on master (audit live at tonight's 04:40 run; transport changes wait for
+the API restart) · proof: .keys/* now 600 (partner-keys.json was 664); the shared public test key is limited to 60 calls a
+minute (a key may carry `per_minute`) so one script cannot lock every tester out; a LOCAL caller may send
+`X-Usage-Exempt: 1` and is not recorded; the 94 "fixture" rows in the usage ledger were NOT fixtures — path probes
+(`../../health`, `a/b`) from several callers — so they stay in the ledger and the weekly report counts them apart
+(`probes_set_apart`), never as demand. Nightly accuracy audit: +English inputs (Huwara, Jericho, Nablus), +AR/EN number
+parity, +route-vs-checkpoint_status agreement, +payload size cap, +description drift, −the phantom `fuels` probe; and three
+of its old checks had drifted from the system (totals recounted from raw 'both' rows since 079 made the default row the
+worse direction; incident types without the fires set apart in P0-A.4) → a false CRITICAL would have paged tonight;
+fixed. Run on dev: 0 critical, 0 major, 0 minor. Tests: test_operability_p1c (4), test_mcp_accuracy (+2).
+Left in P1-C: .3 v1 budget and .6 backup key (Zaid's hands, HANDS-2026-09-24 §2/§4), .7 fresh-clone V1_ROOT (after the
+supply-lines work lands in ingest/).

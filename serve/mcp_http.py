@@ -346,7 +346,7 @@ def _tool_grades() -> dict:
 
 
 def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
-            host: bool = False) -> dict | None:
+            host: bool = False, exempt: bool = False) -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
 
     Runs on the MCP executor, so it may block.
@@ -453,7 +453,7 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
                            "answer": "صار خطأ بالنظام.",
                            "answer_en": "Something failed inside the system."}, True
         usage.record(name, args, int((time.monotonic() - started) * 1000),
-                     not failed, out, ip)
+                     not failed, out, ip, exempt=exempt)
         if not failed:
             out = add_english(target, out)
         # F-81: the licence block goes on LAST, after the tool and its English
@@ -526,6 +526,28 @@ def _presented_key(request: Request) -> str | None:
     if auth[:7].lower() == "bearer ":
         return auth[7:].strip()
     return request.headers.get("x-api-key") or request.query_params.get("key")
+
+
+# P1-C.4: the published test key is shared by everyone, so one script could
+# spend its whole day in a minute and lock every other tester out. A key may
+# carry `per_minute` in the keys file; the public key defaults to 60.
+PUBLIC_KEY_PER_MINUTE = 60
+_MINUTE: dict[str, list] = {}
+
+
+def _minute_exceeded(record: dict, n: int = 1, now: float | None = None) -> bool:
+    import time as _t
+    limit = int(record.get("per_minute") or
+                (PUBLIC_KEY_PER_MINUTE if record.get("name") == PUBLIC_KEY_NAME else 0))
+    if not limit:
+        return False
+    now = _t.monotonic() if now is None else now
+    hits = [t for t in _MINUTE.get(record["name"], []) if now - t < 60.0]
+    if len(hits) + n > limit:
+        _MINUTE[record["name"]] = hits
+        return True
+    _MINUTE[record["name"]] = hits + [now] * n
+    return False
 
 
 def _quota_exceeded(record: dict, n: int = 1) -> bool:
@@ -692,10 +714,17 @@ async def mcp_endpoint(request: Request) -> Response:
             return JSONResponse(_err(None, -32002, "daily quota for this key is "
                                      "used up; it resets at midnight UTC"),
                                 status_code=429)
+        if _minute_exceeded(record, max(1, calls)):
+            return JSONResponse(_err(None, -32003, "this key is shared and limited to "
+                                     f"{int(record.get('per_minute') or PUBLIC_KEY_PER_MINUTE)} "
+                                     "calls a minute; ask us for a key of your own"),
+                                status_code=429, headers={"Retry-After": "60"})
 
+    exempt = is_local(ip) and request.headers.get("x-usage-exempt") == "1"
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(
-        *(loop.run_in_executor(_POOL, _handle, m, ip, tier) for m in msgs)) if r is not None]
+        *(loop.run_in_executor(_POOL, _handle, m, ip, tier, False, exempt) for m in msgs))
+        if r is not None]
 
     # Nothing but notifications: the spec wants an accepted-with-no-body, and a
     # client that gets `null` back instead treats it as a malformed response.

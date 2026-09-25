@@ -96,11 +96,15 @@ def audit_checkpoints_summary() -> None:
     d = check("checkpoints_summary", {})
     if not d:
         return
-    db = {r["value"]: r["n"] for r in q("""
-        SELECT value, count(*) AS n FROM state_serving
-         WHERE state_kind = 'checkpoint_flow' AND direction = 'both' GROUP BY 1""")}
+    # checkpoint_serving, not state_serving: since 079 the default 'both' row is
+    # the WORSE of the two directions, and palhub files per direction — the old
+    # recount read raw 'both' rows only and reported a critical that was the
+    # instrument's, not the surface's (2026-09-25).
+    db = {r["flow"]: r["n"] for r in q("""
+        SELECT flow, count(*) AS n FROM checkpoint_serving
+         WHERE direction = 'both' GROUP BY 1""")}
     if d["totals"] != db:
-        finding("critical", "checkpoints_summary", "totals do not match state_serving",
+        finding("critical", "checkpoints_summary", "totals do not match checkpoint_serving",
                 db, d["totals"])
     if sum(d["totals"].values()) != d["tracked"]:
         finding("major", "checkpoints_summary", "totals do not sum to tracked",
@@ -135,11 +139,9 @@ def audit_checkpoints_near() -> None:
         if len(d["checkpoints"]) != c["returned"]:
             finding("major", "checkpoints_near", f"{place}: returned != len(checkpoints)",
                     c["returned"], len(d["checkpoints"]))
-        db_closed = q("""SELECT count(*) AS n FROM state_serving s
-                           JOIN place p USING (place_id)
-                          WHERE s.state_kind='checkpoint_flow' AND s.direction='both'
-                            AND s.value='closed'
-                            AND ST_DWithin(p.centroid, (SELECT centroid FROM place
+        db_closed = q("""SELECT count(*) AS n FROM checkpoint_serving c
+                          WHERE c.direction = 'both' AND c.flow = 'closed'
+                            AND ST_DWithin(c.centroid, (SELECT centroid FROM place
                                              WHERE place_id = %s), %s)""",
                        (d.get("origin_place_id") or _place_id(place),
                         radius * 1000))[0]["n"]
@@ -166,7 +168,11 @@ def audit_incidents_summary() -> None:
         if d["total"] != db_total:
             finding("critical", "incidents_summary", f"{hours}h total != event table",
                     db_total, d["total"])
-        by_n = sum(v.get("n", 0) for v in d["by_type"].values())
+        # Satellite fire pixels are reported apart from incidents (P0-A.4), so
+        # the types plus the fires make the total.
+        fires = d.get("fires")
+        fires_n = (fires.get("n") or fires.get("events") or 0) if isinstance(fires, dict) else int(fires or 0)
+        by_n = sum(v.get("n", 0) for v in d["by_type"].values()) + fires_n
         if by_n != d["total"]:
             finding("major", "incidents_summary", f"{hours}h by_type does not sum to total",
                     d["total"], by_n)
@@ -463,7 +469,7 @@ def audit_renderer_artifacts() -> None:
     "In the last Noneh" — as a class rather than one occurrence."""
     probes = {
         "coverage": {}, "checkpoints_summary": {}, "incidents_summary": {"hours": 24},
-        "weather_now": {}, "fuels": {}, "fuel_prices": {}, "crossings": {},
+        "weather_now": {}, "fuel_prices": {}, "crossings": {},
         "connectivity_now": {}, "data_gaps": {}, "licenses": {}, "databank": {},
         "latest_news": {"limit": 3}, "search": {"text": "حاجز", "hours": 24},
         "area_history": {"days": 7}, "insights": {"place": "نابلس", "days": 7},
@@ -488,6 +494,98 @@ def audit_renderer_artifacts() -> None:
                     if art in txt:
                         finding("major", tool, f"{field} contains {art!r}",
                                 "no rendering artifact", txt[:120])
+
+
+# ── P1-C.5: the checks the 09-24 black-box audit did by hand ─────────────────
+# English inputs, the two answers agreeing, two tools agreeing about one place,
+# payload size, and the tool descriptions agreeing with the data. Each of these
+# was a finding a partner made that this instrument then reported 0/0/0 over.
+import re as _re
+
+_NUM = _re.compile(r"(?<![A-Za-z0-9.])\d[\d,]*(?:\.\d+)?")   # Arabic 'و' may precede
+_ARABIC = _re.compile(r"[؀-ۿ]")
+PAYLOAD_CAP_BYTES = 60_000
+
+
+def _numbers(text: str) -> set[str]:
+    return {n.replace(",", "") for n in _NUM.findall(text or "")}
+
+
+def audit_english_inputs() -> None:
+    """An English speaker's first questions reach the same rows."""
+    d = check("place", {"place": "Huwara", "view": "history"})
+    if isinstance(d, dict) and d.get("found") is False:
+        finding("major", "place", "English 'Huwara' history not found",
+                "the checkpoint's history", (d.get("answer_en") or "")[:120])
+    d = check("checkpoint_status", {"name": "Huwara"})
+    if isinstance(d, dict) and not d.get("flow"):
+        finding("major", "checkpoint_status", "English 'Huwara' did not resolve",
+                "a flow", (d.get("answer_en") or "")[:120])
+    d = check("crossings", {"place": "Jericho"})
+    if isinstance(d, dict) and not any("Allenby" in (c.get("name_en") or "")
+                                       for c in d.get("crossings") or []):
+        finding("major", "crossings", "'Jericho' does not reach the Allenby bridge",
+                "King Hussein / Allenby Bridge", [c.get("name_en") for c in d.get("crossings") or []])
+    d = check("checkpoints", {"place": "Nablus"})
+    if isinstance(d, dict) and _ARABIC.search((d.get("answer_en") or "").split(":")[0]):
+        finding("minor", "checkpoints", "English answer names the origin in Arabic",
+                "Nablus", (d.get("answer_en") or "")[:80])
+
+
+def audit_parity() -> None:
+    """The two answers over one payload name the same numbers (tools whose
+    sentences are built from the same fields; ages are excluded as they are
+    phrased differently)."""
+    for tool, args in (("fuel_prices", {}), ("checkpoints", {}), ("crossings", {}),
+                       ("databank", {}), ("about", {})):
+        d = check(tool, args)
+        if not isinstance(d, dict) or not d.get("answer_en"):
+            continue
+        ar, en = _numbers(d.get("answer", "")), _numbers(d["answer_en"])
+        only_ar, only_en = sorted(ar - en)[:6], sorted(en - ar)[:6]
+        if only_ar or only_en:
+            finding("minor", tool, "Arabic and English carry different numbers",
+                    "the same set", f"only AR {only_ar}; only EN {only_en}")
+
+
+def audit_cross_tool() -> None:
+    """A checkpoint on a route reads the same in the route and in
+    checkpoint_status (the audit's route-vs-status disagreements)."""
+    d = check("can_i_travel", {"origin": "رام الله", "destination": "نابلس"})
+    if not isinstance(d, dict):
+        return
+    for c in [c for c in d.get("checkpoints") or [] if c.get("flow") not in (None, "unknown")][:4]:
+        s = check("checkpoint_status", {"name": c["name"]})
+        if not isinstance(s, dict) or s.get("flow") in (None, "unknown"):
+            continue
+        by = s.get("by_direction") or {}
+        flows = {s.get("flow")} | {(v or {}).get("flow") for v in by.values()}
+        if c["flow"] not in flows:
+            finding("major", "can_i_travel", f"route says {c['name']} is {c['flow']}",
+                    f"checkpoint_status flows {sorted(f for f in flows if f)}", c["flow"])
+
+
+def audit_payload_size() -> None:
+    for tool, args in (("about", {}), ("checkpoints", {}), ("databank", {"category": "food"}),
+                       ("series", {"indicators": "food.price.bread", "place": "الخليل"}),
+                       ("insights", {"place": "رام الله"}), ("licence", {})):
+        d = check(tool, args)
+        if isinstance(d, dict):
+            n = len(json.dumps(d, ensure_ascii=False).encode())
+            if n > PAYLOAD_CAP_BYTES:
+                finding("minor", tool, "payload larger than the cap",
+                        f"<= {PAYLOAD_CAP_BYTES:,} bytes", f"{n:,} bytes")
+
+
+def audit_description_drift() -> None:
+    """A number written in a tool description matches the data it describes."""
+    from serve.mcp_facades import listed_tools
+    held = q("SELECT count(DISTINCT v1_category) AS n FROM databank_serving")[0]["n"]
+    for t in listed_tools():
+        for m in _re.finditer(r"(\d+) categories", t["description"] or ""):
+            if int(m.group(1)) != held:
+                finding("minor", t["name"], "description's category count drifted",
+                        held, int(m.group(1)))
 
 
 ALERT_UNIT = "palestine-v2:mcp-audit"
@@ -523,7 +621,9 @@ def main() -> int:
     for fn in (audit_serving_invariants, audit_checkpoints_summary, audit_checkpoints_near,
                audit_incidents_summary, audit_insights, audit_fuel_prices, audit_coverage,
                audit_crossings, audit_databank, audit_area_history,
-               audit_answer_vs_payload, audit_edges, audit_renderer_artifacts):
+               audit_answer_vs_payload, audit_edges, audit_renderer_artifacts,
+               audit_english_inputs, audit_parity, audit_cross_tool, audit_payload_size,
+               audit_description_drift):
         print(f"  {fn.__name__} ...")
         try:
             fn()
