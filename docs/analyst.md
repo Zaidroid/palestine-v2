@@ -23,6 +23,8 @@ claim it actually read, advance the watermark, commit, beat.
 
     .venv/bin/python -m analyst.loop                  # the service
     .venv/bin/python -m analyst.loop --once --json    # one tick, readable
+    .venv/bin/python -m analyst.loop --dry-run --organ moh --batches 80 --show -1
+                                                      # read-only; writes nothing
     .venv/bin/python -m analyst.backfill_lang --dry-run
 
 | file | what it is |
@@ -126,6 +128,27 @@ per §2 and §5 of the design:
 `LanguageOrgan` sets `votes`, `agreed` and `json_valid` to **None**, not False:
 a deterministic organ has nothing to vote on, and `False` would report perfect
 disagreement on every row it touches — a number §5's gate would then read.
+
+## Organ C in the loop (P2-A.1, 2026-09-25)
+
+`moh` (`analyst/organs.py: MoHBulletinOrgan`, version `c/2+series/1`) is the
+second registered organ, deterministic and **pure**: it writes provenance and
+nothing else. `ingest/sources/moh_gaza.py` stays the one writer of the
+`gaza_moh_daily` series; organ C re-reads every 2026 bulletin with its own
+reader (`analyst/organ_c.py`) and records, per bulletin, whether the series
+holds what the bulletin states: `agree` · `series-gap` · `disagree` ·
+`not-in-series` · `refused` (with the field-by-field states in `raw.fields`).
+Its cursor trails ingestion by two ingest cycles (`settle_seconds`), it reads
+2,000 claims a tick, and its summary (newest bulletin's verdict, last 30 days'
+tally) rides in the heartbeat detail under `organs.moh`.
+
+Measured by the read-only dry run on 2026-09-25 (all 113,172 claims, 51 s):
+203 bulletins, 0 errors — agree 103, series-gap 98, disagree 1 (04-25: a
+48-hour injury count filed as the day's), refused 1 (06-07: the 1,730,128 the
+series holds). The daily rows are missing on every bulletin since 2026-08-10:
+the ingest's parser does not read the value-first 24 h lines. Resuming them is
+a change to the writer, gated on the gold contract (`ops/gold_contract.py`).
+Organ C joins the running service at its next restart (Zaid's hand).
 
 ## v1's MiniMax
 

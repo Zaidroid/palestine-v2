@@ -419,12 +419,14 @@ def test_the_analyst_is_on_the_board_the_pollers_are_on():
     assert loop.HEARTBEAT == "analyst"
 
 
-def test_only_organ_a_is_registered_in_p0():
-    """B–G are designed, not built. A registry that quietly grew an unmeasured
-    organ would put a model's guesses into the record with no gold set behind
-    them (§5)."""
+def test_only_deterministic_organs_are_registered():
+    """A (language) and, since P2-A.1, C (the MoH bulletin as a control). B and
+    D–G are designed, not built. A registry that quietly grew an unmeasured
+    model organ would put a model's guesses into the record with no gold set
+    behind them (§5) — so no registered organ may need the PC."""
     from analyst.organs import ORGANS
-    assert [o.name for o in ORGANS] == ["lang"]
+    assert [o.name for o in ORGANS] == ["lang", "moh"]
+    assert all(o.needs_model is False for o in ORGANS)
     assert by_name("lang").needs_model is False
     with pytest.raises(KeyError):
         by_name("nope")
