@@ -40,6 +40,13 @@
 > read-mostly DB role, an explicit `--allowedTools` list, and a static `palestine-v2-maintain-retry@.timer` instead of
 > the sudo rule — decide whether the weekly maintainer is worth that, or retire it.
 >
+> **Area 09 ingest landed (`95a4b6f`):** the poller changes (session lock, no media, DB-first, exit 2) are in the tree and
+> reach the running poller at its next restart: `sudo systemctl restart palestine-v2-poller` (bundle with the API
+> restart). The classifier's forwarded-message unit applies to new claims at the next tick. **Two decisions:**
+> INGEST-05 — key channels by numeric Telegram id (a rename today silently darkens a channel; the fix is a migration
+> adding the id to `source` and cursors keyed on it — say go and I write it); INGEST-07 — track edits/deletions,
+> which costs extra get_messages calls per cycle on the scarce account (say how many per cycle you accept, or no).
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

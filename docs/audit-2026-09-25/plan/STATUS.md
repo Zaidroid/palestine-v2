@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 112 done · 6 partial · 42 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 118 done · 6 partial · 36 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -188,21 +188,21 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 09 · Telegram poller and ingestion framework (the scarce account) — `09-ingest.md`
 
-3 done · 0 partial · 8 open of 11 confirmed; 1 of 22 verify-first done.
+9 done · 0 partial · 2 open of 11 confirmed; 1 of 22 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
 | INGEST-01 | F007 | critical | **done** | `f5fd58d` | The v1 import cursor is MAX(observed_at) of a kind the crowd also writes with now(), and v1 row |
-| INGEST-02 | F213 | medium | **open** |  | Hard rule 4 (one Telethon client per session file) is enforced by nothing: discovery, --status  |
-| INGEST-03 | F217 | medium | **open** |  | The poller still downloads every @palhubappfuel photo (hundreds to ~1,000 GetFile requests and  |
+| INGEST-02 | F213 | medium | **done** | `95a4b6f` | Hard rule 4 (one Telethon client per session file) is enforced by nothing: discovery, --status  |
+| INGEST-03 | F217 | medium | **done** | `95a4b6f` | The poller still downloads every @palhubappfuel photo (hundreds to ~1,000 GetFile requests and  |
 | INGEST-04 | F218 | medium | **done** | `3d77f79` | Cursor state file is written non-atomically and only on cycles that stored something; a truncat |
 | INGEST-05 | F219 | medium | **open** |  | Source identity and the poll cursor are keyed on the mutable Telegram username, not the channel |
-| INGEST-06 | F221 | medium | **open** |  | Forwarded messages are recorded (attrs.fwd_from) but never used: a report forwarded through N n |
+| INGEST-06 | F221 | medium | **done** | `95a4b6f` | Forwarded messages are recorded (attrs.fwd_from) but never used: a report forwarded through N n |
 | INGEST-07 | F222 | medium | **open** |  | Message edits and deletions are invisible: a corrected or retracted report keeps feeding events |
-| INGEST-08 | F223 | medium | **open** |  | The exit-2 'deauthorised, do not restart' path is dead: startup deauth returns 1, and the mid-r |
-| INGEST-09 | F225 | medium | **open** |  | A database outage is treated as a channel failure: Telegram is polled and media downloaded ever |
+| INGEST-08 | F223 | medium | **done** | `95a4b6f` | The exit-2 'deauthorised, do not restart' path is dead: startup deauth returns 1, and the mid-r |
+| INGEST-09 | F225 | medium | **done** | `95a4b6f` | A database outage is treated as a channel failure: Telegram is polled and media downloaded ever |
 | INGEST-10 | F226 | medium | **done** | `3d77f79` | A poller with zero resolved channels beats a healthy heartbeat forever; a channel that fails to |
-| INGEST-11 | F438 | low | **open** |  | Fuel-station locality anchor is resolved with no kind preference and an existing station is ret |
+| INGEST-11 | F438 | low | **done** | `95a4b6f` | Fuel-station locality anchor is resolved with no kind preference and an existing station is ret |
 | INGEST-V13 | F224 | medium | **done** | `3d77f79` | get_entity FloodWait at startup is swallowed and the loop keeps resolving the remaining channel |
 
 ### 10 · External feed parsers (fuel prices, MoH Gaza, power, weather, connectivity, fires) — `10-feeds.md`

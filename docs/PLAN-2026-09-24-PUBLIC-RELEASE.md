@@ -402,3 +402,7 @@ tests/test_ops_11b.py 12; `ops.watchdog --dry-run` from the worktree reads every
 (the route test widened for the F011 exit-closure sentence). Zaid: install the three changed units + the valhalla-ip
 drop-in (block in HANDS-NEEDED). Tally 112 done · 6 partial · 42 open. Next: 09 ingest (8), 10 feeds (7), 12 databank (5),
 13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.
+2026-09-25 14:05 UTC · audit 09-ingest · done 6 of 8 left (F213 F217 F221 F223 F225 F438; INGEST-05 id-keying and
+INGEST-07 edits = Zaid's decisions) · proof: `95a4b6f`; tests/test_ingest_09b.py 6; full suite 1144 passed / 0 failed. The
+running poller picks the changes up at Zaid's next restart. Tally 118 done · 6 partial · 36 open. Next: 10 feeds (7),
+12 databank (5), 13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.
