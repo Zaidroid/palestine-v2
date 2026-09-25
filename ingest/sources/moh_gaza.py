@@ -87,9 +87,22 @@ def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, clai
     return 1
 
 
-def load(dry_run: bool = False) -> dict:
+# One writer at a time: the hourly timer and a hand re-read must never both
+# find a day missing and insert it twice (2026-09-25).
+LOCK_KEY = 0x6D6F6867   # 'mohg'
+
+
+def load(dry_run: bool = False, reread_since: str | None = None) -> dict:
+    """`reread_since` (YYYY-MM-DD) re-reads every bulletin from that day,
+    ignoring the read-once cursor — the way a parser fix reaches claims the
+    cursor has already passed (the number-first daily lines, 2026-08-10 on).
+    Safe to repeat: the same value is nothing, a different one supersedes."""
     st = {"claims": 0, "reports": 0, "rows": 0, "no_place": 0}
     with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT pg_try_advisory_xact_lock(%s)", (LOCK_KEY,))
+        if not cur.fetchone()[0]:
+            st["locked"] = 1
+            return st
         did, sid = _dataset(cur)
         place_id = _gaza_place(cur)
         if place_id is None:
@@ -103,11 +116,18 @@ def load(dry_run: bool = False) -> dict:
         cur.execute("""SELECT COALESCE(max((attrs->>'claim_id')::bigint), 0)
                          FROM observation WHERE dataset_id = %s AND attrs ? 'claim_id'""", (did,))
         since = cur.fetchone()[0]
-        cur.execute("""
-            SELECT cl.claim_id, cl.raw_text, cl.reported_at
-              FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
-               AND cl.claim_id > %s
-             ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", since))
+        if reread_since:
+            cur.execute("""
+                SELECT cl.claim_id, cl.raw_text, cl.reported_at
+                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
+                   AND cl.reported_at >= %s::date
+                 ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", reread_since))
+        else:
+            cur.execute("""
+                SELECT cl.claim_id, cl.raw_text, cl.reported_at
+                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
+                   AND cl.claim_id > %s
+                 ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", since))
         for claim_id, text, reported_at in cur.fetchall():
             st["claims"] += 1
             rep = parse(text)
@@ -132,13 +152,18 @@ def load(dry_run: bool = False) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--reread-since", metavar="YYYY-MM-DD",
+                    help="re-read every bulletin from that day (after a parser fix)")
     a = ap.parse_args()
-    s = load(a.dry_run)
+    s = load(a.dry_run, a.reread_since)
+    if s.get("locked"):
+        print("  another Gaza ingest holds the lock — nothing done")
+        return 0
     if s["no_place"]:
         print("  no Gaza region place found — cannot attribute the totals")
         return 1
-    for k in ("claims", "reports", "rows"):
-        print(f"  {k:12}{s[k]:>8,}")
+    for k in ("claims", "reports", "rows", "unchanged", "revised"):
+        print(f"  {k:12}{s.get(k, 0):>8,}")
     return 0
 
 

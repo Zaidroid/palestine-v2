@@ -70,7 +70,25 @@ SECTIONS = (
     ("daily", re.compile(r"خلال\s+ال.?\s*24\s*ساع[ةه]|الساعات\s+ال.?\s*24")),
 )
 
-_HEADER_SHAPE = re.compile(r"^\s*[🔴⭕🔻▪️◾️]+\s*\S")
+# A marker followed by a NUMBER or a dash is a data line, not a header: since
+# 2026-08-10 the 24-hour block is written "▪️ 6 إصابات" / "- 5 شهداء", and the
+# bullet made every such line look like a header (the daily series stopped on
+# 08-09; found by organ C's control run, 2026-09-25).
+# `(?![markers])` stops the regex backtracking INTO the marker run: ▪️ is two
+# code points (U+25AA + U+FE0F), and giving back the variation selector let it
+# pose as the header's first character.
+_HEADER_SHAPE = re.compile(r"^\s*[🔴⭕🔻▪️◾️]+(?![🔴⭕🔻▪️◾️])\s*(?![\d\-–])\S")
+
+# NUMBER-FIRST, the 24-hour block's shape since 2026-08-10 ("5 شهداء، بينهم
+# شهيد متأثر بجراحه." / "- 18 إصابة"). Anchored at the start of the line (after
+# a bullet or dash) and used ONLY in the daily tier, so a number inside a
+# sentence, or a total in another tier, is never taken for the day's count.
+DAILY_NUMBER_FIRST = (
+    # …or right after "و" at a clause boundary: January–April 2026 wrote both
+    # counts on one line ("• 2 شهداء (…) و 1 إصابة.").
+    ("deaths",   re.compile(r"(?:^[\s\-–•*▪️◾️]*|\sو\s?)(\d+)\s+(?:شهداء|شهيد[اًا]?|شهيدًا)(?:\s|،|\.|\(|$)")),
+    ("injuries", re.compile(r"(?:^[\s\-–•*▪️◾️]*|\sو\s?)(\d+)\s+(?:إصابات|إصابة|اصابات|اصابة|جرحى|جريح)(?:\s|،|\.|\(|$)")),
+)
 
 MEASURES = (
     ("deaths",     re.compile(r"(?:العدد\s+التراكمي\s+ل|إجمالي\s+عدد\s+ال|عدد\s+ال)?شهداء\s*:?\s*([\d]+)")),
@@ -146,7 +164,10 @@ def parse(text: str) -> MohReport:
         if current is None:
             continue
 
-        for measure, pat in MEASURES:
+        pats = list(MEASURES)
+        if current == "daily":
+            pats += list(DAILY_NUMBER_FIRST)
+        for measure, pat in pats:
             m = pat.search(line)
             if not m:
                 continue
