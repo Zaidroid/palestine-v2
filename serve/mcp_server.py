@@ -1111,8 +1111,10 @@ def correlate(a: str | None = None, b: str | None = None,
     than handing an agent a number it will quote.
     """
     if a and b:
+        # The route refuses more than a year of lags (audit F077); clamped here
+        # so an agent's large guess scans a year instead of failing the call.
         d = api("/v2/databank/correlate", a=a, b=b, place_id=place_id,
-                max_lag=max_lag,
+                max_lag=max(0, min(int(max_lag or 0), 366)),
                 allow_same_concept="true" if allow_same_concept else "false")
         if d.get("refused"):
             return {"answer": "لا يمكن حساب الارتباط: " + " ".join(
@@ -1689,7 +1691,7 @@ TOOLS = {
                       "search": {"type": "string",
                                  "description": "substring of an indicator"},
                       "place_id": {"type": "integer"},
-                      "max_lag": {"type": "integer",
+                      "max_lag": {"type": "integer", "minimum": 0, "maximum": 366,
                                   "description": "days to scan for a lagged "
                                                  "fit; adds a caveat"},
                       "allow_same_concept": {"type": "boolean"}}}),

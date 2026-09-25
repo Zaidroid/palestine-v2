@@ -942,7 +942,11 @@ def news_latest(request: Request, area: str | None = None,
     message that happens to be written in English — and it finds it, however old
     it is, which reads as a quiet area rather than a missed filter.
     """
-    where = ["length(c.raw_text) > 30"]
+    # Channel and feed text only. A crowd report is an anonymous POST: its note
+    # was served as the newest "news" and quoted into the spoken answer, which
+    # is a stranger writing into what an agent reads aloud (audit F075/F079).
+    where = ["length(c.raw_text) > 30", "s.kind <> 'crowd'",
+             "c.claim_type IS DISTINCT FROM 'crowd_report'"]
     params: list = []
     if area:
         names = {area}
@@ -1135,7 +1139,8 @@ def crowd_report(
     place: str = Query(..., description="place name, Arabic or English"),
     value: str = Query(..., description="must be in that field's vocabulary"),
     direction: str = Query("both", description="both | inbound | outbound"),
-    note: str = Query("", description="optional free text, kept, never parsed"),
+    note: str = Query("", max_length=280,
+                      description="optional free text, kept, never parsed"),
 ) -> dict:
     """Submit one report. Every field goes through here.
 
@@ -1397,7 +1402,9 @@ def insights(
     """
     if place:
         from resolve.geo import resolve_place
-        r = resolve_place(place)
+        # A read path never teaches the gazetteer: learning here wrote every
+        # caller's phrase into place_alias, permanently (audit F076/F081/F085).
+        r = resolve_place(place, learn=False)
         if not r:
             raise HTTPException(404, f"place {place!r} did not resolve")
         row = q("SELECT ST_Y(centroid::geometry) AS la, ST_X(centroid::geometry) AS lo "
@@ -2481,7 +2488,9 @@ def databank_compare(indicators: str, place_id: int | None = None,
 @app.get("/v2/databank/correlate", tags=["databank"])
 def databank_correlate(a: str, b: str, place_id: int | None = None,
                        frm: str | None = None, to: str | None = None,
-                       method: str = "spearman", max_lag: int = 0,
+                       method: str = "spearman",
+                       max_lag: int = Query(0, ge=0, le=366,
+                                            description="days to scan for a lagged fit"),
                        allow_same_concept: bool = False) -> dict:
     """Whether two series move together — or an explanation of why asking is
     the wrong question.

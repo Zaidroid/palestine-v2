@@ -257,8 +257,9 @@ FACADES: dict[str, dict[str, Any]] = {
             "place_id": {"type": "integer", "description": "pair mode: restrict to one place"},
             "candidates": {"type": "integer", "default": 40,
                            "description": "scan mode: how many series to consider"},
-            "max_lag": {"type": "integer",
-                        "description": "pair mode: days to scan for a lagged fit; adds a caveat"},
+            "max_lag": {"type": "integer", "minimum": 0, "maximum": 366,
+                        "description": "pair mode: days to scan for a lagged fit "
+                                       "(at most 366); adds a caveat"},
             "allow_same_concept": {"type": "boolean", "default": False,
                                    "description": "also test series of the same concept"}}},
         "route": _r_correlate},

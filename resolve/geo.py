@@ -519,8 +519,13 @@ NAME_SQL = ("SELECT place_id, name_ar, name_en FROM place "
 # historical joins, never live capture.
 
 
-def resolve_for_state_kind(conn, place: str, state_kind: str):
-    """Resolve a place phrase to the row this field's data actually lives on."""
+def resolve_for_state_kind(conn, place: str, state_kind: str, *, learn: bool = False):
+    """Resolve a place phrase to the row this field's data actually lives on.
+
+    Never learns by default: its callers are an anonymous crowd report, the
+    public /v2/geo/resolve and a feed loader, and the fallthrough below used to
+    write whatever phrase they carried into place_alias (audit F076).
+    """
     want = _prefer_place_kinds(conn).get(state_kind)
     if want:
         from resolve.arabic import fold_for_match, normalize
@@ -559,4 +564,4 @@ def resolve_for_state_kind(conn, place: str, state_kind: str):
             raise _Ambiguous([(pid, ar or en) for pid, ar, en in hits])
 
     return resolve_place(place, {"prefer_kind": want} if want else None,
-                         conn=conn)
+                         conn=conn, learn=learn)
