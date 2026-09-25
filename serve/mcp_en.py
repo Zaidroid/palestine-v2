@@ -724,6 +724,57 @@ def data_gaps(d: dict) -> str:
             f"{c.get('dead_upstream')} whose upstream has died.")
 
 
+_EVENT_EN = {"conflict.deaths.state_based": "state-based conflict events (UCDP)",
+             "conflict.deaths.one_sided": "one-sided violence events (UCDP)",
+             "conflict.deaths.non_state": "non-state conflict events (UCDP)",
+             "conflict.journalists_killed": "journalists killed (Tech4Palestine; the source gives no dates)"}
+
+
+def _displacement_en(d: dict) -> str | None:
+    summ = next((s for s in d.get("event_summary") or []
+                 if s["indicator"] == "displacement.locality_depopulated"), None)
+    if not summ:
+        return None
+    by = d.get("by") or {}
+    grp = ", ".join(f"{n['localities']} {n['name'] or 'unclassified'}"
+                    for n in by.get("locality_group") or [])
+    y0, y1 = str(summ["first"])[:4], str(summ["last"])[:4]
+    out = (f"Depopulation record (Palestine Open Maps): {summ['events']:,} localities depopulated "
+           + (f"in {y0}" if y0 == y1 else f"between {y0} and {y1}")
+           + (f" in the {d.get('district_1945_key') or d['district']} district/subdistrict"
+              if d.get("district") else "")
+           + (f" — {grp}." if grp else "."))
+    if not d.get("district"):
+        dists = [s for s in by.get("district_1945") or [] if s["name"]]
+        subs = [s for s in by.get("subdistrict_1945") or [] if s["name"]][:6]
+        out += " By 1945 district: " + ", ".join(f"{s['name']} {s['localities']}" for s in dists) + "."
+        if subs:
+            out += (" By subdistrict (where known): "
+                    + ", ".join(f"{s['name']} {s['localities']}" for s in subs) + ".")
+    else:
+        names: list[str] = []
+        for it in d.get("items") or []:
+            n = it.get("value_text") or it.get("place_en")
+            if n and n not in names:
+                names.append(n)
+        if names:
+            out += " Among them: " + ", ".join(names[:12]) + "."
+    return out + (" The figure with each locality is its 1945 population (all residents), "
+                  "not a refugee count — it does not add up.")
+
+
+def _event_note_en(d: dict) -> str:
+    bits = []
+    for s in d.get("event_summary") or []:
+        if s["indicator"].startswith("displacement."):
+            continue
+        span = "" if s.get("undated") else f" {str(s['first'])[:4]}–{str(s['last'])[:4]}"
+        deaths = (f", {int(s['value_sum']):,} deaths" if s.get("value_sum") is not None
+                  and not s["indicator"].endswith("journalists_killed") else "")
+        bits.append(f"{s['events']:,} {_EVENT_EN.get(s['indicator'], s['indicator'])}{span}{deaths}")
+    return (" Registers of single events: " + "; ".join(bits) + ".") if bits else ""
+
+
 def databank(d: dict) -> str:
     if d.get("categories"):
         top = sorted(d["categories"].items(), key=lambda kv: -kv[1])[:6]
@@ -738,6 +789,10 @@ def databank(d: dict) -> str:
         return out
     if d.get("category") is None and d.get("indicator"):
         return f"No rows held for an indicator called {d['indicator']} — search for it with correlate."
+    if d.get("category") == "displacement":
+        said = _displacement_en(d)
+        if said:
+            return said
 
     # The same facts as the Arabic: latest value per indicator, the series'
     # span, the source — not a row count (F062).
@@ -763,7 +818,7 @@ def databank(d: dict) -> str:
                 + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
     return (f"{d.get('category')}" + (f" as of {d['as_of']}" if d.get("as_of") else "")
             + " — latest: " + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
-            + f" (newest {d.get('count', 0)} rows shown.)")
+            + f" (newest {d.get('count', 0)} rows shown.)" + _event_note_en(d))
 
 
 def insights(d: dict) -> str:

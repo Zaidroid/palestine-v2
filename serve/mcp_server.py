@@ -1761,8 +1761,73 @@ def licence_tools() -> dict:
                       "cut is on carrying it away."}
 
 
+_GROUP_AR = {"Palestinian": "فلسطيني", "Mixed": "مختلط", "Jewish": "يهودي"}
+_DIST_AR = {"Galilee": "الجليل", "Gaza": "غزة", "Lydda": "اللد", "Jerusalem": "القدس",
+            "Haifa": "حيفا", "Samaria": "السامرة", "Beersheba": "بئر السبع", "Safad": "صفد",
+            "Ramle": "الرملة", "Jaffa": "يافا", "Acre": "عكا", "Tiberias": "طبريا",
+            "Beisan": "بيسان", "Tulkarem": "طولكرم", "Hebron": "الخليل", "Nazareth": "الناصرة",
+            "Jenin": "جنين"}
+_EVENT_AR = {"conflict.deaths.state_based": "حدث نزاع بين دولة وطرف مسلّح (UCDP)",
+             "conflict.deaths.one_sided": "حدث عنف من طرف واحد (UCDP)",
+             "conflict.deaths.non_state": "حدث نزاع بين أطراف غير حكومية (UCDP)",
+             "conflict.journalists_killed": "صحفي استشهد (Tech4Palestine، بلا تواريخ بالمصدر)",
+             "displacement.locality_depopulated": "تجمّع مهجّر (Palestine Open Maps)"}
+
+
+def _displacement_answer_ar(d: dict, district: str | None) -> str | None:
+    """The depopulation register, said as a register: how many, where, what
+    kind — never 'the newest ten rows', and never the populations summed."""
+    summ = next((s for s in d.get("event_summary") or []
+                 if s["indicator"] == "displacement.locality_depopulated"), None)
+    if not summ:
+        return None
+    by = d.get("by") or {}
+    grp = "، ".join(f"{n['localities']} {_GROUP_AR.get(n['name'], 'غير مصنّف')}"
+                    for n in by.get("locality_group") or [])
+    y0, y1 = str(summ["first"])[:4], str(summ["last"])[:4]
+    head = (f"سجل التهجير (Palestine Open Maps): {summ['events']:,} تجمّع هُجّر "
+            + (f"سنة {y0}" if y0 == y1 else f"بين {y0} و{y1}"))
+    if district:
+        key = d.get("district_1945_key") or district
+        head += f" بقضاء/لواء {_DIST_AR.get(key, district)}"
+    out = head + (f" — {grp}." if grp else ".")
+    if not district:
+        subs = [s for s in by.get("subdistrict_1945") or [] if s["name"]][:6]
+        dists = [s for s in by.get("district_1945") or [] if s["name"]]
+        out += (" حسب لواء 1945: " + "، ".join(f"{_DIST_AR.get(s['name'], s['name'])} {s['localities']}"
+                                                for s in dists) + ".")
+        if subs:
+            out += (" وحسب القضاء (للمعروف قضاؤه): " + "، ".join(
+                f"{_DIST_AR.get(s['name'], s['name'])} {s['localities']}" for s in subs) + ".")
+    else:
+        names: list[str] = []
+        for it in d.get("items") or []:
+            n = (it.get("attrs") or {}).get("name_ar") or it.get("value_text")
+            if n and n not in names:
+                names.append(n)
+        if names:
+            out += " منها: " + "، ".join(names[:12]) + "."
+    return out + (" الرقم مع كل تجمّع هو عدد سكانه سنة 1945 (كل السكان)، مش عدد اللاجئين — "
+                  "ما بينجمع.")
+
+
+def _event_note_ar(d: dict) -> str:
+    """Registers of single events inside a category (UCDP, journalists)."""
+    bits = []
+    for s in d.get("event_summary") or []:
+        if s["indicator"].startswith("displacement."):
+            continue
+        what = _EVENT_AR.get(s["indicator"], s["indicator"])
+        span = ("" if s.get("undated") else f" {str(s['first'])[:4]}–{str(s['last'])[:4]}")
+        deaths = (f"، مجموع القتلى {int(s['value_sum']):,}" if s.get("value_sum") is not None
+                  and not s["indicator"].endswith("journalists_killed") else "")
+        bits.append(f"{s['events']:,} {what}{span}{deaths}")
+    return (" وسجلات أحداث مفردة: " + "؛ ".join(bits) + ".") if bits else ""
+
+
 def databank(category: str | None = None, indicator: str | None = None,
-             as_of: str | None = None, limit: int = 10) -> dict:
+             as_of: str | None = None, limit: int = 10,
+             district: str | None = None) -> dict:
     """The historical databank: 200,000+ observations across 20 categories
     (prisoners, demolitions, food prices, funding, the martyrs roster…),
     each row carrying its source's license and attribution. `as_of`
@@ -1771,6 +1836,8 @@ def databank(category: str | None = None, indicator: str | None = None,
     # (Fawwaz's test: {indicator: "prisoners.child"}). The category is looked
     # up from the indicator; `as_of` alone is said to need a category.
     ignored: dict[str, str] = {}
+    if district and not category:
+        category = "displacement"          # only the depopulation record is filed by district
     if not category and indicator:
         where = api("/v2/databank/where", indicator=indicator).get("categories") or []
         if where:
@@ -1811,8 +1878,12 @@ def databank(category: str | None = None, indicator: str | None = None,
                 "error": "category must be a name from /v2/databank/categories",
                 "count": 0, "items": []}
     d = api(f"/v2/databank/{category}", indicator=indicator,
-            as_of=as_of, limit=limit)
+            as_of=as_of, limit=max(limit, 12) if district else limit, district=district)
     when = f" كما كانت بتاريخ {as_of}" if as_of else ""
+    if category == "displacement":
+        said = _displacement_answer_ar(d, district)
+        if said:
+            return {"answer": said, **d}
     items = d.get("items") or []
     if not items:
         return {"answer": f"لا سجلات مطابقة في {category}{when}.", **d}
@@ -1857,6 +1928,7 @@ def databank(category: str | None = None, indicator: str | None = None,
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
               + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
+    answer += _event_note_ar(d)
     return {"answer": answer, "latest_by_indicator": list(newest.values())[:3],
             "series_span": series_span, **d}
 
@@ -2120,7 +2192,8 @@ TOOLS = {
                   "is missing/stale?' and before trusting a quiet series.",
                   {"type": "object", "properties": {}}),
     "databank": (databank,
-                 "Historical databank (200k+ rows, 20 categories: prisoners, "
+                 "Historical databank (200k+ rows, 21 categories: the 1948 depopulated "
+                 "localities (displacement, filter by 1945 `district`), UCDP conflict events, prisoners, "
                  "demolitions, food prices, funding, martyrs roster…) with "
                  "per-source licensing. No `category` lists what exists; "
                  "`as_of` (YYYY-MM-DD) reconstructs a past day's answer.",
@@ -2131,6 +2204,9 @@ TOOLS = {
                                    "description": "prefix filter, e.g. prisoners.child"},
                      "as_of": {"type": "string",
                                "description": "YYYY-MM-DD — answer as of that day"},
+                     "district": {"type": "string",
+                                  "description": "displacement: a 1945 district or subdistrict, "
+                                                 "e.g. Ramle / الرملة (implies category=displacement)"},
                      "limit": {"type": "integer", "default": 10,
                                "description": "rows to return (1–2000)"}}}),
     "can_i_travel": (can_i_travel,

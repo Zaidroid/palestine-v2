@@ -3015,7 +3015,11 @@ def _skip_reason(reason: str) -> str:
 @app.get("/v2/databank/{category}", tags=["databank"])
 def databank_category(category: str, indicator: str | None = None,
                       as_of: str | None = None, memorial: bool = False,
-                      limit: int = Query(200, ge=1, le=2000)) -> dict:
+                      limit: int = Query(200, ge=1, le=2000),
+                      district: str | None = Query(
+                          None, max_length=60,
+                          description="displacement: a 1945 district or subdistrict, "
+                                      "Arabic or English (e.g. Ramle, الرملة)")) -> dict:
     """Rows from one category. `as_of=YYYY-MM-DD` reconstructs what v1's
     archive served on that day (validity-tracked; superseded values appear
     at their own time and never at the present)."""
@@ -3049,42 +3053,116 @@ def databank_category(category: str, indicator: str | None = None,
         # full GHO identity — inside v1_health_who. One fact, served once,
         # reachable from both the water and health categories; indicator
         # names keep their home namespace so provenance stays visible.
-        conds, params = ["(d.v1_category = 'water' OR o.indicator LIKE %s)"], \
+        conds, params = ["(r.v1_category = 'water' OR r.indicator LIKE %s)"], \
             ["health.wsh%"]
     else:
-        conds, params = ["d.v1_category = %s"], [category]
+        conds, params = ["r.v1_category = %s"], [category]
     if indicator:
-        conds.append("o.indicator LIKE %s")
+        conds.append("r.indicator LIKE %s")
         params.append(indicator + "%")
+    dist = _district_1945(district) if district else None
+    if district:
+        # The depopulation record is filed by the Mandate's 1945 geography: six
+        # districts, and subdistricts (qada') where the gazetteer knows them.
+        conds.append("(r.attrs->>'district_1945' ILIKE %s OR r.attrs->>'subdistrict_1945' ILIKE %s)")
+        params += [dist, dist]
     if as_of:
-        conds.append("o.sys_period @> %s::date::timestamptz")
+        conds.append("r.sys_period @> %s::date::timestamptz")
     else:
-        conds.append("upper_inf(o.sys_period)")
-    sql = f"""
-        SELECT o.indicator, o.occurred_at, o.occurred_precision::text,
-               o.value_num, o.value_text, o.unit, o.attrs,
-               p.name_en AS place_en, p.name_ar AS place_ar,
-               s.key AS source_key, d.key AS dataset_key,
+        conds.append("upper_inf(r.sys_period)")
+    # The held conflict events (083) are served beside the observations. Their
+    # rows are current versions only, so an `as_of` before the day they entered
+    # the databank correctly finds none of them.
+    events = _event_rows_served()
+    event_branch = """
+        UNION ALL
+        SELECT e.indicator, e.occurred_at, e.occurred_precision::text, e.value_num,
+               e.value_text, e.unit, e.attrs, e.place_id, e.sys_period, e.v1_category,
+               e.source_key, e.dataset_key, e.attribution_text, e.license_spdx,
+               e.redistribution
+          FROM databank_event_rows e""" if events else ""
+    base = f"""
+        SELECT o.indicator, o.occurred_at, o.occurred_precision::text AS occurred_precision,
+               o.value_num, o.value_text, o.unit, o.attrs, o.place_id, o.sys_period,
+               d.v1_category, s.key AS source_key, d.key AS dataset_key,
                -- dataset-grain licence first (054): the portal row credited
                -- OCHA/UNICEF CC-BY data to the HDX portal (audit F143)
                COALESCE(d.attribution_text, s.attribution_text) AS attribution_text,
                COALESCE(d.license_spdx, s.license_spdx)         AS license_spdx,
                COALESCE(d.redistribution, s.redistribution)     AS redistribution
-        FROM observation o
-        JOIN dataset d ON d.dataset_id = o.dataset_id
-        JOIN source s ON s.source_id = d.source_id
-        LEFT JOIN place p ON p.place_id = o.place_id
-        WHERE o.v1_stable_id IS NOT NULL AND {' AND '.join(conds)}
-        ORDER BY o.occurred_at DESC LIMIT %s"""
+          FROM observation o
+          JOIN dataset d ON d.dataset_id = o.dataset_id
+          JOIN source s ON s.source_id = d.source_id
+         WHERE o.v1_stable_id IS NOT NULL{event_branch}"""
+    sql = f"""
+        SELECT r.*, p.name_en AS place_en, p.name_ar AS place_ar
+          FROM ({base}) r
+          LEFT JOIN place p ON p.place_id = r.place_id
+         WHERE {' AND '.join(conds)}
+         ORDER BY r.occurred_at DESC LIMIT %s"""
     # An `as_of` reconstruction must never come out of a cache keyed on the
     # present, so the historical path keeps the plain connection-per-call q().
     runner = q if as_of else q_cached
-    rows = runner(sql, tuple(params + ([as_of] if as_of else []) + [limit]))
-    return {"category": category, "as_of": as_of, "count": len(rows),
-            "items": [{k: r[k] for k in
-                       ("indicator", "occurred_at", "occurred_precision",
-                        "value_num", "value_text", "unit", "place_en",
-                        "place_ar", "attrs", "source_key", "dataset_key",
-                        "license_spdx", "redistribution")}
-                      | {"attribution": r["attribution_text"]} for r in rows],
-            "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}
+    where_params = tuple(params + ([as_of] if as_of else []))
+    rows = runner(sql, where_params + (limit,))
+    out = {"category": category, "as_of": as_of, "district": district,
+           "district_1945_key": dist, "count": len(rows),
+           "items": [{k: r[k] for k in
+                      ("indicator", "occurred_at", "occurred_precision",
+                       "value_num", "value_text", "unit", "place_en",
+                       "place_ar", "attrs", "source_key", "dataset_key",
+                       "license_spdx", "redistribution")}
+                     | {"attribution": r["attribution_text"]} for r in rows],
+           "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}
+    if events:
+        # A register of single events is summarised, not sampled: "the newest
+        # ten rows" of 589 localities says nothing about the 589 (P1-B.1).
+        summ = runner(f"""
+            SELECT r.indicator, count(*) AS events, sum(r.value_num) AS value_sum,
+                   min(r.occurred_at)::date AS first, max(r.occurred_at)::date AS last,
+                   bool_or(r.occurred_precision = 'unknown') AS undated
+              FROM ({base}) r
+             WHERE r.indicator IN (SELECT DISTINCT indicator FROM databank_event_rows)
+               AND {' AND '.join(conds)}
+             GROUP BY 1 ORDER BY 2 DESC""", where_params)
+        if summ:
+            out["event_summary"] = summ
+        if category == "displacement":
+            groups = {}
+            for key in ("district_1945", "subdistrict_1945", "locality_group"):
+                groups[key] = runner(f"""
+                    SELECT r.attrs->>'{key}' AS name, count(*) AS localities
+                      FROM ({base}) r
+                     WHERE {' AND '.join(conds)}
+                     GROUP BY 1 ORDER BY 2 DESC""", where_params)
+            out["by"] = groups
+            out["value_note"] = ("value_num is each locality's TOTAL 1945 population (all "
+                                 "residents, Village Statistics 1945), never a refugee count; "
+                                 "do not sum it. locality_group says Palestinian, Mixed or Jewish.")
+    return out
+
+
+_DISTRICTS_AR = {"الرملة": "Ramle", "الرمله": "Ramle", "رملة": "Ramle", "يافا": "Jaffa",
+                 "اللد": "Lydda", "حيفا": "Haifa", "عكا": "Acre", "صفد": "Safad",
+                 "طبريا": "Tiberias", "بيسان": "Beisan", "الناصرة": "Nazareth",
+                 "جنين": "Jenin", "طولكرم": "Tulkarem", "القدس": "Jerusalem",
+                 "الخليل": "Hebron", "غزة": "Gaza", "بئر السبع": "Beersheba",
+                 "بير السبع": "Beersheba", "الجليل": "Galilee", "السامرة": "Samaria",
+                 "نابلس": "Samaria", "Ramla": "Ramle", "Lod": "Lydda", "Akka": "Acre",
+                 "Safed": "Safad", "Beer Sheva": "Beersheba", "Bisan": "Beisan"}
+
+
+def _district_1945(name: str) -> str:
+    n = (name or "").strip()
+    for pre in ("قضاء ", "لواء ", "district of ", "subdistrict of "):
+        if n.startswith(pre):
+            n = n[len(pre):]
+    return _DISTRICTS_AR.get(n, n)
+
+
+def _event_rows_served() -> bool:
+    """Migration 083 applied: the held conflict events are served."""
+    try:
+        return bool(q_cached("SELECT to_regclass('databank_event_rows') IS NOT NULL AS ok")[0]["ok"])
+    except Exception:                                            # noqa: BLE001
+        return False

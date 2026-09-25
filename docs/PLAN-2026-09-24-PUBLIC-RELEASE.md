@@ -508,3 +508,17 @@ channels; re-poll is Zaid's call on the scarce account), tg_almasshta (nothing i
 retired); 17 registry-only news feeds with no collector. A silent source raises watchdog:source:<key> once and is
 resolved when it speaks again; verdicts recorded in ops_heartbeat 'sources' (EXPECTED_JOBS) so /health reads them in
 milliseconds. tests/test_source_silence.py (10); full suite 1229 passed.
+2026-09-25 21:40 UTC · P1-B.1 serve what is held (migration 083 + route + tool) · partial (waits for `db/migrate.sh` + API
+restart) · proof: `ops/backfill_conflict_names.py --apply` restored the names the importer had dropped on all 9,137 held
+conflict events (1,159 localities also got their 1945 district), additive, 9,785 prior versions kept in event_history.
+MEASURED BEFORE SERVING: the v1 conflict file had been imported twice — 574 of the "1,163 villages" and 74 of the "7,712"
+UCDP events are exact copies (same name+point; same date+place+dyad+deaths) → 083 marks them `superseded`, never deletes:
+the record is 589 localities (509 Palestinian, 38 Mixed, 10 Jewish, 32 unclassified; 1935–1967) and 7,638 UCDP events;
+and the "displaced" figure is each locality's TOTAL 1945 population (Jerusalem 157,080) → served as population_1945, never
+summed, never called refugees. 083: databank_event_rows (observation's shape, id = −event_id) UNION ALL'd into
+databank_internal so every tier/category view inherits it; a `displacement` category; 5 indicator_def rows; UCDP served
+non-commercial until its terms are read (G5.11). Route: the category read serves events beside observations, summarises
+registers (`event_summary`), counts localities by 1945 district/subdistrict/group, `district=` filter (Arabic or English).
+Rolled-back end-to-end harness: databank(district="الرملة") → "70 تجمّع هُجّر سنة 1948 بقضاء/لواء الرملة — 65 فلسطيني، 5
+مختلط. منها: المنصورة، النبي روبين، القبيبة…"; conflict adds "7,071 state-based events 1989–2024, 55,490 deaths…; 262
+journalists (no dates in the source)". tests/test_held_events.py (7; one live, skips until 083); full suite 1235 passed.

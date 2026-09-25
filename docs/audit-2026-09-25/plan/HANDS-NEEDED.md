@@ -70,6 +70,15 @@
 > ```
 > Dry run with the live data: 265 serving rows, known 168 (0.634), no duplicate name left. Nothing else to restart.
 >
+> **P1-B.1 (21:40 UTC) — migration 083, the Nakba localities + UCDP + journalists served:** apply, then restart:
+> ```
+> cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh && sudo systemctl restart palestine-v2-api
+> ```
+> Exact rollback in the file's header. Then `tests/test_held_events.py` reads 7 passed against the live API.
+> Two decisions left in P1-B for you: (1) read UCDP's terms page and record the licence sentence — until then UCDP is
+> served non-commercial (G5.11); (2) the `pcbs` category holds World Bank data under PCBS's name — rename it into
+> `economic` with World Bank attribution (default), or re-route it to real PCBS.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
