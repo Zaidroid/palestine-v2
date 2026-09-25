@@ -578,3 +578,21 @@ than poured into databank_internal, so no published databank count is inflated b
 of time (the rollup's own rule); a day with reports and none closed is a zero. Found and fixed on the way: `trend` read any
 rise over a zero median as "flat" (Huwara 0.22 vs 0.0) — the direction is now computed separately from the percentage, in
 both languages. tests/test_movement_series.py (3).
+2026-09-25 22:10 UTC · P2-A.1 organ C wired + P2-A.3 gold contract · partial (organ C joins the running loop at the next
+`systemctl restart palestine-v2-analyst`, Zaid's hand; the daily rows do not resume yet) · proof: `b14646b`, `5da2438`.
+DIVISION OF LABOUR, from the code: `ingest/sources/moh_gaza.py` is the one writer of `gaza_moh_daily` and its cumulative /
+ceasefire / recovered rows run to the newest bulletin (09-24), but its DAILY rows stop at 2026-08-09 — the Ministry went
+value-first on the 24 h lines (`▪️ 6 إصابات`, `36 إصابة.`, `- 5 شهداء`) and `cascade/moh_gaza.parse` reads only `عدد
+الشهداء 7`. So organ C (`moh`, c/2+series/1) writes provenance only: per 2026 bulletin, one `analyst_run` row saying whether
+the series holds what the bulletin states. `analyst.loop --dry-run --organ moh --batches 80 --show -1` (new; read-only
+connection, writes nothing) over all 113,172 claims in 51 s → 203 bulletins, 0 errors: agree 103 · series-gap 98 (daily
+missing Jan–Apr and on every bulletin since 08-10; recovered missing 8 days) · disagree 1 (04-25: 32 = a 48-hour injury
+count filed as the day's) · refused 1 (06-07: the 1,730,128 the series holds); cumulative + ceasefire totals agree 203/203
+between the two readers. Cursor trails ingestion by two ingest cycles; organ C declines pre-2026 bulletins (a 2025 misread,
+accepted, had refused all of 2026 in the first dry run). Gold contract (`ops/gold_contract.py`, weekly in
+`ops/measure_review.py`; `--dry --only gold_contract`): incidents 1.10.0 serving UNMEASURED (projections r8 0.877, r7
+0.848 pass) · 1.8.0 NOT SERVABLE (round 8 0.767; death/siege 0.60) · 1.7.1/1.6/1.5 NOT SERVABLE · moh reader c/2
+UNMEASURED (20/20 human-read, 201/201 reproduced — 20 of the 100 rows F229 requires) · F-11 engine NOT SERVABLE (196/199
+agreement, not precision) · roads + organ A: no gold set. Resuming the daily rows is a change to the writer, gated on
+that 100-row read. tests: test_analyst_organ_c_loop 18 + test_measure_review_gold 19 (fakes for every write; 3 read-only
+live) + test_analyst/test_organ_c 62 (6 tx tests not run: they INSERT into production); no migration needed.

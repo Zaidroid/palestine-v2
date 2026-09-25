@@ -34,6 +34,13 @@ GATES
   precision      a round is DUE when the classifier version has moved since
                  the last scored round, or 35 days have passed. The alarm
                  names the unmeasured types rather than a generic "overdue".
+  gold contract  (P2-A.3, ops/gold_contract.py) every classifier and organ
+                 version scored against the gold sets that exist — incident
+                 rounds, the MoH gold, the roads hook — each score beside its
+                 version, and each version servable / NOT SERVABLE /
+                 unmeasured against its gate. Reported, never enforced: a
+                 version below its gate is named in `not_servable` and in the
+                 table this prints; what serves does not change here.
 """
 from __future__ import annotations
 
@@ -158,27 +165,50 @@ def review_precision_rounds() -> dict:
                        else f"last round {age_days}d old" if due else "")}
 
 
+def review_gold_contract() -> dict:
+    """P2-A.3: every version against its gold set, the verdict beside the number."""
+    from ops.gold_contract import contract
+    return {"feed": "gold_contract", **contract()}
+
+
+REVIEWERS = (review_fuel, review_palhub_roads, review_precision_rounds,
+             review_gold_contract)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--only", choices=[fn.__name__.removeprefix("review_") for fn in REVIEWERS],
+                    help="with --dry: run one reviewer and look, recording nothing")
     a = ap.parse_args()
+    if a.only and not a.dry:
+        # A partial week in the ledger would read as reviewers that vanished.
+        ap.error("--only is for looking: use it with --dry")
 
     results = []
     # One failing reviewer must not silence the others — each is recorded,
     # errors included, because "the review broke" is itself worth an entry.
-    for fn in (review_fuel, review_palhub_roads, review_precision_rounds):
+    for fn in REVIEWERS:
+        if a.only and fn.__name__ != f"review_{a.only}":
+            continue
         try:
             results.append(fn())
         except Exception as exc:                                # noqa: BLE001
             results.append({"feed": fn.__name__, "error": f"{type(exc).__name__}: {exc}"})
 
     record = {"ts": datetime.now(timezone.utc).isoformat(), "results": results}
-    print(json.dumps(record, indent=2, ensure_ascii=False))
+    print(json.dumps(record, indent=2, ensure_ascii=False, default=str))
+    gold = next((r for r in results if r.get("feed") == "gold_contract" and "entries" in r), None)
+    if gold:
+        # The same verdicts in the form a human reads in the journal: a version
+        # below its gate is a line that says NOT SERVABLE, with its number.
+        from ops.gold_contract import table
+        print(table(gold))
     if a.dry:
         return 0
 
     with LEDGER.open("a") as fh:
-        fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        fh.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
 
     from ops.notify import send
     for r in results:

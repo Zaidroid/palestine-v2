@@ -21,7 +21,21 @@ from resolve.db import connect                                  # noqa: E402
 # it works while staying inside one transaction's worth of lock time.
 BATCH = 200
 
-CLAIM_COLUMNS = "claim_id, ingested_at, source_id, raw_text, lang, attrs, claim_type"
+# `reported_at` is organ C's: a bulletin's own date is checked against when it
+# was posted, and the series the ingest writes is keyed on that posting day.
+CLAIM_COLUMNS = ("claim_id, ingested_at, source_id, raw_text, lang, attrs, claim_type, "
+                 "reported_at")
+
+
+def connect_readonly():
+    """A connection on which every transaction is READ ONLY.
+
+    For `analyst.loop --dry-run`: a dry run that reached an INSERT or an UPDATE
+    by mistake must fail on the database's word, not on the care of whoever
+    wrote the organ. The organs that write outside provenance (organ A's
+    `claim.lang`) are not run dry at all; this is the second lock.
+    """
+    return connect(options="-c default_transaction_read_only=on")
 
 
 def read_watermark(cur, organ: str) -> tuple | None:
@@ -57,7 +71,8 @@ def write_watermark(cur, organ: str, ingested_at, claim_id: int,
         (organ, ingested_at, claim_id, note))
 
 
-def fetch_batch(cur, after: tuple | None, limit: int = BATCH) -> list[dict]:
+def fetch_batch(cur, after: tuple | None, limit: int = BATCH,
+                before=None) -> list[dict]:
     """The next `limit` claims past the cursor, oldest first.
 
     THE FILTER IS NOT IN THIS QUERY, ON PURPOSE. An organ that only wants some
@@ -66,15 +81,26 @@ def fetch_batch(cur, after: tuple | None, limit: int = BATCH) -> list[dict]:
     return nothing, the loop would have nothing to advance the cursor to, and
     the organ would re-scan the same stretch of corpus forever — busy, honest
     in its heartbeat, and permanently stuck one row before the interesting one.
+
+    `before` is the one bound that IS here, because it is about time, not
+    about the claim: an organ that judges a claim against what ANOTHER job
+    derives from it (organ C against the hourly MoH ingest) must not read the
+    claim before that job has had its turn. Claims ingested at or after
+    `before` are not fetched, so the cursor stops short of them and they are
+    read on a later tick — never skipped.
     """
+    bound = "" if before is None else "AND ingested_at < %s"
+    params: list = [] if before is None else [before]
     if after is None:
         cur.execute(f"""SELECT {CLAIM_COLUMNS} FROM claim
-                         ORDER BY ingested_at, claim_id LIMIT %s""", (limit,))
+                         WHERE true {bound}
+                         ORDER BY ingested_at, claim_id LIMIT %s""",
+                    (*params, limit))
     else:
         cur.execute(f"""SELECT {CLAIM_COLUMNS} FROM claim
-                         WHERE (ingested_at, claim_id) > (%s, %s)
+                         WHERE (ingested_at, claim_id) > (%s, %s) {bound}
                          ORDER BY ingested_at, claim_id LIMIT %s""",
-                    (after[0], after[1], limit))
+                    (after[0], after[1], *params, limit))
     cols = [c.strip() for c in CLAIM_COLUMNS.split(",")]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
@@ -141,6 +167,6 @@ def undetected_claims(cur) -> int:
     return int(cur.fetchone()[0])
 
 
-__all__ = ["BATCH", "backlog", "connect", "fetch_batch", "health",
+__all__ = ["BATCH", "backlog", "connect", "connect_readonly", "fetch_batch", "health",
            "lang_distribution", "read_watermark", "record_run",
            "undetected_claims", "write_watermark"]

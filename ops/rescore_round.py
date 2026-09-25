@@ -32,7 +32,11 @@ from cascade.news import read                                       # noqa: E402
 from ingest.sources.news_incidents import CLASSIFIER_VERSION        # noqa: E402
 
 
-def main(n: str) -> int:
+def project(n: str) -> dict:
+    """The projection over round `n`, computed and returned — nothing written.
+
+    ops/gold_contract.py calls this every week for the classifier that is
+    serving; `main` is the same number plus the artifact file."""
     sample = {json.loads(x)["claim_id"]: json.loads(x)
               for x in (ROOT / "ops" / f"incident-sample-round{n}.ndjson").read_text().splitlines()
               if x.strip()}
@@ -86,6 +90,11 @@ def main(n: str) -> int:
            "why_dropped_or_moved": dict(reasons.most_common()),
            "rejudged": len(rejudged),
            "note": "projection over the old sample; type_moved rows need a human re-judge"}
+    return out
+
+
+def main(n: str) -> int:
+    out = project(n)
     path = ROOT / "ops" / f"incident-precision-round{n}-rescored-{CLASSIFIER_VERSION}.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(json.dumps({k: out[k] for k in ("classifier_version", "served_then", "tally",
