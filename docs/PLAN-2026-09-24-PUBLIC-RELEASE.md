@@ -652,3 +652,12 @@ production data: today 24 fresh · 4 supply-dead · 4 DEAD lines (never fetched)
 · 1 late · 0 supply-dead · v2 fetches 7/7 live · 14 v1 steps retired_pending (not 27-of-32-fresh over 13 failing
 steps) → exit 0. Found: HANDS §3 edits the host refresh-data.sh, which never runs (the container's copy does) → §9.
 tests/test_supply_lines.py 28 passed; touched suites green except the known worktree-missing-input class.
+2026-09-26 01:40 UTC · merges of the three parallel streams · done · proof: P2-A.1/.3 (organ C as the series' control + the
+gold contract, `46a0dfc`), P2-B (front door, `880fb88`) and P1-B.3 (supply lines, `b960a1f`) merged into master; the
+supply-lines spec for PCBS said `v1_category: economic`, which the loader upserts nightly and would have undone 086's move of
+the real PCBS rows — set to `pcbs` (`a59ee67`). Full suite on the merged tree: 1384 passed, 2 failed (identity invariants
+for the two new specs, which need their first fetch); the priming block then ran (fetchers write files only): OCHA
+casualties + demolitions, PCBS population + CPI, HaMoked 219 months — radar "32 datasets — 27 fresh · 1 late · 0 stalled ·
+0 supply-dead · supply lines: 0 DEAD · v2 fetches 7/7 live", exit 0, `supply-lines` heartbeat written. The 03:40 load writes
+the rows (dry-run measured by the agent: casualties 32 revisions, demolitions 855 revisions + 20 new, prisoners 12 new,
+PCBS 36 new).
