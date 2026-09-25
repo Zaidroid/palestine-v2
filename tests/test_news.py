@@ -631,3 +631,42 @@ def test_a_street_named_after_a_city_is_not_that_city():
     assert r.governorate == "نابلس", r
     r2 = read("محاصرة الاحتلال منزله قرب مسجد الفردوس بمنطقة شارع نابلس في طولكرم واعتقاله")
     assert r2.governorate == "طولكرم", r2
+
+
+# ── audit 2026-09-25 (plan 07-classifier) ────────────────────────────────────
+# CLASSIFIER-01 / F039: a reopening matched "حاجز ... اغلاق" and was served as
+# a closure at the checkpoint that had just reopened.
+@pytest.mark.parametrize("text", [
+    "اعادة فتح حاجز حوارة جنوب نابلس بعد اغلاقه صباح اليوم لعدة ساعات",
+    "الحركة طبيعية على حاجز عطارة شمال رام الله بعد ازالة السواتر الترابية التي اغلقت الطريق امس",
+    "إعادة فتح حاجز حوارة بعد إغلاقه لساعات",
+    "قوات الاحتلال تعيد فتح بوابة عطارة شمال رام الله بعد اغلاقها منذ الصباح",
+])
+def test_classifier_01_a_reopening_is_not_a_closure(text):
+    r = read(text)
+    assert r.incident_type != "closure" and not r.is_closure, r
+    assert r.reject_reason == "reopening", r
+
+
+# The rule's error must run the safe way: a closure still in force, a
+# reopening refused, demanded or only forecast stays a closure.
+@pytest.mark.parametrize("text", [
+    "لم يتم اعادة فتح حاجز حوارة جنوب نابلس بعد اغلاقه صباح اليوم",
+    "سيتم اعادة فتح حاجز حوارة جنوب نابلس بعد اغلاقه لساعات",
+    "رفض الاحتلال اعادة فتح حاجز حوارة جنوب نابلس بعد اغلاقه امس",
+    "اعادة فتح حاجز عطارة واغلاق حاجز عين سينيا شمال رام الله",
+    "طالب الاهالي باعادة فتح الطريق المغلق منذ اسبوع في بلدة سنجل",
+])
+def test_classifier_01b_a_closure_in_force_stays_a_closure(text):
+    assert kind(text) == "closure", read(text)
+
+
+# CLASSIFIER-02 / F074: cubic backtracking in settler_attack (and quadratic in
+# the closure verb) — one long token stalled the classifier for minutes, and
+# the timer re-read the same claim on every run.
+@pytest.mark.parametrize("stem", ["عتد", "قتح", "غلق", "مسكر", "هجوم", "مستوطن"])
+def test_classifier_02_one_long_token_cannot_stall_the_reader(stem):
+    import time
+    t0 = time.perf_counter()
+    read(stem * (4000 // len(stem)))
+    assert time.perf_counter() - t0 < 1.0

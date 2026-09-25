@@ -102,7 +102,9 @@ def _norm_pat(pattern: str) -> str:
 # street closed for paving, a checkpoint shut after a crash, an area sealed
 # with earth berms, gates closed on an ambulance — and drops phones, shops and
 # surnames without naming any of them.
-_CLOSE_VERB = r"(?:[اتين]?غلق\w*|اغلاق|مسكر\w*|سكرت|سكروا|تسكير)"
+# Suffixes bounded to a word (audit F074): `\w*` before the 40-char window
+# below scanned quadratically, 4.5 s on one 3,000-char token of repeated غلق.
+_CLOSE_VERB = r"(?:[اتين]?غلق\w{0,8}|اغلاق|مسكر\w{0,8}|سكرت|سكروا|تسكير)"
 _MOVE_OBJECT = (r"(?:شارع|شوارع|طريق|طرق|حاجز|حواجز|بوابه|بوابات|معبر|معابر|"
                 r"مدخل|مداخل|مخرج|منطقه|بلده|قريه|مخيم|مفترق|دوار|جسر|نفق|الحركه)")
 # `[^.،؛]` keeps the two inside one clause: crossing a full stop or a comma is
@@ -166,15 +168,21 @@ INCIDENT_PATTERNS: list[tuple[str, str]] = [
     # cemetery read as "no incident verb". ضرم ("يضرمون النيران"), دشن
     # (founding a new outpost IS the land grab), and ستول (يستولون — the
     # existing ستولا only matched the noun) are round-5 misses too.
-    ("settler_attack", r"(?:(مستوطن\w*|قطعان)(?:\s+\S+){0,5}?\s+\S*"
+    #
+    # EVERY QUANTIFIER HERE IS BOUNDED TO A WORD (audit F074). `\w*` then `\S*`
+    # on the same token, with a literal after, backtracked cubically: one
+    # 1,800-char token of repeated عتد took 5.9 s and a 5,100-char one 131 s,
+    # and the timer re-read that claim on every run. No Arabic word or
+    # prefix is longer than these bounds.
+    ("settler_attack", r"(?:(مستوطن\w{0,12}|قطعان)(?:\s+\S{1,40}){0,5}?\s+\S{0,20}"
                        r"(عتد|هاجم|هجوم|عربد|حرق|شعل|شعال|ضرم|رشق|قتلع|خرب|"
                        r"حطم|دهس|قتح|سيطر|ستيلا|ستول|دشن|"
                        # Round 8 misses: grazing livestock in a village's olive
                        # groves and "desecrating" al-Aqsa are settler incursions.
                        r"مواشيهم|اغنامهم|قطعانهم|باغنام|بمواشي|بقطعان|ستبيح|ستباح|"
                        r"رعي\s+(?:اغنام|مواشي|ابقار|قطعان))"
-                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|ضرم|شعال)\w*"
-                       r"(?:\s+\S+){0,3}?\s*\S*(مستوطن|قطعان))"),
+                       r"|(عتد|هاجم|هجوم|عربد|عربده|قتح|رشق|قتلع|ضرم|شعال)\w{0,12}"
+                       r"(?:\s+\S{1,40}){0,3}?\s*\S{0,20}(مستوطن|قطعان))"),
     # A beating by the army is harm without an injury noun: "تعتدي بالضرب على
     # صاحب محل" was rejected as having no incident verb (round 5). Settler
     # beatings keep their actor — settler_attack sits above this entry.
@@ -605,6 +613,50 @@ _HOMES_LEVELLED_RE = re.compile(_norm_pat(
     r"(?:تجريف|[يت]جرف\w*|جرفت)\s+(?:\S+\s+){0,3}?(?:مساكن|منازل|منزل|مسكن|بركسات|بركس|بيوت(?!ا?\s+بلاستيك)ا?)"))
 
 
+# A REOPENING IS NOT A CLOSURE (audit F039). "اعادة فتح حاجز حوارة بعد اغلاقه
+# لساعات" matched the closure pattern on "حاجز ... اغلاق" and was served as a
+# closure at Huwara, with road_closure='closed', for the checkpoint that had
+# just reopened. A message is read as a reopening only when (a) it reports the
+# reopening as done — not negated, demanded, refused or forecast — and (b)
+# every closing act in it sits in the past ("بعد اغلاقه", "التي اغلقت"). One
+# live closure anywhere keeps it a closure: missing a closure is the worse way
+# for this rule to be wrong.
+_REOPEN_RE = re.compile(_norm_pat(
+    r"(?<!\S)[وف]?(?:(?:اعاده|اعادت|اعاد|[يت]عيد\w{0,3}|تم|تمت)\s+(?:ال)?فتح\w{0,3}|"
+    r"فتح\w{0,3}\s+(?:ال)?(?:حاجز|طريق|شارع|بوابه|بوابات|معبر|مدخل|مداخل)|"
+    r"ازال\w{0,3}\s+(?:ال)?(?:ساتر|سواتر|بوابه|مكعبات|كتل)|"
+    r"(?:فك|رفع)\w{0,2}\s+(?:ال)?اغلاق|"
+    r"(?:عودة|عوده)\s+(?:ال)?حركه|الحركه\s+(?:طبيعيه|عادت))"))
+# What turns a reopening phrase into a non-event: a negator, a demand, a
+# refusal, a forecast or a promise in the one or two words before it.
+_NOT_YET_RE = re.compile(_norm_pat(
+    r"(?:^|\s)(?:لم|لا|لن|ما|مش|عدم|دون|بدون|رفض\w*|[يت]رفض\w*|منع\w*|"
+    r"طالب\w*|[يت]طالب\w*|مطالب\w*|دعا|دعت|دعوه|دعوات|سي\w*|ست\w*|"
+    r"مقرر|المقرر|[يت]توقع\w*|متوقع|وعد\w*|وعود|قرار|انتظار|بانتظار)\s+(?:\S+\s+)?$"))
+_CLOSING_ACT_RE = re.compile(_norm_pat(
+    _CLOSE_VERB + r"|منع الحركة|قطع\w{0,3}\s+(?:ال)?طريق|" + _INSTALL_BARRIER))
+# The closing act is the reason for the reopening, not today's news.
+_PAST_CLAUSE_RE = re.compile(_norm_pat(
+    r"(?:^|\s)[وف]?(?:بعد|عقب|اثر|منذ|التي|الذي|الذين|اللذين)\s+"
+    r"(?:(?:ان|ما|من|ساعات|ساعه|ايام|يومين|يوم|اسبوع|اسابيع|شهر|اشهر|عده|لعده)\s+){0,3}$"))
+
+
+def _reopening(norm: str) -> str | None:
+    """The reopening phrase when the text reports one and no live closure."""
+    hit = None
+    for m in _REOPEN_RE.finditer(norm):
+        if not _NOT_YET_RE.search(norm[:m.start()]):
+            hit = m
+            break
+    if hit is None:
+        return None
+    for c in _CLOSING_ACT_RE.finditer(norm):
+        start = norm.rfind(" ", 0, c.start()) + 1          # the whole token
+        if not _PAST_CLAUSE_RE.search(norm[:start]):
+            return None                                   # a closure in force
+    return hit.group(0).strip()
+
+
 def _first_match(text: str, patterns) -> tuple[str, str] | None:
     for label, rx in patterns:
         m = rx.search(text)
@@ -972,6 +1024,12 @@ def read(text: str | None) -> NewsReading:
     # homes bulldozed are a demolition, whatever the verb.
     if itype == "land_levelling" and _HOMES_LEVELLED_RE.search(norm):
         itype = "demolition"
+    # a reopening is not a closure (audit F039, see _reopening).
+    if itype == "closure":
+        reopened = _reopening(norm)
+        if reopened:
+            return NewsReading(verdict="rejected", reject_reason="reopening",
+                               matched=reopened[:60])
 
     candidates, gov = _extract_places(norm)
     place_text = candidates[0][0] if candidates else None

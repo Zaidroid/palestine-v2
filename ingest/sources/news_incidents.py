@@ -120,7 +120,13 @@ CLASSIFIER = "news"
 # in normalize(). Round 5's 163 claims are tuning data now — 1.6 has NO
 # held-out precision until round 6. Closure at 1.5 measured 0.875 (was
 # 0.167 in round 3); the rewrite held on disjoint data.
-CLASSIFIER_VERSION = "1.8.1"
+#
+# 1.9.0 — audit 2026-09-25: a reopening ("اعادة فتح حاجز X بعد اغلاقه") is
+# rejected as `reopening` instead of served as a closure at X (F039); the
+# settler_attack quantifiers are bounded to a word, which ends the cubic
+# backtracking that let one long token stall the timer (F074). Unmeasured
+# until a fresh round is drawn at 1.9.0.
+CLASSIFIER_VERSION = "1.9.0"
 
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
