@@ -564,3 +564,10 @@ worse direction; incident types without the fires set apart in P0-A.4) → a fal
 fixed. Run on dev: 0 critical, 0 major, 0 minor. Tests: test_operability_p1c (4), test_mcp_accuracy (+2).
 Left in P1-C: .3 v1 budget and .6 backup key (Zaid's hands, HANDS-2026-09-24 §2/§4), .7 fresh-clone V1_ROOT (after the
 supply-lines work lands in ingest/).
+2026-09-25 23:35 UTC · P0-C.5 copy detection for news channels · done (measured; no group warranted) · proof:
+`learn/news_independence.py` (report / --apply; never touches a road copyset, palhub or crowd) over 17,205 claims in 30 d:
+no pair of news channels copies the other at ≥ 50 % — the highest are tg_bzunewss←tg_ramallahnewss 25 % (17 of 69) and the
+Jericho/Bethlehem sister channels 22–24 % (≈190 shared posts each way); most pairs 1–10 %. So the channels are separate
+reporters, and the per-event mirror collapse the classifier already does (≥ 0.90 text similarity, 1.10.0) is the right
+grain for the copies that do occur. Nothing applied. tests/test_news_independence.py (4). Re-run monthly (it prints the
+table) — a channel that starts reposting another wholesale will cross 50 % and group itself.
