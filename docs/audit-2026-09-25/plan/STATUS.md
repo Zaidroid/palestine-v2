@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 118 done · 6 partial · 36 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 125 done · 6 partial · 29 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -207,17 +207,17 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 10 · External feed parsers (fuel prices, MoH Gaza, power, weather, connectivity, fires) — `10-feeds.md`
 
-0 done · 0 partial · 7 open of 7 confirmed; 0 of 18 verify-first done.
+7 done · 0 partial · 0 open of 7 confirmed; 0 of 18 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| FEEDS-01 | F036 | high | **open** |  | One outlet can self-corroborate a fuel price: its RSS item is a claim and its page is a web uni |
-| FEEDS-02 | F037 | high | **open** |  | A power cut keeps being served for ~22 hours after its announced end |
-| FEEDS-03 | F038 | high | **open** |  | power.py's state_current rebuild ignores modality, so a future scheduled cut is served as activ |
-| FEEDS-04 | F073 | high | **open** |  | power.py rebuilds state_current from 'scheduled' rows: a future announced cut is served as an a |
-| FEEDS-05 | F174 | medium | **open** |  | A comma decimal ('8,15 شيكل') is split as a clause boundary and the tail reads as a wrong price |
-| FEEDS-06 | F176 | medium | **open** |  | MoH cascade parser files an unknown section's totals under the previous tier (the 72,274-in-one |
-| FEEDS-07 | F182 | medium | **open** |  | MoH ingest overwrites revised values and clobbers reported_at on every hourly run |
+| FEEDS-01 | F036 | high | **done** | `f05f9bf` | One outlet can self-corroborate a fuel price: its RSS item is a claim and its page is a web uni |
+| FEEDS-02 | F037 | high | **done** | `f05f9bf` | A power cut keeps being served for ~22 hours after its announced end |
+| FEEDS-03 | F038 | high | **done** | `f05f9bf` | power.py's state_current rebuild ignores modality, so a future scheduled cut is served as activ |
+| FEEDS-04 | F073 | high | **done** | `f05f9bf` | power.py rebuilds state_current from 'scheduled' rows: a future announced cut is served as an a |
+| FEEDS-05 | F174 | medium | **done** | `f05f9bf` | A comma decimal ('8,15 شيكل') is split as a clause boundary and the tail reads as a wrong price |
+| FEEDS-06 | F176 | medium | **done** | `f05f9bf` | MoH cascade parser files an unknown section's totals under the previous tier (the 72,274-in-one |
+| FEEDS-07 | F182 | medium | **done** | `f05f9bf` | MoH ingest overwrites revised values and clobbers reported_at on every hourly run |
 
 ### 11 · Operability: watchdog, alerts, backups, shell steps, systemd units — `11-ops.md`
 

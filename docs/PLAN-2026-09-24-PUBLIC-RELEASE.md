@@ -406,3 +406,7 @@ drop-in (block in HANDS-NEEDED). Tally 112 done · 6 partial · 42 open. Next: 0
 INGEST-07 edits = Zaid's decisions) · proof: `95a4b6f`; tests/test_ingest_09b.py 6; full suite 1144 passed / 0 failed. The
 running poller picks the changes up at Zaid's next restart. Tally 118 done · 6 partial · 36 open. Next: 10 feeds (7),
 12 databank (5), 13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.
+2026-09-25 14:12 UTC · audit 10-feeds · done 7 of 7 · proof: `f05f9bf`; tests/test_feeds_10b.py 6; full suite 1149 passed /
+0 failed. Live for the timers at their next tick (power/weather/connectivity/fuel/MoH loaders run the tree); the power
+cut's 'normal' at window_end appears on the next power tick. Tally 125 done · 6 partial · 29 open. Next: 12 databank
+(5), 13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.
