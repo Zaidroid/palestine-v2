@@ -33,12 +33,15 @@ V1_DATA = Path("/opt/stacks/palestine/services/westbank-alerts/data")
 # The 16 governorates, Arabic names keyed by OCHA pcode. The OCHA file carries
 # adm2_name only in English (adm2_name1..3 are all NULL), so Arabic has to come
 # from somewhere — these are stable, official, and small enough to state.
+# The ONE admin2 scheme (migration 077, OCHA): the earlier table here was the
+# scheme 077 retired, so a rebuild would have re-coded every governorate
+# against the polygons (audit F069).
 GOV_AR = {
-    "PS0101": "جنين", "PS0102": "طوباس", "PS0103": "طولكرم", "PS0104": "نابلس",
-    "PS0105": "قلقيلية", "PS0106": "سلفيت", "PS0107": "رام الله والبيرة",
-    "PS0108": "أريحا والأغوار", "PS0109": "القدس", "PS0110": "بيت لحم",
-    "PS0111": "الخليل", "PS0201": "شمال غزة", "PS0202": "غزة",
-    "PS0203": "دير البلح", "PS0204": "خان يونس", "PS0205": "رفح",
+    "PS0101": "جنين", "PS0105": "طوباس", "PS0110": "طولكرم", "PS0115": "نابلس",
+    "PS0120": "قلقيلية", "PS0125": "سلفيت", "PS0130": "رام الله والبيرة",
+    "PS0135": "أريحا والأغوار", "PS0140": "القدس", "PS0145": "بيت لحم",
+    "PS0150": "الخليل", "PS0255": "شمال غزة", "PS0260": "غزة",
+    "PS0265": "دير البلح", "PS0270": "خان يونس", "PS0275": "رفح",
 }
 ADM1_AR = {"PS01": "الضفة الغربية", "PS02": "قطاع غزة"}
 
@@ -141,11 +144,11 @@ def load_localities(cur) -> tuple[int, int]:
     # Governorate name -> admin2_pcode, so localities inherit a real pcode.
     gov_to_pcode = {normalize(v): k for k, v in GOV_AR.items()}
     gov_slug = {  # v1 uses slugs, not Arabic names
-        "jenin": "PS0101", "tubas": "PS0102", "tulkarm": "PS0103", "nablus": "PS0104",
-        "qalqilya": "PS0105", "salfit": "PS0106", "ramallah": "PS0107",
-        "jericho": "PS0108", "jerusalem": "PS0109", "bethlehem": "PS0110",
-        "hebron": "PS0111", "north_gaza": "PS0201", "gaza": "PS0202",
-        "deir_al_balah": "PS0203", "khan_younis": "PS0204", "rafah": "PS0205",
+        "jenin": "PS0101", "tubas": "PS0105", "tulkarm": "PS0110", "nablus": "PS0115",
+        "qalqilya": "PS0120", "salfit": "PS0125", "ramallah": "PS0130",
+        "jericho": "PS0135", "jerusalem": "PS0140", "bethlehem": "PS0145",
+        "hebron": "PS0150", "north_gaza": "PS0255", "gaza": "PS0260",
+        "deir_al_balah": "PS0265", "khan_younis": "PS0270", "rafah": "PS0275",
     }
 
     for r in rows:
@@ -210,12 +213,34 @@ def load_checkpoints(cur) -> tuple[int, int]:
     return places, aliases
 
 
+# Tables whose rows reference `place`. A TRUNCATE ... CASCADE of the gazetteer
+# used to stand here: on main-server it would have taken the claims, the
+# events, every checkpoint reading and the whole databank with it (audit
+# F069, hard rule 2). The loader is for an EMPTY database; on a populated one
+# the gazetteer grows through migrations and ops/promote_named_localities.py.
+REFERENCING = ("claim", "event", "state_observation", "observation")
+
+
+def refuse_if_populated(cur) -> str | None:
+    """The reason this loader must not run here, or None."""
+    for t in REFERENCING:
+        cur.execute(f"SELECT EXISTS (SELECT 1 FROM {t})")
+        if cur.fetchone()[0]:
+            return (f"{t} has rows that reference place — refusing: this loader "
+                    "rebuilds an EMPTY gazetteer only (no TRUNCATE, ever). Grow a "
+                    "populated one with a migration or ops/promote_named_localities.py.")
+    cur.execute("SELECT count(*) FROM place")
+    if cur.fetchone()[0]:
+        return "place is already populated — refusing to rebuild over it"
+    return None
+
+
 def main() -> int:
     with connect() as conn, conn.cursor() as cur:
-        cur.execute("SELECT count(*) FROM place")
-        if cur.fetchone()[0]:
-            print("gazetteer already populated — truncating for a clean rebuild")
-            cur.execute("TRUNCATE place, place_alias RESTART IDENTITY CASCADE")
+        reason = refuse_if_populated(cur)
+        if reason:
+            print("REFUSING:", reason)
+            return 2
 
         a_p, a_a = load_admin(cur);        print(f"P0.14 admin      {a_p:>6} places  {a_a:>6} aliases")
         l_p, l_a = load_localities(cur);   print(f"P0.15 localities {l_p:>6} places  {l_a:>6} aliases")

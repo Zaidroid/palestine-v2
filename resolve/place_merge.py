@@ -141,7 +141,8 @@ def plan(cur) -> list[dict]:
 
 def apply(cur, groups: list[dict]) -> dict:
     stats = {"clusters": 0, "fragments": 0, "observations_moved": 0,
-             "aliases": 0, "aliases_repointed": 0}
+             "aliases": 0, "aliases_repointed": 0, "aliases_owned_elsewhere": 0}
+    owned_elsewhere: list[tuple[str, int, int]] = []       # (key, owner, canon)
     for g in groups:
         canon = g["canonical"]["place_id"]
         for frag in g["fragments"]:
@@ -171,9 +172,20 @@ def apply(cur, groups: list[dict]) -> dict:
                 key = normalize(nm)
                 if not key or is_not_a_name(nm):
                     continue
+                # FIRST WRITER WINS, as in every other loader (audit F315):
+                # DO UPDATE repointed the town's own curated key ("قلقيلية")
+                # to the entrance checkpoint, and every raid on the town then
+                # landed on the checkpoint. A key another place owns is
+                # reported, never taken.
+                cur.execute("SELECT place_id FROM place_alias WHERE alias_norm = %s", (key,))
+                owner = cur.fetchone()
+                if owner and owner[0] not in (canon, fid):
+                    stats["aliases_owned_elsewhere"] += 1
+                    owned_elsewhere.append((key, owner[0], canon))
+                    continue
                 cur.execute("""INSERT INTO place_alias (alias_norm, place_id, origin, confidence)
                                VALUES (%s,%s,'checkpoint_db',0.6)
-                               ON CONFLICT (alias_norm) DO UPDATE SET place_id=EXCLUDED.place_id""",
+                               ON CONFLICT (alias_norm) DO NOTHING""",
                             (key, canon))
                 stats["aliases"] += cur.rowcount
 
@@ -198,6 +210,8 @@ def apply(cur, groups: list[dict]) -> dict:
                               quality_note='name is a report, not a place',
                               updated_at=now() WHERE place_id=%s""", (pid,))
     stats["unservable_names"] = len(lone)
+    for key, owner, canon in owned_elsewhere:
+        print(f"  alias {key!r} stays with place {owner} (not moved to {canon})")
     return stats
 
 

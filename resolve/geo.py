@@ -20,7 +20,7 @@ mechanism that makes coverage improve without anyone labelling anything.
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
@@ -60,6 +60,9 @@ class Resolution:
     admin2_pcode: str | None = None
     oslo_area: str | None = None
     ambiguous_with: int = 0     # runner-up count when the decision was close
+    # The other places that carry this name (place_id, name, admin2_pcode),
+    # so a caller can name them instead of hiding them (audit F067).
+    alternatives: list = field(default_factory=list)
 
 
 # The alias join FOLLOWS MERGES. place_merge collapses v1's sentence-shaped
@@ -77,13 +80,15 @@ _SELECT = """
 """
 
 
-def _mk(row, method: str, confidence: float, ambiguous: int = 0) -> Resolution:
+def _mk(row, method: str, confidence: float, ambiguous: int = 0,
+        alternatives: list | None = None) -> Resolution:
     (pid, ar, en, kind, a1, a2, oslo, alias, _ac) = row
     return Resolution(
         place_id=pid, name_ar=ar, name_en=en, kind=kind,
         precision=KIND_PRECISION.get(kind, "unknown"),
         confidence=round(confidence, 3), method=method, matched_alias=alias,
         admin1_pcode=a1, admin2_pcode=a2, oslo_area=oslo, ambiguous_with=ambiguous,
+        alternatives=list(alternatives or []),
     )
 
 
@@ -125,6 +130,21 @@ def governorate_pcode(cur, name: str | None) -> str | None:
         if key in probes:
             return pc
     return None
+
+
+def _twins_all(cur, keys: list[str]) -> list:
+    """Every promoted twin of these keys, wherever it sits (audit F067). The
+    alias table can hold one owner per key; the other places of the same name
+    carry it in attrs.twin_keys, and every caller — not only one with a
+    governorate hint — must see that they exist."""
+    cur.execute("""
+        SELECT p.place_id, p.name_ar, p.name_en, p.kind::text,
+               p.admin1_pcode, p.admin2_pcode, p.oslo_area, %s, 0.9
+          FROM place p
+         WHERE p.servable AND p.merged_into IS NULL
+           AND p.attrs->'twin_keys' ?| %s
+         ORDER BY p.place_id""", (keys[0], keys))
+    return cur.fetchall()
 
 
 def _twin_in(cur, keys: list[str], admin2: str):
@@ -206,9 +226,15 @@ def _prefer(rows, context: dict | None):
 
 
 def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
-                  learn: bool = True, fuzzy: bool = True,
+                  learn: bool = False, fuzzy: bool = True,
                   contain: bool = True) -> Resolution | None:
     """Resolve a free-text place phrase. Returns None when nothing is confident.
+
+    `learn` is OFF by default (audit F068): a public caller's guess used to be
+    inserted as an alias and served as 'exact' to every later caller,
+    including the classifier. Learning is opt-in for ingestion, and a caller
+    who passes its own connection owns the transaction — nothing here commits
+    it.
 
     `fuzzy=False` stops before the fuzzy branch and `contain=False` before the
     contained-alias branch: a caller whose phrase is a guess (a token that
@@ -248,21 +274,34 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             cur.execute(_SELECT + " WHERE a.alias_norm = ANY(%s)", (keys,))
             rows = cur.fetchall()
             if rows:
+                # The twins ALWAYS join the ranking (F067): with a governorate
+                # hint _prefer picks the one in that governorate; without one
+                # the answer says how many places carry the name and names
+                # them, and its confidence is divided as the fuzzy branch's is.
+                # المغير answered Jenin's village at 0.92 with ambiguous_with=0
+                # while 232 of 241 events belonged to Ramallah's.
+                have = {r[0] for r in rows}
+                rows = rows + [t for t in _twins_all(cur, keys) if t[0] not in have]
                 ranked = _prefer(rows, context)
                 want_a2 = (context or {}).get("admin2_pcode")
-                if want_a2 and not any(r[5] == want_a2 for r in ranked):
-                    twin = _twin_in(cur, keys, want_a2)
-                    if twin:
-                        ranked = [twin]
                 best = ranked[0]
+                others: dict[int, tuple] = {}
+                for r in ranked:
+                    if r[0] != best[0] and r[0] not in others:
+                        others[r[0]] = (r[0], r[1] or r[2], r[5])
+                settled = bool(want_a2) and best[5] == want_a2
+                ambiguous = 0 if settled else len(others)
                 # A fold-only hit is slightly weaker than a normalize hit: folding
                 # discards information, so the match is less specific.
                 exact_on_norm = best[7] == normalize(text)
                 conf = min(0.98, (0.92 if exact_on_norm else 0.85) + float(best[8] or 0) * 0.05)
+                if ambiguous:
+                    conf = conf / (1.0 + 0.35 * ambiguous)
                 if learn:
                     _bump(cur, best[7])
-                    conn.commit()
-                return _mk(best, "exact", conf, max(0, len(ranked) - 1))
+                    if own:
+                        conn.commit()
+                return _mk(best, "exact", conf, ambiguous, list(others.values()))
 
             # Two letters are a name only when an alias says so exactly.
             if len(normalize(text)) < 3 or not contain:
@@ -326,7 +365,8 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
                 if learn:
                     _bump(cur, best[7])
                     _observe(cur, folded, best[0], conf)
-                    conn.commit()
+                    if own:
+                        conn.commit()
                 return _mk(best, "contains", conf, max(0, len({r[0] for r in ranked}) - 1))
 
             # ── 3. fuzzy ──────────────────────────────────────────────────────
@@ -367,7 +407,8 @@ def resolve_place(text: str | None, context: dict | None = None, *, conn=None,
             if learn and distinct == 1:
                 _bump(cur, best[7])
                 _observe(cur, fz, best[0], conf)
-                conn.commit()
+                if own:
+                    conn.commit()
             return _mk(best, "fuzzy", conf, distinct - 1)
     finally:
         if own:

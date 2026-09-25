@@ -1149,11 +1149,20 @@ def geo_resolve(q_: str = Query(..., alias="q", min_length=2),
             "FROM place WHERE place_id=%s", (r.place_id,))
     if not row or row[0]["la"] is None:
         return {"found": False, "query": q_, "reason": "no geometry"}
-    return {"found": True, "query": q_, "place_id": r.place_id,
-            "name": r.name_ar or r.name_en, "name_en": r.name_en,
-            "kind": r.kind, "precision": r.precision,
-            "confidence": round(r.confidence, 3), "method": r.method,
-            "lat": row[0]["la"], "lon": row[0]["lo"]}
+    out = {"found": True, "query": q_, "place_id": r.place_id,
+           "name": r.name_ar or r.name_en, "name_en": r.name_en,
+           "kind": r.kind, "precision": r.precision,
+           "confidence": round(r.confidence, 3), "method": r.method,
+           "admin2_pcode": r.admin2_pcode,
+           "lat": row[0]["la"], "lon": row[0]["lo"],
+           "ambiguous_with": r.ambiguous_with}
+    if r.ambiguous_with:
+        # Twin villages (المغير in Ramallah AND Jenin) are named, not hidden (F067).
+        out["alternatives"] = [{"place_id": pid, "name": nm, "admin2_pcode": a2}
+                               for pid, nm, a2 in r.alternatives]
+        out["note"] = (f"{r.ambiguous_with + 1} places carry this name; pass the "
+                       "governorate (e.g. 'المغير رام الله') to choose")
+    return out
 
 
 # ── P2: the crowd reporting engine ───────────────────────────────────────────
