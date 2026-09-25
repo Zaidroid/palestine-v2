@@ -657,7 +657,7 @@ def _unauthenticated(why: str) -> JSONResponse:
     return JSONResponse(_err(None, -32001, why), status_code=401, headers={
         "www-authenticate": f'Bearer resource_metadata="{oauth.RESOURCE.rsplit("/mcp", 1)[0]}'
                              f'/.well-known/oauth-protected-resource", error="invalid_token"',
-        "x-key-request": "https://zaidlab.xyz/palestine"})
+        "x-key-request": f"{oauth.PUBLIC_BASE}/#connect"})    # was a 404 (P2-B)
 
 
 # One POST is one limiter hit, so both what it may carry and how big it may be

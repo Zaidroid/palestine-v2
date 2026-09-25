@@ -30,3 +30,22 @@
   --t-fast: 140ms;
   --t-slow: 380ms;
 }
+
+/* Status ink: the readable text colour on a status-tinted chip (road.html and
+   pulse.html spell the same three values inline). */
+:root { --ok-ink: #B8C48A; --warn-ink: #E8C27A; --bad-ink: #E39684; }
+
+/* The front door (/ and /docs/partner) follows the reader's colour scheme; the
+   concept pages keep the warm-dark signature because they do not carry the
+   class. Same structure as above; the values are board.html's light scope,
+   with the muted inks darkened to keep 4.5:1 on the light ground. */
+@media (prefers-color-scheme: light) {
+  :root.follows-scheme {
+    --g0: #F3ECE2;  --g1: #FBF7F0;  --g2: #EAE0D2;  --g3: #DFD2C0;
+    --ink: #2C2620;  --ink-muted: #5F5548;  --ink-faint: #857663;
+    --accent: #8F6310;
+    --ok: #6B7A3E;  --warn: #B07E1F;  --bad: #B04A38;  --unknown: #8C7D69;
+    --ok-ink: #45511F;  --warn-ink: #6E4C0E;  --bad-ink: #85301F;
+    --hairline: rgba(44, 38, 32, .14);
+  }
+}

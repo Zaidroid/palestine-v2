@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ar" dir="rtl" class="follows-scheme">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141110">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3ECE2">
+<meta name="description" content="بيانات فلسطين · Palestine Data — live + databank: West Bank roads now, and a databank from 1922 to today. MCP + REST.">
+<title>بيانات فلسطين · Palestine Data — live + databank</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app/tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--g0); color: var(--ink); font: 16px/1.7 var(--font-ui);
+         padding: 0 16px 40px; overflow-wrap: anywhere; }
+  header.top, main, footer { max-inline-size: 720px; margin-inline: auto; }
+  header.top { padding-block: 28px 4px; }
+  h1 { font-size: 30px; line-height: 1.3; }
+  .name-en { color: var(--accent); font-weight: 600; }
+  .lede { margin-block-start: 12px; font-size: 17px; }
+  .en { color: var(--ink-muted); font-size: 14px; line-height: 1.55; }
+  p.en { margin-block-start: 4px; }
+  p > .en, li > .en, dd > .en, .keybox .meta > [lang=en] { display: block; }
+  .url { display: inline-block; direction: ltr; }
+  h2 .en, h3 .en { display: inline-block; font-weight: 400; font-size: 13px; margin: 0 8px; }   /* ltr inside rtl: both sides */
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 18px 6px; }
+  nav a { display: inline-flex; align-items: center; min-block-size: 40px; padding: 4px 12px;
+          background: var(--g1); border: 1px solid var(--hairline); border-radius: var(--r-m);
+          color: var(--ink); text-decoration: none; font-size: 15px; }
+  section { border-block-start: 1px solid var(--hairline); padding-block: 26px 6px; margin-block-start: 18px; }
+  h2 { font-size: 21px; line-height: 1.4; margin-block-end: 10px; }
+  h3 { font-size: 16px; margin-block: 18px 6px; }
+  p + p { margin-block-start: 8px; }
+  .tiers { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card { background: var(--g1); border: 1px solid var(--hairline); border-radius: var(--r-l); padding: 14px 16px; }
+  .card h3 { margin-block-start: 0; }
+  .vocab { display: grid; gap: 10px; }
+  .vocab > div { display: grid; gap: 4px 12px; align-items: baseline; }
+  @media (min-width: 540px) { .vocab > div { grid-template-columns: 11em 1fr; } }
+  .vocab dd { font-size: 15px; }
+  .chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 1px 9px; border-radius: var(--r-s);
+          border: 1px solid transparent; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .chip .w { font-weight: 400; font-size: 12px; }
+  .chip.ok   { background: color-mix(in srgb, var(--ok) 24%, transparent);   color: var(--ok-ink); }
+  .chip.warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn-ink); }
+  .chip.bad  { background: color-mix(in srgb, var(--bad) 24%, transparent);  color: var(--bad-ink); }
+  /* no fill: the absence of knowledge is not a state colour (DESIGN.md) */
+  .chip.unk  { border-color: var(--unknown); color: var(--ink-muted); }
+  .chip.none { border: 1px dashed var(--ink-faint); color: var(--ink-muted); font-weight: 400; }
+  .n, code, pre, .q-n { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  .n { unicode-bidi: isolate; direction: ltr; }
+  .age { color: var(--ink-muted); font-size: 13px; white-space: nowrap; }
+  .rows { display: grid; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+  .row .label { min-inline-size: 7.5em; }
+  .meta { color: var(--ink-muted); font-size: 13.5px; }
+  code { font-size: 13.5px; background: var(--g1); border-radius: var(--r-s); padding: 0 4px; }
+  pre { direction: ltr; text-align: left; background: var(--g1); border: 1px solid var(--hairline);
+        border-radius: var(--r-m); padding: 12px; margin-block: 8px; overflow-x: auto; max-inline-size: 100%;
+        font-size: 13px; line-height: 1.55; }
+  pre code { background: none; padding: 0; overflow-wrap: normal; }
+  details { background: var(--g1); border: 1px solid var(--hairline); border-radius: var(--r-m); margin-block: 8px; }
+  summary { display: flex; gap: 10px; align-items: baseline; min-block-size: 48px; padding: 10px 14px;
+            cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  .q-n { color: var(--accent); min-inline-size: 1.4em; }
+  .q-en { display: block; }
+  summary > span:last-child { flex: 1; }
+  .ans { padding: 0 14px 14px; border-block-start: 1px solid var(--hairline); padding-block-start: 10px; }
+  .ans .a-en { margin-block-start: 6px; }
+  .ans .call { display: block; direction: ltr; text-align: left; margin-block-start: 8px; color: var(--ink-muted);
+               background: none; padding: 0; font-size: 12.5px; }
+  .keybox { background: var(--g1); border: 1px solid var(--hairline); border-radius: var(--r-l); padding: 14px 16px; }
+  .keybox code { display: block; direction: ltr; text-align: left; font-size: 15px;
+                 background: var(--g2); padding: 6px 8px; word-break: break-all; }
+  .keybox button { margin: 8px 0 0; }
+  button { font: inherit; font-size: 14px; color: var(--ink); background: var(--g2); border: 1px solid var(--hairline);
+           border-radius: var(--r-m); min-block-size: 40px; padding: 4px 14px; cursor: pointer; margin-inline-start: 6px; }
+  ol, ul { padding-inline-start: 1.4em; }
+  li + li { margin-block-start: 6px; }
+  .attr { direction: ltr; text-align: left; font-size: 14px; border-inline-start: 3px solid var(--accent);
+          padding: 2px 10px; margin-block-start: 10px; }
+  footer { color: var(--ink-muted); font-size: 13.5px; padding-block-start: 26px; border-block-start: 1px solid var(--hairline); margin-block-start: 26px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ans > * { animation: arrive 220ms var(--ease); }
+    @keyframes arrive { from { opacity: 0; } to { opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>بيانات فلسطين</h1>
+  <p class="name-en" lang="en" dir="ltr">Palestine Data — live + databank</p>
+  <p class="lede">شو صاير على طرق الضفة هلّأ — الحواجز بكل اتجاه، الطريق من بلد لبلد، والأحداث — وسجلّ تاريخي من 1922 لليوم. كل جواب معه عمره ومصدره، وبيقول لما ما بيعرف.</p>
+  <p class="en" lang="en" dir="ltr">What is happening on the West Bank's roads now — checkpoints per direction, journeys between towns, incidents — and a historical databank from 1922 to today. Every answer carries its age and its source, and says so when it does not know.</p>
+  <nav aria-label="أقسام الصفحة">
+    <a href="#status">الحالة</a><a href="#try">جرّب</a><a href="#connect">اتصل</a><a href="#docs">التوثيق</a><a href="#licence">الترخيص</a><a href="#contact">تواصل</a>
+  </nav>
+</header>
+
+<main>
+<section id="what">
+  <h2>شو هاد؟<span class="en" lang="en" dir="ltr">What it is</span></h2>
+  <div class="tiers">
+    <div class="card">
+      <h3>مباشر<span class="en" lang="en" dir="ltr">Live</span></h3>
+      <p>حالة الحواجز لكل اتجاه (دخول وخروج)، الطريق بين البلدات، الاقتحامات واعتداءات المستوطنين والإغلاقات — مقروءة من قنوات الطرق والأخبار، محسوب كم مصدر مستقل أكّدها، وبتضعف ثقتها مع الوقت.</p>
+      <p class="en" lang="en" dir="ltr">Checkpoints per direction, journeys between towns, raids, settler attacks and closures — read from road and news channels, counted by how many independent reporters agree, and decayed with age.</p>
+    </div>
+    <div class="card">
+      <h3>أرشيف<span class="en" lang="en" dir="ltr">Databank</span></h3>
+      <p>أكثر من 200,000 سجلّ من 1922 لليوم: شهداء، هدم، أسرى، تهجير، أسعار، تمويل، صحة… كل سجلّ معه مصدره وترخيصه والفترة اللي كان صحيح فيها.</p>
+      <p class="en" lang="en" dir="ltr">200,000+ rows from 1922 to today — casualties, demolitions, prisoners, displacement, prices, funding, health — each with its source, its licence and the window it was true in.</p>
+    </div>
+  </div>
+  <h3>ثلاث كلمات ما بنخلطها<span class="en" lang="en" dir="ltr">Three words we never blur</span></h3>
+  <dl class="vocab">
+    <div><dt><span class="chip ok">سالك <span class="w" lang="en">open</span></span></dt>
+      <dd>قيمة: اللي بنأكده هلّأ، ومعها عمرها. <span class="en" lang="en" dir="ltr">A value: what we assert now, with its age.</span></dd></div>
+    <div><dt><span class="chip unk">غير معروف <span class="w" lang="en">unknown</span></span></dt>
+      <dd>ما حدا موثوق بلّغ مؤخراً. هاد جواب مش فراغ — وما بنعرض آخر قيمة كأنها الحالية. <span class="en" lang="en" dir="ltr">Nobody credible reported recently. An answer, not a gap — and never the last value dressed as current.</span></dd></div>
+    <div><dt><span class="chip none">لا مصدر <span class="w" lang="en">no source</span></span></dt>
+      <dd>ما في إشي بيقيس هاد، أبداً. <span class="en" lang="en" dir="ltr">Nothing measures this, ever.</span></dd></div>
+  </dl>
+</section>
+
+<section id="status" aria-live="polite">
+  <h2>الحالة الآن<span class="en" lang="en" dir="ltr">Status now</span></h2>
+  <div class="rows">
+    <div class="row" id="st-service"><span class="label">الخدمة <span class="en" lang="en">service</span></span><span class="chip unk">بنفحص <span class="w" lang="en">checking</span></span></div>
+    <div class="row" id="st-families"></div>
+  </div>
+  <h3>الحواجز<span class="en" lang="en" dir="ltr">Checkpoints</span></h3>
+  <div class="row" id="st-checkpoints"></div>
+  <h3>شو بنقيس<span class="en" lang="en" dir="ltr">What is measured</span></h3>
+  <div class="rows" id="st-fields"></div>
+  <p class="meta" style="margin-block-start:12px">مقروءة من نفس الـ API: <a href="/health">/health</a> · <a href="/v2/coverage">/v2/coverage</a> · <a href="/v2/checkpoints/summary">/v2/checkpoints/summary</a></p>
+</section>
+
+<section id="try">
+  <h2>جرّب هالأسئلة<span class="en" lang="en" dir="ltr">Try these questions</span></h2>
+  <p>الأسئلة الـ12 اللي بنقيس عليها الإصدار. كل جواب حقيقي: الخادم بيسأله هلّأ بنفس أدوات الموصل وبنفس مستوى الشريك، وبيتذكّره دقيقتين بالكثير — وعمر كل جواب مكتوب جنبه.</p>
+  <p class="en" lang="en" dir="ltr">The twelve questions this release is measured on. Every answer is real: the server asks it now, with the connector's own tools at the partner tier, and remembers it for two minutes at most — each answer shows how long ago it was asked.</p>
+  <div id="try-list"></div>
+</section>
+
+<section id="connect">
+  <h2>اتصل<span class="en" lang="en" dir="ltr">Connect</span></h2>
+  <p>نفس البيانات من بابين: MCP للوكلاء (Claude وChatGPT وغيرهم) وREST لأي برنامج. ما في مسار كتابة: الوكيل ما بقدر يبلّغ عن إشي، عن قصد.</p>
+  <p class="en" lang="en" dir="ltr">The same data through two doors: MCP for agents, REST for anything else. There is no write path — an agent cannot file a report, by design.</p>
+  <div class="keybox" id="key-box">
+    <h3 style="margin-block-start:0">مفتاح التجربة العام<span class="en" lang="en" dir="ltr">Public test key</span></h3>
+    <p><code id="key" dir="ltr">__PUBLIC_KEY__</code><button type="button" id="copy">انسخ</button></p>
+    <p class="meta">مشترك وبدون تسجيل: <span class="n">__PUBLIC_QUOTA__</span> طلب باليوم لكل اللي بيستخدموه. <span lang="en" dir="ltr">Shared, no signup: __PUBLIC_QUOTA__ calls a day across everyone using it.</span></p>
+  </div>
+  <p class="meta" id="no-key" hidden>ما في مفتاح عام منشور هلّأ — اطلب مفتاح من <a href="#contact">تواصل</a>. <span lang="en" dir="ltr">No public key is published right now — ask for one below.</span></p>
+  <p style="margin-block-start:10px">لإشي جدّي اطلب مفتاحك الخاص (واحد لكل تكامل) من <a href="#contact">تواصل</a>. <span class="en" lang="en" dir="ltr">For anything real, ask for your own key — one per integration.</span></p>
+
+  <h3>Claude</h3>
+  <ol>
+    <li>بإعدادات <span dir="ltr">Claude: Connectors → Add custom connector</span> <span class="en" lang="en" dir="ltr">In Claude's settings: Connectors → Add custom connector.</span></li>
+    <li>الرابط، بدون مفتاح: <code class="url">__BASE__/mcp</code></li>
+    <li>Claude بيفتح صفحتنا وبيطلب مفتاح: الصق مفتاح التجربة أو مفتاحك. <span class="en" lang="en" dir="ltr">Claude opens our page and asks for a key: paste the test key or your own (OAuth 2.0 with PKCE).</span></li>
+  </ol>
+  <p class="meta"><a href="https://claude.ai/settings/connectors">claude.ai → Settings → Connectors</a></p>
+
+  <h3>Claude Code</h3>
+<pre><code>claude mcp add --transport http palestine-data __BASE__/mcp \
+  --header "X-Api-Key: __KEY_OR_PLACEHOLDER__"</code></pre>
+
+  <h3>ChatGPT وغيره<span class="en" lang="en" dir="ltr">other MCP clients</span></h3>
+  <p>أضف نفس الرابط كخادم MCP بعيد (streamable HTTP). العميل اللي بيعرف OAuth بيوصل لصفحة المفتاح لحاله؛ واللي بياخد رابط بس:</p>
+  <p class="en" lang="en" dir="ltr">Add the same URL as a remote MCP server (streamable HTTP). A client that speaks OAuth finds the key page by itself; one that takes only a URL can carry the key in it:</p>
+<pre><code>__BASE__/mcp?key=__KEY_OR_PLACEHOLDER__</code></pre>
+
+  <h3>curl</h3>
+<pre><code># REST — no key
+curl '__BASE__/v2/checkpoints/status?name=Qalandia'
+
+# MCP — with a key
+curl -s -X POST __BASE__/mcp \
+  -H 'X-Api-Key: __KEY_OR_PLACEHOLDER__' -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"checkpoint_status","arguments":{"name":"قلنديا"}}}'</code></pre>
+  <p>الأسئلة الـ12 دفعة وحدة، بـ bash وpython3 بس: <a href="/docs/try-twelve.sh">try-twelve.sh</a> <span class="en" lang="en" dir="ltr">— all twelve in one pass, nothing but bash and python3.</span></p>
+</section>
+
+<section id="docs">
+  <h2>التوثيق<span class="en" lang="en" dir="ltr">Docs</span></h2>
+  <ul>
+    <li><a href="/docs/partner">دليل الشريك</a> — المفاتيح وOAuth، الأدوات الـ16، كيف تقرأ الأرقام، الحدود. <span class="en" lang="en" dir="ltr">Partner guide: keys and OAuth, the 16 tools, how to read the numbers, limits.</span></li>
+    <li><a href="/docs/partner.md">نفس الدليل كـ Markdown</a> <span class="en" lang="en" dir="ltr">the same guide as Markdown</span></li>
+    <li><a href="/v2">/v2</a> — خريطة مسارات REST <span class="en" lang="en" dir="ltr">the REST route map (JSON)</span></li>
+    <li><a href="/openapi.json">/openapi.json</a> — OpenAPI</li>
+    <li><a href="/health">/health</a> — حكم الجهاز على حاله <span class="en" lang="en" dir="ltr">the machine's own verdict</span></li>
+  </ul>
+</section>
+
+<section id="licence">
+  <h2>الترخيص<span class="en" lang="en" dir="ltr">Licence</span></h2>
+  <p>كل إشي هون مقروء لأي حد؛ اللي بيختلف هو شو مسموح تاخد وتعيد نشره. قراءات الحواجز والأحداث استنتاجنا إحنا — خدها مع ذكر المصدر. نص الأخبار ملك قنواته — بيوصلك مقتطف 250 حرف بس. سجلات الأرشيف كل واحد بترخيصه، وفي منها غير تجاري. قياس الإنترنت (IODA) — اذكره، ما تعيد نشره.</p>
+  <p class="en" lang="en" dir="ltr">Everything here is readable by anyone; what differs is what you may carry away. Checkpoint and incident readings are our own derived observations — yours, with attribution. News wording belongs to the channels: you get a 250-character excerpt. Databank rows each carry their own licence, and some are non-commercial. IODA connectivity: cite it, do not republish it.</p>
+  <p>قبل ما تعيد نشر إشي: أداة <code>licence</code> بالـ MCP أو <a href="/v2/licence/tools">/v2/licence/tools</a> — والتفاصيل في <a href="/docs/partner#8-attribution-and-licence">§8 من الدليل</a>.</p>
+  <p class="attr" lang="en">“Data: Palestine Data — live + databank (بيانات فلسطين), processed from public channel reports; Gaza and West Bank series via Tech for Palestine.”</p>
+</section>
+
+<section id="contact">
+  <h2>تواصل<span class="en" lang="en" dir="ltr">Contact</span></h2>
+  <p>شفت جواب غلط؟ هاد أثمن بلاغ. ابعت الطلب والجواب بالضبط ووقته (UTC) على <a href="mailto:zaidsalem@live.com">zaidsalem@live.com</a>. ولمفتاح خاص فيك — نفس العنوان.</p>
+  <p class="en" lang="en" dir="ltr">Seen a wrong answer? That is the most valuable report there is. Send the exact request, the exact response and the UTC time to zaidsalem@live.com — and ask there for a key of your own.</p>
+</section>
+</main>
+
+<footer>
+  <p>بلا تتبّع، بلا كوكيز، بلا أي طلب لطرف ثالث. <span lang="en" dir="ltr">No tracking, no cookies, no request to any third party.</span></p>
+</footer>
+
+<script type="application/json" id="try-data">__TRY_JSON__</script>
+<script nonce="__NONCE__">
+"use strict";
+const $ = (s) => document.querySelector(s);
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function en(tag, cls, text) { const e = el(tag, cls, text); e.lang = "en"; e.dir = "ltr"; return e; }
+function num(v) { return el("span", "n", String(v)); }
+
+// An age in words: "قبل 3 د". The numeral is isolated, the words stay Arabic.
+function age(sec) {
+  sec = Math.max(0, Math.round(sec));
+  let v = sec, u = "ث";
+  if (sec >= 60) { v = Math.round(sec / 60); u = "د"; }
+  if (sec >= 3600) { v = Math.round(sec / 3600); u = "س"; }
+  if (sec >= 172800) { v = Math.round(sec / 86400); u = "يوم"; }
+  const s = el("span", "age");
+  s.append("قبل ", num(v), " " + u);
+  return s;
+}
+function chip(cls, ar, enWord) {
+  const c = el("span", "chip " + cls, ar + " ");
+  c.append(en("span", "w", enWord));
+  return c;
+}
+function label(ar, enWord) {
+  const l = el("span", "label", ar + " ");
+  l.append(en("span", "en", enWord));
+  return l;
+}
+async function getJSON(path) {
+  const r = await fetch(path, { headers: { accept: "application/json" } });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+// ── status ──────────────────────────────────────────────────────────────────
+const FAMILY = { job: ["مهام", "jobs"], feed: ["قنوات", "feeds"], source: ["مصادر", "sources"],
+                 dep: ["اعتماديات", "dependencies"], backup: ["نسخ احتياطي", "backups"],
+                 capacity: ["سعة", "capacity"] };
+const FIELD = { checkpoint_flow: ["حركة الحواجز", "checkpoint flow"], checkpoint_inspection: ["تفتيش", "inspection"],
+                checkpoint_police: ["شرطة", "police"], checkpoint_idf: ["جيش", "army"],
+                checkpoint_settlers: ["مستوطنين", "settlers"], road_closure: ["إغلاق طرق", "road closures"],
+                internet: ["إنترنت", "internet"], power: ["كهرباء", "power"], weather: ["طقس", "weather"],
+                crossing_status: ["معابر", "crossings"], water: ["مياه", "water"] };
+let checkedAt = null;
+const checkedEl = el("span", "age");
+
+function renderService(res) {
+  const row = $("#st-service");
+  row.replaceChildren(label("الخدمة", "service"));
+  const h = res.status === "fulfilled" ? res.value : null;
+  let c;
+  if (!h) c = chip("bad", "لا ترد", "not answering");
+  else if (h.status === "ok") c = chip("ok", "شغّالة", "working");
+  else if (h.status === "degraded") {
+    c = chip("warn", "شغّالة مع أعطال", "degraded");
+    c.append(" ", num(h.faults_total));
+  }
+  else if (h.status === "maintenance") c = chip("warn", "صيانة", "maintenance");
+  else c = chip("unk", "غير معروف", "unknown");
+  row.append(c, checkedEl);
+  const fam = $("#st-families");
+  fam.replaceChildren();
+  if (!h || !h.families) return;
+  for (const [k, v] of Object.entries(h.families)) {
+    const [ar, e] = FAMILY[k] || [k, k];
+    const total = (v.ok || 0) + (v.faults || 0);
+    const c2 = v.faults ? chip("warn", ar, e) : chip("ok", ar, e);
+    c2.append(" ", num((v.ok || 0) + "/" + total));
+    fam.append(c2);
+  }
+}
+
+function renderCheckpoints(res) {
+  const row = $("#st-checkpoints");
+  row.replaceChildren();
+  if (res.status !== "fulfilled") { row.append(chip("unk", "ما قدرنا نقرأ الملخص", "summary unavailable")); return; }
+  const d = res.value, t = d.totals || {};
+  const lead = el("span", null, "");
+  lead.append(num(d.tracked), " حاجز متابَع، ", num(Math.round((d.known_fraction || 0) * 100) + "%"), " منها عليها قراءة حالية.");
+  row.append(lead);
+  const kinds = [["open", "ok", "سالك", "open"], ["closed", "bad", "مسكّر", "closed"],
+                 ["congested", "warn", "أزمة", "congested"], ["slow", "warn", "بطيء", "slow"],
+                 ["unknown", "unk", "غير معروف", "unknown"]];
+  for (const [k, cls, ar, e] of kinds) {
+    if (!(k in t)) continue;
+    const c = chip(cls, ar, e);
+    c.append(" ", num(t[k]));
+    row.append(c);
+  }
+}
+
+function renderFields(res) {
+  const box = $("#st-fields");
+  box.replaceChildren();
+  if (res.status !== "fulfilled") { box.append(chip("unk", "ما قدرنا نقرأ التغطية", "coverage unavailable")); return; }
+  const now = Date.now();
+  for (const f of res.value.fields || []) {
+    if (f.retired || f.state_kind === "checkpoint_status") continue;   // the legacy grain duplicates flow
+    const [ar, e] = FIELD[f.state_kind] || [f.state_kind, f.state_kind];
+    const row = el("div", "row");
+    row.append(label(ar, e));
+    const st = f.coverage_state;
+    if (st === "live") row.append(chip("ok", "حيّ", "live"));
+    else if (st === "stale") row.append(chip("unk", "ساكت — غير معروف", "quiet: unknown"));
+    else if (st === "crowd_only") row.append(chip("unk", "بلاغات الناس بس", "crowd only"));
+    else if (f.no_source || st === "never_reported") row.append(chip("none", "لا مصدر", "no source"));
+    else row.append(chip("unk", st || "غير معروف", "unknown"));
+    if (f.last_observed_at) {
+      const a = age((now - Date.parse(f.last_observed_at)) / 1000);
+      a.prepend("آخر قراءة ");
+      row.append(a);
+    }
+    box.append(row);
+  }
+}
+
+function tick() {
+  if (checkedAt == null) return;
+  checkedEl.replaceChildren("فُحصت ", age((Date.now() - checkedAt) / 1000));
+}
+
+async function loadStatus() {
+  const [h, cov, cp] = await Promise.allSettled([
+    getJSON("/health"), getJSON("/v2/coverage"), getJSON("/v2/checkpoints/summary")]);
+  checkedAt = Date.now();
+  renderService(h); renderFields(cov); renderCheckpoints(cp); tick();
+}
+
+// ── the twelve questions ────────────────────────────────────────────────────
+async function ask(q, body, d) {
+  d.dataset.asked = "1";
+  body.replaceChildren(el("p", "meta", "بنسأل… · asking…"));
+  try {
+    const r = await getJSON("/v2/try/" + q.n);
+    const out = [el("p", "a-ar", r.answer || "—")];
+    if (r.answer_en) out.push(en("p", "a-en en", r.answer_en));
+    const meta = el("p", "meta");
+    if (r.failed) meta.append(chip("bad", "ما زبط", "failed"), " ");
+    const a = age(r.age_seconds || 0);
+    a.prepend("سُئل ");
+    meta.append(a, " · ", num((r.took_ms / 1000).toFixed(1)), " ث");
+    if (r.partner_tier) meta.append(" · ", en("span", null, "licence: " + r.partner_tier));
+    out.push(meta, en("code", "call", q.tool + " " + JSON.stringify(q.arguments)));
+    body.replaceChildren(...out);
+  } catch (e) {
+    d.dataset.asked = "";
+    body.replaceChildren(el("p", "meta", "تعذّر السؤال هلّأ · could not ask right now (" + e.message + ")"));
+  }
+}
+
+const QUESTIONS = JSON.parse($("#try-data").textContent);
+for (const q of QUESTIONS) {
+  const d = el("details");
+  const s = el("summary");
+  const txt = el("span", null);
+  txt.append(el("span", "q-ar", q.ar), en("span", "q-en en", q.en));
+  s.append(el("span", "q-n", String(q.n)), txt);
+  const body = el("div", "ans");
+  d.append(s, body);
+  d.addEventListener("toggle", () => { if (d.open && !d.dataset.asked) ask(q, body, d); });
+  $("#try-list").append(d);
+}
+// Question 2 (قلنديا now) opens by itself: short, live, and the reason this exists.
+const first = $("#try-list details:nth-of-type(2)");
+if (first) first.open = true;
+
+// ── the key ─────────────────────────────────────────────────────────────────
+const key = $("#key").textContent.trim();
+if (!key.startsWith("pv2_")) { $("#key-box").hidden = true; $("#no-key").hidden = false; }
+$("#copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(key); $("#copy").textContent = "انسخ ✓"; }
+  catch (e) { $("#copy").textContent = "ما زبط النسخ"; }
+});
+
+loadStatus();
+setInterval(tick, 5000);
+setInterval(() => { if (!document.hidden) loadStatus(); }, 60000);
+</script>
+</body>
+</html>

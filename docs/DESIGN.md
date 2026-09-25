@@ -61,3 +61,9 @@ Every status chip carries its age beside it, mono.
 light). NOT LOCKED. No further aesthetic work until Zaid points or mixes;
 then the locked concept gets the full PWA pass (manifest, SW, install copy,
 thumb-zone audit) per mobile-first-pwa.
+
+2026-09-25: **the front door** (Z-1) — `/` for a browser serves `webapp/front.html`
+(content-negotiated; API clients keep the JSON), `/docs/partner` the rendered partner guide.
+Both follow the reader's colour scheme through `:root.follows-scheme` in `tokens.css`
+(the concept pages do not carry the class and stay warm-dark), and both send a CSP that
+allows this origin only — law 5 enforced by the browser, not just by review.

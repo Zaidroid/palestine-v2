@@ -1,6 +1,8 @@
-# Palestine data platform
+# Palestine Data — live + databank (بيانات فلسطين)
 
-A live-data and historical-record platform for Palestine. Two halves:
+A live-data and historical-record platform for Palestine. Front door:
+https://live-api.zaidlab.xyz/ (status, the twelve questions answered live, how to
+connect); partner guide: https://live-api.zaidlab.xyz/docs/partner. Two halves:
 
 **Tier 1 — what is happening now.** Checkpoint status, road closures,
 incidents and the official West Bank fuel prices, parsed from Arabic Telegram
