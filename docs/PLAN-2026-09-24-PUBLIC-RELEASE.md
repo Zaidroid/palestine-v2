@@ -475,3 +475,7 @@ own result) resolved 13 units' alarms — 664 → 5 open (measure-review ×2, f1
 watchdog closes on its next run); the manual 11:31 backup recorded as its heartbeat → `/health` ok, 0 faults. From now on
 with-heartbeat.sh resolves a unit's alarm on its next good run. system_health through the MCP will read the same once the API
 restarts (Fawwaz's `48537a6` is also waiting on that restart).
+2026-09-25 17:35 UTC · migration 082 APPLIED + API restarted by Zaid (17:32) · done · proof: 20 rows merged, 0 duplicate
+checkpoint names, `checkpoint_serving` known 169 of 265 = 0.638; Karmelo now in Hebron governorate; live
+`/v2/checkpoints/status` اللبن الشرقية → row 1739, 15 min old (was the 10-hour-old twin), الكونتينر → one row; /health ok,
+0 faults, pool on. Fawwaz's `48537a6` (system_health) live with this restart.
