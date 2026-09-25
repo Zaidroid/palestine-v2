@@ -163,6 +163,14 @@ def _presence_phrase(cp: dict) -> str:
     return f" وفي {' و'.join(who)}" if who else ""
 
 
+def _dir_clause_ar(row: dict | None, label: str) -> str:
+    """One travel direction with its own age, or an honest 'no update'."""
+    f = (row or {}).get("flow")
+    if not f or f == "unknown":
+        return f"{label} ما في تحديث حديث"
+    return f"{FLOW_AR.get(f, f)} {label} ({_age_ar((row or {}).get('age_minutes'))})"
+
+
 def checkpoint_status(name: str, direction: str = "both") -> dict:
     """Is a named checkpoint open? Optionally for one travel direction."""
     direction = DIR_IN.get(direction.strip().lower(), direction.strip().lower())
@@ -170,6 +178,11 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
         direction = "both"
     d = api("/v2/checkpoints/status", name=name, direction=direction)
     if not d.get("found"):
+        # A checkpoint the registry knows and nobody has ever reported is a
+        # different fact from a name we cannot place (F049).
+        if d.get("resolved_to"):
+            return {"answer": f"{d['resolved_to']}: حاجز معروف بس ما وصلنا عنه ولا تقرير لحد الآن.",
+                    **d}
         return {"answer": f"ما عرفت حاجز اسمه {name}.", **d}
 
     nm = d["match"]["resolved_to"]
@@ -179,11 +192,15 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
     # Where the two directions genuinely differ, say so — that difference is
     # the whole reason direction is tracked, and it is exactly what a bare
     # status hides.
-    if (direction == "both" and inb and outb
-            and inb["flow"] != outb["flow"]
-            and "unknown" not in (inb["flow"], outb["flow"])):
-        answer = (f"{nm}: {FLOW_AR.get(inb['flow'], inb['flow'])} للداخل، "
-                  f"و{FLOW_AR.get(outb['flow'], outb['flow'])} للخارج."
+    #
+    # Each direction carries its OWN age (F044/F035/F050), and a known
+    # direction is never hidden behind an unknown one: "closed inbound 9 minutes
+    # ago, outbound unknown" used to fall through to the decayed row (F009).
+    known = [r for r in (inb, outb) if r and r.get("flow") not in (None, "unknown")]
+    if (direction == "both" and inb and outb and known
+            and inb.get("flow") != outb.get("flow")):
+        answer = (f"{nm}: {_dir_clause_ar(inb, 'للداخل')}، "
+                  f"و{_dir_clause_ar(outb, 'للخارج')}."
                   f"{_presence_phrase(d)}")
     else:
         suffix = "" if direction == "both" else f" {DIR_AR[direction]}"
@@ -351,12 +368,16 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
     res, counts = d.get("results", []), d.get("counts", {})
     known = [r for r in res if r["flow"] != "unknown"]
 
-    if not known:
+    if not known and not counts.get("in_radius"):
+        # Nothing tracked in range is not "old news" (F052).
+        answer = f"ما في حاجز متابَع ضمن {radius_km:g} كم من {place or 'موقعك'}."
+    elif not known:
         answer = (f"ما في تحديثات جديدة عن الحواجز حوالين {place or 'هون'}. "
                   f"في {counts.get('in_radius', 0)} حاجز بالمنطقة بس آخر أخبارهم قديمة.")
     else:
         closed = [r for r in known if r["flow"] == "closed"]
-        parts = [f"{r['name']} {FLOW_AR.get(r['flow'], r['flow'])}"
+        # Every listed state says how old it is (F052).
+        parts = [f"{r['name']} {FLOW_AR.get(r['flow'], r['flow'])} ({_age_ar(r.get('age_minutes'))})"
                  f"{_presence_phrase(r)}" for r in known[:4]]
         answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."
         if closed:
@@ -366,7 +387,7 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
             answer += f" وفي {counts['unknown']} حاجز ما إلهم تحديث حديث."
 
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
-            "direction": direction, "counts": counts,
+            "direction": direction, "counts": counts, "radius_km": radius_km,
             "checkpoints": [{"name": r["name"], "flow": r["flow"],
                              "passable": r["passable"],
                              "last_known_flow": r.get("last_known_flow"),
@@ -469,10 +490,16 @@ def incidents_near(place: str | None = None, lat: float | None = None,
         parts = []
         for i in items[:4]:
             ar = INCIDENT_AR.get(i["type"], i["type"])
-            where = i["place"]
-            if i.get("place_precision") == "governorate" and i.get("named_place"):
-                where = f"{i['named_place']} (محافظة {i['place']})"
-            elif i.get("place_precision") == "governorate":
+            # Anything short of a NAMED place is governorate-level: a
+            # village_ambiguous event was spoken as if it happened in the city
+            # (F053).
+            prec = i.get("place_precision")
+            if prec in (None, "named"):
+                where = i["place"]
+            elif i.get("named_place"):
+                where = (f"{i['named_place']} (محافظة {i['place']}"
+                         + ("، القرية مش مؤكدة" if prec == "village_ambiguous" else "") + ")")
+            else:
                 where = f"محافظة {i['place']}"
             parts.append(f"{ar} في {where} {_age_ar(_mins_since(i['occurred_at']))}")
         answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."

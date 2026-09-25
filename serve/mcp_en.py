@@ -52,8 +52,21 @@ def _n(d: dict, *keys, default=0):
 
 # ── live ─────────────────────────────────────────────────────────────────────
 
+def _dir_clause(row: dict | None, label: str) -> str:
+    f = (row or {}).get("flow")
+    if not f or f == "unknown":
+        return f"no recent reading {label}"
+    return f"{FLOW.get(f, f)} {label} ({_age((row or {}).get('age_minutes'))})"
+
+
+_NOT_PLACED = "Place not recognised — try the Arabic spelling or a nearby town."
+
+
 def checkpoint_status(d: dict) -> str:
     if d.get("found") is False:
+        if d.get("resolved_to"):
+            return (f"{d['resolved_to']} is a known checkpoint, but no report of it "
+                    f"has ever been recorded.")
         return f"No checkpoint found matching that name."
     flow, name = d.get("flow"), d.get("name")
     who = [PRESENCE.get(p, p) for p in (d.get("present") or [])]
@@ -65,11 +78,10 @@ def checkpoint_status(d: dict) -> str:
     # reader of "Hawara" was told "عورتا: open" while an Arabic reader was
     # told the name was a guess. Two answers from one payload name one set
     # of facts.
-    if (d.get("direction") == "both" and inb.get("flow") and outb.get("flow")
-            and inb["flow"] != outb["flow"]
-            and "unknown" not in (inb["flow"], outb["flow"])):
-        out = (f"{name}: {FLOW.get(inb['flow'], inb['flow'])} inbound, "
-               f"{FLOW.get(outb['flow'], outb['flow'])} outbound.{tail}")
+    known = [r for r in (inb, outb) if r.get("flow") not in (None, "unknown")]
+    if (d.get("direction") == "both" and inb and outb and known
+            and inb.get("flow") != outb.get("flow")):
+        out = f"{name}: {_dir_clause(inb, 'inbound')}, {_dir_clause(outb, 'outbound')}.{tail}"
     elif flow == "unknown":
         last = d.get("last_known_flow")
         if not last or last == "unknown":
@@ -90,12 +102,19 @@ def checkpoint_status(d: dict) -> str:
 
 
 def checkpoints_near(d: dict) -> str:
+    if d.get("error"):
+        return _NOT_PLACED
     cps = [c for c in d.get("checkpoints", []) if c.get("flow") != "unknown"]
     counts = d.get("counts") or {}
+    if not cps and not counts.get("in_radius"):
+        r = d.get("radius_km")
+        return (f"No tracked checkpoint within {r:g} km of {d.get('origin')}." if r
+                else f"No tracked checkpoint in range of {d.get('origin')}.")
     if not cps:
         return (f"No recent checkpoint reports around {d.get('origin')}. "
                 f"{counts.get('in_radius', 0)} are in range but their last news is old.")
-    parts = [f"{c['name']} {FLOW.get(c['flow'], c['flow'])}" for c in cps[:4]]
+    parts = [f"{c['name']} {FLOW.get(c['flow'], c['flow'])} ({_age(c.get('age_minutes'))})"
+             for c in cps[:4]]
     out = f"Around {d.get('origin')}: " + ", ".join(parts) + "."
     closed = [c["name"] for c in cps if c["flow"] == "closed"]
     if closed:
@@ -225,6 +244,8 @@ def fuel_prices(d: dict) -> str:
 
 
 def incidents_near(d: dict) -> str:
+    if d.get("error"):
+        return _NOT_PLACED
     items = d.get("incidents") or []
     if not items:
         return (f"No incidents recorded around {d.get('origin')} in the last "
@@ -232,9 +253,11 @@ def incidents_near(d: dict) -> str:
     bits = []
     for i in items[:4]:
         where = i.get("place_en") or i["place"]
-        if i.get("place_precision") == "governorate" and i.get("named_place"):
-            where = f"{i['named_place']} ({where} governorate)"
-        elif i.get("place_precision") == "governorate":
+        prec = i.get("place_precision")
+        if prec not in (None, "named") and i.get("named_place"):
+            where = (f"{i['named_place']} ({where} governorate"
+                     + (", village uncertain" if prec == "village_ambiguous" else "") + ")")
+        elif prec not in (None, "named"):
             where = f"{where} governorate (village not resolved)"
         bits.append(f"{i['type'].replace('_', ' ')} in {where} {_age(_mins(i.get('occurred_at')))}")
     out = f"Around {d.get('origin')}: " + ", ".join(bits) + "."
