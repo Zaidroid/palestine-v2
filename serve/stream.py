@@ -117,7 +117,14 @@ class Broadcaster:
             except asyncio.QueueFull:
                 # Slow consumer. Drop it rather than buffer without limit; SSE
                 # clients reconnect on their own and get a fresh snapshot.
+                # Dropping it from the set alone left its stream open on
+                # keepalives, so the client believed it was live and heard
+                # nothing again (audit F402). Empty the queue and leave one
+                # None behind: event_source reads it as "end this stream".
                 self.unsubscribe(q)
+                while not q.empty():
+                    q.get_nowait()
+                q.put_nowait(None)
 
     # ── the poll loop ────────────────────────────────────────────────────────
     def _fetch(self) -> list[dict]:
@@ -250,6 +257,11 @@ async def event_source(state_kind: str | None = None,
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"
                 continue
+            if ev is None:                      # dropped for falling behind
+                yield _sse("reset", {"reason": "this subscriber fell behind and "
+                                               "was dropped; reconnect for a "
+                                               "fresh snapshot"})
+                return
             if state_kind and ev.get("state_kind") != state_kind:
                 continue
             if place_id and ev.get("place_id") != place_id:

@@ -74,7 +74,14 @@ def _save() -> None:
     try:
         STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
         tmp = STATE_PATH.with_suffix(".tmp")
-        tmp.write_text(json.dumps(_STATE, indent=1))
+        # 0600 from the first byte: the file holds live bearer tokens, and
+        # write_text() created it with the umask's 0644 on every issue (F396).
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            fh.write(json.dumps(_STATE, indent=1))
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.chmod(tmp, 0o600)            # an older tmp file keeps its old mode
         tmp.replace(STATE_PATH)
     except Exception:                                            # noqa: BLE001
         pass                        # never let bookkeeping fail a live request
@@ -85,10 +92,11 @@ def _now() -> float:
 
 
 def _prune() -> None:
+    # Each store by its own lifetime. Both used TOKEN_TTL before, so a refresh
+    # token died with its access token and REFRESH_TTL was never read.
     t = _now()
-    for store, keep in ((_STATE["tokens"], 1), (_STATE["refreshes"], 1)):
-        dead = [k for k, v in store.items()
-                if t - v.get("issued", 0) > (TOKEN_TTL if keep else REFRESH_TTL)]
+    for store, ttl in ((_STATE["tokens"], TOKEN_TTL), (_STATE["refreshes"], REFRESH_TTL)):
+        dead = [k for k, v in store.items() if t - v.get("issued", 0) > ttl]
         for k in dead:
             store.pop(k, None)
 
@@ -104,6 +112,23 @@ def _partner_key_ok(key: str) -> str | None:
     from serve.mcp_http import _partner_keys
     rec = _partner_keys().get(key)
     return rec.get("name") if rec else None
+
+
+def current_key(who: str) -> dict | None:
+    """The partner-key record a token was issued under, if it still exists.
+
+    A token is only as alive as the key that earned it: removing a key from the
+    key file must end every OAuth session opened with it, at once, and the
+    token must spend that key's quota rather than none (F087, F357). Looked up
+    by NAME, which is what a token records.
+    """
+    if not who:
+        return None
+    from serve.mcp_http import _partner_keys
+    for rec in _partner_keys().values():
+        if rec.get("name") == who:
+            return rec
+    return None
 
 
 def _test_key_note() -> str:
@@ -130,11 +155,17 @@ def _test_key_note() -> str:
                                f"{int(rec.get('daily_quota') or 0):,}"))
 
 
-def valid_token(token: str) -> bool:
+def token_record(token: str) -> dict | None:
+    """The stored record for a live access token, or None."""
     if not token:
-        return False
+        return None
     _prune()
-    return token in _STATE["tokens"]
+    return _STATE["tokens"].get(token)
+
+
+def valid_token(token: str) -> bool:
+    rec = token_record(token)
+    return bool(rec) and current_key(rec.get("who", "")) is not None
 
 
 async def _form(request: Request) -> dict:
@@ -270,8 +301,11 @@ def authorize_page(request: Request) -> HTMLResponse:
     wanted = ("client_id", "redirect_uri", "state", "code_challenge",
               "code_challenge_method", "response_type", "scope")
     params = {k: q.get(k, "") for k in wanted}
-    if params["code_challenge_method"] and params["code_challenge_method"] != "S256":
-        return HTMLResponse("<p>Only PKCE with S256 is accepted.</p>", status_code=400)
+    # PKCE is required, not offered: without a challenge the flow issued a token
+    # to whoever held the code (F359). The metadata already says S256 only.
+    if not params["code_challenge"] or params["code_challenge_method"] != "S256":
+        return HTMLResponse("<p>PKCE is required: send code_challenge with "
+                            "code_challenge_method=S256.</p>", status_code=400)
     _load()
     client = _STATE["clients"].get(params["client_id"])
     name = (client or {}).get("client_name") or "An application"
@@ -295,6 +329,9 @@ async def authorize_submit(request: Request):
     if ruri not in client["redirect_uris"]:
         return HTMLResponse("<p>redirect_uri is not registered for this client.</p>",
                             status_code=400)
+    if not str(form.get("code_challenge") or ""):
+        return HTMLResponse("<p>PKCE is required: send code_challenge with "
+                            "code_challenge_method=S256.</p>", status_code=400)
     who = _partner_key_ok(str(form.get("key") or "").strip())
     if not who:
         return HTMLResponse(
@@ -318,7 +355,7 @@ async def authorize_submit(request: Request):
 # ── the token endpoint ───────────────────────────────────────────────────────
 def _pkce_ok(verifier: str, challenge: str) -> bool:
     if not challenge:
-        return True                    # no challenge asked for: nothing to verify
+        return False                   # PKCE is required (F359): no challenge, no token
     if not verifier:
         return False
     digest = hashlib.sha256(verifier.encode()).digest()
@@ -343,9 +380,23 @@ async def token(request: Request) -> JSONResponse:
     _load()
 
     if grant == "refresh_token":
-        rec = _STATE["refreshes"].get(str(form.get("refresh_token") or ""))
+        _prune()
+        ref = str(form.get("refresh_token") or "")
+        rec = _STATE["refreshes"].get(ref)
         if not rec:
             return JSONResponse({"error": "invalid_grant"}, status_code=400)
+        cid = str(form.get("client_id") or "")
+        if cid and cid != rec["client_id"]:
+            return JSONResponse({"error": "invalid_grant",
+                                 "error_description": "refresh token was issued to "
+                                                      "another client"}, status_code=400)
+        if current_key(rec["who"]) is None:
+            return JSONResponse({"error": "invalid_grant",
+                                 "error_description": "the partner key behind this "
+                                                      "token was revoked"}, status_code=400)
+        # Rotation: a refresh token is spent by its use, so a copy stolen from a
+        # log or a backup stops working the moment the client refreshes (F087).
+        _STATE["refreshes"].pop(ref, None)
         return JSONResponse(_issue(rec["client_id"], rec["who"]))
 
     if grant != "authorization_code":

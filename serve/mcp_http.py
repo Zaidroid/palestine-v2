@@ -511,8 +511,12 @@ def _presented_key(request: Request) -> str | None:
     return request.headers.get("x-api-key") or request.query_params.get("key")
 
 
-def _quota_exceeded(record: dict) -> bool:
-    """Per-key calls per UTC day, counted in memory, reset by date."""
+def _quota_exceeded(record: dict, n: int = 1) -> bool:
+    """Per-key calls per UTC day, counted in memory, reset by date.
+
+    `n` is how many tool calls this POST carries: a batch of forty tools/call
+    messages used to cost one unit (F078).
+    """
     quota = int(record.get("daily_quota") or 0)
     if not quota:
         return False
@@ -521,9 +525,9 @@ def _quota_exceeded(record: dict) -> bool:
     if slot.get("day") != day:
         _KEY_STATE["counts"] = {"day": day, "n": {}}
         slot = _KEY_STATE["counts"]
-    n = int(slot["n"].get(record["name"], 0))
-    slot["n"][record["name"]] = n + 1
-    return n >= quota
+    used = int(slot["n"].get(record["name"], 0))
+    slot["n"][record["name"]] = used + n
+    return used + n > quota
 
 
 PUBLIC_KEY_NAME = "public-test"
@@ -601,9 +605,24 @@ def _unauthenticated(why: str) -> JSONResponse:
         "x-key-request": "https://zaidlab.xyz/palestine"})
 
 
+# One POST is one limiter hit, so both what it may carry and how big it may be
+# are bounded here (F078, F088). No client sends more than a handshake and a
+# few calls at once, and no tool argument is anywhere near a quarter megabyte.
+MAX_BODY_BYTES = 256 * 1024
+MAX_BATCH = 8
+
+
 @router.post("/mcp", include_in_schema=False)
 async def mcp_endpoint(request: Request) -> Response:
+    try:
+        declared = int(request.headers.get("content-length") or 0)
+    except ValueError:
+        declared = 0
+    if declared > MAX_BODY_BYTES:
+        return JSONResponse(_err(None, -32600, "request body too large"), status_code=413)
     raw = await request.body()
+    if len(raw) > MAX_BODY_BYTES:
+        return JSONResponse(_err(None, -32600, "request body too large"), status_code=413)
     try:
         payload = json.loads(raw or b"")
     except (json.JSONDecodeError, UnicodeDecodeError):
@@ -613,7 +632,11 @@ async def mcp_endpoint(request: Request) -> Response:
     msgs = payload if batch else [payload]
     if not msgs:
         return JSONResponse(_err(None, -32600, "empty batch"), status_code=400)
+    if len(msgs) > MAX_BATCH:
+        return JSONResponse(_err(None, -32600, f"a batch carries at most {MAX_BATCH} "
+                                 "messages"), status_code=400)
 
+    from serve import ratelimit as rl
     from serve.ratelimit import client_ip, is_local
     ip = client_ip(request)
 
@@ -627,17 +650,31 @@ async def mcp_endpoint(request: Request) -> Response:
     tier = "house" if is_local(ip) else "partner"
 
     if not is_local(ip):
+        # The middleware charged this POST once; every further message in a
+        # batch is a request of its own and is charged here.
+        for _ in range(len(msgs) - 1):
+            ok, retry = rl.check(ip, "mcp")
+            if not ok:
+                return JSONResponse(_err(None, -32003, "rate limited"), status_code=429,
+                                    headers={"Retry-After": str(retry)})
+        calls = sum(1 for m in msgs if isinstance(m, dict) and m.get("method") == "tools/call")
         key = _presented_key(request)
         keys = _partner_keys()
         if key and key in keys:                       # a partner key: quota per key
-            if _quota_exceeded(keys[key]):
-                return JSONResponse(_err(None, -32002, "daily quota for this key is "
-                                         "used up; it resets at midnight UTC"),
-                                    status_code=429)
-        elif key and oauth.valid_token(key):
-            pass                          # an OAuth token from /token, per client
+            record = keys[key]
+        elif key and (tok := oauth.token_record(key)):
+            # An OAuth token is the key that earned it: it dies when the key is
+            # revoked and it spends that key's quota (F087, F357).
+            record = oauth.current_key(tok.get("who", ""))
+            if record is None:
+                return _unauthenticated("the partner key behind this token was "
+                                        "revoked. " + _no_key_message())
         else:
             return _unauthenticated(_no_key_message())
+        if _quota_exceeded(record, max(1, calls)):
+            return JSONResponse(_err(None, -32002, "daily quota for this key is "
+                                     "used up; it resets at midnight UTC"),
+                                status_code=429)
 
     loop = asyncio.get_running_loop()
     replies = [r for r in await asyncio.gather(

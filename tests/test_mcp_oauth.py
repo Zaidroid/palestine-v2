@@ -32,6 +32,9 @@ def _clean_state(tmp_path, monkeypatch):
     monkeypatch.setattr(oauth, "_CODES", {})
     monkeypatch.setattr(oauth, "_partner_key_ok",
                         lambda k: "test" if k == GOOD_KEY else None)
+    # a token lives only while the key that earned it does (audit F087)
+    monkeypatch.setattr(oauth, "current_key",
+                        lambda who: {"name": who, "daily_quota": 0} if who == "test" else None)
     monkeypatch.setitem(_KEY_STATE, "keys", {})
     yield
 
