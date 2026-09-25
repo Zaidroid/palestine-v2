@@ -9,6 +9,10 @@
 > default row (Zaid's decision). Verification: full suite on the real DB 1045 passed / 17 failed → 13 were
 > worktree-missing files, 4 wait for 079/080, 1 real regression fixed (`5d55ed8`).
 >
+> **2026-09-25 (later):** items 1–3 below DONE by Zaid at 09:54 UTC (079/080 applied, API + poller restarted; verified
+> live). Area 04 renderers then landed on master (`81acc75`, 13 more tasks) — all in `serve/`, so **one more
+> `sudo systemctl restart palestine-v2-api`** puts them live; nothing else is needed for it.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 58 done · 3 partial · 99 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 69 done · 5 partial · 86 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -73,7 +73,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 04 · MCP tool answers (Arabic + English renderers, façades) — `04-renderers.md`
 
-15 done · 0 partial · 14 open of 29 confirmed; 0 of 37 verify-first done.
+26 done · 2 partial · 1 open of 29 confirmed; 0 of 37 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
@@ -83,29 +83,29 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | RENDERERS-04 | F044 | high | **done** | `c530211` | The direction-split checkpoint sentence carries no age in either language |
 | RENDERERS-05 | F045 | high | **done** | `c530211` | EN checkpoints_near turns 'place not resolved' into 'No recent checkpoint reports around None' |
 | RENDERERS-06 | F046 | high | **done** | `c530211` | EN incidents_near turns 'place not resolved' into 'No incidents recorded around None in the las |
-| RENDERERS-07 | F047 | high | **open** |  | news façade silently drops place/kind in search mode and hours in newest mode; declared limit d |
+| RENDERERS-07 | F047 | high | **done** | `81acc75` | news façade silently drops place/kind in search mode and hours in newest mode; declared limit d |
 | RENDERERS-08 | F049 | high | **done** | `c530211` | checkpoint_status blurs 'unknown name' with 'known checkpoint that has never been read' |
 | RENDERERS-09 | F035 | high | **done** | `c530211` | MCP checkpoint_status omits the reading's age whenever inbound and outbound differ (Arabic and  |
 | RENDERERS-10 | F050 | high | **done** | `c530211` | The direction-split answer carries no age at all |
-| RENDERERS-11 | F051 | high | **open** |  | Per-call boilerplate notes the plan moved to the reading-contract resource are still attached t |
+| RENDERERS-11 | F051 | high | **done** | `81acc75` | Per-call boilerplate notes the plan moved to the reading-contract resource are still attached t |
 | RENDERERS-12 | F052 | high | **done** | `c530211` | checkpoints (near) lists flows with no age, and says '0 checkpoints in the area but their news  |
 | RENDERERS-13 | F053 | high | **done** | `c530211` | incidents_near speaks a village_ambiguous event as if it happened in the governorate city |
-| RENDERERS-14 | F054 | high | **open** |  | Façade arguments are forwarded past the REST validation caps and turn into tool errors instead  |
+| RENDERERS-14 | F054 | high | **done** | `81acc75` | Façade arguments are forwarded past the REST validation caps and turn into tool errors instead  |
 | RENDERERS-15 | F055 | high | **done** | `1d5115c` | crossings says 'no source at all' when every sourced crossing has merely decayed |
-| RENDERERS-16 | F056 | high | **open** |  | can_i_travel never speaks the age of its evidence and leaks an English verdict token into the A |
+| RENDERERS-16 | F056 | high | **done** | `81acc75` | can_i_travel never speaks the age of its evidence and leaks an English verdict token into the A |
 | RENDERERS-17 | F057 | high | **open** |  | Route waypoints are not labelled as settlements although the ledger marks P0-A.4 done |
 | RENDERERS-18 | F058 | high | **done** | `1d5115c` | place_profile's hourly pattern still uses the legacy mixed `checkpoint_status` kind |
 | RENDERERS-19 | F059 | high | **done** | `1d5115c` | place_profile never shows incidents for days > 7: hours=days*24 exceeds the REST cap and the 42 |
 | RENDERERS-20 | F060 | high | **done** | `1d5115c` | Swallowed REST failures render as 'no recent information about it' |
-| RENDERERS-21 | F061 | high | **open** |  | series/trend declares and accepts `days` but never applies it |
-| RENDERERS-22 | F062 | high | **open** |  | databank headline's 'series from X to Y' is computed over the returned page, not the series |
-| RENDERERS-23 | F268 | medium | **open** |  | Composite tools have no overall deadline: up to six sequential 30 s calls per request |
-| RENDERERS-24 | F305 | medium | **open** |  | `series(..., days=N)` is declared in the façade schema and ignored by `trend`; ledger P0-A.1 ma |
-| RENDERERS-25 | F269 | medium | **open** |  | about() counts every `place` row of kind checkpoint as 'tracked', not the servable set |
-| RENDERERS-26 | F270 | medium | **open** |  | The stdio transport still diverges from HTTP: no ping, no instructions, no outputSchema, no lic |
-| RENDERERS-27 | F271 | medium | **open** |  | test_absorbed_names_are_off_the_menu_but_still_answer cannot fail: the envelope never has a top |
-| RENDERERS-28 | F504 | low | **open** |  | Arabic age phrases ignore dual/plural and can go negative; flow vocabulary differs per tool |
-| RENDERERS-29 | F505 | low | **open** |  | correlate's `answer` is English in two of its three modes |
+| RENDERERS-21 | F061 | high | **done** | `81acc75` | series/trend declares and accepts `days` but never applies it |
+| RENDERERS-22 | F062 | high | **done** | `81acc75` | databank headline's 'series from X to Y' is computed over the returned page, not the series |
+| RENDERERS-23 | F268 | medium | **partial** | `81acc75` | Composite tools have no overall deadline: up to six sequential 30 s calls per request | — *api() 8 s per call, about() degrades to `partial`; the wall-clock bound on `_handle` is still open*
+| RENDERERS-24 | F305 | medium | **done** | `81acc75` | `series(..., days=N)` is declared in the façade schema and ignored by `trend`; ledger P0-A.1 ma |
+| RENDERERS-25 | F269 | medium | **done** | `81acc75` | about() counts every `place` row of kind checkpoint as 'tracked', not the servable set |
+| RENDERERS-26 | F270 | medium | **done** | `81acc75` | The stdio transport still diverges from HTTP: no ping, no instructions, no outputSchema, no lic |
+| RENDERERS-27 | F271 | medium | **done** | `81acc75` | test_absorbed_names_are_off_the_menu_but_still_answer cannot fail: the envelope never has a top |
+| RENDERERS-28 | F504 | low | **partial** | `81acc75` | Arabic age phrases ignore dual/plural and can go negative; flow vocabulary differs per tool | — *counted ages (dual/plural, negatives → الآن) done; one flow/event lexicon across renderers still open*
+| RENDERERS-29 | F505 | low | **done** | `81acc75` | correlate's `answer` is English in two of its three modes |
 
 ### 05 · MCP transport, OAuth, rate limit, SSE, licence — `05-transport.md`
 

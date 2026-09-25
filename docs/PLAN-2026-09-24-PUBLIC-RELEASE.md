@@ -369,3 +369,7 @@ rows: unknown 134 · open 96 · closed 21; جبع default row `unknown` (last kn
 direction; live connector: قلنديا "ما في تحديث جديد — آخر معلومة قبل 2 ساعة: كان فيه أزمة"; رام الله→نابلس `unverified`
 with the blind 27 km, 3 of 8 reported and سلواد يبرود closed 2 km off spoken; crossings separates 3 decayed from 5
 no-source. Open from the audit: 99 findings (STATUS.md), HANDS §8 timeout still wanted for the next version bump.
+2026-09-25 11:05 UTC · audit 04-renderers · done 11 + partial 2 of the 14 left open (F047 F051 F054 F056 F061 F062 F268
+F269 F270 F271 F305 F504 F505; F057 settlement labels stays open — needs a data source) · proof: `81acc75`,
+tests/test_renderers_04b.py 10 new + 3 assertions corrected; full suite on the real DB 1082 passed / 0 failed. Serving
+change → needs Zaid's `restart palestine-v2-api` (not live yet). Next: audit 06-rest (13 open), then P1-A palhub.
