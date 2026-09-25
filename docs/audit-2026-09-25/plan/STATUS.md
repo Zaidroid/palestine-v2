@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 93 done · 7 partial · 60 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 97 done · 6 partial · 57 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -62,7 +62,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 03 · Route verdict (corridor) — `03-route.md`
 
-3 done · 1 partial · 0 open of 4 confirmed; 0 of 14 verify-first done.
+4 done · 0 partial · 0 open of 4 confirmed; 0 of 14 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
@@ -181,10 +181,10 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| GAZETTEER-01 | F067 | high | **open** |  | A twin promoted through attrs.twin_keys is invisible to every caller without a governorate hint |
-| GAZETTEER-02 | F068 | high | **partial** | `f650da8` | The resolver learns from untrusted and quarantined callers by default, launders a guess into an — *read paths and resolve_for_state_kind no longer learn; resolve_place still defaults learn=True (08-gazetteer)* |
-| GAZETTEER-03 | F069 | high | **open** |  | load_gazetteer.py TRUNCATE ... CASCADE would empty every observation table, and its pcode table |
-| GAZETTEER-04 | F315 | medium | **open** |  | place_merge steals aliases from other places with ON CONFLICT DO UPDATE, contrary to every othe |
+| GAZETTEER-01 | F067 | high | **done** | `d19a3b2` | A twin promoted through attrs.twin_keys is invisible to every caller without a governorate hint |
+| GAZETTEER-02 | F068 | high | **done** | `d19a3b2` | The resolver learns from untrusted and quarantined callers by default, launders a guess into an — *read paths and resolve_for_state_kind no longer learn; resolve_place still defaults learn=True (08-gazetteer)* |
+| GAZETTEER-03 | F069 | high | **done** | `d19a3b2` | load_gazetteer.py TRUNCATE ... CASCADE would empty every observation table, and its pcode table |
+| GAZETTEER-04 | F315 | medium | **done** | `d19a3b2` | place_merge steals aliases from other places with ON CONFLICT DO UPDATE, contrary to every othe |
 
 ### 09 · Telegram poller and ingestion framework (the scarce account) — `09-ingest.md`
 

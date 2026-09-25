@@ -392,3 +392,8 @@ under the lock: 34,032 claims → incident 9,638 · rejected 15,893 · unclear 8
 Honest precision stays round 8's 0.767 until round 9. Audit tally 93 done · 7 partial · 60 open of 160. Also today:
 last night's backup had refused (event rows shrank under the 09-24 DELETE sweeps) → run with `--accept-shrink`, set
 2026-09-25T11-31-07Z uploaded and verified. Next: 08 gazetteer (4), 11 ops (16), 09 ingest (8), then P1-A palhub.
+2026-09-25 13:35 UTC · audit 08-gazetteer · done 4 of 4 · proof: `d19a3b2`; المغير without a hint → ambiguous_with 1,
+alternatives [Jenin's], confidence 0.72 (was 0.92 Jenin-only); with رام الله / جنين hints → each twin at 0.96; learn
+defaults False and never commits a borrowed transaction; load_gazetteer refuses a populated DB (no TRUNCATE) and carries
+the 077 codes; place_merge first-writer-wins; tests/test_gazetteer_08b.py 4; full suite 1124 passed / 0 failed. Serving
+part (/v2/geo/resolve) waits for the next API restart. Tally 97 done · 6 partial · 57 open. Next: 11 ops (16), 09 ingest (8).

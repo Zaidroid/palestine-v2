@@ -23,6 +23,9 @@
 > here. **Round 9** (`learn/incident_precision.py --sample --round 9 --adversarial 50`) is the measurement, after a week
 > of 1.10.0 output — the numbers above are projections on tuning sets.
 >
+> **Area 08 gazetteer landed (`d19a3b2`):** resolve/ is live for the timers; the /v2/geo/resolve change (twins named) needs
+> the next `sudo systemctl restart palestine-v2-api` — bundle it with the next serving restart, no urgency.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
