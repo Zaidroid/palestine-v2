@@ -30,10 +30,11 @@ def _applied(cur) -> bool:
     return cur.fetchone() is not None
 
 
-def _latest_bulletins(cur, n=3):
+def _latest_bulletins(cur, n=12):
+    """One cycle: palhub posts one bulletin per governorate, twelve in all."""
     cur.execute("""SELECT c.raw_text FROM claim c JOIN source s USING (source_id)
                     WHERE s.key = %s ORDER BY c.reported_at DESC LIMIT %s""",
-                (PR.SOURCE_KEY, n * 4))
+                (PR.SOURCE_KEY, n * 3))
     out = []
     for (text,) in cur.fetchall():
         if PR.is_bulletin(text or ""):
