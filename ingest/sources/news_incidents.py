@@ -433,6 +433,9 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
               -- classifier read what it was given correctly; it was given fuel
               -- data, in which مغلقة means a petrol station is shut.
               AND s.feeds_incidents
+              -- Never the crowd, whatever its flag says (audit F012): the
+              -- flag defaulted to true for every crowd submitter.
+              AND s.kind <> 'crowd'
               AND NOT EXISTS (
                     SELECT 1 FROM claim_classification cc
                     WHERE cc.claim_id = c.claim_id

@@ -119,11 +119,16 @@ def register(handle: str, channel: str = "http", note: str = "") -> dict:
         cur.execute("""
             INSERT INTO source (key, name, kind, license_spdx, commercial_use,
                                 attribution_text, authority_rank,
-                                independence_group, independence_note, active)
+                                independence_group, independence_note, active,
+                                feeds_incidents)
             VALUES (%s, %s, 'crowd', 'NONE', false, 'Crowd report', 5, %s,
                     'Unverified submitter — shares one independence unit with '
                     'every other unverified submitter until independence is '
-                    'earned.', true)
+                    'earned.', true,
+                    -- A crowd note is never news (audit F012, migration 080):
+                    -- the default (true) let an anonymous POST become a
+                    -- believed raid and a road closure within one tick.
+                    false)
             RETURNING source_id""",
             (f"crowd_{handle}", f"Crowd submitter @{handle}", UNVERIFIED_GROUP))
         source_id = cur.fetchone()[0]

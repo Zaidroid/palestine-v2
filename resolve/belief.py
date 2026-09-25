@@ -113,12 +113,53 @@ WITH grp AS (
          kind
   FROM source
 ),
-latest AS (
+newest AS (
   SELECT DISTINCT ON (place_id, state_kind, direction)
          place_id, state_kind, direction, value, observed_at, source_id
   FROM state_observation
   WHERE state_kind = ANY(%(kinds)s) AND modality = 'assertion'
   ORDER BY place_id, state_kind, direction, observed_at DESC
+),
+-- A STRANGER'S CAUTION MAY NOT BLIND A CHANNEL (audit 2026-09-25, F017).
+-- The newest report used to become the belief whoever filed it. An unverified
+-- crowd "closed" (0.85 x 0.20 = 0.17, below every floor) posted one minute
+-- after a channel's "open" replaced the channel's row, served 'unknown', and
+-- took the checkpoint off every route: anyone could blind any checkpoint.
+-- When the newest report is a below-floor CROWD report that contradicts a
+-- still-assertable reading from a unit above the floor, that reading stays the
+-- belief and the crowd report counts as dissent (see `corr`). A lone caution
+-- with nothing to contradict is still recorded, as P2.4 intends.
+held AS (
+  SELECT n.place_id, n.state_kind, n.direction,
+         prev.value, prev.observed_at, prev.source_id
+  FROM newest n
+  JOIN source s ON s.source_id = n.source_id AND s.kind = 'crowd'
+  LEFT JOIN state_kind_config k ON k.state_kind = n.state_kind
+  CROSS JOIN LATERAL (
+    SELECT o.value, o.observed_at, o.source_id
+      FROM state_observation o
+      JOIN source s2 ON s2.source_id = o.source_id
+     WHERE o.place_id = n.place_id AND o.state_kind = n.state_kind
+       AND o.direction = n.direction AND o.modality = 'assertion'
+       AND o.observed_at < n.observed_at
+       AND {SINGLE_SOURCE_TRUST} * COALESCE(s2.trust_weight,
+             CASE WHEN s2.kind = 'crowd' THEN {UNEARNED_CROWD_TRUST} ELSE 1.0 END)
+           >= COALESCE(k.confidence_floor, 0.25)
+       AND (k.max_assert_seconds IS NULL
+            OR o.observed_at > now() - make_interval(secs => k.max_assert_seconds))
+     ORDER BY o.observed_at DESC
+     LIMIT 1) prev
+  WHERE {SINGLE_SOURCE_TRUST} * COALESCE(s.trust_weight, {UNEARNED_CROWD_TRUST})
+        < COALESCE(k.confidence_floor, 0.25)
+    AND prev.value <> n.value
+),
+latest AS (
+  SELECT n.* FROM newest n
+   WHERE NOT EXISTS (SELECT 1 FROM held h
+                      WHERE h.place_id = n.place_id AND h.state_kind = n.state_kind
+                        AND h.direction = n.direction)
+  UNION ALL
+  SELECT place_id, state_kind, direction, value, observed_at, source_id FROM held
 ),
 corr AS (
   SELECT l.place_id, l.state_kind, l.direction, l.value, l.observed_at, l.source_id,
@@ -135,8 +176,9 @@ corr AS (
     AND o.state_kind = l.state_kind
     AND o.direction  = l.direction
     AND o.modality   = 'assertion'
-    AND o.observed_at BETWEEN l.observed_at - INTERVAL '{CORROBORATION_WINDOW}'
-                          AND l.observed_at
+    -- No upper bound: for an ordinary row nothing is newer than `latest`; for
+    -- a `held` row the newer crowd reports are exactly the dissent to count.
+    AND o.observed_at >= l.observed_at - INTERVAL '{CORROBORATION_WINDOW}'
   JOIN grp g ON g.source_id = o.source_id
   GROUP BY 1,2,3,4,5,6
 ),
