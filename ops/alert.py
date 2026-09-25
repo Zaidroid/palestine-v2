@@ -167,6 +167,47 @@ def resolve(unit: str, note: str = "", *, notify: bool = True) -> dict:
     return rec
 
 
+def resolve_if_open(unit: str, note: str = "") -> dict | None:
+    """Resolve `unit`'s alarm if one is open — silently, and only then.
+
+    systemd's OnFailure= raises an alarm every time a unit fails, and until
+    2026-09-25 nothing answered it when the unit next succeeded: 664 unit
+    alarms had piled up since 2026-08-06 (Fawwaz's test found the machine
+    reporting 461 live problems). The heartbeat wrapper now calls this on every
+    successful run, so an alarm lives exactly as long as the failure does.
+    Returns None when there was nothing to resolve; never notifies on a no-op.
+    """
+    if not any(r.get("unit") == unit for r in open_alerts()):
+        return None
+    return resolve(unit, note or "the unit ran to completion", notify=True)
+
+
+def _job_of(unit: str) -> str | None:
+    """palestine-v2-<job>.service -> <job>, else None."""
+    if unit.startswith("palestine-v2-") and unit.endswith(".service"):
+        return unit[len("palestine-v2-"):-len(".service")]
+    return None
+
+
+def sweep(last_ok: dict[str, str]) -> list[str]:
+    """One-time reconciliation: resolve every open unit alarm whose job has a
+    heartbeat `last_ok` newer than the alarm (ISO timestamps). Silent — 600
+    recoveries are a ledger fact, not 600 notifications."""
+    done: list[str] = []
+    newest: dict[str, str] = {}
+    for r in open_alerts():
+        u = r.get("unit") or ""
+        if u:
+            newest[u] = max(newest.get(u, ""), r["ts"])
+    for unit, ts in sorted(newest.items()):
+        job = _job_of(unit)
+        ok = last_ok.get(job or "")
+        if ok and ok > ts:
+            resolve(unit, f"sweep: the job ran ok at {ok[:19]}Z, after this alarm", notify=False)
+            done.append(unit)
+    return done
+
+
 def _read_log() -> tuple[list[dict], int]:
     """Every record in the log, and a count of the lines that were not records.
 
@@ -231,7 +272,24 @@ def main() -> int:
     ap.add_argument("--clear", action="store_true")
     ap.add_argument("--test", action="store_true",
                     help="raise a real alarm down the real path and say where it landed")
+    ap.add_argument("--resolve", metavar="UNIT",
+                    help="resolve UNIT's alarm if one is open (silent no-op otherwise)")
+    ap.add_argument("--sweep", action="store_true",
+                    help="resolve every unit alarm older than its job's last ok heartbeat")
     a = ap.parse_args()
+
+    if a.resolve:
+        rec = resolve_if_open(a.resolve, a.reason)
+        print(f"resolved {a.resolve}" if rec else f"nothing open for {a.resolve}")
+        return 0
+    if a.sweep:
+        from resolve.db import connect
+        with connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT name, last_ok FROM ops_heartbeat WHERE last_ok IS NOT NULL")
+            last_ok = {n: t.isoformat() for n, t in cur.fetchall()}
+        done = sweep(last_ok)
+        print(f"resolved {len(done)} unit alarm(s)" + (": " + ", ".join(done) if done else ""))
+        return 0
 
     if a.test:
         # Deliberately NOT a bespoke one-line probe: this goes through

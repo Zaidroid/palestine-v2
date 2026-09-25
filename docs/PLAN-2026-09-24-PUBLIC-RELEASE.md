@@ -457,3 +457,16 @@ skip until 081). Zaid's hand: `cd ~/palestine-v2 && db/migrate.sh` (HANDS-NEEDED
 **0 off-kind** (was 55 towns/roads/a station), known **164 of 273 = 0.601** — the G4 gate on honest rows, 20 of the 34
 new gate rows already known from the moved readings; 0 palhub rows on a town since; `tests/test_palhub_names.py` 5 passed
 against the live API (`faeea57`, the test reads a whole 12-bulletin cycle). Weekly measure-review keeps measuring.
+2026-09-25 18:30 UTC · Two testers' round (Fawwaz via the partner door, Claude web via the connector; both ran BEFORE 081)
+· partial · what was already fixed by 081: "road bulletins don't update checkpoints" (Beita, al-Lubban, the 17 junction
+now 5 min old) · gazetteer: migration 082 written + dry-run (20 duplicate/fragment/Hebrew rows merged into the row with the
+readings, 6 renamed, 2 retired, Karmelo moved from Jenin to Yatta with its 14 aliases, Hebron خربة الطيبة created for the 3
+PCBS aliases): 265 serving rows, known 0.634, 0 duplicate names — waits for `db/migrate.sh` · ops: an OnFailure alarm is
+now resolved by the unit's next successful run (`ops/alert.py --resolve`, called by with-heartbeat.sh), and `--sweep`
+reconciles the 664 unit alarms that piled up since 08-06 against ops_heartbeat.last_ok (tests/test_alert_resolve.py 4) ·
+still open, serving layer (one commit, mine): databank drops indicator/as_of without category; English answers print
+Arabic names (nearby query has name_en, closed-now list ignores it); English refusal strings inside Arabic answers;
+AR/EN content divergence (databank overview 6 vs 5, "32 sources" vs datasets, summary caveat); fuel effective dates per
+language; crossings Arabic area filter (matches name_en only → "أريحا" = nothing); place "Huwara" history view; series with
+a place = 0 points; correlate scan "941 of 235 dates" + 0-tests text; insights "152,926 minutes"; route "most of the
+route" at 50 %; about says crossings have no source.

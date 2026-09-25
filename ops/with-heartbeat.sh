@@ -51,6 +51,9 @@ done
 if [ "$ok" -eq 1 ]; then
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
       --interval "$interval" --grace "$grace" --detail "${HEARTBEAT_DETAIL:-{\}}" || true
+  # A failure alarm systemd raised for this unit is answered by the next
+  # successful run — silently, and only if one is open (ops/alert.py).
+  "$ROOT/.venv/bin/python" -m ops.alert --resolve "palestine-v2-$name.service" >/dev/null 2>&1 || true
 else
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
       --interval "$interval" --grace "$grace" --fail "exited $rc" || true

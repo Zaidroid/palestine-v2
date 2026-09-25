@@ -61,6 +61,15 @@
 > on checkpoint rows; `PALESTINE_API=http://127.0.0.1:7871 .venv/bin/python -m pytest -q tests/test_palhub_names.py`
 > should read 5 passed, and `checkpoint_serving` should show 0 rows whose place_kind is not checkpoint/crossing/road.
 >
+> **Two testers' round (17:50–18:30 UTC) — migration 082, one row per checkpoint:** nine checkpoint names had two or
+> three servable rows (a lookup of اللبن الشرقية answered from the stale twin; الكونتينر existed seven times), six rows were
+> named after the road message they came from, and Karmelo sat in Jenin. 082 merges 20 rows into the one that carries the
+> readings, renames six, retires two, moves Karmelo to Yatta. Exact rollback in the header. **Apply it:**
+> ```
+> cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh
+> ```
+> Dry run with the live data: 265 serving rows, known 168 (0.634), no duplicate name left. Nothing else to restart.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
