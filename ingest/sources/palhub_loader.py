@@ -67,7 +67,9 @@ def _resolve_station(cur, conn, name: str, locality: str | None, region: str):
     # 2 / 3 — anchor geometry on the locality, else the region
     anchor = None
     if locality:
-        a = resolve_place(locality, conn=conn, learn=False)
+        # a town anchors a station; without the preference the name could
+        # land on a checkpoint or a station row (audit F438). RETIRED feed.
+        a = resolve_place(locality, {"prefer_kind": "locality"}, conn=conn, learn=False)
         if a:
             anchor, precision, how = a, "town", "locality"
     if anchor is None:

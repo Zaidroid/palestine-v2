@@ -71,7 +71,9 @@ def _creds():
 
 async def _client(api_id: int, api_hash: str):
     from telethon import TelegramClient
+    from ingest.session_lock import acquire          # SessionBusy propagates: one client per session (F213)
     SESSION_DIR.mkdir(parents=True, exist_ok=True)
+    acquire(SESSION, who="setup_session")
     c = TelegramClient(str(SESSION), api_id, api_hash)
     await c.connect()
     return c

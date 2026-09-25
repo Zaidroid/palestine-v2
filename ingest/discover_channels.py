@@ -183,6 +183,8 @@ async def discover(categories: list[str], per_query: int = 25) -> dict:
 
     known = v1_channels()
     found: dict[str, dict] = {}
+    from ingest.session_lock import acquire          # one client per session file (F213)
+    acquire(session, who="discover_channels")
     client = TelegramClient(session, api_id, api_hash)
     await client.start()
 
@@ -289,6 +291,8 @@ async def probe_liveness(candidates: list[dict], limit: int = 30) -> None:
     from telethon.errors import FloodWaitError
 
     e = _env()
+    from ingest.session_lock import acquire          # one client per session file (F213)
+    acquire(ROOT / "data" / "session" / "v2_ingest", who="probe_liveness")
     client = TelegramClient(str(ROOT / "data" / "session" / "v2_ingest"),
                             int(e["V2_TELEGRAM_API_ID"]), e["V2_TELEGRAM_API_HASH"])
     await client.connect()

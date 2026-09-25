@@ -98,7 +98,11 @@ RECONNECT_ATTEMPTS = 6
 # Kept to an explicit list rather than "download everything with media": the
 # news channels post photos constantly and none of it is machine-readable, so a
 # blanket rule would spend bandwidth and disk on nothing and slow every cycle.
-MEDIA_CHANNELS = {"palhubappfuel"}
+# EMPTY since 2026-09-25 (audit F217): the fuel-card vertical was retired on
+# 2026-09-23 and nothing reads the images, yet the poller kept downloading
+# every @palhubappfuel photo — hundreds of GetFile requests a day on the
+# scarcest account for empty claims. Add a channel here only with a reader.
+MEDIA_CHANNELS: set[str] = set()
 
 # One card is ~15 KB. A cap exists so a channel that starts posting video
 # cannot fill the disk between watchdog runs — the capacity check is the
@@ -125,6 +129,14 @@ def _is_flood(exc: BaseException) -> bool:
     """FloodWaitError, recognised by class name so the check works without
     importing Telethon (and against the fakes the tests use)."""
     return any(c.__name__ == "FloodWaitError" for c in type(exc).__mro__)
+
+
+def _is_deauth(exc: BaseException) -> bool:
+    """Telethon's 'this session is dead' family (audit F223)."""
+    name = type(exc).__name__
+    return name in ("UnauthorizedError", "AuthKeyError", "AuthKeyUnregisteredError",
+                    "SessionRevokedError", "UserDeactivatedError", "AuthKeyInvalidError") \
+        or "AUTH_KEY" in str(exc) or "SESSION_REVOKED" in str(exc)
 
 
 class Deauthorised(Exception):
@@ -255,6 +267,20 @@ async def archive_media(client, channel: str, messages) -> tuple[dict, int | Non
         except Exception as exc:                        # noqa: BLE001
             print(f"  media archive failed for {channel}/{m.id}: {exc}")
     return refs, None
+
+
+def _db_reachable() -> bool:
+    """One-row probe. A database outage used to be treated as a channel
+    failure: Telegram was polled and media downloaded every cycle for work
+    that could not be stored, and each restart re-fetched the backlog (audit
+    F225)."""
+    try:
+        with connect() as conn:
+            conn.execute("SELECT 1").fetchone()
+        return True
+    except Exception as exc:                            # noqa: BLE001
+        print(f"database unreachable: {exc}")
+        return False
 
 
 def store(channel: str, messages, media_refs: dict | None = None) -> int:
@@ -402,6 +428,14 @@ async def _reconnect(client) -> None:
             # A restored socket is not a restored session. Checking this before
             # polling means a revoked account is reported as a revoked account,
             # instead of as ten channels that all mysteriously stopped working.
+            # Telethon caches the authorised flag; ask the server (F223).
+            client._authorized = None
+            try:
+                await client.get_me()
+            except Exception as exc:                    # noqa: BLE001
+                if _is_deauth(exc):
+                    raise Deauthorised("session is no longer authorised") from exc
+                raise
             if not await client.is_user_authorized():
                 raise Deauthorised("session is no longer authorised")
             print(f"reconnected after {attempt} attempt(s)")
@@ -460,11 +494,21 @@ async def run(once: bool = False, backfill: int = 0) -> int:
         print("V2_TELEGRAM_CHANNELS is empty")
         return 1
 
+    from ingest.session_lock import SessionBusy, acquire
+    try:
+        acquire(SESSION, who="telegram_poller")
+    except SessionBusy as exc:
+        print(f"FATAL: {exc}")
+        fail(HEARTBEAT, str(exc), int(interval), _GRACE)
+        return 3
     client = TelegramClient(str(SESSION), api_id, api_hash)
     await client.connect()
     if not await client.is_user_authorized():
+        # Exit 2 = deauthorised, do NOT restart (the unit reads it); this path
+        # returned 1 and systemd restarted a dead session forever (audit F223).
         print("Not authorised. Run: ./.venv/bin/python -m ingest.setup_session --request-code")
-        return 1
+        fail(HEARTBEAT, "session not authorised", int(interval), _GRACE)
+        return 2
     me = await client.get_me()
     print(f"Polling as {me.first_name} (id={me.id}) — {len(channels)} channel(s), {interval}s")
 
@@ -498,8 +542,22 @@ async def run(once: bool = False, backfill: int = 0) -> int:
     # prompted this, but relying on it alone would leave the loop trusting one
     # flag to notice it has stopped working.
     dead_cycles = 0
+    db_down = 0
+    # A batch fetched from Telegram whose store() failed is KEPT for the next
+    # cycle (F225): the fetch is the scarce part, the store can be retried.
+    pending: dict[str, tuple] = {}
 
     while not _stop:
+        if not _db_reachable():
+            db_down += 1
+            fail(HEARTBEAT, "database unreachable", int(interval), _GRACE)
+            if db_down >= 3:
+                print("FATAL: the database has been unreachable for 3 cycles — exiting "
+                      "so systemd restarts and the alarm fires")
+                return 1
+            await asyncio.sleep(min(300, interval * 2 ** db_down))
+            continue
+        db_down = 0
         if not client.is_connected():
             print("transport is down — Telethon's own retries are exhausted")
             try:
@@ -522,17 +580,25 @@ async def run(once: bool = False, backfill: int = 0) -> int:
         total, failures, moved = 0, 0, False
         for ch, ent in entities.items():
             try:
-                last = state.get(ch, 0)
-                fresh = await _fetch_since(client, ent, last)   # oldest first
-                if fresh:
-                    refs, cutoff = await archive_media(client, ch, fresh)
-                    if cutoff is not None:
-                        # Truncate to the contiguous run whose media we took.
-                        fresh = [m for m in fresh if m.id <= cutoff]
+                if ch in pending:
+                    fresh, refs = pending.pop(ch)           # retry the store, no refetch
+                else:
+                    last = state.get(ch, 0)
+                    fresh = await _fetch_since(client, ent, last)   # oldest first
+                    refs = {}
                     if fresh:
+                        refs, cutoff = await archive_media(client, ch, fresh)
+                        if cutoff is not None:
+                            # Truncate to the contiguous run whose media we took.
+                            fresh = [m for m in fresh if m.id <= cutoff]
+                if fresh:
+                    try:
                         total += store(ch, fresh, refs)
-                        state[ch] = max(m.id for m in fresh)
-                        moved = True
+                    except Exception:
+                        pending[ch] = (fresh, refs)
+                        raise
+                    state[ch] = max(m.id for m in fresh)
+                    moved = True
             except FloodWaitError as fw:
                 # Respect it exactly. Blind retry is how a new account gets banned.
                 print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")
@@ -545,6 +611,10 @@ async def run(once: bool = False, backfill: int = 0) -> int:
                      {"flood_wait_seconds": fw.seconds, "channel": ch})
                 await asyncio.sleep(fw.seconds + 5)
             except Exception as exc:                    # noqa: BLE001
+                if _is_deauth(exc):
+                    print(f"FATAL: deauthorised while polling @{ch}: {exc}")
+                    fail(HEARTBEAT, f"deauthorised: {exc}", int(interval), _GRACE)
+                    return 2
                 failures += 1
                 print(f"poll @{ch} failed: {exc}")
             # Stagger so five channels are not hit in the same instant.

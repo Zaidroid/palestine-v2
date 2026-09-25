@@ -551,7 +551,11 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
         # firing turned 151 events into 216.
         sql = """
             SELECT c.claim_id, c.raw_text, c.reported_at, c.source_id,
-                   COALESCE(s.independence_group, 'src:' || s.source_id::text) AS unit,
+                   -- A forwarded message is its ORIGIN's voice: N channels
+                   -- forwarding one post counted as N witnesses (audit F221).
+                   CASE WHEN NULLIF(c.attrs->>'fwd_from', '') IS NOT NULL
+                        THEN 'fwd:' || (c.attrs->>'fwd_from')
+                        ELSE COALESCE(s.independence_group, 'src:' || s.source_id::text) END AS unit,
                    s.key AS source_key
             FROM claim c
             JOIN source s USING (source_id)

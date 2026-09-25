@@ -161,9 +161,11 @@ class Photo:
         self.id, self.photo = i, object()
 
 
-def test_ingest_f042_a_flood_during_media_download_reaches_the_poll_loop():
+def test_ingest_f042_a_flood_during_media_download_reaches_the_poll_loop(monkeypatch):
     """It was swallowed: the batch was stored without media and the cursor
-    moved past it. Now it propagates, so the loop sleeps and stores nothing."""
+    moved past it. Now it propagates, so the loop sleeps and stores nothing.
+    MEDIA_CHANNELS is empty since F217; the path is exercised with one added."""
+    monkeypatch.setattr(telegram_poller, "MEDIA_CHANNELS", {"palhubappfuel"})
     class Client:
         calls = 0
 
