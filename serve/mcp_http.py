@@ -434,17 +434,33 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
         if target not in table:
             return _err(rid, -32602, f"unknown tool: {name}")
         started = time.monotonic()
+        # Arguments are checked against the tool's signature FIRST: a TypeError
+        # raised inside a tool is a bug of ours, and reporting it as "those
+        # arguments do not fit" blamed the caller for it (found 2026-09-26).
+        import inspect as _inspect
         try:
+            _inspect.signature(table[target][0]).bind(**targs)
+            bad_args = None
+        except TypeError as exc:
+            bad_args = exc
+        try:
+            if bad_args is not None:
+                raise bad_args
             out = table[target][0](**targs)
             failed = False
-        except TypeError as exc:                            # bad arguments
-            # Said in both languages with the arguments the tool DOES take; a
-            # bare `error` left `answer` null (Claude web's test, 2026-09-25).
-            takes = ", ".join(sorted(((table[target][2] or {}).get("properties") or {})))
-            out, failed = {"error": _scrub(str(exc)),
-                           "answer": f"المدخلات مش صحيحة لهاي الأداة. بتاخد: {takes}.",
-                           "answer_en": f"Those arguments do not fit this tool. It takes: {takes}.",
-                           "accepts": takes.split(", ") if takes else []}, True
+        except TypeError as exc:                            # bad arguments — or our bug
+            if bad_args is None:
+                out, failed = {"error": _scrub(str(exc)),
+                               "answer": "صار خطأ بالنظام.",
+                               "answer_en": "Something failed inside the system."}, True
+            else:
+                # Said in both languages with the arguments the tool DOES take; a
+                # bare `error` left `answer` null (Claude web's test, 2026-09-25).
+                takes = ", ".join(sorted(((table[target][2] or {}).get("properties") or {})))
+                out, failed = {"error": _scrub(str(exc)),
+                               "answer": f"المدخلات مش صحيحة لهاي الأداة. بتاخد: {takes}.",
+                               "answer_en": f"Those arguments do not fit this tool. It takes: {takes}.",
+                               "accepts": takes.split(", ") if takes else []}, True
         except Exception as exc:                            # noqa: BLE001
             # Reported as a tool error rather than a protocol error: the call
             # was well-formed and the model should see what went wrong and

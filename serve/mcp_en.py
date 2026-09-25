@@ -223,6 +223,12 @@ def checkpoint_status(d: dict) -> str:
         if _search_folds(d) and d.get("presence_age_minutes") is not None:
             out += f"; the search seen {_age(d['presence_age_minutes'])}"
         out += f".{tail}"
+    rel = d.get("related") or []
+    if rel:
+        out += (" Near it in the same hours: " + "; ".join(
+            f"{r['type'].replace('_', ' ')} in {r.get('name_en') or r.get('name') or 'the area'} "
+            f"({_age(r['age_minutes'])}, {r['metres'] / 1000:.1f} km)" for r in rel[:2])
+            + " — co-occurrence, not necessarily the cause.")
     score = float((d.get("match") or {}).get("score") or 0.0)
     if 0 < score < 0.8:
         out = (f"Not sure about the name — nearest match is {name}. {out} If that is "

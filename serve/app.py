@@ -678,8 +678,42 @@ def checkpoint_status(
                                           "age_minutes": b["age_minutes"],
                                           "present": list(b["present"] or [])}
                          for b in both},
+        "related": _related_incidents(m["place_id"]),
         "attribution": CHECKPOINT_ATTRIBUTION,
     }
+
+
+# P2-C.1: the two tiers, side by side. What happened near a checkpoint in the
+# same hours — a CO-OCCURRENCE, never a cause: a closure at 14:30 and a raid
+# 2 km away at 14:05 are two facts in one place and time, and saying one caused
+# the other would be a claim nobody measured. Named places only, so a
+# governorate-level "siege of Nablus" never attaches to every Nablus checkpoint.
+RELATED_METRES = 2000
+RELATED_HOURS = 3
+
+
+def _related_incidents(place_id: int) -> list[dict]:
+    try:
+        rows = q("""
+            SELECT e.event_id, e.event_type AS type, p2.name_ar AS name, p2.name_en,
+                   round(ST_Distance(e.geom, p.centroid)::numeric) AS metres,
+                   (extract(epoch FROM now() - e.occurred_at) / 60)::int AS age_minutes,
+                   e.independent_sources
+              FROM place p
+              JOIN event e ON ST_DWithin(e.geom, p.centroid, %(m)s)
+              LEFT JOIN place p2 ON p2.place_id = e.place_id
+             WHERE p.place_id = %(pid)s AND e.status = 'believed'
+               AND e.attrs->>'place_precision' = 'named'
+               AND e.event_type IN ('closure','siege','raid','settler_attack','shooting',
+                                    'arrest','injury','death')
+               AND e.occurred_at > now() - make_interval(hours => %(h)s)
+               AND e.occurred_at <= now() + interval '10 minutes'
+             ORDER BY e.occurred_at DESC LIMIT 4""",
+                 {"m": RELATED_METRES, "pid": place_id, "h": RELATED_HOURS})
+    except Exception:                                            # noqa: BLE001
+        return []
+    return [{**r, "metres": int(r["metres"]), "age_minutes": max(0, int(r["age_minutes"])),
+             "relation": "co-occurrence"} for r in rows]
 
 
 @app.get("/v2/checkpoints/summary", tags=["checkpoints"])

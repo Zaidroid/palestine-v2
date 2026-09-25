@@ -301,7 +301,13 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
                     "is assertable: confidence has decayed below the floor or the "
                     "age has passed the assert ceiling. `staleness_band` is not a "
                     "claim that the reading is current.")
+    rel = d.get("related") or []
+    if rel:
+        answer += (" قريب منه بنفس الساعات: " + "، ".join(
+            f"{_ar_event(r['type'])} ب{r.get('name') or 'المنطقة'} ({_age_ar(r['age_minutes'])}، "
+            f"{r['metres'] / 1000:.1f} كم)" for r in rel[:2]) + " — تزامن، مش بالضرورة السبب.")
     return {"answer": answer, "name": nm, "name_en": d.get("name_en"),
+            "related": rel,
             "direction": direction, "value_withheld_because": withheld,
             "match": d.get("match"),
             # The band's meaning is stated ONCE, in palestine://reading-contract

@@ -604,3 +604,10 @@ since late July: 38/38 days agree; across 2026 the parser never states a number 
 0 revised; the series now runs to 2026-09-24 (5 deaths, 35 injuries). Early-2026 shapes the parser still omits (counts on
 the header line, "شهيدان") stay organ C's path once F229's 100 hand-read rows exist. Note: the 09-24 bulletin opens with a
 chatbot's preamble ("بالتأكيد، هذه الصياغة مرتبة…") — the Ministry drafted it with an AI tool; its figures add up.
+2026-09-26 00:45 UTC · P2-C.1 checkpoint ↔ incident co-occurrence · done on master, waits for the API restart · proof: a
+checkpoint answer names believed incidents on a NAMED place within 2 km in the last 3 h, labelled co-occurrence — live on
+dev: "زيف يطا: مغلق… قريب منه بنفس الساعات: إطلاق نار بمخيم الفوار (قبل ساعتين، 0.6 كم) — تزامن، مش بالضرورة السبب" /
+"…co-occurrence, not necessarily the cause"; `related` in the payload. Computed at request time (fresh by construction)
+rather than by a nightly job. Found on the way: the transport's bad-argument handler (added in the testers' round) caught
+ANY TypeError, so a bug inside a tool was reported as the caller's mistake — arguments are now checked against the tool's
+signature first. tests/test_related_cooccurrence.py (3).
