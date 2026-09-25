@@ -522,3 +522,10 @@ registers (`event_summary`), counts localities by 1945 district/subdistrict/grou
 Rolled-back end-to-end harness: databank(district="الرملة") → "70 تجمّع هُجّر سنة 1948 بقضاء/لواء الرملة — 65 فلسطيني، 5
 مختلط. منها: المنصورة، النبي روبين، القبيبة…"; conflict adds "7,071 state-based events 1989–2024, 55,490 deaths…; 262
 journalists (no dates in the source)". tests/test_held_events.py (7; one live, skips until 083); full suite 1235 passed.
+2026-09-25 21:30 UTC · P1-B.1 LIVE (083 applied + API restarted by Zaid 21:16) + follow-up · done · proof: through the public
+connector `databank(displacement)` → "589 تجمّع هُجّر بين 1935 و1967 … حسب لواء 1945 … الرقم مع كل تجمّع هو عدد سكانه سنة
+1945 (كل السكان)، مش عدد اللاجئين"; production passes tests/test_held_events.py + databank/facades/testers (105). Seen in the
+live payload and fixed: 28 localities v1 had filed on a governorate or a same-named town (Imwas, Bayt Nuba, al-Latrun →
+"رام الله") re-linked to their own Palestine Open Maps rows (`ops/relink_depopulated_localities.py --apply`, prior place_id
+kept) → Ramle subdistrict 70 → 77, unclassified group 32 → 4; the payload's event_summary no longer offers a sum of 1945
+populations (route change → next API restart).

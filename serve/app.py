@@ -3126,6 +3126,11 @@ def databank_category(category: str, indicator: str | None = None,
                AND {' AND '.join(conds)}
              GROUP BY 1 ORDER BY 2 DESC""", where_params)
         if summ:
+            # A locality's value is its whole 1945 population: a sum of those is
+            # not a number anyone should quote, so the payload does not offer one.
+            for s_ in summ:
+                if s_["indicator"] == "displacement.locality_depopulated":
+                    s_["value_sum"] = None
             out["event_summary"] = summ
         if category == "displacement":
             groups = {}

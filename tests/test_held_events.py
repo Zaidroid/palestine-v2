@@ -112,3 +112,6 @@ def test_the_held_record_is_served_once(mcp_call, mcp_payload):
     assert n["conflict.journalists_killed"] == 262
     p = mcp_payload(mcp_call("databank", district="الرملة"))
     assert p["category"] == "displacement" and "الرملة" in p["answer"] and "Ramle" in p["answer_en"]
+    summ = next(s for s in p["event_summary"] if s["indicator"] == "displacement.locality_depopulated")
+    assert summ["value_sum"] is None                       # the populations are not summed, anywhere
+    assert not any(it.get("place_ar") == "رام الله" for it in p["items"])   # re-linked off the governorate
