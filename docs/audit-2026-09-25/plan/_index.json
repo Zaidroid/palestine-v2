@@ -1,0 +1,152 @@
+[
+ {
+  "n": 1,
+  "area": "parser",
+  "title": "Checkpoint status parser (the sign of every road fact)",
+  "phase": "1",
+  "confirmed": 14,
+  "critical_or_high": 14,
+  "verify_first": 15,
+  "file": "01-parser.md"
+ },
+ {
+  "n": 2,
+  "area": "belief",
+  "title": "Belief engine, serving views, crowd engine (SQL + Python)",
+  "phase": "1",
+  "confirmed": 5,
+  "critical_or_high": 4,
+  "verify_first": 28,
+  "file": "02-belief.md"
+ },
+ {
+  "n": 3,
+  "area": "route",
+  "title": "Route verdict (corridor)",
+  "phase": "1",
+  "confirmed": 4,
+  "critical_or_high": 1,
+  "verify_first": 14,
+  "file": "03-route.md"
+ },
+ {
+  "n": 4,
+  "area": "renderers",
+  "title": "MCP tool answers (Arabic + English renderers, façades)",
+  "phase": "1",
+  "confirmed": 29,
+  "critical_or_high": 22,
+  "verify_first": 37,
+  "file": "04-renderers.md"
+ },
+ {
+  "n": 5,
+  "area": "transport",
+  "title": "MCP transport, OAuth, rate limit, SSE, licence",
+  "phase": "2",
+  "confirmed": 10,
+  "critical_or_high": 5,
+  "verify_first": 36,
+  "file": "05-transport.md"
+ },
+ {
+  "n": 6,
+  "area": "rest",
+  "title": "REST API handlers (serve/app.py), correlation statistics, precision annotation",
+  "phase": "2",
+  "confirmed": 20,
+  "critical_or_high": 14,
+  "verify_first": 78,
+  "file": "06-rest.md"
+ },
+ {
+  "n": 7,
+  "area": "classifier",
+  "title": "Incident classifier and event writer",
+  "phase": "3",
+  "confirmed": 17,
+  "critical_or_high": 6,
+  "verify_first": 44,
+  "file": "07-classifier.md"
+ },
+ {
+  "n": 8,
+  "area": "gazetteer",
+  "title": "Place resolution and gazetteer tooling",
+  "phase": "3",
+  "confirmed": 4,
+  "critical_or_high": 3,
+  "verify_first": 20,
+  "file": "08-gazetteer.md"
+ },
+ {
+  "n": 9,
+  "area": "ingest",
+  "title": "Telegram poller and ingestion framework (the scarce account)",
+  "phase": "4",
+  "confirmed": 11,
+  "critical_or_high": 1,
+  "verify_first": 22,
+  "file": "09-ingest.md"
+ },
+ {
+  "n": 10,
+  "area": "feeds",
+  "title": "External feed parsers (fuel prices, MoH Gaza, power, weather, connectivity, fires)",
+  "phase": "4",
+  "confirmed": 7,
+  "critical_or_high": 4,
+  "verify_first": 18,
+  "file": "10-feeds.md"
+ },
+ {
+  "n": 11,
+  "area": "ops",
+  "title": "Operability: watchdog, alerts, backups, shell steps, systemd units",
+  "phase": "4",
+  "confirmed": 16,
+  "critical_or_high": 4,
+  "verify_first": 21,
+  "file": "11-ops.md"
+ },
+ {
+  "n": 12,
+  "area": "databank",
+  "title": "Tier 2 databank loader, mappings, export",
+  "phase": "5",
+  "confirmed": 5,
+  "critical_or_high": 4,
+  "verify_first": 32,
+  "file": "12-databank.md"
+ },
+ {
+  "n": 13,
+  "area": "learning",
+  "title": "Learning loop, analyst, self-measurement",
+  "phase": "5",
+  "confirmed": 4,
+  "critical_or_high": 1,
+  "verify_first": 30,
+  "file": "13-learning.md"
+ },
+ {
+  "n": 14,
+  "area": "docs",
+  "title": "Documentation a partner or a new session follows",
+  "phase": "6",
+  "confirmed": 10,
+  "critical_or_high": 2,
+  "verify_first": 28,
+  "file": "14-docs.md"
+ },
+ {
+  "n": 15,
+  "area": "webapp",
+  "title": "Public web pages (serve/webapp)",
+  "phase": "6",
+  "confirmed": 4,
+  "critical_or_high": 3,
+  "verify_first": 13,
+  "file": "15-webapp.md"
+ }
+]
