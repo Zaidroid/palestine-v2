@@ -15,7 +15,9 @@
 -- Now: inbound and outbound are resolved exactly as before (the freshest of
 -- {that direction, 'both'}, a tie to the direction-specific report), and the
 -- 'both' row is the more restrictive of the two (closed > congested > slow >
--- open > unknown), freshest first among equals. `reported_for` still names the
+-- unknown > open), freshest first among equals. 'unknown' outranks 'open' so
+-- that one open direction beside an unknown or never-read one never makes the
+-- default row say open (the last_known_flow keeps the open reading). `reported_for` still names the
 -- report the row came from, and a new last column, `differs_by_direction`, says
 -- when the two travel directions disagree.
 --
@@ -50,8 +52,8 @@ WITH travel AS (
         ), bothflow AS (
          SELECT DISTINCT ON (d.place_id) d.place_id,
             'both'::text AS direction,
-            d.value,
-            d.last_known_value,
+            CASE WHEN d.ndirs < 2 AND d.value = 'open' THEN 'unknown' ELSE d.value END AS value,
+            CASE WHEN d.ndirs < 2 AND d.value = 'open' THEN 'open' ELSE d.last_known_value END AS last_known_value,
             d.observed_at,
             d.age_minutes,
             d.confidence,
@@ -61,10 +63,15 @@ WITH travel AS (
             d.contradicted_by,
             d.cadence_measured,
             d.reported_for
-           FROM dirflow d
+           FROM (SELECT d.*, count(*) OVER (PARTITION BY d.place_id) AS ndirs
+                   FROM dirflow d) d
           ORDER BY d.place_id,
-                   CASE d.value WHEN 'closed' THEN 3 WHEN 'congested' THEN 2
-                                WHEN 'slow' THEN 1 WHEN 'open' THEN 0 ELSE -1 END DESC,
+                   -- 'unknown' outranks 'open' (Zaid, 2026-09-25): one open
+                   -- direction beside an unknown one never makes the default
+                   -- row say open; a closure, jam or slow in either direction
+                   -- still does. ndirs < 2 = the other direction was never read.
+                   CASE d.value WHEN 'closed' THEN 4 WHEN 'congested' THEN 3
+                                WHEN 'slow' THEN 2 WHEN 'open' THEN 0 ELSE 1 END DESC,
                    d.observed_at DESC
         ), flow AS (
          SELECT * FROM dirflow
@@ -128,4 +135,4 @@ WITH travel AS (
   WHERE p.servable;
 
 COMMENT ON VIEW checkpoint_serving IS
-  'One row per (checkpoint, travel direction). inbound/outbound: the freshest of that direction or a both report. both: the more restrictive of inbound and outbound (079), with differs_by_direction. Flow and presence stay on separate axes. The API reads this, never state_current.';
+  'One row per (checkpoint, travel direction). inbound/outbound: the freshest of that direction or a both report. both: the more restrictive of inbound and outbound, unknown outranking open (079), with differs_by_direction. Flow and presence stay on separate axes. The API reads this, never state_current.';

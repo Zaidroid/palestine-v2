@@ -376,8 +376,13 @@ def _confidence(groups: int) -> float:
 # has a foreign key onto event) and would otherwise take the only record of
 # which events were ours with it.
 REBUILD_STEPS = [
-    ("DELETE FROM state_observation "
-     "WHERE state_kind = %(closure)s AND attrs ? 'from_event'"),
+    # Withdrawn, not deleted (hard rule 2; audit 2026-09-25 F206): belief
+    # reads modality 'assertion' only, and the closure writer re-asserts
+    # the row when the re-clustering derives the same event again.
+    ("UPDATE state_observation SET modality = 'rejected', "
+     "attrs = attrs || jsonb_build_object('withdrawn_by', 'rebuild') "
+     "WHERE state_kind = %(closure)s AND attrs ? 'from_event' "
+     "AND modality = 'assertion'"),
     ("UPDATE claim SET event_id = NULL WHERE event_id IN "
      "(SELECT event_id FROM event WHERE attrs->>'classifier' = %(clf)s)"),
     ("DELETE FROM state_current WHERE state_kind = %(closure)s"),
@@ -413,6 +418,59 @@ WHERE EXCLUDED.observed_at >= state_current.observed_at
 
 
 LOCK_KEY = 7870_0001          # pg advisory lock: one classifier run at a time
+
+
+def retire_unreferenced_events(cur, stats: dict) -> None:
+    """An event of ours that neither a claim nor a classification references is
+    a conclusion nothing stands behind. It is RETRACTED, not deleted (audit
+    2026-09-25 F206; Zaid 09-25: fix it permanently): the versioning trigger
+    files the believed version in event_history, event_as_of() still returns
+    it for the days it was served, an id a partner stored keeps resolving, and
+    serving — which reads status = 'believed' — stops showing it. Every earlier
+    version bump DELETEd here; nothing outside the claims survived a bump.
+
+    Closure observations derived from a retracted event are withdrawn with it:
+    modality 'rejected' (belief reads 'assertion' only), the row stays, attrs
+    say why, and reassert_closure_observations() brings them back if the event
+    is revived by a later re-read that produces the same stable key."""
+    cur.execute("""
+        UPDATE event e
+           SET status = 'retracted', correction_note = %(note)s
+         WHERE e.status = 'believed'
+           AND e.attrs->>'classifier' = %(clf)s
+           AND NOT EXISTS (SELECT 1 FROM claim c WHERE c.event_id = e.event_id)
+           AND NOT EXISTS (SELECT 1 FROM claim_classification cc
+                           WHERE cc.event_id = e.event_id)""",
+        {"clf": CLASSIFIER,
+         "note": f"no claim stands behind it after classifier {CLASSIFIER_VERSION} re-read"})
+    stats["stale_events_swept"] = cur.rowcount          # retracted, not deleted
+    if stats["stale_events_swept"]:
+        cur.execute("""
+            UPDATE state_observation so
+               SET modality = 'rejected',
+                   attrs = so.attrs || jsonb_build_object('withdrawn_by', %(ver)s::text,
+                                                          'withdrawn_reason', 'event retracted')
+             WHERE so.state_kind = %(closure)s AND so.attrs ? 'from_event'
+               AND so.modality = 'assertion'
+               AND NOT EXISTS (SELECT 1 FROM event e
+                               WHERE e.event_id = (so.attrs->>'from_event')::bigint
+                                 AND e.status = 'believed')""",
+            {"closure": STATE_KIND_CLOSURE, "ver": CLASSIFIER_VERSION})
+        stats["stale_closure_obs_swept"] = cur.rowcount
+
+
+def reassert_closure_observations(cur, event_id: int) -> int:
+    """The derived closure rows of an event that is believed again (revived on
+    join, or re-derived after a --rebuild) return to modality 'assertion'."""
+    cur.execute("""
+        UPDATE state_observation so
+           SET modality = 'assertion',
+               attrs = (so.attrs - 'withdrawn_by') - 'withdrawn_reason'
+         WHERE so.state_kind = %(closure)s AND so.modality = 'rejected'
+           AND so.attrs ? 'withdrawn_by'
+           AND so.attrs->>'from_event' = %(event)s""",
+        {"closure": STATE_KIND_CLOSURE, "event": str(event_id)})
+    return cur.rowcount
 
 
 def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
@@ -601,11 +659,18 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                 # The event KEEPS its earliest report time: that is when the
                 # incident was first reported, and moving it forward would let a
                 # late report make an old incident look new.
+                # A retracted event whose key comes back is REVIVED — the
+                # versioning trigger files the retracted version, the id a
+                # partner stored resolves again (F206).
                 cur.execute("""
                     UPDATE event
                        SET claim_count = %s, independent_sources = %s,
                            confidence = %s,
-                           attrs = attrs || %s::jsonb
+                           attrs = attrs || %s::jsonb,
+                           status = CASE WHEN status = 'retracted'
+                                         THEN 'believed'::event_status ELSE status END,
+                           correction_note = CASE WHEN status = 'retracted'
+                                                  THEN NULL ELSE correction_note END
                      WHERE event_id = %s""",
                     (prev_n + len(cluster), len(merged_units),
                      _confidence(len(merged_units)),
@@ -664,6 +729,7 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
 
             # A closure is also a movement STATE and must decay like one.
             if itype in ("closure", "siege"):
+                reassert_closure_observations(cur, event_id)
                 cur.execute(CLOSURE_OBS_SQL, {
                     "place_id": place_id, "kind": STATE_KIND_CLOSURE,
                     "raw": reading.matched, "at": occurred,
@@ -704,7 +770,8 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
         # events and nothing cleaned up what they used to point at. Five bumps
         # run WITHOUT --rebuild left 982 believed-but-unreferenced events, and
         # /v2/incidents was serving nearly every incident twice (#37 audit).
-        # Deleting a stale conclusion is not data loss — the claims stay (037).
+        # A stale conclusion is RETRACTED, never deleted (F206, 2026-09-25):
+        # the claims stay (037) and so does every version of the event.
         #
         # (1) A claim whose new verdict is not `incident` keeps its old event
         # link forever otherwise — 77 fuel-bulletin "closures" survived 037
@@ -715,25 +782,9 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
                         "WHERE claim_id = ANY(%s) AND event_id IS NOT NULL",
                         (demoted,))
             stats["claims_unlinked"] = cur.rowcount
-        # (2) An event of ours that neither a claim nor a classification
-        # references is a conclusion nothing stands behind.
-        cur.execute("""
-            DELETE FROM event e
-             WHERE e.attrs->>'classifier' = %(clf)s
-               AND NOT EXISTS (SELECT 1 FROM claim c WHERE c.event_id = e.event_id)
-               AND NOT EXISTS (SELECT 1 FROM claim_classification cc
-                               WHERE cc.event_id = e.event_id)""",
-            {"clf": CLASSIFIER})
-        stats["stale_events_swept"] = cur.rowcount
-        # (3) Closure observations derived from a now-deleted event follow it.
-        if stats["stale_events_swept"]:
-            cur.execute("""
-                DELETE FROM state_observation so
-                 WHERE so.state_kind = %(closure)s AND so.attrs ? 'from_event'
-                   AND NOT EXISTS (SELECT 1 FROM event e
-                                   WHERE e.event_id = (so.attrs->>'from_event')::bigint)""",
-                {"closure": STATE_KIND_CLOSURE})
-            stats["stale_closure_obs_swept"] = cur.rowcount
+        # (2) + (3): retire what nothing stands behind — see
+        # retire_unreferenced_events(). Retracted, never deleted (F206).
+        retire_unreferenced_events(cur, stats)
 
         # (4) Counts are derived, not accumulated. Joining an event adds the
         # cluster to its claim_count, and a re-read of the same claims (every

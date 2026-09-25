@@ -159,3 +159,40 @@ def test_belief_06_crowd_sources_never_feed_incidents(db):
     assert "feeds_incidents" in inspect.getsource(engine.register)
     from ingest.sources import news_incidents
     assert "s.kind <> 'crowd'" in inspect.getsource(news_incidents)
+
+
+def test_belief_07_an_open_direction_beside_an_unknown_one_is_not_open(db):
+    """Zaid, 2026-09-25: 'unknown' outranks 'open' in the default row. Inbound
+    open 3 minutes ago, outbound congested 2 hours ago and decayed to unknown:
+    the default row says unknown (last known open), never open."""
+    with db.cursor() as cur:
+        pid = _place(cur)
+        ch = _source(cur, "_t_s7")
+        _observe(cur, pid, ch, "congested", "outbound", "150 minutes")
+        _observe(cur, pid, ch, "open", "inbound", "3 minutes")
+        _refresh(cur)
+        both = _serving(cur, pid, "both")
+        cur.execute("SELECT flow FROM checkpoint_serving WHERE place_id=%s AND direction='outbound'", (pid,))
+        outbound = cur.fetchone()[0]
+    assert outbound == "unknown", "the fixture needs outbound to have decayed"
+    assert both[0] == "unknown"
+
+
+def test_belief_08_a_lone_open_direction_does_not_open_the_default_row(db):
+    """Only inbound was ever read, and it is open: the checkpoint is not
+    'open' — half of it was never looked at. Last known keeps the reading, and
+    a lone CLOSED direction still closes the default row."""
+    with db.cursor() as cur:
+        pid = _place(cur)
+        ch = _source(cur, "_t_s8")
+        _observe(cur, pid, ch, "open", "inbound", "2 minutes")
+        _refresh(cur)
+        cur.execute("SELECT flow, last_known_flow FROM checkpoint_serving "
+                    "WHERE place_id=%s AND direction='both'", (pid,))
+        lone_open = cur.fetchone()
+        pid2 = _place(cur, "T_serving2")
+        _observe(cur, pid2, ch, "closed", "outbound", "2 minutes")
+        _refresh(cur)
+        lone_closed = _serving(cur, pid2, "both")
+    assert lone_open == ("unknown", "open")
+    assert lone_closed[0] == "closed"
