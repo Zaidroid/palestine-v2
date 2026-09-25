@@ -472,7 +472,7 @@ def _resolve_checkpoint(name: str) -> dict | None:
         return None
     rows = q("""
         SELECT p.place_id, p.name_ar, p.name_en,
-               COALESCE(o.n, 0) AS obs,
+               COALESCE(o.n, 0) AS obs, o.latest AS latest,
                COALESCE(array_agg(a.alias_norm) FILTER (WHERE a.alias_norm IS NOT NULL),
                         ARRAY[]::text[]) AS aliases
         FROM place p
@@ -481,10 +481,10 @@ def _resolve_checkpoint(name: str) -> dict | None:
         -- kind and direction), not a COUNT over every checkpoint_flow row ever
         -- stored: that aggregate decompressed the whole hypertable on every
         -- checkpoint_status call for a 0.04-point tie-break (audit F296).
-        LEFT JOIN (SELECT place_id, COUNT(*) n FROM state_current
+        LEFT JOIN (SELECT place_id, COUNT(*) n, MAX(observed_at) latest FROM state_current
                    WHERE state_kind = 'checkpoint_flow' GROUP BY 1) o ON o.place_id = p.place_id
         WHERE p.servable AND p.kind IN ('checkpoint','crossing','road')
-        GROUP BY p.place_id, p.name_ar, p.name_en, o.n""")
+        GROUP BY p.place_id, p.name_ar, p.name_en, o.n, o.latest""")
 
     def _sim(a: str, b: str) -> float:
         # A misspelling keeps its first letter (Hawara/Huwara); a lookalike of
@@ -497,7 +497,7 @@ def _resolve_checkpoint(name: str) -> dict | None:
     def _key(r) -> str:                       # rows that share a name are one candidate
         return (r["name_en"] or r["name_ar"] or "").lower()
 
-    best, best_score, best_ratio = None, 0.0, 1.0
+    best, best_raw, best_score, best_ratio = None, 0.0, 0.0, 1.0
     ratio_by_name: dict[str, float] = {}
     for r in rows:
         names = [x for x in (r["name_ar"], r["name_en"]) if x]
@@ -527,11 +527,15 @@ def _resolve_checkpoint(name: str) -> dict | None:
             score = ratio * 0.8
             ratio_by_name[_key(r)] = max(ratio_by_name.get(_key(r), 0.0), ratio)
         # Evidence breaks ties: among equally-named candidates the one people
-        # actually report about is the one they mean. Capped at 1.0 — scores
-        # of 1.04 were served (F070).
-        score = min(1.0, score + min(r["obs"], 3) / 3 * 0.04)
-        if score > best_score:
-            best, best_score, best_ratio = r, score, ratio
+        # actually report about is the one they mean — the row with readings,
+        # and the one read RECENTLY (two rows are named 'Huwara'; one is a
+        # gate row last reported 106 days ago). The comparison keeps the
+        # bonus; only the SERVED score is capped at 1.0 (F070).
+        latest = r.get("latest")
+        recent = latest is not None and (datetime.now(timezone.utc) - latest).days <= 30
+        raw = score + min(r["obs"], 3) / 3 * 0.04 + (0.02 if recent else 0.0)
+        if raw > best_raw:
+            best, best_raw, best_score, best_ratio = r, raw, min(1.0, raw), ratio
     if not best:
         return None
     # A fuzzy match is served WITH its doubt spoken (tests/test_name_safety.py)

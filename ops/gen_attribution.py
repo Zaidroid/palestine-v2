@@ -33,9 +33,18 @@ SECTIONS = [
      "rows and distribute it, it inherits their terms. Served through "
      "`v_tier_commercial_sharealike`, deliberately not through the "
      "permissive commercial tier."),
+    ("share-alike-nc", "Share-alike, non-commercial",
+     "Credit, copyleft AND no commercial use (CC-BY-NC-SA and the WHO GHO "
+     "terms). A derived database inherits the licence and may not be sold."),
     ("attribution", "Attribution — credit required",
      "Redistributable, commercially or otherwise, provided the credit below "
      "travels with the data."),
+    # The section key is (redistribution, commercial_use) — IODA and OONI were
+    # listed as 'redistributable, commercially or otherwise' while the registry
+    # holds CC-BY-NC / All Rights Reserved (audit F146).
+    ("attribution-nc", "Attribution — non-commercial only",
+     "Credit required AND no commercial use. Served only through the "
+     "non-commercial tiers; a sale built on these rows breaches their terms."),
     ("open", "Public domain — credit given by choice",
      "No attribution is required. It is given anyway, because a source that "
      "put its work in the public domain still did the work."),
@@ -51,7 +60,12 @@ SECTIONS = [
 def build() -> str:
     with connect() as conn, conn.cursor() as cur:
         cur.execute("""
-            SELECT redistribution, source_name, license_spdx,
+            SELECT CASE WHEN redistribution = 'attribution' AND commercial_use IS FALSE
+                        THEN 'attribution-nc'
+                        WHEN redistribution = 'share-alike' AND commercial_use IS FALSE
+                        THEN 'share-alike-nc'
+                        ELSE redistribution END AS grade,
+                   source_name, license_spdx,
                    attribution_text, terms_url, terms_verified_at::date,
                    count(*) AS n
             FROM databank_serving

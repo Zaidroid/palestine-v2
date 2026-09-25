@@ -60,6 +60,7 @@ rc=$?
 # The gap radar re-measures after every sync: freshness on the data's own
 # dates, holes, era coverage, fetch-layer health → data/gap-radar.json
 # (served at /v2/databank/radar; Monday's maintenance run reads it).
+.venv/bin/python -m ops.gen_attribution --write || echo "attribution not regenerated — yesterday's file stands" >&2
 .venv/bin/python -m ops.gap_radar
 radar=$?
 [ "$radar" -eq 4 ] && echo "gap radar: a dataset stalled since yesterday — see data/gap-radar.json newly_stalled" >&2

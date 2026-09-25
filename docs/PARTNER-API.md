@@ -52,9 +52,12 @@ at `https://live-api.zaidlab.xyz/mcp` with no key and it will:
 5. exchange the resulting code at `POST /token` (authorization code + PKCE S256)
    for an access token.
 
-Tokens last 30 days, refresh tokens 90, and both survive a redeploy. Code
-exchange is single-use: a replayed code is refused, and so is one presented with
-the wrong PKCE verifier.
+Tokens last 30 days, refresh tokens 90, and both survive a redeploy. A token
+dies with its partner key (remove the key and every token issued under it is
+refused on the next call) and spends that key's daily quota. Refresh tokens
+rotate on use and are bound to the client that obtained them. PKCE is
+required. Code exchange is single-use: a replayed code is refused, and so is
+one presented with the wrong PKCE verifier.
 
 ## 2. Handshake
 
@@ -80,21 +83,55 @@ confident.
 
 ## 3. The tools
 
-**Checkpoints** — `checkpoint_status` (one named checkpoint: flow, whether it is
-passable, who is present, age), `checkpoints_near` (nearest first, with what is
-NOT known), `checkpoints_summary` (West Bank picture).
+Sixteen public names, generated from the server's own `tools/list` (`ops/gen_partner_tools.py`; a required argument is starred, a declared default is shown). Older names still answer for one release but are not on the menu.
 
-**Incidents** — `incidents_near` (raids, settler attacks, closures, arrests,
-demolitions, with the count of *independent* channels), `incidents_summary`.
+**`about`** — What this system is, what it holds, what it holds NOTHING for, and whether it is alive — call this first. overview (default) is a short reduction; section=sources|fields|gaps|stream returns the full detail. `no source` means nothing measures a field, ever; `unknown` means nobody credible reported recently.
+  <br>arguments: `section`="overview"
 
-**Insights and analysis** — `insights` (below), `place_history`,
-`place_pattern` (hour-of-day rhythm at one place), `area_history` (governorate
-rollup), `trend`, `compare`, `correlate`, `what_correlates_with`, `data_gaps`
-(where the record thins), `databank` (categories and series), `licenses` (what
-each dataset's licence obliges).
+**`checkpoint_status`** — Is a named checkpoint open right now? Returns flow (open/congested/slow/closed), whether it is passable, who is present (army, police, settlers, inspection) as a SEPARATE fact, and how old the reading is. Inbound and outbound can differ and are both reported.
+  <br>arguments: `name`*, `direction`="both"
 
-**Getting around** — `can_i_travel` (route plus the checkpoints on it),
-`where_is`, `crossings` (Rafah, Kerem Shalom, Allenby, King Hussein).
+**`checkpoints`** — Checkpoints around a place, nearest first, with what is known and how much is NOT known; with no place, the West-Bank-wide picture (open / closed / congested / no recent reading, and which are closed now). For ONE named checkpoint use checkpoint_status.
+  <br>arguments: `place`, `lat`, `lon`, `direction`="both", `radius_km`=15, `limit`=6
+
+**`can_i_travel`** — Can I get from A to B right now? Returns every reasonable route scored by the checkpoints ON it — in travel order, each with its age — plus alternatives when one is blocked. Use this instead of checking checkpoints one by one: a journey needs EVERY checkpoint passable, so one confirmed closure blocks the route. Checkpoints nobody has reported recently never block and are always named.
+  <br>arguments: `origin`*, `destination`*
+
+**`incidents`** — Located incidents — raids, settler attacks, closures, arrests, demolitions — each with how many INDEPENDENT channels reported it. Around a place when `place` (or lat/lon) is given; otherwise West-Bank-wide counts by type and the worst-affected places. Times are when a channel POSTED, precise to the hour.
+  <br>arguments: `place`, `lat`, `lon`, `hours`=12, `radius_km`=25, `limit`=8
+
+**`place`** — One place, four views. profile (default): everything both tiers hold — live checkpoint state, recent history, hourly pattern, nearby incidents. history: daily report counts and what they said. pattern: what USUALLY happens by hour of day. locate: the coordinates. A town and the checkpoint named after it are different rows; the answer says which it covers.
+  <br>arguments: `place`*, `view`="profile", `days`=30, `state_kind`
+
+**`insights`** — ONE reduction of a place over a window: checkpoint status distribution around it, which checkpoints actually changed, the busiest hours, incident counts by type, and the measured precision of each subject. Use it for 'what was happening around X last month' instead of fetching rows and averaging them. scope=governorates: totals per governorate instead of one place.
+  <br>arguments: `place`, `lat`, `lon`, `days`=30, `radius_km`=15, `scope`="place", `state_kind`
+
+**`news`** — The newest ingested messages (Telegram channels and RSS), optionally filtered by area — or, with `text`, a literal search for the words somebody used. Bodies are excerpted to 250 characters for partners: the channels own their wording.
+  <br>arguments: `text`, `place`, `hours`=168, `limit`=8, `kind`
+
+**`weather_now`** — Weather conditions and advisories per West Bank governorate — heat waves, storms, frost. Optionally filter to one governorate. Useful alongside movement answers: 43C changes what a checkpoint queue means.
+  <br>arguments: `place`
+
+**`connectivity_now`** — Whether West Bank internet is reachable, measured externally by IODA (routing table, active probes, darknet telescope) rather than reported by anyone. Answers 'is the internet down' when nobody can post that it is.
+  <br>arguments: no arguments
+
+**`fuel_prices`** — Official West Bank fuel prices (petrol 95/98, diesel, kerosene, cooking-gas cylinders): the Petroleum Corporation's monthly MAXIMUM consumer price, not a pump price and not Gaza's. A price is given only when two independent outlets agree; otherwise the answer says it is unconfirmed, conflicting, or that this month's list has not been read yet. history=true lists every confirmed price so far.
+  <br>arguments: `product`, `history`=false
+
+**`crossings`** — Status of Gaza and West Bank crossings (Rafah, Kerem Shalom, Erez, Zikim, Kissufim, Allenby / King Hussein…): open / partial / closed / unknown, where `partial` is NOT open. A crossing nobody reports reads `unknown`, and the answer says which crossings have no source at all — most Gaza crossings today.
+  <br>arguments: `place`
+
+**`databank`** — Historical databank (200k+ rows, 20 categories: prisoners, demolitions, food prices, funding, martyrs roster…) with per-source licensing. No `category` lists what exists; `as_of` (YYYY-MM-DD) reconstructs a past day's answer.
+  <br>arguments: `category`, `indicator`, `as_of`, `limit`=10
+
+**`series`** — A databank series over time. One indicator: is it above or below its own baseline (the last three readings against the median of the rest), and how old the newest reading is. Two to six comma-separated indicators: side by side in their own units over the window they share — nothing is rescaled onto one axis. Find indicator strings with correlate(search=...).
+  <br>arguments: `indicators`*, `place`, `days`=90
+
+**`correlate`** — Concepts, indicator search, correlation and scanning over the databank. No arguments: the concepts held. `search`/`concept`: find an indicator string. `a` and `b`: correlate two series — REFUSES rather than returning a misleading number (two cumulative tolls correlate at ~1.0 and that measures time). `indicator` alone: SCAN for series that move with it; results are hypotheses to check pairwise, never findings, and the answer says how many tests it ran.
+  <br>arguments: `a`, `b`, `search`, `concept`, `indicator`, `place`, `place_id`, `candidates`=40, `max_lag`, `allow_same_concept`=false
+
+**`licence`** — What may be REUSED from here, and how. scope=tools (default): what each public tool may hand a commercial partner — whole, excerpt, per-row, or cited fact only. scope=sources: who owns the databank's rows, each licence's obligation, attribution text, and which publishers' terms nobody has read yet. Call it before republishing anything.
+  <br>arguments: `scope`="tools", `source`
 
 ### Reading a route verdict
 
@@ -232,14 +269,14 @@ rather than a person.
 * Gaza and West Bank casualty series are **Tech for Palestine's, Unlicense
   (public domain)**.
 * The historical databank carries per-source terms: several sets are
-  `commercial_use=false` and are **not** part of this release. `licenses` names
-  each one's obligations, and `coverage` names each source.
+  `commercial_use=false` and are **not** part of this release. `licence`
+  (`scope=sources`) names each one's obligations, and `about` names each source.
 * Attribution string to carry: *"Data: Palestine Data Platform, processed from
   public channel reports; Gaza and West Bank series via Tech for Palestine."*
 
 ### What you may carry away, per tool
 
-Call **`licence_tools`** (or `GET /v2/licence/tools`) before you republish
+Call **`licence`** (`scope=tools`, or `GET /v2/licence/tools`) before you republish
 anything from here. It grades every public tool and tells you which of four
 things you are holding. Grades are read from the source register at call time,
 so that table is authoritative and this paragraph is only the shape of it.
@@ -264,34 +301,37 @@ channels, not a key change.
 A grade says what you may **redistribute**, not what you may **read**.
 Everything on this server is readable; the cut is only on carrying it away.
 
-## 9. Ten calls to try first
+## 9. Twelve questions to try first
 
-Run `docs/try-ten-calls.sh` with your staging key and you have all ten in one
-pass — it prints each answer, the licence tier of what it just received, and the
-round-trip time, and it never echoes the key:
+Run `docs/try-twelve.sh` with your key and you have the twelve canonical
+questions the release is measured on (PLAN §10) in one pass — each answer in
+both languages, the licence tier of what you received, and the round-trip
+time; the key is never echoed:
 
 ```bash
-THAURA_KEY=pv2_... ./docs/try-ten-calls.sh
+THAURA_KEY=pv2_... ./docs/try-twelve.sh
 ```
 
-The same ten calls by hand, if you would rather see the wire format:
+The same twelve by hand, if you would rather see the wire format:
 
 ```bash
 K=<key>; U=https://live-api.zaidlab.xyz/mcp
-call() { curl -s -X POST "$U?key=$K" -H 'content-type: application/json' \
+call() { curl -s -X POST "$U" -H "X-Api-Key: $K" -H 'content-type: application/json' \
   -H 'accept: application/json, text/event-stream' \
   -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"$1\",\"arguments\":$2}}"; }
 
-call coverage '{}'
-call checkpoints_summary '{}'
-call checkpoints_near '{"place":"نابلس","limit":10}'
-call checkpoint_status '{"name":"حوارة"}'
-call incidents_summary '{"hours":24}'
-call incidents_near '{"place":"الخليل","hours":168,"limit":20}'
-call insights '{"place":"رام الله","days":30,"radius_km":15}'
+call about '{}'
+call checkpoint_status '{"name":"قلنديا"}'
+call checkpoint_status '{"name":"Huwara"}'
 call can_i_travel '{"origin":"رام الله","destination":"نابلس"}'
-call crossings '{}'
-call weather_now '{}'
+call can_i_travel '{"origin":"Nablus","destination":"Jenin"}'
+call incidents '{"place":"رام الله","hours":12}'
+call insights '{"place":"نابلس","days":7}'
+call crossings '{"place":"رفح"}'
+call fuel_prices '{}'
+call databank '{"category":"casualties","limit":3}'
+call databank '{"category":"demolitions","limit":5}'
+call place '{"place":"حوارة","view":"history","days":30}'
 ```
 
 ## 10. Known gaps, stated plainly

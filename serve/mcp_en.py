@@ -351,9 +351,11 @@ def connectivity_now(d: dict) -> str:
                    f"Bank ({d.get('signals_agreeing')} independent signals agree)."),
         "unknown": "No current measurement of the network.",
     }
+    age = d.get("age_minutes")
+    when = f" Measured {_age(age)}." if age is not None else ""    # the age is spoken (P0-A.2)
     if status in known:
-        return known[status]
-    return f"West Bank internet status: {status}."        # never claim silence
+        return known[status] + when
+    return f"West Bank internet status: {status}.{when}"        # never claim silence
 
 
 def crossings(d: dict) -> str:

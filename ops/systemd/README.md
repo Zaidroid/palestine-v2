@@ -4,8 +4,8 @@ Copies of everything installed under `/etc/systemd/system/palestine-v2-*`.
 
 ## Why these are here
 
-The nightly backup covers the database. It does not cover the twelve unit files
-and eight drop-ins that decide *when anything runs at all* — those lived only in
+The nightly backup covers the database. It does not cover the unit files and
+drop-ins that decide *when anything runs at all* — those lived only in
 `/etc`, owned by root, on the same disk the backups exist to survive losing. A
 restore would have brought back every row and left nothing to collect the next
 one, and the gap would only have been discovered during a rebuild, which is the
@@ -22,19 +22,24 @@ directory as the record, and keep the two in step.
       sudo cp "$d"/*.conf "/etc/systemd/system/$(basename "$d")/"
     done
     sudo systemctl daemon-reload
-    sudo systemctl enable --now palestine-v2-poller.service
-    sudo systemctl enable --now palestine-v2-{checkpoints,news,fuel,external}.timer
-    sudo systemctl enable --now palestine-v2-{backup,restore-test,watchdog}.timer
-    sudo systemctl enable --now palestine-v2-{accuracy,checkpoint-learn}.timer
-    sudo systemctl enable --now palestine-v2-mcp-audit.timer
-    sudo systemctl enable --now palestine-v2-analyst.service
+    # the three daemons, then EVERY timer in this directory — the list is the
+    # directory, never a hand-typed subset (audit F159/F279: the old block
+    # enabled a retired timer and left ten live ones out)
+    sudo systemctl enable --now palestine-v2-{api,poller,analyst}.service
+    sudo systemctl enable --now $(basename -a ops/systemd/*.timer)
+
+Timers in this directory today: accuracy, backup, checkpoint-learn, checkpoints, crowd, databank, external, gaza, maintain-retry, maintain, mcp-audit, measure-review, news, palhub-roads, restore-test, rollup, scout, valhalla-ip, watchdog.
 
 ## Checking they have not drifted
 
-    diff -r <(ls /etc/systemd/system/palestine-v2-*) <(ls ops/systemd/palestine-v2-*)
-    for f in ops/systemd/palestine-v2-*.{service,timer}; do
-      diff -q "$f" "/etc/systemd/system/$(basename "$f")" || echo "DRIFT: $f"
-    done
+    # every file here, drop-ins included, against /etc (audit F279)
+    (cd ops/systemd && find . -type f -name '*.service' -o -type f -name '*.timer' -o -type f -name '*.conf') \
+      | sed 's#^\./##' | while read -r f; do
+          diff -q "ops/systemd/$f" "/etc/systemd/system/$f" >/dev/null 2>&1 || echo "DRIFT: $f"
+        done
+    # and anything installed that this directory does not carry
+    ls /etc/systemd/system/palestine-v2-* 2>/dev/null | xargs -n1 basename \
+      | while read -r u; do [ -e "ops/systemd/$u" ] || echo "UNTRACKED: $u"; done
 
 ## What the drop-ins carry
 
@@ -52,10 +57,12 @@ files:
   * `palestine-v2-poller.service.d/unbuffered.conf` — `PYTHONUNBUFFERED=1`, so a
     long-running service's output reaches the journal before it exits.
 
-`palestine-v2-watchdog.service` carries `SuccessExitStatus=0 1` in the base unit
-rather than a drop-in: the watchdog exits 1 when it *finds* a fault, which is a
-successful run with a bad result. Without it, every detected fault would also
-mark the watchdog failed and raise a second alarm about the alarm.
+`palestine-v2-watchdog.service` carries `SuccessExitStatus=0 3` in the base unit
+rather than a drop-in: the watchdog exits 3 when it *finds* a fault, which is a
+successful run with a bad result, and 1 when it itself crashed (audit F066).
+Without it, every detected fault would also mark the watchdog failed and raise
+a second alarm about the alarm. `palestine-v2-mcp-audit.service` likewise
+accepts exit 1 (criticals found).
 
 ## Alarm delivery (F-04, 2026-09-22)
 
@@ -87,7 +94,11 @@ Set `NTFY_URL=off` to disable ntfy deliberately. Prove the wiring with:
 .venv/bin/python -m ops.alert  --test     # a REAL alarm, down the real path
 ```
 
-## Fuel from the archived cards (F-05, 2026-09-22)
+## Retired: fuel from the archived cards (F-05, 2026-09-22 → retired 2026-09-23)
+
+The `palestine-v2-fuel-images` unit and its drop-in are gone from this
+directory (audit F159): the fuel-card vertical was retired on 2026-09-23. The
+paragraph below is kept as history of how it worked.
 
 `palestine-v2-fuel-images.{service,timer}` read `@palhubappfuel`'s rendered
 cards — the tee spool's text bulletins died on 2026-08-28 and the cards are the

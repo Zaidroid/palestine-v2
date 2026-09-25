@@ -56,3 +56,25 @@ def _clear_rate_limit_buckets():
     yield
     for book in ratelimit._buckets.values():
         book.clear()
+
+
+# ── the two helpers every transport-level test uses (promoted here, P0-A.2) ──
+@pytest.fixture(scope="session")
+def mcp_call():
+    """(name, tier='partner', **args) -> the JSON-RPC reply through the HTTP
+    dispatcher — the only path that attaches answer_en and the licence block."""
+    from serve import mcp_http as m
+
+    def call(tool_name, tier="partner", **args):
+        return m._handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                          "params": {"name": tool_name, "arguments": args}}, None, tier)
+    return call
+
+
+@pytest.fixture(scope="session")
+def mcp_payload():
+    import json as _json
+
+    def payload(reply):
+        return _json.loads(reply["result"]["content"][0]["text"])
+    return payload

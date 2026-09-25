@@ -654,6 +654,10 @@ def connectivity_now() -> dict:
         answer = "في تراجع بجودة الإنترنت بالضفة حسب القياس الخارجي."
     else:
         answer = "الإنترنت بالضفة شغال طبيعي حسب القياس الخارجي."
+    # The age is spoken (answer contract, P0-A.2): the English said "measured
+    # 8 min ago" and the Arabic said nothing about when.
+    if d.get("age_minutes") is not None:
+        answer += f" آخر قياس {_age_ar(int(d['age_minutes']))}."
     return {"answer": answer, **d}
 
 
