@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 125 done · 6 partial · 29 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 133 done · 6 partial · 21 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -177,7 +177,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 08 · Place resolution and gazetteer tooling — `08-gazetteer.md`
 
-0 done · 1 partial · 3 open of 4 confirmed; 0 of 20 verify-first done.
+4 done · 0 partial · 0 open of 4 confirmed; 0 of 20 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
@@ -256,14 +256,14 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 13 · Learning loop, analyst, self-measurement — `13-learning.md`
 
-0 done · 0 partial · 4 open of 4 confirmed; 0 of 30 verify-first done.
+4 done · 0 partial · 0 open of 4 confirmed; 0 of 30 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| LEARNING-01 | F004 | critical | **open** |  | Nightly copy-collapse can lift a crowd submitter out of crowd:unverified, granting independence |
-| LEARNING-02 | F229 | medium | **open** |  | Plan/ledger present '196/199' as the deterministic MoH reader's score; it is a brain model's ag |
-| LEARNING-03 | F110 | medium | **open** |  | Loop A can never record a miss in a two-unit bucket and scores each unit against a consensus th |
-| LEARNING-04 | F242 | medium | **open** |  | The nightly accuracy audit calls tool functions in-process; answer_en is only attached by the t |
+| LEARNING-01 | F004 | critical | **done** | `908d08d` | Nightly copy-collapse can lift a crowd submitter out of crowd:unverified, granting independence |
+| LEARNING-02 | F229 | medium | **done** | `908d08d` | Plan/ledger present '196/199' as the deterministic MoH reader's score; it is a brain model's ag |
+| LEARNING-03 | F110 | medium | **done** | `908d08d` | Loop A can never record a miss in a two-unit bucket and scores each unit against a consensus th |
+| LEARNING-04 | F242 | medium | **done** | `908d08d` | The nightly accuracy audit calls tool functions in-process; answer_en is only attached by the t |
 
 ### 14 · Documentation a partner or a new session follows — `14-docs.md`
 
@@ -284,14 +284,14 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 15 · Public web pages (serve/webapp) — `15-webapp.md`
 
-0 done · 0 partial · 4 open of 4 confirmed; 0 of 13 verify-first done.
+4 done · 0 partial · 0 open of 4 confirmed; 0 of 13 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| WEBAPP-01 | F090 | high | **open** |  | pulse.html pairs the worst flow with the freshest row's age, so a three-hour-old closure can re |
-| WEBAPP-02 | F091 | high | **open** |  | pulse.html's SSE consumer is dead: `es.onmessage` never fires for named events, and it reads fi |
-| WEBAPP-03 | F092 | high | **open** |  | Pages fetch once and never refresh: age strings freeze and decay events are ignored, so a stale |
-| WEBAPP-04 | F413 | medium | **open** |  | A failed or rate-limited fetch leaves a silent '…' / hint panel that reads as 'no closures', wi |
+| WEBAPP-01 | F090 | high | **done** | `908d08d` | pulse.html pairs the worst flow with the freshest row's age, so a three-hour-old closure can re |
+| WEBAPP-02 | F091 | high | **done** | `908d08d` | pulse.html's SSE consumer is dead: `es.onmessage` never fires for named events, and it reads fi |
+| WEBAPP-03 | F092 | high | **done** | `908d08d` | Pages fetch once and never refresh: age strings freeze and decay events are ignored, so a stale |
+| WEBAPP-04 | F413 | medium | **done** | `908d08d` | A failed or rate-limited fetch leaves a silent '…' / hint panel that reads as 'no closures', wi |
 
 ## Refuted findings that were still worth a change
 

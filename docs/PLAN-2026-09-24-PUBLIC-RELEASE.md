@@ -410,3 +410,8 @@ running poller picks the changes up at Zaid's next restart. Tally 118 done · 6 
 0 failed. Live for the timers at their next tick (power/weather/connectivity/fuel/MoH loaders run the tree); the power
 cut's 'normal' at window_end appears on the next power tick. Tally 125 done · 6 partial · 29 open. Next: 12 databank
 (5), 13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.
+2026-09-25 14:30 UTC · audit 13-learning + 15-webapp · done 8 of 8 · proof: `908d08d`; tests 7; full suite 1155 passed.
+Crowd sources can no longer be lifted out of crowd:unverified by the nightly collapse (F004, critical); reliability is
+leave-one-out; the nightly audit runs through the transport; pulse/road pages carry the verdict row's age, consume the
+stream's named events, refresh, and say when a fetch fails. Web pages + audit go live at the next API restart. Tally 133
+done · 6 partial · 21 open (12 databank 5 — migrations + Zaid's World Bank re-route decision; 14 docs 10; the partials).

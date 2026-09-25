@@ -47,6 +47,9 @@
 > adding the id to `source` and cursors keyed on it — say go and I write it); INGEST-07 — track edits/deletions,
 > which costs extra get_messages calls per cycle on the scarce account (say how many per cycle you accept, or no).
 >
+> **Areas 13 learning + 15 webapp landed (`908d08d`):** the web pages (`serve/webapp/`) and the audit path are served by the
+> API — they go live with the next `restart palestine-v2-api`; the learning jobs run the tree at their next tick.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
