@@ -607,7 +607,10 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         if r is not None:
             c.flow, c.flow_last_known = v, r[3]
             c.confidence = float(r[4]) if r[4] is not None else None
-            c.age_minutes = r[2]
+            # `unknown` carries no age: an age beside it would read as a
+            # stale-but-real reading (tests/test_route_omissions.py). The
+            # reconciliation picks a decayed row's age otherwise (F320 fix).
+            c.age_minutes = r[2] if v != "unknown" else None
             c.independent_sources = r[5]
 
     cps = sorted(by_id.values(), key=lambda c: c.along)
