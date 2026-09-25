@@ -547,6 +547,7 @@ def _resolve_checkpoint(name: str) -> dict | None:
                                       or runner_up >= best_ratio - AMBIGUOUS_MARGIN)
     return {"place_id": best["place_id"],
             "name": best["name_ar"] or best["name_en"],
+            "name_en": best["name_en"] or None,
             "score": round(best_score, 3),
             "uncertain": uncertain}
 
@@ -707,7 +708,9 @@ def services() -> dict:
     return {
         "internet": ({"region": net[0]["name_en"], "status": net[0]["value"],
                       "age_minutes": net[0]["age_minutes"],
-                      "signals_agreeing": net[0]["independent_sources"],
+                      "signals_agreeing": _signals_agreeing(
+                          net[0]["value"], (net[0]["attrs"] or {}).get("signals")),
+                      "signals_total": len((net[0]["attrs"] or {}).get("signals") or {}),
                       "signals": (net[0]["attrs"] or {}).get("signals"),
                       "method": "measured externally (IODA)"} if net else None),
         "power_cuts_active": [{"place": r["name_ar"] or r["name_en"],
@@ -720,6 +723,27 @@ def services() -> dict:
                           "system, and neither are other distribution areas."),
         "attribution": "IODA (Georgia Tech) · شركة توزيع كهرباء الشمال (NEDCO)",
     }
+
+
+def _signals_agreeing(status: str | None, signals: dict | None) -> int | None:
+    """How many of IODA's vantage points agree with the asserted status.
+
+    `independent_sources` is 1 by construction (one source, IODA), and was
+    served as `signals_agreeing` — always 1 — while the whole design is that
+    three signals must agree before an outage is asserted (Claude web's test,
+    2026-09-25). Counted from the signal ratios with the loader's thresholds."""
+    if not signals or not status:
+        return None
+    from ingest.sources.connectivity import DEGRADED_RATIO, OUTAGE_RATIO
+    ratios = [float(v.get("ratio")) for v in signals.values()
+              if isinstance(v, dict) and v.get("ratio") is not None]
+    if status == "outage":
+        return sum(r < OUTAGE_RATIO for r in ratios)
+    if status == "degraded":
+        return sum(r < DEGRADED_RATIO for r in ratios)
+    if status == "normal":
+        return sum(r >= DEGRADED_RATIO for r in ratios)
+    return None
 
 
 @app.get("/v2/connectivity", tags=["services"])
@@ -757,7 +781,8 @@ def connectivity() -> dict:
             "observed_at": r["observed_at"], "age_minutes": r["age_minutes"],
             "staleness_band": r["staleness_band"],
             "confidence": round(float(r["confidence"]), 3),
-            "signals_agreeing": r["independent_sources"],
+            "signals_agreeing": _signals_agreeing(r["value"], (r["attrs"] or {}).get("signals")),
+            "signals_total": len((r["attrs"] or {}).get("signals") or {}),
             "signals": (r["attrs"] or {}).get("signals"),
             "method": (r["attrs"] or {}).get("method"),
             "attribution": (src[0]["attribution_text"] if src else
@@ -1117,6 +1142,22 @@ def coverage() -> dict:
             }}
 
 
+def _geo_out(query: str, place_id: int, *, method: str, confidence: float) -> dict:
+    """The /v2/geo/resolve answer for a place chosen by id."""
+    row = q("""SELECT place_id, name_ar, name_en, kind::text AS kind, admin2_pcode,
+                      ST_Y(centroid::geometry) la, ST_X(centroid::geometry) lo
+                 FROM place WHERE place_id = %s""", (place_id,))
+    if not row or row[0]["la"] is None:
+        return {"found": False, "query": query, "reason": "no geometry"}
+    r = row[0]
+    return {"found": True, "query": query, "place_id": r["place_id"],
+            "name": r["name_ar"] or r["name_en"], "name_en": r["name_en"] or None,
+            "kind": r["kind"], "precision": "checkpoint",
+            "confidence": round(float(confidence), 3), "method": method,
+            "admin2_pcode": r["admin2_pcode"], "lat": r["la"], "lon": r["lo"],
+            "ambiguous_with": 0}
+
+
 @app.get("/v2/geo/resolve", tags=["meta"])
 def geo_resolve(q_: str = Query(..., alias="q", min_length=2),
                 state_kind: str | None = Query(
@@ -1136,13 +1177,32 @@ def geo_resolve(q_: str = Query(..., alias="q", min_length=2),
     from resolve.geo import resolve_for_state_kind, resolve_place
     if state_kind:
         from resolve.db import connect
-        from resolve.geo import _Ambiguous
+        from resolve.geo import _Ambiguous, _prefer_place_kinds
+        options = None
         try:
             with connect() as conn:
+                want = _prefer_place_kinds(conn).get(state_kind)
                 r = resolve_for_state_kind(conn, q_, state_kind)
         except _Ambiguous as amb:
+            r, options = None, amb.options
+        # A CHECKPOINT KIND ASKED IN ENGLISH. The kind-aware resolver matches
+        # exact names only, so "Huwara" (two checkpoint rows carry it) came back
+        # ambiguous and place history/pattern answered "place not found" while
+        # checkpoint_status, which scores names and breaks ties on evidence,
+        # answered حوارة (Claude web's test, 2026-09-25). Same resolver now.
+        if want == "checkpoint" and (r is None or r.kind not in ("checkpoint", "crossing", "road")):
+            m = _resolve_checkpoint(q_)
+            if m and not m["uncertain"]:
+                return _geo_out(q_, m["place_id"], method="checkpoint_name",
+                                confidence=m["score"])
+        if options:
+            names = {row["place_id"]: row for row in q(
+                "SELECT place_id, name_ar, name_en FROM place WHERE place_id = ANY(%s)",
+                ([pid for pid, _ in options],))}
             return {"found": False, "query": q_, "ambiguous": True,
-                    "options": [{"place_id": pid, "name": n} for pid, n in amb.options],
+                    "options": [{"place_id": pid, "name": n,
+                                 "name_en": (names.get(pid) or {}).get("name_en") or None}
+                                for pid, n in options],
                     "note": "more than one place of that kind has this name — "
                             "ask again with the fuller name"}
     else:
@@ -1154,12 +1214,23 @@ def geo_resolve(q_: str = Query(..., alias="q", min_length=2),
     if not row or row[0]["la"] is None:
         return {"found": False, "query": q_, "reason": "no geometry"}
     out = {"found": True, "query": q_, "place_id": r.place_id,
-           "name": r.name_ar or r.name_en, "name_en": r.name_en,
+           "name": r.name_ar or r.name_en, "name_en": r.name_en or None,
            "kind": r.kind, "precision": r.precision,
            "confidence": round(r.confidence, 3), "method": r.method,
            "admin2_pcode": r.admin2_pcode,
            "lat": row[0]["la"], "lon": row[0]["lo"],
            "ambiguous_with": r.ambiguous_with}
+    if not state_kind and r.kind not in ("checkpoint", "crossing", "road"):
+        # "Huwara" is a town AND a checkpoint; a plain lookup answers the town
+        # and now says the checkpoint exists, so the caller knows to ask for it.
+        from resolve.arabic import fold_for_match
+        m = _resolve_checkpoint(q_)
+        # Only a checkpoint that carries the SAME name as the town: "Nablus"
+        # also matched a row named شارع جنين نابلس whose English label is Nablus.
+        if (m and not m["uncertain"] and m["score"] >= 0.9 and m["place_id"] != r.place_id
+                and fold_for_match(m["name"] or "") == fold_for_match(r.name_ar or r.name_en or "")):
+            out["also_checkpoint"] = {"place_id": m["place_id"], "name": m["name"],
+                                      "name_en": m.get("name_en")}
     if r.ambiguous_with:
         # Twin villages (المغير in Ramallah AND Jenin) are named, not hidden (F067).
         out["alternatives"] = [{"place_id": pid, "name": nm, "admin2_pcode": a2}
@@ -1303,14 +1374,14 @@ near AS MATERIALIZED (
   -- which 33 report flow. Driving the scan from `place` therefore fetched 18x
   -- the rows it needed (820 ms measured). state_serving already holds exactly
   -- the places that have ever had a reading, so it drives instead.
-  SELECT DISTINCT s.place_id, p.name_ar
+  SELECT DISTINCT s.place_id, p.name_ar, NULLIF(p.name_en, '') AS name_en
     FROM state_serving s
     JOIN place p ON p.place_id = s.place_id
     CROSS JOIN anchor a
    WHERE s.state_kind = 'checkpoint_flow'
      AND ST_DWithin(p.centroid, a.g, %(radius_m)s)),
 win AS MATERIALIZED (
-  SELECT o.place_id, n.name_ar, o.value, o.observed_at
+  SELECT o.place_id, n.name_ar, n.name_en, o.value, o.observed_at
     FROM near n
     JOIN state_observation o
       ON o.place_id = n.place_id
@@ -1352,10 +1423,10 @@ SELECT
   (SELECT min(age_minutes) FROM now_rows)                          AS freshest_minutes,
   (SELECT count(*) FROM now_rows WHERE value = 'unknown')          AS unknown_now,
   (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.readings DESC) FROM (
-      SELECT name_ar, count(*) readings,
+      SELECT name_ar, name_en, count(*) readings,
              count(DISTINCT value) distinct_values,
              min(extract(epoch FROM now() - observed_at)/60)::int AS last_seen_minutes
-        FROM win GROUP BY place_id, name_ar
+        FROM win GROUP BY place_id, name_ar, name_en
        ORDER BY count(*) DESC LIMIT 8) t)                          AS most_reported,
   (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.transitions DESC, t.readings DESC)
      FROM (
@@ -1367,12 +1438,12 @@ SELECT
       -- the places that FLIPPED — open, closed, open again — so it now counts
       -- transitions over time and reports them as `transitions`, keeping
       -- `distinct_values` beside it for context.
-      SELECT name_ar, count(*) AS readings,
+      SELECT name_ar, max(name_en) AS name_en, count(*) AS readings,
              count(*) FILTER (WHERE prev_value IS NOT NULL
                                 AND value IS DISTINCT FROM prev_value)
                AS transitions,
              count(DISTINCT value) AS distinct_values
-        FROM (SELECT name_ar, value, observed_at,
+        FROM (SELECT name_ar, name_en, value, observed_at,
                      lag(value) OVER (PARTITION BY place_id
                                       ORDER BY observed_at) AS prev_value
                 FROM win) w
@@ -2215,15 +2286,19 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
     moves people), and "open" is rarely binary — open for medical evacuation is
     not open. `partial` is kept distinct for that reason.
 
-    Every crossing will read `unknown` until a source reports one. That is the
-    honest state and it is shown rather than hidden: leaving the crossings out
-    entirely would make the same ignorance invisible.
+    A crossing nobody reports reads `unknown` (today: the Gaza crossings; the
+    Allenby bridge and the Jericho rest stop are read through the road
+    channels, `basis` checkpoint_flow). That is the honest state and it is
+    shown rather than hidden: leaving the crossings out entirely would make the
+    same ignorance invisible. `area` matches the governorate or the crossing
+    name, in Arabic or English.
     """
     rows = q("""
         SELECT p.place_id, p.name_ar, p.name_en,
                p.attrs->>'crossing_role'   AS role,
                p.attrs->>'note'            AS note,
                g.name_en                   AS governorate,
+               g.name_ar                   AS governorate_ar,
                ST_Y(p.centroid::geometry)  AS lat,
                ST_X(p.centroid::geometry)  AS lon,
                COALESCE(s.value, cf.value)                       AS value,
@@ -2250,13 +2325,30 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
                                     AND cf.state_kind = 'checkpoint_flow'
                                     AND cf.direction = 'both'
          WHERE p.kind = 'crossing'
-           AND (%s::text IS NULL OR g.name_en ILIKE %s)
          ORDER BY g.name_en NULLS LAST, p.name_en
-    """, (area, f"%{area}%" if area else None))
+    """)
+    # The area is matched in Python with the gazetteer's own normalisation,
+    # against the governorate AND the crossing's name, in both scripts. The SQL
+    # matched `g.name_en ILIKE` only, so "أريحا" found nothing and the answer
+    # said no source reports any crossing while the bridge read closed (Claude
+    # web's test, 2026-09-25).
+    if area:
+        from resolve.arabic import fold_for_match, normalize
+        want = {k for k in (normalize(area), fold_for_match(area), area.strip().lower()) if k}
+
+        def _hit(r) -> bool:
+            names = [r["name_ar"], r["name_en"], r["governorate"], r.get("governorate_ar")]
+            keys = set()
+            for nm in names:
+                if nm:
+                    keys |= {normalize(nm), fold_for_match(nm), nm.strip().lower()}
+            return any(w and any(w in k for k in keys if k) for w in want)
+        rows = [r for r in rows if _hit(r)]
 
     out = [{"place_id": r["place_id"],
             "name": r["name_ar"] or r["name_en"], "name_en": r["name_en"],
-            "governorate": r["governorate"], "role": r["role"], "note": r["note"],
+            "governorate": r["governorate"], "governorate_ar": r["governorate_ar"],
+            "role": r["role"], "note": r["note"],
             "lat": r["lat"], "lon": r["lon"],
             "value": r["value"] or "unknown",
             "last_known_value": r["last_known_value"],
@@ -2287,7 +2379,7 @@ def crossings(area: str | None = Query(None, description="governorate name")) ->
 
     known = [c for c in out if c["value"] != "unknown"]
     return {
-        "crossings": out,
+        "crossings": out, "area": area,
         "total": len(out), "with_a_current_reading": len(known),
         "vocabulary": ["open", "partial", "closed"],
         "band_note": ("`staleness_band` describes whether a place is still being "
@@ -2481,10 +2573,23 @@ def databank_concepts() -> dict:
                     "energy.supply is there because the absence is the point."}
 
 
+@app.get("/v2/databank/where", tags=["databank"])
+def databank_where(indicator: str = Query(..., min_length=2, max_length=120)) -> dict:
+    """Which categories hold rows for an indicator (prefix match), so a caller
+    who names an indicator without its category still reaches its rows."""
+    rows = q("""SELECT v1_category AS category, count(*) AS rows
+                  FROM databank_serving
+                 WHERE indicator LIKE %s AND v1_category IS NOT NULL
+                 GROUP BY 1 ORDER BY 2 DESC LIMIT 5""", (indicator + "%",))
+    return {"indicator": indicator, "categories": rows}
+
+
 @app.get("/v2/databank/indicators", tags=["databank"])
 def databank_indicators(concept: str | None = None, q_: str | None = None,
                         measure_kind: str | None = None,
-                        limit: int = 100) -> dict:
+                        limit: int = 100,
+                        search: str | None = Query(None, alias="q",
+                                                   description="words in the indicator string or name")) -> dict:
     """Find a series without knowing its string.
 
     THE endpoint for "I don't know the indicator name". 1,408 of them exist
@@ -2494,6 +2599,7 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
     if concept:
         where.append("(i.concept_key = %(c)s OR c.parent = %(c)s)")
         params["c"] = concept
+    q_ = q_ or search
     if q_:
         where.append("(i.indicator ILIKE %(q)s OR i.name_en ILIKE %(q)s)")
         params["q"] = f"%{q_}%"
@@ -2518,8 +2624,44 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
                     "flow before it is compared to anything."}
 
 
+def _wider_places(place_id: int) -> list[dict]:
+    """The governorate, then the region, that contain a place."""
+    return q("""
+        SELECT g.place_id, g.name_ar, g.name_en, g.kind::text AS kind, 1 AS rank
+          FROM place p JOIN place g ON g.kind = 'governorate'
+                                   AND g.admin2_pcode = p.admin2_pcode
+         WHERE p.place_id = %(p)s AND g.place_id <> p.place_id
+        UNION ALL
+        SELECT r.place_id, r.name_ar, r.name_en, r.kind::text, 2
+          FROM place p JOIN place r ON r.kind = 'region'
+                                   AND r.admin1_pcode = p.admin1_pcode
+         WHERE p.place_id = %(p)s AND r.place_id <> p.place_id
+         ORDER BY rank""", {"p": place_id})
+
+
 def _series(indicator: str, place_id: int | None, frm: str | None,
             to: str | None) -> dict:
+    """One databank series, at the place asked — or at the governorate or region
+    that contains it when the series is not kept that finely.
+
+    "الخليل" resolves to Hebron the CITY while food prices are kept per
+    GOVERNORATE, so `series` with a place returned 0 points for bread in Hebron
+    (Claude web's test, 2026-09-25). The widening is stated in `place_used`,
+    never silent."""
+    s = _series_at(indicator, place_id, frm, to)
+    if place_id is None or s["points"] or not s["known"]:
+        return {**s, "place_used": None}
+    for alt in _wider_places(place_id):
+        s2 = _series_at(indicator, alt["place_id"], frm, to)
+        if s2["points"]:
+            return {**s2, "place_used": {"place_id": alt["place_id"], "name": alt["name_ar"],
+                                         "name_en": alt["name_en"], "kind": alt["kind"],
+                                         "widened_from": place_id}}
+    return {**s, "place_used": None}
+
+
+def _series_at(indicator: str, place_id: int | None, frm: str | None,
+               to: str | None) -> dict:
     where = ["v.indicator = %(i)s"]
     params: dict = {"i": indicator}
     if place_id is not None:
@@ -2833,11 +2975,15 @@ def databank_correlate_scan(
         "capped_at": candidates,
         "truncated": len(rows) == candidates,
         "matches": hits[:15],
+        # Zero tests used to read "0 tests were run … roughly 1 of these would
+        # look significant" (Claude web's test, 2026-09-25).
         "multiple_comparisons": (
-            f"{tested} tests were run. At the conventional 5% threshold "
-            f"roughly {max(1, round(tested * 0.05))} of these would look "
-            "significant from noise alone, so treat every row as a hypothesis "
-            "to check, never as a finding."),
+            (f"{tested} tests were run. At the conventional 5% threshold "
+             f"roughly {round(tested * 0.05, 1):g} of these would look "
+             "significant from noise alone, so treat every row as a hypothesis "
+             "to check, never as a finding.") if tested else
+            "No test was run: nothing held passed the comparability checks, "
+            "so there is no coefficient to report and no false-positive risk."),
         "next": ("/v2/databank/correlate?a=…&b=… returns the caveats, the "
                  "attribution and the lag search for one pair. This endpoint "
                  "deliberately returns none of those: finding is not "

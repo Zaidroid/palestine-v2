@@ -185,9 +185,12 @@ def duplicate_dates(series: dict) -> tuple[int, int]:
     """(dates carrying more than one row, distinct dates) — a breakdown series
     (by place, sex, age, category) has several rows per date and no single
     value to correlate (audit F043)."""
-    dates = [p["at"] for p in series["points"]]
-    distinct = len(set(dates))
-    return len(dates) - distinct, distinct
+    # The DATES that carry more than one row. This returned rows minus
+    # distinct dates, so the note read "941 of 235 dates carried several rows"
+    # (Claude web's test, 2026-09-25) — a count of extra rows, not of dates.
+    from collections import Counter
+    per_date = Counter(p["at"] for p in series["points"])
+    return sum(1 for n in per_date.values() if n > 1), len(per_date)
 
 
 def caveats(a: dict, b: dict, pairs: list, lag: int) -> list[str]:
@@ -237,3 +240,76 @@ def describe(rho: float | None, a: dict, b: dict) -> str:
                   ", between two series where a rise is a harm — so they move "
                   "against each other")
     return s
+
+
+# ── the refusals, in Arabic ─────────────────────────────────────────────────
+# The Arabic answer used to splice these English sentences in mid-flight
+# ("لا يمكن حساب الارتباط: both series are detention…", Fawwaz's test,
+# 2026-09-25). Every reason this module and the correlate routes produce has a
+# fixed shape, so each is rendered from its parts; anything unrecognised is
+# pointed at rather than pasted.
+import re as _re
+
+GRAIN_AR = {"region": "المنطقة كلها", "governorate": "المحافظة", "locality": "البلدة",
+            "point": "النقطة"}
+TIME_AR = {"month": "شهري", "year": "سنوي", "day": "يومي", "snapshot": "لقطة وحدة",
+           "event": "أحداث", "register": "سجل", "census": "تعداد", "period": "فترات"}
+
+SKIP_AR = {"cumulative — a running total": "مجموع تراكمي",
+           "categorical status": "تصنيف مش رقم",
+           "different place grain": "مستوى مكان مختلف",
+           "same concept as the subject": "نفس مفهوم السلسلة",
+           "kind unclassified": "نوع الرقم غير مصنّف",
+           "not comparable": "غير قابلة للمقارنة",
+           "both series move with time (monotone; would measure time)":
+               "السلسلتين بيتحركوا مع الوقت بس",
+           "too few overlapping dates": "تواريخ مشتركة قليلة",
+           "no variance in one series": "وحدة منهم ثابتة"}
+
+
+def skip_ar(label: str) -> str:
+    m = _re.fullmatch(r"different time grain \((\w+) vs (\w+)\)", label)
+    if m:
+        return f"دقة زمنية مختلفة ({TIME_AR.get(m[1], m[1])} مقابل {TIME_AR.get(m[2], m[2])})"
+    return SKIP_AR.get(label, "غير قابلة للمقارنة")
+
+
+def reason_ar(reason: str) -> str:
+    """One refusal reason, in Arabic, with the same facts."""
+    r = reason.strip()
+    m = _re.match(r"no series named '(.+?)'", r)
+    if m:
+        return f"ما في سلسلة اسمها {m[1]} — دوّر على الاسم الصح بـ search"
+    m = _re.match(r"(\S+) exists but has no points(.*)", r)
+    if m:
+        where = " بهالمكان" if "place" in m[2] else ""
+        when = " بالفترة المطلوبة" if "window" in m[2] else ""
+        return f"{m[1]} موجودة بس ما فيها نقاط{where}{when}"
+    m = _re.match(r"(\S+): nobody has established what KIND", r)
+    if m:
+        return f"{m[1]}: نوع الرقم غير مصنّف، فما بتنقارن بشي"
+    m = _re.match(r"(\S+) is CUMULATIVE", r)
+    if m:
+        return (f"{m[1]} مجموع تراكمي — أي مجموعين تراكميين بيرتبطوا تقريباً 1.0 "
+                "لأنهم بيكبروا مع الوقت، مش لأنهم مرتبطين")
+    m = _re.match(r"(\S+) is categorical", r)
+    if m:
+        return f"{m[1]} تصنيف مش رقم، والارتباط على تصنيفات ما إله معنى"
+    m = _re.match(r"place grains differ: (\S+) is (\w+)-grade and (\S+) is (\w+)-grade", r)
+    if m:
+        return (f"مستوى المكان مختلف: {m[1]} على مستوى {GRAIN_AR.get(m[2], m[2])} و{m[3]} "
+                f"على مستوى {GRAIN_AR.get(m[4], m[4])} — الرقم رح يطلع شكله منطقي وهو بيقارن شيئين مختلفين")
+    m = _re.match(r"both series are (.+?)\. Two measures", r)
+    if m:
+        return (f"السلسلتين من نفس المفهوم ({m[1]}) — غالباً نفس الكمية معدودة مرتين، "
+                "وارتباطهم تقريباً 1.0 ما بيعني شي. إذا هاد فعلاً سؤالك مرّر allow_same_concept=true")
+    m = _re.match(r"both series (rise|fall) with time", r)
+    if m:
+        way = "بيطلعوا" if m[1] == "rise" else "بينزلوا"
+        return (f"السلسلتين {way} مع الوقت، فالمعامل رح يقيس الوقت مش العلاقة — "
+                "مرّر detrend=diff لتقارن التغيّرات")
+    m = _re.match(r"nothing else held is comparable to (\S+): .*?place grain \((\w+)\)", r)
+    if m:
+        return (f"ما في سلسلة ثانية على مستوى {GRAIN_AR.get(m[2], m[2])} "
+                f"وفيها نقاط كفاية لنقارنها مع {m[1]}")
+    return "مرفوض — السبب مفصّل في `reasons`"

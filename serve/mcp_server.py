@@ -36,6 +36,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from serve.mcp_en import (effective_groups, field_words, product_labels,  # noqa: E402
+                          share_words)
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx
@@ -131,12 +134,12 @@ def fuel_prices(product: str | None = None, history: bool = False) -> dict:
             gaps.append(f"{r['name_ar']}: غير مؤكد (المنشور: {rep})")
     # Kerosene and LPG came into force on 1 Sep, petrol and diesel on the 7th;
     # naming one date for all of them was wrong for four of the eight products.
-    dates = sorted({r["effective_from"] for r in rows if r["price"] is not None
-                    and r.get("effective_from")})
-    if len(dates) == 1:
-        since = dates[0]
-    elif dates:
-        since = f"{dates[0]} (وأحدثها {dates[-1]})"
+    groups = effective_groups(rows)
+    if len(groups) == 1:
+        since = groups[0][0]
+    elif groups:
+        since = "، ومن ".join(f"{d} لـ{'، '.join(product_labels(g, 'ar'))}"
+                              for d, g in groups)
     else:
         since = None
     head = ("الحد الأقصى الرسمي لأسعار المحروقات بالضفة، من الهيئة العامة للبترول"
@@ -253,7 +256,17 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
         answer += (" تنبيه: الاسم تطابق تقريبياً — تأكد إنك قصدت نفس الحاجز، "
                    "في حواجز بأسماء قريبة.")
 
-    return {"answer": answer, "name": nm, "direction": direction,
+    withheld = None
+    if d.get("flow") == "unknown" and d.get("staleness_band") in ("live", "recent", "stale"):
+        # "recent" beside "no current reading" read as a contradiction (Claude
+        # web's test on al-Lubban, 2026-09-25): the band is about the place's
+        # reporting rhythm; the value is gated by confidence and age.
+        withheld = ("still reported at this checkpoint's own rhythm, but no value "
+                    "is assertable: confidence has decayed below the floor or the "
+                    "age has passed the assert ceiling. `staleness_band` is not a "
+                    "claim that the reading is current.")
+    return {"answer": answer, "name": nm, "name_en": d.get("name_en"),
+            "direction": direction, "value_withheld_because": withheld,
             "match": d.get("match"),
             # The band's meaning is stated ONCE, in palestine://reading-contract
             # (`staleness_band`), not per call (audit F051).
@@ -316,7 +329,8 @@ def insights(place: str | None = None, lat: float | None = None,
         parts.append(f"و{ck['unknown_now']} بلا قراءة حديثة")
     fresh = ck.get("freshest_reading_minutes")
     if fresh is not None:
-        parts.append(f"أحدث قراءة عمرها {int(fresh)} دقيقة")
+        # "عمرها 152,926 دقيقة" (Claude web's test) — an age is said as an age.
+        parts.append(f"أحدث قراءة {_age_ar(int(fresh))}")
 
     top = (ck.get("most_reported") or [])[:3]
     if top:
@@ -338,7 +352,9 @@ def insights(place: str | None = None, lat: float | None = None,
                         "note": "NASA FIRMS satellite fire pixels — detections, not reports"}
     if rows:
         parts.append("أحداث: " + "، ".join(
-            f"{r['events']} {_ar_event(r['type'])}" for r in rows[:6]))
+            f"{r['events']} {_ar_event(r['type'])}"
+            + (f" ({r['corroborated']} مؤكَّد)" if r.get("corroborated") is not None else "")
+            for r in rows[:6]))
     elif inc.get("events") == 0:
         parts.append("ما في أحداث مسجّلة بالنطاق")
     if fires and fires.get("events"):
@@ -378,6 +394,7 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
     direction = DIR_IN.get(direction.strip().lower(), direction.strip().lower())
     if direction not in ("inbound", "outbound", "both"):
         direction = "both"
+    place_en = None
     if lat is None or lon is None:
         if not place:
             return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
@@ -385,6 +402,7 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
         if not geo.get("found"):
             return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
         lat, lon, place = geo["lat"], geo["lon"], geo["name"]
+        place_en = geo.get("name_en")
 
     d = api("/v2/checkpoints/nearby", lat=lat, lon=lon, direction=direction,
             radius_km=radius_km, limit=limit)
@@ -410,8 +428,10 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
             answer += f" وفي {counts['unknown']} حاجز ما إلهم تحديث حديث."
 
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
+            "origin_en": place_en,
             "direction": direction, "counts": counts, "radius_km": radius_km,
-            "checkpoints": [{"name": r["name"], "flow": r["flow"],
+            "checkpoints": [{"name": r["name"], "name_en": r.get("name_en") or None,
+                             "flow": r["flow"],
                              "passable": r["passable"],
                              "last_known_flow": r.get("last_known_flow"),
                              "km": r.get("straight_km"),
@@ -648,12 +668,13 @@ def connectivity_now() -> dict:
     if st == "unknown":
         return {"answer": "ما عندي قياس للشبكة حالياً.", **d}
     if st == "outage":
-        answer = ("في انقطاع واسع بالإنترنت بالضفة حسب القياس الخارجي "
-                  f"({d.get('signals_agreeing')} مؤشرات مستقلة متفقة).")
+        answer = "في انقطاع واسع بالإنترنت بالضفة حسب القياس الخارجي."
     elif st == "degraded":
         answer = "في تراجع بجودة الإنترنت بالضفة حسب القياس الخارجي."
     else:
         answer = "الإنترنت بالضفة شغال طبيعي حسب القياس الخارجي."
+    if d.get("signals_agreeing") is not None and d.get("signals_total"):
+        answer = answer[:-1] + f" ({d['signals_agreeing']} من {d['signals_total']} مؤشرات متفقة)."
     # The age is spoken (answer contract, P0-A.2): the English said "measured
     # 8 min ago" and the Arabic said nothing about when.
     if d.get("age_minutes") is not None:
@@ -725,14 +746,35 @@ def coverage() -> dict:
     fields = d.get("fields", [])
     dark = [f["state_kind"] for f in fields if f.get("coverage_state") == "never_reported"]
     stale = [f["state_kind"] for f in fields if f.get("coverage_state") == "stale"]
+    # crossing_status has no source of its own, but the Allenby bridge and the
+    # Jericho rest stop are read through the road channels (the `crossings`
+    # tool serves them). "No source for crossing status" contradicted that
+    # tool (Claude web's test, 2026-09-25): said as partial, with the gap named.
+    partial: dict[str, list[str]] = {}
+    if "crossing_status" in dark:
+        try:
+            xs = api("/v2/crossings").get("crossings") or []
+        except Exception:                                    # noqa: BLE001
+            xs = []
+        if any(c.get("basis") for c in xs):
+            dark = [k for k in dark if k != "crossing_status"]
+            partial["crossing_status"] = {
+                "read": [c["name"] for c in xs if c.get("basis")],
+                "read_en": [c.get("name_en") or c["name"] for c in xs if c.get("basis")],
+                "no_source": [c.get("name_en") or c["name"] for c in xs if not c.get("basis")]}
     say = (f"عندي {d['total_claims']} رسالة من {len(d['sources'])} مصدر، "
            f"و{sum(d['live_states'].values())} حالة مباشرة.")
     if dark:
-        say += f" ما في ولا مصدر لـ: {'، '.join(dark)}."
+        say += f" ما في ولا مصدر لـ: {'، '.join(field_words(k)[0] for k in dark)}."
+    if partial.get("crossing_status"):
+        pc = partial["crossing_status"]
+        say += (f" المعابر: بس {'، '.join(pc['read'])} من قنوات الطرق؛ "
+                f"و{_counted_ar(len(pc['no_source']), 'معبر', 'معبرين', 'معابر', 'معبر')} بلا مصدر.")
     if stale:
-        say += f" وهاي ساكتة من زمان: {'، '.join(stale)}."
+        say += f" وهاي ساكتة من زمان: {'، '.join(field_words(k)[0] for k in stale)}."
     return {"answer": say,
             "no_source": dark,
+            "partial_source": partial,
             "stale": stale,
             "warning": ("Fields under `no_source` have NEVER had an "
                         "observation. Do not report them as 'unknown' — that "
@@ -752,13 +794,19 @@ def crossings(area: str | None = None) -> dict:
     """
     d = api("/v2/crossings", area=area)
     items = d.get("crossings", [])
+    if area and not items:
+        return {"answer": f"ما في معبر مسجّل بـ{area}. جرّب اسم المحافظة أو المعبر.",
+                "count": 0, "crossings": [], "area": area, "no_match": True}
     known = [c for c in items if c.get("value") not in (None, "unknown")]
     # "No source at all" only when NOTHING feeds any crossing. A crossing we
     # follow whose reading decayed is `unknown` with a last-known value — the
     # early return said "no source" over it (F055).
     if not known and not any(c.get("basis") for c in items):
-        return {"answer": ("ما عندي ولا مصدر بيقول عن حالة المعابر — "
+        # Narrowed to an area, the sentence names the crossings it is about.
+        what = ("، ".join(c["name"] for c in items[:6]) if area else "حالة المعابر")
+        return {"answer": (f"ما عندي ولا مصدر بيقول عن {what} — "
                            "مش معناها مفتوحة، معناها ما حدا بيخبرنا."),
+                "area": area,
                 "count": len(items), "crossings": items,
                 "no_source": True,
                 "warning": ("Every crossing reads `unknown` because NO source "
@@ -811,9 +859,26 @@ def where_is(place: str, state_kind: str | None = None) -> dict:
     """
     d = api("/v2/geo/resolve", q=place, state_kind=state_kind)
     if not d.get("found"):
-        return {"answer": f"ما عرفت وين {place}.", **d}
-    return {"answer": f"{d.get('name')} ({d.get('kind')}) — "
-                      f"{d.get('lat')}, {d.get('lon')}", **d}
+        return {"answer": _not_found_ar(place, d), **d}
+    ans = f"{d.get('name')} ({_KIND_AR.get(d.get('kind'), d.get('kind'))}) — {d.get('lat')}, {d.get('lon')}."
+    if d.get("also_checkpoint"):
+        ans += (f" وفي حاجز اسمه {d['also_checkpoint']['name']} — "
+                "لحالته اسأل checkpoint_status، ولتاريخه view=history.")
+    return {"answer": ans, **d}
+
+
+_KIND_AR = {"locality": "بلدة", "city": "مدينة", "town": "بلدة", "village": "قرية",
+            "camp": "مخيم", "checkpoint": "حاجز", "crossing": "معبر", "road": "مفرق/طريق",
+            "governorate": "محافظة", "region": "منطقة", "station": "محطة"}
+
+
+def _not_found_ar(place: str, g: dict) -> str:
+    """'Not found' only when nothing matched; several matches are named."""
+    if g.get("ambiguous") and g.get("options"):
+        return (f"في أكثر من مكان اسمه {place}: "
+                + "، ".join(o.get("name") or "?" for o in g["options"][:4])
+                + " — اكتب الاسم كامل.")
+    return f"ما عرفت وين {place}."
 
 
 
@@ -827,13 +892,13 @@ def place_history(place: str, state_kind: str | None = None,
     """Daily report counts for a place, from the databank rollup."""
     g = api("/v2/geo/resolve", q=place, state_kind=state_kind or "checkpoint_status")
     if not g.get("found"):
-        return {"answer": f"ما عرفت وين {place}.", "found": False, **g}
+        return {"answer": _not_found_ar(place, g), "found": False, **g}
     d = api("/v2/history/place", place_id=g["place_id"],
             state_kind=state_kind, days=days)
     series = d.get("series", [])
     if not series:
         return {"answer": f"ما عندي تاريخ محفوظ عن {g['name']} بعد.",
-                "place": g["name"], "series": []}
+                "place": g["name"], "place_en": g.get("name_en"), "series": []}
     # Summarise so a model does not have to reduce 30 days itself to answer
     # "has it been bad lately".
     tot: dict[str, dict[str, int]] = {}
@@ -876,7 +941,7 @@ def place_history(place: str, state_kind: str | None = None,
     if units:
         parts.append(f"من {units} جهة مستقلة كحد أقصى في اليوم")
     return {"answer": "؛ ".join(parts) + ".",
-            "place": g["name"], "place_id": g["place_id"],
+            "place": g["name"], "place_en": g.get("name_en"), "place_id": g["place_id"],
             "days": days, "days_with_data": len(series), "totals_by_kind": tot,
             "flow_totals": flow, "max_independent_units_per_day": units,
             "series": series,
@@ -899,13 +964,13 @@ def place_pattern(place: str, state_kind: str = "checkpoint_flow",
     """
     g = api("/v2/geo/resolve", q=place, state_kind=state_kind)
     if not g.get("found"):
-        return {"answer": f"ما عرفت وين {place}.", "found": False, **g}
+        return {"answer": _not_found_ar(place, g), "found": False, **g}
     d = api("/v2/patterns/place", place_id=g["place_id"],
             state_kind=state_kind, days=days)
     known = [h for h in d["hours"] if h.get("usually") not in (None, "unknown")]
     if not known:
         return {"answer": f"ما في تقارير كافية عن {g['name']} لأستنتج نمط.",
-                "place": g["name"], "hours": d["hours"],
+                "place": g["name"], "place_en": g.get("name_en"), "hours": d["hours"],
                 "caveat": d.get("note")}
 
     tally: dict[str, int] = {}
@@ -924,7 +989,8 @@ def place_pattern(place: str, state_kind: str = "checkpoint_flow",
     closed = [h for h in known if h["usually"] == "closed"]
     if closed:
         answer += " ساعات الإغلاق: " + "، ".join(f"{h['hour']:02d}:00" for h in closed[:6]) + "."
-    return {"answer": answer, "place": g["name"], "place_id": g["place_id"],
+    return {"answer": answer, "place": g["name"], "place_en": g.get("name_en"),
+            "place_id": g["place_id"],
             "timezone": d["timezone"], "hours": d["hours"],
             "usually_by_hour_tally": tally,
             "caveat": d["note"]}
@@ -1090,8 +1156,9 @@ def can_i_travel(origin: str, destination: str) -> dict:
             + f" ({int(x['off_route_m'])} متر عن المسار"
             + (f"، {_age_ar(int(x['age_minutes']))}" if x.get("age_minutes") is not None else "")
             + ")" for x in exits[:3]))
-    if any(x.get("kind") == "blind_stretch" for x in doubts):
-        why.append("نص الطريق تقريباً بلا حاجز متابَع")
+    blind = next((x for x in doubts if x.get("kind") == "blind_stretch"), None)
+    if blind:
+        why.append(f"{share_words(blind.get('share'))[0]} بلا حاجز متابَع")
     low = next((x for x in doubts if x.get("kind") == "low_coverage"), None)
     if low and low.get("fraction") is not None:
         why.append(f"بس {round(100 * low['fraction'])}% من الطريق عليه حاجز فيه تقرير حديث")
@@ -1176,8 +1243,9 @@ def correlate(a: str | None = None, b: str | None = None,
                 max_lag=max(0, min(int(max_lag or 0), 366)),
                 allow_same_concept="true" if allow_same_concept else "false")
         if d.get("refused"):
-            return {"answer": "لا يمكن حساب الارتباط: " + " ".join(
-                        r.split("—")[0] for r in d["reasons"])[:300],
+            from serve.correlate import reason_ar
+            return {"answer": "ما بحسب الارتباط هون: " + "؛ و".join(
+                        reason_ar(r) for r in d["reasons"]) + ".",
                     "refused": True, "reasons": d["reasons"],
                     "caveat": "This is a hard refusal, not a warning. Do not "
                               "report a coefficient for this pair."}
@@ -1195,10 +1263,13 @@ def correlate(a: str | None = None, b: str | None = None,
     if search or concept:
         d = api("/v2/databank/indicators", q_=search, concept=concept, limit=25)
         inds = d["indicators"]
-        return {"answer": (f"{len(inds)} سلسلة مطابقة: "
-                           + "، ".join(i["indicator"] for i in inds[:6])
-                           + ("." if inds else " — جرّب كلمة ثانية أو `concept`.")),
-                "indicators": inds}
+        what = search or concept
+        if not inds:
+            return {"answer": f"ما في ولا سلسلة مطابقة لـ«{what}» — جرّب كلمة ثانية أو `concept`.",
+                    "indicators": [], "query": what}
+        return {"answer": (f"{len(inds)} سلسلة مطابقة لـ«{what}»: "
+                           + "، ".join(i["indicator"] for i in inds[:6]) + "."),
+                "indicators": inds, "query": what}
     d = api("/v2/databank/concepts")
     top = [c for c in d["concepts"] if c["rows_served"]][:8]
     return {"answer": "أكبر المفاهيم في بنك المعلومات: " + "، ".join(
@@ -1226,15 +1297,17 @@ def what_correlates_with(indicator: str, place: str | None = None,
     d = api("/v2/databank/correlate/scan", a=indicator, place_id=place_id,
             candidates=candidates,
             allow_same_concept="true" if allow_same_concept else "false")
+    from serve.correlate import reason_ar, skip_ar
     if d.get("refused"):
-        return {"answer": "ما قدرت أفحص: " + " ".join(d["reasons"])[:200], **d}
+        return {"answer": "ما قدرت أفحص: " + "؛ و".join(reason_ar(r) for r in d["reasons"]) + ".",
+                **d}
     ms = d["matches"]
     if not ms:
         # The reasons ARE the answer here. "Nothing correlates" and "nothing
         # was comparable enough to test" are different findings and the second
         # is the common one.
-        return {"answer": ("ما في ولا سلسلة قابلة للمقارنة مع هاي. الأسباب: "
-                           + "، ".join(f"{v} {k}" for k, v in d["skipped"].items())),
+        return {"answer": ("ما في ولا سلسلة قابلة للمقارنة مع هاي، فما انعمل ولا اختبار. الأسباب: "
+                           + "، ".join(f"{v} {skip_ar(k)}" for k, v in d["skipped"].items()) + "."),
                 **d}
     top = ms[0]
     return {"answer": (f"من {d['tested']} سلسلة مفحوصة، أقواها: "
@@ -1272,7 +1345,8 @@ def compare(indicators: str, place: str | None = None) -> dict:
             s_["points_omitted"] = len(pts) - SERIES_POINTS
             s_["points"] = pts[-SERIES_POINTS:]
     bits = [f"{s['indicator']} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'}"
-            + (f"، آخرها {str(s.get('last'))[:10]}" if s.get("last") else "") + ")"
+            + (f"، آخرها {str(s.get('last'))[:10]}" if s.get("last") else "")
+            + (f"، على مستوى {s['place_used']['name']}" if s.get("place_used") else "") + ")"
             for s in ss]
     ov = d.get("overlap") or {}
     return {"answer": ("مقارنة: " + "، ".join(bits) +
@@ -1297,6 +1371,7 @@ def place_profile(place: str, days: int = 30) -> dict:
     anchor = cp if cp.get("found") else town
 
     out: dict[str, Any] = {"place": anchor.get("name"),
+                           "place_en": anchor.get("name_en"),
                            "place_id": anchor.get("place_id"),
                            "kind": anchor.get("kind"),
                            "resolved": {"as_town": town.get("found"),
@@ -1446,9 +1521,14 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
                if p.get("value") is not None]
         window_note = (f" (آخر {days} يوم فيها {n_win} نقطة بس، فالمقارنة على كامل السلسلة)")
         frm, days = None, None
+    used = ((d.get("series") or [{}])[0] or {}).get("place_used")
+    at_ar = ((f" (الأرقام محفوظة على مستوى "
+              + ("محافظة " if used.get("kind") == "governorate" else "")
+              + f"{used['name']}، مش {place} لحالها)") if used else "")
     if len(pts) < 6:
-        return {"answer": f"ما في نقاط كفاية بـ{indicator} لأقارن باتجاه.",
-                "n": len(pts), "window_days": days, "from": frm}
+        where = f" لـ{place}" if place else ""
+        return {"answer": f"ما في نقاط كفاية بـ{indicator}{where} لأقارن باتجاه.",
+                "n": len(pts), "window_days": days, "from": frm, "place_used": used}
 
     # Most indicators here are a BREAKDOWN, not a line: refugees.cross_border
     # is 1,157 points over 16 dates — seventy-odd rows per date, split by
@@ -1499,9 +1579,10 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
                        + f": آخر {len(recent)} قراءة {word}"
                        + (f" بنسبة {abs(change)}% عن وسيط الفترة"
                           if change is not None else "")
-                       + f" ({round(avg, 2)} مقابل {round(med, 2)})" + window_note + "."
+                       + f" ({round(avg, 2)} مقابل {round(med, 2)})" + window_note + at_ar + "."
                        + freshest + "."),
             "indicator": indicator, "n": len(pts), "last_age_days": age_days,
+            "place_used": used,
             "window_days": days, "from": frm,
             "window_widened": bool(window_note),
             "recent_mean": round(avg, 4), "baseline_median": round(med, 4),
@@ -1528,8 +1609,23 @@ def licenses(source: str | None = None) -> dict:
                 if source.lower() in (r["source_key"] or "").lower()
                 or source.lower() in (r["source_name"] or "").lower()]
         if not rows:
-            return {"answer": f"No source matching {source!r} is served.",
-                    "licenses": []}
+            return {"answer": f"ما في مصدر اسمه {source} بين المصادر المخدومة.",
+                    "licenses": [], "source": source}
+        # A narrowed payload used to carry the whole-databank sentence, so the
+        # answer never said which source it was about (Fawwaz's test).
+        bits = []
+        for r in rows[:3]:
+            sell = ("يجوز بيعها" if r["commercial_use"] else "ما بتنباع")
+            share = "، وأي قاعدة مشتقة لازم تحمل نفس الترخيص" if r["share_alike"] else ""
+            red = {"ask": "إعادة النشر بإذن", "yes": "مسموح إعادة نشرها",
+                   "no": "ممنوع إعادة نشرها"}.get(r.get("redistribution"), "")
+            read = (f"الشروط مقروءة بتاريخ {r['verified_on']}" if r.get("verified_on")
+                    else "ما حدا قرأ شروط الناشر")
+            bits.append(f"{r['source_name']}: {r.get('license_spdx') or 'بلا ترخيص معلن'}، {int(r.get('rows_served') or 0):,} صف، "
+                        f"{sell}{share}" + (f"، {red}" if red else "") + f"؛ {read}")
+        return {"answer": "؛ ".join(bits) + ".", "licenses": rows, "source": source,
+                "caveat": "A null verified_on means nobody has read that "
+                          "publisher's terms at the publisher."}
     t = d["tiers"]
     # A share-alike licence that is ALSO non-commercial (WHO's
     # CC-BY-NC-SA-3.0-IGO) is not in any commercial tier, so listing it beside
@@ -1604,20 +1700,42 @@ def databank(category: str | None = None, indicator: str | None = None,
     (prisoners, demolitions, food prices, funding, the martyrs roster…),
     each row carrying its source's license and attribution. `as_of`
     reconstructs what the archive served on a past day."""
+    # `indicator` alone used to return the category overview, silently
+    # (Fawwaz's test: {indicator: "prisoners.child"}). The category is looked
+    # up from the indicator; `as_of` alone is said to need a category.
+    ignored: dict[str, str] = {}
+    if not category and indicator:
+        where = api("/v2/databank/where", indicator=indicator).get("categories") or []
+        if where:
+            category = where[0]["category"]
+        else:
+            return {"answer": f"ما في سجلات لمؤشر اسمه {indicator} — دوّر عليه بـ correlate search.",
+                    "indicator": indicator, "count": 0, "items": [], "category": None}
     if not category:
+        if as_of:
+            ignored["as_of"] = ("as_of reconstructs one category's rows on a past "
+                                "day; pass a category with it. The overview is today's.")
         d = api("/v2/databank/categories")
         cats: dict[str, int] = {}
         for ds in d["datasets"]:
             cats[ds["category"]] = cats.get(ds["category"], 0) + ds["rows"]
         top = sorted(cats.items(), key=lambda kv: -kv[1])
+        # The same six in both languages, and datasets called datasets: the
+        # Arabic said "32 مصدراً" over 32 datasets-with-rows out of 41
+        # registered (Fawwaz's test).
         answer = ("بنك المعلومات التاريخي — أكبر الفئات: " +
                   "، ".join(f"{c} ({n:,})" for c, n in top[:6]) +
-                  f". المجموع {sum(cats.values()):,} سجلاً من "
-                  f"{len(d['datasets'])} مصدراً.")
+                  f". المجموع {sum(cats.values()):,} سجلاً في {len(cats)} فئة، من "
+                  f"{d.get('datasets_with_rows') or len(d['datasets'])} مجموعة بيانات فيها سجلات"
+                  + (f" (من أصل {d['datasets_registered']} مسجّلة)" if d.get("datasets_registered") else "")
+                  + ".")
+        if ignored:
+            answer += " as_of بيشتغل مع فئة بس — هاد الملخص تبع اليوم."
         return {"answer": answer, "categories": cats,
                 "datasets": d["datasets"],
                 "datasets_with_rows": d.get("datasets_with_rows"),
                 "datasets_registered": d.get("datasets_registered"),
+                "ignored": ignored or None,
                 "list_note": d.get("list_note")}
     # The one place a caller's string becomes part of a URL path rather than a
     # query value. Named categories only — no slashes, no dots, no query.
@@ -1668,7 +1786,7 @@ def databank(category: str | None = None, indicator: str | None = None,
         where = f"، {it['place_ar']}" if it.get("place_ar") else ""
         bits.append(f"{k}: {val:,}{unit} في {when_}{partial}{where}" if isinstance(val, (int, float))
                     else f"{k}: {val} في {when_}{where}")
-    src = "؛ ".join(d.get("attribution") or [])[:120]
+    src = "؛ ".join(d.get("attribution") or [])[:120].rstrip(". ")
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
               + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
@@ -1773,10 +1891,15 @@ def about(section: str = "overview") -> dict:
           + (f"حالة مباشرة على {tracked} حاجز متابَع، {with_reading} منها عليها قراءة حالية."
              if tracked is not None
              else f"حالة مباشرة على {places.get('checkpoint', 0)} حاجز مسجّل."))
+    partial_src = cov.get("partial_source") or {}
     if no_source:
-        ar += " ما في ولا مصدر لـ: " + "، ".join(no_source) + "."
+        ar += " ما في ولا مصدر لـ: " + "، ".join(field_words(k)[0] for k in no_source) + "."
+    if partial_src.get("crossing_status"):
+        pc = partial_src["crossing_status"]
+        ar += (f" المعابر: بس {'، '.join(pc['read'])} من قنوات الطرق، "
+               f"و{_counted_ar(len(pc['no_source']), 'معبر', 'معبرين', 'معابر', 'معبر')} بلا مصدر.")
     if stale:
-        ar += " ساكتة من زمان: " + "، ".join(stale) + "."
+        ar += " ساكتة من زمان: " + "، ".join(field_words(k)[0] for k in stale) + "."
     ar += (f" بنك المعلومات: {rows:,} سجل في {len(cat_counts)} فئة"
            + (f"، و{len(failing)} خط إمداد معطّل." if failing else "."))
     ar += " البث شغال." if running else " البث واقف."
@@ -1788,7 +1911,8 @@ def about(section: str = "overview") -> dict:
                  "newest_message_at": newest,
                  "live_states": cov.get("live_states"),
                  "live_fields": live,
-                 "no_source": no_source, "stale": stale, "retired": retired,
+                 "no_source": no_source, "partial_source": partial_src,
+                 "stale": stale, "retired": retired,
                  "checkpoints_tracked": tracked if tracked is not None else places.get("checkpoint"),
                  "checkpoints_with_current_reading": with_reading,
                  "checkpoint_rows": places.get("checkpoint")},
@@ -2080,8 +2204,9 @@ TOOLS = {
                              "Shalom, Erez, Zikim, Kissufim, Allenby...). Values are "
                              "open / partial / closed / unknown, where `partial` "
                              "means open only for some traffic and is NOT open. "
-                             "Currently every crossing reads unknown because no "
-                             "source reports this yet — say so plainly.",
+                             "The Allenby bridge and the Jericho rest stop are read "
+                             "through the road channels; the Gaza crossings have "
+                             "no source — the answer names which, say so plainly.",
                   {"type": "object", "properties": {
                       "area": {"type": "string",
                                "description": "governorate or region, e.g. غزة"}}}),

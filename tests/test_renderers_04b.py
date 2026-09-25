@@ -195,4 +195,4 @@ def test_renderers_29_correlate_answers_in_arabic(monkeypatch):
     assert "move together" not in pair["answer"]
     found = s.correlate(search="x")
     assert "سلسلة مطابقة" in found["answer"] and "series matched" not in found["answer"]
-    assert "series matched: x.y" in mcp_en.correlate(found)
+    assert "series matched “x”: x.y" in mcp_en.correlate(found)

@@ -172,8 +172,13 @@ def test_about_is_a_reduction_with_the_detail_one_section_away():
     assert p["databank"]["categories"] >= 19
     # the headline names the numbers a reader needs and the fields with no source
     assert "بيانات فلسطين" in p["answer"]
+    # Fields are SPOKEN as words, never as column names (both testers,
+    # 2026-09-25: "ما في ولا مصدر لـ: crossing_status، water").
+    from serve.mcp_en import field_words
     for field in p["live"]["no_source"]:
-        assert field in p["answer"] and field in p["answer_en"]
+        ar, en = field_words(field)
+        assert ar in p["answer"] and en in p["answer_en"]
+        assert field not in p["answer"] or field == en
     full = payload(call("about", section="fields"))
     assert "fields" in full and len(full["fields"]) > 10
     assert len(json.dumps(p, ensure_ascii=False)) < len(json.dumps(full, ensure_ascii=False))

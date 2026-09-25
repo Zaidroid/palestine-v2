@@ -438,13 +438,20 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
             out = table[target][0](**targs)
             failed = False
         except TypeError as exc:                            # bad arguments
-            out, failed = {"error": _scrub(str(exc))}, True
+            # Said in both languages with the arguments the tool DOES take; a
+            # bare `error` left `answer` null (Claude web's test, 2026-09-25).
+            takes = ", ".join(sorted(((table[target][2] or {}).get("properties") or {})))
+            out, failed = {"error": _scrub(str(exc)),
+                           "answer": f"المدخلات مش صحيحة لهاي الأداة. بتاخد: {takes}.",
+                           "answer_en": f"Those arguments do not fit this tool. It takes: {takes}.",
+                           "accepts": takes.split(", ") if takes else []}, True
         except Exception as exc:                            # noqa: BLE001
             # Reported as a tool error rather than a protocol error: the call
             # was well-formed and the model should see what went wrong and
             # decide, not be told its request was malformed.
             out, failed = {"error": _scrub(str(exc)),
-                           "answer": "صار خطأ بالنظام."}, True
+                           "answer": "صار خطأ بالنظام.",
+                           "answer_en": "Something failed inside the system."}, True
         usage.record(name, args, int((time.monotonic() - started) * 1000),
                      not failed, out, ip)
         if not failed:

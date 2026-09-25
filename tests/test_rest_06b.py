@@ -110,7 +110,7 @@ def test_rest_10_incident_exports_carry_place_precision():
 # ── REST-11: the unit the value is in ────────────────────────────────────────
 
 def test_rest_11_series_unit_is_the_resolved_unit_not_the_declared_one():
-    src = inspect.getsource(A._series)
+    src = inspect.getsource(A._series_at)   # _series widens the place, _series_at reads
     assert "v.resolved_unit" in src and "COALESCE(v.canonical_unit" not in src
     d = client.get("/v2/databank/compare",
                    params={"indicators": "food.price.water_drinking,food.price.bread"}).json()

@@ -75,7 +75,8 @@ CASES: dict[str, list[dict]] = {
     "/v2/databank/licenses":    [{}],
     "/v2/licence/tools":        [{}],
     "/v2/databank/concepts":    [{}],
-    "/v2/databank/indicators":  [{}, {"concept": "food.price"}],
+    "/v2/databank/indicators":  [{}, {"concept": "food.price"}, {"q": "bread"}],
+    "/v2/databank/where":       [{"indicator": "prisoners.child"}],
     "/v2/databank/compare":     [{"indicators":
                                   "food.price.bread,food.price.sugar"}],
     "/v2/databank/correlate":   [{"a": "food.price.bread",
@@ -345,6 +346,7 @@ def test_mcp_read_surface_is_at_parity_with_rest() -> None:
         "/v2/licence/tools": "licence_tools",
         "/v2/databank/concepts": "correlate",
         "/v2/databank/indicators": "correlate",
+        "/v2/databank/where": "databank",       # the indicator → category lookup
         "/v2/databank/compare": "compare",
         "/v2/databank/correlate": "correlate",
         "/v2/databank/correlate/scan": "what_correlates_with",

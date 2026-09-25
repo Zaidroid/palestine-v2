@@ -326,6 +326,12 @@ def route(name: str, args: dict | None) -> tuple[str, dict]:
     args = dict(args or {})
     spec = FACADES.get(name)
     if spec is None:
+        # `place` is the one name for a place everywhere (PLAN P0-A.1), but
+        # checkpoint_status takes `name`: {place: "عصيرة"} failed with a bare
+        # argument error and no answer (Claude web's test, 2026-09-25).
+        props = set(((TOOLS.get(name) or (None, None, {}))[2] or {}).get("properties", {}))
+        if "place" in args and "place" not in props and "name" in props and "name" not in args:
+            args["name"] = args.pop("place")
         return name, args
     target, kwargs = spec["route"](args)
     allowed = set((TOOLS[target][2] or {}).get("properties", {}))

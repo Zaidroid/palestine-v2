@@ -43,6 +43,73 @@ def _age(minutes: Any) -> str:
     return f"{m // 1440}d ago"
 
 
+def _nm(x: dict | None, key: str = "name") -> str:
+    """The English name when the payload has one, else the Arabic.
+
+    The English answers printed عين سينيا and نابلس over payloads that
+    carried `name_en` (Fawwaz's test, 2026-09-25)."""
+    x = x or {}
+    return (x.get(f"{key}_en") or x.get(key) or "").strip() or "?"
+
+
+# ── phrases both languages share (imported by serve/mcp_server.py) ───────────
+# One table per fact, so the Arabic and the English cannot say different
+# things about the same record.
+
+FIELD_WORDS = {
+    "checkpoint_flow": ("حركة السير على الحواجز", "checkpoint traffic"),
+    "checkpoint_status": ("حالة الحواجز (النوع القديم)", "checkpoint status (legacy kind)"),
+    "checkpoint_idf": ("تواجد الجيش على الحواجز", "army at checkpoints"),
+    "checkpoint_police": ("الشرطة على الحواجز", "police at checkpoints"),
+    "checkpoint_inspection": ("التفتيش على الحواجز", "inspection at checkpoints"),
+    "checkpoint_settlers": ("المستوطنين على الحواجز", "settlers at checkpoints"),
+    "crossing_status": ("حالة المعابر", "crossing status"),
+    "road_closure": ("إغلاق الطرق", "road closures"),
+    "internet": ("الإنترنت", "internet"), "power": ("قطع الكهرباء", "power cuts"),
+    "weather": ("الطقس", "weather"), "water": ("المي", "water"),
+    "cooking_gas": ("غاز الطبخ", "cooking gas"),
+    "fuel_diesel": ("توفّر السولار", "diesel availability"),
+    "fuel_gasoline": ("توفّر البنزين", "petrol availability"),
+}
+
+
+def field_words(kind: str) -> tuple[str, str]:
+    return FIELD_WORDS.get(kind, (kind.replace("_", " "), kind.replace("_", " ")))
+
+
+def share_words(share: float | None) -> tuple[str, str]:
+    """How much of a route a blind stretch is, in words both answers use."""
+    if share is None or share < 0.4:
+        return "جزء من الطريق", "part of the route"
+    if share < 0.65:
+        return "نص الطريق تقريباً", "about half the route"
+    return "معظم الطريق", "most of the route"
+
+
+def effective_groups(rows: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Priced fuel products grouped by the date their price took effect, newest
+    first. Kerosene and gas took effect on the 1st and petrol and diesel on the
+    7th; one date for all eight was wrong in each language differently."""
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        if r.get("price") is not None and r.get("effective_from"):
+            groups.setdefault(str(r["effective_from"])[:10], []).append(r)
+    return sorted(groups.items(), key=lambda kv: kv[0], reverse=True)
+
+
+def product_labels(rows: list[dict], lang: str) -> list[str]:
+    """Product names for one date group; the four gas cylinders are one word."""
+    out: list[str] = []
+    for r in rows:
+        if str(r.get("product") or "").startswith("lpg"):
+            lab = "أسطوانات الغاز" if lang == "ar" else "gas cylinders"
+        else:
+            lab = r.get("name_ar") if lang == "ar" else (r.get("name_en") or r.get("name_ar"))
+        if lab and lab not in out:
+            out.append(lab)
+    return out
+
+
 def _n(d: dict, *keys, default=0):
     for k in keys:
         if d.get(k) is not None:
@@ -67,7 +134,7 @@ def checkpoint_status(d: dict) -> str:
         if d.get("resolved_to"):
             return f"{d['resolved_to']} is a known checkpoint, but it has never been reported."
         return f"No checkpoint found matching that name."
-    flow, name = d.get("flow"), d.get("name")
+    flow, name = d.get("flow"), _nm(d)
     who = [PRESENCE.get(p, p) for p in (d.get("present") or [])]
     tail = f" {' and '.join(who)} present." if who else ""
     by = d.get("by_direction") or {}
@@ -107,17 +174,20 @@ def checkpoints_near(d: dict) -> str:
     counts = d.get("counts") or {}
     if not cps and not counts.get("in_radius"):
         r = d.get("radius_km")
-        return (f"No tracked checkpoint within {r:g} km of {d.get('origin')}." if r
-                else f"No tracked checkpoint in range of {d.get('origin')}.")
+        return (f"No tracked checkpoint within {r:g} km of {_nm(d, 'origin')}." if r
+                else f"No tracked checkpoint in range of {_nm(d, 'origin')}.")
     if not cps:
-        return (f"No recent checkpoint reports around {d.get('origin')}. "
+        return (f"No recent checkpoint reports around {_nm(d, 'origin')}. "
                 f"{counts.get('in_radius', 0)} are in range but their last news is old.")
-    parts = [f"{c['name']} {FLOW.get(c['flow'], c['flow'])} ({_age(c.get('age_minutes'))})"
+    def _seen(c):
+        who = [PRESENCE.get(p, p) for p in (c.get("present") or [])]
+        return f" ({' and '.join(who)} present)" if who else ""
+    parts = [f"{_nm(c)} {FLOW.get(c['flow'], c['flow'])} ({_age(c.get('age_minutes'))}){_seen(c)}"
              for c in cps[:4]]
-    out = f"Around {d.get('origin')}: " + ", ".join(parts) + "."
-    closed = [c["name"] for c in cps if c["flow"] == "closed"]
+    out = f"Around {_nm(d, 'origin')}: " + ", ".join(parts) + "."
+    closed = [_nm(c) for c in cps if c["flow"] == "closed"]
     if closed:
-        out += f" Closed: {', '.join(closed)}."
+        out += f" Watch out: {', '.join(closed)} closed."
     if counts.get("unknown"):
         out += f" {counts['unknown']} more have no recent reading."
     return out
@@ -130,9 +200,18 @@ def checkpoints_summary(d: dict) -> str:
         "No recent checkpoint reports."
     if t.get("unknown"):
         out += f" {t['unknown']} have no recent reading."
-    closed = [c["name"] for c in (d.get("closed_now") or [])[:6]]
-    if closed:
-        out += f" Closed now: {', '.join(closed)}."
+    # The same list the Arabic speaks: each name once, then the count of
+    # closed checkpoints whose name another place shares (dropped in English
+    # until Fawwaz's test, 2026-09-25).
+    seen: list[str] = []
+    for c in d.get("closed_now") or []:
+        if _nm(c) not in seen:
+            seen.append(_nm(c))
+    if seen:
+        out += f" Closed now: {', '.join(seen[:6])}."
+    dupes = len(d.get("closed_now") or []) - len(seen)
+    if dupes:
+        out += f" ({dupes} more closed under a shared name — names repeat across places.)"
     return out
 
 
@@ -165,8 +244,9 @@ def can_i_travel(d: dict) -> str:
             f"{x.get('name_en') or x.get('name')} ({int(x['off_route_m'])} m off the route"
             + (f", {_age(x['age_minutes'])}" if x.get("age_minutes") is not None else "") + ")"
             for x in exits[:3]))
-    if any(x.get("kind") == "blind_stretch" for x in doubts):
-        why.append("most of the route has no tracked checkpoint")
+    blind = next((x for x in doubts if x.get("kind") == "blind_stretch"), None)
+    if blind:
+        why.append(f"{share_words(blind.get('share'))[1]} has no tracked checkpoint")
     low = next((x for x in doubts if x.get("kind") == "low_coverage"), None)
     if low and low.get("fraction") is not None:
         why.append(f"only {round(100 * low['fraction'])}% of it is watched by a "
@@ -241,7 +321,14 @@ def fuel_prices(d: dict) -> str:
                         f"(last confirmed {r['last_confirmed_price']:g} from {r['last_confirmed_from']})")
         elif r["status"] in ("unconfirmed", "conflicting"):
             gaps.append(f"{r['name_en']}: {r['status']}")
-    since = next((r["effective_from"] for r in rows if r["price"] is not None), None)
+    groups = effective_groups(rows)
+    if len(groups) == 1:
+        since = groups[0][0]
+    elif groups:
+        since = "; from ".join(f"{dt} for {', '.join(product_labels(g, 'en'))}"
+                               for dt, g in groups)
+    else:
+        since = None
     out = ("Official West Bank maximum fuel prices (Petroleum Corporation)"
            + (f", in force from {since}" if since else "") + ": "
            + ("; ".join(said) if said else "none confirmed right now"))
@@ -347,19 +434,28 @@ def connectivity_now(d: dict) -> str:
         "normal": "West Bank internet is reachable and behaving normally.",
         "ok": "West Bank internet is reachable and behaving normally.",
         "degraded": "West Bank internet quality is measurably degraded.",
-        "outage": (f"A widespread internet outage is measured in the West "
-                   f"Bank ({d.get('signals_agreeing')} independent signals agree)."),
+        "outage": "A widespread internet outage is measured in the West Bank.",
         "unknown": "No current measurement of the network.",
     }
     age = d.get("age_minutes")
     when = f" Measured {_age(age)}." if age is not None else ""    # the age is spoken (P0-A.2)
+    agree = ""
+    if d.get("signals_agreeing") is not None and d.get("signals_total") and status != "unknown":
+        agree = f" ({d['signals_agreeing']} of {d['signals_total']} signals agree.)"
     if status in known:
-        return known[status] + when
+        return known[status] + agree + when
     return f"West Bank internet status: {status}.{when}"        # never claim silence
 
 
 def crossings(d: dict) -> str:
+    if d.get("no_match"):
+        return (f"No crossing is registered in {d.get('area')}. Try the governorate "
+                "or the crossing's name.")
     if d.get("no_source"):
+        if d.get("area"):
+            names = ", ".join(_nm(c) for c in (d.get("crossings") or [])[:6])
+            return (f"No source reports {names}. That is absence of evidence, "
+                    "not an open crossing.")
         return ("Every crossing reads unknown because no source reports crossing "
                 "status yet. That is absence of evidence, not an open crossing.")
     items = d.get("crossings", [])
@@ -385,9 +481,13 @@ def coverage(d: dict) -> str:
     out = (f"{d.get('total_claims')} messages from {len(d.get('sources') or [])} "
            f"sources, {sum((d.get('live_states') or {}).values())} live states.")
     if d.get("no_source"):
-        out += f" NO source at all for: {', '.join(d['no_source'])}."
+        out += f" NO source at all for: {', '.join(field_words(k)[1] for k in d['no_source'])}."
+    pc = (d.get("partial_source") or {}).get("crossing_status")
+    if pc:
+        out += (f" Crossings: only {', '.join(pc['read_en'])} from the road channels; "
+                f"{len(pc['no_source'])} crossings have no source.")
     if d.get("stale"):
-        out += f" Quiet for a long time: {', '.join(d['stale'])}."
+        out += f" Quiet for a long time: {', '.join(field_words(k)[1] for k in d['stale'])}."
     return out
 
 
@@ -408,8 +508,8 @@ def place_profile(d: dict) -> str:
         bits.append(f"{days} days with reports")
     res = d.get("resolved") or {}
     which = ("the checkpoint" if res.get("as_checkpoint") else "the town")
-    out = (f"{d.get('place')} ({which}): " + ", ".join(bits) + "."
-           if bits else f"{d.get('place')}: nothing recent held.")
+    out = (f"{_nm(d, 'place')} ({which}): " + ", ".join(bits) + "."
+           if bits else f"{_nm(d, 'place')}: nothing recent held.")
     return out + (f" Could not read: {failed} — that is a failure, not an absence."
                   if failed else "")
 
@@ -421,15 +521,30 @@ def search(d: dict) -> str:
             f"{(d.get('items') or [{}])[0].get('text', '')[:160]}")
 
 
+def _not_found(d: dict) -> str:
+    """'Not found' only when nothing matched; several matches are named."""
+    if d.get("ambiguous") and d.get("options"):
+        return (f"More than one place is called {d.get('query')}: "
+                + ", ".join(_nm(o) for o in d["options"][:4]) + " — give the fuller name.")
+    return "Place not found."
+
+
 def where_is(d: dict) -> str:
     if d.get("found") is False:
-        return "Place not found."
-    return f"{d.get('name')} ({d.get('kind')}) at {d.get('lat')}, {d.get('lon')}."
+        return _not_found(d)
+    out = f"{_nm(d)} ({d.get('kind')}) at {d.get('lat')}, {d.get('lon')}."
+    if d.get("also_checkpoint"):
+        out += (f" There is also a checkpoint called {_nm(d['also_checkpoint'])} — "
+                "ask checkpoint_status for its state, or view=history for its record.")
+    return out
 
 
 def trend(d: dict) -> str:
     if d.get("refused"):
         return d.get("reason", "Refused.")
+    used = d.get("place_used")
+    at = ((f" (kept for {_nm(used)}" + (" governorate" if used.get("kind") == "governorate" else "")
+           + ", not for the place asked on its own)") if used else "")
     if "recent_mean" not in d:
         # Not enough points: the Arabic says so; "None vs None" said nothing.
         return f"Not enough readings to compare a trend (n={d.get('n', 0)})."
@@ -442,7 +557,7 @@ def trend(d: dict) -> str:
     out = (f"{d.get('indicator')}{win}: the last readings are {word}"
            + (f" by {abs(c)}%" if c is not None else "")
            + f" against the window's median ({d.get('recent_mean')} vs "
-             f"{d.get('baseline_median')}).")
+             f"{d.get('baseline_median')}){at}.")
     age = d.get("last_age_days")
     if d.get("last"):
         out += f" Newest reading {str(d['last'])[:10]}"
@@ -459,8 +574,8 @@ def what_correlates_with(d: dict) -> str:
         return "Cannot scan: " + " ".join(d.get("reasons", []))[:200]
     ms = d.get("matches") or []
     if not ms:
-        return ("Nothing held is comparable to this series. Reasons: "
-                + ", ".join(f"{v} {k}" for k, v in (d.get("skipped") or {}).items()))
+        return ("Nothing held is comparable to this series, so no test was run. Reasons: "
+                + ", ".join(f"{v} {k}" for k, v in (d.get("skipped") or {}).items()) + ".")
     top = ms[0]
     return (f"Of {d.get('tested')} series tested, the strongest is "
             f"{top['indicator']} (rho={top['rho']}, n={top['n']}). "
@@ -469,7 +584,8 @@ def what_correlates_with(d: dict) -> str:
 
 def compare(d: dict) -> str:
     ss = d.get("series") or []
-    bits = [f"{s['indicator']} ({s['n']} points, {s.get('canonical_unit') or 'no unit'})"
+    bits = [f"{s['indicator']} ({s['n']} points, {s.get('canonical_unit') or 'no unit'}"
+            + (f", read at {_nm(s['place_used'])}" if s.get("place_used") else "") + ")"
             for s in ss]
     ov = d.get("overlap") or {}
     return ("Comparing " + ", ".join(bits) +
@@ -486,12 +602,30 @@ def correlate(d: dict) -> str:
                 + (" " + d["caveats"][0] if d.get("caveats") else ""))
     if "indicators" in d:
         inds = d["indicators"]
-        return (f"{len(inds)} series matched: " + ", ".join(i["indicator"] for i in inds[:6])
-                + ("." if inds else " — try another word or a concept."))
+        if not inds:
+            return f"No series matched “{d.get('query')}” — try another word or a concept."
+        return (f"{len(inds)} series matched “{d.get('query')}”: "
+                + ", ".join(i["indicator"] for i in inds[:6]) + ".")
     return "Concepts held in the databank; pass search or concept to narrow."
 
 
 def licenses(d: dict) -> str:
+    if d.get("source"):
+        rows = d.get("licenses") or []
+        if not rows:
+            return f"No served source matches {d['source']}."
+        bits = []
+        for r in rows[:3]:
+            sell = "may be sold" if r.get("commercial_use") else "may not be sold"
+            share = ", and a derived database must carry the same licence" if r.get("share_alike") else ""
+            red = {"ask": "republishing needs permission", "yes": "may be republished",
+                   "no": "may not be republished"}.get(r.get("redistribution"), "")
+            read = (f"terms read on {r['verified_on']}" if r.get("verified_on")
+                    else "nobody has read the publisher's terms")
+            bits.append(f"{r['source_name']}: {r.get('license_spdx') or 'no stated licence'}, "
+                        f"{int(r.get('rows_served') or 0):,} rows, {sell}{share}"
+                        + (f", {red}" if red else "") + f"; {read}")
+        return "; ".join(bits) + "."
     t = d.get("tiers") or {}
     return (f"{t.get('open', 0):,} rows are republishable with attribution, "
             f"{t.get('commercial_permissive', 0):,} are sellable with no further "
@@ -509,10 +643,19 @@ def data_gaps(d: dict) -> str:
 
 def databank(d: dict) -> str:
     if d.get("categories"):
-        top = sorted(d["categories"].items(), key=lambda kv: -kv[1])[:5]
-        return ("Historical databank — largest categories: "
-                + ", ".join(f"{k} ({v:,})" for k, v in top)
-                + f". {sum(d['categories'].values()):,} rows total.")
+        top = sorted(d["categories"].items(), key=lambda kv: -kv[1])[:6]
+        out = ("Historical databank — largest categories: "
+               + ", ".join(f"{k} ({v:,})" for k, v in top)
+               + f". {sum(d['categories'].values()):,} rows in {len(d['categories'])} categories, "
+               f"from {d.get('datasets_with_rows') or len(d.get('datasets') or [])} datasets with rows"
+               + (f" (of {d['datasets_registered']} registered)" if d.get("datasets_registered") else "")
+               + ".")
+        if d.get("ignored"):
+            out += " as_of works with a category only — this overview is today's."
+        return out
+    if d.get("category") is None and d.get("indicator"):
+        return f"No rows held for an indicator called {d['indicator']} — search for it with correlate."
+
     # The same facts as the Arabic: latest value per indicator, the series'
     # span, the source — not a row count (F062).
     bits = []
@@ -531,7 +674,7 @@ def databank(d: dict) -> str:
     lo = sorted(v["from"] for v in spans.values() if v.get("from"))
     hi = sorted(v["to"] for v in spans.values() if v.get("to"))
     span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi else ""
-    src = "; ".join(d.get("attribution") or [])[:120]
+    src = "; ".join(d.get("attribution") or [])[:120].rstrip(". ")
     if not bits:
         return (f"No matching rows in {d.get('category')}"
                 + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
@@ -551,18 +694,27 @@ def insights(d: dict) -> str:
            f"{ck.get('places_in_window', ck.get('places', 0))} checkpoints")
     now = ck.get("now") or {}
     definite = {k: v for k, v in now.items() if k != "unknown"}
+    tracked = ck.get("places_now")
     if definite:
         said = ", ".join(f"{v} {k}" for k, v in sorted(definite.items(), key=lambda kv: -kv[1]))
-        out += f". Right now {sum(definite.values())} have a definite reading: {said}"
+        out += (f". Of {tracked} tracked now, " if tracked else ". Right now ") + \
+            f"{sum(definite.values())} have a definite reading: {said}"
     if ck.get("unknown_now"):
         out += f", and {ck['unknown_now']} have no recent reading at all"
     fresh = ck.get("freshest_reading_minutes")
     if fresh is not None:
-        out += f". Newest reading is {int(fresh)} minutes old"
+        out += f". Newest reading {_age(int(fresh))}"
     top = (ck.get("most_reported") or [])[:3]
     if top:
         out += ". Most reported: " + ", ".join(
-            f"{r['name_ar']} ({r['readings']:,} readings)" for r in top)
+            f"{r.get('name_en') or r['name_ar']} ({r['readings']:,} readings)" for r in top)
+    changing = (ck.get("changing") or [])[:3]
+    if changing:
+        out += ". Actually changing: " + ", ".join(
+            f"{r.get('name_en') or r['name_ar']} ({r['distinct_values']} states)" for r in changing)
+    hours = [h["hour"] for h in (ck.get("busiest_hours_hebron") or [])[:3]]
+    if hours:
+        out += ". Busiest hours, local time: " + ", ".join(f"{h}:00" for h in hours)
     rows = [r for r in (inc.get("by_type") or []) if r.get("type") != "fire_detection"]
     if rows:
         out += ". Incidents in the window: " + ", ".join(
@@ -608,11 +760,17 @@ def about(d: dict) -> str:
     out = (f"Palestine Data: {int(live.get('messages') or 0):,} messages from "
            f"{live.get('sources', 0)} sources, "
            f"{sum((live.get('live_states') or {}).values()):,} live states over "
-           f"{live.get('checkpoints_tracked', 0)} tracked checkpoints.")
+           f"{live.get('checkpoints_tracked', 0)} tracked checkpoints"
+           + (f", {live['checkpoints_with_current_reading']} of them with a current reading."
+              if live.get("checkpoints_with_current_reading") is not None else "."))
     if live.get("no_source"):
-        out += " NO source at all for: " + ", ".join(live["no_source"]) + "."
+        out += " NO source at all for: " + ", ".join(field_words(k)[1] for k in live["no_source"]) + "."
+    pc = (live.get("partial_source") or {}).get("crossing_status")
+    if pc:
+        out += (f" Crossings: only {', '.join(pc['read_en'])} from the road channels, "
+                f"and {len(pc['no_source'])} crossings with no source.")
     if live.get("stale"):
-        out += " Quiet for a long time: " + ", ".join(live["stale"]) + "."
+        out += " Quiet for a long time: " + ", ".join(field_words(k)[1] for k in live["stale"]) + "."
     out += (f" Databank: {int(db.get('rows') or 0):,} rows in {db.get('categories', 0)} "
             f"categories")
     if db.get("failing_supply_lines"):
@@ -635,15 +793,20 @@ def latest_news(d: dict) -> str:
 
 def place_history(d: dict) -> str:
     if d.get("found") is False:
-        return "Place not found."
+        return _not_found(d)
     if not d.get("series"):
-        return f"No saved history for {d.get('place')} yet."
+        return f"No saved history for {_nm(d, 'place')} yet."
     flow = d.get("flow_totals") or {}
-    out = f"{d.get('place')}, last {d.get('days')} days"
+    out = f"{_nm(d, 'place')}, last {d.get('days')} days"
     if flow:
         n = sum(flow.values())
         said = ", ".join(f"{v} {FLOW.get(k, k)}" for k, v in sorted(flow.items(), key=lambda kv: -kv[1]))
         out += f": {n} road reports — {said}"
+        worst = max(d.get("series") or [{}], key=lambda day: ((day.get("kinds") or {})
+                    .get("checkpoint_flow") or {}).get("values", {}).get("closed", 0))
+        wc = ((worst.get("kinds") or {}).get("checkpoint_flow") or {}).get("values", {}).get("closed", 0)
+        if wc:
+            out += f"; worst day {worst.get('day')} ({wc} closed reports)"
     else:
         out += f": {d.get('days_with_data')} days with reports"
     seen = []
@@ -662,13 +825,13 @@ def place_history(d: dict) -> str:
 
 def place_pattern(d: dict) -> str:
     if d.get("found") is False:
-        return "Place not found."
+        return _not_found(d)
     tally = d.get("usually_by_hour_tally") or {}
     if not tally:
-        return f"Not enough reports about {d.get('place')} to infer a pattern."
+        return f"Not enough reports about {_nm(d, 'place')} to infer a pattern."
     modal, n_modal = max(tally.items(), key=lambda kv: kv[1])
     known = [h for h in (d.get("hours") or []) if h.get("usually") not in (None, "unknown")]
-    out = (f"{d.get('place')}: usually {FLOW.get(modal, modal)} — {n_modal} of {len(known)} "
+    out = (f"{_nm(d, 'place')}: usually {FLOW.get(modal, modal)} — {n_modal} of {len(known)} "
            f"hours with enough reports.")
     congested = [f"{h['hour']:02d}:00" for h in known if h.get("usually") == "congested"]
     if congested and modal != "congested":

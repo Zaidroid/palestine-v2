@@ -479,3 +479,15 @@ restarts (Fawwaz's `48537a6` is also waiting on that restart).
 checkpoint names, `checkpoint_serving` known 169 of 265 = 0.638; Karmelo now in Hebron governorate; live
 `/v2/checkpoints/status` اللبن الشرقية → row 1739, 15 min old (was the 10-hour-old twin), الكونتينر → one row; /health ok,
 0 faults, pool on. Fawwaz's `48537a6` (system_health) live with this restart.
+2026-09-25 19:40 UTC · Testers' serving-layer set (Fawwaz via the partner door + Claude web via the connector) · done on
+master, waits for one API restart · proof: each reported case replayed through the MCP dispatcher before and after
+(`tests/test_testers_round_0925.py`, 24 tests, one per defect): databank `indicator` alone reaches its category and `as_of`
+alone is said; English answers use English names (nearby, closed-now, insights, locate, history, profile, status); every
+correlation refusal and scan reason is Arabic inside Arabic (`serve/correlate.reason_ar`); AR/EN carry the same facts
+(databank overview six categories + "datasets" not "sources", closed-now shared-name caveat, insights corroboration, about's
+count with a reading); fuel dates grouped by product in both languages; crossings match the area in Arabic or English and an
+unmatched area is not "no source"; about no longer denies the Allenby bridge, fields spoken as words; "Huwara" in English
+reaches the checkpoint in history/pattern/profile and locate names it; `series` with a city reads its governorate and says
+so; the date-collapse note counts dates; zero scan tests says so; insights ages as ages; the route's blind stretch is one
+size in both languages; `signals_agreeing` counts IODA's signals (3 of 3); checkpoint_status takes `place`; bad arguments
+answer in both languages. Full suite 1205 passed before 4 structure-pinned tests were updated (now green).

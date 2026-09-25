@@ -414,7 +414,13 @@ def doubt_records(coverage: dict | None, near_misses: list | None,
     out: list[dict] = []
     gap = float((coverage or {}).get("longest_gap_km") or 0.0)
     if gap >= UNVERIFIED_GAP_KM:
+        # The SHARE of the route, so both answers say the same size: Arabic
+        # said "about half" and English "most of the route" over one record,
+        # for 27 km of a 50 km trip (Claude web's test, 2026-09-25).
+        share = (round(gap / float(distance_km), 2)
+                 if distance_km and float(distance_km) > 0 else None)
         out.append({"kind": "blind_stretch", "km": round(gap, 1),
+                    "share": min(share, 1.0) if share is not None else None,
                     "from_km": (coverage or {}).get("longest_gap_from_km"),
                     "to_km": (coverage or {}).get("longest_gap_to_km")})
     elif _low_coverage(coverage):
