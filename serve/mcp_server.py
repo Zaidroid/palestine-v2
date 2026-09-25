@@ -2141,12 +2141,33 @@ HOST_ONLY = {"system_health", "ops_digest", "mcp_usage"}
 _ROOT = Path(__file__).resolve().parent.parent
 
 
+_UNREADABLE_LINES: dict[str, int] = {}
+
+
 def _tail_ndjson(name: str, n: int = 3) -> list[dict]:
+    """Last n records of an append-only ndjson file.
+
+    One unreadable line must never take a tool down. A crash mid-append left a
+    line of NUL bytes in ops/alerts.ndjson (line 195 of 899, found 2026-09-25),
+    and `system_health` — the tool whose whole job is to say whether the system
+    is healthy — answered "صار خطأ بالنظام." for a system whose /health said
+    `degraded` with one named fault. Skip what cannot be parsed, and RECORD the
+    count: a log we can only partly read may be missing alarms, so the damage
+    belongs in the payload, not in silence.
+    """
     p = _ROOT / "ops" / name
     if not p.exists():
         return []
-    lines = [x for x in p.read_text().splitlines() if x.strip()]
-    return [json.loads(x) for x in lines[-n:]]
+    out: list[dict] = []
+    bad = 0
+    for line in (x for x in p.read_text().splitlines() if x.strip()):
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            bad += 1
+    if bad:
+        _UNREADABLE_LINES[name] = bad
+    return out[-n:]
 
 
 def _open_alarms() -> list[dict]:
@@ -2172,11 +2193,14 @@ def _system_health() -> dict:
     alarms = _open_alarms()
     say = ("النظام سليم — كل المهام والمصادر خضراء." if h.get("status") == "ok" and not alarms
            else "في أعطال تحتاج نظرة: " + "، ".join(h.get("faults", []) or [a.get("unit", "?") for a in alarms]))
+    if _UNREADABLE_LINES:
+        say += " (ملاحظة: " + "، ".join(f"{k}: {v} سطر غير مقروء" for k, v in _UNREADABLE_LINES.items()) + ")"
     return {"answer": say, "status": h.get("status"),
             "faults": h.get("faults", []),
             "jobs_ok": f"{h.get('jobs_ok')}/{h.get('jobs_total')}",
             "feeds_ok": f"{h.get('feeds_ok')}/{h.get('feeds_total')}",
             "open_alarms": alarms,
+            "unreadable_log_lines": dict(_UNREADABLE_LINES) or None,
             "caveat": "system status, not road status — use checkpoints_summary for roads"}
 
 
