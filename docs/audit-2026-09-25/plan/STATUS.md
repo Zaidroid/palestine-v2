@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 97 done · 6 partial · 57 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 112 done · 6 partial · 42 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -221,26 +221,26 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 11 · Operability: watchdog, alerts, backups, shell steps, systemd units — `11-ops.md`
 
-0 done · 0 partial · 16 open of 16 confirmed; 0 of 21 verify-first done.
+15 done · 0 partial · 1 open of 16 confirmed; 0 of 21 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
 | OPS-01 | F063 | high | **open** |  | The unattended maintainer is an internet-reading agent with --dangerously-skip-permissions and  |
-| OPS-02 | F064 | high | **open** |  | mcp-audit.sh hands OK_EXIT_CODES to the audit process instead of the wrapper: every critical ni |
-| OPS-03 | F065 | high | **open** |  | The Valhalla IP sync — the fixer for the routing outage that already happened — has no OnFailur |
-| OPS-04 | F066 | high | **open** |  | A watchdog crash and a watchdog that found a fault are the same exit code, so the watchdog cann |
-| OPS-05 | F272 | medium | **open** |  | OnFailure alarms have no dedup or rate limit — a 2-minute timer that keeps failing pushes 30 no |
-| OPS-06 | F273 | medium | **open** |  | The 'monthly' full bronze set is cut every ~8 days because the last-full reference is read from |
-| OPS-07 | F274 | medium | **open** |  | Backup pruning runs after the upload it must make room for, and the first-of-month rule pins ev |
-| OPS-08 | F275 | medium | **open** |  | databank-sync.sh keeps six `\|\| echo` steps whose only reader is the weekly maintainer that has  |
-| OPS-09 | F276 | medium | **open** |  | The as_of vault's index files and manifest, and the partner-key store, are not in the backup se |
-| OPS-10 | F345 | medium | **open** |  | repair_generations.py's demolitions rule deletes every current row ingested since 2026-08-07 —  |
-| OPS-11 | F277 | medium | **open** |  | The weekly restore test never restores bronze or the full+increment chain — only the DB dump is |
-| OPS-12 | F278 | medium | **open** |  | sync-valhalla-ip.sh rewrites the single secrets file non-atomically every 15 minutes, and resta |
-| OPS-13 | F283 | medium | **open** |  | Feed freshness ignores modality: palhub's quarantined checkpoint_flow rows keep the served chec |
-| OPS-14 | F284 | medium | **open** |  | A feed alarm is auto-resolved with a 'recovered' push when its collector degrades, although the |
-| OPS-15 | F285 | medium | **open** |  | A failed delivery is never retried and nothing ever proves the doorbell works — a dead ntfy tok |
-| OPS-16 | F286 | medium | **open** |  | The heartbeat records the attempt only after the job returns, so a job killed by TimeoutStartSe |
+| OPS-02 | F064 | high | **done** | `d34217d` | mcp-audit.sh hands OK_EXIT_CODES to the audit process instead of the wrapper: every critical ni |
+| OPS-03 | F065 | high | **done** | `d34217d` | The Valhalla IP sync — the fixer for the routing outage that already happened — has no OnFailur |
+| OPS-04 | F066 | high | **done** | `d34217d` | A watchdog crash and a watchdog that found a fault are the same exit code, so the watchdog cann |
+| OPS-05 | F272 | medium | **done** | `d34217d` | OnFailure alarms have no dedup or rate limit — a 2-minute timer that keeps failing pushes 30 no |
+| OPS-06 | F273 | medium | **done** | `d34217d` | The 'monthly' full bronze set is cut every ~8 days because the last-full reference is read from |
+| OPS-07 | F274 | medium | **done** | `d34217d` | Backup pruning runs after the upload it must make room for, and the first-of-month rule pins ev |
+| OPS-08 | F275 | medium | **done** | `d34217d` | databank-sync.sh keeps six `\|\| echo` steps whose only reader is the weekly maintainer that has  |
+| OPS-09 | F276 | medium | **done** | `d34217d` | The as_of vault's index files and manifest, and the partner-key store, are not in the backup se |
+| OPS-10 | F345 | medium | **done** | `d34217d` | repair_generations.py's demolitions rule deletes every current row ingested since 2026-08-07 —  |
+| OPS-11 | F277 | medium | **done** | `d34217d` | The weekly restore test never restores bronze or the full+increment chain — only the DB dump is |
+| OPS-12 | F278 | medium | **done** | `d34217d` | sync-valhalla-ip.sh rewrites the single secrets file non-atomically every 15 minutes, and resta |
+| OPS-13 | F283 | medium | **done** | `d34217d` | Feed freshness ignores modality: palhub's quarantined checkpoint_flow rows keep the served chec |
+| OPS-14 | F284 | medium | **done** | `d34217d` | A feed alarm is auto-resolved with a 'recovered' push when its collector degrades, although the |
+| OPS-15 | F285 | medium | **done** | `d34217d` | A failed delivery is never retried and nothing ever proves the doorbell works — a dead ntfy tok |
+| OPS-16 | F286 | medium | **done** | `d34217d` | The heartbeat records the attempt only after the job returns, so a job killed by TimeoutStartSe |
 
 ### 12 · Tier 2 databank loader, mappings, export — `12-databank.md`
 

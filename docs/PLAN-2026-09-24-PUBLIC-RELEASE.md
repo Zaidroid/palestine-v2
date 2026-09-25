@@ -397,3 +397,8 @@ alternatives [Jenin's], confidence 0.72 (was 0.92 Jenin-only); with رام ال�
 defaults False and never commits a borrowed transaction; load_gazetteer refuses a populated DB (no TRUNCATE) and carries
 the 077 codes; place_merge first-writer-wins; tests/test_gazetteer_08b.py 4; full suite 1124 passed / 0 failed. Serving
 part (/v2/geo/resolve) waits for the next API restart. Tally 97 done · 6 partial · 57 open. Next: 11 ops (16), 09 ingest (8).
+2026-09-25 13:55 UTC · audit 11-ops · done 15 of 16 (OPS-01 maintainer sudo/permissions = Zaid's hand) · proof: `d34217d`;
+tests/test_ops_11b.py 12; `ops.watchdog --dry-run` from the worktree reads every family; full suite 1137 passed / 1
+(the route test widened for the F011 exit-closure sentence). Zaid: install the three changed units + the valhalla-ip
+drop-in (block in HANDS-NEEDED). Tally 112 done · 6 partial · 42 open. Next: 09 ingest (8), 10 feeds (7), 12 databank (5),
+13 learning (4), 14 docs (10), 15 webapp (4); then P1-A palhub.

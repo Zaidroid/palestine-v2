@@ -26,6 +26,20 @@
 > **Area 08 gazetteer landed (`d19a3b2`):** resolve/ is live for the timers; the /v2/geo/resolve change (twins named) needs
 > the next `sudo systemctl restart palestine-v2-api` — bundle it with the next serving restart, no urgency.
 >
+> **Area 11 ops landed (`d34217d`):** scripts are live at their next tick (watchdog now exits 3 on faults — its unit
+> and wrapper agree once the unit is installed). **Install the changed units** (one block):
+> ```
+> cd ~/palestine-v2 && sudo cp ops/systemd/palestine-v2-{mcp-audit,watchdog,valhalla-ip}.service /etc/systemd/system/ \
+>   && sudo mkdir -p /etc/systemd/system/palestine-v2-valhalla-ip.service.d \
+>   && sudo cp ops/systemd/palestine-v2-valhalla-ip.service.d/onfailure.conf /etc/systemd/system/palestine-v2-valhalla-ip.service.d/ \
+>   && sudo systemctl daemon-reload
+> ```
+> Until then a watchdog run that finds faults exits 3 and systemd will fire ONE OnFailure alarm per run (the wrapper
+> already records it correctly). **OPS-01 (F063)** stays yours: the unattended maintainer runs with
+> `--dangerously-skip-permissions` and a `sudo -n /usr/bin/systemd-run` rule; the fix is a dedicated user with a
+> read-mostly DB role, an explicit `--allowedTools` list, and a static `palestine-v2-maintain-retry@.timer` instead of
+> the sudo rule — decide whether the weekly maintainer is worth that, or retire it.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
