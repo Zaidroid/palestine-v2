@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 133 done · 6 partial · 21 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 144 done · 5 partial · 11 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -109,7 +109,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 05 · MCP transport, OAuth, rate limit, SSE, licence — `05-transport.md`
 
-7 done · 0 partial · 3 open of 10 confirmed; 0 of 36 verify-first done.
+10 done · 0 partial · 0 open of 10 confirmed; 0 of 36 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
@@ -271,16 +271,16 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| DOCS-01 | F031 | high | **partial** | `a348ccf` | PARTNER-API promises one-revocation and 90-day refresh; OAuth tokens skip key revocation, skip  — *code now matches PARTNER-API (one revocation, 90-day refresh); the doc itself not re-read* |
-| DOCS-02 | F084 | high | **open** |  | No test that a --rebuild preserves event ids; the stable-key path has no test at all while the  |
-| DOCS-03 | F146 | medium | **open** |  | ATTRIBUTION.md lists IODA and OONI as 'redistributable, commercially or otherwise'; the registr |
-| DOCS-04 | F150 | medium | **open** |  | README 'Running it' fails at every step: no requirements.txt, compose file not at the root, mig |
-| DOCS-05 | F153 | medium | **open** |  | PARTNER-API.md teaches the retired 28-tool surface (§3, §8, §9, try-ten-calls.sh) as the integr |
-| DOCS-06 | F155 | medium | **open** |  | Ledger marks P0-A.2 (answer contract) done; tests/test_answer_contract.py does not exist and /v |
-| DOCS-07 | F245 | medium | **open** |  | Ledger marks P0-A.2 'answer contract, enforced' done but tests/test_answer_contract.py does not |
-| DOCS-08 | F379 | medium | **open** |  | Ledger marks P0-A.2 done but tests/test_answer_contract.py does not exist and the call/payload  |
-| DOCS-09 | F159 | medium | **open** |  | ops/systemd/README.md install procedure enables a retired timer and never starts 10 of the 19 t |
-| DOCS-10 | F279 | medium | **open** |  | The systemd README a rebuild would follow enables a retired timer and omits ten live ones; its  |
+| DOCS-01 | F031 | high | **done** | `db5c400` | PARTNER-API promises one-revocation and 90-day refresh; OAuth tokens skip key revocation, skip  — *code now matches PARTNER-API (one revocation, 90-day refresh); the doc itself not re-read* |
+| DOCS-02 | F084 | high | **done** | `db5c400` | No test that a --rebuild preserves event ids; the stable-key path has no test at all while the  |
+| DOCS-03 | F146 | medium | **done** | `db5c400` | ATTRIBUTION.md lists IODA and OONI as 'redistributable, commercially or otherwise'; the registr |
+| DOCS-04 | F150 | medium | **done** | `db5c400` | README 'Running it' fails at every step: no requirements.txt, compose file not at the root, mig |
+| DOCS-05 | F153 | medium | **done** | `db5c400` | PARTNER-API.md teaches the retired 28-tool surface (§3, §8, §9, try-ten-calls.sh) as the integr |
+| DOCS-06 | F155 | medium | **done** | `db5c400` | Ledger marks P0-A.2 (answer contract) done; tests/test_answer_contract.py does not exist and /v |
+| DOCS-07 | F245 | medium | **done** | `db5c400` | Ledger marks P0-A.2 'answer contract, enforced' done but tests/test_answer_contract.py does not |
+| DOCS-08 | F379 | medium | **done** | `db5c400` | Ledger marks P0-A.2 done but tests/test_answer_contract.py does not exist and the call/payload  |
+| DOCS-09 | F159 | medium | **done** | `db5c400` | ops/systemd/README.md install procedure enables a retired timer and never starts 10 of the 19 t |
+| DOCS-10 | F279 | medium | **done** | `db5c400` | The systemd README a rebuild would follow enables a retired timer and omits ten live ones; its  |
 
 ### 15 · Public web pages (serve/webapp) — `15-webapp.md`
 

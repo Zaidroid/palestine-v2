@@ -415,3 +415,9 @@ Crowd sources can no longer be lifted out of crowd:unverified by the nightly col
 leave-one-out; the nightly audit runs through the transport; pulse/road pages carry the verdict row's age, consume the
 stream's named events, refresh, and say when a fetch fails. Web pages + audit go live at the next API restart. Tally 133
 done · 6 partial · 21 open (12 databank 5 — migrations + Zaid's World Bank re-route decision; 14 docs 10; the partials).
+2026-09-25 14:45 UTC · audit 14-docs · done 10 of 10 — and G1's two open items with it: `tests/test_answer_contract.py`
+(16 tools, contract (a)–(e), found the connectivity age gap in both languages, fixed) and `docs/try-twelve.sh` (all
+twelve canonical questions answered 200 against the dev API, p50 ≈ 0.5 s) · proof: `db5c400`; full suite 1173 passed.
+Serving side (renderers, resolver tie-break) goes live at the next API restart. Tally 144 done · 5 partial · 11 open:
+12 databank (5, migrations + Zaid's World Bank re-route), INGEST-05/07 (2 decisions), OPS-01 (his hand), REST-15/16
+(pool package), RENDERERS-17 (settlement data), the 3 partials. Next: P1-A palhub earn-out (G4).
