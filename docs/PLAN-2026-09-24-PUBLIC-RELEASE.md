@@ -362,3 +362,10 @@ crowd-derived incidents 0. F206 FIXED PERMANENTLY `f572be8` (Zaid: "fix it perma
 rejections, 5 derived closure rows withdrawn, 0 deleted. Item 8 (v1 import cursor): 0 duplicate identities over 13 h.
 ZAID'S HANDS (classifier-refused): `db/migrate.sh` (079+080) → `restart palestine-v2-api` → `restart palestine-v2-poller`
 → HANDS §8 timeout; the block is at the top of `docs/audit-2026-09-25/plan/HANDS-NEEDED.md`.
+2026-09-25 10:00 UTC · audit branch LIVE end to end (Zaid's hands: `db/migrate.sh` 079+080 at 09:54, `restart
+palestine-v2-api` 09:54:35, `restart palestine-v2-poller`) · done · proof: `/health` 200 from outside; poller resolved its
+channels; `tests/test_belief_serving.py` + `test_route_omissions.py` against :7870 → 17 passed; `checkpoint_serving` both
+rows: unknown 134 · open 96 · closed 21; جبع default row `unknown` (last known congested) with inbound open spoken per
+direction; live connector: قلنديا "ما في تحديث جديد — آخر معلومة قبل 2 ساعة: كان فيه أزمة"; رام الله→نابلس `unverified`
+with the blind 27 km, 3 of 8 reported and سلواد يبرود closed 2 km off spoken; crossings separates 3 decayed from 5
+no-source. Open from the audit: 99 findings (STATUS.md), HANDS §8 timeout still wanted for the next version bump.
