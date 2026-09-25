@@ -98,3 +98,62 @@ def test_r_07_village_ambiguous_is_not_spoken_as_the_city(monkeypatch):
     assert "محافظة رام الله" in out["answer"] and "في رام الله " not in out["answer"], out["answer"]
     en = mcp_en.incidents_near(out)
     assert "governorate" in en and "in Ramallah " not in en, en
+
+
+def test_r_08_crossings_decayed_is_not_no_source(monkeypatch):
+    """F055 — every sourced crossing had merely decayed and the answer said
+    'no source reports crossings at all'."""
+    items = [{"name": "جسر الملك حسين", "name_en": "Allenby", "value": "unknown",
+              "last_known_value": "open", "age_minutes": 840, "basis": "checkpoint_flow"},
+             {"name": "رفح", "name_en": "Rafah", "value": None, "basis": None}]
+    monkeypatch.setattr(mcp_server, "api", lambda *a, **k: {"crossings": items})
+    out = mcp_server.crossings()
+    assert "ما عندي ولا مصدر" not in out["answer"] and "جسر الملك حسين" in out["answer"], out["answer"]
+    assert out.get("no_source") is not True
+    en = mcp_en.crossings(out)
+    assert not en.startswith("Every crossing") and "Allenby" in en and "Rafah" in en, en
+
+
+class _Api:
+    """A fake api() that answers by path and records what it was asked."""
+
+    def __init__(self, fail=()):
+        self.calls, self.fail = [], set(fail)
+
+    def __call__(self, path, **p):
+        self.calls.append((path, p))
+        if path in self.fail:
+            raise RuntimeError("boom")
+        if path == "/v2/geo/resolve":
+            if p.get("state_kind"):
+                return {"found": True, "name": "حوارة", "place_id": 2, "kind": "checkpoint",
+                        "lat": 32.15, "lon": 35.25}
+            return {"found": True, "name": "حوارة", "place_id": 1, "kind": "locality",
+                    "lat": 32.15, "lon": 35.25}
+        if path == "/v2/checkpoints/status":
+            return {"found": True, "match": {"resolved_to": p.get("name"), "score": 1.0},
+                    "flow": "closed", "age_minutes": 20, "present": []}
+        if path == "/v2/incidents/recent":
+            return {"incidents": [{"type": "raid"}]}
+        return {"series": []}
+
+
+def test_r_09_place_profile_window_kind_name_age_and_errors(monkeypatch):
+    """F059: hours=days*24 exceeded the REST cap (168) and the 422 was swallowed,
+    so incidents never showed for days > 7. F058: the pattern read the legacy
+    mixed kind. F010: the live status was fetched by the caller's text, not the
+    resolved checkpoint, and spoken with no age. F060: a failed section read as
+    'no recent information'."""
+    fake = _Api(fail={"/v2/history/place"})
+    monkeypatch.setattr(mcp_server, "api", fake)
+    out = mcp_server.place_profile("Huwara", days=30)
+    inc = [p for path, p in fake.calls if path == "/v2/incidents/recent"][0]
+    pat = [p for path, p in fake.calls if path == "/v2/patterns/place"][0]
+    st = [p for path, p in fake.calls if path == "/v2/checkpoints/status"][0]
+    assert inc["hours"] <= 168
+    assert pat["state_kind"] == "checkpoint_flow"
+    assert st["name"] == "حوارة"
+    assert AGE_AR.search(out["answer"]), out["answer"]
+    assert "history" in (out.get("errors") or {}) and "ما قدرت أقرأ" in out["answer"], out["answer"]
+    en = mcp_en.place_profile(out)
+    assert AGE_EN.search(en) and "could not read" in en.lower(), en

@@ -65,8 +65,7 @@ _NOT_PLACED = "Place not recognised — try the Arabic spelling or a nearby town
 def checkpoint_status(d: dict) -> str:
     if d.get("found") is False:
         if d.get("resolved_to"):
-            return (f"{d['resolved_to']} is a known checkpoint, but no report of it "
-                    f"has ever been recorded.")
+            return f"{d['resolved_to']} is a known checkpoint, but it has never been reported."
         return f"No checkpoint found matching that name."
     flow, name = d.get("flow"), d.get("name")
     who = [PRESENCE.get(p, p) for p in (d.get("present") or [])]
@@ -357,10 +356,10 @@ def crossings(d: dict) -> str:
                 "status yet. That is absence of evidence, not an open crossing.")
     items = d.get("crossings", [])
     known = [c for c in items if c.get("value") not in (None, "unknown")]
-    out = "Crossings — " + "; ".join(
+    out = ("Crossings — " + "; ".join(
         f"{c.get('name_en') or c['name']}: {c['value']}"
         + (f" ({_age(int(c['age_minutes']))})" if c.get("age_minutes") is not None else "")
-        for c in known[:6]) + "."
+        for c in known[:6]) + ".") if known else "No crossing has a current reading."
     decayed = [c for c in items if c not in known and c.get("basis")]
     if decayed:
         out += " No current reading: " + "; ".join(
@@ -387,20 +386,24 @@ def coverage(d: dict) -> str:
 def place_profile(d: dict) -> str:
     if d.get("found") is False:
         return "Place not found."
+    failed = ", ".join(d.get("errors") or {})
     bits = []
     cp = d.get("checkpoint_now") or {}
     if cp.get("flow"):
         bits.append(f"checkpoint {FLOW.get(cp['flow'], cp['flow'])} "
                     f"({_age(cp.get('age_minutes'))})")
     if d.get("incidents"):
-        bits.append(f"{len(d['incidents'])} recent incidents")
+        bits.append(f"{len(d['incidents'])} incidents in the last "
+                    f"{d.get('incident_days') or 7} days")
     days = len((d.get("history") or {}).get("series") or [])
     if days:
         bits.append(f"{days} days with reports")
     res = d.get("resolved") or {}
     which = ("the checkpoint" if res.get("as_checkpoint") else "the town")
-    return (f"{d.get('place')} ({which}): " + ", ".join(bits) + "."
-            if bits else f"{d.get('place')}: nothing recent held.")
+    out = (f"{d.get('place')} ({which}): " + ", ".join(bits) + "."
+           if bits else f"{d.get('place')}: nothing recent held.")
+    return out + (f" Could not read: {failed} — that is a failure, not an absence."
+                  if failed else "")
 
 
 def search(d: dict) -> str:

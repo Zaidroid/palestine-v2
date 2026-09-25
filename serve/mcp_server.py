@@ -705,7 +705,10 @@ def crossings(area: str | None = None) -> dict:
     d = api("/v2/crossings", area=area)
     items = d.get("crossings", [])
     known = [c for c in items if c.get("value") not in (None, "unknown")]
-    if not known:
+    # "No source at all" only when NOTHING feeds any crossing. A crossing we
+    # follow whose reading decayed is `unknown` with a last-known value — the
+    # early return said "no source" over it (F055).
+    if not known and not any(c.get("basis") for c in items):
         return {"answer": ("ما عندي ولا مصدر بيقول عن حالة المعابر — "
                            "مش معناها مفتوحة، معناها ما حدا بيخبرنا."),
                 "count": len(items), "crossings": items,
@@ -727,7 +730,7 @@ def crossings(area: str | None = None) -> dict:
     bits = [f"{c['name']}: {_ar_value(c['value'])}"
             + (f" ({_age_ar(int(c['age_minutes']))})" if c.get("age_minutes") is not None else "")
             for c in known[:6]]
-    say = "المعابر — " + "، ".join(bits) + "."
+    say = ("المعابر — " + "، ".join(bits) + ".") if bits else "ما في قراءة حديثة لأي معبر."
     if decayed:
         say += " بلا قراءة حديثة: " + "، ".join(
             f"{c['name']} (آخر معلومة {_ar_value(c.get('last_known_value') or 'unknown')}"
@@ -1231,37 +1234,55 @@ def place_profile(place: str, days: int = 30) -> dict:
                                         "as_checkpoint": cp.get("found")}}
     said = []
 
+    # A section that FAILED is said as a failure. Every except here used to
+    # leave the section empty, and an empty section read as "no recent
+    # information" (F060).
+    errors: dict[str, str] = {}
     if cp.get("found"):
         try:
-            live = api("/v2/checkpoints/status", name=place, direction="both")
-            out["checkpoint_now"] = {"flow": live.get("flow"),
-                                     "age_minutes": live.get("age_minutes"),
-                                     "present": live.get("present")}
-            said.append(f"الحاجز {FLOW_AR.get(live.get('flow'), live.get('flow'))}")
-        except Exception:                                   # noqa: BLE001
-            pass
+            # By the RESOLVED checkpoint, not the caller's text: the two
+            # resolvers can disagree, and the status call re-resolved "Huwara"
+            # on its own (F010). Spoken with its age.
+            live = api("/v2/checkpoints/status", name=cp.get("name") or place, direction="both")
+            if live.get("found") and (live.get("match") or {}).get("resolved_to") == cp.get("name"):
+                out["checkpoint_now"] = {"flow": live.get("flow"),
+                                         "age_minutes": live.get("age_minutes"),
+                                         "present": live.get("present")}
+                said.append(f"الحاجز {FLOW_AR.get(live.get('flow'), live.get('flow'))} "
+                            f"({_age_ar(live.get('age_minutes'))})")
+        except Exception as e:                              # noqa: BLE001
+            errors["checkpoint"] = str(e)[:200]
 
     for label, call in (("history", lambda: api("/v2/history/place",
                                                 place_id=anchor["place_id"],
                                                 days=days)),
+                        # The flow axis, not the legacy mixed kind that carries
+                        # idf/police in the same column as open (F058).
                         ("pattern", lambda: api("/v2/patterns/place",
                                                 place_id=anchor["place_id"],
-                                                state_kind="checkpoint_status",
+                                                state_kind="checkpoint_flow",
                                                 days=60))):
         try:
             out[label] = call()
-        except Exception:                                   # noqa: BLE001
+        except Exception as e:                              # noqa: BLE001
             out[label] = None
+            errors[label] = str(e)[:200]
 
     if town.get("found"):
+        # /v2/incidents/recent caps hours at 168; days*24 above that was a 422
+        # that the except turned into "no incidents" for every days > 7 (F059).
+        inc_days = min(days, 7)
+        out["incident_days"] = inc_days
         try:
             inc = api("/v2/incidents/recent", lat=town["lat"], lon=town["lon"],
-                      hours=days * 24, radius_km=10, limit=20)
+                      hours=inc_days * 24, radius_km=10, limit=20)
             out["incidents"] = inc.get("incidents", [])
             if out["incidents"]:
-                said.append(f"{len(out['incidents'])} حدث بآخر {days} يوم")
-        except Exception:                                   # noqa: BLE001
+                said.append(f"{len(out['incidents'])} حدث بآخر {inc_days} أيام")
+        except Exception as e:                              # noqa: BLE001
             out["incidents"] = []
+            errors["incidents"] = str(e)[:200]
+    out["errors"] = errors
 
     days_with = len((out.get("history") or {}).get("series") or [])
     if days_with:
@@ -1269,6 +1290,9 @@ def place_profile(place: str, days: int = 30) -> dict:
     out["answer"] = (f"{anchor.get('name')}: " + "، ".join(said) + "."
                      if said else
                      f"{anchor.get('name')}: ما في معلومات حديثة عنها.")
+    if errors:
+        out["answer"] += (f" ما قدرت أقرأ: {'، '.join(errors)} — هاد عطل، "
+                          "مش غياب معلومات.")
     out["caveat"] = ("A town and the checkpoint named after it are different "
                      "rows; `resolved` says which of the two this answer "
                      "actually covers.")
