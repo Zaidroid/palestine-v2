@@ -1,0 +1,99 @@
+# prisoners_hamoked — HaMoked's monthly count of Palestinians held by Israel,
+# read from HaMoked by v2 itself (Format v2 `input:`). P1-B.3, 2026-09-25.
+#
+# WHY THIS SPEC EXISTS. The series came through v1's unified prisoners tree
+# (prisoners.yaml) until v1's `hamoked-detention` step died — its headless
+# browser left v1's image — and failed 31 nights in a row with nothing
+# paging. v1's file kept 216 months ending June 2026. ops/fetch_hamoked.py now
+# reads the page directly (a plainly named client passes the site's
+# Cloudflare rule that refuses curl and Python's default agent), with the
+# Internet Archive's capture of the same page as its second door, into
+# data/raw/hamoked/detention.json.
+#
+# SAME DATASET, NOT A NEW ONE. Unlike conflict_gaza (a new dataset with a
+# cut-over date), this writes into v1_prisoners_hamoked itself: the publisher
+# is the same, the records are the same shape (t_prisoners reads them
+# unchanged), and identity is [indicator, occurred_at]. Measured 2026-09-25:
+# the page reproduces the held June 2026 month to the person (sentenced
+# 1,335 · remand 3,386 · administrative 3,324 · total 9,361 = the four IPS
+# figures including 1,316 "unlawful combatants"). So a held month with the
+# same figures is skipped, a month HaMoked revised supersedes the held
+# reading, and July-September 2026 are new. prisoners.yaml drops v1's copy
+# by name (`source_routing.moved`), so no month is ever read twice.
+#
+# NO FROZEN FALLBACK. v1 never had a frozen HaMoked corpus — its fallback was
+# its own stale file, which prisoners.yaml no longer reads. A machine that has
+# never fetched fails this category (records_read 0 < min_records), loudly.
+category: prisoners_hamoked
+transform: python:t_prisoners
+v1_category: prisoners           # joins the prisoners serving views
+shape: observation
+status: reviewed
+records_measured: 876            # 2026-09-25: 219 months × 4 series
+
+input:
+  root: data/raw/hamoked
+  glob: detention.json
+cadence: monthly                 # HaMoked adds a month; fetched nightly
+
+source_routing:
+  by_name:
+    "HaMoked": hamoked
+  default: null
+
+datasets:
+  - key: v1_prisoners_hamoked    # the held series, continued (not a new one)
+    source: hamoked              # no licence found — verify-required,
+                                 #   commercial_use false (042/058)
+
+indicator:
+  template: "prisoners.{prisoner_metric_type}"
+  # total · sentenced · remand · administrative — the four series the dataset
+  # already holds. "Unlawful combatants" is folded into total exactly as the
+  # held rows fold it; it is not a fifth series (yet).
+
+value:
+  num_from: metrics.count
+  text_from: null
+  unit_from: metrics.unit        # 'persons'
+
+occurred_at:
+  from: date
+  precision: month               # the 1st is a bucket label (prisoners.yaml)
+  rules:
+    - if: "always"
+      then: "keep the date, set precision=month"
+
+place:
+  strategy: region               # 'Palestine' → place_id NULL + attrs.region
+  min_decided_pct: 1.0
+
+stable_id: stable_id             # hamoked:<YYYY-MM-01>:<metric>
+attrs_passthrough:
+  - prisoner_metric_type
+  - location.name
+  - location.region
+
+expect:
+  min_records: 780               # ≈ 0.9 × 864, the held panel
+  max_observations: 1010         # 876 at spec time + ~2.5 years of months
+
+identity:
+  fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "prisoners."}
+      concept: detention
+      measure_kind: stock
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+
+notes: |
+  A page with no "unlawful combatants" figure for a month gets no total for
+  that month (month_records in ops/fetch_hamoked.py) — the held total is the
+  sum of all four, and a sum of three would be a different number under the
+  same name.

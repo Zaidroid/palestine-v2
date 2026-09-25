@@ -1,0 +1,88 @@
+# economic_pcbs — the Palestinian Central Bureau of Statistics' OWN figures,
+# read from PCBS by v2 itself (Format v2 `input:`). P1-B.3, 2026-09-25.
+#
+# WHY THIS SPEC EXISTS. PCBS-direct came through v1's unified economic tree
+# (economic.yaml) until v1's `pcbs-indicators` step died: the page it rendered
+# (statisticsIndicatorsTables.aspx?table_id=585) is gone from PCBS's rebuilt
+# site, and the headless browser it needed left v1's image — 31 failed nights,
+# nothing paging. ops/fetch_pcbs.py reads PCBS directly into
+# data/raw/pcbs/indicators.json: the population workbook linked from the home
+# page and the CPI dashboard's yearly table (its own Dash callback).
+#
+# SAME DATASET, NOT A NEW ONE. Writes into v1_economic_pcbs_direct itself.
+# Measured 2026-09-25: all 30 held population rows (2017–2026 × West Bank,
+# Gaza Strip, Palestine) and all 84 held CPI rows (2005–2025 × four regions,
+# base 2018) are reproduced to the digit, so they are skipped as held; CPI
+# 1996–2004 (36 rows) is new. economic.yaml drops v1's copy by name
+# (`source_routing.moved`).
+#
+# WHAT IS NOT REFRESHED. economic.pcbs_poverty_rate — the rebuilt PCBS site
+# has no machine-readable poverty table (2026-09-25). Its 2 held rows stay
+# held (the loader never deletes) and age in the open. The dashboard's CPI
+# base year is pinned to 2018; a rebase is refused by the fetcher, not
+# absorbed as 120 "revisions".
+#
+# REGISTRY. No rules here: the indicators are economic's (v1_category), and
+# ops/load_registry.py counts an indicator classified by ANY spec of the
+# category as classified — economic.yaml's rules classify pcbs_*.
+category: economic_pcbs
+transform: python:t_economic
+v1_category: economic            # joins the economic serving views
+shape: observation
+status: reviewed
+records_measured: 150            # 2026-09-25: population 30 + CPI 120
+
+input:
+  root: data/raw/pcbs
+  glob: indicators.json
+cadence: annual                  # PCBS publishes yearly; fetched nightly
+
+source_routing:
+  by_name:
+    "Palestinian Central Bureau of Statistics (PCBS)": pcbs_direct
+  default: null
+
+datasets:
+  - key: v1_economic_pcbs_direct # the held dataset, continued
+    source: pcbs_direct          # CC-BY-4.0 (PCBS terms, read 2026-08-05)
+
+indicator:
+  template: "economic.{indicator_code}"   # pcbs_population · pcbs_cpi
+
+value:
+  num_from: metrics.value
+  text_from: null
+  unit_from: metrics.unit        # 'persons' · 'index'
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "always"
+      then: "truncate to Jan 1 of that year, precision=year"   # law 2
+
+place:
+  strategy: region
+  # West Bank → place 2, Gaza Strip → place 1, Palestine → NULL + attrs.region,
+  # East Jerusalem (PCBS's "Jerusalem J1") → the Jerusalem governorate row
+  # with attrs.region = 'East Jerusalem' — the same rules the held rows used.
+  min_decided_pct: 1.0
+
+drop:
+  - if: "the (source, indicator_code, date, region) key appears more than once"
+    reason: contradictory_duplicate
+    measured: 0                  # defensive: the fetch emits one row per key
+
+stable_id: stable_id             # pcbs:<code>:<region>:<year>
+attrs_passthrough:
+  - indicator_code
+  - indicator_name
+  - location.region
+  - location.name
+
+expect:
+  min_records: 127               # ≈ 0.85 × 150
+  max_observations: 200
+
+identity:
+  fields: [indicator, occurred_at, place_id]

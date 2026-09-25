@@ -19,8 +19,28 @@ ways the databank can quietly rot, and ranks what it finds:
      streaks from refresh-events.ndjson) and v2's own fetch artifacts (raw
      tree ages) — the layer where June-9 actually broke.
 
+  5. SUPPLY LINES (P1-B.3, 2026-09-25) — every nightly fetch judged as a line
+     that feeds named datasets. A line is DEAD when its last three attempts
+     failed, when it has stopped attempting at all, or when a dataset it feeds
+     has stalled (data older than twice its allowance, the allowance being
+     three times its learned rhythm). A v1 step is dead the same way unless it
+     is declared RETIRED with its successor named. A dead line FAILS the
+     nightly job: this module exits 5 and ops/databank-sync.sh runs it through
+     ops/with-heartbeat.sh and exits non-zero, so systemd's OnFailure alarm
+     pages (ops/alert.py) — the path every other job uses.
+
+     Why: on 2026-09-25 four v1 fetches had failed 31 nights in a row, eight
+     more 29, and the headline read "27 fresh of 32" — because the datasets
+     they fed were judged on a 730-day allowance and the failures were a
+     severity-3 line nobody was paged for. A dataset whose line is dead is
+     now `supply_dead`, never `fresh`.
+
 Output: data/gap-radar.json (served at /v2/databank/radar, read by the
 Monday maintenance run) + a human table on stdout.
+
+Exit: 0 every line alive · 5 at least one dead supply line (the job fails) ·
+      1 the radar itself broke (the job fails too — an unjudged night is not
+      a green one).
 
 Run: .venv/bin/python -m ops.gap_radar
 """
@@ -37,6 +57,7 @@ from resolve.db import connect
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "gap-radar.json"
 V1_EVENTS = Path("/opt/stacks/palestine/public/data/refresh-events.ndjson")
+V2_EVENTS = ROOT / "ops" / "fetch-events.ndjson"   # ops/fetchlib.py's ledger
 V1_T4P_RAW = Path("/opt/stacks/palestine/public/data/tech4palestine")
 
 # ── declarations: the radar's reviewable knowledge, never guessed ────────────
@@ -101,25 +122,84 @@ BENIGN_STEPS = {
                           "the in-container docker call always fails",
 }
 
-# Notes for failing v1 steps the project has already diagnosed.
+# Notes for failing v1 steps the project has already diagnosed. A step that is
+# RETIRED (below) carries its successor instead.
 STEP_NOTES = {
-    "ocha-casualties": "no HDX mirror exists (measured 2026-08-06) — fix "
-                       "v1's scraper or accept annual staleness",
-    "ocha-demolitions": "same: scraper down, no open mirror anywhere",
-    "pcbs-indicators": "PCBS direct (CC-BY, verified) is the re-source path",
-    "hamoked-detention": "site fetch failing; prisoners still flow via "
-                         "Addameer",
-    "validate": "v1's own validation step — v1 maintenance backlog",
-    "learn-corrections": "v1 internal; superseded by v2's accuracy loop",
-    "databank-martyrs": "v1's internal databank backfills — superseded by "
-                        "v2 Tier 2; fix or retire in v1",
-    "databank-btselem": "superseded by v2 Tier 2; fix or retire in v1",
-    "databank-gaza": "superseded by v2 Tier 2; fix or retire in v1",
-    "databank-incidents": "superseded by v2 Tier 2; fix or retire in v1",
-    "databank-prisoners": "superseded by v2 Tier 2; fix or retire in v1",
-    "databank-structures": "superseded by v2 Tier 2; fix or retire in v1",
-    "databank-ucdp-actions": "superseded by v2 Tier 2; fix or retire in v1",
+    "validate": "v1's own validation step (validate-data.js, 25 min a night)",
 }
+
+# ── supply lines (P1-B.3) ────────────────────────────────────────────────────
+# Consecutive not-ok attempts that make a line dead. The same three the
+# watchdog's fetch family uses (ops/watchdog.py FETCH_FAIL_STREAK), so the
+# nightly job and the ten-minute watchdog never disagree about a line.
+FAIL_STREAK = 3
+
+# v2's own fetchers, by the labels they write to ops/fetch-events.ndjson, and
+# the datasets each one feeds. `replaces` names the v1 step the line took
+# over; `successor` is who carries the series if the line is ever declared
+# dead (`declared_dead: "<evidence>"`), which excuses it from failing the job.
+# ops/fetch_gho_wash.py writes no ledger line; the raw-artifact age below
+# judges it.
+SUPPLY_LINES = {
+    "t4p": {"labels": ["t4p:gaza_daily", "t4p:westbank_daily",
+                       "t4p:killed_in_gaza", "t4p:summary"],
+            "feeds": ["t4p_gaza_daily", "v1_conflict_t4p_westbank",
+                      "v1_martyrs_snapshot_2023_tech4palestine"],
+            "fetcher": "ops/fetch_t4p.py", "every_days": 1},
+    "ooni": {"labels": ["ooni:ps_daily"], "feeds": ["v1_connectivity_ooni"],
+             "fetcher": "ops/fetch_ooni.py", "every_days": 1},
+    "ioda": {"labels": ["ioda:outages"], "feeds": ["v1_connectivity_ioda"],
+             "fetcher": "ops/fetch_ioda.py", "every_days": 1},
+    "ocha-casualties": {"labels": ["ocha:casualties"],
+                        "feeds": ["v1_casualties_ocha_casualties"],
+                        "fetcher": "ops/fetch_ocha.py", "every_days": 1,
+                        "replaces": "ocha-casualties"},
+    "ocha-demolitions": {"labels": ["ocha:demolitions"],
+                         "feeds": ["v1_demolitions_ocha_demolitions"],
+                         "fetcher": "ops/fetch_ocha.py", "every_days": 1,
+                         "replaces": "ocha-demolitions"},
+    "pcbs-direct": {"labels": ["pcbs:population", "pcbs:cpi"],
+                    "feeds": ["v1_economic_pcbs_direct"],
+                    "fetcher": "ops/fetch_pcbs.py", "every_days": 1,
+                    "replaces": "pcbs-indicators",
+                    "note": "pcbs_poverty_rate has no source on PCBS's rebuilt "
+                            "site; its 2 held rows are not refreshed"},
+    "hamoked": {"labels": ["hamoked:detention"],
+                "feeds": ["v1_prisoners_hamoked"],
+                "fetcher": "ops/fetch_hamoked.py", "every_days": 1,
+                "replaces": "hamoked-detention",
+                "successor": "Addameer (v1_prisoners_addameer, via v1's "
+                             "`prisoners` step): total and administrative "
+                             "detention, 2022 onward"},
+}
+
+# v1 refresh steps that are RETIRED: a successor carries what they did, so
+# their failure is not a dead supply line. They stay listed — with the
+# successor, and as `retired_pending` while v1 keeps running them — until the
+# line is removed from v1's refresh-data.sh (docs/HANDS-2026-09-24.md §9,
+# Zaid's hand: v1 is live production and is never edited from here).
+RETIRED_V1_STEPS = {
+    "ocha-casualties": "v2 supply line ocha-casualties (ops/fetch_ocha.py)",
+    "ocha-demolitions": "v2 supply line ocha-demolitions (ops/fetch_ocha.py)",
+    "pcbs-indicators": "v2 supply line pcbs-direct (ops/fetch_pcbs.py)",
+    "hamoked-detention": "v2 supply line hamoked (ops/fetch_hamoked.py)",
+    "databank-martyrs": "v2 Tier 2 databank (martyrs_snapshot_2023, from T4P)",
+    "databank-btselem": "v2 Tier 2 databank (v1's people-killed backfill; the "
+                        "B'Tselem register is a letter, not a feed)",
+    "databank-gaza": "v2 Tier 2 databank (conflict_gaza, from T4P)",
+    "databank-prisoners": "v2 Tier 2 databank (prisoners + prisoners_hamoked)",
+    "databank-ucdp-actions": "v2 Tier 2 databank (UCDP events, migration 083)",
+    "databank-structures": "v2 Tier 2 databank (infrastructure)",
+    "databank-incidents": "v2 Tier 2 databank (v1's Insecurity Insight backfill)",
+    "learn-corrections": "v2's accuracy loop (ops/measure_review.py, learn/)",
+    "validate": "v2's spec floors, identity invariant and this radar — the "
+                "loader refuses what validate-data.js only reported",
+    "docker-restart-api": "palestine-refresh.service's ExecStartPost (the "
+                          "in-container docker call never worked)",
+}
+
+# Exit code for "found at least one dead supply line": the job must fail.
+DEAD_EXIT = 5
 
 # Datasets whose occurred_at is disclaimed (precision=unknown registers):
 # freshness runs on ingest recency instead, and says so.
@@ -128,29 +208,26 @@ REGISTER_BASIS = "register (occurred_at disclaimed; age = last ingest)"
 # Fill paths for gaps the project has already scoped. Everything else gets
 # honest "unscoped".
 FILL_PATHS = {
-    "v1_casualties_ocha_casualties": "v1's ocha-casualties scraper FAILs nightly; no HDX "
-                          "mirror exists (measured 2026-08-06). Fix the "
-                          "scraper in v1 or accept annual staleness.",
-    "v1_demolitions_ocha_demolitions": "same as casualties: scraper down, no open mirror "
-                           "anywhere (Peace Now unlicensed, B'Tselem "
-                           "consent-gated).",
+    "v1_casualties_ocha_casualties": "v2 fetch ops/fetch_ocha.py (supply line "
+                                     "ocha-casualties) — read that line in "
+                                     "supply_lines first.",
+    "v1_demolitions_ocha_demolitions": "v2 fetch ops/fetch_ocha.py (supply "
+                                       "line ocha-demolitions).",
     "v1_food_wfp": "WFP price data usually lands monthly; check the HDX "
                    "dataset revision if LATE persists.",
     "v1_aid_access_unrwa_aid_trucks": "dead; a successor series would need "
                                       "OCHA aid-tracking or COGAT data — "
                                       "unscoped.",
-    "v1_economic_pcbs": "pcbs-indicators fetch FAILs nightly in v1; PCBS "
-                        "direct (CC-BY, verified) is the re-source path.",
+    "v1_economic_pcbs_direct": "v2 fetch ops/fetch_pcbs.py (supply line "
+                               "pcbs-direct); poverty has no source.",
+    "v1_prisoners_hamoked": "v2 fetch ops/fetch_hamoked.py (supply line "
+                            "hamoked); successor if it dies: Addameer.",
     "v1_conflict_tech4palestine": "fix installed 2026-08-06, heals via the "
                                   "02:35→03:41 chain — if this is still "
                                   "stalled after 2026-08-07, the container "
                                   "copy was lost (recreate re-copies, see "
                                   "task #55).",
-    "v1_connectivity_ooni": "scripts/sources/ooni-censorship.js EXISTS in v1 "
-                            "but was never added to refresh-data.sh — the "
-                            "same never-ported class as tech4palestine, "
-                            "frozen since the same June rebuild. One "
-                            "run-line in v1 fixes it (Zaid's call: prod).",
+    "v1_connectivity_ooni": "v2 fetch ops/fetch_ooni.py (supply line ooni).",
 }
 
 ERAS = [
@@ -309,6 +386,7 @@ def measure_fetch_health(today: date) -> list[dict]:
                             "kind": "v1_refresh",
                             "fail_streak": streak, "last_at": hist[-1][0],
                             "benign": BENIGN_STEPS.get(label),
+                            "retired_to": RETIRED_V1_STEPS.get(label),
                             "note": STEP_NOTES.get(label)})
     # v2-native fetch artifacts: file age at the RAW layer — the June-9 class
     for name, path, allowance in [
@@ -342,7 +420,178 @@ def measure_fetch_health(today: date) -> list[dict]:
     return out
 
 
-def rank_gaps(datasets, fetch_health) -> list[dict]:
+def _when(s: str) -> datetime:
+    d = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+def read_events(path: Path, limit: int = 20000) -> dict[str, list[dict]]:
+    """A fetch ledger (v2's ops/fetch-events.ndjson or v1's refresh-events)
+    as label → attempts, oldest first. Both write {label, at, outcome}; v2
+    says "ok", v1 says "OK" — anything else is a failed attempt."""
+    if not path.exists():
+        return {}
+    by: dict[str, list[dict]] = defaultdict(list)
+    for line in path.read_text(errors="replace").splitlines()[-limit:]:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(e, dict) or not e.get("label") or not e.get("at"):
+            continue
+        out = str(e.get("outcome", ""))
+        by[e["label"]].append({"at": e["at"], "outcome": out,
+                               "ok": out.lower() == "ok"})
+    for v in by.values():
+        v.sort(key=lambda a: _when(a["at"]))
+    return dict(by)
+
+
+def judge_attempts(attempts: list[dict], now: datetime,
+                   every_days: float = 1) -> dict:
+    """One feed's verdict from its own attempts.
+
+    dead     FAIL_STREAK consecutive failures, or no attempt at all for
+             FAIL_STREAK × its cadence (the fetcher stopped being run — the
+             June-9 class: nothing fails because nothing runs), or never
+             attempted.
+    failing  one or two failures at the tail — reported, not yet dead.
+    live     the last attempt worked.
+    """
+    if not attempts:
+        return {"status": "dead", "why": "never fetched — no attempt on record",
+                "fail_streak": 0, "last_ok": None, "last_attempt": None,
+                "attempts": 0}
+    streak = 0
+    for a in reversed(attempts):
+        if a["ok"]:
+            break
+        streak += 1
+    last = attempts[-1]
+    silent = (now - _when(last["at"])).total_seconds() / 86400
+    v = {"fail_streak": streak, "attempts": len(attempts),
+         "last_attempt": last["at"], "last_outcome": last["outcome"],
+         "last_ok": max((a["at"] for a in attempts if a["ok"]),
+                        key=_when, default=None)}
+    if streak >= FAIL_STREAK:
+        return {**v, "status": "dead",
+                "why": f"{streak} consecutive attempts failed "
+                       f"(last: {last['outcome']}, {last['at'][:10]})"}
+    if silent > FAIL_STREAK * every_days:
+        return {**v, "status": "dead",
+                "why": f"no attempt for {silent:.1f} days — the fetcher is "
+                       "not being run"}
+    if streak:
+        return {**v, "status": "failing",
+                "why": f"{streak} failed attempt(s), fewer than {FAIL_STREAK}"}
+    return {**v, "status": "live", "why": None}
+
+
+def judge_supply_lines(v2_events: dict, v1_events: dict,
+                       datasets: list[dict], now: datetime) -> dict:
+    """Every line that feeds the databank, judged — and which ones are dead.
+
+    Returns {"v2": [...], "v1_steps": [...], "data": [...], "dead": [...]}:
+    `dead` is the list the nightly job fails on. A v2 line is dead when any
+    of its feeds is, or when a dataset it feeds has stalled; a v1 step is
+    dead unless it is RETIRED (successor named) or BENIGN; a stalled dataset
+    that no declared line feeds is a dead line of its own ("data").
+    """
+    status_of = {d["dataset"]: d["status"] for d in datasets}
+    fed = set()
+    v2 = []
+    for name, decl in SUPPLY_LINES.items():
+        every = decl.get("every_days", 1)
+        feeds = [dict(label=lab, **judge_attempts(v2_events.get(lab, []), now,
+                                                  every))
+                 for lab in decl["labels"]]
+        fed |= set(decl.get("feeds", []))
+        stalled = [k for k in decl.get("feeds", [])
+                   if status_of.get(k) == "stalled"]
+        why = ([f"{f['label']}: {f['why']}" for f in feeds
+                if f["status"] == "dead"]
+               + [f"{k}: data stalled (older than twice its allowance)"
+                  for k in stalled])
+        if decl.get("declared_dead"):
+            status = "declared_dead"
+        elif why:
+            status = "dead"
+        elif any(f["status"] == "failing" for f in feeds):
+            status = "failing"
+        else:
+            status = "live"
+        v2.append({"line": name, "kind": "v2_fetch", "status": status,
+                   "why": "; ".join(why) or None,
+                   "fetcher": decl.get("fetcher"),
+                   "feeds": decl.get("feeds", []),
+                   "replaces_v1_step": decl.get("replaces"),
+                   "successor": decl.get("successor"),
+                   "declared_dead": decl.get("declared_dead"),
+                   "note": decl.get("note"),
+                   "labels": feeds})
+    v1 = []
+    for step, attempts in sorted(v1_events.items()):
+        verdict = judge_attempts(attempts, now, 1)
+        still_run = (now - _when(attempts[-1]["at"])).days < FAIL_STREAK
+        if step in RETIRED_V1_STEPS:
+            # Excused because a successor carries it — never because it works.
+            status = "retired_pending" if still_run else "retired"
+        elif step in BENIGN_STEPS and verdict["status"] != "live":
+            status = "benign"
+        else:
+            status = verdict["status"]
+        v1.append({"line": f"v1 step {step}", "step": step, "kind": "v1_step",
+                   "status": status, "why": verdict["why"],
+                   "fail_streak": verdict["fail_streak"],
+                   "last_attempt": verdict["last_attempt"],
+                   "last_ok": verdict["last_ok"],
+                   "successor": RETIRED_V1_STEPS.get(step),
+                   "benign": BENIGN_STEPS.get(step),
+                   "note": STEP_NOTES.get(step)})
+    data = [{"line": f"data {d['dataset']}", "kind": "data", "status": "dead",
+             "why": f"stalled: last information {d['last_information_day']}, "
+                    f"{d['age_days']}d old against a {d['allowance_days']}d "
+                    "allowance — whatever feeds it has stopped delivering",
+             "feeds": [d["dataset"]]}
+            for d in datasets
+            if d["status"] == "stalled" and d["dataset"] not in fed]
+    dead = [x for x in v2 + v1 + data if x["status"] == "dead"]
+    return {"v2": v2, "v1_steps": v1, "data": data, "dead": dead}
+
+
+def apply_supply(datasets: list[dict], supply: dict) -> None:
+    """A dataset fed by a dead line is `supply_dead`, never `fresh`: its age
+    can look fine for months (a 730-day allowance) while nothing arrives."""
+    line_of = {}
+    for line in supply["v2"]:
+        for k in line["feeds"]:
+            line_of[k] = line
+    for d in datasets:
+        line = line_of.get(d["dataset"])
+        if not line:
+            continue
+        d["supply_line"] = line["line"]
+        if line["status"] == "dead" and d["status"] in ("fresh", "late"):
+            d["status"] = "supply_dead"
+            d["supply_why"] = line["why"]
+
+
+def supply_counts(supply: dict) -> dict:
+    def n(rows, st):
+        return sum(1 for r in rows if r["status"] == st)
+    v2, v1 = supply["v2"], supply["v1_steps"]
+    return {"v2_lines": len(v2), "v2_live": n(v2, "live"),
+            "v2_failing": n(v2, "failing"), "v2_dead": n(v2, "dead"),
+            "v2_declared_dead": n(v2, "declared_dead"),
+            "v1_steps": len(v1), "v1_live": n(v1, "live"),
+            "v1_failing": n(v1, "failing"), "v1_dead": n(v1, "dead"),
+            "v1_retired_pending": n(v1, "retired_pending"),
+            "v1_retired": n(v1, "retired"), "v1_benign": n(v1, "benign"),
+            "stalled_data_lines": len(supply["data"]),
+            "dead": len(supply["dead"])}
+
+
+def rank_gaps(datasets, fetch_health, supply: dict | None = None) -> list[dict]:
     gaps = []
     for d in datasets:
         if d["status"] == "stalled":
@@ -381,18 +630,26 @@ def rank_gaps(datasets, fetch_health) -> list[dict]:
                            f"in a series with a {h['rhythm_days']:.0f}d rhythm",
                 "fill_path": "check bronze + upstream archive for that window",
             })
+    # Dead supply lines: the gaps the nightly job FAILS on (P1-B.3). A v1
+    # step's streak used to be a severity-3 line here that nobody was paged
+    # for; it is judged in judge_supply_lines now, with retired steps excused
+    # only by a named successor.
+    for line in (supply or {}).get("dead", []):
+        gaps.append({
+            "severity": 5, "kind": "supply", "subject": line["line"],
+            "measure": line["why"] or "dead",
+            "fill_path": (f"run {line['fetcher']} by hand and read its error"
+                          + (f"; successor if it cannot be revived: "
+                             f"{line['successor']}" if line.get("successor")
+                             else "")
+                          if line.get("fetcher") else
+                          "fix the step in v1, or declare it retired with its "
+                          "successor in ops/gap_radar.py RETIRED_V1_STEPS"),
+        })
     for f in fetch_health:
-        if f.get("benign"):
-            continue
-        if f.get("fail_streak", 0) >= 3:
-            gaps.append({
-                "severity": 3, "kind": "fetch", "subject": f["line"],
-                "measure": f"{f['fail_streak']} consecutive FAILs "
-                           f"(last {f['last_at'][:10]})",
-                "fill_path": f.get("note") or "v1 maintenance backlog — the "
-                             "step is failing inside v1's nightly",
-            })
-        elif f.get("status") == "stalled":
+        if f.get("kind") == "v1_refresh":
+            continue                      # judged as a supply line above
+        if f.get("status") == "stalled":
             gaps.append({
                 "severity": 5, "kind": "fetch", "subject": f["line"],
                 "measure": f"raw artifact {f['age_days']}d old against "
@@ -410,38 +667,70 @@ def rank_gaps(datasets, fetch_health) -> list[dict]:
     return sorted(gaps, key=lambda g: -g["severity"])
 
 
+def headline(today, c: dict) -> list[str]:
+    """The two lines a human reads first. Every failure is COUNTED here — a
+    retired v1 step that still fails inside v1 is said, not folded into
+    'fresh' (the 2026-09-25 headline read '27 fresh of 32' over twelve
+    supply lines that had failed for a month)."""
+    s = c["supply_lines"]
+    return [
+        f"gap radar {today}: {c['datasets']} datasets — "
+        f"{c['fresh']} fresh · {c['late']} late · {c['stalled']} stalled · "
+        f"{c['supply_dead']} supply-dead · "
+        f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed · "
+        f"{c['continued']} continued",
+        f"supply lines: {s['dead']} DEAD · v2 fetches {s['v2_live']}/"
+        f"{s['v2_lines']} live ({s['v2_failing']} failing, {s['v2_dead']} dead)"
+        f" · v1 steps {s['v1_live']}/{s['v1_steps']} live ({s['v1_dead']} dead,"
+        f" {s['v1_failing']} failing, {s['v1_retired_pending']} retired but "
+        f"still run and fail in v1 until HANDS §9, {s['v1_retired']} retired, "
+        f"{s['v1_benign']} benign) · {s['stalled_data_lines']} stalled "
+        "datasets with no declared line"]
+
+
 def main() -> int:
     today = datetime.now(timezone.utc).date()
+    now = datetime.now(timezone.utc)
     with connect() as conn, conn.cursor() as cur:
         datasets = measure_datasets(cur, today)
         eras = measure_eras(cur)
     fetch_health = measure_fetch_health(today)
-    gaps = rank_gaps(datasets, fetch_health)
+    supply = judge_supply_lines(read_events(V2_EVENTS),
+                                read_events(V1_EVENTS, limit=4000),
+                                datasets, now)
+    apply_supply(datasets, supply)
+    gaps = rank_gaps(datasets, fetch_health, supply)
 
     report = {
         "measured_at": datetime.now(timezone.utc).isoformat(),
         "method": "freshness on the data's own dates vs each series' median "
                   "rhythm (3x allowance, declared exceptions); holes vs "
-                  "rhythm; era grid; fetch-layer artifact ages",
+                  "rhythm; era grid; fetch-layer artifact ages; supply lines "
+                  f"judged on their own attempts ({FAIL_STREAK} failures in a "
+                  "row, or silence, or a stalled dataset = dead)",
         "counts": {
             "datasets": len(datasets),
             "fresh": sum(1 for d in datasets if d["status"] == "fresh"),
             "late": sum(1 for d in datasets if d["status"] == "late"),
             "stalled": sum(1 for d in datasets if d["status"] == "stalled"),
+            "supply_dead": sum(1 for d in datasets
+                               if d["status"] == "supply_dead"),
             "dead_upstream": sum(1 for d in datasets
                                  if d["status"] == "dead_upstream"),
             "closed_corpus": sum(1 for d in datasets
                                  if d["status"] == "closed_corpus"),
             "continued": sum(1 for d in datasets if d["status"] == "continued"),
             "open_gaps": len(gaps),
+            "supply_lines": supply_counts(supply),
         },
         "datasets": datasets,
         "era_grid": eras,
         "fetch_health": fetch_health,
+        "supply_lines": supply,
         "gaps": gaps,
     }
-    # A dataset that stalled since the last radar is said, and exits 4 so the
-    # nightly job can say it too (audit F275 / P1-B.3).
+    # A dataset that stalled since the last radar is named (audit F275). It
+    # is also a dead supply line, so it fails the job below.
     def _key(d):
         return d.get("dataset") or d.get("key") or d.get("name")
     prev_stalled: set = set()
@@ -457,18 +746,19 @@ def main() -> int:
     tmp.write_text(json.dumps(report, ensure_ascii=False, indent=1))
     tmp.replace(OUT)
 
-    c = report["counts"]
-    print(f"gap radar {today}: {c['datasets']} datasets — "
-          f"{c['fresh']} fresh · {c['late']} late · {c['stalled']} stalled · "
-          f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed · "
-          f"{c['continued']} continued")
+    for line in headline(today, report["counts"]):
+        print(line)
     for g in gaps[:12]:
         print(f"  [{g['severity']}] {g['kind']:<12} {g['subject']:<44} "
               f"{g['measure'][:80]}")
     print(f"→ {OUT}")
     if report["newly_stalled"]:
         print("NEWLY STALLED:", ", ".join(report["newly_stalled"]))
-        return 4
+    if supply["dead"]:
+        print(f"DEAD SUPPLY LINES ({len(supply['dead'])}): "
+              + "; ".join(f"{x['line']} — {x['why']}" for x in supply["dead"]),
+              file=sys.stderr)
+        return DEAD_EXIT
     return 0
 
 

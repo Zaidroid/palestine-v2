@@ -180,6 +180,31 @@ def read_payload(f: Path) -> bytes:
     return gzip.decompress(b) if b[:2] == b"\x1f\x8b" else b
 
 
+def _input_files(inp: dict) -> list[Path]:
+    root = Path(inp["root"])
+    if not root.is_absolute():
+        root = ROOT / root
+    # `glob:` may be a list. A publisher's own API is not one file per
+    # category the way v1's unified tree was — T4P publishes the named
+    # roster and the cumulative summary at two endpoints, and the spec
+    # that reads them should name both rather than sweep a directory and
+    # hope. Order is the spec's, not the filesystem's.
+    globs = inp["glob"]
+    out = []
+    for g in ([globs] if isinstance(globs, str) else globs):
+        out += [f for f in sorted(root.glob(g))
+                if f.name not in ("index.json", "recent.json")]
+    return out
+
+
+def reads_fallback(spec: dict | None) -> bool:
+    """True when the spec's primary input is absent and its declared
+    `input.fallback` is what a run would read (a fresh clone that has never
+    run the fetcher)."""
+    inp = (spec or {}).get("input") or {}
+    return bool(inp.get("fallback")) and not _input_files(inp)
+
+
 def iter_v1_files(category: str, spec: dict | None = None):
     # Format v2 `input:` — a spec may read a v1 RAW tree instead of the
     # unified category (first user: conflict_westbank, whose cumulative
@@ -187,19 +212,16 @@ def iter_v1_files(category: str, spec: dict | None = None):
     # repository (Stage 7). Relative roots resolve against the repo, so a
     # frozen spec works from any working directory and on any machine.
     if spec and spec.get("input"):
-        root = Path(spec["input"]["root"])
-        if not root.is_absolute():
-            root = ROOT / root
-        # `glob:` may be a list. A publisher's own API is not one file per
-        # category the way v1's unified tree was — T4P publishes the named
-        # roster and the cumulative summary at two endpoints, and the spec
-        # that reads them should name both rather than sweep a directory and
-        # hope. Order is the spec's, not the filesystem's.
-        globs = spec["input"]["glob"]
-        for g in ([globs] if isinstance(globs, str) else globs):
-            for f in sorted(root.glob(g)):
-                if f.name not in ("index.json", "recent.json"):
-                    yield f
+        files = _input_files(spec["input"])
+        # `input.fallback` (P1-B.3): a category whose live fetch replaced a
+        # frozen corpus keeps the corpus as the answer for a machine that has
+        # never fetched — so a fresh clone still loads, and the run says so.
+        if not files and spec["input"].get("fallback"):
+            files = _input_files(spec["input"]["fallback"])
+            print(f"{category}: no fetched input under {spec['input']['root']} "
+                  f"— reading the fallback {spec['input']['fallback']['glob']} "
+                  "(additive only)", file=sys.stderr)
+        yield from files
         return
     d = V1_UNIFIED / category
     if (d / "all-data.json").exists():
@@ -448,6 +470,15 @@ def route(rec: dict, spec: dict, counts: Counter) -> str | None:
     return None
 
 
+def moved(rec: dict, spec: dict) -> str | None:
+    """Format v2 `source_routing.moved` (P1-B.3): the spec that reads this
+    record's source now, or None. A moved record is a declared, counted drop
+    in the spec it left — never an unroutable name that fails the run."""
+    sources = rec.get("sources") or []
+    name = sources[0].get("name") if sources and isinstance(sources[0], dict) else None
+    return ((spec.get("source_routing") or {}).get("moved") or {}).get(name)
+
+
 def passthrough(rec: dict, spec_list: list, base: dict | None = None) -> dict:
     """attrs_passthrough: dotted paths, absent/empty values omitted."""
     out = dict(base or {})
@@ -465,6 +496,8 @@ def passthrough(rec: dict, spec_list: list, base: dict | None = None) -> dict:
 # ── per-category transformers (each implements its reviewed spec) ────────────
 
 def t_prisoners(rec, spec, places, counts):
+    if moved(rec, spec):
+        return Drop("moved")
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
@@ -485,6 +518,20 @@ def t_prisoners(rec, spec, places, counts):
                 reported_at=fetched, attrs=attrs)]
 
 
+# The frozen corpora (data/frozen/, v1's 2026-08-05 file) carry no span of
+# their own: their cross-sections ran to the day v1 fetched them, and their
+# 2026 row was a partial year. ops/fetch_ocha.py writes both facts into each
+# record — the date of the latest record inside the row, and whether the year
+# is still running — so a live row states its own span (P1-B.3).
+FROZEN_COVERAGE_END = "2026-08-05"
+
+
+def _partial_year(rec: dict, year: str) -> bool:
+    if "partial_year" in rec:
+        return bool(rec["partial_year"])
+    return year == FROZEN_COVERAGE_END[:4]
+
+
 def t_casualties(rec, spec, places, counts):
     ds = route(rec, spec, counts)
     if ds is None:
@@ -497,12 +544,12 @@ def t_casualties(rec, spec, places, counts):
     if dim == "annual_total" and date:
         year = str(date)[:4]
         occurred, precision = f"{year}-01-01", "year"            # law 2
-        if year == "2026":
+        if _partial_year(rec, year):
             attrs["partial_year"] = True                          # spec note
     else:
         occurred, precision = "2008-01-01", "unknown"             # series start
         attrs["coverage_start"] = "2008-01-01"
-        attrs["coverage_end"] = "2026-08-05"
+        attrs["coverage_end"] = rec.get("coverage_end") or FROZEN_COVERAGE_END
     loc = rec.get("location") or {}
     if dim == "governorate":
         gov = loc.get("governorate")
@@ -537,12 +584,12 @@ def t_demolitions(rec, spec, places, counts):
         year = str(date)[:4]
         occurred, precision = f"{year}-01-01", "year"             # law 2
         attrs["coverage_area"] = "West Bank + East Jerusalem"     # spec note
-        if year == "2026":
+        if _partial_year(rec, year):
             attrs["partial_year"] = True
     else:
         occurred, precision = "2009-01-01", "unknown"             # series start
         attrs["coverage_start"] = "2009-01-01"
-        attrs["coverage_end"] = "2026-08-05"
+        attrs["coverage_end"] = rec.get("coverage_end") or FROZEN_COVERAGE_END
     loc = rec.get("location") or {}
     if (rec.get("demolition_dimension") or "") == "locality":
         # THE FIX-FIRST NOTE, discharged (2026-08-07). The locality name was
@@ -749,6 +796,8 @@ def t_pcbs(rec, spec, places, counts):
 
 
 def t_economic(rec, spec, places, counts):
+    if moved(rec, spec):
+        return Drop("moved")
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
@@ -1495,6 +1544,7 @@ TRANSFORMERS = {
     "historical": t_historical,
     "refugees": t_refugees,
     "prisoners": t_prisoners,
+    "prisoners_hamoked": t_prisoners,     # P1-B.3: v2's own HaMoked fetch
     "casualties": t_casualties,
     "demolitions": t_demolitions,
     "settlements": t_engine,
@@ -1505,6 +1555,7 @@ TRANSFORMERS = {
     "funding": t_engine,
     "pcbs": t_engine,
     "economic": t_economic,
+    "economic_pcbs": t_economic,          # P1-B.3: v2's own PCBS fetch
     "health": t_health,
     "food": t_food,
     "aid_access": t_aid_access,
@@ -1642,6 +1693,9 @@ def run(category: str, dry_run: bool = False) -> dict:
     rows: list[Row] = []
     refs: dict[Path, str] = {}
     seen_stable: set[str] = set()
+    from_fallback = reads_fallback(spec)
+    if from_fallback:
+        counts["input_fallback"] = 1
 
     # Format v2 `identity:` — cross-run natural-key idempotency for datasets
     # whose v1 stable_ids are unstable (2026-08-07: v1 re-hashed after the
@@ -1815,6 +1869,14 @@ def run(category: str, dry_run: bool = False) -> dict:
                         # is what a write would insert.
                         if not dry_run:
                             continue
+                    elif from_fallback:
+                        # The fallback is an OLD answer (a frozen corpus
+                        # standing in for a fetch that has not happened on
+                        # this machine). It may fill a hole; it may never
+                        # overwrite what a live fetch put here — or deleting
+                        # data/raw/ would roll the series back to June.
+                        counts["fallback_revision_refused"] += 1
+                        continue
                     else:
                         # A CORRECTION. Same row, different reading — the
                         # publisher revised it. Supersede what we hold and

@@ -4,6 +4,15 @@
 # year-bucket, 0% geo, one event_type, one unit. The cleanest category in the
 # Tier-2 set — and the only one where BOTH sources are verify-required, so
 # nothing here can be sold until Zaid reads the terms.
+#
+# HaMoked MOVED 2026-09-25 (P1-B.3). v1's `hamoked-detention` step had failed
+# 31 nights (its headless browser left v1's image) and v1's unified file kept
+# the June copy. ops/fetch_hamoked.py now reads HaMoked itself and
+# prisoners_hamoked.yaml loads it into the SAME dataset (v1_prisoners_hamoked),
+# so the series continues and a month HaMoked revises supersedes the held
+# reading. This spec keeps Addameer (still fetched by v1's `prisoners` step)
+# and drops v1's stale HaMoked records by name — declared and counted, never
+# an unroutable failure.
 category: prisoners
 transform: python:t_prisoners
 shape: observation
@@ -12,17 +21,19 @@ records_measured: 890
 
 source_routing:
   by_name:
-    "HaMoked": hamoked                                                   # alias 'hamoked'
     "Addameer Prisoner Support and Human Rights Association": addameer   # exact alias
+  moved:
+    "HaMoked": prisoners_hamoked   # v2's own fetch since 2026-09-25 (P1-B.3)
   default: null           # measured: 0 records with sources: []
 
+drop:
+  - reason: moved
+    if: "sources[0].name is HaMoked — read by prisoners_hamoked.yaml now"
+    measured: 864          # v1's unified file, frozen at June 2026 since the
+                           #   step died; 4 series × 216 months
+
 datasets:
-  - key: v1_prisoners_hamoked
-    source: hamoked
-    records_measured: 864
-    overrides:
-      expect:
-        min_records: 780
+  # v1_prisoners_hamoked is declared by prisoners_hamoked.yaml (P1-B.3).
   - key: v1_prisoners_addameer
     source: addameer
     records_measured: 26

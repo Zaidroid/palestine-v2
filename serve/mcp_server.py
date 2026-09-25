@@ -1942,7 +1942,17 @@ def data_gaps() -> dict:
     top = [g for g in d["gaps"] if g["severity"] >= 3][:5]
     answer = (f"رادار الفجوات: من أصل {c['datasets']} سلسلة بيانات — "
               f"{c['fresh']} حديثة، {c['late']} متأخرة، "
-              f"{c['stalled']} متوقفة، {c['dead_upstream']} مصدرها توقف. ")
+              f"{c['stalled']} متوقفة، {c['dead_upstream']} مصدرها توقف")
+    # P1-B.3: a series whose supply line died is never counted fresh, and
+    # the dead lines are said — the radar's own headline, in words.
+    sl = c.get("supply_lines") or {}
+    if "supply_dead" in c:
+        answer += f"، {c['supply_dead']} خط إمدادها ميت"
+    answer += ". "
+    if sl:
+        answer += (f"خطوط الإمداد: {sl.get('dead', 0)} ميتة، "
+                   f"{sl.get('v2_live', 0)} من {sl.get('v2_lines', 0)} "
+                   f"من جلبنا الذاتي شغالة. ")
     if top:
         answer += "أهم الفجوات: " + "؛ ".join(
             f"{g['subject']} ({g['measure'][:60]})" for g in top)

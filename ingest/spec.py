@@ -243,6 +243,15 @@ _k("input.glob", "enforced",
    "list is how a spec names the publisher's own endpoints (T4P's roster and "
    "summary) instead of sweeping a directory and hoping",
    types=(str, list))
+_k("input.fallback", "enforced",
+   "{root, glob} read ONLY when the primary glob matches no file — a fresh "
+   "clone that has never run the fetcher (P1-B.3: OCHA casualties and "
+   "demolitions fall back to their frozen corpora). A run that reads the "
+   "fallback is ADDITIVE ONLY: it never supersedes a held row, so a deleted "
+   "raw file cannot roll the live series back to the frozen one",
+   types=(dict,))
+_k("input.fallback.root", "enforced", "as input.root", types=(str,))
+_k("input.fallback.glob", "enforced", "as input.glob", types=(str, list))
 _k("input.object_as_record", "enforced",
    "a payload that is one JSON object IS one record (T4P /v3/summary.json). "
    "Off by default so a genuinely empty file still reads as empty",
@@ -257,6 +266,12 @@ _k("source_routing.default", "enforced",
    "the dataset for records carrying sources: []. Declared in 21 specs and "
    "read by nothing until 2026-08-08 — and its absence was not neutral: a "
    "record with no sources routed to None, which FAILS the run", types=(str,))
+_k("source_routing.moved", "data_map",
+   "upstream source name → the spec that reads it NOW (v2's own fetch). "
+   "Records under a moved name are dropped with reason `moved` — declared "
+   "and counted like any drop — instead of failing the run as unroutable. "
+   "P1-B.3: HaMoked left v1's unified prisoners tree for prisoners_hamoked, "
+   "PCBS-direct left economic for economic_pcbs", types=(dict,))
 _k("source_routing.route_on", "rationale",
    "documents WHICH field routing reads; route() hardcodes sources[0].name",
    types=(str,))
@@ -599,6 +614,22 @@ def _cross_checks(spec: dict, category: str, out: list[Problem]) -> None:
         out.append(Problem("source_routing.by_name",
                            f"routes to {sorted(orphan)}, which no dataset "
                            "declares — a record with that name fails the run"))
+
+    # A moved name is read by exactly one other spec, and not by this one.
+    moved = (spec.get("source_routing") or {}).get("moved") or {}
+    both = set(moved) & set((spec.get("source_routing") or {}).get("by_name") or {})
+    if both:
+        out.append(Problem("source_routing.moved",
+                           f"{sorted(both)} both moved and routed here — a "
+                           "record cannot be read by two specs"))
+    for name, target in moved.items():
+        if not (SPECS / f"{target}.yaml").exists():
+            out.append(Problem(f"source_routing.moved[{name!r}]",
+                               f"moved to {target!r}, which has no spec — "
+                               "the records would be dropped into nowhere"))
+    if moved and "moved" not in {d.get("reason") for d in spec.get("drop") or []}:
+        out.append(Problem("drop", "source_routing.moved without a declared "
+                                   "`moved` drop — the removal must be sized"))
 
     # Law 6: description is not data.
     for lst_path in ("attrs_passthrough",):

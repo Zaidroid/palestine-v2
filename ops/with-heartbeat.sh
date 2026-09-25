@@ -53,7 +53,12 @@ if [ "$ok" -eq 1 ]; then
       --interval "$interval" --grace "$grace" --detail "${HEARTBEAT_DETAIL:-{\}}" || true
   # A failure alarm systemd raised for this unit is answered by the next
   # successful run — silently, and only if one is open (ops/alert.py).
-  "$ROOT/.venv/bin/python" -m ops.alert --resolve "palestine-v2-$name.service" >/dev/null 2>&1 || true
+  # HEARTBEAT_RESOLVE=0 leaves that to the caller: a script that wraps
+  # several steps (ops/databank-sync.sh) resolves once, when ALL of them
+  # passed, or the first good step would close an alarm a later step raises.
+  if [ "${HEARTBEAT_RESOLVE:-1}" != 0 ]; then
+    "$ROOT/.venv/bin/python" -m ops.alert --resolve "palestine-v2-$name.service" >/dev/null 2>&1 || true
+  fi
 else
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
       --interval "$interval" --grace "$grace" --fail "exited $rc" || true

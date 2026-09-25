@@ -108,25 +108,31 @@ expect:
   min_records: 44         # ≈0.9 × 49
   max_observations: 66
 
-# ── FROZEN 2026-08-08 (Stage 7, the v1 cut) ─────────────────────────────────
-# This corpus is finished. ops/v1_liveness.py measured its content unchanged
-# across all 38 vaulted days — identical at both ends and every sample
-# between — once v1's own churn is removed (its re-derived stable_id, its
-# ingest stamp, its flapping geo enrichment). v1 rewrote the file nightly and
-# changed nothing a publisher said.
+# ── LIVE AGAIN 2026-09-25 (P1-B.3, the supply line v2 took over) ─────────────
+# Frozen 2026-08-08 from v1's last good file, because v1's scraper had stopped
+# and the content no longer moved. It had stopped because v1's image lost its
+# headless browser — not because OCHA stopped publishing: on 2026-09-25 the
+# report held 7,494 fatalities (2026 to date: 90, where the frozen file said
+# 56), and v1's step had failed 31 nights in a row with nothing paging.
 #
-# So it is read from THIS REPOSITORY now, not from /opt/stacks/palestine. The
-# id re-hash, the geo flap and the silent stall stop being risks this
-# category is guarded against and become risks it cannot have. And a fresh
-# clone can load it, which is the difference between open-source code and an
-# open-source project.
+# ops/fetch_ocha.py now reads the SAME report through the public Power BI API
+# (no browser) into data/raw/ocha/casualties.json, nightly, before the loader
+# (ops/databank-sync.sh). Same records, same labels, same identity — measured:
+# all 49 rows present, all five slices summing to one total. Two fields are
+# the fetch's own and read by t_casualties: each breakdown row's
+# `coverage_end` (the date of the latest fatality inside it, so a quiet night
+# rewrites nothing) and `partial_year` on the running year.
 #
-# To unfreeze: delete this block and the `cadence`, and re-measure with
-# ops/v1_liveness.py first — a corpus that started moving again is a finding.
+# THE FROZEN CORPUS STAYS, AS THE FALLBACK. A machine that has never fetched
+# (a fresh clone) loads data/frozen/casualties.json.gz instead — additive
+# only: a run reading the fallback never supersedes a held row.
 input:
-  root: data/frozen
-  glob: casualties.json.gz
-cadence: frozen
+  root: data/raw/ocha
+  glob: casualties.json
+  fallback:
+    root: data/frozen
+    glob: casualties.json.gz
+cadence: daily
 
 notes: |
   Measured from ops/t2-category-audit.json and the 49 v1 records:

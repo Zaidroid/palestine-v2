@@ -63,7 +63,11 @@ def _prisoner_rec(**over):
 
 
 def test_prisoners_month_bucket_and_null_place():
-    spec = spec_for("prisoners")
+    # HaMoked is read by prisoners_hamoked.yaml since P1-B.3; the same
+    # transformer, the same rules, and prisoners.yaml now drops it as `moved`.
+    spec = spec_for("prisoners_hamoked")
+    assert databank.t_prisoners(_prisoner_rec(), spec_for("prisoners"), PLACES,
+                                Counter()) == Drop("moved")
     [row] = databank.t_prisoners(_prisoner_rec(), spec, PLACES, Counter())
     assert row.indicator == "prisoners.administrative"
     assert row.precision == "month"          # 1st-of-month bucket, never day
@@ -197,23 +201,39 @@ def test_pilot_dry_runs_reproduce_spec_arithmetic():
     # HaMoked is a complete four-series panel (864 = 4 x 216 when measured).
     # The floor on the total is the spec's expect.min_records, which run()
     # itself enforces.
+    #
+    # P1-B.3 (2026-09-25): HaMoked is read by prisoners_hamoked.yaml from
+    # v2's own fetch now, so v1's HaMoked records are a declared, counted
+    # `moved` drop here — every one of them, and nothing else.
     spec = load_spec("prisoners")
     recs = json.loads((V1 / "prisoners" / "all-data.json").read_bytes())["data"]
     by_source = Counter(rec["sources"][0]["name"] for rec in recs)
     r = databank.run("prisoners", dry_run=True)
-    assert r["records_read"] == r["observations_emitted"] == len(recs)
-    assert not r["drops"]
-    assert set(by_source) <= set(spec["source_routing"]["by_name"])
+    assert r["records_read"] == len(recs)
+    assert r["drops"] == {"moved": by_source["HaMoked"]}
+    assert r["observations_emitted"] == len(recs) - by_source["HaMoked"]
+    routing = spec["source_routing"]
+    assert set(by_source) <= set(routing["by_name"]) | set(routing["moved"])
     months = {rec["date"] for rec in recs
               if rec["sources"][0]["name"] == "HaMoked"}
     assert by_source["HaMoked"] == 4 * len(months)
+    # casualties and demolitions read v2's own fetch when it exists and the
+    # frozen corpus otherwise (P1-B.3). The frozen arithmetic is pinned; the
+    # live file is held to the spec's floors and the same structure.
     r = databank.run("casualties", dry_run=True)
-    assert r["records_read"] == r["observations_emitted"] == 49
+    assert r["records_read"] == r["observations_emitted"]
+    if databank.reads_fallback(load_spec("casualties")):
+        assert r["records_read"] == 49
+    else:
+        assert r["records_read"] >= 44
     r = databank.run("demolitions", dry_run=True)
-    assert r["records_read"] == 534
-    # fan-out: 534 structures + 352 displaced + 18 affected — the spec's
-    # measured non-zero fills, exactly
-    assert r["observations_emitted"] == 904
+    if databank.reads_fallback(load_spec("demolitions")):
+        assert r["records_read"] == 534
+        # fan-out: 534 structures + 352 displaced + 18 affected — the spec's
+        # measured non-zero fills, exactly
+        assert r["observations_emitted"] == 904
+    else:
+        assert r["records_read"] >= 480 and r["observations_emitted"] >= 850
     # Locality resolution tracks UPSTREAM quality, so it is not pinned: on
     # 2026-08-07 v1's rebuild dropped the gazetteer_key from ALL 516 locality
     # records (measured: 0 of 516 retained one, against 515 of 516 before),
@@ -368,8 +388,11 @@ def test_water_gho_prefers_numeric_and_drops_unparseable():
 
 # ── Stage 7: the frozen corpora ──────────────────────────────────────────────
 
-FROZEN_CATEGORIES = ("aid_access", "casualties", "demolitions", "education",
-                     "historical", "infrastructure")
+FROZEN_CATEGORIES = ("aid_access", "education", "historical",
+                     "infrastructure")
+# Frozen 2026-08-08, live again 2026-09-25 (P1-B.3): v2 fetches them itself
+# and keeps the frozen corpus as the fallback a fresh clone reads.
+REVIVED_CATEGORIES = ("casualties", "demolitions")
 
 
 def test_frozen_specs_read_this_repository_not_v1() -> None:
@@ -384,6 +407,19 @@ def test_frozen_specs_read_this_repository_not_v1() -> None:
         assert spec["input"]["root"] == "data/frozen", f"{cat}: {spec['input']}"
 
 
+def test_revived_specs_read_v2s_fetch_and_fall_back_to_the_frozen_corpus() -> None:
+    """casualties and demolitions were frozen because v1's scraper died, not
+    because OCHA stopped publishing. v2 reads OCHA itself now (ops/fetch_ocha.py
+    → data/raw/ocha), never v1, and the frozen corpus is the declared fallback."""
+    from ingest.databank import load_spec
+    for cat in REVIVED_CATEGORIES:
+        spec = load_spec(cat)
+        assert spec["input"]["root"] == "data/raw/ocha", cat
+        assert spec["input"]["fallback"] == {"root": "data/frozen",
+                                             "glob": f"{cat}.json.gz"}, cat
+        assert spec.get("cadence") == "daily", cat
+
+
 def test_the_unplug_test_frozen_categories_survive_v1_disappearing(
         monkeypatch) -> None:
     """The criterion the plan set for the cut, run for real: rename v1's tree
@@ -392,7 +428,7 @@ def test_the_unplug_test_frozen_categories_survive_v1_disappearing(
     from pathlib import Path
     import ingest.databank as db
     monkeypatch.setattr(db, "V1_UNIFIED", Path("/nonexistent/v1-is-gone"))
-    for cat in FROZEN_CATEGORIES:
+    for cat in FROZEN_CATEGORIES + REVIVED_CATEGORIES:
         report = db.run(cat, dry_run=True)
         assert report["records_read"] > 0, f"{cat} read nothing without v1"
 
