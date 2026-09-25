@@ -69,7 +69,6 @@ WITH ph AS (
     FROM state_observation o
     JOIN source s ON s.source_id = o.source_id
    WHERE s.key = 'tg_palhubapproad' AND o.state_kind = 'checkpoint_flow'
-     AND o.modality = 'quarantined'
      AND o.observed_at > now() - make_interval(days => %s)
 ), live AS (
   SELECT o.place_id, o.direction, o.value, o.observed_at

@@ -89,6 +89,25 @@ PARSE_CONFIDENCE = 0.95
 # different congestion threshold, and only the 96.8% control shows what it is.
 MODALITY = "quarantined"
 
+# THE EARN-OUT, BY VALUE CLASS (P1-A.1, measured 2026-09-25 in
+# ops/palhub_earnout.py over 28 days and 70,735 pairs, against the
+# channel-vs-channel control measured the same way): palhub's `open` agrees
+# with the road channels at 0.861 (control 0.889) and its `closed` at 0.646
+# (control 0.778) — a channel's own error band — while its `congested` agrees
+# at 0.222 (control 0.590): "أزمة متوسطة" is what the channels call open four
+# times in five. Zaid's decision A, 2026-09-25: open and closed are ASSERTED,
+# congested stays quarantined (collected, measured, never believed). A closed
+# from palhub therefore flips a stale open the way any channel's would; the
+# alternative (open only) would keep serving an open palhub had already seen
+# close.
+MODALITY_BY_VALUE = {"open": "assertion", "closed": "assertion",
+                     "congested": MODALITY, "slow": MODALITY}
+EARN_OUT = "2026-09-25 A: open+closed asserted, congested quarantined"
+
+
+def modality_for(value: str) -> str:
+    return MODALITY_BY_VALUE.get(value, MODALITY)
+
 # "أخرى" is Palhub's catch-all bucket and names no governorate; those rows
 # resolve on the checkpoint name alone.
 NO_AREA = {"أخرى"}
@@ -261,11 +280,12 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
                         (place.place_id, STATE_KIND, rd.value, rd.raw_status,
                          observed_at, source_id, claim_id, PARSE_CONFIDENCE,
-                         rd.direction, MODALITY,
+                         rd.direction, modality_for(rd.value),
                          json.dumps({"palhub_area": b.area,
                                      "palhub_name": rd.name,
                                      "palhub_severity": rd.severity,
-                                     "palhub_updated_local": b.updated_local},
+                                     "palhub_updated_local": b.updated_local,
+                                     "earn_out": EARN_OUT},
                                     ensure_ascii=False)))
                 last[key] = (rd.value, observed_at)
                 stats["written"] += 1

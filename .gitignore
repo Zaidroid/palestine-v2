@@ -65,3 +65,4 @@ ops/mcp-accuracy.json
 
 # nightly databank run ledger: runtime state, appended by every sync; its mtime is a cache key
 ops/databank-runs.ndjson
+ops/coverage.ndjson

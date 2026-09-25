@@ -174,6 +174,7 @@ EXPECTED_JOBS = {
     "databank":          (86400, 21600),
     "scout":             (604800, 259200),
     "valhalla-ip":       (900, 1800),
+    "coverage":          (600, 900),
     # The analyst (P0 of LOCAL-ANALYST-2026-09) is a consumer loop, not a
     # timer: it beats once per tick from inside `analyst.loop`, like the poller,
     # so it has no entry in any *.sh and the cadence is duplicated from
@@ -869,6 +870,48 @@ def resend_undelivered() -> int:
     return n
 
 
+COVERAGE_LEDGER = ROOT / "ops" / "coverage.ndjson"
+COVERAGE_SQL = """
+SELECT count(*) FILTER (WHERE direction = 'both')                                        AS tracked,
+       count(*) FILTER (WHERE direction = 'both' AND flow <> 'unknown')                 AS known,
+       count(*) FILTER (WHERE direction = 'both' AND flow <> 'unknown'
+                          AND reported_for IN ('inbound', 'outbound'))                  AS direction_resolved,
+       count(DISTINCT place_id) FILTER (WHERE direction IN ('inbound','outbound')
+                                          AND flow <> 'unknown' AND reported_for = direction) AS places_with_a_direction
+  FROM checkpoint_serving
+"""
+
+
+def coverage_check() -> list[dict]:
+    """G4, recorded on every run (PLAN §6: known-fraction ≥ 0.60 at 09:00 and
+    18:00 Hebron; here it is measured every 10 minutes and the two named
+    readings are whichever runs fall on those hours). One row in ops_heartbeat
+    (the latest) and one line per run in ops/coverage.ndjson (the history)."""
+    try:
+        r = _q(COVERAGE_SQL)[0]
+    except Exception as exc:                                    # noqa: BLE001
+        return [{"check": "coverage", "name": "known-fraction", "status": "error", "fault": True,
+                 "detail": str(exc)[:200], "age_minutes": None, "expected_seconds": None}]
+    tracked, known = int(r["tracked"] or 0), int(r["known"] or 0)
+    frac = round(known / tracked, 3) if tracked else 0.0
+    dir_share = round(int(r["direction_resolved"] or 0) / known, 3) if known else 0.0
+    rec = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "tracked": tracked,
+           "known": known, "known_fraction": frac, "direction_resolved": int(r["direction_resolved"] or 0),
+           "direction_share": dir_share, "places_with_a_direction": int(r["places_with_a_direction"] or 0)}
+    try:
+        from ops.heartbeat import beat
+        beat("coverage", 600, 900, rec)
+        with COVERAGE_LEDGER.open("a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+    except Exception:                                           # noqa: BLE001
+        pass
+    below = frac < 0.60
+    return [{"check": "coverage", "name": "known-fraction", "age_minutes": None,
+             "status": "below_gate" if below else "ok", "fault": False,      # a gate, not an outage
+             "detail": f"{known} of {tracked} checkpoints known ({frac:.2f}; G4 gate 0.60); "
+                       f"{dir_share:.0%} of known are direction-resolved"}]
+
+
 FETCH_EVENTS = ROOT / "ops" / "fetch-events.ndjson"
 FETCH_FAIL_STREAK = 3
 
@@ -965,7 +1008,8 @@ def _main() -> int:
     feeds = feed_checks(jobs, measure_cadence())
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
             + minimax_check() + fuel_price_check() + backup_check()
-            + doorbell_check(send=not a.dry_run) + fetch_check() + feeds)
+            + doorbell_check(send=not a.dry_run) + fetch_check()
+            + (coverage_check() if not a.dry_run else []) + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:
