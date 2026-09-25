@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # The twelve canonical questions (PLAN §10) — the release is measured on these.
 #
-# For a reviewer with the staging key and nothing else installed: no MCP client,
-# no SDK, no Python package beyond the interpreter most machines already have.
+# For anyone with a key and nothing else installed — the public test key on
+# https://live-api.zaidlab.xyz/#connect works: no MCP client, no SDK, no Python
+# package beyond the interpreter most machines already have. Download it from
+# https://live-api.zaidlab.xyz/docs/try-twelve.sh.
 # Every call goes to the same endpoint the product will use, with the key in a
 # header (the shape a server-side harness should send), and prints what came
 # back plus the licence tier of what it just received.
 #
-#   THAURA_KEY=pv2_... ./docs/try-twelve.sh
+#   PV2_KEY=pv2_... ./docs/try-twelve.sh
 #   ./docs/try-twelve.sh pv2_...                # or pass it as $1
 #   LIVE_API=http://127.0.0.1:7870/mcp ./docs/try-twelve.sh   # against a local build
 #
@@ -15,18 +17,19 @@
 # safe to run in a terminal someone else can see.
 set -uo pipefail
 
-K="${THAURA_KEY:-${1:-}}"
+K="${PV2_KEY:-${1:-}}"
 U="${LIVE_API:-https://live-api.zaidlab.xyz/mcp}"
 
 if [ -z "$K" ]; then
-  echo "usage: THAURA_KEY=pv2_... $0   (the key is not echoed by this script)" >&2
+  echo "usage: PV2_KEY=pv2_... $0   (the key is not echoed by this script;" >&2
+  echo "       the public test key is on https://live-api.zaidlab.xyz/#connect)" >&2
   exit 2
 fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# The order matters: coverage first, because it says what the system holds and —
+# The order matters: `about` first, because it says what the system holds and —
 # more usefully — what it holds NOTHING for. A reviewer who skips it will read
 # every thin answer that follows as a data problem rather than a known gap.
 calls=(
@@ -53,7 +56,7 @@ for entry in "${calls[@]}"; do
   body="{\"jsonrpc\":\"2.0\",\"id\":$i,\"method\":\"tools/call\",\"params\":{\"name\":\"$name\",\"arguments\":$args}}"
   start=$(date +%s%N)
   code=$(curl -sS -m 30 -o "$TMP/$(printf %02d $i)-$name.json" -w '%{http_code}' -X POST "$U" \
-      -A 'thaura-staging/1.0' \
+      -A 'palestine-data-try-twelve/1.0' \
       -H "X-Api-Key: $K" \
       -H 'content-type: application/json' \
       -H 'accept: application/json, text/event-stream' \
@@ -91,7 +94,8 @@ for f in sorted(tmp.glob("*.json")):
     if p.get("answer_en"):
         print("answer_en:", " ".join(str(p["answer_en"]).split())[:300])
     if lic:
-        print(f"licence : tier={lic.get('tier')} emits={lic.get('emits')}")
+        print(f"licence : tier={lic.get('tier')} partner_tier={lic.get('partner_tier')} "
+              f"grade={lic.get('grade')}")
         if lic.get("note"):
             print("          note:", " ".join(str(lic["note"]).split())[:220])
         if lic.get("excerpted_items"):

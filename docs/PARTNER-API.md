@@ -1,9 +1,15 @@
-# Partner API — live status for the West Bank
+# Palestine Data — live + databank · partner guide
+
+بيانات فلسطين. This guide is served at <https://live-api.zaidlab.xyz/docs/partner>
+([as Markdown](https://live-api.zaidlab.xyz/docs/partner.md)); the front page, with the
+live status and the twelve questions answered, is <https://live-api.zaidlab.xyz/>.
 
 One server, two surfaces over the same data and the same code path:
 
 * **MCP over HTTP** — `POST https://live-api.zaidlab.xyz/mcp` (JSON-RPC 2.0, stateless, no session to resume)
-* **REST** — `https://live-api.zaidlab.xyz/v2/...` (same numbers, for callers without an MCP client)
+* **REST** — `https://live-api.zaidlab.xyz/v2/...` (same numbers, for callers without an MCP client;
+  the route map is [`/v2`](https://live-api.zaidlab.xyz/v2), the schema
+  [`/openapi.json`](https://live-api.zaidlab.xyz/openapi.json))
 
 16 tools (since 2026-09-24; the 28 earlier names still answer as aliases for one
 release, off the menu). No write path: an agent cannot file a report, ever, by design.
@@ -27,14 +33,15 @@ Use it as a header, or appended to the url if your client's UI takes only a url:
 It is shared, so it carries a ceiling: **5,000 calls a day across everyone using
 it**, reset at midnight UTC. Hit that and you get `429` until the day rolls over.
 The data behind it is the full read surface — 16 tools, and every tool a paying
-partner gets. What differs is not access but redistribution: `latest_news` and
-`search` return an excerpt of a channel's wording to every external caller (§8),
+partner gets. What differs is not access but redistribution: `news` returns an
+excerpt of a channel's wording to every external caller (§8),
 because those words are not ours to republish. It is
 also printed in the `401` body, so anyone who finds the endpoint by themselves
 can start without asking.
 
-For anything real, ask us for your own key. One key per integration, so traffic
-is attributable and a leak is one revocation rather than an outage.
+For anything real, ask us for your own key ([§11](#11-availability-and-what-to-do-when-something-looks-wrong)
+says where). One key per integration, so traffic is attributable and a leak is one
+revocation rather than an outage.
 
 A missing or unknown key returns `401` with the reason in the JSON-RPC error body.
 Keys are read from a file on every request, so revocation takes effect without a
@@ -173,10 +180,10 @@ happen to know about them.
 
 **Conditions** — `weather_now`, `connectivity_now`, `fuel_prices` (the Petroleum
 Corporation's monthly maximum for the West Bank, confirmed only when two
-independent outlets agree and one names the Corporation), `latest_news`,
-`search`, `stream_info`.
+independent outlets agree and one names the Corporation), `news` (the newest
+messages, or a literal search with `text`).
 
-**Meta** — `about` (coverage, gaps, stream), `place`, `licence` (what each tool above
+**Meta** — `about` (`section=sources|fields|gaps|stream`), `place`, `licence` (what each tool above
 may hand you, and in what form — see §8).
 
 ## 4. The question this was built for
@@ -271,12 +278,12 @@ rather than a person.
 * The historical databank carries per-source terms: several sets are
   `commercial_use=false` and are **not** part of this release. `licence`
   (`scope=sources`) names each one's obligations, and `about` names each source.
-* Attribution string to carry: *"Data: Palestine Data Platform, processed from
-  public channel reports; Gaza and West Bank series via Tech for Palestine."*
+* Attribution string to carry: *"Data: Palestine Data — live + databank (بيانات فلسطين),
+  processed from public channel reports; Gaza and West Bank series via Tech for Palestine."*
 
 ### What you may carry away, per tool
 
-Call **`licence`** (`scope=tools`, or `GET /v2/licence/tools`) before you republish
+Call **`licence`** (`scope=tools`, or [`GET /v2/licence/tools`](https://live-api.zaidlab.xyz/v2/licence/tools)) before you republish
 anything from here. It grades every public tool and tells you which of four
 things you are holding. Grades are read from the source register at call time,
 so that table is authoritative and this paragraph is only the shape of it.
@@ -289,7 +296,7 @@ so that table is authoritative and this paragraph is only the shape of it.
 | `filtered` | databank rows, each carrying its own licence. |
 | `cited_fact_only` | a third party's measurement we hold no redistribution right to (IODA connectivity). Cite it; do not republish it. |
 
-**`latest_news` and `search` return an excerpt, not the message.** Every channel
+**`news` returns an excerpt, not the message.** Every channel
 feeding them is graded `no-redistribution` — the words are the channels' own
 copyright, and a key we issue cannot grant a licence we do not hold. You get the
 first 250 characters, the source name and the timestamp, which is a citation;
@@ -303,13 +310,15 @@ Everything on this server is readable; the cut is only on carrying it away.
 
 ## 9. Twelve questions to try first
 
-Run `docs/try-twelve.sh` with your key and you have the twelve canonical
+Run [`try-twelve.sh`](https://live-api.zaidlab.xyz/docs/try-twelve.sh) (`docs/try-twelve.sh`
+in the repository) with your key and you have the twelve canonical
 questions the release is measured on (PLAN §10) in one pass — each answer in
 both languages, the licence tier of what you received, and the round-trip
 time; the key is never echoed:
 
 ```bash
-THAURA_KEY=pv2_... ./docs/try-twelve.sh
+curl -O https://live-api.zaidlab.xyz/docs/try-twelve.sh
+PV2_KEY=pv2_... bash try-twelve.sh
 ```
 
 The same twelve by hand, if you would rather see the wire format:
@@ -340,7 +349,7 @@ call place '{"place":"حوارة","view":"history","days":30}'
   concentrated in one class: obituaries, funerals and features being read as
   incident reports. Until that classifier ships (in progress), treat incident
   counts as a lower-confidence signal — which every incident payload says.
-* Coverage is not uniform. `coverage` and `data_gaps` list the fields that are
+* Coverage is not uniform. `about` (`section=gaps`) lists the fields that are
   thin, stale or have never had a source at all. Some governorates are quieter
   than others because fewer channels report on them, not because less happens.
 * A caller may see `unknown` far more than it expects. That is the system
@@ -363,13 +372,13 @@ Excluded, because they are outside anything this system can promise:
   endpoint below.
 
 Beyond the number, the commitment is that failure is **visible, not silent**.
-`GET /health` returns the machine's own verdict — `status`, `faults_total`,
+[`GET /health`](https://live-api.zaidlab.xyz/health) returns the machine's own verdict — `status`, `faults_total`,
 `jobs_ok/jobs_total`, `feeds_ok/feeds_total`, `families` (ok/faults per watchdog family) — and it goes
 `degraded` rather than staying `ok` when the watchdog has faults. A halted
 backfill or a stop-the-line fault is reported there rather than discovered by you.
 
-**When a call looks wrong, email `zaidsalem@live.com` with the exact request, the
-exact response, and the UTC time.** The three reports that help most:
+**When a call looks wrong, email [zaidsalem@live.com](mailto:zaidsalem@live.com) with the
+exact request, the exact response, and the UTC time** — the same address gives out keys. The three reports that help most:
 
 * a **wrong answer** — the most valuable report there is. Include the answer text
   and, if you can, the source you believe contradicts it;

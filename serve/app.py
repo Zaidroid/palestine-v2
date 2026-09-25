@@ -2131,10 +2131,29 @@ async def _rate_limit(request, call_next):
     return await call_next(request)
 
 
-@app.get("/", tags=["discovery"])
-def root() -> dict:
-    """The bare hostname answers with the map of the system rather than a 404."""
+from fastapi import Response as _Response                      # noqa: E402
+
+
+@app.get("/", tags=["discovery"], response_model=dict)
+def root(request: Request, response: _Response) -> Any:
+    """The bare hostname answers with the map of the system rather than a 404 —
+    and a browser gets the front door (P2-B, gate G6): same URL, negotiated on
+    `Accept`. Only a request that PREFERS text/html gets the page; an API client
+    sending `application/json`, `*/*`, nothing, or a tie gets exactly this JSON.
+    See serve/front_door.py."""
+    from serve.front_door import landing, wants_html
+    if wants_html(request.headers.get("accept")):
+        return landing()
+    response.headers["Vary"] = "Accept"
     return discovery()
+
+
+# The partner guide rendered (/docs/partner, /docs/partner.md), the script it
+# tells a partner to run (/docs/try-twelve.sh) and the page's twelve live
+# questions (/v2/try/{n}). See serve/front_door.py.
+from serve.front_door import router as _front_door_router       # noqa: E402
+
+app.include_router(_front_door_router)
 
 
 # An agent can now reach this system without a clone, a venv or a path on the

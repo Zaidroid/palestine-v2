@@ -50,6 +50,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 router = APIRouter()
 
 PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://live-api.zaidlab.xyz")
+NAME = "Palestine Data — live + databank"          # one name (PLAN Z-4)
 RESOURCE = f"{PUBLIC_BASE}/mcp"
 STATE_PATH = Path(os.environ.get("OAUTH_STATE_PATH",
                                  "/home/zaid/palestine-v2/.keys/oauth-state.json"))
@@ -184,11 +185,14 @@ async def _form(request: Request) -> dict:
 def _protected_resource() -> dict:
     return {
         "resource": RESOURCE,
-        "resource_name": "Palestine live tracker",
+        "resource_name": NAME,
         "authorization_servers": [PUBLIC_BASE],
         "bearer_methods_supported": ["header"],
         "scopes_supported": [SCOPE],
-        "resource_documentation": f"{PUBLIC_BASE}/docs/PARTNER-API.md",
+        # Served by this API (serve/front_door.py). Until 2026-09-25 this named
+        # /docs/PARTNER-API.md, a 404: the one link a client is given to read.
+        "resource_documentation": f"{PUBLIC_BASE}/docs/partner",
+        "resource_policy_uri": f"{PUBLIC_BASE}/docs/partner#8-attribution-and-licence",
     }
 
 
@@ -212,6 +216,7 @@ def _as_metadata() -> dict:
         "code_challenge_methods_supported": ["S256"],
         # public client: the connector ships no secret, PKCE is the protection
         "token_endpoint_auth_methods_supported": ["none"],
+        "service_documentation": f"{PUBLIC_BASE}/docs/partner",
     }
 
 
@@ -258,7 +263,7 @@ async def register(request: Request) -> JSONResponse:
 # ── the consent page: one field, the partner key ─────────────────────────────
 _PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Connect to Palestine live tracker</title>
+<title>Connect to Palestine Data — live + databank</title>
 <style>
  body{{font:16px/1.5 system-ui,sans-serif;margin:0;display:flex;min-height:100vh;
       align-items:center;justify-content:center;background:#0f1115;color:#e8e8e8}}
@@ -272,10 +277,11 @@ _PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
  button{{margin-top:1rem;width:100%;padding:.8rem;border:0;border-radius:9px;
          background:#3ddc97;color:#08130d;font-weight:700;font-size:1rem;cursor:pointer}}
  .who{{font-size:.8rem;color:#6d7686;margin-top:1rem}}
+ .who a{{color:#a8b0bf}}
 </style></head><body><main>
-<h1>Palestine live tracker</h1>
+<h1>Palestine Data — live + databank · <span lang="ar" dir="rtl">بيانات فلسطين</span></h1>
 <p><strong>{client}</strong> is asking for <strong>read</strong> access to live
-checkpoint, incident and road data.</p>
+checkpoint, incident and road data and the historical databank.</p>
 <form method="post" action="{action}">
   {hidden}
   <label for="key">Partner key</label>
@@ -284,7 +290,8 @@ checkpoint, incident and road data.</p>
   <button type="submit">Connect</button>
 </form>
 <p class="who">No account, no password, nothing stored about you. The key says
-which integration is calling, for rate limiting and attribution.</p>
+which integration is calling, for rate limiting and attribution. How to get
+one: <a href="/#connect">the front page</a>.</p>
 {test_note}
 </main></body></html>"""
 
