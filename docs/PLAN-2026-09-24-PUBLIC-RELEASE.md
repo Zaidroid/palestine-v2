@@ -421,3 +421,15 @@ twelve canonical questions answered 200 against the dev API, p50 ≈ 0.5 s) · p
 Serving side (renderers, resolver tie-break) goes live at the next API restart. Tally 144 done · 5 partial · 11 open:
 12 databank (5, migrations + Zaid's World Bank re-route), INGEST-05/07 (2 decisions), OPS-01 (his hand), REST-15/16
 (pool package), RENDERERS-17 (settlement data), the 3 partials. Next: P1-A palhub earn-out (G4).
+2026-09-25 16:00 UTC · P1-A.1 palhub earn-out — MEASURED, read-only (`ops/palhub_earnout.py --days 28 --window 90`,
+`ops/palhub-earnout.json`) · partial (decision pending) · proof: 70,735 palhub↔channel pairs agree 0.735; the
+channel↔channel CONTROL measured the same way agrees 0.829 — so the 0.90 gate is above what two channels achieve. By class
+(palhub vs control): open 0.861 vs 0.889 (gap −0.03, 49,374 pairs) · closed 0.646 vs 0.778 (−0.13, 11,187) · congested
+0.222 vs 0.590 (−0.37, 10,174). Congested splits by phrase: أزمة متوسطة agrees 0.12 (channels say open 81 %), أزمة خانقة
+0.51. Window ±10/20/45/90 min changes nothing (real disagreement, not lag). Direction: palhub's in/out is NOT inverted
+(same-direction beats opposite) but where a channel states a direction explicitly agreement is ~0.50 either way — those
+are the contested moments; the undirected reading is what agrees. Per checkpoint (103 with ≥20 pairs): from 0.46 (تياسير)
+to 0.86. Projection on today's serving view (known 95 of 251 = 0.38): promote open → 0.52 (6 contradictions with a
+current channel value), open+closed → 0.54 (8), all three → 0.57 (26). 49 more palhub places ≤3 h old resolve to rows
+that are not in checkpoint_serving (the 13.5 % unresolved/non-servable names) — the alias/promotion backfill is the
+other half of G4. Decision for Zaid: A promote open+closed (recommended), B open only, C stay quarantined.

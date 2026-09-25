@@ -1,0 +1,434 @@
+{
+ "measured_at": "2026-09-25T15:41:53.865344+00:00",
+ "days": 28,
+ "window_minutes": 90,
+ "overall": {
+  "pairs": 70735,
+  "agreement": 0.735,
+  "control_pairs": 30666,
+  "control_agreement": 0.829
+ },
+ "by_class": {
+  "open": {
+   "pairs": 49374,
+   "agreement": 0.861,
+   "control_pairs": 20777,
+   "control_agreement": 0.889,
+   "direction_explicit_pairs": 1235,
+   "direction_explicit_agreement": 0.504,
+   "gap_to_control": -0.028
+  },
+  "congested": {
+   "pairs": 10174,
+   "agreement": 0.222,
+   "control_pairs": 3854,
+   "control_agreement": 0.59,
+   "direction_explicit_pairs": 673,
+   "direction_explicit_agreement": 0.611,
+   "gap_to_control": -0.368
+  },
+  "closed": {
+   "pairs": 11187,
+   "agreement": 0.646,
+   "control_pairs": 6014,
+   "control_agreement": 0.778,
+   "direction_explicit_pairs": 261,
+   "direction_explicit_agreement": 0.326,
+   "gap_to_control": -0.132
+  },
+  "slow": {
+   "pairs": 0,
+   "agreement": null,
+   "control_pairs": 21,
+   "control_agreement": 0.333,
+   "direction_explicit_pairs": 0,
+   "direction_explicit_agreement": null,
+   "gap_to_control": null
+  }
+ },
+ "by_direction": {
+  "inbound": {
+   "pairs": 35397,
+   "agreement": 0.74
+  },
+  "outbound": {
+   "pairs": 35338,
+   "agreement": 0.73
+  }
+ },
+ "confusion": {
+  "palhub=open live=open": 42513,
+  "palhub=closed live=closed": 7223,
+  "palhub=congested live=open": 7110,
+  "palhub=open live=closed": 3782,
+  "palhub=closed live=open": 3588,
+  "palhub=open live=congested": 3061,
+  "palhub=congested live=congested": 2255,
+  "palhub=congested live=closed": 803,
+  "palhub=closed live=congested": 373,
+  "palhub=open live=slow": 18,
+  "palhub=congested live=slow": 6,
+  "palhub=closed live=slow": 3
+ },
+ "checkpoints_measured": 106,
+ "worst_checkpoints": [
+  {
+   "place_id": 1681,
+   "name": "قفين",
+   "pairs": 24,
+   "agreement": 0.0,
+   "by_class": {
+    "open": {
+     "pairs": 14,
+     "agreement": 0.0
+    },
+    "closed": {
+     "pairs": 10,
+     "agreement": 0.0
+    }
+   }
+  },
+  {
+   "place_id": 1486,
+   "name": "تياسير",
+   "pairs": 713,
+   "agreement": 0.46,
+   "by_class": {
+    "open": {
+     "pairs": 344,
+     "agreement": 0.506
+    },
+    "congested": {
+     "pairs": 77,
+     "agreement": 0.351
+    },
+    "closed": {
+     "pairs": 292,
+     "agreement": 0.435
+    }
+   }
+  },
+  {
+   "place_id": 1610,
+   "name": "كفل حارس",
+   "pairs": 604,
+   "agreement": 0.492,
+   "by_class": {
+    "closed": {
+     "pairs": 542,
+     "agreement": 0.504
+    },
+    "open": {
+     "pairs": 30,
+     "agreement": 0.8
+    },
+    "congested": {
+     "pairs": 32,
+     "agreement": 0.0
+    }
+   }
+  },
+  {
+   "place_id": 1683,
+   "name": "شويكة",
+   "pairs": 96,
+   "agreement": 0.5,
+   "by_class": {
+    "open": {
+     "pairs": 56,
+     "agreement": 0.857
+    },
+    "closed": {
+     "pairs": 30,
+     "agreement": 0.0
+    },
+    "congested": {
+     "pairs": 10,
+     "agreement": 0.0
+    }
+   }
+  },
+  {
+   "place_id": 1536,
+   "name": "عطاره طلوع البرج",
+   "pairs": 715,
+   "agreement": 0.509,
+   "by_class": {
+    "open": {
+     "pairs": 420,
+     "agreement": 0.543
+    },
+    "closed": {
+     "pairs": 226,
+     "agreement": 0.566
+    },
+    "congested": {
+     "pairs": 69,
+     "agreement": 0.116
+    }
+   }
+  },
+  {
+   "place_id": 1713,
+   "name": "حبلة",
+   "pairs": 61,
+   "agreement": 0.525,
+   "by_class": {
+    "open": {
+     "pairs": 46,
+     "agreement": 0.478
+    },
+    "congested": {
+     "pairs": 9,
+     "agreement": 0.444
+    },
+    "closed": {
+     "pairs": 6,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1584,
+   "name": "بيت ايل",
+   "pairs": 684,
+   "agreement": 0.528,
+   "by_class": {
+    "open": {
+     "pairs": 340,
+     "agreement": 0.729
+    },
+    "congested": {
+     "pairs": 127,
+     "agreement": 0.197
+    },
+    "closed": {
+     "pairs": 217,
+     "agreement": 0.406
+    }
+   }
+  },
+  {
+   "place_id": 1731,
+   "name": "الرام",
+   "pairs": 351,
+   "agreement": 0.533,
+   "by_class": {
+    "open": {
+     "pairs": 237,
+     "agreement": 0.523
+    },
+    "closed": {
+     "pairs": 35,
+     "agreement": 0.229
+    },
+    "congested": {
+     "pairs": 79,
+     "agreement": 0.696
+    }
+   }
+  },
+  {
+   "place_id": 1589,
+   "name": "قلنديا",
+   "pairs": 1126,
+   "agreement": 0.552,
+   "by_class": {
+    "open": {
+     "pairs": 672,
+     "agreement": 0.47
+    },
+    "congested": {
+     "pairs": 408,
+     "agreement": 0.745
+    },
+    "closed": {
+     "pairs": 46,
+     "agreement": 0.043
+    }
+   }
+  },
+  {
+   "place_id": 1465,
+   "name": "جبع",
+   "pairs": 1600,
+   "agreement": 0.564,
+   "by_class": {
+    "open": {
+     "pairs": 790,
+     "agreement": 0.746
+    },
+    "closed": {
+     "pairs": 159,
+     "agreement": 0.308
+    },
+    "congested": {
+     "pairs": 651,
+     "agreement": 0.407
+    }
+   }
+  },
+  {
+   "place_id": 1698,
+   "name": "الولجة",
+   "pairs": 46,
+   "agreement": 0.565,
+   "by_class": {
+    "open": {
+     "pairs": 42,
+     "agreement": 0.524
+    },
+    "congested": {
+     "pairs": 4,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1662,
+   "name": "العروب",
+   "pairs": 1241,
+   "agreement": 0.571,
+   "by_class": {
+    "open": {
+     "pairs": 771,
+     "agreement": 0.489
+    },
+    "congested": {
+     "pairs": 82,
+     "agreement": 0.037
+    },
+    "closed": {
+     "pairs": 388,
+     "agreement": 0.845
+    }
+   }
+  },
+  {
+   "place_id": 1582,
+   "name": "النبي يونس",
+   "pairs": 915,
+   "agreement": 0.583,
+   "by_class": {
+    "open": {
+     "pairs": 543,
+     "agreement": 0.692
+    },
+    "closed": {
+     "pairs": 227,
+     "agreement": 0.586
+    },
+    "congested": {
+     "pairs": 145,
+     "agreement": 0.166
+    }
+   }
+  },
+  {
+   "place_id": 1542,
+   "name": "حزما",
+   "pairs": 994,
+   "agreement": 0.598,
+   "by_class": {
+    "open": {
+     "pairs": 583,
+     "agreement": 0.808
+    },
+    "congested": {
+     "pairs": 323,
+     "agreement": 0.282
+    },
+    "closed": {
+     "pairs": 88,
+     "agreement": 0.364
+    }
+   }
+  },
+  {
+   "place_id": 1669,
+   "name": "اذنا",
+   "pairs": 50,
+   "agreement": 0.6,
+   "by_class": {
+    "open": {
+     "pairs": 44,
+     "agreement": 0.545
+    },
+    "closed": {
+     "pairs": 6,
+     "agreement": 1.0
+    }
+   }
+  }
+ ],
+ "best_checkpoints": [
+  {
+   "place_id": 1521,
+   "name": "الزاوية",
+   "pairs": 142,
+   "agreement": 1.0,
+   "by_class": {
+    "open": {
+     "pairs": 142,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1670,
+   "name": "الهجرة",
+   "pairs": 58,
+   "agreement": 1.0,
+   "by_class": {
+    "closed": {
+     "pairs": 58,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1728,
+   "name": "العيساوية",
+   "pairs": 50,
+   "agreement": 1.0,
+   "by_class": {
+    "open": {
+     "pairs": 42,
+     "agreement": 1.0
+    },
+    "congested": {
+     "pairs": 8,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1732,
+   "name": "ياسوف",
+   "pairs": 180,
+   "agreement": 1.0,
+   "by_class": {
+    "closed": {
+     "pairs": 180,
+     "agreement": 1.0
+    }
+   }
+  },
+  {
+   "place_id": 1742,
+   "name": "دوار كدوميم",
+   "pairs": 222,
+   "agreement": 0.991,
+   "by_class": {
+    "open": {
+     "pairs": 220,
+     "agreement": 1.0
+    },
+    "congested": {
+     "pairs": 2,
+     "agreement": 0.0
+    }
+   }
+  }
+ ]
+}
