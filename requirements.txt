@@ -5,7 +5,7 @@ fastapi==0.141.1
 uvicorn[standard]==0.52.0
 httpx==0.28.1
 psycopg[binary]==3.3.4
-psycopg-pool>=3.2          # optional at runtime (resolve/db.py falls back); listed so a fresh clone gets the pool
+psycopg-pool==3.3.3        # the serving pool (resolve/db.py falls back to a connection per call without it)
 PyYAML==6.0.3
 Telethon==1.44.0
 lingua-language-detector==2.2.0
