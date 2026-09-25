@@ -9,7 +9,3 @@ User=zaid
 WorkingDirectory=/home/zaid/palestine-v2
 ExecStart=/home/zaid/palestine-v2/ops/mcp-audit.sh
 TimeoutStartSec=900
-# Exit 1 is "ran fine, found criticals" (ops/mcp-audit.sh): a successful RUN
-# with a bad RESULT, already paged by the audit's own alert. Without this the
-# unit failed too and OnFailure pushed a second alarm for the same finding.
-SuccessExitStatus=0 1

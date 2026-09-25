@@ -148,11 +148,7 @@ def _to_int(raw: str) -> int | None:
     the dot as a decimal point returns 72, which then fails the delta check and
     is refused — correctly, but for the wrong reason.
     """
-    # A full stop that ENDS a sentence is punctuation, not a separator:
-    # `إجمالي الشهداء: 73,919.` read as None and the day was refused for a
-    # value it states (audit F483). _NUM captures the trailing dot, so it is
-    # dropped here before the dot-as-separator test below.
-    s = raw.replace("\u066c", "").replace(",", "").strip().rstrip(".")
+    s = raw.replace("\u066c", "").replace(",", "").strip()
     if re.fullmatch(r"\d{1,3}(\.\d{3})+", s):
         s = s.replace(".", "")
     elif "." in s:
@@ -334,14 +330,10 @@ def read(text: str, reported_at: datetime | None = None) -> dict:
         "since_ceasefire_injured": cf.get("injured"),
         "recovered": cf.get("recovered"),
     }
-    # The demographic fields are the WINDOW's breakdown, so they are read from
-    # the window block only. Searched over the whole text, a Ministry note
-    # after the cumulative block (`منهم 18,500 من الأطفال`, the war's total)
-    # filled `children` beside the day's deaths (audit F484).
     for key, words in (("children", ("أطفال",)), ("women", ("نساء", "نساءً")),
                        ("medics", ("كوادر صحية", "مسعفين")),
                        ("journalists", ("صحفيين", "صحفيون"))):
-        m = re.search(_NUM + r"[^\d\n]{0,16}?(?:" + "|".join(words) + r")", h24_text)
+        m = re.search(_NUM + r"[^\d\n]{0,16}?(?:" + "|".join(words) + r")", t)
         if m:
             out[key] = _to_int(m.group(1))
     return out
@@ -400,16 +392,6 @@ def schema_errors(reading: dict) -> list[str]:
 # poison the next good one.
 MAX_REVISION_DOWN = 0.005   # a stated downward revision up to 0.5 % is served
 MAX_DAILY_RISE = 0.01       # a one-day rise above 1 % is refused as a typo
-
-# PER DAY, NOT PER BULLETIN (audit F232, 2026-09-25). `previous` is the last
-# ACCEPTED reading, so after a refused day, or a week the channel did not post,
-# the rise being judged is several days' worth. Judged against one day's 1 %,
-# the next honest bulletin was refused, `previous` did not move, and every
-# bulletin after it was refused too: an 8-day gap at 100 deaths a day
-# (73,119 -> 73,919) read as two typos and froze the series until a hand reseed.
-# The band is the ratified 1 % a day times the days elapsed between the two
-# bulletins' own printed dates (at least one). With no date on `previous` it is
-# one day, which is the ratified rule unchanged.
 
 
 def settle(reading: dict, previous: dict | None) -> tuple[dict, list[Refusal], list[Refusal]]:
@@ -488,12 +470,6 @@ def validate(reading: dict, previous: dict | None = None,
 
     if previous:
         window = settled.get("window_hours")
-        days = 1
-        try:
-            if previous.get("as_of_date"):
-                days = max(1, (as_of - date.fromisoformat(previous["as_of_date"])).days)
-        except (TypeError, ValueError):
-            days = 1
         for key, label in (("cum_killed", "killed"), ("cum_injured", "injured")):
             prev = previous.get(key)
             now = settled[key]
@@ -514,13 +490,12 @@ def validate(reading: dict, previous: dict | None = None,
                         f"{100 * MAX_REVISION_DOWN:.1f} % revision band"))
                 continue
             rise = now - prev
-            if rise / prev > MAX_DAILY_RISE * days:
-                span = "in one bulletin" if days == 1 else f"over {days} days"
+            if rise / prev > MAX_DAILY_RISE:
                 reasons.append(Refusal(
                     "implausible-jump",
                     f"cumulative {label} rose {prev} -> {now} (+{rise}, "
-                    f"{100 * rise / prev:.1f} %) {span}, beyond "
-                    f"{100 * MAX_DAILY_RISE * days:.0f} %"))
+                    f"{100 * rise / prev:.1f} %) in one bulletin, beyond "
+                    f"{100 * MAX_DAILY_RISE:.0f} %"))
                 continue
             if window is None or window <= 24:
                 line = settled.get("last_24h_killed" if key == "cum_killed" else "last_24h_injured")

@@ -32,10 +32,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from ingest.setup_session import SESSION, SessionBusy, session_lock  # noqa: E402
-
 # Silent longer than this and a channel is dead for a real-time feed, whatever
 # its historical posting rate was.
 STALE_AFTER_DAYS = 14
@@ -171,13 +167,6 @@ def _env() -> dict[str, str]:
 
 
 async def discover(categories: list[str], per_query: int = 25) -> dict:
-    """Search, holding the session lock: discovery on the live session while
-    the poller has it open is two clients on one auth key (HANDOFF rule 4)."""
-    with session_lock(SESSION, "discover_channels"):
-        return await _discover(categories, per_query)
-
-
-async def _discover(categories: list[str], per_query: int) -> dict:
     from telethon import TelegramClient, functions
 
     e = _env()
@@ -186,7 +175,7 @@ async def _discover(categories: list[str], per_query: int) -> dict:
     if not api_id or not api_hash:
         print("V2_TELEGRAM_API_ID / V2_TELEGRAM_API_HASH not set in .env")
         return {}
-    session = str(SESSION)
+    session = str(ROOT / "data" / "session" / "v2_ingest")
     if not Path(session + ".session").exists():
         print(f"No session at {session}.session — run: "
               "./.venv/bin/python -m ingest.setup_session")
@@ -296,16 +285,11 @@ async def probe_liveness(candidates: list[dict], limit: int = 30) -> None:
 
     One cheap get_messages per channel, spaced. Read-only, no joins.
     """
-    with session_lock(SESSION, "discover_channels"):
-        await _probe_liveness(candidates, limit)
-
-
-async def _probe_liveness(candidates: list[dict], limit: int) -> None:
     from telethon import TelegramClient
     from telethon.errors import FloodWaitError
 
     e = _env()
-    client = TelegramClient(str(SESSION),
+    client = TelegramClient(str(ROOT / "data" / "session" / "v2_ingest"),
                             int(e["V2_TELEGRAM_API_ID"]), e["V2_TELEGRAM_API_HASH"])
     await client.connect()
     if not await client.is_user_authorized():
@@ -346,19 +330,12 @@ def main() -> int:
     a = ap.parse_args()
     cats = sorted(QUERIES) if a.all or not a.category else a.category
     print(f"Discovering: {', '.join(cats)}")
-    # Held across both phases, so the poller cannot be restarted into the gap
-    # between the search and the probe while this still has the session.
-    try:
-        with session_lock(SESSION, "discover_channels"):
-            found = asyncio.run(discover(cats))
-            if found and a.probe:
-                top = sorted([r for r in found.values() if r["relevance"] > 0],
-                             key=lambda r: -r["participants"])[:a.probe]
-                print(f"Probing liveness for top {len(top)} …")
-                asyncio.run(probe_liveness(top))
-    except SessionBusy as exc:
-        print(f"REFUSING: {exc}")
-        return 1
+    found = asyncio.run(discover(cats))
+    if found and a.probe:
+        top = sorted([r for r in found.values() if r["relevance"] > 0],
+                     key=lambda r: -r["participants"])[:a.probe]
+        print(f"Probing liveness for top {len(top)} …")
+        asyncio.run(probe_liveness(top))
     if found:
         write_report(found)
     return 0

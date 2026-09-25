@@ -55,68 +55,8 @@ def _gaza_place(cur) -> int | None:
     return r[0] if r else None
 
 
-# A REVISION SUPERSEDES; IT DOES NOT OVERWRITE.
-#
-# This was `DO UPDATE SET value_num = EXCLUDED.value_num, reported_at = now()`
-# with no condition, and the loop re-reads every bulletin every hour. So:
-#   * a corrected bulletin later the same day replaced the first figure with
-#     no trace (HANDOFF §1 rule 2: corrections supersede, nothing is
-#     overwritten), and attrs.claim_id went on naming the FIRST bulletin
-#     while value_num came from the second;
-#   * after the second hourly run every row's reported_at was the run time,
-#     so "when did the Ministry say this" was gone for the whole series.
-# Now a conflicting row changes only when a LATER bulletin states a
-# DIFFERENT number; the old value, its bulletin and its time are appended to
-# attrs.superseded, and reported_at is the bulletin's own time. Re-reading
-# the same bulletins writes nothing, which makes the hourly re-read safe.
-UPSERT_SQL = """
-    INSERT INTO observation
-      (dataset_id, place_id, indicator, value_num, unit,
-       occurred_at, occurred_precision, reported_at, attrs)
-    VALUES (%(did)s, %(place)s, %(ind)s, %(value)s, 'count',
-            %(reported)s::date, 'day', %(reported)s, %(attrs)s)
-    ON CONFLICT (dataset_id, place_id, indicator, occurred_at)
-      WHERE place_id IS NOT NULL AND v1_stable_id IS NULL
-    DO UPDATE SET
-      value_num   = EXCLUDED.value_num,
-      reported_at = EXCLUDED.reported_at,
-      attrs       = EXCLUDED.attrs || jsonb_build_object('superseded',
-                      COALESCE(observation.attrs -> 'superseded', '[]'::jsonb)
-                      || jsonb_build_array(jsonb_build_object(
-                           'value_num',     observation.value_num,
-                           'reported_at',   observation.reported_at,
-                           'claim_id',      observation.attrs -> 'claim_id',
-                           'superseded_at', now())))
-    WHERE observation.value_num IS DISTINCT FROM EXCLUDED.value_num
-      AND (observation.reported_at IS NULL
-           OR EXCLUDED.reported_at > observation.reported_at)"""
-
-
-def write_report(cur, dataset_id: int, place_id: int, claim_id: int, text: str,
-                 reported_at, st: dict, dry_run: bool = False) -> None:
-    """One bulletin's tiers -> observation rows (see UPSERT_SQL)."""
-    rep = parse(text)
-    if not rep.is_report or not rep.tiers:
-        return
-    st["reports"] += 1
-    for tier, measures in rep.tiers.items():
-        for measure, value in measures.items():
-            ind = INDICATORS.get((tier, measure))
-            if not ind:
-                continue
-            st["rows"] += 1
-            if dry_run:
-                continue
-            cur.execute(UPSERT_SQL, {
-                "did": dataset_id, "place": place_id, "ind": ind,
-                "value": float(value), "reported": reported_at,
-                "attrs": json.dumps({"tier": tier, "measure": measure,
-                                     "claim_id": claim_id}, ensure_ascii=False)})
-            st["written"] += cur.rowcount
-
-
 def load(dry_run: bool = False) -> dict:
-    st = {"claims": 0, "reports": 0, "rows": 0, "written": 0, "no_place": 0}
+    st = {"claims": 0, "reports": 0, "rows": 0, "no_place": 0}
     with connect() as conn, conn.cursor() as cur:
         did, sid = _dataset(cur)
         place_id = _gaza_place(cur)
@@ -124,15 +64,37 @@ def load(dry_run: bool = False) -> dict:
             st["no_place"] = 1
             return st
 
-        # Hamza-less "الاحصائي" is the same word (cascade/moh_gaza.IS_REPORT);
-        # a LIKE on the hamzated spelling alone never even selected that day.
         cur.execute("""
             SELECT cl.claim_id, cl.raw_text, cl.reported_at
-              FROM claim cl WHERE cl.source_id=%s AND cl.raw_text ~ %s
-             ORDER BY cl.reported_at, cl.claim_id""", (sid, "التقرير\\s+ال[إا]حصائي"))
+              FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
+             ORDER BY cl.reported_at""", (sid, "%التقرير الإحصائي%"))
         for claim_id, text, reported_at in cur.fetchall():
             st["claims"] += 1
-            write_report(cur, did, place_id, claim_id, text, reported_at, st, dry_run)
+            rep = parse(text)
+            if not rep.is_report or not rep.tiers:
+                continue
+            st["reports"] += 1
+            for tier, measures in rep.tiers.items():
+                for measure, value in measures.items():
+                    ind = INDICATORS.get((tier, measure))
+                    if not ind:
+                        continue
+                    if dry_run:
+                        st["rows"] += 1
+                        continue
+                    cur.execute("""
+                        INSERT INTO observation
+                          (dataset_id, place_id, indicator, value_num, unit,
+                           occurred_at, occurred_precision, reported_at, attrs)
+                        VALUES (%s,%s,%s,%s,'count',%s::date,'day',%s,%s)
+                        ON CONFLICT (dataset_id, place_id, indicator, occurred_at)
+                          WHERE place_id IS NOT NULL AND v1_stable_id IS NULL
+                        DO UPDATE SET value_num=EXCLUDED.value_num, reported_at=now()""",
+                        (did, place_id, ind, float(value),
+                         reported_at, reported_at,
+                         json.dumps({"tier": tier, "measure": measure,
+                                     "claim_id": claim_id}, ensure_ascii=False)))
+                    st["rows"] += 1
         if not dry_run:
             conn.commit()
     return st
@@ -146,7 +108,7 @@ def main() -> int:
     if s["no_place"]:
         print("  no Gaza region place found — cannot attribute the totals")
         return 1
-    for k in ("claims", "reports", "rows", "written"):
+    for k in ("claims", "reports", "rows"):
         print(f"  {k:12}{s[k]:>8,}")
     return 0
 

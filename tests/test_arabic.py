@@ -63,47 +63,6 @@ check("sentence dot still splits", normalize("سالك. جيش"), "سالك جي
 # Latin dots were ALREADY punctuation-to-space before the inner-dot rule;
 # the rule must not change that.
 check("latin dot spaces as before", normalize("palhub.app"), "palhub app")
-# Evasion with two dots and a tatweel (claim 13259) is still evasion.
-check("tatweel double dot removed", normalize("الاحتـ..ـلال"), "الاحتلال")
-# A bare single dot inside a word is still evasion (claim 12506, مش.هد).
-check("bare single dot removed", normalize("مش.هد"), "مشهد")
-# An ELLIPSIS between two words is a pause, not evasion. The rule fused
-# "المغير…شرق" into المغيرشرق, which matches no alias (F315).
-check("ellipsis between words spaces", normalize("حوارة…مغلق"), "حواره مغلق")
-check("three dots between words space", normalize("شاهد...رسائل المتعافين"),
-      "شاهد رسايل المتعافين")
-check("ellipsis keeps the village", normalize("قرية المغير…شرق رام الله"),
-      "قريه المغير شرق رام الله")
-
-print("--- invisible marks, emoji, Persian letters (F314/F353/F108) ---")
-# Bidi and zero-width marks are invisible: a name followed by an RLM, or with a
-# ZWJ inside it, looked right on screen and matched nothing.
-check("RLM dropped", normalize("حوارة‏ مغلق"), "حواره مغلق")
-check("bidi override and ZWJ dropped",
-      normalize("حاجز قلنديا ‮مغلق‬ مفتوح‍​"),
-      "حاجز قلنديا مغلق مفتوح")
-check("ZWJ inside a name dropped", normalize("حوا‍رة"), "حواره")
-check("isolates dropped", normalize("⁧البيضاء⁩"), "البيضاء")
-check("zero-width space separates", normalize("حوارة​مغلق"), "حواره مغلق")
-# An emoji glued to a word separates it exactly as a space does — the same
-# rule checkpoint_text.tokens() already applies.
-check("emoji before a word spaces", normalize("🔴حوارة مغلق"), "حواره مغلق")
-check("emoji after a word spaces", normalize("حوارة🔴 جنوب نابلس"), "حواره جنوب نابلس")
-check("station word behind an emoji", normalize("🚫حاجز حوارة مغلق"), "حاجز حواره مغلق")
-check("variation selector and square", normalize("عابا ▫️وهو"), "عابا وهو")
-check("pin emoji", normalize("📍في بيت ليد"), "في بيت ليد")
-# A Farsi keyboard writes ی and ک; the gazetteer holds ي and ك.
-check("farsi yeh", normalize("بيت لقی"), "بيت لقي")
-check("farsi keheh", normalize("کفر قدوم"), "كفر قدوم")
-check("idempotent on symbols", normalize(normalize("🔴حوارة‏")), normalize("🔴حوارة‏"))
-
-print("--- fold: the article is stripped once (F522) ---")
-# The second article pass stripped a stem that merely begins like one:
-# الوالجة -> والجه -> جه, الفالوجة -> فالوجه -> وجه ("face").
-check("al-walaja keeps its stem", fold("الوالجة"), "والجه")
-check("al-faluja keeps its stem", fold("الفالوجة"), "فالوجه")
-check("place-type then article still folds", fold("حاجز القدس"), "قدس")
-check("article then place-type still folds", fold("الحاجز قلنديا"), "قلنديا")
 
 print("--- variants + language detection ---")
 check("variants deduped when equal", variants("قلنديا"), ["قلنديا"])

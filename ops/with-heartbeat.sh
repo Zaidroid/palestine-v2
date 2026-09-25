@@ -22,40 +22,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 name="$1"; interval="$2"; grace="$3"; shift 3
 [ "${1:-}" = "--" ] && shift
 
-hb() {
-  "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
-      --interval "$interval" --grace "$grace" "$@" || true
-}
-
-# THE ATTEMPT IS STAMPED BEFORE THE JOB RUNS. A job killed by TimeoutStartSec
-# never returns here: systemd SIGTERMs the whole cgroup, this shell included,
-# so a heartbeat written only AFTER "$@" was never written at all, last_attempt
-# went stale with last_ok, and the view called a job that fired every five
-# minutes and was killed every time `not_running` — "the scheduler stopped" —
-# with no reason attached (the classifier re-read, 2026-09-24 18:04). With the
-# attempt on record first, the same job reads `failing`, which is the truth.
-hb --attempt
-
-# And when the kill IS a SIGTERM, say so. With a trap set, bash waits for the
-# child (which systemd signalled too) and then runs this, inside the stop
-# timeout, so the row carries "killed by SIGTERM" instead of nothing. SIGKILL
-# cannot be trapped; the attempt stamp above is what covers that one.
-killed=""
-trap 'killed=TERM' TERM
-trap 'killed=INT' INT
-
 "$@"
 rc=$?
 
 # OK_EXIT_CODES lets a job say "this exit code means I worked, and found
-# something" — the watchdog exits 3 when it DETECTS a fault, which is a
-# successful run with a bad result. It must be EXPORTED by the calling script
-# before this wrapper runs: `-- env OK_EXIT_CODES=1 cmd` sets it for the child
-# only, this shell never sees it, and every "found something" night was
-# recorded as a failed job (mcp-audit, until 2026-09-25). And the code should
-# not be 1, which is also what an uncaught Python exception exits with — a
-# crash is then recorded as a working run (the watchdog, until the same day;
-# mcp-audit still, until ops/mcp_accuracy_audit.py reports criticals as 3).
+# something" — the watchdog exits 1 when it DETECTS a fault, which is a
+# successful run with a bad result.
 #
 # Without it the watchdog recorded `--fail` on every run that found anything,
 # so it reported ITSELF as failing, which is a fault, which it then found on
@@ -69,11 +41,11 @@ for code in 0 ${OK_EXIT_CODES:-}; do
 done
 
 if [ "$ok" -eq 1 ]; then
-  hb
-elif [ -n "$killed" ]; then
-  hb --fail "killed by SIG$killed before it finished (TimeoutStartSec, or stopped by hand) — exited $rc"
+  "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
+      --interval "$interval" --grace "$grace" || true
 else
-  hb --fail "exited $rc"
+  "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
+      --interval "$interval" --grace "$grace" --fail "exited $rc" || true
 fi
 
 exit "$rc"

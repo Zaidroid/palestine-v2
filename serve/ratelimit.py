@@ -37,7 +37,6 @@ then reports the system as unhealthy.
 """
 from __future__ import annotations
 
-import ipaddress
 import time
 from collections import OrderedDict
 
@@ -89,32 +88,7 @@ def client_ip(request) -> str:
 
 
 def is_local(ip: str) -> bool:
-    # `unknown` is what `client_ip` returns when the server has no socket
-    # address at all — a unix socket, or a proxy that dropped it. That is an
-    # absence of evidence, not evidence of this machine, and "local" here means
-    # no key, no limit and the house licence tier (audit F401/F561).
-    return ip in ("127.0.0.1", "::1", "localhost")
-
-
-def bucket_key(ip: str) -> str:
-    """Whose allowance a request spends.
-
-    An IPv4 address is a visitor. An IPv6 address is not: a subscriber is
-    handed a whole /64, so keying on the literal address gave one household
-    2^64 fresh buckets — measured, 400 calls rotating through one /64 all passed
-    a 300/min limit, `register` (3 an hour) included (audit F360). The /64 is
-    the unit an ISP assigns, so it is the unit counted. Anything that does not
-    parse as an address is its own literal bucket, as before.
-    """
-    try:
-        addr = ipaddress.ip_address(ip)
-    except ValueError:
-        return ip
-    if addr.version == 6:
-        if addr.ipv4_mapped:
-            return str(addr.ipv4_mapped)
-        return str(ipaddress.ip_network(f"{addr}/64", strict=False))
-    return str(addr)
+    return ip in ("127.0.0.1", "::1", "localhost", "unknown")
 
 
 def check(ip: str, cls: str, now: float | None = None) -> tuple[bool, int]:
@@ -124,15 +98,14 @@ def check(ip: str, cls: str, now: float | None = None) -> tuple[bool, int]:
     now = now if now is not None else time.monotonic()
     limit, window = LIMITS[cls]
     book = _buckets[cls]
-    key = bucket_key(ip)
 
-    hits = book.get(key)
+    hits = book.get(ip)
     if hits is None:
         hits = []
-        book[key] = hits
+        book[ip] = hits
         if len(book) > MAX_TRACKED:
             book.popitem(last=False)
-    book.move_to_end(key)
+    book.move_to_end(ip)
 
     cutoff = now - window
     # A sliding window rather than a fixed one: fixed windows let a caller send

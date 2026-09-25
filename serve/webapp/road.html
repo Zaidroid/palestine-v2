@@ -21,18 +21,11 @@
 
   header {
     position: sticky; inset-block-start: 0; z-index: 5;
-    background: var(--g0);
+    background: color-mix(in srgb, var(--g0) 88%, transparent);
     backdrop-filter: blur(8px);
     border-block-end: 1px solid var(--hairline);
     padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
     display: flex; align-items: center; gap: 10px;
-  }
-  /* Translucent only where color-mix() exists. A fallback declared first is
-     not enough: a declaration holding var() fails at computed-value time and
-     falls to `transparent`, so the header went see-through on pre-2023
-     Android WebView (audit F602). */
-  @supports (background: color-mix(in srgb, red 50%, transparent)) {
-    header { background: color-mix(in srgb, var(--g0) 88%, transparent); }
   }
   .brand { font-weight: 700; font-size: 17px; }
   .live { inline-size: 8px; block-size: 8px; border-radius: 50%;
@@ -44,8 +37,7 @@
   .live.off { background: var(--unknown); }
   .spacer { flex: 1; }
   .lang { background: none; border: 1px solid var(--hairline); color: var(--ink-muted);
-          border-radius: var(--r-s); padding: 3px 10px; font: inherit; font-size: 13px;
-          min-block-size: var(--tap); min-inline-size: var(--tap); }
+          border-radius: var(--r-s); padding: 3px 10px; font: inherit; font-size: 13px; }
 
   main { padding: 16px; max-inline-size: 640px; margin-inline: auto; }
 
@@ -58,16 +50,7 @@
   }
   .search::placeholder { color: var(--ink-faint); }
   .near { background: var(--g2); border: 1px solid var(--hairline); color: var(--accent);
-          border-radius: var(--r-l); padding: 0 14px; font: inherit; font-size: 14px;
-          min-block-size: var(--tap); }
-  .notice { margin-block-end: 14px; background: var(--g2); color: var(--ink);
-            border-inline-start: 3px solid var(--warn); border-radius: var(--r-m);
-            padding: 8px 12px; font-size: 14px;
-            display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .notice[hidden] { display: none; }
-  .retry { background: none; border: 1px solid var(--hairline); color: var(--accent);
-           border-radius: var(--r-m); padding: 0 14px; font: inherit; font-size: 14px;
-           min-block-size: var(--tap); }
+          border-radius: var(--r-l); padding: 0 14px; font: inherit; font-size: 14px; }
 
   .cards { margin-block-start: 14px; display: grid; gap: 10px; }
   .card {
@@ -76,9 +59,6 @@
   }
   @media (prefers-reduced-motion: no-preference) {
     .card { animation: arrive var(--t-slow) var(--ease); }
-    /* the 30-second re-render is not an arrival; a card whose state the
-       stream just changed is (law 6: motion on arrival/state-change only) */
-    .cards.quiet .card:not(.changed) { animation: none; }
     @keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
   }
   .card .toprow { display: flex; align-items: baseline; gap: 10px; }
@@ -88,16 +68,14 @@
   .pill {
     font-weight: 700; font-size: 16px; padding: 4px 14px; border-radius: 999px;
   }
-  .pill.open      { background: var(--ok-bg); color: var(--ok-ink); }
+  .pill.open      { background: color-mix(in srgb, var(--ok) 22%, transparent); color: #B8C48A; }
   .pill.congested,
-  .pill.slow      { background: var(--warn-bg); color: var(--warn-ink); }
-  .pill.closed    { background: var(--bad-bg); color: var(--bad-ink); }
+  .pill.slow      { background: color-mix(in srgb, var(--warn) 20%, transparent); color: #E8C27A; }
+  .pill.closed    { background: color-mix(in srgb, var(--bad) 24%, transparent); color: #E39684; }
   .pill.unknown   { background: none; border: 1px dashed var(--unknown); color: var(--ink-muted);
                     font-weight: 500; }
   .age { color: var(--ink-muted); font-size: 13px; }
-  /* the law-1 line: it says the value above is no longer asserted, so it is
-     never the faintest text on the card (audit F414) */
-  .lastknown { color: var(--ink-muted); font-size: 13px; margin-block-start: 4px; }
+  .lastknown { color: var(--ink-faint); font-size: 13px; margin-block-start: 4px; }
   .dirs { display: flex; gap: 6px; margin-block-start: 10px; flex-wrap: wrap; }
   .dirchip {
     background: var(--g2); border: 1px solid var(--hairline); border-radius: var(--r-m);
@@ -107,9 +85,7 @@
   .dot.open { background: var(--ok); } .dot.closed { background: var(--bad); }
   .dot.congested, .dot.slow { background: var(--warn); }
   .dot.unknown { background: none; border: 1px solid var(--unknown); }
-  .dirnote { color: var(--ink-muted); font-size: 13px; }
   .sight { margin-block-start: 8px; font-size: 13px; color: var(--warn); }
-  .calm  { margin-block-start: 8px; font-size: 13px; color: var(--ink-muted); }
   .conf { color: var(--ink-faint); font-size: 12px; }
 
   .section-eyebrow {
@@ -124,7 +100,6 @@
     border-radius: var(--r-m); padding: 8px 12px; font-size: 14.5px;
   }
   .closedrow .age { margin-inline-start: auto; }
-  .closedrow.stale { border-inline-start-color: var(--unknown); }
 
   footer {
     margin-block-start: 28px; padding: 14px 16px 24px;
@@ -136,14 +111,13 @@
 </head>
 <body>
 <header>
-  <span class="live off" id="live" role="img" aria-label="غير متصل"></span>
+  <span class="live off" id="live"></span>
   <span class="brand" data-i18n="brand">الطريق</span>
   <span class="spacer"></span>
   <button class="lang" id="langbtn">EN</button>
 </header>
 
 <main>
-  <div class="notice" id="notice" role="status" hidden></div>
   <div class="ask" data-i18n="ask">وين رايح؟</div>
   <div class="searchrow">
     <input class="search" id="q" data-i18n-ph="search" placeholder="اكتب اسم الحاجز… (حوارة، قلنديا، الكونتينر)" autocomplete="off">
@@ -167,20 +141,8 @@ const I18N = {
         unknown:"غير معروف", lastknown:"آخر معلومة", ago:"قبل", min:"د", hr:"س",
         inbound:"دخول", outbound:"خروج", both:"الاتجاهين",
         idf:"جيش", police:"شرطة", settlers:"مستوطنون", inspection:"تفتيش",
-        no_idf:"لا جيش", no_police:"لا شرطة", no_settlers:"لا مستوطنين", no_inspection:"لا تفتيش",
         sighted:"شوهد", conf:"الثقة", sources:"مصدر مستقل",
-        nodir:"البلاغ لم يحدد اتجاهاً", general:"بلاغ عام",
-        foot_cov:"يغطي {n} حاجزاً · معلوم الآن {k}٪",
-        noresult:"لا نتيجة بين الحواجز التي وصلتنا عنها قراءة — جرّب كتابة أخرى. غياب الحاجز هنا لا يعني أنه سالك.",
-        noclosed:"لا إغلاق معلوم الآن",
-        nodata:"لا توجد قراءات للحواجز الآن — وهذا لا يعني أن الطرق سالكة.",
-        nogeo:"لم نحصل على موقعك — اكتب اسم الحاجز بدلاً من ذلك.",
-        net:"الشبكة", retry:"أعد المحاولة",
-        err_first:"تعذّر تحميل البيانات ({e}) — نعيد المحاولة كل دقيقة.",
-        err_again:"تعذّر التحديث ({e}) — المعروض من آخر تحميل، {age}.",
-        stale:"لم نستطع التحديث منذ {age} — ما لم يصلنا تأكيده يُعرض «غير معروف».",
-        stalled:"الخادم لا يستطيع قراءة الحالات الآن — ما نعرضه لم يُراجَع، فيُعرض «غير معروف».",
-        live_on:"مباشر — تصل التغييرات فور حدوثها", live_off:"غير متصل — التغييرات لا تصل مباشرة" },
+        foot_cov:"يغطي {n} حاجزاً · معلوم الآن {k}٪", noresult:"لا نتيجة — جرّب اسماً آخر" },
   en: { brand:"The Road", ask:"Where to?", near:"Nearest", closednow:"CLOSED NOW",
         search:"Type a checkpoint… (Huwara, Qalandia, Container)",
         hint:"Type a checkpoint name, or allow location for the nearest ones.",
@@ -188,216 +150,15 @@ const I18N = {
         unknown:"unknown", lastknown:"last known", ago:"", min:"m", hr:"h",
         inbound:"in", outbound:"out", both:"both ways",
         idf:"army", police:"police", settlers:"settlers", inspection:"checks",
-        no_idf:"no army", no_police:"no police", no_settlers:"no settlers", no_inspection:"no checks",
         sighted:"sighted", conf:"confidence", sources:"independent source(s)",
-        nodir:"the report named no direction", general:"general report",
-        foot_cov:"{n} checkpoints tracked · {k}% known right now",
-        noresult:"No match among the checkpoints we have readings for — try another spelling. Not listed does not mean open.",
-        noclosed:"No closure known right now",
-        nodata:"No checkpoint readings right now — that does not mean the roads are open.",
-        nogeo:"Could not get your location — type a checkpoint name instead.",
-        net:"network", retry:"Retry",
-        err_first:"Could not load the data ({e}) — retrying every minute.",
-        err_again:"Could not refresh ({e}) — showing the last load, {age}.",
-        stale:"No refresh for {age} — anything not re-confirmed reads unknown.",
-        stalled:"The server cannot read current state — what we hold is unchecked and reads unknown.",
-        live_on:"Live — changes arrive as they happen", live_off:"Offline — changes are not arriving live" },
+        foot_cov:"{n} checkpoints tracked · {k}% known right now", noresult:"No match — try another name" },
 };
-// ── shared by road / pulse / board: no build step, so kept identical ──────
-const FLOWS = ["open", "slow", "congested", "closed", "unknown"];
-const ORDER = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
-const PRESENCE = ["idf", "police", "settlers", "inspection"];
-// Server text never reaches innerHTML raw (audit F408). Place names come from
-// channel-derived registry rows, and one `<img onerror>` in a bulletin line
-// would run on the API's own origin, beside /mcp and the OAuth endpoints.
-// Every server string passes esc(); a flow outside the vocabulary is read as
-// unknown rather than echoed into a class attribute.
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const flowOf = f => FLOWS.includes(f) ? f : "unknown";
-// Worst news first; among unknown rows the worst LAST KNOWN (what the page
-// showed before it stopped vouching); then the freshest.
-const worse = (a, b) => (ORDER[b.flow] - ORDER[a.flow])
-  || (a.flow === "unknown" ? ORDER[flowOf(b.last_known_flow)] - ORDER[flowOf(a.last_known_flow)] : 0)
-  || ((a.age_minutes ?? 1e9) - (b.age_minutes ?? 1e9));
-// A stored value this page did not write (another page on the origin; Safari
-// private mode, which throws) blanked the whole page through I18N[undefined]
-// before anything was fetched (audit F603).
-let LANG = "ar";
-try { const s = localStorage.getItem("lang"); if (s === "ar" || s === "en") LANG = s; } catch {}
-const saveLang = () => { try { localStorage.setItem("lang", LANG); } catch {} };
-const $ = s => document.querySelector(s);
-const t = k => I18N[LANG][k] ?? esc(k);
-const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k] ?? "");
+let LANG = localStorage.getItem("lang") || "ar";
+let CPS = [];          // features from the export
+let SUMMARY = null;
 
-function ageStr(min, bare) {
-  if (min == null) return "";
-  const m = Math.round(min);
-  const [d, u] = m < 90 ? [m, t("min")] : [(m/60).toFixed(m<600?1:0), t("hr")];
-  const n = `<span class="num">${d}</span>${u}`;
-  if (bare) return n;
-  return LANG === "ar" ? `${t("ago")} ${n}` : `${n} ${t("ago")}`;
-}
-
-// ── age changes the answer (DESIGN law 1; audit F096, F413, F604) ─────────
-// The page used to fetch ONCE. 'سالك · قبل 3د' stayed on a phone in a pocket
-// for six hours while the server had long since said closed, then unknown,
-// under a green dot that only meant "socket open"; and a 429 or a 502 left a
-// permanent '…' that read as "nothing closed". Now it re-fetches every
-// REFRESH_MS, when the tab comes back, and soon after the stream announces a
-// change; ages count up between fetches; a failed fetch says so in words; and
-// a row this page has not re-confirmed for STALE_MS (five missed refreshes —
-// longer than an API restart) is shown the way the server shows a reading it
-// can no longer stand behind: unknown, with its last known value.
-const REFRESH_MS = 60000, TICK_MS = 30000, STALE_MS = 5 * 60000;
-let CPS = [];            // serving rows, flattened; _t0 = client ms they were true
-let ATTRIB = "";
-let LOADED_AT = 0;       // client ms of the last good fetch; 0 = never
-let LOAD_ERR = null;     // HTTP status (or "net") of the last failed fetch
-let STALLED_AT = 0;      // stream.py said `stalled`: rows held from before are unchecked
-let STREAM_OK = false, ES = null, SOON = null, BUSY = false, AGAIN = false, LAST_TRY = 0;
-
-function view(p) {
-  const gone = (Date.now() - p._t0) / 60000;
-  const v = { ...p, flow: flowOf(p.flow),
-    age_minutes: p.age_minutes == null ? null : p.age_minutes + gone,
-    presence_age_minutes: p.presence_age_minutes == null ? null : p.presence_age_minutes + gone };
-  const unchecked = Date.now() - p._t0 > STALE_MS || (STALLED_AT && p._t0 < STALLED_AT);
-  if (unchecked && v.flow !== "unknown")
-    Object.assign(v, { last_known_flow: v.flow, flow: "unknown", present: [], absent: [], _stale: true });
-  return v;
-}
-
-async function getJSON(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();         // a 200 HTML page from the tunnel rejects here too
-}
-
-async function refresh() {
-  if (BUSY) { AGAIN = true; return; }
-  BUSY = true; LAST_TRY = Date.now();
-  try {
-    const gj = await getJSON("/v2/export/checkpoints.geojson");
-    if (!Array.isArray(gj.features)) throw new Error("format");
-    const now = Date.now();
-    CPS = gj.features.map(f => ({ ...f.properties, _t0: now,
-      _lat: f.geometry?.coordinates?.[1], _lon: f.geometry?.coordinates?.[0] }));
-    ATTRIB = gj.attribution || "";
-    LOADED_AT = now; LOAD_ERR = null;
-  } catch (e) {
-    LOAD_ERR = /^HTTP (\d+)$/.exec(e.message)?.[1] || "net";
-  }
-  // The dot is evidence of life, not of a socket (audit F604): stream.py's
-  // poller can die inside a healthy uvicorn, and a subscriber then hears
-  // keepalives for ever. /v2/stream/status says when it last polled.
-  try {
-    const s = await getJSON("/v2/stream/status");
-    STREAM_OK = !!s.running && !s.stalled_since && s.last_poll_age_seconds != null
-      && s.last_poll_age_seconds < 3 * (s.poll_seconds || 10);
-  } catch { STREAM_OK = false; }
-  BUSY = false;
-  connect();
-  render(true);
-  if (AGAIN) { AGAIN = false; soon(); }
-}
-
-// A change on the stream is followed by a re-fetch, which reconciles whatever
-// the in-place patch below mirrors imperfectly. At most one per 10 s: a burst
-// of changes must not become a burst of full exports on a 2G phone.
-function soon() {
-  if (BUSY) { AGAIN = true; return; }
-  if (SOON) return;
-  SOON = setTimeout(() => { SOON = null; refresh(); },
-                    Math.max(2000, LAST_TRY + 10000 - Date.now()));
-}
-
-// Apply an announced change in place, mirroring checkpoint_serving (027): a
-// travel direction shows the NEWEST reading filed for it or for 'both'. The
-// fields are the ones stream.py sends: to, last_known_value, observed_at,
-// age_minutes, confidence, independent_sources, staleness_band.
-function patch(d) {
-  const kind = String(d.state_kind || "").replace("checkpoint_", "");
-  if (kind !== "flow" && !PRESENCE.includes(kind)) return false;
-  const at = Date.parse(d.observed_at);
-  let hit = false;
-  for (const p of CPS) {
-    if (p.place_id !== d.place_id) continue;
-    if (d.direction !== "both" && p.direction !== d.direction) continue;
-    if (kind === "flow" && at < Date.parse(p.observed_at)) continue;  // a newer reading holds it
-    const gone = (Date.now() - p._t0) / 60000;
-    if (kind === "flow") {
-      Object.assign(p, { flow: d.to, last_known_flow: d.last_known_value,
-        observed_at: d.observed_at, age_minutes: d.age_minutes, confidence: d.confidence,
-        independent_sources: d.independent_sources, staleness_band: d.staleness_band,
-        presence_age_minutes: p.presence_age_minutes == null ? null : p.presence_age_minutes + gone,
-        _t0: Date.now() });
-    } else {
-      // a sighting confirms the sighting, not the flow: _t0 stays put
-      p.present = (p.present || []).filter(x => x !== kind);
-      p.absent = (p.absent || []).filter(x => x !== kind);
-      if (d.to === "present" || d.to === "absent") {
-        p[d.to].push(kind);
-        p.presence_age_minutes = (d.age_minutes ?? 0) - gone;
-      }
-    }
-    p._fresh = true; hit = true;
-  }
-  return hit;
-}
-
-// stream.py sends NAMED events (`event: state_change`), which EventSource
-// hands to a listener of that name and never to onmessage (audit F095).
-function connect() {
-  if (ES && ES.readyState !== EventSource.CLOSED) return;
-  const es = ES = new EventSource("/v2/stream?snapshot=false");
-  es.onopen = () => { if (es._dropped) soon(); es._dropped = false; setLive(); };
-  es.onerror = () => { es._dropped = true; setLive(); };
-  es.addEventListener("state_change", ev => {
-    let d; try { d = JSON.parse(ev.data); } catch { return; }
-    if (!String(d.state_kind || "").startsWith("checkpoint_")) return;
-    if (patch(d)) render(false);
-    soon();
-  });
-  // "nothing you hold is being checked — show it as unknown until resumed"
-  es.addEventListener("stalled", () => { STALLED_AT = Date.now(); render(false); });
-  es.addEventListener("resumed", () => { STALLED_AT = 0; soon(); render(false); });
-  es.addEventListener("reset", () => soon());   // events were dropped; re-fetch
-}
-
-function setLive() {
-  const on = !!ES && ES.readyState === EventSource.OPEN && STREAM_OK && !STALLED_AT
-    && LOADED_AT > 0 && Date.now() - LOADED_AT <= STALE_MS;
-  const el = $("#live");
-  el.className = on ? "live on" : "live off";
-  el.title = t(on ? "live_on" : "live_off");
-  el.setAttribute("aria-label", el.title);
-}
-
-// The failure in words, in both languages — never a bare '…' or an empty
-// panel that reads as "nothing closed".
-function problem() {
-  const e = LOAD_ERR === "net" ? t("net") : esc(LOAD_ERR);
-  const since = (Date.now() - LOADED_AT) / 60000;
-  if (!LOADED_AT) return LOAD_ERR ? fill(t("err_first"), { e }) : "";
-  if (since * 60000 > STALE_MS) return fill(t("stale"), { age: ageStr(since, true) });
-  if (STALLED_AT) return t("stalled");
-  if (LOAD_ERR) return fill(t("err_again"), { e, age: ageStr(since) });
-  return "";
-}
-function notice() {
-  const msg = problem(), el = $("#notice");
-  el.hidden = !msg;
-  el.innerHTML = msg ? `<span>${msg}</span><button class="retry">${t("retry")}</button>` : "";
-}
-
-function tick() { render(true); }
-setInterval(tick, TICK_MS);
-setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) { tick(); refresh(); } });
-$("#notice").addEventListener("click", e => { if (e.target.closest(".retry")) refresh(); });
-// ── end shared ──────────────────────────────────────────────────────────────
+const $ = (s) => document.querySelector(s);
+const t = (k) => I18N[LANG][k] ?? k;
 
 function applyLang() {
   document.documentElement.lang = LANG;
@@ -405,183 +166,134 @@ function applyLang() {
   $("#langbtn").textContent = LANG === "ar" ? "EN" : "ع";
   document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
   document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
-  render(false);
+  render();
 }
 
-// One checkpoint may have several directional rows; group by place. Every
-// row is read through view(), so ages and staleness are as of this render.
+function ageStr(min) {
+  if (min == null) return "";
+  const m = Math.round(min);
+  const [d, u] = m < 90 ? [m, t("min")] : [(m/60).toFixed(m<600?1:0), t("hr")];
+  return LANG === "ar"
+    ? `${t("ago")} <span class="num">${d}</span>${u}`
+    : `<span class="num">${d}</span>${u} ${t("ago")}`;
+}
+
+// One checkpoint may have several directional rows; group by place.
 function grouped() {
   const by = new Map();
-  for (const p of CPS) {
+  for (const f of CPS) {
+    const p = f.properties;
     const g = by.get(p.place_id) || { name: p.name_ar, name_en: p.name_en, dirs: [] };
-    g.dirs.push(view(p));
+    g.dirs.push(p);
     by.set(p.place_id, g);
   }
   return by;
 }
 
 function best(g) {
-  // The row that answers "can I pass": the worst news across directions and,
-  // among equally bad rows, the freshest; the serving layer applied decay.
-  // Among unknown rows the worst LAST KNOWN leads, so a closure that ages out
-  // reads 'unknown · last known: closed' — not the other direction's 'open'.
-  return g.dirs.slice().sort(worse)[0];
-}
-
-// A directional row that only carries the undirected report (027 copies every
-// 'both' reading onto inbound and outbound). `reported_for` says so when the
-// export carries it; before that, the shared reading gives it away.
-function inherited(d, both) {
-  if (d.direction === "both") return false;
-  if (d.reported_for != null) return d.reported_for === "both";
-  return !!both && d.observed_at === both.observed_at && d.flow === both.flow;
-}
-
-// Directions are spelled out only when they say something (audit F411): one
-// channel line with no direction, 'حوارة سالكة', used to become two chips,
-// 'دخول · سالك' and 'خروج · سالك', a specificity nobody reported. Each chip
-// carries its own age; one inherited from a general report says so.
-function dirsHTML(g) {
-  const both = g.dirs.find(d => d.direction === "both");
-  if (g.dirs.every(d => d.direction === "both" || inherited(d, both)))
-    return `<span class="dirnote">${t("nodir")}</span>`;
-  return g.dirs.filter(d => d.direction !== "both").map(d =>
-    `<span class="dirchip"><span class="dot ${d.flow}"></span>${t(d.direction)} · ${t(d.flow)}
-       <span class="age">${ageStr(d.age_minutes)}${inherited(d, both) ? ` · ${t("general")}` : ""}</span></span>`).join("");
+  // The row that answers "can I pass" — a directional row beats 'both' only
+  // when it is worse news; the serving layer already applied decay.
+  const order = { closed: 3, congested: 2, slow: 1, open: 0, unknown: -1 };
+  return g.dirs.slice().sort((a, b) => (order[b.flow] ?? -1) - (order[a.flow] ?? -1))[0];
 }
 
 function cardHTML(g) {
   const b = best(g);
-  const name = esc(LANG === "ar" ? (g.name || g.name_en) : (g.name_en || g.name));
-  const sub = esc(LANG === "ar" ? (g.name_en || "") : (g.name || ""));
+  const name = LANG === "ar" ? (g.name || g.name_en) : (g.name_en || g.name);
   const pill = `<span class="pill ${b.flow}">${t(b.flow)}</span>`;
   const age = b.age_minutes != null ? `<span class="age">${ageStr(b.age_minutes)}</span>` : "";
-  const lk = flowOf(b.last_known_flow);
-  const last = b.flow === "unknown" && lk !== "unknown"
-    ? `<div class="lastknown">${t("lastknown")}: ${t(lk)} · ${ageStr(b.age_minutes)}</div>` : "";
+  const last = b.flow === "unknown" && b.last_known_flow && b.last_known_flow !== "unknown"
+    ? `<div class="lastknown">${t("lastknown")}: ${t(b.last_known_flow)} · ${ageStr(b.age_minutes)}</div>` : "";
+  const dirs = g.dirs.filter(d => d.direction !== "both" || g.dirs.length === 1).map(d =>
+    `<span class="dirchip"><span class="dot ${d.flow}"></span>${t(d.direction)} · ${t(d.flow)}</span>`).join("");
   const sights = (b.present || []).map(x =>
     `<div class="sight">⚠ ${t(x)} · ${t("sighted")} ${ageStr(b.presence_age_minutes)}</div>`).join("");
-  // "No army here" is a comfort; it is shown only with its age (law 8).
-  const calm = b.presence_age_minutes == null ? "" : (b.absent || []).map(x =>
-    `<div class="calm">${t("no_" + x)} · ${ageStr(b.presence_age_minutes)}</div>`).join("");
   const conf = b.flow !== "unknown"
-    ? `<span class="conf">${t("conf")} <span class="num">${Math.round(Number(b.confidence) * 100)}%</span> · <span class="num">${esc(b.independent_sources)}</span> ${t("sources")}</span>` : "";
-  return `<div class="card${g.dirs.some(d => d._fresh) ? " changed" : ""}">
+    ? `<span class="conf">${t("conf")} <span class="num">${Math.round(b.confidence * 100)}%</span> · <span class="num">${b.independent_sources}</span> ${t("sources")}</span>` : "";
+  return `<div class="card">
       <div class="toprow"><span class="cp-name">${name}</span>
-        <span class="cp-sub">${sub}</span></div>
+        <span class="cp-sub">${LANG === "ar" ? (g.name_en || "") : (g.name || "")}</span></div>
       <div class="verdict">${pill}${age}</div>
       ${last}
-      <div class="dirs">${dirsHTML(g)}</div>
-      ${sights}${calm}
+      <div class="dirs">${dirs}</div>
+      ${sights}
       <div style="margin-block-start:6px">${conf}</div>
     </div>`;
 }
 
-// Search folds spelling the way the server's resolver does (resolve/arabic.py
-// normalize + fold). A raw substring said 'no result' for حواره, the spelling
-// 22–40 % of channel writers use, and for 'حاجز حوارة', while the MCP
-// answered the same question through the resolver (audit F412).
-const norm = s => String(s ?? "").normalize("NFKC")
-  .replace(/[ً-ٰٟۖ-ۭـ]/g, "")
-  .replace(/[آأإٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
-  .replace(/ؤ/g, "و").replace(/ئ/g, "ي")
-  .replace(/[،؛؟.,:;!?"'`()\[\]{}\/\\|_+*=~^&%$#@—–-]/g, " ")
-  .replace(/\s+/g, " ").trim().toLowerCase();
-const TYPES = /^(?:حواجز|حاجز|بوابه|مدينه|منطقه|محطه|مفرق|مدخل|مخرج|معبر|بلده|قريه|مخيم|شارع|طريق|دوار|جسر|نفق|بلد|حي)\s+/;
-const art = w => { const o = w.replace(/^(?:لل|[بلكفو]ال|ال)/, ""); return o.length >= 2 ? o : w; };
-function fold(s) {
-  let f = norm(s).replace(/^(?:checkpoint|cp|the)\s+/, "").split(" ").map(art).join(" ");
-  for (let i = 0; i < 3; i++) { const n = f.replace(TYPES, ""); if (n === f) break; f = n; }
-  return f.split(" ").map(art).join(" ").trim();
-}
-function matches(g, q) {
-  const fq = fold(q), nq = norm(q);
-  return !!nq && (fold(g.name).includes(fq) || norm(g.name).includes(nq)
-                  || norm(g.name_en).includes(nq));
-}
+let mode = { kind: "hint" };   // hint | search | near
 
-// 'Closed now' is built from the same rows as the cards, per place. It came
-// from /v2/checkpoints/summary, which reads only the undirected 'both' row, so
-// a closure filed for one direction ('حوارة مغلق دخول') was missing from
-// المغلق الآن while that checkpoint's own card said مغلق. A closure this page
-// can no longer vouch for stays listed as unknown with its last value: a list
-// that simply emptied would read as "nothing closed".
-function closedHTML(groups) {
-  const isClosed = d => d.flow === "closed" || (d._stale && d.last_known_flow === "closed");
-  const items = groups.map(g => {
-    const cl = g.dirs.filter(isClosed).sort((a, b) => a.age_minutes - b.age_minutes);
-    if (!cl.length) return null;
-    const dir = cl.length === g.dirs.length ? ""
-      : cl.filter(d => d.direction !== "both").map(d => t(d.direction)).join("، ");
-    return { g, d: cl[0], dir };
-  }).filter(Boolean).sort((a, b) => a.d.age_minutes - b.d.age_minutes).slice(0, 40);
-  return items.map(({ g, d, dir }) =>
-    `<div class="closedrow${d._stale ? " stale" : ""}"><span class="dot ${d._stale ? "unknown" : "closed"}"></span>
-       <span>${esc(LANG === "ar" ? (g.name || g.name_en) : (g.name_en || g.name))}${dir ? ` <span class="age">(${dir})</span>` : ""}</span>
-       <span class="age">${d._stale ? `${t("lastknown")}: ${t("closed")} · ` : ""}${ageStr(d.age_minutes)}</span></div>`).join("")
-    || `<div class="empty">${t("noclosed")}</div>`;
-}
-
-let mode = { kind: "hint" };   // hint | search | near | nogeo
-
-function render(quiet) {
-  notice(); setLive();
-  const cards = $("#cards"), closed = $("#closed");
-  cards.classList.toggle("quiet", !!quiet);
-  if (!LOADED_AT) {           // nothing has loaded yet: loading, or failed in words
-    const msg = LOAD_ERR ? `<div class="empty">${problem()}</div>` : `<div class="empty">…</div>`;
-    closed.innerHTML = msg;
-    if (mode.kind === "search" || mode.kind === "near") cards.innerHTML = msg;
-    else cards.innerHTML = `<div class="empty">${t(mode.kind === "nogeo" ? "nogeo" : "hint")}</div>`;
-    return;
-  }
-  const groups = [...grouped().values()];
+function render() {
+  const cards = $("#cards");
+  if (!CPS.length) return;
   let list = [];
-  if (mode.kind === "search" && mode.q && mode.q.trim()) {
-    list = groups.filter(g => matches(g, mode.q.trim()));
+  if (mode.kind === "search" && mode.q) {
+    const q = mode.q.trim();
+    list = [...grouped().values()].filter(g =>
+      (g.name || "").includes(q) ||
+      (g.name_en || "").toLowerCase().includes(q.toLowerCase()));
   } else if (mode.kind === "near" && mode.lat != null) {
-    list = groups.filter(g => g.dirs[0]._lat != null).map(g => {
+    list = [...grouped().values()].map(g => {
       const d = g.dirs[0];
       const km = Math.hypot((d._lat - mode.lat) * 110.6, (d._lon - mode.lon) * 94.9);
       return { g, km };
     }).sort((a, b) => a.km - b.km).slice(0, 6).map(x => x.g);
   }
-  if (!groups.length) {
-    cards.innerHTML = `<div class="empty">${t("nodata")}</div>`;
-  } else if (mode.kind === "hint" || mode.kind === "nogeo" || (mode.kind === "search" && !(mode.q || "").trim())) {
-    cards.innerHTML = `<div class="empty">${t(mode.kind === "nogeo" ? "nogeo" : "hint")}</div>`;
+  if (mode.kind === "hint") {
+    cards.innerHTML = `<div class="empty">${t("hint")}</div>`;
   } else if (!list.length) {
     cards.innerHTML = `<div class="empty">${t("noresult")}</div>`;
   } else {
     cards.innerHTML = list.slice(0, 8).map(cardHTML).join("");
   }
 
-  closed.innerHTML = groups.length ? closedHTML(groups) : `<div class="empty">${t("nodata")}</div>`;
-  // Coverage from the same rows the page shows, as of this render.
-  const k = groups.length
-    ? Math.round(100 * groups.filter(g => best(g).flow !== "unknown").length / groups.length) : 0;
-  $("#foot").innerHTML =
-    t("foot_cov").replace("{n}", `<span class="num">${groups.length}</span>`)
-                 .replace("{k}", `<span class="num">${k}</span>`) +
-    "<br>" + esc(ATTRIB);
-  CPS.forEach(p => p._fresh = false);
+  const closed = $("#closed");
+  if (SUMMARY) {
+    const rows = (SUMMARY.closed_now || []).map(c =>
+      `<div class="closedrow"><span class="dot closed"></span>
+         <span>${LANG === "ar" ? c.name : (c.name_en || c.name)}</span>
+         <span class="age">${ageStr(c.age_minutes)}</span></div>`);
+    closed.innerHTML = rows.join("") || `<div class="empty">—</div>`;
+    const k = Math.round((SUMMARY.known_fraction || 0) * 100);
+    $("#foot").innerHTML =
+      t("foot_cov").replace("{n}", `<span class="num">${SUMMARY.tracked}</span>`)
+                   .replace("{k}", `<span class="num">${k}</span>`) +
+      "<br>" + (SUMMARY.attribution || "");
+  }
 }
 
-$("#q").addEventListener("input", e => { mode = { kind: "search", q: e.target.value }; render(false); });
+async function boot() {
+  applyLang();
+  const [gj, sum] = await Promise.all([
+    fetch("/v2/export/checkpoints.geojson").then(r => r.json()),
+    fetch("/v2/checkpoints/summary").then(r => r.json()),
+  ]);
+  CPS = gj.features.map(f => {
+    f.properties._lat = f.geometry.coordinates[1];
+    f.properties._lon = f.geometry.coordinates[0];
+    return f;
+  });
+  SUMMARY = sum;
+  render();
+
+  const es = new EventSource("/v2/stream?snapshot=false");
+  es.onopen = () => $("#live").className = "live on";
+  es.onerror = () => $("#live").className = "live off";
+  es.onmessage = () => {};   // liveness only in this concept
+}
+
+$("#q").addEventListener("input", e => { mode = { kind: "search", q: e.target.value }; render(); });
 $("#nearbtn").addEventListener("click", () => {
-  // A refused or missing location says so, instead of silently showing the hint.
-  if (!navigator.geolocation) { mode = { kind: "nogeo" }; render(false); return; }
-  navigator.geolocation.getCurrentPosition(
-    p => { mode = { kind: "near", lat: p.coords.latitude, lon: p.coords.longitude }; render(false); },
-    () => { mode = { kind: "nogeo" }; render(false); });
+  navigator.geolocation?.getCurrentPosition(
+    p => { mode = { kind: "near", lat: p.coords.latitude, lon: p.coords.longitude }; render(); },
+    () => { mode = { kind: "hint" }; render(); });
 });
 $("#langbtn").addEventListener("click", () => {
   LANG = LANG === "ar" ? "en" : "ar";
-  saveLang();
+  localStorage.setItem("lang", LANG);
   applyLang();
 });
-applyLang();
-refresh();
+boot();
 </script>
 </body>
 </html>

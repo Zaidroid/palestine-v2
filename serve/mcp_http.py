@@ -42,9 +42,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import re
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -76,41 +74,6 @@ DEFAULT_PROTOCOL = "2025-06-18"
 # Sixteen simultaneous MCP calls is far past a room of people exploring; the
 # seventeenth waits rather than starving the API underneath it.
 _POOL = ThreadPoolExecutor(max_workers=16, thread_name_prefix="mcp")
-
-# ── what one POST may carry (audit F091/F081/F302, 2026-09-25) ───────────────
-# Measured before these existed: a key with daily_quota=1 answered a 500-message
-# batch in one POST, its quota counter read 1 and the limiter had seen one
-# request; the body had no size at all, so Cloudflare's 100 MB was the only cap
-# in front of `json.loads` in the single process serving REST, SSE and MCP.
-# The 2025-06-18 protocol removed batching; older clients still batch a
-# handshake, which is a handful of messages, so ten is generous. The largest
-# honest request is a tools/call with a few short arguments — a few hundred
-# bytes — so 256 KB refuses nothing real.
-MAX_BATCH = 10
-MAX_BODY_BYTES = 256 * 1024
-_log = logging.getLogger("serve.mcp_http")
-
-# ── what one reply may carry (audit F051, 2026-09-25) ────────────────────────
-# PLAN P0-A.3 asked for "hard caps on payload bytes per tool with a test", and
-# there was neither: databank(limit=2000) was ~276 KB, carried twice on the wire
-# (text and structured). The budget is by what the tool EMITS, because a cut
-# means different things to different payloads. Shortening a databank list is a
-# paging problem, stated in the payload. Shortening `closed_now` hides a closed
-# checkpoint — so the live, derived tools get a runaway guard far above any
-# real answer instead of a trim, and a cut, when it happens, always says so.
-PAYLOAD_BYTES = {
-    licence.DERIVED: 1024 * 1024,
-    licence.METADATA: 256 * 1024,
-    licence.MEASURED: 128 * 1024,
-    licence.VERBATIM: 128 * 1024,
-    licence.DATABANK: 96 * 1024,
-}
-PAYLOAD_BYTES_DEFAULT = 96 * 1024
-
-# Protocol versions that predate `structuredContent` (added in 2025-06-18). A
-# client that says it speaks one of these cannot read the field, so sending it
-# only doubles the reply. A client that says nothing still gets both.
-_PRE_STRUCTURED = ("2024-11-05", "2025-03-26")
 
 INSTRUCTIONS = (
     "Palestine Data — live + databank (بيانات فلسطين). Tier 1: what is happening "
@@ -352,99 +315,29 @@ def _tool_list() -> list[dict]:
 # The per-payload licence block should carry the tool's GRADE and its
 # OBLIGATION, and those are read from the database by /v2/licence/tools. Asking
 # for that table on every tool call would cost a round trip per request, so it is
-# held: grades move when a publisher's terms are re-read or a migration re-grades
-# a source, which is not an event that needs to be seen within minutes. A failure
-# to read it leaves the block without the grade rather than failing an answer
-# about a road.
-#
-# OFF THE REQUEST PATH (audit F301). The refresh used to run synchronously
-# inside the first tool call after the minute expired, and the table behind it
-# scans state_observation, claim and the databank whole — so under sparse
-# traffic every checkpoint_status paid three table scans before it could answer,
-# and a burst paid them once per caller. Now a stale table is served while ONE
-# background thread refreshes it; only the very first read in a process, which
-# has nothing to serve, waits. A failed read is retried no sooner than
-# _GRADES_RETRY, so an unreachable API does not make every call wait for it.
-_GRADES: dict = {"at": 0.0, "tried": float("-inf"), "tools": {}, "busy": False}
-_GRADES_TTL = 600.0
-_GRADES_RETRY = 30.0
-_GRADES_LOCK = threading.Lock()
+# held for a minute: grades move when a publisher's terms are re-read, which is
+# not an event that needs to be seen within one second. A failure to read it
+# leaves the block without the grade rather than failing an answer about a road.
+_GRADES: dict = {"at": 0.0, "tools": {}}
+_GRADES_TTL = 60.0
 
 
-def _refresh_grades() -> None:
+def _tool_grades() -> dict:
+    now = time.monotonic()
+    if _GRADES["tools"] and (now - _GRADES["at"]) < _GRADES_TTL:
+        return _GRADES["tools"]
     try:
         from serve.mcp_server import api as _api
         fresh = {t["tool"]: t for t in _api("/v2/licence/tools").get("tools", [])}
         if fresh:
             _GRADES["tools"] = fresh
-            _GRADES["at"] = time.monotonic()
+            _GRADES["at"] = now
     except Exception:                                       # noqa: BLE001
         pass
-    finally:
-        _GRADES["busy"] = False
-
-
-def _tool_grades() -> dict:
-    now = time.monotonic()
-    tools = _GRADES["tools"]
-    if tools and (now - _GRADES["at"]) < _GRADES_TTL:
-        return tools
-    with _GRADES_LOCK:
-        if _GRADES["busy"] or (now - _GRADES["tried"]) < _GRADES_RETRY:
-            return _GRADES["tools"]
-        _GRADES["busy"] = True
-        _GRADES["tried"] = now
-    if tools:
-        threading.Thread(target=_refresh_grades, name="licence-grades",
-                         daemon=True).start()
-        return tools
-    _refresh_grades()               # nothing to serve yet: this caller reads it
     return _GRADES["tools"]
 
 
-def _fit(target: str, out: dict) -> tuple[dict, str]:
-    """(payload, its JSON) within the tool's byte budget — serialised once.
-
-    Over budget, the longest top-level lists are halved until it fits, and the
-    cut is written into the payload and into the sentence read aloud: a list
-    that is quietly short reads as the whole answer. A payload that is still
-    over budget with nothing left to halve goes out as it is — the budget is a
-    guard against runaway lists, not a reason to drop an answer.
-    """
-    text = json.dumps(out, ensure_ascii=False, default=str)
-    emits = (licence.TOOLS.get(target) or {}).get("emits")
-    budget = PAYLOAD_BYTES.get(emits, PAYLOAD_BYTES_DEFAULT)
-    if len(text.encode("utf-8")) <= budget:
-        return out, text
-    cut: dict[str, dict] = {}
-    while len(text.encode("utf-8")) > budget:
-        lists = [(len(json.dumps(v, ensure_ascii=False, default=str)), k)
-                 for k, v in out.items() if isinstance(v, list) and len(v) > 1]
-        if not lists:
-            break
-        _, k = max(lists)
-        cut.setdefault(k, {"of": len(out[k])})
-        out[k] = out[k][: len(out[k]) // 2]
-        cut[k]["kept"] = len(out[k])
-        text = json.dumps(out, ensure_ascii=False, default=str)
-    if cut:
-        shown = "; ".join(f"{k}: {c['kept']} of {c['of']}" for k, c in cut.items())
-        out["payload_cut"] = {
-            **cut, "budget_bytes": budget,
-            "note": (f"this reply was cut to fit {budget // 1024} KB ({shown}). "
-                     "Nothing was filtered — narrow the question (an indicator, "
-                     "a place, a smaller limit) to see the rest.")}
-        if isinstance(out.get("answer"), str):
-            out["answer"] += (" (الرد مختصر لحجمه: " + "؛ ".join(
-                f"{c['kept']} من {c['of']} في {k}" for k, c in cut.items()) + ")")
-        if isinstance(out.get("answer_en"), str):
-            out["answer_en"] += f" (Reply cut to fit: {shown}.)"
-        text = json.dumps(out, ensure_ascii=False, default=str)
-    return out, text
-
-
-def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
-            structured: bool = True) -> dict | None:
+def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
 
     Runs on the MCP executor, so it may block.
@@ -454,23 +347,12 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
     be carried away (F-81). It defaults to `partner`, the narrower of the two, so
     a future call path that forgets to pass it cuts too much rather than
     republishing somebody's article.
-
-    `structured` is False for a client that declared a protocol older than
-    `structuredContent`; it gets the text block alone.
     """
     if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0":
         return _err(None, -32600, "not a JSON-RPC 2.0 message")
 
     method, rid = msg.get("method"), msg.get("id")
-    # A non-object `params` or a non-string `method` used to raise inside the
-    # first `.get` and 500 the whole POST, batch-mates included (audit F395).
-    if method is not None and not isinstance(method, str):
-        return _err(rid, -32600, "method must be a string")
-    params = msg.get("params")
-    if params is None:
-        params = {}
-    if not isinstance(params, dict):
-        return _err(rid, -32602, "params must be an object")
+    params = msg.get("params") or {}
 
     # A notification has no id and takes no reply, ever — answering one is how
     # a client ends up waiting for a response it will never correlate.
@@ -516,10 +398,7 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
         p = next((x for x in PROMPTS if x["name"] == name), None)
         if p is None:
             return _err(rid, -32602, f"unknown prompt: {name}")
-        pargs = params.get("arguments") or {}
-        if not isinstance(pargs, dict):
-            return _err(rid, -32602, "arguments must be an object")
-        text = p["build"](pargs)
+        text = p["build"](params.get("arguments") or {})
         return _ok(rid, {"description": p["description"],
                          "messages": [{"role": "user",
                                        "content": {"type": "text", "text": text}}]})
@@ -568,18 +447,17 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
         # tool that answered; labelled with the name the caller used.
         out = licence.apply(target, out, tier, _tool_grades().get(target),
                             shown_as=name)
-        # Serialised ONCE, inside the byte budget; the structured copy is parsed
-        # back from that one string rather than dumped a second time (F519).
-        if isinstance(out, dict):
-            out, text = _fit(target, out)
-        else:
-            text = json.dumps(out, ensure_ascii=False, default=str)
-        result = {"content": [{"type": "text", "text": text}], "isError": failed}
+        result = {
+            "content": [{"type": "text",
+                         "text": json.dumps(out, ensure_ascii=False, default=str)}],
+            "isError": failed,
+        }
         # The text block stays for older clients, which is what the spec asks
         # for; structuredContent is the same object as data rather than as a
         # string a client has to parse back out of a message.
-        if structured and not failed and isinstance(out, dict):
-            result["structuredContent"] = json.loads(text)
+        if not failed and isinstance(out, dict):
+            result["structuredContent"] = json.loads(
+                json.dumps(out, ensure_ascii=False, default=str))
         return _ok(rid, result)
 
     if rid is None:
@@ -587,36 +465,16 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
     return _err(rid, -32601, f"method not found: {method}")
 
 
-def _dispatch(msg: Any, ip: str | None, tier: str, structured: bool) -> dict | None:
-    """`_handle` for one message of a POST, whose failure stays its own.
-
-    `asyncio.gather` re-raises the first exception, so one message that raised
-    turned the whole request — every batch-mate's answer with it — into a bare
-    500 with no JSON-RPC body (audit F395/F560).
-    """
-    try:
-        return _handle(msg, ip, tier, structured)
-    except Exception as exc:                                # noqa: BLE001
-        _log.exception("mcp message failed")
-        rid = msg.get("id") if isinstance(msg, dict) else None
-        return _err(rid, -32603, "internal error: " + _scrub(str(exc)))
 
 
 # ── the door (W8, 2026-09-23) ────────────────────────────────────────────────
 # Until today this endpoint answered anyone who had the URL: a public
 # tools/list, a public call, no key anywhere in `serve/`. For a partner release
 # that is the first finding their test writes, so every POST now needs a key
-# unless it comes from this machine. Keys live in `.keys/` at the root of the
-# checkout — gitignored, so this file stays committable — and revocation is a
-# file edit, not a deploy.
-#
-# Resolved from this checkout rather than hard-coded to /home/zaid (audit F164):
-# on main-server that is the same path, and a second checkout — a dev API, a
-# restore under another user — reads its own keys instead of silently answering
-# 401 to every partner. PARTNER_KEYS_PATH overrides it.
-KEYS_PATH = Path(os.environ.get("PARTNER_KEYS_PATH")
-                 or Path(__file__).resolve().parent.parent / ".keys" / "partner-keys.json")
-_KEY_STATE: dict = {"mtime": 0.0, "keys": {}, "counts": {}, "error": None}
+# unless it comes from this machine. Keys live OUTSIDE the repo, so this file
+# stays committable and revocation is a file edit, not a deploy.
+KEYS_PATH = Path("/home/zaid/palestine-v2/.keys/partner-keys.json")
+_KEY_STATE: dict = {"mtime": 0.0, "keys": {}, "counts": {}}
 
 
 def _partner_keys() -> dict:
@@ -631,20 +489,8 @@ def _partner_keys() -> dict:
             data = _json.loads(KEYS_PATH.read_text())
             _KEY_STATE["keys"] = {k["key"]: k for k in data.get("keys", [])}
             _KEY_STATE["mtime"] = m
-            _KEY_STATE["error"] = None
-        except Exception as exc:                                 # noqa: BLE001
-            # A broken file must not revoke a working key — but it must not be
-            # silent either: the edit that broke it may have been the one
-            # REMOVING a leaked key, which is then still being served (F592).
-            # Logged once per broken version of the file, kept for /health.
-            if _KEY_STATE.get("error_mtime") != m:
-                _KEY_STATE["error_mtime"] = m
-                _log.error("partner-keys file %s is unreadable (%s); still serving "
-                           "the %d keys read before it broke — a revocation in "
-                           "this edit has NOT taken effect",
-                           KEYS_PATH.name, type(exc).__name__, len(_KEY_STATE["keys"]))
-            _KEY_STATE["error"] = (f"{KEYS_PATH.name} unreadable since mtime {m:.0f}: "
-                                   f"{type(exc).__name__}; previous keys still served")
+        except Exception:                                        # noqa: BLE001
+            pass                     # a broken file must not revoke a working key
     return _KEY_STATE["keys"]
 
 
@@ -666,12 +512,7 @@ def _presented_key(request: Request) -> str | None:
 
 
 def _quota_exceeded(record: dict) -> bool:
-    """Per-key calls per UTC day, counted in memory, reset by date.
-
-    Charged once per tools/call MESSAGE — not per POST, which let a batch carry
-    any number of calls for one unit, and not for the handshake, which is not a
-    question answered. Still in memory: a restart resets the day's counts.
-    """
+    """Per-key calls per UTC day, counted in memory, reset by date."""
     quota = int(record.get("daily_quota") or 0)
     if not quota:
         return False
@@ -760,38 +601,9 @@ def _unauthenticated(why: str) -> JSONResponse:
         "x-key-request": "https://zaidlab.xyz/palestine"})
 
 
-def _too_large() -> JSONResponse:
-    return JSONResponse(_err(None, -32600, f"request body over {MAX_BODY_BYTES // 1024} KB"),
-                        status_code=413)
-
-
-async def _read_capped(request: Request) -> bytes | None:
-    """The body, or None past MAX_BODY_BYTES — refused before it is held whole.
-
-    Content-Length is checked first because it costs nothing; the stream is
-    counted anyway, because a chunked body has no Content-Length to believe.
-    """
-    try:
-        if int(request.headers.get("content-length") or 0) > MAX_BODY_BYTES:
-            return None
-    except ValueError:
-        return None
-    buf = bytearray()
-    async for chunk in request.stream():
-        buf += chunk
-        if len(buf) > MAX_BODY_BYTES:
-            return None
-    return bytes(buf)
-
-
-_QUOTA_MSG = "daily quota for this key is used up; it resets at midnight UTC"
-
-
 @router.post("/mcp", include_in_schema=False)
 async def mcp_endpoint(request: Request) -> Response:
-    raw = await _read_capped(request)
-    if raw is None:
-        return _too_large()
+    raw = await request.body()
     try:
         payload = json.loads(raw or b"")
     except (json.JSONDecodeError, UnicodeDecodeError):
@@ -801,12 +613,7 @@ async def mcp_endpoint(request: Request) -> Response:
     msgs = payload if batch else [payload]
     if not msgs:
         return JSONResponse(_err(None, -32600, "empty batch"), status_code=400)
-    if len(msgs) > MAX_BATCH:
-        return JSONResponse(_err(None, -32600, f"a batch may carry at most {MAX_BATCH} "
-                                 "messages; send them in separate requests"),
-                            status_code=400)
 
-    from serve import ratelimit as rl
     from serve.ratelimit import client_ip, is_local
     ip = client_ip(request)
 
@@ -819,54 +626,22 @@ async def mcp_endpoint(request: Request) -> Response:
     # a licence we do not hold.
     tier = "house" if is_local(ip) else "partner"
 
-    # The limiter middleware charged this POST once. A batch is that many
-    # requests' worth of work, so every further message is charged too, before
-    # any of it runs; local callers stay exempt inside `check`.
-    for _ in msgs[1:]:
-        ok, retry = rl.check(ip, "mcp")
-        if not ok:
-            return JSONResponse(
-                _err(None, -32003, "rate limited: every message in a batch counts "
-                                   "as a request"),
-                status_code=429, headers={"Retry-After": str(retry)})
-
-    record = None
     if not is_local(ip):
         key = _presented_key(request)
         keys = _partner_keys()
         if key and key in keys:                       # a partner key: quota per key
-            record = keys[key]
-        elif key:
-            # An OAuth token answers to the key it was minted from, as the key
-            # file says NOW: revoked with it, metered against its quota (F090).
-            record = oauth.token_key(key)
-        if record is None:
+            if _quota_exceeded(keys[key]):
+                return JSONResponse(_err(None, -32002, "daily quota for this key is "
+                                         "used up; it resets at midnight UTC"),
+                                    status_code=429)
+        elif key and oauth.valid_token(key):
+            pass                          # an OAuth token from /token, per client
+        else:
             return _unauthenticated(_no_key_message())
 
-    # Quota per tools/call, decided before anything runs. A single call past
-    # the quota is a 429 as it always was; in a batch, the calls past it are
-    # refused one by one and the rest are answered.
-    refused: dict[int, dict] = {}
-    if record is not None:
-        for i, msg in enumerate(msgs):
-            if isinstance(msg, dict) and msg.get("method") == "tools/call" \
-                    and _quota_exceeded(record):
-                refused[i] = _err(msg.get("id"), -32002, _QUOTA_MSG)
-    if refused and not batch:
-        return JSONResponse(refused[0], status_code=429)
-
-    declared = (request.headers.get("mcp-protocol-version") or "").strip()
-    structured = declared not in _PRE_STRUCTURED
-
     loop = asyncio.get_running_loop()
-
-    async def one(i: int, msg: Any) -> dict | None:
-        if i in refused:
-            return refused[i]
-        return await loop.run_in_executor(_POOL, _dispatch, msg, ip, tier, structured)
-
-    replies = [r for r in await asyncio.gather(*(one(i, x) for i, x in enumerate(msgs)))
-               if r is not None]
+    replies = [r for r in await asyncio.gather(
+        *(loop.run_in_executor(_POOL, _handle, m, ip, tier) for m in msgs)) if r is not None]
 
     # Nothing but notifications: the spec wants an accepted-with-no-body, and a
     # client that gets `null` back instead treats it as a malformed response.

@@ -23,37 +23,6 @@ BATCH = 200
 
 CLAIM_COLUMNS = "claim_id, ingested_at, source_id, raw_text, lang, attrs, claim_type"
 
-# THE CURSOR ONLY PASSES SETTLED ROWS (audit F233, 2026-09-25). `ingested_at`
-# is the WRITER's transaction start (DEFAULT now()), not its commit. The RSS
-# ingest holds one transaction across every feed, network fetches included, so
-# its claims can commit tens of seconds after a Telegram batch that started
-# later and committed first. A tick in between saw the later rows, moved the
-# watermark past them, and the RSS claims — stamped earlier — landed behind the
-# cursor: never read by any organ, and not counted in analyst_backlog either.
-# So a batch stops at the older of (now - SETTLE) and the start of the oldest
-# transaction still open on this database (a writer that may yet commit rows
-# stamped with that start). The second bound is ignored for a transaction open
-# longer than STUCK — an idle-in-transaction session must not stall the analyst
-# forever; the settle window still applies then.
-SETTLE = "2 minutes"
-STUCK = "1 hour"
-_SETTLED_CUTOFF = f"""
-    LEAST(now() - interval '{SETTLE}',
-          COALESCE((SELECT min(xact_start) FROM pg_stat_activity
-                     WHERE datname = current_database()
-                       AND pid <> pg_backend_pid()
-                       AND xact_start IS NOT NULL
-                       AND xact_start > now() - interval '{STUCK}'),
-                   now()))"""
-
-# A claim an organ RAISED on is read again on later ticks, before the fresh
-# batch, until it succeeds or has MAX_ATTEMPTS rows at the organ's CURRENT
-# version (audit F231). Keyed on the version, because a fix is a version bump
-# ("bumped whenever its answer could change"), and a fixed organ should get to
-# re-read what the broken one could not — without that, the watermark had
-# already passed every claim that errored and nothing ever re-entered a batch.
-MAX_ATTEMPTS = 3
-
 
 def read_watermark(cur, organ: str) -> tuple | None:
     """(last_ingested_at, last_claim_id), or None if this organ never ran."""
@@ -100,40 +69,12 @@ def fetch_batch(cur, after: tuple | None, limit: int = BATCH) -> list[dict]:
     """
     if after is None:
         cur.execute(f"""SELECT {CLAIM_COLUMNS} FROM claim
-                         WHERE ingested_at < {_SETTLED_CUTOFF}
                          ORDER BY ingested_at, claim_id LIMIT %s""", (limit,))
     else:
         cur.execute(f"""SELECT {CLAIM_COLUMNS} FROM claim
                          WHERE (ingested_at, claim_id) > (%s, %s)
-                           AND ingested_at < {_SETTLED_CUTOFF}
                          ORDER BY ingested_at, claim_id LIMIT %s""",
                     (after[0], after[1], limit))
-    cols = [c.strip() for c in CLAIM_COLUMNS.split(",")]
-    return [dict(zip(cols, r)) for r in cur.fetchall()]
-
-
-def fetch_retries(cur, organ: str, organ_version: str,
-                  limit: int = BATCH) -> list[dict]:
-    """Claims this organ raised on and has not yet read successfully, with
-    fewer than MAX_ATTEMPTS rows at its current version. Oldest first."""
-    cur.execute(f"""
-        SELECT {", ".join("c." + c.strip() for c in CLAIM_COLUMNS.split(","))}
-          FROM claim c
-          JOIN (SELECT r.claim_id
-                  FROM analyst_run r
-                 WHERE r.organ = %(organ)s
-                   -- only claims that ever errored: the ok rows of a healthy
-                   -- organ are the whole corpus, and must not be grouped every tick
-                   AND r.claim_id IN (SELECT claim_id FROM analyst_run
-                                       WHERE outcome = 'error' AND organ = %(organ)s)
-                 GROUP BY r.claim_id
-                HAVING count(*) FILTER (WHERE r.outcome = 'error') > 0
-                   AND count(*) FILTER (WHERE r.outcome = 'ok') = 0
-                   AND count(*) FILTER (WHERE r.organ_version = %(ver)s) < %(max)s
-               ) e ON e.claim_id = c.claim_id
-         ORDER BY c.ingested_at, c.claim_id
-         LIMIT %(limit)s""",
-        {"organ": organ, "ver": organ_version, "max": MAX_ATTEMPTS, "limit": limit})
     cols = [c.strip() for c in CLAIM_COLUMNS.split(",")]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
@@ -200,6 +141,6 @@ def undetected_claims(cur) -> int:
     return int(cur.fetchone()[0])
 
 
-__all__ = ["BATCH", "backlog", "connect", "fetch_batch", "fetch_retries", "health",
+__all__ = ["BATCH", "backlog", "connect", "fetch_batch", "health",
            "lang_distribution", "read_watermark", "record_run",
            "undetected_claims", "write_watermark"]

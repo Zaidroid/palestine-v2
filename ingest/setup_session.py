@@ -29,8 +29,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import contextlib
-import fcntl
 import json
 import os
 import sys
@@ -41,76 +39,6 @@ SESSION_DIR = ROOT / "data" / "session"
 SESSION = SESSION_DIR / "v2_ingest"
 PENDING = SESSION_DIR / ".pending_login.json"
 V1_PHONE = "+970595463664"
-
-
-# ── one client per session file (HANDOFF §1, rule 4) ─────────────────────────
-#
-# Two Telethon clients on one auth key at once is the pattern that can get the
-# account invalidated, and until this lock nothing enforced it: the rule lived
-# in HANDOFF and in an operator's memory, while discovery, `--status` and the
-# poller's `--once` all opened the live session whether or not the service was
-# running. Every entry point that constructs a client now takes this lock first
-# and refuses — before any client exists — if another process holds it.
-#
-# flock, not a pid file: the kernel releases it when the holder dies, so a
-# SIGKILLed poller cannot leave a stale lock that blocks its own restart. The
-# holder writes its pid and role (never argv — `--password` travels there) so
-# a refusal can say who to stop.
-
-class SessionBusy(RuntimeError):
-    """Another process has the Telegram session open."""
-
-    def __init__(self, path: str, holder: str):
-        self.path, self.holder = path, holder
-        super().__init__(
-            f"the Telegram session is in use by {holder or 'another process'} "
-            f"({path}). Two clients on one session can cost the account; stop "
-            "the other first (the poller: sudo systemctl stop palestine-v2-poller)")
-
-
-_held: dict[str, list] = {}          # lock path -> [fd, depth]; re-entrant per process
-
-
-@contextlib.contextmanager
-def session_lock(session: Path | str = SESSION, role: str = "telegram"):
-    """Hold the exclusive lock beside `session` for the life of the block.
-
-    Re-entrant within one process (discovery's main() holds it across
-    discover() and probe_liveness(), which each take it too); a second
-    PROCESS gets SessionBusy immediately rather than waiting, because the
-    caller that is waiting is always one that should not be running.
-    """
-    path = f"{session}.lock"
-    held = _held.get(path)
-    if held:
-        held[1] += 1
-        try:
-            yield path
-        finally:
-            held[1] -= 1
-        return
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    try:
-        fd, writable = os.open(path, os.O_RDWR | os.O_CREAT, 0o600), True
-    except PermissionError:
-        # Created by another user (a sudo'd run). flock needs no write access.
-        fd, writable = os.open(path, os.O_RDONLY), False
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        holder = os.pread(fd, 200, 0).decode("utf-8", "replace").strip()
-        os.close(fd)
-        raise SessionBusy(path, holder) from None
-    if writable:
-        os.ftruncate(fd, 0)
-        os.pwrite(fd, f"pid {os.getpid()} ({role})\n".encode(), 0)
-    _held[path] = [fd, 1]
-    try:
-        yield path
-    finally:
-        del _held[path]
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
 
 
 def _env() -> dict[str, str]:
@@ -238,19 +166,12 @@ def main() -> int:
     ap.add_argument("--status", action="store_true")
     a = ap.parse_args()
 
-    if a.request_code or a.code or a.status:
-        # Every mode opens the live session, `--status` included: "is it
-        # authorised?" asked while the poller runs is a second client.
-        try:
-            with session_lock(SESSION, "setup_session"):
-                if a.request_code:
-                    return asyncio.run(request_code())
-                if a.code:
-                    return asyncio.run(sign_in(a.code, a.password))
-                return asyncio.run(status())
-        except SessionBusy as exc:
-            print(f"REFUSING: {exc}")
-            return 1
+    if a.request_code:
+        return asyncio.run(request_code())
+    if a.code:
+        return asyncio.run(sign_in(a.code, a.password))
+    if a.status:
+        return asyncio.run(status())
     ap.print_help()
     print("\nTypical flow:\n"
           "  --request-code            # Telegram sends a code to your app\n"

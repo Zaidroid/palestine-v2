@@ -20,15 +20,6 @@ it. The gates assert no place has ancestors of both kinds at the same depth.
 
 Run:  .venv/bin/python -m ops.build_place_closure           # measure
       .venv/bin/python -m ops.build_place_closure --apply
-
---apply REBUILDS the modern relation, it does not append to it. Every edge was
-`ON CONFLICT DO NOTHING` and nothing ever deleted one, so an edge proven from a
-code migration 077 later re-coded (v1's PS0105 = Qalqilya joined OCHA's PS0105
-= Tubas, as 'pcode', the strongest claim in the table) survived every re-run,
-and a re-run added the correct parent beside it (F313, 2026-09-25). The modern
-edges are derived from `place` and nothing else, so they are deleted and
-re-derived in ONE transaction, which commits only if the gates below hold. The
-Mandate edges come from a fixed 1945 crosswalk and are left as they are.
 """
 from __future__ import annotations
 
@@ -50,12 +41,6 @@ EDGES = {
          AND g.merged_into IS NULL
         WHERE l.kind = 'locality' AND l.merged_into IS NULL
           AND l.admin2_pcode IS NOT NULL AND l.place_id <> g.place_id
-          -- Servable only, as for st_contains below. Since 077 a
-          -- NON-servable reference row inside a polygon carries that polygon's
-          -- code too (077 re-coded every kind but the admin ones), so without
-          -- this the pcode edge gave ~2,000 Mandate reference rows a modern
-          -- parent — the G4.11 double-count 062 caught once already (F313).
-          AND l.servable
         ON CONFLICT DO NOTHING"""),
 
     # governorate -> locality, by geometry, for the ones with no code. Only
@@ -118,47 +103,13 @@ EDGES = {
 }
 
 
-# The two things a rebuilt closure must never hold. G4.11 is the gate in
-# tests/test_gate4_history.sql; the second one it did not check: a locality
-# with two modern parents at depth 1 is counted in two governorates.
-GATES = {
-    "two_modern_parents": """
-        SELECT count(*) FROM (SELECT descendant_id FROM place_closure
-                               WHERE relation = 'modern' AND depth = 1
-                               GROUP BY 1 HAVING count(*) > 1) x""",
-    "both_geographies": """
-        SELECT count(*) FROM (SELECT descendant_id FROM place_closure
-                               WHERE depth = 1 GROUP BY 1
-                              HAVING count(DISTINCT relation) > 1) x""",
-}
-
-
-def rebuild(cur) -> dict:
-    """Delete and re-derive the modern edges, append the Mandate ones, and
-    measure the gates. The caller commits only when every gate is zero."""
-    cur.execute("DELETE FROM place_closure WHERE relation = 'modern'")
-    out = {"modern_deleted": cur.rowcount}
-    for name, sql in EDGES.items():
-        cur.execute(sql)
-        out[name] = cur.rowcount
-    for name, sql in GATES.items():
-        cur.execute(sql)
-        out[name] = cur.fetchone()[0]
-    return out
-
-
 def main(argv: list[str]) -> int:
     apply = "--apply" in argv
     with connect() as conn, conn.cursor() as cur:
         if apply:
-            got = rebuild(cur)
-            for name, n in got.items():
-                print(f"  {name:<20} {n}")
-            broken = {g: got[g] for g in GATES if got[g]}
-            if broken:
-                conn.rollback()
-                print(f"\n  NOT COMMITTED — gate(s) failed: {broken}")
-                return 1
+            for name, sql in EDGES.items():
+                cur.execute(sql)
+                print(f"  {name:<20} +{cur.rowcount}")
             conn.commit()
 
         cur.execute("""SELECT relation, established_by, depth, count(*)

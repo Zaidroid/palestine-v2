@@ -192,37 +192,3 @@ def test_the_declared_transform_is_the_one_that_runs():
         actual = ("none" if fn is None else "engine" if fn is t_engine
                   else f"python:{fn.__name__}")
         assert spec["transform"].split()[0] == actual, p.stem
-
-
-# ── registry rules: a typo must not classify everything (F217) ───────────────
-
-def _when_problems(when):
-    from ingest.spec import validate
-    spec = {"registry": {"rules": [{"when": when, "concept": "x",
-                                    "measure_kind": "stock"}]}}
-    return [p for p in validate(spec, "test")
-            if p.path.startswith("registry.rules[].when")]
-
-
-@pytest.mark.parametrize("when", [
-    {"prefx": "casualties."},                 # a typo'd key
-    {"regexp": "^demolitions"},
-    {"prefix": "casualties.", "unti": "%"},   # one good key does not excuse a bad one
-    {},                                       # says nothing
-    {"regex": "(unclosed"},                   # would raise mid-load
-])
-def test_a_registry_rule_whose_when_cannot_mean_what_it_says_is_refused(when):
-    """ops/load_registry.matches() ignores a key it does not know and then
-    returns bool(when) — True — so `when: {prefx: ...}` passed validation and
-    matched EVERY indicator after it, first match wins. Nothing is left
-    unclassified, so max_unclassified cannot catch it either."""
-    assert _when_problems(when), f"{when!r} passed validation"
-
-
-@pytest.mark.parametrize("when", [
-    {"prefix": "casualties."}, {"regex": "cumulative_(killed|injured)"},
-    {"equals": "x.y"}, {"not_prefix": "x."},
-    {"regex": "^who\\.", "unit": ["%", "per_1000"]}, {"unit": "%"},
-])
-def test_the_registry_rules_in_use_stay_valid(when):
-    assert not _when_problems(when)

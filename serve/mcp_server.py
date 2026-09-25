@@ -32,17 +32,13 @@ import json
 import os
 import re
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx
-
-# WHICH facts a sentence carries is decided once, beside the English renderer,
-# so the two languages cannot pick different ones; the wording stays here.
-from serve.mcp_en import direction_split, exit_end, general_also, route_facts  # noqa: E402
 
 PROTOCOL = "2024-11-05"
 API = os.environ.get("PALESTINE_API", "http://127.0.0.1:7870")
@@ -69,56 +65,14 @@ def api(path: str, **params) -> dict:
     return r.json()
 
 
-def _count_ar(n: int, one: str, two: str, few: str, many: str) -> str:
-    """A counted noun as it is SAID: ساعة، ساعتين، 3 ساعات، 11 ساعة. A voice
-    bot read "قبل 2 ساعة" and "قبل 5 دقيقة" — the module's own docstring
-    promised "قبل ساعتين", a dual the code could not produce."""
-    if n == 1:
-        return one
-    if n == 2:
-        return two
-    return f"{n} {few}" if 3 <= n <= 10 else f"{n} {many}"
-
-
 def _age_ar(minutes: int | None) -> str:
-    """How old a reading is, in Palestinian Arabic.
-
-    Hours are ROUNDED to the half, not floored: 119 minutes read "قبل 1 ساعة",
-    a two-hour-old closure spoken at half its age. A negative age is a future
-    timestamp (clock skew) and reads as now — "قبل -3 دقيقة" was read aloud
-    literally."""
     if minutes is None:
         return "غير معروف"
-    m = int(minutes)
-    if m < 1:
-        return "قبل أقل من دقيقة"
-    if m < 60:
-        return "قبل " + _count_ar(m, "دقيقة", "دقيقتين", "دقايق", "دقيقة")
-    if m < 1440:
-        h, rem = divmod(m, 60)
-        half = 15 <= rem < 45
-        if rem >= 45:
-            h += 1
-        if h < 24:
-            return ("قبل " + _count_ar(h, "ساعة", "ساعتين", "ساعات", "ساعة")
-                    + (" ونص" if half else ""))
-        m = 1440
-    return "قبل " + _count_ar(m // 1440, "يوم", "يومين", "أيام", "يوم")
-
-
-def _days_ar(n: int) -> str:
-    return _count_ar(n, "يوم", "يومين", "أيام", "يوم")
-
-
-def _clamp(v: Any, lo: float, hi: float, default: Any) -> Any:
-    """A façade argument held inside what the REST route accepts. The façade
-    schemas declared no bounds, so a legal call — news(limit=30), which asked
-    /v2/news/latest for 120 rows against its cap of 100 — came back as a 422
-    and "صار خطأ بالنظام". Clamped here, once per tool, and the answer states
-    the window it actually used."""
-    if v is None:
-        return default
-    return type(default)(min(max(v, lo), hi))
+    if minutes < 60:
+        return f"قبل {int(minutes)} دقيقة"
+    if minutes < 1440:
+        return f"قبل {int(minutes // 60)} ساعة"
+    return f"قبل {int(minutes // 1440)} يوم"
 
 
 # ── tools ────────────────────────────────────────────────────────────────────
@@ -147,11 +101,8 @@ def fuel_prices(product: str | None = None, history: bool = False) -> dict:
         if r["price"] is not None:
             said.append(f"{r['name_ar']}: {r['price']:g} {unit_ar.get(r['unit'], 'شيكل')}")
         elif r["status"] == "awaiting_list":
-            # Never confirmed means no last price: `None:g` raised and took the
-            # whole list down with it (gasoline_98, lpg_2_5kg).
-            last = (f"آخر سعر مؤكد {r['last_confirmed_price']:g} من {r['last_confirmed_from']}"
-                    if r.get("last_confirmed_price") is not None else "ولا سعر مؤكد سابق")
-            gaps.append(f"{r['name_ar']}: ما انقرت تسعيرة هالشهر لسا ({last})")
+            gaps.append(f"{r['name_ar']}: ما انقرت تسعيرة هالشهر لسا "
+                        f"(آخر سعر مؤكد {r['last_confirmed_price']:g} من {r['last_confirmed_from']})")
         elif r["status"] in ("unconfirmed", "conflicting"):
             rep = "، ".join(f"{x['price']:g}" for x in (r.get("reported") or []))
             gaps.append(f"{r['name_ar']}: غير مؤكد (المنشور: {rep})")
@@ -212,49 +163,6 @@ def _presence_phrase(cp: dict) -> str:
     return f" وفي {' و'.join(who)}" if who else ""
 
 
-def _checkpoint_not_found_ar(name: str, d: dict) -> str:
-    """The three found:false shapes are three facts, and saying "ما عرفت حاجز
-    اسمه" for all of them sent a caller to retry spellings of a checkpoint we
-    know. `resolved_to`: known, and nothing has EVER reported it — the `no
-    source` state. `nearest`: a lookalike the API refused to speak for (its
-    match gate, serve/app.py), named so the caller can check it."""
-    near = d.get("nearest") or {}
-    if d.get("uncertain") and near.get("name"):
-        return (f"ما في حاجز بإسم {name}. أقرب اسم شبيه: {near['name']} — وما بعطي "
-                f"حالته، لأنه اسم شبيه مش نفس الحاجز. جرّب الاسم كامل أو بالعربي.")
-    if d.get("resolved_to"):
-        return (f"{d['resolved_to']}: حاجز معروف، بس ما وصلنا عنه ولا تقرير أبداً — "
-                f"مش معناها مفتوح، معناها ما حدا بيخبرنا عنه.")
-    return f"ما عرفت حاجز اسمه {name}."
-
-
-def _checkpoint_body_ar(d: dict) -> str:
-    """Everything after "{name}: " — flow, age, direction split, sightings —
-    with no closing full stop, so place_profile can speak a checkpoint in the
-    same words. The presence clause sits INSIDE the sentence: after the full
-    stop it dangled ("…للخارج. وفي جيش")."""
-    pres = _presence_phrase(d)
-    split = direction_split(d)
-    if split:
-        # Where a direction is known, it is spoken with ITS OWN age: "سالك
-        # للداخل، ومغلق للخارج" with no age could be three minutes or five hours
-        # old. And a known direction is never hidden behind the undirected row,
-        # which only undirected reports refresh (see mcp_en.direction_split).
-        parts = [(f"{FLOW_AR.get(r['flow'], r['flow'])} {DIR_AR[k]} "
-                  f"({_age_ar(r.get('age_minutes'))})")
-                 if r and r.get("flow") not in (None, "unknown")
-                 else f"{DIR_AR[k]} ما في تحديث حديث" for k, r in split]
-        body = "، و".join(parts) + (f"،{pres}" if pres else "")
-        if general_also(d, split):
-            body += (f". آخر تقرير بدون اتجاه: {FLOW_AR.get(d['flow'], d['flow'])} "
-                     f"{_age_ar(d.get('age_minutes'))}")
-        return body
-    body = f"{_flow_phrase(d)}{pres}"
-    if d.get("flow") != "unknown":
-        body += f"، آخر تحديث {_age_ar(d.get('age_minutes'))}"
-    return body
-
-
 def checkpoint_status(name: str, direction: str = "both") -> dict:
     """Is a named checkpoint open? Optionally for one travel direction."""
     direction = DIR_IN.get(direction.strip().lower(), direction.strip().lower())
@@ -262,12 +170,26 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
         direction = "both"
     d = api("/v2/checkpoints/status", name=name, direction=direction)
     if not d.get("found"):
-        return {"answer": _checkpoint_not_found_ar(name, d), **d}
+        return {"answer": f"ما عرفت حاجز اسمه {name}.", **d}
 
     nm = d["match"]["resolved_to"]
     by = d.get("by_direction") or {}
-    suffix = "" if direction == "both" else f" {DIR_AR[direction]}"
-    answer = f"{nm}{suffix}: {_checkpoint_body_ar({**d, 'direction': direction})}."
+    inb, outb = by.get("inbound"), by.get("outbound")
+
+    # Where the two directions genuinely differ, say so — that difference is
+    # the whole reason direction is tracked, and it is exactly what a bare
+    # status hides.
+    if (direction == "both" and inb and outb
+            and inb["flow"] != outb["flow"]
+            and "unknown" not in (inb["flow"], outb["flow"])):
+        answer = (f"{nm}: {FLOW_AR.get(inb['flow'], inb['flow'])} للداخل، "
+                  f"و{FLOW_AR.get(outb['flow'], outb['flow'])} للخارج."
+                  f"{_presence_phrase(d)}")
+    else:
+        suffix = "" if direction == "both" else f" {DIR_AR[direction]}"
+        answer = f"{nm}{suffix}: {_flow_phrase(d)}.{_presence_phrase(d)}"
+        if d["flow"] != "unknown":
+            answer += f" آخر تحديث {_age_ar(d.get('age_minutes'))}."
 
     # A fuzzy match used to be invisible: "Zaatara" answered about عطارة, 11 km
     # away and in the opposite state, with a match score of 0.738 that never

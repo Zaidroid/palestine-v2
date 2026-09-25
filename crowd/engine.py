@@ -43,7 +43,6 @@ import hashlib
 import json
 import secrets
 import sys
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -66,24 +65,6 @@ MIN_PLACE_CONFIDENCE = 0.55
 
 TOKEN_BYTES = 32
 UNVERIFIED_GROUP = "crowd:unverified"
-
-# The note is kept, never parsed — and every report, refused or not, is kept
-# forever (bronze object, claim, observation). With no limit one handle could
-# loop 15 KB notes into permanent storage at the write allowance (audit F350).
-# A tweet's length is enough to say what a person saw at a checkpoint; a note
-# over it is refused before anything is written, like any other invalid field.
-NOTE_MAX_CHARS = 280
-
-
-@contextmanager
-def _session(conn):
-    """The caller's connection (never committed here — the caller owns the
-    transaction, which is how the tests roll back), or our own, committed."""
-    if conn is not None:
-        yield conn, False
-        return
-    with connect() as own:
-        yield own, True
 
 
 
@@ -109,8 +90,7 @@ def _hash(token: str) -> str:
 
 # ── identity ─────────────────────────────────────────────────────────────────
 
-def register(handle: str, channel: str = "http", note: str = "",
-             conn=None) -> dict:
+def register(handle: str, channel: str = "http", note: str = "") -> dict:
     """Create a submitter. Returns the token ONCE; only its hash is stored.
 
     The submitter's source row starts in the shared 'crowd:unverified'
@@ -122,10 +102,6 @@ def register(handle: str, channel: str = "http", note: str = "",
 
     `reliability` is left NULL, exactly as it is for every other source. Loop A
     measures it or it stays unmeasured; it is never seeded.
-
-    `feeds_incidents` is FALSE, stated here and enforced by migration 079: the
-    column defaults to true (037), and a submitter's note read as news became
-    a believed incident without ever meeting the belief layer (audit F012).
     """
     handle = handle.strip().lower()
     if not handle or len(handle) < 3 or len(handle) > 40:
@@ -136,19 +112,18 @@ def register(handle: str, channel: str = "http", note: str = "",
         raise ValueError(f"unknown channel {channel!r}")
 
     token = secrets.token_urlsafe(TOKEN_BYTES)
-    with _session(conn) as (conn, own), conn.cursor() as cur:
+    with connect() as conn, conn.cursor() as cur:
         cur.execute("SELECT 1 FROM submitter WHERE handle = %s", (handle,))
         if cur.fetchone():
             raise ValueError(f"handle {handle!r} is taken")
         cur.execute("""
             INSERT INTO source (key, name, kind, license_spdx, commercial_use,
                                 attribution_text, authority_rank,
-                                independence_group, independence_note, active,
-                                feeds_incidents)
+                                independence_group, independence_note, active)
             VALUES (%s, %s, 'crowd', 'NONE', false, 'Crowd report', 5, %s,
                     'Unverified submitter — shares one independence unit with '
                     'every other unverified submitter until independence is '
-                    'earned.', true, false)
+                    'earned.', true)
             RETURNING source_id""",
             (f"crowd_{handle}", f"Crowd submitter @{handle}", UNVERIFIED_GROUP))
         source_id = cur.fetchone()[0]
@@ -156,8 +131,7 @@ def register(handle: str, channel: str = "http", note: str = "",
             INSERT INTO submitter (source_id, handle, secret_hash, channel, note)
             VALUES (%s, %s, %s, %s, %s)""",
             (source_id, handle, _hash(token), channel, note or None))
-        if own:
-            conn.commit()
+        conn.commit()
     return {"handle": handle, "source_id": source_id, "token": token,
             "independence": UNVERIFIED_GROUP,
             "note": "Store the token now — only its hash is kept."}
@@ -184,29 +158,13 @@ def authenticate(cur, handle: str, token: str) -> tuple[int | None, str]:
 
 def _kind_config(cur, state_kind: str) -> dict | None:
     cur.execute("""SELECT state_kind, crowd_reportable, crowd_values,
-                          crowd_gated_values, crowd_min_units, crowd_max_per_hour,
-                          place_kind, retired_at IS NOT NULL
+                          crowd_gated_values, crowd_min_units, crowd_max_per_hour
                    FROM state_kind_config WHERE state_kind = %s""", (state_kind,))
     r = cur.fetchone()
     if not r:
         return None
     return {"state_kind": r[0], "reportable": r[1], "values": r[2],
-            "gated": r[3], "min_units": r[4], "max_per_hour": r[5],
-            "place_kind": r[6], "retired": r[7]}
-
-
-def _kind_lives_here(cur, place_id: int, state_kind: str) -> bool:
-    """Has anyone other than the crowd ever asserted this kind at this place?
-
-    The label on the row is not the test: v1's checkpoints include crossings
-    and roads, and the channels report checkpoint_flow on them. What matters is
-    that a report lands where other sources will meet it."""
-    cur.execute("""SELECT 1 FROM state_observation o
-                    JOIN source s ON s.source_id = o.source_id
-                   WHERE o.place_id = %s AND o.state_kind = %s
-                     AND o.modality = 'assertion' AND s.kind <> 'crowd'
-                   LIMIT 1""", (place_id, state_kind))
-    return cur.fetchone() is not None
+            "gated": r[3], "min_units": r[4], "max_per_hour": r[5]}
 
 
 def reportable_kinds() -> list[dict]:
@@ -216,10 +174,7 @@ def reportable_kinds() -> list[dict]:
         cur.execute("""SELECT state_kind, crowd_values, crowd_gated_values,
                               crowd_min_units, crowd_max_per_hour
                        FROM state_kind_config
-                       -- a retired kind is not offered (F120: 070 retired fuel
-                       -- availability and left it reportable)
-                       WHERE crowd_reportable AND retired_at IS NULL
-                       ORDER BY state_kind""")
+                       WHERE crowd_reportable ORDER BY state_kind""")
         return [{"state_kind": k, "values": v, "gated_values": g,
                  "min_units_for_gated": u, "max_per_hour": h}
                 for k, v, g, u, h in cur.fetchall()]
@@ -236,14 +191,10 @@ def _rate_limited(cur, source_id: int, place_id: int, state_kind: str,
 
 
 def submit(handle: str, token: str, state_kind: str, place: str, value: str,
-           direction: str = "both", note: str = "", conn=None) -> Result:
+           direction: str = "both", note: str = "") -> Result:
     """The whole submission path, for every field. See the module docstring."""
     value = (value or "").strip().lower()
-    note = note or ""
-    if len(note) > NOTE_MAX_CHARS:
-        return Result(False, "rejected",
-                      f"note is {len(note)} characters; at most {NOTE_MAX_CHARS}")
-    with _session(conn) as (conn, own), conn.cursor() as cur:
+    with connect() as conn, conn.cursor() as cur:
         source_id, reason = authenticate(cur, handle, token)
         if source_id is None:
             return Result(False, "rejected", reason)
@@ -254,9 +205,6 @@ def submit(handle: str, token: str, state_kind: str, place: str, value: str,
         if not cfg["reportable"]:
             return Result(False, "rejected",
                           f"{state_kind} is not crowd-reportable")
-        if cfg["retired"]:
-            return Result(False, "rejected",
-                          f"{state_kind} is retired and no longer collected")
         if value not in cfg["values"]:
             return Result(False, "rejected",
                           f"value must be one of {sorted(cfg['values'])}")
@@ -277,21 +225,6 @@ def submit(handle: str, token: str, state_kind: str, place: str, value: str,
             got = f" (best guess {res.name_ar or res.name_en} at {res.confidence:.2f})" if res else ""
             return Result(False, "rejected",
                           f"could not place {place!r} confidently{got}")
-
-        # F109. The kind-scoped lookup above falls through to the general
-        # resolver, which PREFERS the kind but does not require it: a
-        # misspelt checkpoint name came back as the town of the same name at
-        # 0.9 and the report was stored on a locality no channel writes to —
-        # accepted, and structurally incapable of ever mattering, the trap 035
-        # was meant to close. Refused, and nothing written, like any other
-        # place the engine cannot stand behind.
-        want = cfg["place_kind"]
-        if (want and getattr(res, "kind", want) != want
-                and not _kind_lives_here(cur, res.place_id, state_kind)):
-            return Result(False, "rejected",
-                          f"{place!r} resolved to a {res.kind} "
-                          f"({res.name_ar or res.name_en}), not a {want} — "
-                          f"name the {want} itself")
 
         # Everything below this line IS written, whatever the engine decides.
         cur.execute("""SELECT count(*) FROM state_observation
@@ -348,8 +281,7 @@ def submit(handle: str, token: str, state_kind: str, place: str, value: str,
 
         cur.execute("UPDATE submitter SET last_seen_at = now() WHERE source_id = %s",
                     (source_id,))
-        if own:
-            conn.commit()
+        conn.commit()
 
     place_name = res.name_ar or res.name_en
     if over_cap:

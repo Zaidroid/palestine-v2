@@ -39,7 +39,7 @@ import argparse
 import json
 import sqlite3
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -69,52 +69,6 @@ HALF_LIFE_MAX = 43200     # 12 h  — never keep a reading alive longer than thi
 # keeps that import working while leaving exactly one definition.
 from resolve.belief import (CORROBORATION_WINDOW, MAX_CONFIDENCE,  # noqa: E402,F401
                             SINGLE_SOURCE_TRUST)
-
-# THE IMPORT CURSOR, AND WHY IT LOOKS BACK.
-#
-# It was `WHERE timestamp > MAX(observed_at)` over every checkpoint_status row,
-# formatted to whole seconds, with nothing to stop a row being inserted twice.
-# Three ways that lost or doubled v1's reports:
-#   * the crowd path writes checkpoint_status rows stamped now() (030), so one
-#     crowd report moved this importer's cursor past v1 rows it had not read,
-#     and they were skipped forever;
-#   * a v1 row inserted AFTER a newer one — catch-up after an outage, a
-#     channel read late — sat below the cursor and was skipped forever;
-#   * the cursor was a re-formatted string compared as TEXT in SQLite, so a
-#     sub-second stamp re-read the newest second on every tick and inserted it
-#     again, and a ' ' separator sorted every later same-day row below 'T'.
-# So the cursor is this importer's own newest row (the canonical_key marker
-# the --full delete already scopes by), each run re-reads LOOKBACK behind it
-# from a whole-day boundary (a date prefix compares the same whichever way v1
-# spells the time), and a row is skipped only when the identical v1 update is
-# already stored — the stored rows are the ingest-seen set, so nothing needs a
-# migration and every row imported before this change counts as seen.
-# A v1 row arriving more than LOOKBACK late is still missed; --full recovers it.
-LOOKBACK = timedelta(hours=24)
-
-
-def _s(v) -> str | None:
-    return None if v is None else str(v)
-
-
-def _update_key(channel, msg_id, key, v1dir, v1status, observed: datetime) -> tuple:
-    """One v1 update, as it is recorded in the archival row's attrs. Built
-    from the same values on both sides, so it compares the way ->> reads them."""
-    return (_s(channel), _s(msg_id), _s(key), _s(v1dir or None), _s(v1status),
-            observed.astimezone(timezone.utc).isoformat())
-
-
-def _imported_since(cur, floor: datetime | None) -> set[tuple]:
-    sql = ("SELECT attrs->>'channel', attrs->>'msg_id', attrs->>'canonical_key', "
-           "attrs->>'v1_direction', attrs->>'v1_status', observed_at "
-           "FROM state_observation WHERE state_kind = %s AND attrs ? 'canonical_key'")
-    params: tuple = (LEGACY_KIND,)
-    if floor is not None:
-        sql += " AND observed_at >= %s"
-        params += (floor,)
-    cur.execute(sql, params)
-    return {(ch, mid, k, d, st, ts.astimezone(timezone.utc).isoformat())
-            for ch, mid, k, d, st, ts in cur.fetchall()}
 
 
 def _ro():
@@ -157,7 +111,7 @@ def _place_map(cur) -> dict[str, int]:
 def import_updates(full: bool = False) -> dict:
     stats = {"read": 0, "legacy": 0, "flow": 0, "presence": 0, "absence": 0,
              "questions": 0, "unparsed": 0, "skipped_no_place": 0,
-             "already_imported": 0, "unmatched_keys": set()}
+             "unmatched_keys": set()}
     rows: list[tuple] = []
 
     with connect() as conn, conn.cursor() as cur:
@@ -189,9 +143,7 @@ def import_updates(full: bool = False) -> dict:
                         (list((LEGACY_KIND, *ALL_KINDS)),))
             since = None
         else:
-            # THIS importer's newest row, never the kind's: see LOOKBACK.
-            cur.execute("""SELECT MAX(observed_at) FROM state_observation
-                           WHERE state_kind = %s AND attrs ? 'canonical_key'""",
+            cur.execute("SELECT MAX(observed_at) FROM state_observation WHERE state_kind=%s",
                         (LEGACY_KIND,))
             since = cur.fetchone()[0]
 
@@ -199,38 +151,24 @@ def import_updates(full: bool = False) -> dict:
         sql = ("SELECT canonical_key,status,status_raw,direction,source_channel,"
                "source_msg_id,timestamp,raw_line FROM checkpoint_updates")
         params: tuple = ()
-        floor = None
         if since:
-            day = (since - LOOKBACK).astimezone(timezone.utc).date()
-            sql += " WHERE timestamp >= ?"
-            params = (day.isoformat(),)
-            # A day earlier than the read floor, so a stamp v1 wrote with an
-            # offset still finds its stored twin in the set.
-            floor = datetime(day.year, day.month, day.day,
-                             tzinfo=timezone.utc) - timedelta(days=1)
-        imported = _imported_since(cur, floor)
+            sql += " WHERE timestamp > ?"
+            params = (since.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),)
         sql += " ORDER BY timestamp"
 
         for (key, v1status, status_raw, v1dir, channel, msg_id, ts, raw_line) in db.execute(sql, params):
             stats["read"] += 1
+            pid = places.get(key)
+            if not pid:
+                stats["unmatched_keys"].add(key)
+                stats["skipped_no_place"] += 1
+                continue
             try:
                 observed = datetime.fromisoformat(ts)
             except ValueError:
                 continue
             if observed.tzinfo is None:
                 observed = observed.replace(tzinfo=timezone.utc)
-            if floor is not None and observed < floor:
-                continue                     # outside the set; seen long ago
-            if _update_key(channel, msg_id, key, v1dir, v1status, observed) in imported:
-                stats["already_imported"] += 1
-                continue
-            pid = places.get(key)
-            if not pid:
-                # Re-read on every run inside LOOKBACK, so a place added to
-                # v2 within a day still receives the reports filed for it.
-                stats["unmatched_keys"].add(key)
-                stats["skipped_no_place"] += 1
-                continue
 
             source_id = _ensure_channel(cur, channel or "unknown", cache)
             r = read(raw_line)
@@ -356,8 +294,7 @@ def main() -> int:
     if not (a.cadence or a.state_only):
         s = import_updates(a.full)
         print(f"read {s['read']} v1 updates · archived {s['legacy']} · "
-              f"flow {s['flow']} · presence {s['presence']} · "
-              f"{s['already_imported']} already imported")
+              f"flow {s['flow']} · presence {s['presence']}")
         print(f"  excluded from belief: {s['questions']} questions, "
               f"{s['unparsed']} unreadable (both retained)")
         if s["skipped_no_place"]:

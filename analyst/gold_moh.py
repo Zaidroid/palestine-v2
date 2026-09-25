@@ -102,11 +102,8 @@ def main() -> int:
                 "verdict": {"ok": None, "reasons": [], "notes": []}, "previous": None,
             })
             continue
-        # The accepted row's own date travels with it, so the rise band is
-        # judged per elapsed day, not per bulletin (organ_c, audit F232).
         previous = ({"cum_killed": last_accepted["cum_killed"],
-                     "cum_injured": last_accepted["cum_injured"],
-                     "as_of_date": last_accepted["as_of_date"]} if last_accepted else None)
+                     "cum_injured": last_accepted["cum_injured"]} if last_accepted else None)
         verdict = organ_c.validate(reading, previous=previous, reported_at=when)
         for reason in verdict.reasons:
             verdict_counts[reason.code] = verdict_counts.get(reason.code, 0) + 1

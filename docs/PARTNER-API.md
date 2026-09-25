@@ -5,18 +5,10 @@ One server, two surfaces over the same data and the same code path:
 * **MCP over HTTP** — `POST https://live-api.zaidlab.xyz/mcp` (JSON-RPC 2.0, stateless, no session to resume)
 * **REST** — `https://live-api.zaidlab.xyz/v2/...` (same numbers, for callers without an MCP client)
 
-16 tools (since 2026-09-24; 19 earlier names still answer as aliases for one
-release, hidden from `tools/list` — §3 lists each one and the name that replaces
-it). No tool files a report: an agent cannot submit one, ever, by design.
+16 tools (since 2026-09-24; the 28 earlier names still answer as aliases for one
+release, off the menu). No write path: an agent cannot file a report, ever, by design.
 Call `about` first — it says what this system holds and, more usefully, what it
 holds nothing for.
-
-<!-- Rewritten 2026-09-25 against `serve/mcp_facades.py` (LISTED, ABSORBED) and
-serve/mcp_oauth.py as they are on disk. Until then §3 and §9 taught the 28-name
-surface the façades replaced, so a partner building from this page integrated
-against names that are hidden and scheduled to stop answering. -->
-
-
 
 ---
 
@@ -35,52 +27,34 @@ Use it as a header, or appended to the url if your client's UI takes only a url:
 It is shared, so it carries a ceiling: **5,000 calls a day across everyone using
 it**, reset at midnight UTC. Hit that and you get `429` until the day rolls over.
 The data behind it is the full read surface — 16 tools, and every tool a paying
-partner gets. What differs is not access but redistribution: `news` returns an
-excerpt of a channel's wording to every external caller (§8), because those
-words are not ours to republish. It is
+partner gets. What differs is not access but redistribution: `latest_news` and
+`search` return an excerpt of a channel's wording to every external caller (§8),
+because those words are not ours to republish. It is
 also printed in the `401` body, so anyone who finds the endpoint by themselves
 can start without asking.
 
 For anything real, ask us for your own key. One key per integration, so traffic
-is attributable and a leaked key sent as a header or `?key=` is one revocation
-rather than an outage (for OAuth connectors see the note below the flow).
+is attributable and a leak is one revocation rather than an outage.
 
 A missing or unknown key returns `401` with the reason in the JSON-RPC error body.
-The key file is re-read whenever it changes, so removing a key stops header and
-`?key=` calls without a restart, and `?key=` is scrubbed from the server's
-access log.
+Keys are read from a file on every request, so revocation takes effect without a
+restart, and `?key=` is scrubbed from the server's access log.
 
 **Hosted clients (Claude, ChatGPT, and anything else that cannot hold a static
 header) use OAuth instead**, per the MCP authorization spec. Point the connector
 at `https://live-api.zaidlab.xyz/mcp` with no key and it will:
 
-1. get a `401` carrying `WWW-Authenticate: Bearer resource_metadata="https://live-api.zaidlab.xyz/.well-known/oauth-protected-resource"`;
+1. get a `401` carrying `WWW-Authenticate: Bearer resource_metadata=".../‌.well-known/oauth-protected-resource"`;
 2. read `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`;
 3. register itself at `POST /register` (RFC 7591);
 4. open `GET /authorize` — a page asking for your partner key, because this is a
    gate and not a formality;
-5. exchange the resulting code at `POST /token` (grant `authorization_code`) for
-   an access token. S256 is the only PKCE method accepted: send `code_challenge`
-   with `code_challenge_method=S256` and the matching `code_verifier`.
+5. exchange the resulting code at `POST /token` (authorization code + PKCE S256)
+   for an access token.
 
-An access token lasts 30 days (`expires_in` says so) and survives a redeploy.
-A code lasts five minutes and is single-use: a replayed code is refused, and so
-is one whose PKCE challenge the verifier does not match.
-
-**What OAuth does not yet do, stated so you do not rely on it** (the code on
-2026-09-25; closing these is PLAN §7 P1-C.4, and this paragraph changes when
-it lands):
-
-* removing a partner key stops that key's header calls at once, but does **not**
-  revoke the OAuth tokens already issued with it;
-* calls made with an OAuth token are not counted against the key's daily quota —
-  the per-IP limit (§6) is their only ceiling;
-* a refresh token is exchanged for a fresh pair whenever it is presented; there
-  is no enforced 90-day refresh lifetime, and the used refresh token is not
-  retired;
-* PKCE is checked only when the client sent a challenge — a code issued without
-  one exchanges without a verifier. Every hosted client we know sends one; send
-  it.
+Tokens last 30 days, refresh tokens 90, and both survive a redeploy. Code
+exchange is single-use: a replayed code is refused, and so is one presented with
+the wrong PKCE verifier.
 
 ## 2. Handshake
 
@@ -106,54 +80,23 @@ confident.
 
 ## 3. The tools
 
-The sixteen names `tools/list` returns, in the order it returns them. Every
-tool that takes a place calls the argument `place` (Arabic or English); every
-parameter is described and every default is declared in the schema, so
-`tools/list` is the authoritative copy of this table.
+**Checkpoints** — `checkpoint_status` (one named checkpoint: flow, whether it is
+passable, who is present, age), `checkpoints_near` (nearest first, with what is
+NOT known), `checkpoints_summary` (West Bank picture).
 
-| tool | what it answers | arguments (default) |
-|---|---|---|
-| `about` | what the system holds, what it holds nothing for, whether it is alive | `section` = overview · sources · fields · gaps · stream |
-| `checkpoint_status` | one named checkpoint: flow, passable, who is present, age, per direction | `name` (required), `direction` (both) |
-| `checkpoints` | checkpoints around a place, nearest first, with what is NOT known; no place = the West-Bank-wide picture | `place` or `lat`/`lon`, `direction` (both), `radius_km` (15), `limit` (6) |
-| `can_i_travel` | every reasonable route from A to B, scored by the checkpoints on it | `origin`, `destination` (both required) |
-| `incidents` | raids, settler attacks, closures, arrests, demolitions — each with its count of *independent* channels; no place = West-Bank-wide counts by type | `place` or `lat`/`lon`, `hours` (12 around a place, 24 for the summary), `radius_km` (25), `limit` (8) |
-| `place` | one place in four views: profile · history · pattern (hour of day) · locate | `place` (required), `view` (profile), `days` (30; pattern uses 60), `state_kind` |
-| `insights` | one reduction of a place over a window (below); `scope=governorates` ranks governorates instead | `place` or `lat`/`lon`, `days` (30), `radius_km` (15), `scope` (place), `state_kind` |
-| `news` | the newest ingested messages, or with `text` a literal search; bodies excerpted for partners (§8) | `text`, `place`, `hours` (168, search mode), `limit` (8), `kind` = news · roads · all (news) |
-| `weather_now` | conditions and advisories per governorate | `place` |
-| `connectivity_now` | whether West Bank internet is reachable, measured externally by IODA | — |
-| `fuel_prices` | the Petroleum Corporation's monthly maximum for the West Bank, confirmed only when two independent outlets agree and one names the Corporation | `product`, `history` (false) |
-| `crossings` | Gaza and West Bank crossings: open · partial · closed · unknown, and which have no source at all | `place` |
-| `databank` | the historical databank: no `category` lists what exists; `as_of` reconstructs a past day | `category`, `indicator`, `as_of`, `limit` (10) |
-| `series` | one indicator against its own baseline, or two to six side by side in their own units | `indicators` (required), `place`, `days` (90) |
-| `correlate` | concepts, indicator search, a pair correlation that refuses rather than mislead, or a scan | `a`+`b`, or `search`/`concept`, or `indicator`; see its schema |
-| `licence` | what may be reused from here: per tool (`scope=tools`) or per data owner (`scope=sources`) | `scope` (tools), `source` |
+**Incidents** — `incidents_near` (raids, settler attacks, closures, arrests,
+demolitions, with the count of *independent* channels), `incidents_summary`.
 
-**The 19 earlier names** still answer when called by name, for one release, and
-are hidden from `tools/list`. Each is routed to the tool that replaced it and is
-graded and rendered exactly as before; build against the right-hand column,
-because the left one will stop answering (`unknown tool`) when the alias release
-ends.
+**Insights and analysis** — `insights` (below), `place_history`,
+`place_pattern` (hour-of-day rhythm at one place), `area_history` (governorate
+rollup), `trend`, `compare`, `correlate`, `what_correlates_with`, `data_gaps`
+(where the record thins), `databank` (categories and series), `licenses` (what
+each dataset's licence obliges).
 
-| earlier name | call instead |
-|---|---|
-| `coverage`, `data_gaps`, `stream_info` | `about` (`section=sources` · `gaps` · `stream`) |
-| `licenses`, `licence_tools` | `licence` (`scope=sources` · `scope=tools`) |
-| `checkpoints_near`, `checkpoints_summary` | `checkpoints` (with / without `place`) |
-| `incidents_near`, `incidents_summary` | `incidents` (with / without `place`) |
-| `place_profile`, `place_history`, `place_pattern`, `where_is` | `place` (`view=profile` · `history` · `pattern` · `locate`) |
-| `latest_news`, `search` | `news` (without / with `text`) |
-| `trend`, `compare` | `series` (one indicator / several, comma-separated) |
-| `what_correlates_with` | `correlate` (`indicator=`) |
-| `area_history` | `insights` (`scope=governorates`) |
+**Getting around** — `can_i_travel` (route plus the checkpoints on it),
+`where_is`, `crossings` (Rafah, Kerem Shalom, Allenby, King Hussein).
 
 ### Reading a route verdict
-
-The `verdict` is one of `likely_open`, `slow`, `unverified`, `unknown`,
-`blocked`. `unverified` means nothing on the route is reported closed but we
-could not see enough of the road to call it open — it is not a softer
-`likely_open`.
 
 `can_i_travel` returns a verdict per route, and **the verdict does not speak for
 parts of the road nobody watched**. Read it with its coverage block:
@@ -190,6 +133,14 @@ Also returned:
 Each entry in `routes` carries its own `coverage`, so a longer alternate can be
 the better-watched one. Routes rank by verdict then by time, never by how much we
 happen to know about them.
+
+**Conditions** — `weather_now`, `connectivity_now`, `fuel_prices` (the Petroleum
+Corporation's monthly maximum for the West Bank, confirmed only when two
+independent outlets agree and one names the Corporation), `latest_news`,
+`search`, `stream_info`.
+
+**Meta** — `about` (coverage, gaps, stream), `place`, `licence` (what each tool above
+may hand you, and in what form — see §8).
 
 ## 4. The question this was built for
 
@@ -229,10 +180,6 @@ Answer, 2026-09-23 (abridged from the real payload):
 }
 ```
 
-The sample is a day older than the incident measurement it quotes: its
-`quality.incidents` is round 7 (0.717). Today's payload carries round 8 — read
-the block, never this page (§5).
-
 ## 5. What the numbers mean — read this before building UI on them
 
 * **A reading is a report, not a census.** "open" means a channel said so recently.
@@ -246,23 +193,16 @@ the block, never this page (§5).
 * **`independent_sources` counts independence groups.** Channels that mirror each
   other count once, so a wire story reprinted five times is still one source.
 * **Every subject carries its sample size and the precision it was measured at.**
-  Incident answers carry a `precision` block: the hand-scored round, the
-  classifier version it measured and the version now serving, the overall
-  number with its interval and `n`, the gate, and the types below it. Quote that
-  block, not a number from this page — pages go stale and the block is read
-  from `ops/incident-precision.json` on every call. (For orientation only: round
-  8, 2026-09-24, measured classifier 1.8.0 at 0.767 [0.693–0.827], n=150,
-  against a 0.80 gate, with death and siege lowest at 0.60; 1.8.1 serves and is
-  unmeasured until round 9.) The answer to "is this accurate?" is the number,
-  not a claim.
+  Today the checkpoint layer measures 0.8203 (n=10,803) and the incident
+  classifier 0.717 against its 0.80 gate — which the payload says out loud. The
+  answer to "is this accurate?" is the number, not a claim.
 * **Non-events are honest.** `absent_types` lists incident types with no reports
   in the window; that is absence of evidence and is labelled as such.
 
 ## 6. Limits
 
 * 300 MCP requests per minute per client IP (sliding window). HTTP `429` beyond it.
-* A per-key daily quota for keys sent as a header or `?key=`; the reset is
-  midnight UTC. (OAuth tokens are not yet counted against it — §1.)
+* A per-key daily quota; the reset is midnight UTC.
 * Heaviest call measured: `insights` over 90 days / 25 km, ~1.3 s cold. Answers
   that re-aggregate the whole dataset are cached for up to 60 seconds, and `as_of`
   in the payload is when the answer was built, so its age is always visible.
@@ -274,11 +214,8 @@ OAuth adds nothing to the privacy surface: registration takes a client name and 
 redirect URI, no personal data, and an issued token identifies an integration
 rather than a person.
 
-* No PII is served through MCP. Place names, checkpoint states, road conditions,
-  incident types — no reporter identities, no locations of individuals. The one
-  named-person record is deliberate and gated: the memorial roster of the
-  identified dead is readable over REST only with `?memorial=true`
-  (`/v2/databank/martyrs_snapshot_2023`), and no MCP tool asks for it.
+* No PII is served. Place names, checkpoint states, road conditions, incident
+  types — no names of people, no reporter identities, no locations of individuals.
 * Caller IP is used only for rate limiting and is stored in a coarse bucket; the
   usage ledger records the tool, its arguments, the duration and whether it
   succeeded, rotated at a size cap.
@@ -294,39 +231,29 @@ rather than a person.
   readings, not the channels' text.
 * Gaza and West Bank casualty series are **Tech for Palestine's, Unlicense
   (public domain)**.
-* The historical databank carries per-source terms, and **every row it serves
-  carries its own licence, `commercial_use` and `redistribution` grade**. Rows
-  from sources that grant no redistribution right (HaMoked, Addameer, Peace Now,
-  Good Shepherd, OCHA's UN-terms sets) or that have granted nothing yet (IODA,
-  All Rights Reserved with a letter pending; the heritage register, terms
-  unread) ARE served to a query, with that grade attached: a credited
-  fact answering a question is reporting, not redistribution (migration 066).
-  They are excluded from bulk export (`databank_bulk`, the open-data release),
-  and they are not yours to republish. `licence(scope=sources)` names each
-  source's obligation; `about(section=sources)` names each source.
+* The historical databank carries per-source terms: several sets are
+  `commercial_use=false` and are **not** part of this release. `licenses` names
+  each one's obligations, and `coverage` names each source.
 * Attribution string to carry: *"Data: Palestine Data Platform, processed from
   public channel reports; Gaza and West Bank series via Tech for Palestine."*
 
 ### What you may carry away, per tool
 
-Call **`licence`** (default `scope=tools`, or `GET /v2/licence/tools`) before
-you republish anything from here. It grades every public tool and tells you
-which of four things you are holding. Grades are read from the source register
-at call time, so that table is authoritative and this paragraph is only the
-shape of it. A façade is graded as the tool that actually answered it
-(`licence.via` names that tool), so `checkpoints` with a place and without one
-can carry different obligations.
+Call **`licence_tools`** (or `GET /v2/licence/tools`) before you republish
+anything from here. It grades every public tool and tells you which of four
+things you are holding. Grades are read from the source register at call time,
+so that table is authoritative and this paragraph is only the shape of it.
 
 | tier | what it means |
 |---|---|
 | `full` | our own derived observation — the live tracker. Yours to carry, with attribution. |
 | `share-alike` (still `full`) | reached an ODbL row (OpenStreetMap fuel stations). Sellable, but a derived **database** must be released under ODbL. |
 | `excerpt` | somebody else's **wording**. See below. |
-| `filtered` | databank rows, each carrying its own licence and grade. Nothing is removed from a query answer; what you may carry away is decided per row. |
+| `filtered` | databank rows, each carrying its own licence. |
 | `cited_fact_only` | a third party's measurement we hold no redistribution right to (IODA connectivity). Cite it; do not republish it. |
 
-**`news` returns an excerpt, not the message** (in both modes: newest and
-`text` search). Every channel feeding it is graded `no-redistribution` — the words are the channels' own
+**`latest_news` and `search` return an excerpt, not the message.** Every channel
+feeding them is graded `no-redistribution` — the words are the channels' own
 copyright, and a key we issue cannot grant a licence we do not hold. You get the
 first 250 characters, the source name and the timestamp, which is a citation;
 each item says `excerpted: true` and `full_text_chars`, and the payload's
@@ -355,33 +282,25 @@ call() { curl -s -X POST "$U?key=$K" -H 'content-type: application/json' \
   -H 'accept: application/json, text/event-stream' \
   -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"$1\",\"arguments\":$2}}"; }
 
-call about '{}'
-call checkpoints '{}'
-call checkpoints '{"place":"نابلس","limit":10}'
+call coverage '{}'
+call checkpoints_summary '{}'
+call checkpoints_near '{"place":"نابلس","limit":10}'
 call checkpoint_status '{"name":"حوارة"}'
-call incidents '{"hours":24}'
-call incidents '{"place":"الخليل","hours":168,"limit":20}'
+call incidents_summary '{"hours":24}'
+call incidents_near '{"place":"الخليل","hours":168,"limit":20}'
 call insights '{"place":"رام الله","days":30,"radius_km":15}'
 call can_i_travel '{"origin":"رام الله","destination":"نابلس"}'
 call crossings '{}'
 call weather_now '{}'
 ```
 
-The same ten questions the script and this list asked before 2026-09-25, under
-the names `tools/list` now returns; the earlier names (`coverage`,
-`checkpoints_summary`, `checkpoints_near`, `incidents_summary`,
-`incidents_near`) still answer for one release but are not what to build on.
-
 ## 10. Known gaps, stated plainly
 
-* The incident classifier is **below its own 0.80 gate** (round 8, 2026-09-24:
-  0.767 on 1.8.0). Most errors are one class: a message that is not an incident
-  report at all — a funeral notice, a feature, a retrospective — read as one
-  (42 of the 59 errors across all 198 claims scored in round 8, adversarial
-  ones included). The version serving now, 1.8.1, is
-  unmeasured until round 9. Treat incident counts as a lower-confidence signal,
-  which every incident payload's `precision` block says.
-* Coverage is not uniform. `about` (`section=fields`, `section=gaps`) lists the fields that are
+* The incident classifier is **below its own 0.80 gate**. The errors are
+  concentrated in one class: obituaries, funerals and features being read as
+  incident reports. Until that classifier ships (in progress), treat incident
+  counts as a lower-confidence signal — which every incident payload says.
+* Coverage is not uniform. `coverage` and `data_gaps` list the fields that are
   thin, stale or have never had a source at all. Some governorates are quieter
   than others because fewer channels report on them, not because less happens.
 * A caller may see `unknown` far more than it expects. That is the system

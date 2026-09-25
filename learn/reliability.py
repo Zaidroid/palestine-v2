@@ -25,18 +25,6 @@ independence units, never across messages. Without that, a copy-paste ring of
 five would outvote a first-hand reporter five to one — which is precisely the
 attack P2 has to survive, where the ring is one person with five phones.
 
-AND THE UNIT BEING SCORED DOES NOT VOTE ON ITSELF (audit F114/F487, 2026-09-25)
-Each unit is scored against the majority of the OTHER units in the bucket. The
-old rule took one consensus over every unit, the scored one included, and
-threw a 1-1 split away as a tie — so in a two-unit bucket, the commonest shape
-here (the copyset plus one other observer), agreement was a hit for both and
-disagreement was nothing for anybody. A miss was possible only when outvoted by
-two others, a crowd account that shadowed the channels collected hits and never
-a miss, and kappa over the scored buckets was inflated with it. With leave-one-
-out, two units that disagree are a miss for both — neither is corroborated by
-the only other observer there was — and a unit whose others split evenly is not
-scored in that bucket (counted in `ties`, per unit, not per bucket).
-
 WHY A SHORT WINDOW
 Two observations are only comparable if the world cannot reasonably have changed
 between them. Compared six hours apart, disagreement means the checkpoint
@@ -97,15 +85,6 @@ MAX_WINDOW_S = 7200
 # interval is too wide for the bound to mean much.
 ESTABLISHED_N = 100
 
-# A MEASURED ZERO IS NOT "UNMEASURED" (audit F115, 2026-09-25). wilson_lower(0, n)
-# is 0.0 for every n, and the write used `trust_weight or None`, so a reporter
-# that disagreed with every consensus it was scored against was stored as NULL
-# — which belief reads as "never measured" and coalesces to 1.0 for a channel
-# (0.20 for a crowd account): the worst reporter served exactly like the best.
-# Migration 024 forbids 0 (`trust_weight > 0`), so a measured weight is floored
-# here instead; NULL stays reserved for "nobody could score this".
-MIN_MEASURED_WEIGHT = 0.01
-
 
 def wilson_lower(hits: int, n: int, z: float = 1.96) -> float:
     """Lower bound of the score interval — the number to actually trust."""
@@ -116,13 +95,6 @@ def wilson_lower(hits: int, n: int, z: float = 1.96) -> float:
     centre = (p + z * z / (2 * n)) / d
     half = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
     return max(0.0, centre - half)
-
-
-def stored_weight(trust_weight: float | None) -> float | None:
-    """What goes into source.trust_weight: None only when unmeasured."""
-    if trust_weight is None:
-        return None
-    return round(max(float(trust_weight), MIN_MEASURED_WEIGHT), 4)
 
 
 def trust(reliability: float | None, n: int | None) -> float | None:
@@ -178,7 +150,7 @@ def score_kind(cur, kind: str, days: int, window_s: int) -> dict:
     per_source: dict[int, list[int]] = defaultdict(lambda: [0, 0])  # hits, misses
     # (source_value, consensus_value) counts per source, for chance correction.
     joint: dict[int, Counter] = defaultdict(Counter)
-    compared = ties = singleton = two_unit = 0
+    compared = ties = singleton = 0
 
     for _, by_unit in buckets.items():
         if len(by_unit) < 2:
@@ -198,30 +170,21 @@ def score_kind(cur, kind: str, days: int, window_s: int) -> dict:
         if len(unit_value) < 2:
             singleton += 1
             continue
-        if len(unit_value) == 2:
-            two_unit += 1
-        scored_any = False
+        top = votes.most_common()
+        if len(top) > 1 and top[0][1] == top[1][1]:
+            ties += 1        # no consensus; nobody is scored
+            continue
+        consensus = top[0][0]
+        compared += 1
         for unit, v in unit_value.items():
-            # LEAVE ONE OUT: the consensus this unit is judged by is the vote
-            # of everyone else in the bucket. See the module docstring.
-            others = votes.copy()
-            others[v] -= 1
-            top = [(val, c) for val, c in others.most_common() if c > 0]
-            if len(top) > 1 and top[0][1] == top[1][1]:
-                ties += 1    # the others split evenly; this unit is not scored
-                continue
-            consensus = top[0][0]
-            scored_any = True
             hit = v == consensus
             for sid in by_unit[unit][v]:
                 per_source[sid][0 if hit else 1] += 1
                 joint[sid][(v, consensus)] += 1
-        if scored_any:
-            compared += 1
 
     return {"state_kind": kind, "window_s": window_s,
             "buckets": len(buckets), "compared": compared, "ties": ties,
-            "no_second_unit": singleton, "two_unit_buckets": two_unit,
+            "no_second_unit": singleton,
             "per_source": {sid: {"hits": h, "misses": m}
                            for sid, (h, m) in per_source.items()},
             "joint": {sid: dict(c) for sid, c in joint.items()}}
@@ -306,8 +269,8 @@ def run(days: int, write: bool) -> dict:
         plateau = (sorted(established)[len(established) // 2]
                    if established else None)
         for s in sources:
-            s["trust_weight"] = stored_weight(min(1.0, s["trust"] / plateau)
-                                              if plateau else None)
+            s["trust_weight"] = (round(min(1.0, s["trust"] / plateau), 4)
+                                 if plateau else None)
 
         if write:
             for s in sources:
@@ -317,7 +280,7 @@ def run(days: int, write: bool) -> dict:
                                       reliability_measured_at = %s
                     WHERE source_id = %s""",
                             (s["reliability"], s["n"], s["trust"],
-                             s["trust_weight"], measured_at, s["source_id"]))
+                             s["trust_weight"] or None, measured_at, s["source_id"]))
             conn.commit()
 
     result = {
@@ -350,8 +313,7 @@ def main() -> int:
           f"({', '.join(r['kinds_unmeasurable']) or 'none'})\n")
     for k in r["per_kind"]:
         print(f"  {k['state_kind']:<24} window {k['window_s']:>5}s · "
-              f"{k['compared']:>6} scored · {k['ties']:>4} unit ties · "
-              f"{k['two_unit_buckets']:>6} two-unit · "
+              f"{k['compared']:>6} scored · {k['ties']:>4} ties · "
               f"{k['no_second_unit']:>6} with no second unit")
     print(f"\n  {'source':<24}{'group':<14}{'n':>7}{'miss':>6}"
           f"{'agree':>8}{'trust':>8}{'kappa':>8}{'weight':>8}")

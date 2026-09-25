@@ -65,19 +65,7 @@ drop:
   - reason: no_cumulative        # no bulletin that day, and T4P left it empty
     measured: 7                  # since the cut-over, at spec time
   - reason: t4p_inferred         # no bulletin that day, and T4P filled it by
-    measured: 4                  #   arithmetic (report_source == "missing")
-  - reason: not_a_ministry_bulletin
-    measured: 0                  # report_source "gmotel": T4P transcribed the
-                                 #   Government Media Office's bulletin, not
-                                 #   the Ministry's. 22 in the file, all before
-                                 #   the cut-over (2023-10-11 .. 2023-12-15),
-                                 #   0 since. Named apart from t4p_inferred
-                                 #   (2026-09-25) because it is a published
-                                 #   figure from another office, not an
-                                 #   inferred one; whether it may continue
-                                 #   this Ministry series is Zaid's call. Any
-                                 #   OTHER report_source is undeclared and
-                                 #   fails the run.
+    measured: 4                  #   arithmetic (report_source != "mohtel")
   - reason: missing_date
     measured: 0
 

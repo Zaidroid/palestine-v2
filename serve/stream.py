@@ -66,22 +66,6 @@ KEEPALIVE_SECONDS = 25
 # the process that serves everyone else.
 MAX_QUEUE = 200
 
-# DISCONNECTED MEANS THE CONNECTION ENDS (audit F402, 2026-09-25). Dropping a
-# slow subscriber used to remove its queue from the fan-out and nothing else:
-# its generator went on yielding keepalives for ever, so the client saw a live
-# connection over states frozen at the moment of the drop and never reconnected
-# for the snapshot that would have corrected them — a phone asleep through a
-# mass decay kept its 'open'. Now the dropped queue is emptied and handed this
-# marker, and the stream tells the client to reconnect and then closes.
-_DROPPED = object()
-
-# A poller that cannot read the database is not a quiet night. After this many
-# failed polls in a row (30 s at POLL_SECONDS=10) every subscriber is told the
-# stream is `stalled` — nothing it holds is being checked — and `resumed` when a
-# poll succeeds again (audit F586). Before, a dead database was silence, which
-# is exactly what a quiet night sounds like.
-STALL_AFTER = 3
-
 WATCH_SQL = """
 SELECT s.place_id, p.name_ar, p.name_en, p.kind AS place_kind,
        s.state_kind, s.direction, s.value, s.last_known_value,
@@ -112,9 +96,6 @@ class Broadcaster:
         self._primed = False
         self.events_sent = 0
         self.last_poll_at: datetime | None = None
-        self.failed_polls = 0
-        self._failing_since: datetime | None = None
-        self.stalled_since: datetime | None = None
 
     # ── subscription ─────────────────────────────────────────────────────────
     def subscribe(self) -> asyncio.Queue:
@@ -135,20 +116,8 @@ class Broadcaster:
                 q.put_nowait(event)
             except asyncio.QueueFull:
                 # Slow consumer. Drop it rather than buffer without limit; SSE
-                # clients reconnect on their own and get a fresh snapshot —
-                # but only once the connection actually ENDS, so the backlog is
-                # discarded and the marker is the next thing it reads.
+                # clients reconnect on their own and get a fresh snapshot.
                 self.unsubscribe(q)
-                self._drop(q)
-
-    @staticmethod
-    def _drop(q: asyncio.Queue) -> None:
-        while True:
-            try:
-                q.get_nowait()
-            except asyncio.QueueEmpty:
-                break
-        q.put_nowait(_DROPPED)
 
     # ── the poll loop ────────────────────────────────────────────────────────
     def _fetch(self) -> list[dict]:
@@ -203,59 +172,23 @@ class Broadcaster:
 
         self._primed = True
 
-    def _poll_failed(self) -> None:
-        now = datetime.now(timezone.utc)
-        self.failed_polls += 1
-        if self._failing_since is None:
-            self._failing_since = now
-        if self.failed_polls >= STALL_AFTER and self.stalled_since is None:
-            self.stalled_since = self._failing_since
-            self._publish({
-                "type": "stalled",
-                "at": now.isoformat(),
-                "since": self.stalled_since.isoformat(),
-                "failed_polls": self.failed_polls,
-                "note": "the server cannot read current state; nothing you hold "
-                        "is being checked. Show it as unknown until `resumed`.",
-            })
-
-    def _poll_ok(self) -> None:
-        if self.stalled_since is not None:
-            self._publish({
-                "type": "resumed",
-                "at": datetime.now(timezone.utc).isoformat(),
-                "stalled_since": self.stalled_since.isoformat(),
-                "note": "polling again; whatever changed during the stall "
-                        "follows as ordinary state_change events.",
-            })
-        self.failed_polls = 0
-        self._failing_since = None
-        self.stalled_since = None
-
     async def run(self) -> None:
         while True:
             try:
                 await self._poll_once()
+                # The stream lives INSIDE the API process, so if this loop dies
+                # while uvicorn keeps answering, /health stays green and every
+                # subscriber simply hears nothing forever — a dead poller and a
+                # quiet night are indistinguishable. That is precisely the trap
+                # P3.1 exists for, so it reuses P3.1's answer rather than
+                # inventing a second one: a positive heartbeat the watchdog
+                # already knows how to miss.
+                await asyncio.to_thread(_beat, len(self._last))
             except Exception as exc:                     # noqa: BLE001
                 # A database blip must not kill the stream for everyone. It is
-                # reported and retried; subscribers keep their connections, and
-                # after STALL_AFTER failures in a row they are told so rather
-                # than left to hear a silence that sounds like a quiet night.
+                # reported and retried; subscribers keep their connections and
+                # simply hear nothing until it recovers.
                 print(f"stream poll failed: {exc}", flush=True)
-                self._poll_failed()
-            else:
-                self._poll_ok()
-                try:
-                    # The stream lives INSIDE the API process, so if this loop
-                    # dies while uvicorn keeps answering, /health stays green
-                    # and every subscriber simply hears nothing forever — a
-                    # dead poller and a quiet night are indistinguishable. That
-                    # is precisely the trap P3.1 exists for, so it reuses
-                    # P3.1's answer rather than inventing a second one: a
-                    # positive heartbeat the watchdog already knows how to miss.
-                    await asyncio.to_thread(_beat, len(self._last))
-                except Exception as exc:                 # noqa: BLE001
-                    print(f"stream heartbeat failed: {exc}", flush=True)
             await asyncio.sleep(POLL_SECONDS)
 
     def start(self) -> None:
@@ -285,17 +218,6 @@ async def event_source(state_kind: str | None = None,
     consistent from its first byte rather than only after the first thing
     happens to change. Without it a client that connects at 03:00 knows nothing
     until 06:00, and cannot tell "nothing has changed" from "not connected".
-
-    The snapshot is COMPLETE, and says so (audit F403). It used to list asserted
-    rows only, so a phone that slept through Huwara decaying to unknown
-    reconnected to a snapshot that did not mention Huwara at all, and its
-    cached 'open' survived with no server signal — the decay event the stream
-    promises could not be delivered by its own recovery path. `states` is still
-    the asserted rows (its meaning is unchanged for every existing reader);
-    `unknown_states` names every watched row that HAD a value and no longer
-    has one, with what it was and how old that is; and the rule a client needs
-    is stated in the payload: anything held that is not in `states` is not
-    asserted now.
     """
     q = broadcaster.subscribe()
     try:
@@ -309,56 +231,24 @@ async def event_source(state_kind: str | None = None,
 
         if snapshot:
             rows = await asyncio.to_thread(broadcaster._fetch)
-            wanted = [r for r in rows
-                      if (state_kind is None or r["state_kind"] == state_kind)
-                      and (place_id is None or r["place_id"] == place_id)]
             current = [
                 {"place_id": r["place_id"],
                  "place": r["name_ar"] or r["name_en"],
                  "state_kind": r["state_kind"], "direction": r["direction"],
                  "value": r["value"], "confidence": r["confidence"],
                  "age_minutes": float(r["age_minutes"]) if r["age_minutes"] is not None else None}
-                for r in wanted if r["value"] != "unknown"
+                for r in rows
+                if r["value"] != "unknown"
+                and (state_kind is None or r["state_kind"] == state_kind)
+                and (place_id is None or r["place_id"] == place_id)
             ]
-            gone = [
-                {"place_id": r["place_id"],
-                 "place": r["name_ar"] or r["name_en"],
-                 "state_kind": r["state_kind"], "direction": r["direction"],
-                 "value": "unknown",
-                 "last_known_value": r["last_known_value"],
-                 "age_minutes": float(r["age_minutes"]) if r["age_minutes"] is not None else None}
-                for r in wanted
-                if r["value"] == "unknown" and r.get("last_known_value") not in (None, "unknown")
-            ]
-            yield _sse("snapshot", {
-                "asserted": len(current), "states": current,
-                "unknown": len(gone), "unknown_states": gone,
-                "complete": True,
-                "note": "complete as of now: anything you hold that is not in "
-                        "`states` is NOT asserted — show it as unknown, never as "
-                        "its last value.",
-            })
+            yield _sse("snapshot", {"asserted": len(current), "states": current})
 
         while True:
             try:
                 ev = await asyncio.wait_for(q.get(), timeout=KEEPALIVE_SECONDS)
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"
-                continue
-            if ev is _DROPPED:
-                # Told why, told to come back soon, and then the response ends
-                # — which is what makes EventSource reconnect and re-snapshot.
-                yield ("event: reset\nretry: 1000\ndata: " + json.dumps({
-                    "reason": "this connection fell too far behind and was "
-                              "dropped; reconnect for a fresh snapshot — "
-                              "events since the drop were not delivered."},
-                    ensure_ascii=False) + "\n\n")
-                return
-            kind = ev.get("type", "state_change")
-            if kind != "state_change":
-                # `stalled` / `resumed` are about the whole stream, so a filter
-                # on one place or kind must not swallow them.
-                yield _sse(kind, ev)
                 continue
             if state_kind and ev.get("state_kind") != state_kind:
                 continue

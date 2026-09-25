@@ -44,7 +44,6 @@ Being wrong toward "you should check" costs a phone call; being wrong toward
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import asdict, dataclass, field
 
 import httpx
@@ -94,41 +93,7 @@ NEAR_MISS_METRES = 3000
 # a 10 km blind stretch is roughly the point where the unwatched part stops
 # being "between two junctions" and starts being "most of the drive". Below it
 # the payload still reports the gap; above it the gap outweighs the verdict.
-#
-# Since 2026-09-25 the verdict measures this gap between checkpoints WITH A
-# CURRENT READING, not between registry rows (see MIN_OPEN_COVERAGE). The
-# registry gap is still reported as `blind_stretch` — "nothing is even tracked
-# here" is its own fact — but it no longer decides the verdict on its own.
 UNVERIFIED_GAP_KM = 10.0
-
-# MIN_OPEN_COVERAGE — PLAN §6 G2 as written: "`open` only when corridor
-# coverage ≥ 0.6". Coverage is 1 − (the longest stretch with no current
-# reading) / (the drive), measured on READINGS, never on the registry.
-#
-# Two defects made this necessary (audit 2026-09-25, F071 and the lead probe):
-#   * The 10 km gap was the only coverage test, and on a drive shorter than
-#     ~25 km it can never fire: Ramallah->Bir Zeit (12 km) with one open
-#     checkpoint at km 3 read "probably passable" over a road three-quarters
-#     unwatched.
-#   * The gap was measured between REGISTRY rows, including ones nobody had
-#     reported on. One of eight checkpoints known read exactly like eight of
-#     eight (PLAN §4 R2), and — worse — adding a tracked-but-silent row inside
-#     a 15 km unwatched stretch turned `unverified` into `likely_open`: knowing
-#     that a checkpoint exists made the answer MORE permissive. A checkpoint
-#     with no current reading watches nothing, so it marks nothing.
-MIN_OPEN_COVERAGE = 0.6
-
-# `verdict_covers` says "the whole route" only above this, and only when no
-# stretch doubt exists — the renderers speak the blind stretch below it too.
-WHOLE_ROUTE_COVERAGE = 0.8
-
-# Where along the route a point sits is measured in METRES, in UTM zone 36N
-# (EPSG:32636, which covers the West Bank and Gaza with < 0.05 % scale error).
-# ST_LineLocatePoint on SRID 4326 locates in DEGREES, and at 32°N a degree of
-# longitude is 94 km against 111 km for latitude: on a drive that mixes
-# east-west and north-south legs a closure 9.5 km from the origin projected to
-# 10.4 km and fell outside the ENDS_KM window (audit F526).
-METRIC_SRID = 32636
 
 # ENDS_KM — a closure in the first or last stretch is the one that decides
 # whether you can start or finish the journey at all. On the audited trip Beit
@@ -145,28 +110,11 @@ ENDS_KM = 10.0
 # caution because a family planning a journey wants to know it was seen at all.
 PRESENCE_KINDS = ("checkpoint_idf", "checkpoint_settlers", "checkpoint_police")
 
-# THE ROUTE READS THE SAME DIRECTION RECONCILIATION AS checkpoint_status.
-# Until 2026-09-25 these two queries read raw `state_serving` rows, one per
-# REPORTED direction, and kept the most severe. But state_current is keyed
-# (place, kind, direction), so a 'both' reading never retires an 'inbound' one:
-# "بيت ايل مغلق للداخل" at 10:00 and "بيت ايل سالك" from three channels at
-# 14:55 coexist until max_assert retires the first. checkpoint_serving
-# (migration 014/027) resolves each TRAVEL direction to the freshest of
-# (that direction, 'both') and served open both ways; the route took the stale
-# inbound closure and said `blocked` on the same checkpoint in the same minute
-# (audit F320). Reading the view's inbound/outbound rows makes the two tools
-# one definition; which travel direction is yours is still unknown, so the
-# worse of the two is what the route scores (see _corridor_for).
-_LINE_CTE = f"""
-WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g,
-                     ST_Transform(ST_GeomFromText(%(wkt)s, 4326), {METRIC_SRID}) u)"""
-
-_ALONG = f"ST_LineLocatePoint(line.u, ST_Transform(p.centroid::geometry, {METRIC_SRID}))"
-
-ON_ROUTE_SQL = _LINE_CTE + f""",
+ON_ROUTE_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m),
      cp AS (
   SELECT p.place_id, p.name_ar, p.name_en,
-         {_ALONG}                                              AS along,
+         ST_LineLocatePoint(line.m, p.centroid::geometry)      AS along,
          round(ST_Distance(p.centroid, line.g)::numeric)       AS off_route_m,
          ST_Y(p.centroid::geometry) lat, ST_X(p.centroid::geometry) lon
     FROM place p, line
@@ -176,32 +124,33 @@ ON_ROUTE_SQL = _LINE_CTE + f""",
 )
 SELECT cp.place_id, cp.name_ar, cp.name_en, cp.along, cp.off_route_m,
        cp.lat, cp.lon,
-       f.flow,
-       f.last_known_flow AS flow_last,
-       f.confidence      AS flow_conf,
-       f.age_minutes     AS flow_age,
+       f.value          AS flow,
+       f.last_known_value AS flow_last,
+       f.confidence     AS flow_conf,
+       f.age_minutes    AS flow_age,
        f.independent_sources,
        f.direction
   FROM cp
-  LEFT JOIN checkpoint_serving f
-    ON f.place_id = cp.place_id AND f.direction IN ('inbound', 'outbound')
+  LEFT JOIN state_serving f
+    ON f.place_id = cp.place_id AND f.state_kind = 'checkpoint_flow'
  ORDER BY cp.along, f.direction
 """
 
-NEAR_MISS_SQL = _LINE_CTE + f"""
+NEAR_MISS_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
 SELECT p.place_id, p.name_ar, p.name_en,
        round(ST_Distance(p.centroid, line.g)::numeric) AS off_route_m,
-       f.flow, f.age_minutes, f.independent_sources,
-       {_ALONG} AS along
+       f.value AS flow, f.age_minutes, f.independent_sources,
+       ST_LineLocatePoint(line.m, p.centroid::geometry) AS along
   FROM place p
  CROSS JOIN line
-  JOIN checkpoint_serving f
-    ON f.place_id = p.place_id AND f.direction IN ('inbound', 'outbound')
+  JOIN state_serving f
+    ON f.place_id = p.place_id AND f.state_kind = 'checkpoint_flow'
  WHERE p.kind = 'checkpoint' AND p.centroid IS NOT NULL
    AND COALESCE(p.servable, true) AND p.merged_into IS NULL
    AND ST_DWithin(p.centroid, line.g, %(near)s)
    AND NOT ST_DWithin(p.centroid, line.g, %(buf)s)
-   AND f.flow IN ('closed', 'congested', 'slow')
+   AND f.value IN ('closed', 'congested', 'slow')
 """
 
 PRESENCE_SQL = """
@@ -256,44 +205,21 @@ _PASSES_NOISE = tuple(_fold_ar(n) for n in ("محطة", "كازية", "Fuel stat
                  "סונול", "פז", "דלק", "דור אלון", "ח'רבת", "Khirbet", "Khirbat",
                  "بنزين", "بترول", "غاز", "Petrol", "Gas", "غسيل"))
 
-# A waypoint is a place people live, filtered by KIND first and by the noise
-# list second. `p.kind <> 'checkpoint'` alone let a forecourt under a brand the
-# list did not know ("الريان"), a governorate centroid and road rows through
-# as towns the route "passes" (audit F528). Denying the kinds that are never a
-# town — rather than allowing a guessed set — cannot silently empty the list
-# if the gazetteer files towns under a kind nobody measured here.
-PASSES_SQL = _LINE_CTE + f"""
+PASSES_SQL = """
+WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m)
 SELECT p.name_ar, p.name_en,
-       {_ALONG} AS along,
+       ST_LineLocatePoint(line.m, p.centroid::geometry) AS along,
        round(ST_Distance(p.centroid, line.g)::numeric)  AS off_m
   FROM place p, line
  WHERE p.merged_into IS NULL
    AND COALESCE(p.servable, true)
-   AND p.kind NOT IN ('checkpoint', 'crossing', 'road', 'station', 'facility',
-                      'hospital', 'school', 'region', 'governorate',
-                      'district_mandate')
+   AND p.kind <> 'checkpoint'
    AND ST_DWithin(p.centroid, line.g, %(near)s)
  ORDER BY along
 """
 
-# A name in Hebrew script is not a name the traveller navigates by, and the
-# rows that carry one are Israeli POIs or the Hebrew-duplicate registry rows
-# PLAN §4 R1 names ("מחסום דיר שרף"). `nm = par or pen` let such a row into the
-# spoken Arabic list whenever its slice had no Arabic-named candidate (F322).
-_HEBREW = re.compile("[\u0590-\u05FF]")
-
 BLOCKING = "closed"
 SLOWING = ("congested", "slow")
-OPEN = "open"
-# The whole flow vocabulary. Anything else — a future crowd value, 'partial',
-# 'checking', a typo — is NOT a reading of `open`: `_score` used to count every
-# value that was not literally 'unknown' as known, so 'restricted' came back as
-# "1 of 1 checkpoints confirmed open" (audit F530).
-FLOWS = (OPEN,) + SLOWING + (BLOCKING,)
-
-
-def _is_reading(flow: str | None) -> bool:
-    return flow in FLOWS
 
 
 @dataclass
@@ -340,13 +266,8 @@ class Corridor:
     # merged into `blocked_at` (they are not ON the route) or `near_misses`
     # (which is every closure/congestion along the whole line).
     exit_closures: list = field(default_factory=list)
-    # Why this route could NOT be called open, structured for the renderers:
-    # blind_stretch / unreported_stretch / exit_closure records. Populated for
-    # EVERY verdict, not only `unverified`: a `slow` route is as much a claim
-    # that the road is passable as `likely_open` is, and a `blocked` or
-    # `unknown` one still has exits and blind stretches worth saying (F318).
-    # Whether the doubts CHANGED the word is the verdict's business; that they
-    # exist is always the reader's.
+    # Why an otherwise-open route reads `unverified`, structured for the
+    # renderers: blind_stretch / exit_closure records.
     doubts: list = field(default_factory=list)
     checkpoints: list = field(default_factory=list)
     # How much of this drive anything actually watches, and which towns it goes
@@ -422,13 +343,12 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
     the opposite of the answer.
 
     So `likely_open` — the only verdict that reads as permission — now has to
-    earn it (PLAN §6 G2). It degrades to `unverified` when any of:
+    earn it. It degrades to `unverified` when either:
 
-      * current readings cover less than MIN_OPEN_COVERAGE of the drive,
-      * the longest stretch with no current reading exceeds UNVERIFIED_GAP_KM,
+      * the longest unwatched stretch exceeds UNVERIFIED_GAP_KM, or
       * a closure sits within ENDS_KM of the origin or the destination.
 
-    The last is the one that matters most and the one the audit named: a
+    The second is the one that matters most and the one the audit named: a
     closure 2 km off a corridor AT THE ORIGIN is usually the road you must take
     to reach that corridor. Near the middle of a long drive it is far more
     often a genuinely different road, which is why position, not just distance
@@ -437,16 +357,12 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
     `unverified` is not `blocked`. It means: we cannot tell you this is open,
     here is what we do know. A confirmed closure ON the route still blocks, and
     congestion still reads as slow — degrading those would be hiding evidence
-    rather than qualifying its absence. But `slow` says "passable" too, so it
-    carries the same doubts in its sentence: until 2026-09-25 it returned
-    before they were computed, and a route whose only watched checkpoint was
-    congested 45 km in, with the exit closed, read "passable but congested"
-    and nothing else (audit F318).
+    rather than qualifying its absence.
     """
     blocked = [c for c in cps if c.flow == BLOCKING]
     slow = [c for c in cps if c.flow in SLOWING]
-    known = [c for c in cps if _is_reading(c.flow)]
-    unknown = [c for c in cps if not _is_reading(c.flow)]
+    known = [c for c in cps if c.flow != "unknown"]
+    unknown = [c for c in cps if c.flow == "unknown"]
 
     if blocked:
         names = "، ".join(c.name for c in blocked[:3])
@@ -457,17 +373,15 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
     if not known:
         return "unknown", (f"No recent reports from any of the "
                            f"{len(cps)} checkpoints on this route.")
-
-    # Nothing on the route is closed — now ask whether we saw enough of the
-    # route, and of its two ends, to call it passable at all.
-    doubts = _doubts(coverage, near_misses, distance_km)
     if slow:
         names = "، ".join(c.name for c in slow[:3])
         return "slow", (f"Passable but congested at {names}. "
                         f"{len(known)} of {len(cps)} checkpoints reported"
-                        + (f", {len(unknown)} not checked recently." if unknown else ".")
-                        + (" Beyond that it cannot be confirmed: " + "; ".join(doubts)
-                           + ". Check before travelling." if doubts else ""))
+                        + (f", {len(unknown)} not checked recently." if unknown else "."))
+
+    # Nothing on the route contradicts "open" — now ask whether we saw enough
+    # of the route, and of its two ends, to say so.
+    doubts = _doubts(coverage, near_misses, distance_km)
     if doubts:
         return "unverified", ("Nothing on this route is reported closed, but "
                               + "; ".join(doubts)
@@ -477,110 +391,18 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
                               if unknown else "."))
 
 
-def _longest_gap(alongs: list[float]) -> tuple[float, float, float]:
-    """(length, start, end) of the longest stretch between marks, as fractions
-    of the route, counting the origin and the destination as marks."""
-    marks = sorted([0.0] + [a for a in alongs if 0.0 <= a <= 1.0] + [1.0])
-    segs = [(marks[i + 1] - marks[i], marks[i], marks[i + 1])
-            for i in range(len(marks) - 1)]
-    return max(segs) if segs else (1.0, 0.0, 1.0)
-
-
-def coverage_of(cps: list[CheckpointOnRoute], dist: float) -> dict:
-    """How much of this drive anything actually watches — twice.
-
-    `coverage_fraction` / `longest_gap_*` are measured on the REGISTRY: where a
-    tracked checkpoint exists at all, reported or not. They are what "no
-    checkpoint is tracked for N km" means and are kept exactly as before.
-
-    `reported_fraction` / `longest_unreported_*` are measured on checkpoints
-    WITH A CURRENT READING, and they are what the verdict is gated on (G2):
-    an `unknown` checkpoint watches nothing, so it marks nothing. See
-    MIN_OPEN_COVERAGE for the two defects the registry measure caused.
-    `silent_checkpoints` names the tracked checkpoints inside the longest
-    unreported stretch — the ones whose silence IS the stretch.
-    """
-    g, a, b = _longest_gap([c.along for c in cps])
-    reported = [c for c in cps if _is_reading(c.flow)]
-    rg, ra, rb = _longest_gap([c.along for c in reported])
-    return {
-        "distance_km": round(dist, 1),
-        "checkpoints_on_route": len(cps),
-        "coverage_fraction": round(1.0 - g, 2),
-        "covered_km": round(dist * (1.0 - g), 1),
-        "longest_gap_km": round(dist * g, 1),
-        "longest_gap_from_km": round(dist * a, 1),
-        "longest_gap_to_km": round(dist * b, 1),
-        "reported_checkpoints": len(reported),
-        "reported_fraction": round(1.0 - rg, 2),
-        "longest_unreported_km": round(dist * rg, 1),
-        "longest_unreported_from_km": round(dist * ra, 1),
-        "longest_unreported_to_km": round(dist * rb, 1),
-        "silent_checkpoints": [c.name for c in cps
-                               if not _is_reading(c.flow) and ra <= c.along <= rb],
-    }
-
-
-def verdict_covers(coverage: dict, records: list[dict]) -> str:
-    """"the whole route" only when the verdict could not have been withheld
-    for coverage. It used to read the registry fraction against 0.8 while the
-    verdict read a 10 km gap, so a 60 km drive with a 10.5 km blind stretch
-    said "the whole route" beside `unverified` for exactly that stretch (F531)."""
-    if any(r.get("kind") in ("blind_stretch", "unreported_stretch") for r in records):
-        return "part of the route"
-    frac = coverage.get("reported_fraction", coverage.get("coverage_fraction"))
-    return ("the whole route" if frac is not None and frac >= WHOLE_ROUTE_COVERAGE
-            else "part of the route")
-
-
 def doubt_records(coverage: dict | None, near_misses: list | None,
                   distance_km: float | None) -> list[dict]:
-    """Every reason this route could not be called open, STRUCTURED, so both
-    spoken answers can render them in their own language. Until 2026-09-24 the
-    reasons existed only in the English `summary`, which neither the Arabic nor
-    the English MCP answer used: a route read `unverified` and never said why.
-
-      blind_stretch       no checkpoint is even TRACKED on this stretch
-                          (km / from_km / to_km)
-      unreported_stretch  checkpoints are tracked here but none has a current
-                          reading (km / from_km / to_km / silent: their names)
-      exit_closure        a closure just off the route at either end
-
-    Two kinds rather than one because they are different facts and the
-    renderers speak `blind_stretch` as "no tracked checkpoint", which would be
-    false over a stretch holding seven tracked-but-silent ones.
-
-    A caller that passes a coverage dict without the reported measure (tests,
-    older callers) is gated on the registry measure it did pass.
-    """
+    """The same reasons as `_doubts`, STRUCTURED, so both spoken answers can
+    render them in their own language. Until 2026-09-24 the reasons existed
+    only in the English `summary`, which neither the Arabic nor the English
+    MCP answer used: a route read `unverified` and never said why."""
     out: list[dict] = []
-    cov = coverage or {}
-    gap = float(cov.get("longest_gap_km") or 0.0)
-    blind = gap >= UNVERIFIED_GAP_KM
-    if blind:
+    gap = float((coverage or {}).get("longest_gap_km") or 0.0)
+    if gap >= UNVERIFIED_GAP_KM:
         out.append({"kind": "blind_stretch", "km": round(gap, 1),
-                    "from_km": cov.get("longest_gap_from_km"),
-                    "to_km": cov.get("longest_gap_to_km")})
-
-    frac = cov.get("reported_fraction", cov.get("coverage_fraction"))
-    rgap = float(cov.get("longest_unreported_km", cov.get("longest_gap_km")) or 0.0)
-    thin = frac is not None and float(frac) < MIN_OPEN_COVERAGE
-    if thin or rgap >= UNVERIFIED_GAP_KM:
-        rec = {"km": round(rgap, 1),
-               "from_km": cov.get("longest_unreported_from_km", cov.get("longest_gap_from_km")),
-               "to_km": cov.get("longest_unreported_to_km", cov.get("longest_gap_to_km")),
-               "reported_fraction": frac, "min_fraction": MIN_OPEN_COVERAGE}
-        silent = list(cov.get("silent_checkpoints") or [])
-        if silent:
-            out.append({"kind": "unreported_stretch", **rec, "silent": silent})
-        elif blind:
-            # The same stretch, already recorded: say why it also fails G2.
-            out[0].update(reported_fraction=frac, min_fraction=MIN_OPEN_COVERAGE)
-        else:
-            # Nothing tracked on it either — shorter than UNVERIFIED_GAP_KM, but
-            # most of a short drive (F071: 9 km of a 12 km trip).
-            out.append({"kind": "blind_stretch", **rec})
-
+                    "from_km": (coverage or {}).get("longest_gap_from_km"),
+                    "to_km": (coverage or {}).get("longest_gap_to_km")})
     for m in _closures_at_ends(near_misses, distance_km):
         out.append({"kind": "exit_closure", "name": m.get("name"),
                     "name_en": m.get("name_en"), "flow": m.get("flow"),
@@ -592,28 +414,20 @@ def doubt_records(coverage: dict | None, near_misses: list | None,
 
 def _doubts(coverage: dict | None, near_misses: list | None,
             distance_km: float | None) -> list[str]:
-    """The same reasons as `doubt_records`, as English clauses for `summary`.
-    Rendered FROM the records so the sentence and the structure cannot drift
-    apart. Empty means clean."""
+    """Reasons an otherwise-open route cannot be called open. Empty means clean."""
     out: list[str] = []
-    for r in doubt_records(coverage, near_misses, distance_km):
-        if r["kind"] == "exit_closure":
-            end = "leaving" if r["end"] == "origin" else "arriving at"
-            out.append(f"{r['name']} is {r['flow']} {(r['off_route_m'] or 0) / 1000:.1f} km "
-                       f"off the route where you are {end} it")
-            continue
-        frm, to = r.get("from_km"), r.get("to_km")
+
+    gap = float((coverage or {}).get("longest_gap_km") or 0.0)
+    if gap >= UNVERIFIED_GAP_KM:
+        frm = (coverage or {}).get("longest_gap_from_km")
+        to = (coverage or {}).get("longest_gap_to_km")
         where = f" ({frm:.0f}-{to:.0f} km in)" if frm is not None and to is not None else ""
-        if r["kind"] == "blind_stretch":
-            s = f"no checkpoint is tracked for {r['km']:.0f} km of it{where}"
-        else:
-            names = "، ".join(r["silent"][:3])
-            s = (f"none of the checkpoints on {r['km']:.0f} km of it{where} has a "
-                 f"current report ({names} not reported recently)")
-        if r.get("reported_fraction") is not None and r["reported_fraction"] < MIN_OPEN_COVERAGE:
-            s += (f", so current reports cover only {r['reported_fraction']:.0%} "
-                  f"of the drive")
-        out.append(s)
+        out.append(f"no checkpoint is tracked for {gap:.0f} km of it{where}")
+
+    for m in _closures_at_ends(near_misses, distance_km):
+        end = "leaving" if m["along"] <= 0.5 else "arriving at"
+        out.append(f"{m['name']} is {m['flow']} {m['off_route_m'] / 1000:.1f} km "
+                   f"off the route where you are {end} it")
     return out
 
 
@@ -690,41 +504,13 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     near_on_route: set[int] = set()
     near_misses: list = []
 
-    # One checkpoint comes back once per TRAVEL direction (inbound, outbound),
-    # each already resolved by checkpoint_serving exactly as checkpoint_status
-    # resolves it. A route has a direction of travel but our inbound/outbound is
-    # defined relative to the CHECKPOINT, and mapping one to the other reliably
-    # is not something we can do yet — so the WORST direction is taken and both
-    # are reported. Guessing would be wrong half the time, in a way that
-    # silently favours "it is fine".
-    #
-    # ON EQUAL SEVERITY THE CHOICE IS ASYMMETRIC, like everything here. It used
-    # to be whichever row sorted first by direction NAME (audit F321):
-    #   * closed / congested / slow — the best-known reading speaks: more
-    #     independent sources, then the fresher. "Closed (300 min ago), one
-    #     source" beside a 5-minute three-source closure understates a closure
-    #     the system knows well — the near-miss merge above already did this.
-    #   * open — the WEAKEST reading speaks: the older, then the fewer sources.
-    #     An open checkpoint is only as fresh as the direction you might be
-    #     driving, and reporting the fresher one would make `oldest_known_minutes`
-    #     and the age beside "open" understate how stale the permission is.
+    # One checkpoint can appear once per direction. A route has a direction of
+    # travel but our inbound/outbound is defined relative to the CHECKPOINT, and
+    # mapping one to the other reliably is not something we can do yet — so the
+    # WORST direction is taken and both are reported. Guessing would be wrong
+    # half the time, in a way that silently favours "it is fine".
     by_id: dict[int, CheckpointOnRoute] = {}
     order = {"closed": 3, "congested": 2, "slow": 1, "open": 0, "unknown": -1}
-
-    def _age(a) -> float:
-        return float(a) if a is not None else 1e9       # no age reads as oldest
-
-    def _replaces(v: str, srcs, age, c: CheckpointOnRoute) -> bool:
-        new, cur = order.get(v, -1), order.get(c.flow, -1)
-        if new != cur:
-            return new > cur
-        if not _is_reading(v):
-            return False        # unknown beside unknown: no reading, so no age
-        if v == OPEN:           # the staler direction speaks
-            return (_age(age), -(srcs or 0)) > (_age(c.age_minutes),
-                                                 -(c.independent_sources or 0))
-        return (srcs or 0, -_age(age)) > (c.independent_sources or 0, -_age(c.age_minutes))
-
     for (pid, ar, en, along, off, lat, lon, flow, last, conf, age, srcs, direction) in rows:
         c = by_id.get(pid)
         if c is None:
@@ -736,7 +522,7 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
             c.name_en = en
         if direction:
             c.directions[direction] = v
-        if _replaces(v, srcs, age, c):
+        if order.get(v, -1) > order.get(c.flow, -1):
             c.flow, c.flow_last_known = v, last
             c.confidence = float(conf) if conf is not None else None
             c.age_minutes = float(age) if age is not None else None
@@ -756,7 +542,7 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                     by_id[pid].presence.append(
                         {"kind": kind, "age_minutes": float(age) if age is not None else None})
 
-    known = [c for c in cps if _is_reading(c.flow)]
+    known = [c for c in cps if c.flow != "unknown"]
 
     # ── HOW MUCH OF THIS DRIVE ANYTHING ACTUALLY WATCHES ──
     #
@@ -771,24 +557,33 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     #
     # THIS IS COMPUTED BEFORE THE VERDICT, NOT AFTER IT. Until 2026-09-24 the
     # order was reversed, which is precisely why the verdict could not take any
-    # of it into account — see _score. And it is measured twice — on the
-    # registry and on the READINGS — see coverage_of and MIN_OPEN_COVERAGE.
+    # of it into account — see _score.
     dist = float(trip["summary"]["length"])
-    coverage = coverage_of(cps, dist)
+    marks = sorted([0.0] + [c.along for c in cps if 0.0 <= c.along <= 1.0] + [1.0])
+    segs = [(marks[i + 1] - marks[i], marks[i], marks[i + 1])
+            for i in range(len(marks) - 1)]
+    gap_frac, gap_a, gap_b = max(segs) if segs else (1.0, 0.0, 1.0)
+    coverage = {
+        "distance_km": round(dist, 1),
+        "checkpoints_on_route": len(cps),
+        "coverage_fraction": round(1.0 - gap_frac, 2),
+        "covered_km": round(dist * (1.0 - gap_frac), 1),
+        "longest_gap_km": round(dist * gap_frac, 1),
+        "longest_gap_from_km": round(dist * gap_a, 1),
+        "longest_gap_to_km": round(dist * gap_b, 1),
+    }
 
     verdict, summary = _score(cps, coverage=coverage, near_misses=near_misses,
                               distance_km=dist)
-    records = doubt_records(coverage, near_misses, dist)
 
     # A verdict that speaks for a route it cannot see half of is the defect, not
     # the numbers behind it. Say which it is rather than leaving the reader to
-    # infer it from a fraction — from the SAME doubts the verdict read.
-    coverage["verdict_covers"] = verdict_covers(coverage, records)
-    # `unverified` and a doubted `slow` already name their stretches in their
-    # own sentence, from the same numbers.
-    stretch_said = verdict in ("unverified", "slow") and any(
-        r["kind"] in ("blind_stretch", "unreported_stretch") for r in records)
-    if (not stretch_said and coverage["coverage_fraction"] < WHOLE_ROUTE_COVERAGE
+    # infer it from a fraction.
+    coverage["verdict_covers"] = ("the whole route"
+                                  if coverage["coverage_fraction"] >= 0.8
+                                  else "part of the route")
+    # `unverified` already says this in its own sentence, from the same numbers.
+    if (verdict != "unverified" and coverage["coverage_fraction"] < 0.8
             and coverage["longest_gap_km"] > 0):
         summary += (f" No checkpoint is tracked for {coverage['longest_gap_km']:.0f}"
                     f" km of this route ({coverage['longest_gap_from_km']:.0f}-"
@@ -806,9 +601,6 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     # each slice, is what "which towns does it go through" actually asks.
     cands = []
     for par, pen, palong, poff in pass_rows:
-        # A Hebrew-script name is neither the spoken name nor the English one.
-        par = None if par and _HEBREW.search(par) else par
-        pen = None if pen and _HEBREW.search(pen) else pen
         nm = (par or pen or "").strip()
         if not nm or any(x in _fold_ar(nm) for x in _PASSES_NOISE):
             continue
@@ -847,13 +639,12 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                                   if c.age_minutes is not None), default=None),
         blocked_at=[c.name for c in cps if c.flow == BLOCKING],
         slow_at=[c.name for c in cps if c.flow in SLOWING],
-        unreported=[c.name for c in cps if not _is_reading(c.flow)],
+        unreported=[c.name for c in cps if c.flow == "unknown"],
         cautions=[{"place": c.name, "seen": p["kind"], "age_minutes": p["age_minutes"]}
                   for c in cps for p in c.presence],
         near_misses=near_misses,
         exit_closures=_closures_at_ends(near_misses, dist, cap=None),
-        # Every verdict, not only `unverified` — see Corridor.doubts.
-        doubts=records,
+        doubts=doubt_records(coverage, near_misses, dist) if verdict == "unverified" else [],
         checkpoints=cps, shape=leg["shape"], is_alternate=is_alternate)
 
 

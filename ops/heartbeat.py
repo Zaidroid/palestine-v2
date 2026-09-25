@@ -11,7 +11,6 @@ From a shell script, which is how the timers use it:
     .venv/bin/python -m ops.heartbeat ingest-fuel --interval 300 --grace 600 \
         --detail '{"rows": 42}'
     .venv/bin/python -m ops.heartbeat ingest-fuel --fail "spool unreadable"
-    .venv/bin/python -m ops.heartbeat ingest-fuel --attempt   # before the run
 
 WHY THIS EXISTS
 See db/migrations/028_ops_heartbeat.sql for the argument in full. Short version:
@@ -75,32 +74,6 @@ ON CONFLICT (name) DO UPDATE SET
 """
 
 
-# THE ATTEMPT IS RECORDED BEFORE THE RUN, not only after it.
-#
-# `last_attempt` is what separates `failing` (the scheduler fires the job and it
-# cannot finish) from `not_running` (the scheduler has stopped firing it) — the
-# two need different responders (db/migrations/028). The wrapper used to write
-# it only once the job had RETURNED, so a job killed by TimeoutStartSec — the
-# classifier re-read at 18:04 on 2026-09-24, killed every tick — never wrote
-# anything: systemd SIGTERMs the whole cgroup, the wrapper included, and the
-# row read `not_running` with no reason, sending whoever read the alarm to the
-# timer instead of to the job's runtime. Stamping the attempt first makes a
-# killed job read `failing`, which is what it is. `last_ok`, `last_error` and
-# `consecutive_failures` are left alone: starting is neither success nor
-# failure, and the outcome is written when there is one.
-UPSERT_ATTEMPT = """
-INSERT INTO ops_heartbeat (name, last_ok, last_attempt, last_error,
-                           consecutive_failures, expected_interval_seconds,
-                           grace_seconds)
-VALUES (%s, NULL, now(), NULL, 0, %s, %s)
-ON CONFLICT (name) DO UPDATE SET
-  last_attempt = now(),
-  expected_interval_seconds = COALESCE(EXCLUDED.expected_interval_seconds,
-                                       ops_heartbeat.expected_interval_seconds),
-  grace_seconds = COALESCE(EXCLUDED.grace_seconds, ops_heartbeat.grace_seconds)
-"""
-
-
 def beat(name: str, interval: int | None = None, grace: int | None = None,
          detail: dict | None = None) -> bool:
     """Record a successful cycle. Never raises — see the module docstring."""
@@ -132,19 +105,6 @@ def fail(name: str, error: str, interval: int | None = None,
         return False
 
 
-def attempt(name: str, interval: int | None = None,
-            grace: int | None = None) -> bool:
-    """Record that a cycle is STARTING. Never raises — see the module docstring."""
-    try:
-        with connect() as conn, conn.cursor() as cur:
-            cur.execute(UPSERT_ATTEMPT, (name, interval, grace))
-            conn.commit()
-        return True
-    except Exception as exc:                            # noqa: BLE001
-        print(f"heartbeat attempt({name}) failed to record: {exc}", file=sys.stderr)
-        return False
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="record a job heartbeat")
     ap.add_argument("name")
@@ -152,12 +112,8 @@ def main() -> int:
     ap.add_argument("--grace", type=int, help="how late is late, in seconds")
     ap.add_argument("--detail", default="{}", help="JSON object")
     ap.add_argument("--fail", metavar="ERROR", help="record a failed attempt")
-    ap.add_argument("--attempt", action="store_true",
-                    help="record that a cycle is starting (before the run)")
     a = ap.parse_args()
 
-    if a.attempt:
-        return 0 if attempt(a.name, a.interval, a.grace) else 1
     if a.fail:
         return 0 if fail(a.name, a.fail, a.interval, a.grace) else 1
     try:

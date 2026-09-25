@@ -169,58 +169,6 @@ def identity_key_for(ident: dict, dataset_key: str, *, indicator, occurred_at,
     return "|".join(parts)
 
 
-# What tells two events on one day at one place with one count apart. Until
-# 2026-09-25 the event identity was type|day|place|point|metrics and nothing
-# else, so the 262 T4P journalist killings — every one dated 2023-10-07,
-# region-precise, killed 1 — rendered ONE key between them: a fresh load kept
-# about one journalist per region, and a newly published journalist was
-# skipped as "already held". The victim's name is in `actors`; a UCDP dyad
-# (Israel–Hamas vs Israel–PIJ, same day, same point, same toll) is in
-# `dyad_name`; a Nakba village is its `gazetteer_key`. Read from attrs on
-# BOTH sides — the held event's stored attrs and the fresh row's — and
-# rendered by the one function below, so no key changes for an event whose
-# attrs did not.
-EVENT_IDENTITY_ATTRS = ("actors", "dyad_name", "gazetteer_key")
-
-
-def event_identity(event_type, day, place_id, lat, lon, metrics,
-                   attrs) -> str:
-    """The ONE renderer for an event's identity; see EVENT_IDENTITY_ATTRS."""
-    return "|".join(
-        [event_type, day, place_id, lat, lon,
-         json.dumps(metrics, sort_keys=True)]
-        + [json.dumps((attrs or {}).get(a), sort_keys=True,
-                      ensure_ascii=False, default=str)
-           for a in EVENT_IDENTITY_ATTRS])
-
-
-def revision_key(ident: dict, key: str) -> str | None:
-    """The identity with its MEASUREMENT taken out, or None when it has none.
-
-    Three specs (refugees, health, conflict) key on `value_num`, because for
-    them the value is what tells two co-located figures apart — health's
-    frozen corpus measures 104 collisions of genuinely different WHO figures
-    the moment it is removed. The price was that a publisher's revision could
-    never supersede: IDMC revising a displacement from 106 to 120 minted a
-    NEW identity, the old row was never compared, and both stayed current —
-    226 displaced for one event, on a run that reported success.
-
-    Re-keying those datasets would re-mint every stored key. This keeps every
-    key as it is and adds the question the identity could not ask: which held
-    rows share everything BUT the value with a row that is new tonight? Cut
-    from the rendered key rather than re-rendered, so the held side (the
-    STORED key, 052) and the fresh side go through the one renderer, the
-    lesson identity_key_for's docstring spells out three times. Safe to cut:
-    every field before value_num renders without a '|' (a slugged indicator,
-    a date, an integer), and attrs only ever follow the fields."""
-    fields = ident.get("fields", [])
-    if "value_num" not in fields:
-        return None
-    parts = key.split("|")
-    i = 1 + fields.index("value_num")
-    return "|".join(parts[:i] + parts[i + 1:])
-
-
 def read_payload(f: Path) -> bytes:
     """A frozen corpus is gzipped; a v1 file is not. One reader for both.
 
@@ -606,20 +554,6 @@ def t_demolitions(rec, spec, places, counts):
         attrs["locality_name"] = loc.get("name")
         attrs["governorate"] = loc.get("governorate")
     pid = places["pcode"].get(loc.get("admin2_pcode"))
-    if pid is None and loc.get("lat") is not None \
-            and loc.get("lon") is not None:
-        # THE MIDDLE RUNG, which the spec has declared since 2026-08-05
-        # (`strategy: latlon`, "1. location.lat/lon (515/534)") and this
-        # transformer never had. It went pcode → region, which was invisible
-        # while v1 supplied pcodes; v1's rebuild dropped admin2_pcode from
-        # all 516 locality records, so every one of them fell to rung 4 while
-        # holding a good coordinate — 431 served as "West Bank", invisible
-        # to any governorate query, and only counted, never failed (F028).
-        # Education and infrastructure got this rung through place_ladder on
-        # 2026-08-08; demolitions was left behind.
-        pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
-        if pid is not None:
-            counts["place_rung:latlon"] += 1
     if pid is not None:
         place_id, located = pid, True                             # rung 1-2
     else:
@@ -1281,21 +1215,10 @@ def t_conflict(rec, spec, places, counts):
                                      "affected", "unit")
                if m.get(k) not in (None, 0)}
     q = (rec.get("quality") or {}).get("score") or 0.7
-    # A CITATION IS NOT A WITNESS (F445). The spec's `provenance_only`
-    # sources — Zochrot, Palestine Remembered, Atlas of Palestine, Wikidata —
-    # are cross-references where a village page can be read, and the licence
-    # check above already skips them for exactly that reason. Counting them
-    # here stored a POM village with four citations as corroborated by five
-    # independent sources, which any ranking by independence would read as
-    # the best-attested events in the databank for a bibliographic reason.
-    by_name = spec["source_routing"]["by_name"]
-    prov_only = set(spec.get("provenance_only") or [])
-    witnesses = [s for s in sources
-                 if by_name.get(s.get("name")) not in prov_only]
     return [EventRow(ds, f"conflict.{etype}", str(rec["date"])[:10],
                      precision, rec["stable_id"], place_id=pid,
                      lat=lat, lon=lon, located=located, confidence=q,
-                     independent_sources=max(len(witnesses), 1),
+                     independent_sources=max(len(sources), 1),
                      metrics=metrics, attrs=attrs)]
 
 
@@ -1512,23 +1435,8 @@ def t_conflict_gaza(rec, spec, places, counts):
     # states — and on 2026-09-13 it put 73,784 on a day the bulletin itself
     # reads 73,786. A gap is honest; an inferred value served as published is
     # not.
-    # Three values measured in the live feed (2026-09-24: mohtel 1,025,
-    # missing 36, gmotel 22), and each gets its own name. Until 2026-09-25
-    # every non-"mohtel" day was dropped as `t4p_inferred`, a reason that
-    # means "arithmetic fill" — so a Government Media Office bulletin
-    # ("gmotel") would have left a gap in the report under the label of a
-    # number nobody published (F135). It is still not served: this series is
-    # the Ministry's own bulletins by Zaid's decision of 2026-09-23, and
-    # whether the Media Office's totals may continue it is his call, not the
-    # loader's. Anything else T4P starts writing is a drop no spec declares,
-    # which FAILS the run instead of being filed under a guess.
-    src = rec.get("report_source")
-    if src == "missing":
+    if rec.get("report_source") != "mohtel":
         return Drop("t4p_inferred")
-    if src == "gmotel":
-        return Drop("not_a_ministry_bulletin")
-    if src != "mohtel":
-        return Drop(f"unknown_report_source:{src}")
     gaza = places["region"]["Gaza Strip"]
     attrs = {"cumulative": True, "region": "Gaza Strip",
              "report_source": rec.get("report_source")}
@@ -1631,23 +1539,6 @@ def ensure_datasets(conn, spec, category) -> dict:
             # serving category (conflict_westbank → conflict) declares which
             # category views its datasets join.
             cat_label = spec.get("v1_category", category)
-            # THE SPEC'S SOURCE MUST BE THE STORED ONE (F447). The upsert
-            # below never touches source_id, so re-pointing a dataset in its
-            # spec (pcbs → worldbank, P1-B.2) used to "succeed" while every
-            # row kept the old publisher's name, licence and attribution.
-            # Moving a dataset between publishers changes what its rows may
-            # be used for, so it is a MIGRATION (with the old source kept in
-            # attrs), never a side effect of a nightly — and a spec that
-            # disagrees with the database refuses rather than pretends.
-            cur.execute("""SELECT s.key FROM dataset d
-                           JOIN source s ON s.source_id = d.source_id
-                           WHERE d.key = %s""", (ds["key"],))
-            held = cur.fetchone()
-            if held is not None and held[0] != ds["source"]:
-                raise SpecRefused(
-                    f"dataset {ds['key']}: spec says source "
-                    f"{ds['source']!r}, the database holds {held[0]!r} — "
-                    "re-pointing a dataset is a migration, not a sync")
             cur.execute("""
                 INSERT INTO dataset (key, name, source_id, v1_category,
                                      cadence, active)
@@ -1758,42 +1649,19 @@ def run(category: str, dry_run: bool = False) -> dict:
     # generation). 044's unique index cannot see this: new hash = new row.
     # Declared identity is what the row IS, independent of v1's hashing.
     identity_spec = spec.get("identity")
-    # identity → (observation_id, the content held, the same content with
-    # place_id taken out). ONLY rows the DATABASE holds live here. A row
+    # identity → (observation_id or None, the content currently held). A row
     # already here with the SAME content is a re-fetch and is skipped; the
     # same identity with DIFFERENT content is a correction, and corrections
     # supersede.
-    #
-    # Until 2026-09-25 this map was also seeded from the run's OWN rows, and
-    # that one line did two different kinds of damage. An `indistinguishable`
-    # dataset's second identical lorry read as "already held" and was never
-    # written: a fresh load of aid_access wrote ~25.7k of 50,059 rows and
-    # reported success (F029). And a `duplicate_fact` pair whose copies
-    # differed in one attr took the correction branch with oid None, so both
-    # copies were inserted under one key and 052 aborted the transaction
-    # mid-category (F139). What THIS run has already emitted is a separate
-    # question, answered by `run_identities` below.
-    known_identities: dict[str, tuple[int, str, str]] = {}
-    run_identities: set[str] = set()
+    known_identities: dict[str, tuple[int | None, str]] = {}
     to_supersede: list[int] = []
     revision_samples: list[str] = []
-    # value-keyed identities (see revision_key): held keys grouped by the
-    # identity-without-the-value, and the NEW keys this run emitted per group
-    held_by_revision: dict[str, list[str]] = defaultdict(list)
-    new_by_revision: dict[str, set[str]] = defaultdict(set)
 
     # Events need the same protection as observations: 046's index keys on
     # v1_stable_id, so a re-hashed upstream re-inserts the whole history
     # (measured 2026-08-07: conflict re-added 8,282 events). An event's
-    # natural identity is what happened, where, when, at what scale — and to
-    # WHOM, between WHOM. Held events (from the database) and this run's own
-    # are kept apart for the same reason as observations: a second event
-    # this run emits under one key is a collision to count, not a row the
-    # databank "already holds".
+    # natural identity is what happened, where, when, at what scale.
     known_events: set[str] = set()
-    run_events: set[str] = set()
-    event_collisions = 0
-    event_collision_samples: list[str] = []
 
     # [emitted, located] per dataset — a whole-category floor cannot see one
     # dataset going dark inside a healthy average, and refugees declares three
@@ -1807,9 +1675,9 @@ def run(category: str, dry_run: bool = False) -> dict:
     collision_samples: dict[str, list[str]] = defaultdict(list)
 
     def _event_identity(e) -> str:
-        return event_identity(e.event_type, str(e.occurred_at)[:10],
-                              str(e.place_id), str(e.lat), str(e.lon),
-                              e.metrics, e.attrs)
+        return "|".join([e.event_type, str(e.occurred_at)[:10],
+                         str(e.place_id), str(e.lat), str(e.lon),
+                         json.dumps(e.metrics, sort_keys=True)])
 
     # Identity is per DATASET, not per spec. That distinction is the whole
     # 2026-08-07 freeze: infrastructure.yaml holds a 730-day Gaza daily
@@ -1882,33 +1750,25 @@ def run(category: str, dry_run: bool = False) -> dict:
                       AND upper_inf(o.sys_period)""",
                     (list(identity_by_ds),))
                 for k, oid, vn, vt, un, pid, at in cur.fetchall():
-                    known_identities[k] = (
-                        oid,
-                        content_of(value_num=vn, value_text=vt, unit=un,
-                                   place_id=pid, attrs=at),
-                        content_of(value_num=vn, value_text=vt, unit=un,
-                                   place_id=None, attrs=at))
-                    ds_of = k.split("|", 1)[0]
-                    _id = identity_by_ds.get(ds_of) or {}
-                    rk = (revision_key(_id, k) if _id.get("collision_kind")
-                          != "indistinguishable" else None)
-                    if rk is not None:
-                        held_by_revision[rk].append(k)
+                    known_identities[k] = (oid, content_of(
+                        value_num=vn, value_text=vt, unit=un, place_id=pid,
+                        attrs=at))
             if spec.get("shape") == "event" or spec.get("shape_overrides"):
                 cur.execute(
                     "SELECT event_type, occurred_at::date::text, "
                     "       place_id::text, "
                     "       ST_Y(geom::geometry)::text, "
-                    "       ST_X(geom::geometry)::text, metrics, attrs "
+                    "       ST_X(geom::geometry)::text, metrics "
                     "FROM event "
                     "WHERE attrs->>'dataset_key' = ANY(%s) "
                     "  AND upper_inf(sys_period)",
                     ([ds["key"] for ds in spec["datasets"]],))
-                for et, oc, pid, lat, lon, met, eat in cur.fetchall():
-                    known_events.add(event_identity(
+                for et, oc, pid, lat, lon, met in cur.fetchall():
+                    known_events.add("|".join([
                         et, oc, "None" if pid is None else pid,
                         "None" if lat is None else lat,
-                        "None" if lon is None else lon, met, eat))
+                        "None" if lon is None else lon,
+                        json.dumps(met, sort_keys=True)]))
         for f, r in transform_all(category, spec, places, counts, drops):
             if f not in refs:
                 refs[f] = bronze.put(f"v1_{category}", read_payload(f),
@@ -1929,16 +1789,7 @@ def run(category: str, dry_run: bool = False) -> dict:
             # could never fail at all
             per_ds[r.dataset_key][0] += 1
             per_ds[r.dataset_key][1] += bool(r.located)
-            if not isinstance(r, EventRow):
-                # the FULL emission, measured before any already-held skip.
-                # `len(rows)` after the skip is a handful on a real nightly,
-                # so the tripwire below could only ever fire on a first load
-                # or a dry run — never on the night an identity too fine
-                # starts re-inserting revisions (F140).
-                counts["observations_produced"] += 1
             ident = _identity_of(r)
-            kind = (identity_by_ds.get(r.dataset_key) or {}).get(
-                "collision_kind")
             if ident is not None:
                 # THE INVARIANT: an identity that cannot tell two rows
                 # of THIS run apart cannot tell them apart across runs
@@ -1949,153 +1800,63 @@ def run(category: str, dry_run: bool = False) -> dict:
                     if len(collision_samples[r.dataset_key]) < 3:
                         collision_samples[r.dataset_key].append(ident)
                 emitted_identities.add(ident)
-            if ident is not None and kind == "indistinguishable":
-                # NO identity guard at all. The duplicates are DIFFERENT
-                # things the source records identically (aid_access's
-                # lorries), the key is never stored, so the databank can
-                # never "hold" one — and a key seen earlier in THIS run is
-                # the previous lorry, not this one. 044 (v1_stable_id) is
-                # the dedupe this dataset declares, and the only one.
-                pass
-            elif ident is not None and ident in run_identities:
-                # The same declared fact a second time in ONE run — the
-                # `duplicate_fact` the spec measured (IDMC's Nur Shams row
-                # published twice; v1's cumulative under two event_types).
-                # One fact, one row: the first copy stands. Never a
-                # "correction": the first copy is not in the databank yet,
-                # so there is nothing to supersede — appending its None
-                # oid and inserting both copies under one key is what made
-                # 052 abort the whole category (F139). Allowed only up to
-                # identity.allow_collisions, enforced below.
-                counts["intra_run_duplicate_dropped"] += 1
-                if not dry_run:
-                    continue
-            elif ident is not None and ident in known_identities:
-                run_identities.add(ident)
-                oid, held, held_sans_place = known_identities[ident]
-                fresh = content_of(
-                    value_num=r.value_num, value_text=r.value_text,
-                    unit=r.unit, place_id=r.place_id, attrs=r.attrs)
-                if fresh == held:
-                    # already in the databank under an older v1 hash —
-                    # the 2026-08-07 doubling, prevented at the source
-                    counts["identity_already_held"] += 1
-                    # a DRY RUN reports what the spec PRODUCES (the
-                    # arithmetic under test); only a real run drops
-                    # the already-held rows. emitted − already_held
-                    # is what a write would insert.
-                    if not dry_run:
-                        continue
-                else:
-                    # A CORRECTION. Same row, different reading — the
-                    # publisher revised it. Supersede what we hold and
-                    # write the new one, which is the law this databank
-                    # is built on and which the identity guard had
-                    # quietly suspended: OONI revised eight days upward
-                    # and the databank kept the stale numbers while
-                    # reporting a clean run.
-                    #
-                    # Unless only the PLACE moved. place_id is ours — the
-                    # gazetteer's answer, not the publisher's — so a
-                    # re-resolution (a new ladder rung, 077's admin2
-                    # re-coding) still supersedes, but it is counted as
-                    # what it is. Read as `revisions` it would record a
-                    # correction the source never made, hundreds at a
-                    # time on corpora measured static (F444).
-                    same_but_place = content_of(
+                if ident in known_identities:
+                    oid, held = known_identities[ident]
+                    fresh = content_of(
                         value_num=r.value_num, value_text=r.value_text,
-                        unit=r.unit, place_id=None,
-                        attrs=r.attrs) == held_sans_place
-                    counts["place_resolution_changes" if same_but_place
-                           else "revisions"] += 1
-                    if len(revision_samples) < 5 and not same_but_place:
-                        revision_samples.append(
-                            f"{r.indicator}@{str(r.occurred_at)[:10]}: "
-                            f"{held[:90]} → {fresh[:90]}")
-                    if not dry_run:
-                        to_supersede.append(oid)
-            elif ident is not None:
-                run_identities.add(ident)
-                rk = revision_key(identity_by_ds[r.dataset_key], ident)
-                if rk is not None:
-                    new_by_revision[rk].add(ident)
+                        unit=r.unit, place_id=r.place_id, attrs=r.attrs)
+                    if fresh == held:
+                        # already in the databank under an older v1 hash —
+                        # the 2026-08-07 doubling, prevented at the source
+                        counts["identity_already_held"] += 1
+                        # a DRY RUN reports what the spec PRODUCES (the
+                        # arithmetic under test); only a real run drops
+                        # the already-held rows. emitted − already_held
+                        # is what a write would insert.
+                        if not dry_run:
+                            continue
+                    else:
+                        # A CORRECTION. Same row, different reading — the
+                        # publisher revised it. Supersede what we hold and
+                        # write the new one, which is the law this databank
+                        # is built on and which the identity guard had
+                        # quietly suspended: OONI revised eight days upward
+                        # and the databank kept the stale numbers while
+                        # reporting a clean run.
+                        counts["revisions"] += 1
+                        if len(revision_samples) < 5:
+                            revision_samples.append(
+                                f"{r.indicator}@{str(r.occurred_at)[:10]}: "
+                                f"{held[:90]} → {fresh[:90]}")
+                        if not dry_run:
+                            to_supersede.append(oid)
+                        known_identities[ident] = (oid, fresh)
+                else:
+                    known_identities[ident] = (None, content_of(
+                        value_num=r.value_num, value_text=r.value_text,
+                        unit=r.unit, place_id=r.place_id, attrs=r.attrs))
             if isinstance(r, EventRow):
                 ek = _event_identity(r)
-                if ek in run_events:
-                    # two events of THIS run that the identity cannot tell
-                    # apart: the same thing twice (collapsed, as before),
-                    # but counted and sampled — until 2026-09-25 this was
-                    # indistinguishable from "already held" in the report
-                    event_collisions += 1
-                    if len(event_collision_samples) < 3:
-                        event_collision_samples.append(ek[:160])
-                    if not dry_run:
-                        continue
-                elif ek in known_events:
+                if ek in known_events:
                     counts["event_already_held"] += 1
-                    run_events.add(ek)
                     if not dry_run:
                         continue
                 else:
-                    run_events.add(ek)
-            if ident is not None and kind != "indistinguishable":
+                    known_events.add(ek)
+            if ident is not None and (
+                    identity_by_ds.get(r.dataset_key, {})
+                    .get("collision_kind") != "indistinguishable"):
                 # Only `indistinguishable` datasets go keyless — their
                 # duplicates are DIFFERENT things the source records
                 # identically (aid_access lorries), so collapsing them
                 # would delete real data. A `duplicate_fact` dataset
-                # keeps its key and its second copy is dropped above,
+                # keeps its key and lets 052 refuse the second copy,
                 # which is the dedup we want. Getting this backwards
                 # cost IDMC a silent doubling on 2026-08-07.
                 r.identity_key = ident
             seen_stable.add(r.v1_stable_id)
             r.raw_ref = refs[f]
             (event_rows if isinstance(r, EventRow) else rows).append(r)
-
-        # ── value-keyed revisions (F027) ─────────────────────────────────────
-        # A held row whose identity-without-the-value matches a row that is
-        # NEW tonight, and which this run did not re-emit, is the old reading
-        # of a revised figure: IDMC's 106 → 120. It is superseded, exactly as
-        # a correction under a value-free identity would be.
-        #
-        # Only where the input is a COMPLETE generation, judged per dataset
-        # from the data: at least half of what we hold came back tonight, or
-        # every group that lost readings gained at least as many new ones
-        # (one-for-one replacement, which is what a revision of a small
-        # dataset looks like). An incremental feed re-emits little of what it
-        # held, and there "not re-emitted" means nothing — pairing there
-        # would close co-located figures merely absent from tonight's slice.
-        held_per_ds: Counter = Counter()
-        back_per_ds: Counter = Counter()
-        for k in known_identities:
-            ds_of = k.split("|", 1)[0]
-            held_per_ds[ds_of] += 1
-            back_per_ds[ds_of] += k in run_identities
-        replaced: dict[str, list[str]] = defaultdict(list)
-        one_for_one: dict[str, bool] = defaultdict(lambda: True)
-        for rk, held_keys in held_by_revision.items():
-            fresh_keys = new_by_revision.get(rk)
-            gone = [k for k in held_keys if k not in run_identities]
-            if not gone or not fresh_keys:
-                continue            # nothing revised away / a plain absence
-            ds_of = gone[0].split("|", 1)[0]
-            replaced[ds_of].extend(gone)
-            if len(fresh_keys) < len(gone):
-                one_for_one[ds_of] = False
-        for ds_of, keys in replaced.items():
-            complete = (2 * back_per_ds[ds_of] >= held_per_ds[ds_of]
-                        or one_for_one[ds_of])
-            if not complete:
-                counts["value_revision_unconfirmed"] += len(keys)
-                continue
-            counts["value_revisions"] += len(keys)
-            for k in keys:
-                if len(revision_samples) < 5:
-                    rk = revision_key(identity_by_ds[ds_of], k)
-                    revision_samples.append(
-                        f"{k[:90]} → "
-                        f"{sorted(new_by_revision[rk])[0][:90]}")
-                if not dry_run:
-                    to_supersede.append(known_identities[k][0])
 
         # ── enforcement, before any write ────────────────────────────────────
         n = counts["records_read"]
@@ -2104,14 +1865,10 @@ def run(category: str, dry_run: bool = False) -> dict:
             problems.append(f"records_read {n} < expect.min_records "
                             f"{spec['expect']['min_records']}")
         max_obs = spec["expect"].get("max_observations")
-        produced = counts["observations_produced"]
-        if max_obs and produced > max_obs:
+        if max_obs and len(rows) > max_obs:
             # health's failure mode: a run that "succeeds with more" has
-            # failed to dedupe and must say so. Judged on everything the
-            # transform PRODUCED, the same number a dry run has always
-            # judged — not on the night's new rows, which is what a real run
-            # measured until 2026-09-25 and which never trips (F140).
-            problems.append(f"emitted {produced} > expect.max_observations "
+            # failed to dedupe and must say so
+            problems.append(f"emitted {len(rows)} > expect.max_observations "
                             f"{max_obs}")
         # THE INJECTIVITY INVARIANT (added 2026-08-07 after the freeze).
         # An identity that maps two distinct rows to one key does not
@@ -2237,17 +1994,6 @@ def run(category: str, dry_run: bool = False) -> dict:
         "observations_emitted": len(rows),
         "events_emitted": len(event_rows),
         "written": written, "events_written": events_written,
-        # THE BUCKET THAT WAS MISSING (F136). A row can be emitted, not
-        # deduped, not dropped — and still not written, because 044/046's
-        # ON CONFLICT (v1_stable_id) DO NOTHING refused it. For a keyless
-        # dataset that is the designed dedupe (aid_access re-offers every
-        # lorry nightly); for a keyed one it means the identity said "new"
-        # while the stable id said "held" — an identity edit, or a
-        # correction lost quietly. Either way it is counted, not absent,
-        # which is what "every record lands in exactly one bucket" promised.
-        "refused_by_stable_id": (len(rows) - written) if not dry_run else 0,
-        "events_refused_by_stable_id":
-            (len(event_rows) - events_written) if not dry_run else 0,
         "deduped": counts["deduped"],
         "drops": dict(drops),
         "located_pct": round(located / max(decided, 1), 3),
@@ -2258,13 +2004,6 @@ def run(category: str, dry_run: bool = False) -> dict:
         # a correction is a fact about the SOURCE, not a plumbing detail —
         # it belongs in the run record where a reader can see what moved
         report["revisions"] = revision_samples
-    if event_collisions:
-        # Events declare no `allow_collisions` (the identity block is the
-        # observation half's), so a same-key pair is collapsed as before —
-        # but counted and sampled here, where the next spec review can
-        # measure it, instead of hiding inside event_already_held (F137).
-        report["event_identity_collisions"] = event_collisions
-        report["event_collision_samples"] = event_collision_samples
     with RUNS.open("a") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report
@@ -2286,19 +2025,6 @@ def run_all(dry_run: bool = False) -> int:
             if "migrate=false" in str(e):
                 continue
             print(f"FAIL {cat}: {e}", file=sys.stderr)
-            failed.append(cat)
-        except Exception as e:                            # noqa: BLE001
-            # ONE category's crash is one category's failure (F141). Only
-            # SpecRefused was caught here, so a truncated raw file's
-            # JSONDecodeError in conflict_gaza, a KeyError in a hand-written
-            # transformer or a psycopg error ended the whole sync — and
-            # every category after it alphabetically was silently not loaded
-            # that night. run() holds its own connection, so its transaction
-            # has already rolled back by the time we get here; the traceback
-            # goes to stderr for the unit's alert, and the exit code counts it.
-            import traceback
-            print(f"FAIL {cat}: {type(e).__name__}: {e}", file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
             failed.append(cat)
     print(json.dumps({"grew": grew, "failed": failed}, ensure_ascii=False))
     return len(failed)

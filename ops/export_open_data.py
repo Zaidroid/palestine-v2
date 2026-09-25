@@ -48,9 +48,7 @@ import csv
 import gzip
 import io
 import json
-import re
 import sys
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -79,32 +77,6 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "open-release"
 # make the same deliberate choice the API asks for.
 MEMORIAL_FILTER = ("NOT (v1_category = 'martyrs_snapshot_2023' "
                    "AND indicator = 'martyrs.identified_killed')")
-
-# THE SAME OBSERVATION TWICE IS NOT TWO OBSERVATIONS (F026).
-#
-# The `pcbs` category is the World Bank's Palestine series that v1 pulled
-# from api.worldbank.org and filed under PCBS's name (db/mappings/pcbs.yaml,
-# "THIS DATA IS NOT FROM PCBS"; 085 moves the dataset to the World Bank). 1,856
-# of its 2,060 rows are value-identical to rows `economic` already holds from
-# the World Bank itself, under `economic.<code>` instead of `pcbs.<code>`.
-# The 2026-08-08 release shipped both — one copy in pcbs.csv.gz credited to
-# PCBS, one in worldbank.csv.gz — so a reader counted one publisher's figure
-# twice and read it as two sources agreeing.
-#
-# A release carries each observation once: a v1_pcbs_pcbs row whose economic
-# twin (same code, same year, same value) is in the release is left out, and
-# the count goes to WITHHELD.md with the reason. The 204 rows economic does
-# not have stay, credited to whichever publisher the database now names.
-# Written as a predicate over databank_bulk so the collection and the single
-# aggregate apply the same rule.
-PCBS_RELABEL_DUPLICATE = (
-    "(databank_bulk.dataset_key = 'v1_pcbs_pcbs' AND EXISTS ("
-    "SELECT 1 FROM databank_bulk e "
-    "WHERE e.dataset_key = 'v1_economic_worldbank' "
-    "AND e.indicator = 'economic.' || substr(databank_bulk.indicator, 6) "
-    "AND e.occurred_at = databank_bulk.occurred_at "
-    "AND e.value_num IS NOT DISTINCT FROM databank_bulk.value_num))")
-NOT_A_DUPLICATE = f"NOT {PCBS_RELABEL_DUPLICATE}"
 
 # A release licence is compatible with the share-alike rows inside it only if
 # it carries the same copyleft. This is deliberately a short, conservative
@@ -137,72 +109,43 @@ def export_collection(include_memorial: bool = False) -> int:
     (OUT / "by-source").mkdir(exist_ok=True)
     manifest, total = [], 0
     with connect() as conn, conn.cursor() as cur:
-        # ONE FILE PER LICENCE, NOT PER SOURCE (F144). Licence is
-        # dataset-grained since 054 — hdx's two datasets are CC-BY-4.0 and
-        # CC-BY-IGO-3.0 (065) — and this loop used to write one file per
-        # source_key and take the licence from `fetchone()` of a DISTINCT
-        # that could return several, so a file's manifest entry described
-        # whichever tuple came first. A source whose rows share one tuple
-        # keeps its old file name; one with several gets a file per tuple,
-        # each under its own terms, which is the collection's whole premise.
-        cur.execute("""SELECT DISTINCT source_key, source_name, license_spdx,
-                              attribution_text, terms_url, share_alike
-                       FROM databank_bulk ORDER BY 1, 3, 4""")
-        tuples = cur.fetchall()
-        per_source = Counter(t[0] for t in tuples)
-        seen_names: Counter = Counter()
-        for key, name, spdx, attribution, terms, sa in tuples:
-            if per_source[key] == 1:
-                fname = f"{key}.csv.gz"
-            else:
-                seen_names[key] += 1
-                fname = (f"{key}--{_slug(spdx or 'unlicensed')}"
-                         f"-{seen_names[key]}.csv.gz")
+        cur.execute("SELECT DISTINCT source_key FROM databank_bulk ORDER BY 1")
+        for (key,) in cur.fetchall():
             cur.execute(f"SELECT {', '.join(COLUMNS)} FROM databank_bulk "
-                        f"WHERE source_key = %s "
-                        "AND source_name IS NOT DISTINCT FROM %s "
-                        "AND license_spdx IS NOT DISTINCT FROM %s "
-                        "AND attribution_text IS NOT DISTINCT FROM %s "
-                        "AND terms_url IS NOT DISTINCT FROM %s "
-                        "AND share_alike IS NOT DISTINCT FROM %s "
-                        f"AND {mem_sql} AND {NOT_A_DUPLICATE} "
-                        "ORDER BY v1_category, indicator, occurred_at",
-                        (key, name, spdx, attribution, terms, sa))
+                        f"WHERE source_key = %s AND {mem_sql} "
+                        "ORDER BY v1_category, indicator, occurred_at", (key,))
             rows = cur.fetchall()
-            if not rows:
-                continue            # every row was a memorial or a duplicate
             buf = io.StringIO()
             w = csv.writer(buf)
             w.writerow(COLUMNS)
             for r in rows:
                 w.writerow([json.dumps(x, ensure_ascii=False, default=str)
                             if isinstance(x, dict) else x for x in r])
-            (OUT / "by-source" / fname).write_bytes(
+            (OUT / "by-source" / f"{key}.csv.gz").write_bytes(
                 gzip.compress(buf.getvalue().encode()))
-            manifest.append({"file": f"by-source/{fname}", "rows": len(rows),
-                             "source_key": key, "source_name": name,
-                             "license_spdx": spdx, "attribution": attribution,
-                             "terms_url": terms, "share_alike": sa})
+            cur.execute("""SELECT DISTINCT source_name, license_spdx,
+                                  attribution_text, terms_url, share_alike
+                           FROM databank_bulk WHERE source_key = %s""", (key,))
+            meta = cur.fetchone()
+            manifest.append({"file": f"by-source/{key}.csv.gz", "rows": len(rows),
+                             "source_key": key, "source_name": meta[0],
+                             "license_spdx": meta[1], "attribution": meta[2],
+                             "terms_url": meta[3], "share_alike": meta[4]})
             total += len(rows)
         cur.execute("""SELECT v1_category, source_name, license_spdx, rows_held,
                               from_date, to_date, reason, permission_status,
                               terms_url FROM v_withheld ORDER BY rows_held DESC""")
         withheld = cur.fetchall()
-        duplicates = _count(cur, PCBS_RELABEL_DUPLICATE)
-        memorial = 0 if include_memorial else _count(cur,
-                                                     f"NOT {MEMORIAL_FILTER}")
 
     (OUT / "manifest.json").write_text(json.dumps(
         {"shape": "collection", "generated":
          f"{datetime.now(timezone.utc):%Y-%m-%d}", "rows": total,
-         "duplicates_left_out": duplicates,
-         "note": "Each file carries its own licence. Nothing is "
+         "note": "Each file carries its own source's licence. Nothing is "
                  "relicensed and no derived database is formed — three "
                  "incompatible copylefts (ODbL, CC-BY-SA, CC-BY-NC-SA) live "
                  "here and no single aggregate licence can hold them.",
          "files": manifest}, indent=1, ensure_ascii=False))
-    _write_withheld(withheld, total, include_memorial, memorial=memorial,
-                    duplicates=duplicates)
+    _write_withheld(withheld, total, include_memorial)
     sa = [m for m in manifest if m["share_alike"]]
     print(f"  by-source/            {len(manifest)} files, {total:,} rows")
     print(f"  manifest.json         each file under its own licence")
@@ -215,32 +158,8 @@ def export_collection(include_memorial: bool = False) -> int:
     return 0
 
 
-def _slug(s: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
-
-
-def _count(cur, predicate: str) -> int:
-    cur.execute(f"SELECT count(*) FROM databank_bulk WHERE {predicate}")
-    return cur.fetchone()[0]
-
-
-def _duplicates_section(duplicates: int) -> list[str]:
-    if not duplicates:
-        return []
-    return [
-        "## The same observation twice", "",
-        f"**{duplicates:,} rows are left out as copies**, not withheld: the "
-        "`pcbs` category is the World Bank's Palestine series, filed under "
-        "the Palestinian Central Bureau of Statistics' name by an upstream "
-        "relabel, and each of these rows repeats a World Bank row that IS "
-        "in this release (same indicator code, same year, same value). "
-        "Shipping both would count one publisher's figure twice and read as "
-        "two sources agreeing.", ""]
-
-
 def _write_withheld(withheld, n_released: int,
-                    include_memorial: bool = False, *, memorial: int = 0,
-                    duplicates: int = 0) -> None:
+                    include_memorial: bool = False) -> None:
     stamp = f"{datetime.now(timezone.utc):%Y-%m-%d}"
     (OUT / "WITHHELD.md").write_text("\n".join([
         "# What this release does not contain", "",
@@ -260,13 +179,9 @@ def _write_withheld(withheld, n_released: int,
         "Generated from the database, not maintained by hand. If a permission "
         "arrives the rows appear in the next release and leave this page "
         "automatically.", "",
-        *_duplicates_section(duplicates),
         *([] if include_memorial else [
             "## The memorial roster", "",
-            # counted in the same connection as the release (F448): the
-            # roster grows nightly, and a literal 73,077 under "generated
-            # from the database" was stale by the next morning
-            f"**{memorial:,} named records are also absent** — every identified "
+            "**73,077 named records are also absent** — every identified "
             "person killed, with name, date of birth, age and sex. The "
             "licence permits publishing them: Tech4Palestine releases the "
             "roster as public domain precisely so the names are known, and "
@@ -284,17 +199,9 @@ def _write_withheld(withheld, n_released: int,
 
 
 def main(argv: list[str]) -> int:
-    global OUT
     lic = None
     if "--license" in argv:
         lic = argv[argv.index("--license") + 1]
-    if "--out" in argv:
-        # Where the release is written. The default is the release directory
-        # in this repository — which is exactly why a TEST must never use
-        # the default: on a database with no share-alike rows the refusal
-        # test's run went on to overwrite the committed WITHHELD.md with
-        # "0 rows withheld of 0 held" and dropped a README beside it.
-        OUT = Path(argv[argv.index("--out") + 1])
     drop_sa = "--exclude-share-alike" in argv
     include_memorial = "--include-memorial" in argv
     collection = not lic
@@ -325,8 +232,8 @@ def main(argv: list[str]) -> int:
                     "(and lose the entire Mandate-era gazetteer).")
 
         clauses = ([] if include_memorial else [MEMORIAL_FILTER]) \
-            + (["NOT share_alike"] if drop_sa else []) + [NOT_A_DUPLICATE]
-        where = "WHERE " + " AND ".join(clauses)
+            + (["NOT share_alike"] if drop_sa else [])
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
         cur.execute(f"SELECT {', '.join(COLUMNS)} FROM databank_bulk {where} "
                     "ORDER BY v1_category, indicator, occurred_at")
         rows = cur.fetchall()
@@ -341,9 +248,6 @@ def main(argv: list[str]) -> int:
                               attribution_text, terms_url
                        FROM databank_bulk ORDER BY 1""")
         credits = cur.fetchall()
-        duplicates = _count(cur, PCBS_RELABEL_DUPLICATE)
-        memorial = 0 if include_memorial else _count(cur,
-                                                     f"NOT {MEMORIAL_FILTER}")
 
     OUT.mkdir(parents=True, exist_ok=True)
     buf = io.StringIO()
@@ -375,7 +279,6 @@ def main(argv: list[str]) -> int:
         "This list is generated from the database, not maintained by hand. "
         "If a permission arrives, the rows appear in the next release and "
         "leave this page automatically.", "",
-        *_duplicates_section(duplicates),
     ]))
 
     (OUT / "README.md").write_text("\n".join([
@@ -386,8 +289,8 @@ def main(argv: list[str]) -> int:
         "`WITHHELD.md` for what is deliberately absent and why — the export "
         "is never quietly short.", "",
         ("" if include_memorial else
-         f"The {memorial:,} named memorial records are NOT in this release; "
-         "see `WITHHELD.md`. Their aggregate totals are."), "",
+         "The 73,077 named memorial records are NOT in this release; see "
+         "`WITHHELD.md`. Their aggregate totals are."), "",
         "## Credit where it is owed", "",
         *[f"- **{n}** — `{l}`  \n  {a}" + (f"  \n  <{u}>" if u else "")
           for n, l, a, u in credits],
@@ -400,12 +303,7 @@ def main(argv: list[str]) -> int:
          if not drop_sa and sa_total else
          "Share-alike rows were excluded from this release "
          "(`--exclude-share-alike`), so no copyleft obligation travels with "
-         "it. The Mandate-era gazetteer is among what that leaves out."
-         if drop_sa else
-         # neither: the database held no share-alike rows to include or
-         # exclude, and saying `--exclude-share-alike` was passed when it
-         # was not is a small lie in the file that exists to be exact
-         "This release contains no share-alike rows."), "",
+         "it. The Mandate-era gazetteer is among what that leaves out."), "",
     ]))
 
     print(f"  observations.csv.gz   {len(rows):,} rows, licence {lic}")

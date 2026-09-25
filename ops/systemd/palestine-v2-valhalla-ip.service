@@ -1,9 +1,5 @@
 [Unit]
 Description=Palestine v2 — keep VALHALLA_URL pointing at the routing container
-# It had none, the only unit here without one: the fixer for the eleven-hour
-# routing outage of 2026-08-07 could fail every 15 minutes into the journal
-# and nowhere else.
-OnFailure=palestine-v2-alert@%n.service
 
 [Service]
 Type=oneshot

@@ -15,14 +15,8 @@ safer per action. Accordingly:
     Joining is the action that looks like scraping.
   * Poll interval defaults to 30s (v1 uses 5s) and channels are staggered.
   * FloodWaitError is caught, respected, and reported — never retried blindly.
-    That holds wherever a request is made: startup, channel resolution, the
-    history fetch, a media download, a reconnect.
-  * One client per session file. run() holds ingest.setup_session's lock for
-    its whole life, and discovery and setup_session take the same lock, so a
-    second client on the live session refuses instead of starting.
   * A per-channel failure never stops the loop; one dead handle must not take
     the poller down (v1 carries a dead `Almasshta` that errors every startup).
-    A channel that does not resolve is retried on a doubling schedule.
 
 RECONNECTION, AND WHY IT IS NOT JUST A RETRY (added 2026-08-01, after a live
 8-hour outage). A network blip at 08:35 exhausted Telethon's own connection
@@ -62,7 +56,6 @@ import os
 import random
 import signal
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -71,7 +64,6 @@ sys.path.insert(0, str(ROOT))
 
 from ingest import bronze                     # noqa: E402
 from analyst.lang import detect_quietly    # noqa: E402
-from ingest.setup_session import SessionBusy, session_lock   # noqa: E402
 from ops.heartbeat import beat, fail          # noqa: E402
 from resolve.db import connect                # noqa: E402
 
@@ -106,15 +98,7 @@ RECONNECT_ATTEMPTS = 6
 # Kept to an explicit list rather than "download everything with media": the
 # news channels post photos constantly and none of it is machine-readable, so a
 # blanket rule would spend bandwidth and disk on nothing and slow every cycle.
-#
-# EMPTY SINCE THE VERTICAL WAS RETIRED (2026-09-23, migration 070; DECISIONS:
-# "fuel is not an issue to track anymore"). The card reader that consumed
-# attrs.media_ref moved to ops/retired/, but this set still named the channel,
-# so the poller went on issuing up to 150 GetFile requests a cycle — 288-1,040
-# photos a day — on the scarcest account, for images nothing reads. The text
-# of every message is still stored; only the image download stops. Re-enabling
-# is one entry here, and belongs with whatever job reads the images again.
-MEDIA_CHANNELS: frozenset[str] = frozenset()
+MEDIA_CHANNELS = {"palhubappfuel"}
 
 # One card is ~15 KB. A cap exists so a channel that starts posting video
 # cannot fill the disk between watchdog runs — the capacity check is the
@@ -135,73 +119,6 @@ class Deauthorised(Exception):
     the correct response is the opposite one: stop, and do not retry."""
 
 
-def _telethon_errors():
-    """(FloodWaitError, the errors that mean the SESSION is gone).
-
-    Imported lazily, like TelegramClient, so the module imports without
-    Telethon. A 401 (revoked, expired, banned, unregistered key) is never about
-    one channel, and AUTH_KEY_DUPLICATED is Telegram killing a key that two
-    clients used at once. Every other 406 (FILEREF_UPGRADE_NEEDED, ...) is
-    per-request and stays a channel failure.
-    """
-    from telethon.errors import (AuthKeyDuplicatedError, FloodWaitError,
-                                 UnauthorizedError)
-    return FloodWaitError, (UnauthorizedError, AuthKeyDuplicatedError)
-
-
-async def _nap(seconds: float) -> None:
-    """Sleep, waking for SIGTERM. A FloodWait can last hours and systemd's
-    stop timeout is 90 s: an unwakeable sleep ends in a SIGKILL, which is how
-    a state file gets torn mid-write."""
-    end = time.monotonic() + max(0.0, seconds)
-    while not _stop:
-        left = end - time.monotonic()
-        if left <= 0:
-            return
-        await asyncio.sleep(min(left, 1.0))
-
-
-def _flood_grace(seconds: int, interval: float) -> int:
-    """The heartbeat grace for a beat taken before sleeping out a flood.
-
-    The fixed 900 s meant any flood over ~15 minutes read as `not_running` —
-    "the scheduler is not firing it" — whose documented reflex is a restart,
-    and a fresh process re-issues at once the request the flood forbade. The
-    next ordinary beat puts _GRACE back.
-    """
-    return max(_GRACE, int(seconds) + int(interval) + 60)
-
-
-async def _flood_pause(seconds: int, interval: float, detail: dict) -> None:
-    """Respect a FloodWait exactly, having said so first. Blind retry is how a
-    new account gets banned.
-
-    Beat before sleeping. Waiting out a flood is the poller doing its job
-    correctly, and a long one would otherwise trip the watchdog into reporting
-    a dead poller. The duration goes into detail so a PERMANENT throttle —
-    healthy heartbeats, no claims, a flood_wait every cycle — is still legible.
-    """
-    beat(HEARTBEAT, int(interval), _flood_grace(seconds, interval),
-         {"flood_wait_seconds": int(seconds), **detail})
-    await _nap(seconds + 5)
-
-
-async def _whoami(client):
-    """The logged-in user, or None when the session is no longer authorised.
-
-    get_me() is a real request. is_user_authorized() is not: Telethon caches
-    its answer in `_authorized` for the life of the client and connect() never
-    resets it, so after a revocation _reconnect's check still read True and
-    exit 2 was unreachable. FloodWaitError and transport errors propagate —
-    neither says anything about authorisation.
-    """
-    _flood, deauth = _telethon_errors()
-    try:
-        return await client.get_me()
-    except deauth:
-        return None
-
-
 def _env() -> dict[str, str]:
     env: dict[str, str] = {}
     f = ROOT / ".env"
@@ -215,77 +132,16 @@ def _env() -> dict[str, str]:
     return env
 
 
-# THE CURSOR FILE, AND WHY LOSING IT NO LONGER MEANS 0.
-#
-# It was written with write_text — truncate, then write — and read back as {}
-# on any parse error. A SIGKILL between the two (the 90 s stop timeout landing
-# in a FloodWait sleep, a power cut) left a file that did not parse, every
-# channel restarted at min_id=0, and each cycle walked 2,000 messages of
-# history per channel on the fragile account. It was also saved only on cycles
-# that wrote a claim, so cursors advanced across an all-duplicate batch were
-# not persisted at all.
-#
-# Now: written to a temp file and renamed (bronze's pattern), saved whenever a
-# cursor moved, and a corrupt file is moved aside, never silently read as
-# empty. A channel with no cursor is resumed from the claims already stored
-# for it (_stored_cursor): the cursor only ever advances across messages that
-# were stored, so the newest stored id IS the cursor, and 0 remains the answer
-# only for a channel that has never been read.
 def _load_state() -> dict:
     try:
-        s = json.loads(STATE.read_text())
-        if not isinstance(s, dict):
-            raise ValueError(f"expected an object, got {type(s).__name__}")
-        return s
-    except FileNotFoundError:
-        return {}
-    except ValueError as exc:                           # JSON and UTF-8 errors
-        aside = STATE.with_name(f"{STATE.name}.corrupt-{int(time.time())}")
-        try:
-            STATE.rename(aside)
-        except OSError:
-            aside = STATE
-        print(f"WARNING: {STATE.name} is unreadable ({exc}); kept as "
-              f"{aside.name}. Cursors will be recovered from the claims "
-              "already stored, not reset to 0.")
+        return json.loads(STATE.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
 def _save_state(s: dict) -> None:
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = STATE.with_name(f"{STATE.name}.tmp{os.getpid()}")
-    try:
-        with open(tmp, "w", encoding="utf-8") as fh:
-            fh.write(json.dumps(s, indent=1, sort_keys=True))
-            fh.flush()
-            os.fsync(fh.fileno())
-        os.replace(tmp, STATE)
-    finally:
-        tmp.unlink(missing_ok=True)
-
-
-def _stored_cursor(channel: str) -> int:
-    """The newest message id already stored for a channel: its cursor,
-    recovered from the claims themselves. 0 only if nothing was ever stored."""
-    with connect() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT max(d.external_id::bigint)
-                         FROM claim_dedup d JOIN source s USING (source_id)
-                        WHERE s.key = %s AND d.external_id ~ '^[0-9]+$'""",
-                    (f"tg_{channel.lower()}",))
-        return int(cur.fetchone()[0] or 0)
-
-
-def _db_ok() -> bool:
-    """Can a claim be stored right now? Asked BEFORE Telegram is, because a
-    fetch whose result cannot be stored is a request spent on nothing."""
-    try:
-        with connect() as conn, conn.cursor() as cur:
-            cur.execute("SELECT 1")
-            cur.fetchone()
-        return True
-    except Exception as exc:                            # noqa: BLE001
-        print(f"database unreachable: {type(exc).__name__}: {exc}")
-        return False
+    STATE.write_text(json.dumps(s, indent=1, sort_keys=True))
 
 
 def _ensure_source(cur, channel: str) -> int:
@@ -341,7 +197,6 @@ async def archive_media(client, channel: str, messages) -> tuple[dict, int | Non
     """
     if channel.lower() not in MEDIA_CHANNELS:
         return {}, None
-    flood_wait, deauth = _telethon_errors()
     refs: dict[int, str] = {}
     downloaded = 0
     for m in messages:
@@ -360,13 +215,6 @@ async def archive_media(client, channel: str, messages) -> tuple[dict, int | Non
             return refs, m.id - 1
         try:
             blob = await client.download_media(m, file=bytes)
-        except (flood_wait, *deauth):
-            # Not a per-photo failure. Swallowed here, a flood let the caller
-            # store the whole batch and step its cursor past every photo that
-            # was never downloaded — permanently, contradicting the cutoff
-            # above. Raised, the caller's flood handler sleeps once and the
-            # batch is fetched again, whole, next cycle.
-            raise
         except Exception as exc:                        # noqa: BLE001
             print(f"  media download failed for {channel}/{getattr(m,'id','?')}: "
                   f"{type(exc).__name__}: {exc}")
@@ -423,14 +271,6 @@ def store(channel: str, messages, media_refs: dict | None = None) -> int:
                      # it is on the CLAIM rather than only in bronze.
                      "media_ref": media_refs.get(getattr(m, "id", None)),
                      "link_urls": _link_urls(m)}
-            # Kept because the claim is immutable and cannot gain them later:
-            # an album's one caption sits on one member (grouped_id ties the
-            # rest to it), and an edit reuses the id — a claim that does not
-            # say its text was already edited cannot be told from the original.
-            for k in ("grouped_id", "edit_date"):
-                v = getattr(m, k, None)
-                if v is not None:
-                    attrs[k] = v.isoformat() if hasattr(v, "isoformat") else v
             if detector:
                 attrs["lang_detector"] = detector
             cur.execute("""
@@ -521,11 +361,10 @@ async def _reconnect(client) -> None:
     correct response to "still disconnected" is to stop, and a flag is the kind
     of thing a later edit forgets to check.
     """
-    flood_wait, _deauth = _telethon_errors()
     for attempt in range(1, RECONNECT_ATTEMPTS + 1):
         delay = min(300, 15 * 2 ** (attempt - 1))
         print(f"reconnect attempt {attempt}/{RECONNECT_ATTEMPTS} in {delay}s")
-        await _nap(delay)
+        await asyncio.sleep(delay)
         if _stop:
             raise ConnectionError("stopping during reconnect")
         try:
@@ -535,87 +374,22 @@ async def _reconnect(client) -> None:
             # A restored socket is not a restored session. Checking this before
             # polling means a revoked account is reported as a revoked account,
             # instead of as ten channels that all mysteriously stopped working.
-            # It must be a real request — see _whoami.
-            if await _whoami(client) is None:
+            if not await client.is_user_authorized():
                 raise Deauthorised("session is no longer authorised")
             print(f"reconnected after {attempt} attempt(s)")
             return
         except Deauthorised:
             raise
-        except flood_wait as fw:
-            print(f"  FLOOD WAIT {fw.seconds}s while reconnecting — sleeping")
-            await _nap(fw.seconds + 5)
         except Exception as exc:                        # noqa: BLE001
             print(f"  reconnect failed: {exc}")
     raise ConnectionError(
         f"could not reconnect after {RECONNECT_ATTEMPTS} attempts")
 
 
-# A channel that fails to resolve is tried again, not abandoned: it used to be
-# resolved once at startup and a failure printed UNRESOLVED and was never
-# revisited, so it stayed dark for the life of the process while the
-# heartbeat read healthy. The retry doubles from 30 minutes to 6 hours, because
-# a handle that is genuinely dead (v1's `Almasshta`) should cost a few
-# ResolveUsername calls a day, not one a cycle.
-RESOLVE_RETRY = 1800
-RESOLVE_RETRY_MAX = 6 * 3600
-
-
-async def _resolve_due(client, entities: dict, pending: dict, backoff: dict):
-    """Resolve the channels in `pending` whose retry time has come.
-
-    Returns the seconds of a FloodWait Telegram imposed, else None. On a flood
-    it stops at once and moves every pending channel past the window: the old
-    loop printed the flood and asked for the next handle 1.5 s later, each one
-    a ResolveUsername inside the window the flood forbade — the most tightly
-    limited method there is for a young account — and each one then
-    UNRESOLVED for good. A lost session propagates (it is not about a channel).
-    """
-    flood_wait, deauth = _telethon_errors()
-    for ch in [c for c, t in pending.items() if t <= time.monotonic()]:
-        try:
-            entities[ch] = await client.get_entity(ch)
-            del pending[ch]
-            backoff.pop(ch, None)
-            print(f"  resolved @{ch}")
-        except flood_wait as fw:
-            until = time.monotonic() + fw.seconds + 5
-            for c in pending:
-                pending[c] = max(pending[c], until)
-            print(f"  FLOOD WAIT {fw.seconds}s resolving @{ch} — no further "
-                  f"resolves until it has passed ({len(pending)} pending)")
-            return fw.seconds
-        except deauth:
-            raise
-        except Exception as exc:                        # noqa: BLE001
-            wait = min(backoff.get(ch, RESOLVE_RETRY // 2) * 2, RESOLVE_RETRY_MAX)
-            backoff[ch] = wait
-            pending[ch] = time.monotonic() + wait
-            print(f"  UNRESOLVED @{ch}: {exc} — next try in {wait // 60} min")
-        await _nap(1.5)
-    return None
-
-
 async def run(once: bool = False, backfill: int = 0) -> int:
-    """Poll until stopped. Exit 0 on a clean stop, 1 for anything a restart
-    may fix, 2 when the session is gone — which the unit refuses to restart
-    (RestartPreventExitStatus=2)."""
-    # One client per session file (HANDOFF rule 4), taken before anything —
-    # the client, the database — so a second poller, a `--once` beside the
-    # service, or a restart into a running discovery refuses without ever
-    # opening the session.
-    try:
-        with session_lock(SESSION, "telegram_poller"):
-            return await _run(once, backfill)
-    except SessionBusy as exc:
-        print(f"REFUSING: {exc}")
-        return 1
-
-
-async def _run(once: bool, backfill: int) -> int:
     from telethon import TelegramClient
+    from telethon.errors import FloodWaitError
 
-    flood_wait, deauth = _telethon_errors()
     e = _env()
     api_id = int(e.get("V2_TELEGRAM_API_ID", "0") or 0)
     api_hash = e.get("V2_TELEGRAM_API_HASH", "")
@@ -625,201 +399,121 @@ async def _run(once: bool, backfill: int) -> int:
         print("V2_TELEGRAM_CHANNELS is empty")
         return 1
 
-    # The database first. A process restarted into a database outage used to
-    # connect, resolve every channel and fetch every backlog before its first
-    # store() failed — per restart. Waiting here costs Telegram nothing.
-    delay = 15
-    while not _db_ok():
-        if once:
-            return 1
-        print(f"waiting {delay}s for the database before touching Telegram")
-        await _nap(delay)
-        if _stop:
-            return 0
-        delay = min(delay * 2, 300)
-
     client = TelegramClient(str(SESSION), api_id, api_hash)
-    try:
-        return await _poll(client, channels, interval, once, backfill)
-    except (Deauthorised, *deauth) as exc:
-        # Exit 2, which the unit does not restart. This path used to be dead:
-        # startup returned 1 for an unauthorised session, and a revocation
-        # mid-run surfaced as a channel failure in every channel until the
-        # three-cycle exit returned 1 — so systemd reconnected a dead session
-        # every 30 s to 15 min, forever, the one pattern rule 3 forbids.
-        why = f"{type(exc).__name__}: {exc}"
-        print(f"FATAL: the session is no longer authorised ({why}). Run: "
-              "./.venv/bin/python -m ingest.setup_session --status")
-        fail(HEARTBEAT, f"deauthorised — {why}"[:500], int(interval), _GRACE)
-        return 2
-    finally:
-        try:
-            await client.disconnect()
-        except Exception:                               # noqa: BLE001
-            pass
-
-
-async def _poll(client, channels: list[str], interval: float, once: bool,
-                backfill: int) -> int:
-    flood_wait, deauth = _telethon_errors()
     await client.connect()
-    while True:
-        try:
-            me = await _whoami(client)
-            break
-        except flood_wait as fw:
-            print(f"FLOOD WAIT {fw.seconds}s at startup — sleeping")
-            await _flood_pause(fw.seconds, interval, {"at": "startup"})
-            if _stop:
-                return 0
-    if me is None:
-        raise Deauthorised("not authorised. Run: ./.venv/bin/python -m "
-                           "ingest.setup_session --request-code")
+    if not await client.is_user_authorized():
+        print("Not authorised. Run: ./.venv/bin/python -m ingest.setup_session --request-code")
+        return 1
+    me = await client.get_me()
     print(f"Polling as {me.first_name} (id={me.id}) — {len(channels)} channel(s), {interval}s")
 
     entities: dict[str, object] = {}
-    pending: dict[str, float] = {ch: 0.0 for ch in channels}
-    backoff: dict[str, int] = {}
-    while True:
-        flood = await _resolve_due(client, entities, pending, backoff)
-        if entities or _stop:
-            break
-        if flood is None:
-            # Nothing resolved and Telegram did not ask for a wait. Beating
-            # `channels: 0` every cycle — what this did — reads as healthy to
-            # systemd, /health and the watchdog while nothing is ingested.
-            msg = f"none of the {len(channels)} channel(s) resolved"
-            print(f"FATAL: {msg}")
-            fail(HEARTBEAT, msg, int(interval), _GRACE)
-            return 1
-        await _flood_pause(flood, interval, {"resolving": len(pending)})
-    if _stop:
-        return 0
+    for ch in channels:
+        try:
+            entities[ch] = await client.get_entity(ch)
+            print(f"  resolved @{ch}")
+        except Exception as exc:                        # noqa: BLE001
+            print(f"  UNRESOLVED @{ch}: {exc}")
+        await asyncio.sleep(1.5)
 
     state = _load_state()
-    saved = dict(state)
-    try:
-        if backfill:
-            for ch, ent in entities.items():
-                try:
-                    msgs = await client.get_messages(ent, limit=backfill)
-                    ordered = list(reversed(msgs))
-                    refs, _ = await archive_media(client, ch, ordered)
-                    n = store(ch, ordered, refs)
-                    if msgs:
-                        state[ch] = max(m.id for m in msgs)
-                    print(f"  backfill @{ch}: {n} claim(s)")
-                except flood_wait as fw:
-                    print(f"  FLOOD WAIT {fw.seconds}s on @{ch} — stopping backfill")
-                    break
-                except deauth:
-                    raise
-                except Exception as exc:                # noqa: BLE001
-                    print(f"  backfill @{ch} failed: {exc}")
-                await _nap(3)
-            _save_state(state)
-            saved = dict(state)
-
-        # A cycle where EVERY channel raised is a transport failure wearing a
-        # channel failure's clothing — ten independent handles do not break at
-        # the same instant. is_connected() reported the truth in the outage
-        # that prompted this, but relying on it alone would leave the loop
-        # trusting one flag to notice it has stopped working.
-        dead_cycles = 0
-
-        while not _stop:
-            if not _db_ok():
-                # Not a channel failure, and not Telegram's business. Counted
-                # against the same three-cycle exit, so the outage is loud,
-                # but nothing is fetched — or downloaded — that cannot be
-                # stored. The restarted process then waits in _run, still
-                # without touching Telegram, until the database is back.
-                dead_cycles += 1
-                print(f"not polling: database down ({dead_cycles} cycle(s) in a row)")
-                if dead_cycles >= 3 or once:
-                    fail(HEARTBEAT, "database unreachable", int(interval), _GRACE)
-                    print(f"FATAL: the database has been unreachable for "
-                          f"{dead_cycles} cycle(s) — exiting so systemd restarts "
-                          "and the alarm fires")
-                    return 1
-                await _nap(interval)
-                continue
-
-            if not client.is_connected():
-                print("transport is down — Telethon's own retries are exhausted")
-                try:
-                    await _reconnect(client)
-                except Deauthorised:
-                    raise
-                except Exception as exc:                # noqa: BLE001
-                    print(f"FATAL: {exc}")
-                    fail(HEARTBEAT, str(exc), int(interval), _GRACE)
-                    return 1
-                dead_cycles = 0
-
-            if pending:
-                await _resolve_due(client, entities, pending, backoff)
-
-            total, failures = 0, 0
-            for ch, ent in list(entities.items()):
-                try:
-                    last = state.get(ch)
-                    if last is None:
-                        last = state[ch] = _stored_cursor(ch)
-                    fresh = await _fetch_since(client, ent, last)   # oldest first
-                    if fresh:
-                        refs, cutoff = await archive_media(client, ch, fresh)
-                        if cutoff is not None:
-                            # Truncate to the contiguous run whose media we took.
-                            fresh = [m for m in fresh if m.id <= cutoff]
-                        if fresh:
-                            total += store(ch, fresh, refs)
-                            state[ch] = max(m.id for m in fresh)
-                except flood_wait as fw:
-                    print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")
-                    await _flood_pause(fw.seconds, interval, {"channel": ch})
-                except deauth:
-                    raise
-                except Exception as exc:                # noqa: BLE001
-                    failures += 1
-                    print(f"poll @{ch} failed: {exc}")
-                # Stagger so five channels are not hit in the same instant.
-                await _nap(1.0 + random.random())
-
-            if failures == len(entities):
-                dead_cycles += 1
-                print(f"every channel failed ({dead_cycles} cycle(s) in a row)")
-                if dead_cycles >= 3:
-                    fail(HEARTBEAT, f"all {failures} channels failing", int(interval), _GRACE)
-                    print("FATAL: every channel has failed for 3 cycles — exiting "
-                          "so systemd restarts and the alarm fires")
-                    return 1
-            else:
-                dead_cycles = 0
-                # Recorded on EVERY good cycle, including the ones that found
-                # nothing. A heartbeat that only fires when there is news cannot
-                # distinguish a dead poller from a quiet Saturday, which is the
-                # entire failure this is here to prevent. `unresolved` names the
-                # configured channels that are not being read at all.
-                beat(HEARTBEAT, int(interval), _GRACE,
-                     {"channels": len(entities), "claims": total,
-                      "channel_failures": failures,
-                      "configured": len(channels),
-                      "unresolved": sorted(pending)})
-
-            if state != saved:
-                _save_state(state)
-                saved = dict(state)
-            if total:
-                print(f"[{datetime.now(timezone.utc):%H:%M:%S}] +{total} claim(s)")
-            if once:
+    if backfill:
+        for ch, ent in entities.items():
+            try:
+                msgs = await client.get_messages(ent, limit=backfill)
+                ordered = list(reversed(msgs))
+                refs, _ = await archive_media(client, ch, ordered)
+                n = store(ch, ordered, refs)
+                if msgs:
+                    state[ch] = max(m.id for m in msgs)
+                print(f"  backfill @{ch}: {n} claim(s)")
+            except FloodWaitError as fw:
+                print(f"  FLOOD WAIT {fw.seconds}s on @{ch} — stopping backfill")
                 break
-            await _nap(interval)
-    finally:
-        # Whatever ended the loop — a clean stop, an exit code, a lost session
-        # — the cursors it advanced were earned by stored claims.
-        if state != saved:
+            except Exception as exc:                    # noqa: BLE001
+                print(f"  backfill @{ch} failed: {exc}")
+            await asyncio.sleep(3)
+        _save_state(state)
+
+    # A cycle where EVERY channel raised is a transport failure wearing a
+    # channel failure's clothing — ten independent handles do not break at the
+    # same instant. is_connected() reported the truth in the outage that
+    # prompted this, but relying on it alone would leave the loop trusting one
+    # flag to notice it has stopped working.
+    dead_cycles = 0
+
+    while not _stop:
+        if not client.is_connected():
+            print("transport is down — Telethon's own retries are exhausted")
+            try:
+                await _reconnect(client)
+            except Deauthorised as exc:
+                print(f"FATAL: {exc}")
+                fail(HEARTBEAT, str(exc), int(interval), _GRACE)
+                return 2
+            except Exception as exc:                    # noqa: BLE001
+                print(f"FATAL: {exc}")
+                fail(HEARTBEAT, str(exc), int(interval), _GRACE)
+                return 1
+            dead_cycles = 0
+
+        total, failures = 0, 0
+        for ch, ent in entities.items():
+            try:
+                last = state.get(ch, 0)
+                fresh = await _fetch_since(client, ent, last)   # oldest first
+                if fresh:
+                    refs, cutoff = await archive_media(client, ch, fresh)
+                    if cutoff is not None:
+                        # Truncate to the contiguous run whose media we took.
+                        fresh = [m for m in fresh if m.id <= cutoff]
+                    if fresh:
+                        total += store(ch, fresh, refs)
+                        state[ch] = max(m.id for m in fresh)
+            except FloodWaitError as fw:
+                # Respect it exactly. Blind retry is how a new account gets banned.
+                print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")
+                # Beat before sleeping. Waiting out a flood is the poller doing
+                # its job correctly, and a long one would otherwise trip the
+                # watchdog into reporting a dead poller. The duration goes into
+                # detail so a PERMANENT throttle — healthy heartbeats, no
+                # claims, a flood_wait every cycle — is still legible.
+                beat(HEARTBEAT, int(interval), _GRACE,
+                     {"flood_wait_seconds": fw.seconds, "channel": ch})
+                await asyncio.sleep(fw.seconds + 5)
+            except Exception as exc:                    # noqa: BLE001
+                failures += 1
+                print(f"poll @{ch} failed: {exc}")
+            # Stagger so five channels are not hit in the same instant.
+            await asyncio.sleep(1.0 + random.random())
+
+        if entities and failures == len(entities):
+            dead_cycles += 1
+            print(f"every channel failed ({dead_cycles} cycle(s) in a row)")
+            if dead_cycles >= 3:
+                fail(HEARTBEAT, f"all {failures} channels failing", int(interval), _GRACE)
+                print("FATAL: every channel has failed for 3 cycles — exiting "
+                      "so systemd restarts and the alarm fires")
+                return 1
+        else:
+            dead_cycles = 0
+            # Recorded on EVERY good cycle, including the ones that found
+            # nothing. A heartbeat that only fires when there is news cannot
+            # distinguish a dead poller from a quiet Saturday, which is the
+            # entire failure this is here to prevent.
+            beat(HEARTBEAT, int(interval), _GRACE,
+                 {"channels": len(entities), "claims": total,
+                  "channel_failures": failures})
+
+        if total:
             _save_state(state)
+            print(f"[{datetime.now(timezone.utc):%H:%M:%S}] +{total} claim(s)")
+        if once:
+            break
+        await asyncio.sleep(interval)
+
+    await client.disconnect()
+    _save_state(state)
     return 0
 
 

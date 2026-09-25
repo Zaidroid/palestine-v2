@@ -42,14 +42,6 @@ ZAID-10, answered 2026-09-23: live trackers plus insights now; ungraded and
 per-datum here, and the cut is always NAMED: an excerpt says it is an excerpt,
 a filtered list says how many rows it dropped and why. A payload that is quietly
 short is the exact lie this system was built to stop telling.
-
-The databank filter needs each row's grade, and a payload can only be filtered
-on what it carries (audit F089, 2026-09-25). Until then every databank reply's
-block said `partner_tier: filtered` over rows nobody had filtered — the same lie
-pointed the other way, a payload quietly FULL. Now the per-call block states
-what was done to THAT payload: rows carrying `redistribution` are filtered and
-counted; rows that carry none are labelled `unfiltered`, with the reason, and
-the grade beside them is the worst in the databank.
 """
 from __future__ import annotations
 
@@ -238,20 +230,6 @@ def _worst(grades: list[str]) -> str:
     return max(seen, key=GRADE_ORDER.index)
 
 
-# NOTHING KNOWN IS NOT `open` (audit F347/F393). `_worst([])` is `open`, which
-# is right for a list of grades that are all permissive and wrong for a list
-# that is empty because nothing could be read: a source row inserted with a
-# NULL grade (no live-source inserter sets one, and the column has no default),
-# a source key renamed away from its row, a databank view empty after a failed
-# sync. Each of those advertised `full` to partners. An unreadable grade is
-# `ask` — the grade that means "nobody has established the terms".
-UNGRADED = "ask"
-
-
-def _as_grade(g: Any) -> str:
-    return g if g in GRADE_ORDER else UNGRADED
-
-
 def _group_grades(q, group: str) -> list[str]:
     """Grades of a whole class of sources, read live from the database."""
     if group == GROUP_STATE:
@@ -328,7 +306,7 @@ def _group_grades(q, group: str) -> list[str]:
             rows = q(sql)
     else:
         return []
-    return [_as_grade(r["g"]) for r in rows]
+    return [r["g"] for r in rows if r["g"]]
 
 
 def grade_tools(q) -> dict:
@@ -354,7 +332,7 @@ def grade_tools(q) -> dict:
                 if src in PROPAGATING_GROUPS:
                     copied += cache[src]
             elif src in by_key:
-                grades.append(_as_grade(by_key[src]["redistribution"]))
+                grades.append(by_key[src]["redistribution"])
             else:
                 unknown.append(src)
 
@@ -371,12 +349,6 @@ def grade_tools(q) -> dict:
         # over claims stay ours either way.
         if emits == DERIVED:
             grade = _worst(copied) if copied else "open"
-        elif emits == METADATA:
-            grade = "open"                  # describes this system; no source
-        elif unknown or not grades:
-            # A named source with no row, or a group that returned nothing:
-            # the grade was not READ, so it is not `open`.
-            grade = _worst(grades + [UNGRADED])
         else:
             grade = _worst(grades)
 
@@ -395,8 +367,6 @@ def grade_tools(q) -> dict:
         }
         if emits == VERBATIM:
             entry["excerpt_chars"] = EXCERPT_CHARS
-        if emits == DATABANK:
-            entry["filter"] = _DATABANK_FILTER
         if spec.get("note"):
             entry["note"] = spec["note"]
         if unknown:
@@ -449,97 +419,6 @@ def table(q, public_tools: set[str]) -> dict:
 
 # ── applying it to one payload ────────────────────────────────────────────────
 
-# What the table's `filtered` means for a databank tool, said where it is read.
-_DATABANK_FILTER = (
-    "per row, at the partner tier: rows whose source is graded outside "
-    f"{'/'.join(PARTNER_ALLOWED)} (or not graded) are withheld and counted. It "
-    "needs each row's own grade; a payload whose rows carry none is labelled "
-    "`unfiltered` in its own licence block.")
-
-# The lists in a databank payload that hold ROWS (the databank tool copies the
-# newest rows into `latest_by_indicator`, so both are filtered together).
-_ROW_FIELDS = ("items", "latest_by_indicator")
-
-
-def _filter_databank(out: dict, block: dict) -> None:
-    """ZAID-10 on one partner payload: withhold rows graded outside the tier.
-
-    Every outcome is written into the block, because the failure being fixed is
-    a block that claimed a cut which did not happen.
-    """
-    lists = {f: out[f] for f in _ROW_FIELDS
-             if isinstance(out.get(f), list) and out[f]}
-    rows = [r for rows_ in lists.values() for r in rows_ if isinstance(r, dict)]
-    if not rows or not all("redistribution" in r for r in rows):
-        block["partner_tier"] = "unfiltered"
-        block["filter"] = (
-            "not filtered: this payload's rows carry no per-row licence grade, "
-            "so nothing could be withheld. Treat every row as the grade above "
-            "(the worst in the databank) and see `ref` before republishing."
-            if rows else
-            "not filtered: this payload carries no per-row data to filter; its "
-            "figures are computed from the databank and carry the grade above.")
-        return
-
-    main = out.get("items") if isinstance(out.get("items"), list) else rows
-    total = len(main)
-    withheld: set[str] = set()
-    quoted_withheld = False
-    dropped = 0
-    for f, rows_ in lists.items():
-        keep = []
-        for r in rows_:
-            g = r.get("redistribution") if isinstance(r, dict) else None
-            if g in PARTNER_ALLOWED:
-                keep.append(r)
-                continue
-            withheld.add(str(g or "ungraded"))
-            if f == "latest_by_indicator":
-                quoted_withheld = True
-            elif rows_ is main:
-                dropped += 1
-        out[f] = keep
-    kept = out.get("items") if isinstance(out.get("items"), list) else []
-    if isinstance(out.get("count"), int) and isinstance(out.get("items"), list):
-        out["count"] = len(out["items"])
-
-    block["partner_tier"] = "filtered"
-    block["filtered_rows"] = dropped
-    block["filter"] = _DATABANK_FILTER
-    # The payload's OWN grade, from the rows it still carries (F394): the table
-    # can only name the worst grade anywhere in the databank.
-    block["grade"] = _worst([r.get("redistribution") for r in kept
-                             if isinstance(r, dict)]) if kept else "open"
-    block["grade_basis"] = "the rows in this payload"
-    if block["grade"] == "share-alike" and \
-            _SHARE_ALIKE_OBLIGATION not in (block.get("obligations") or []):
-        block["obligations"] = [_SHARE_ALIKE_OBLIGATION] + list(block.get("obligations") or [])
-    if dropped or quoted_withheld:
-        block["refused"] = (
-            f"{dropped} of {total} rows withheld: their sources are graded "
-            f"{', '.join(sorted(withheld))}, outside the partner tier "
-            "(ZAID-10). The house reads them; a partner may not carry them away.")
-        cut_ar = (f"حجبنا {dropped} من {total} سجل لأنه مصادرها ما بتسمح "
-                  "بإعادة النشر.")
-        cut_en = (f"{dropped} of {total} rows were withheld because their "
-                  "sources do not permit redistribution.")
-        if quoted_withheld:
-            # The spoken answer quotes exactly the newest row per indicator
-            # (`latest_by_indicator`). One of those was withheld, so the
-            # sentence would carry its figure past the filter — the same
-            # one-f-string defeat the verbatim excerpt guards against — and it
-            # is replaced with one that says what happened.
-            out["answer"] = (f"عرضنا {len(kept)} سجل من مصادر بتسمح بإعادة النشر، "
-                             f"و{cut_ar} الأرقام بالتفصيل بـ items.")
-            out["answer_en"] = (f"{len(kept)} rows from sources that permit "
-                                f"redistribution are shown. {cut_en} The figures "
-                                "are in `items`.")
-        else:
-            # The figures it quotes all survived the cut; its row count did not.
-            for key, cut in (("answer", cut_ar), ("answer_en", cut_en)):
-                if isinstance(out.get(key), str):
-                    out[key] = f"{out[key]} {cut}"
-
 def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
           shown_as: str | None = None) -> Any:
     """Attach the licence block and enforce it, per datum.
@@ -588,9 +467,6 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             block["obligations"] = [_SHARE_ALIKE_OBLIGATION] + block["obligations"]
         if entry.get("note") and entry["note"] != spec.get("note"):
             block["grade_note"] = entry["note"]
-
-    if tier == "partner" and emits == DATABANK:
-        _filter_databank(out, block)
 
     if tier == "partner" and emits == VERBATIM:
         field, key = spec.get("field", "items"), spec.get("text_key", "text")
