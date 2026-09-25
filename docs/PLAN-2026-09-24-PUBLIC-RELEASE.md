@@ -596,3 +596,11 @@ UNMEASURED (20/20 human-read, 201/201 reproduced — 20 of the 100 rows F229 req
 agreement, not precision) · roads + organ A: no gold set. Resuming the daily rows is a change to the writer, gated on
 that 100-row read. tests: test_analyst_organ_c_loop 18 + test_measure_review_gold 19 (fakes for every write; 3 read-only
 live) + test_analyst/test_organ_c 62 (6 tx tests not run: they INSERT into production); no migration needed.
+2026-09-26 00:25 UTC · Gaza MoH daily series resumed (found by organ C's control, P2-A.1) · done, live · proof: deaths.daily and
+injuries.daily had stopped on 2026-08-09 while the totals went on — from 08-10 the Ministry wrote the 24-hour block
+number-first and a ▪️ bullet (two code points) posed as a section header (`021952c`). Parser vs organ C's independent reader
+since late July: 38/38 days agree; across 2026 the parser never states a number organ C contradicts. `ingest.sources.moh_gaza
+--reread-since 2026-08-10` (new, advisory-locked against the hourly timer) → 35 bulletins, 52 new daily rows, 171 unchanged,
+0 revised; the series now runs to 2026-09-24 (5 deaths, 35 injuries). Early-2026 shapes the parser still omits (counts on
+the header line, "شهيدان") stay organ C's path once F229's 100 hand-read rows exist. Note: the 09-24 bulletin opens with a
+chatbot's preamble ("بالتأكيد، هذه الصياغة مرتبة…") — the Ministry drafted it with an AI tool; its figures add up.
