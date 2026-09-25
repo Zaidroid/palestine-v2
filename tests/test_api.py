@@ -543,7 +543,8 @@ def test_gap_radar_measures_on_data_dates_not_mtimes() -> None:
     assert dead["status"] == "dead_upstream" and dead["dead_reason"]
     for x in d["datasets"]:
         assert x["status"] in ("fresh", "late", "stalled", "dead_upstream",
-                               "closed_corpus", "continued", "unmeasured")
+                               "closed_corpus", "continued", "unmeasured",
+                               "supply_dead")
         if x["status"] in ("fresh", "late", "stalled", "continued"):
             assert x["age_days"] is not None and x["allowance_days"] > 0
     # `continued` is earned, not declared: a predecessor is only excused when

@@ -187,4 +187,8 @@ def test_ops_08_fetch_failures_are_counted_and_a_streak_is_a_fault(monkeypatch, 
     monkeypatch.setattr(W, "FETCH_EVENTS", ev)
     out = W.fetch_check()
     assert [r["name"] for r in out] == ["gho:wash"] and out[0]["fault"]
-    assert "newly_stalled" in inspect.getsource(gap_radar.main) and "return 4" in inspect.getsource(gap_radar.main)
+    # P1-B.3: a newly stalled dataset is still named, and a dead supply line
+    # (which a stalled dataset now is) fails the job with DEAD_EXIT.
+    src = inspect.getsource(gap_radar.main)
+    assert "newly_stalled" in src and "return DEAD_EXIT" in src and gap_radar.DEAD_EXIT == 5
+    assert "with-heartbeat.sh supply-lines" in sh and "final=$radar" in sh

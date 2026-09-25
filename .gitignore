@@ -57,6 +57,11 @@ data/open-release/*.csv.gz
 data/raw/tech4palestine/
 data/raw/ooni/
 data/raw/ioda/
+# the supply lines v2 took over from v1 (P1-B.3): regenerate with
+# ops/fetch_ocha.py, ops/fetch_pcbs.py, ops/fetch_hamoked.py
+data/raw/ocha/
+data/raw/pcbs/
+data/raw/hamoked/
 .keys/
 
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)

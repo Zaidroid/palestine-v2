@@ -636,3 +636,19 @@ News + Al Jazeera; Silwad/al-Mazra'a settlers ← Quds News + Al Jazeera; al-Mug
 also name the village. Applied over 14 d: 59 events carry `attrs.press` (≤ 5, merged by url). Never a second witness: counts,
 corroboration and verdict are untouched. Incidents answers name the outlets ("وفي تغطية صحفية منشورة من: …").
 tests/test_press_links.py (5).
+2026-09-25 22:28 UTC · P1-B.3 supply lines (v2 takes over the four dead v1 fetches; a dead line fails the night) · partial
+(waits for the merge, the first 03:40 run, and Zaid's HANDS-2026-09-24 §9) · proof (`bbe55fa`): the four died of one cause
+— `playwright` left v1's image, rc 1 in 0 s for 31 nights; none of the upstreams is dead. `ops/fetch_ocha.py --dry-run`:
+casualties 49 records, 7,494 fatalities through 2026-09-20, all five slices = 7,494 (frozen: 7,459, 2026 = 56 → 90);
+demolitions 526 localities (all 516 frozen names + 10) + 18 years, 15,081 structures through 2026-09-23, via OCHA's
+public Power BI API, no browser. `ops/fetch_pcbs.py --dry-run`: population 30 rows 2017–2026 (workbook), CPI 120 rows
+1996–2025 base 2018 (dashboard callback; the old table page is gone; PCBS's wrong TLS intermediate pinned, verification
+on); poverty has no source on the rebuilt site. `ops/fetch_hamoked.py --dry-run`: 219 months 2008-05 → 2026-09 direct
+(Wayback capture 2026-08-24 is the second door; successor if dead: Addameer). Loader dry runs on those exact fetches,
+READ ONLY: casualties 17 held / 32 revisions; demolitions 49 held / 855 revisions (one-time coverage_end move) / 20 new;
+prisoners_hamoked 864 held (to the person) / 12 new; economic_pcbs 114 held (to the digit) / 36 new; prisoners and
+economic drop v1's copies as `moved` (864, 142); the frozen fallback reproduces 49/49 and 904/904 held. Radar on
+production data: today 24 fresh · 4 supply-dead · 4 DEAD lines (never fetched) → exit 5; with one ok night → 27 fresh
+· 1 late · 0 supply-dead · v2 fetches 7/7 live · 14 v1 steps retired_pending (not 27-of-32-fresh over 13 failing
+steps) → exit 0. Found: HANDS §3 edits the host refresh-data.sh, which never runs (the container's copy does) → §9.
+tests/test_supply_lines.py 28 passed; touched suites green except the known worktree-missing-input class.

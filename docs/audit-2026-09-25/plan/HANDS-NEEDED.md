@@ -84,6 +84,12 @@
 > cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh && sudo systemctl restart palestine-v2-api
 > ```
 > Exact rollback in 086's header. Then `tests/test_databank_honesty.py` reads 7 passed against the live API.
+> **P1-B.3 (2026-09-25) — supply lines:** v2 fetches OCHA casualties + demolitions, PCBS and HaMoked itself, and a dead
+> supply line now fails the nightly job and pages. v1's fourteen dead refresh steps are retired **inside the
+> `palestine-data-api` container** (the host `scripts/refresh-data.sh` that HANDS-2026-09-24 §3 edits is never run — §3
+> is superseded): **[HANDS-2026-09-24 §9](../../HANDS-2026-09-24.md)**, one block, expected output `14`. Its second
+> block (optional, right after the merge) writes the first `supply-lines` heartbeat so the watchdog does not report it
+> `never_reported` until 03:40.
 >
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback

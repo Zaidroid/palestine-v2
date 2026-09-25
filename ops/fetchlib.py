@@ -81,6 +81,27 @@ def check_floor(label: str, n: int, floor: int) -> None:
             "indistinguishable, one layer later, from the source shrinking.")
 
 
+def stage_dir(argv: list[str]) -> Path | None:
+    """`--dry-run --stage DIR`: a dry run that also materialises the raw file
+    it WOULD write, under DIR — so the loader's own dry run can be pointed at
+    tonight's answer without the raw tree, bronze or the ledger being touched.
+    Added for P1-B.3's proofs; nothing in the nightly passes it."""
+    if "--stage" not in argv:
+        return None
+    i = argv.index("--stage")
+    if i + 1 >= len(argv):
+        raise SystemExit("--stage needs a directory")
+    return Path(argv[i + 1])
+
+
+def stage(directory: Path | None, name: str, payload) -> None:
+    if directory is None:
+        return
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / name).write_text(json.dumps(payload, ensure_ascii=False))
+    print(f"         staged {directory / name}")
+
+
 def stamp(path: Path, source: str, license_note: str, attribution: str,
           **extra) -> None:
     """Every raw tree says what it is and under what terms it was taken.

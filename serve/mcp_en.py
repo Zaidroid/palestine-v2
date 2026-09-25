@@ -745,9 +745,18 @@ def licenses(d: dict) -> str:
 
 def data_gaps(d: dict) -> str:
     c = d.get("counts") or {}
-    return (f"Gap radar: of {c.get('datasets')} series — {c.get('fresh')} fresh, "
-            f"{c.get('late')} late, {c.get('stalled')} stalled, "
-            f"{c.get('dead_upstream')} whose upstream has died.")
+    out = (f"Gap radar: of {c.get('datasets')} series — {c.get('fresh')} fresh, "
+           f"{c.get('late')} late, {c.get('stalled')} stalled, "
+           f"{c.get('dead_upstream')} whose upstream has died")
+    sl = c.get("supply_lines") or {}
+    if "supply_dead" in c:
+        out += f", {c['supply_dead']} whose supply line is dead"
+    out += "."
+    if sl:
+        out += (f" Supply lines: {sl.get('dead', 0)} dead; "
+                f"{sl.get('v2_live', 0)} of {sl.get('v2_lines', 0)} of our own "
+                "fetches working.")
+    return out
 
 
 _EVENT_EN = {"conflict.deaths.state_based": "state-based conflict events (UCDP)",

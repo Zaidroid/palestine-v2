@@ -172,6 +172,9 @@ EXPECTED_JOBS = {
     "measure-review":    (604800, 86400),
     "maintain":          (604800, 172800),
     "databank":          (86400, 21600),
+    # P1-B.3: the gap radar's supply-line judgment, wrapped on its own inside
+    # ops/databank-sync.sh — exit 5 (a dead line) records a failed run here.
+    "supply-lines":      (86400, 21600),
     "scout":             (604800, 259200),
     "valhalla-ip":       (900, 1800),
     "coverage":          (600, 900),
