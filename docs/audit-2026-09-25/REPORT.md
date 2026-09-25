@@ -2,7 +2,7 @@
 
 23 subsystem readers produced 605 findings. 160 were confirmed by independent adversarial verifiers (12 critical, 76 high, 68 medium, 4 low), 9 were refuted, and 436 are reader-reported only and NOT independently verified.
 
-Sections written: verdict, architecture, accuracy, safety-logic. The data-integrity, security, operability, performance and roadmap sections were not written (usage limit). Every confirmed finding, with its evidence and the verifier's reasoning, is in `confirmed-findings.json`; `digest.md` lists them by severity.
+Sections written: verdict, architecture, accuracy, safety-logic. The data-integrity, security, operability, performance and roadmap sections were not written (usage limit). The task-by-task fix plan is in `plan/00-README.md`. Every confirmed finding, with its evidence and the verifier's reasoning, is in `confirmed-findings.json`; `digest.md` lists them by severity.
 
 ## Verdict and the ten things that matter most
 
