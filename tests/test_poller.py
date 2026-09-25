@@ -142,3 +142,97 @@ def test_deleted_message_ids_do_not_stall_the_cursor():
     got, ch = fetch(ids)
     assert got == ids
     assert len(ch.calls) <= 3
+
+
+# ── audit 2026-09-25 (plan 09-ingest): the account-safety paths ─────────────
+# Telethon is never imported: a fake FloodWaitError is recognised by class
+# name exactly as the real one is.
+import types                                                   # noqa: E402
+
+
+class FloodWaitError(Exception):
+    def __init__(self, seconds):
+        super().__init__(f"A wait of {seconds} seconds is required")
+        self.seconds = seconds
+
+
+class Photo:
+    def __init__(self, i):
+        self.id, self.photo = i, object()
+
+
+def test_ingest_f042_a_flood_during_media_download_reaches_the_poll_loop():
+    """It was swallowed: the batch was stored without media and the cursor
+    moved past it. Now it propagates, so the loop sleeps and stores nothing."""
+    class Client:
+        calls = 0
+
+        async def download_media(self, m, file=None):
+            Client.calls += 1
+            raise FloodWaitError(600)
+    import pytest
+    with pytest.raises(FloodWaitError):
+        asyncio.run(telegram_poller.archive_media(Client(), "palhubappfuel",
+                                                  [Photo(1), Photo(2), Photo(3)]))
+    assert Client.calls == 1
+
+
+def test_ingest_f224_a_flood_while_resolving_stops_the_round(monkeypatch):
+    """The third ResolveUsername flooded and the loop fired the fourth, fifth…
+    1.5 s later, inside the window."""
+    monkeypatch.setattr(telegram_poller, "RESOLVE_PAUSE", 0)
+    asked = []
+
+    class Client:
+        async def get_entity(self, ch):
+            asked.append(ch)
+            if ch == "c":
+                raise FloodWaitError(1800)
+            return ch
+    ents: dict = {}
+    left, not_before = asyncio.run(telegram_poller._resolve(Client(), list("abcde"), ents))
+    assert asked == ["a", "b", "c"]
+    assert left == ["c", "d", "e"] and set(ents) == {"a", "b"}
+    import time
+    assert not_before > time.monotonic() + 1700
+
+
+def _fake_telethon(monkeypatch, client_cls):
+    tele = types.ModuleType("telethon")
+    tele.TelegramClient = client_cls
+    errs = types.ModuleType("telethon.errors")
+    errs.FloodWaitError = FloodWaitError
+    monkeypatch.setitem(sys.modules, "telethon", tele)
+    monkeypatch.setitem(sys.modules, "telethon.errors", errs)
+
+
+def test_ingest_f226_nothing_resolved_is_a_failure_not_a_quiet_cycle(monkeypatch, tmp_path):
+    """With every get_entity failing, the poller beat healthy (channels=0)
+    forever and nothing re-resolved."""
+    class Client:
+        def __init__(self, *a, **k): pass
+        async def connect(self): pass
+        async def is_user_authorized(self): return True
+        async def get_me(self): return types.SimpleNamespace(first_name="t", id=1)
+        async def get_entity(self, ch): raise ValueError("Cannot find any entity")
+        def is_connected(self): return True
+        async def disconnect(self): pass
+    _fake_telethon(monkeypatch, Client)
+    monkeypatch.setattr(telegram_poller, "_env", lambda: {
+        "V2_TELEGRAM_API_ID": "1", "V2_TELEGRAM_API_HASH": "h",
+        "V2_TELEGRAM_CHANNELS": "a,b", "V2_POLL_INTERVAL": "30"})
+    monkeypatch.setattr(telegram_poller, "STATE", tmp_path / "state.json")
+    monkeypatch.setattr(telegram_poller, "RESOLVE_PAUSE", 0)
+    seen = []
+    monkeypatch.setattr(telegram_poller, "beat", lambda *a, **k: seen.append("beat"))
+    monkeypatch.setattr(telegram_poller, "fail", lambda *a, **k: seen.append("fail"))
+    asyncio.run(telegram_poller.run(once=True))
+    assert seen == ["fail"]
+
+
+def test_ingest_f218_the_cursor_file_is_replaced_not_truncated(monkeypatch, tmp_path):
+    monkeypatch.setattr(telegram_poller, "STATE", tmp_path / "state.json")
+    telegram_poller._save_state({"a": 5})
+    import inspect
+    assert telegram_poller._load_state() == {"a": 5}
+    assert "os.replace" in inspect.getsource(telegram_poller._save_state)

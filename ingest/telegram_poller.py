@@ -113,6 +113,19 @@ MAX_MEDIA_BYTES = 2 * 1024 * 1024
 # that were STORED, so the un-downloaded tail arrives on later cycles.
 MEDIA_PER_CYCLE = 150
 
+# Channels that did not resolve at startup are retried, not abandoned for the
+# life of the process (audit F226): every RESOLVE_RETRY_CYCLES cycles (~10
+# minutes at 30 s), never inside a flood window. RESOLVE_PAUSE is the stagger
+# between ResolveUsername calls, the most tightly limited method there is.
+RESOLVE_RETRY_CYCLES = 20
+RESOLVE_PAUSE = 1.5
+
+
+def _is_flood(exc: BaseException) -> bool:
+    """FloodWaitError, recognised by class name so the check works without
+    importing Telethon (and against the fakes the tests use)."""
+    return any(c.__name__ == "FloodWaitError" for c in type(exc).__mro__)
+
 
 class Deauthorised(Exception):
     """The session is no longer valid. Distinct from a transport failure because
@@ -140,8 +153,16 @@ def _load_state() -> dict:
 
 
 def _save_state(s: dict) -> None:
+    # tmp + replace, never truncate-then-write: a kill mid-write left a file
+    # that did not parse, _load_state read it as {}, and every channel was
+    # re-walked from message 0 on the fragile account (audit F218).
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps(s, indent=1, sort_keys=True))
+    tmp = STATE.with_suffix(".tmp")
+    with open(tmp, "w") as fh:
+        fh.write(json.dumps(s, indent=1, sort_keys=True))
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, STATE)
 
 
 def _ensure_source(cur, channel: str) -> int:
@@ -216,6 +237,13 @@ async def archive_media(client, channel: str, messages) -> tuple[dict, int | Non
         try:
             blob = await client.download_media(m, file=bytes)
         except Exception as exc:                        # noqa: BLE001
+            # A flood is the account's problem, not this photo's: it goes up
+            # to the poll loop, which sleeps it out and stores nothing, so the
+            # batch is re-read with its media afterwards. Swallowed here, the
+            # batch was stored without media_ref and the cursor moved past it
+            # (audit F042, hard rule 3).
+            if _is_flood(exc):
+                raise
             print(f"  media download failed for {channel}/{getattr(m,'id','?')}: "
                   f"{type(exc).__name__}: {exc}")
             continue
@@ -386,6 +414,39 @@ async def _reconnect(client) -> None:
         f"could not reconnect after {RECONNECT_ATTEMPTS} attempts")
 
 
+async def _resolve(client, names: list[str], entities: dict) -> tuple[list[str], float]:
+    """Resolve every name not yet in `entities`; return (still unresolved,
+    monotonic time before which not to try again).
+
+    A FloodWait here is honoured, not swallowed (audit F224): the old loop
+    printed it and fired the next ResolveUsername 1.5 s later, inside the flood
+    window, for every remaining channel. Now the round stops at the first flood
+    and the rest wait until the window has passed.
+    """
+    import time as _time
+    left: list[str] = []
+    not_before = 0.0
+    for ch in names:
+        if ch in entities:
+            continue
+        if not_before:
+            left.append(ch)
+            continue
+        try:
+            entities[ch] = await client.get_entity(ch)
+            print(f"  resolved @{ch}")
+        except Exception as exc:                        # noqa: BLE001
+            left.append(ch)
+            if _is_flood(exc):
+                secs = int(getattr(exc, "seconds", 0) or 60)
+                not_before = _time.monotonic() + secs + 5
+                print(f"  FLOOD WAIT {secs}s resolving @{ch} — the rest wait it out")
+                continue
+            print(f"  UNRESOLVED @{ch}: {exc}")
+        await asyncio.sleep(RESOLVE_PAUSE)
+    return left, not_before
+
+
 async def run(once: bool = False, backfill: int = 0) -> int:
     from telethon import TelegramClient
     from telethon.errors import FloodWaitError
@@ -407,14 +468,10 @@ async def run(once: bool = False, backfill: int = 0) -> int:
     me = await client.get_me()
     print(f"Polling as {me.first_name} (id={me.id}) — {len(channels)} channel(s), {interval}s")
 
+    import time as _time
     entities: dict[str, object] = {}
-    for ch in channels:
-        try:
-            entities[ch] = await client.get_entity(ch)
-            print(f"  resolved @{ch}")
-        except Exception as exc:                        # noqa: BLE001
-            print(f"  UNRESOLVED @{ch}: {exc}")
-        await asyncio.sleep(1.5)
+    unresolved, resolve_after = await _resolve(client, channels, entities)
+    cycle = 0
 
     state = _load_state()
     if backfill:
@@ -457,7 +514,12 @@ async def run(once: bool = False, backfill: int = 0) -> int:
                 return 1
             dead_cycles = 0
 
-        total, failures = 0, 0
+        cycle += 1
+        if unresolved and cycle % RESOLVE_RETRY_CYCLES == 0 \
+                and _time.monotonic() >= resolve_after:
+            unresolved, resolve_after = await _resolve(client, unresolved, entities)
+
+        total, failures, moved = 0, 0, False
         for ch, ent in entities.items():
             try:
                 last = state.get(ch, 0)
@@ -470,6 +532,7 @@ async def run(once: bool = False, backfill: int = 0) -> int:
                     if fresh:
                         total += store(ch, fresh, refs)
                         state[ch] = max(m.id for m in fresh)
+                        moved = True
             except FloodWaitError as fw:
                 # Respect it exactly. Blind retry is how a new account gets banned.
                 print(f"FLOOD WAIT {fw.seconds}s on @{ch} — sleeping")
@@ -487,7 +550,14 @@ async def run(once: bool = False, backfill: int = 0) -> int:
             # Stagger so five channels are not hit in the same instant.
             await asyncio.sleep(1.0 + random.random())
 
-        if entities and failures == len(entities):
+        if not entities:
+            # Nothing resolved is not a quiet cycle: it beat healthy with
+            # channels=0 forever before (audit F226). Failing it every cycle
+            # puts it in front of the watchdog; resolution keeps retrying.
+            fail(HEARTBEAT, f"0 of {len(channels)} channels resolved "
+                            f"(unresolved: {', '.join(unresolved)[:200]})",
+                 int(interval), _GRACE)
+        elif failures == len(entities):
             dead_cycles += 1
             print(f"every channel failed ({dead_cycles} cycle(s) in a row)")
             if dead_cycles >= 3:
@@ -503,10 +573,13 @@ async def run(once: bool = False, backfill: int = 0) -> int:
             # entire failure this is here to prevent.
             beat(HEARTBEAT, int(interval), _GRACE,
                  {"channels": len(entities), "claims": total,
-                  "channel_failures": failures})
+                  "channel_failures": failures, "unresolved": unresolved})
 
-        if total:
+        # Saved whenever a cursor moved, not only when a claim was new: an
+        # all-duplicate batch still advances the cursor (audit F218).
+        if moved:
             _save_state(state)
+        if total:
             print(f"[{datetime.now(timezone.utc):%H:%M:%S}] +{total} claim(s)")
         if once:
             break
