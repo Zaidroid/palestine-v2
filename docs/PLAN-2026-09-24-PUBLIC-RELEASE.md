@@ -453,3 +453,7 @@ inside the uncompressed chunks), re-quarantines the 2 that had nowhere to go, dr
 run with a belief rebuild: 273 rows, 0 off-kind, known 161 (0.59) at once; with the new loader 174 of 191 names resolve,
 17 stay unresolved on purpose (no row, no anchor — listed in the migration). Tests: `tests/test_palhub_names.py` (5; four
 skip until 081). Zaid's hand: `cd ~/palestine-v2 && db/migrate.sh` (HANDS-NEEDED top).
+2026-09-25 16:45 UTC · P1-A.1b migration 081 APPLIED by Zaid (16:39) · done · proof: `checkpoint_serving` both rows 273,
+**0 off-kind** (was 55 towns/roads/a station), known **164 of 273 = 0.601** — the G4 gate on honest rows, 20 of the 34
+new gate rows already known from the moved readings; 0 palhub rows on a town since; `tests/test_palhub_names.py` 5 passed
+against the live API (`faeea57`, the test reads a whole 12-bulletin cycle). Weekly measure-review keeps measuring.
