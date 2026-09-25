@@ -433,3 +433,10 @@ to 0.86. Projection on today's serving view (known 95 of 251 = 0.38): promote op
 current channel value), open+closed → 0.54 (8), all three → 0.57 (26). 49 more palhub places ≤3 h old resolve to rows
 that are not in checkpoint_serving (the 13.5 % unresolved/non-servable names) — the alias/promotion backfill is the
 other half of G4. Decision for Zaid: A promote open+closed (recommended), B open only, C stay quarantined.
+2026-09-25 16:00 UTC · P1-A.1 palhub earn-out — DECISION A (Zaid) LIVE at 15:49 (`e82a176`): open + closed asserted,
+congested quarantined · done · proof: first two palhub ticks wrote 254 rows (139 open + 61 closed asserted, 54 congested
+quarantined); `checkpoint_serving` known 95 of 251 (0.38) → **167 of 287 (0.58)**, direction-resolved among known 0 →
+**96** (36 checkpoints that had only palhub readings now enter the view). G4 gate 0.60 within reach; the remaining lever
+is the 49 palhub places that resolve to non-servable rows (alias/promotion backfill, P1-A.1 second half). The watchdog now
+records known-fraction + direction share every run (`ops_heartbeat` 'coverage', `ops/coverage.ndjson`). Watch: palhub's
+closed agrees with channels 0.65 (control 0.78) — the weekly measure-review keeps measuring every palhub row by class.
