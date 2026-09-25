@@ -67,6 +67,15 @@ IDENTITY = {
 }
 
 
+def generation_sql(cutoff: str) -> str:
+    """The ONE day of the bad generation, closed on both ends: `>= cutoff`
+    would have deleted every current row ingested since (audit F345)."""
+    return f"""
+                SELECT o.observation_id FROM observation o
+                WHERE o.dataset_id = %s AND upper_inf(o.sys_period)
+                  AND o.ingested_at::date BETWEEN '{cutoff}' AND '{cutoff}'"""
+
+
 def main() -> int:
     apply = "--apply" in sys.argv
     report = {"ts": datetime.now(timezone.utc).isoformat(), "apply": apply,
@@ -78,12 +87,16 @@ def main() -> int:
             if not row:
                 continue
             ds = row[0]
+            cur.execute("""SELECT EXISTS (SELECT 1 FROM observation
+                                          WHERE dataset_id = %s AND identity_key IS NOT NULL)""", (ds,))
+            if cur.fetchone()[0]:
+                # Post-052 the dataset has identities; this one-off repair
+                # would delete the repaired generation itself (audit F345).
+                print(f"  {key}: carries identity_key — this repair does not apply, skipped")
+                continue
             if ident.startswith("GENERATION:"):
                 cutoff = ident.split(":", 1)[1]
-                dup_sql = f"""
-                SELECT o.observation_id FROM observation o
-                WHERE o.dataset_id = %s AND upper_inf(o.sys_period)
-                  AND o.ingested_at::date >= '{cutoff}'"""
+                dup_sql = generation_sql(cutoff)
             else:
                 # duplicates = current rows for which an OLDER current row
                 # with the same identity exists in the same dataset

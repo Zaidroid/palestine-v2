@@ -13,4 +13,4 @@ TimeoutStartSec=300
 # bad RESULT, and systemd cannot tell the difference — without this, every
 # detected fault would also mark the watchdog itself as failed, raising a
 # second alarm about the alarm. SuccessExitStatus keeps the two apart.
-SuccessExitStatus=0 1
+SuccessExitStatus=0 3

@@ -9,3 +9,6 @@ User=zaid
 WorkingDirectory=/home/zaid/palestine-v2
 ExecStart=/home/zaid/palestine-v2/ops/mcp-audit.sh
 TimeoutStartSec=900
+# Exit 1 = ran fine, found criticals (the audit's own alert pages); not a
+# unit failure, or OnFailure raises a second alarm about the alarm (F064).
+SuccessExitStatus=0 1

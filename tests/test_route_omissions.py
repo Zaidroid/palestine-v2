@@ -105,7 +105,9 @@ def test_a_closed_near_miss_is_spoken_not_only_structured(route):
     if not closed:
         pytest.skip("no closed checkpoint within the band right now")
     answer = route["answer"]
-    assert "تنبيه" in answer, answer
+    # An exit closure is spoken as the REASON ("إغلاق عند X على طريق …"), not
+    # repeated as a nearby-closure warning (audit F011); either form names it.
+    assert "تنبيه" in answer or "إغلاق عند" in answer, answer
     assert any(m["name"] in answer for m in closed), (answer, closed)
 
 

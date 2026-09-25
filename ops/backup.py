@@ -176,6 +176,19 @@ def dump_database(out_dir: Path) -> dict[str, int]:
 BRONZE_FULL_DAY = 1          # a full set on the 1st; increments in between
 
 
+LAST_FULL_MARKER = STAGING / "last-full.json"     # outside the pruned 20* dirs (F273)
+MIN_REMOTE_SETS = 5
+EVIDENCE = ROOT / "data" / "evidence"
+
+
+def _count_objects(src: Path, newer_than: float | None) -> int:
+    n = 0
+    for f in src.rglob("*"):
+        if f.is_file() and (newer_than is None or f.stat().st_mtime > newer_than):
+            n += 1
+    return n
+
+
 def archive_bronze(out_dir: Path) -> str:
     """Raw source payloads. Silver and gold are re-derivable from these.
 
@@ -194,6 +207,11 @@ def archive_bronze(out_dir: Path) -> str:
         return "absent"
     ref = _last_full_bronze()
     full = ref is None or _now().day == BRONZE_FULL_DAY
+    # The delta is cut from the moment the LAST tar started (F273): objects
+    # written during tar+encrypt used to land in no set, and the reference was
+    # the gpg blob's mtime read from local staging that prune_local trims.
+    global _BRONZE_FROM, _BRONZE_OBJECTS
+    _BRONZE_FROM = _now().timestamp()
     cmd = ["tar", "-C", str(ROOT / "data"),
            "--use-compress-program=zstd -19 -T0",
            "-cf", str(out_dir / "bronze.tar.zst")]
@@ -201,13 +219,34 @@ def archive_bronze(out_dir: Path) -> str:
         cmd += [f"--newer-mtime=@{int(ref)}"]
     cmd.append("bronze")
     _run(cmd)
+    _BRONZE_OBJECTS = _count_objects(src, None if full else ref)
     return "full" if full else "incremental"
+
+
+_BRONZE_FROM: float | None = None
+_BRONZE_OBJECTS: int | None = None
+
+
+def archive_evidence(out_dir: Path) -> str:
+    """The as_of vault's indexes and manifest (data/evidence): ops/evidence.py
+    said they were in the backup set and they were not (audit F276)."""
+    if not EVIDENCE.exists():
+        return "absent"
+    _run(["tar", "-C", str(ROOT / "data"), "--use-compress-program=zstd -19 -T0",
+          "-cf", str(out_dir / "evidence.tar.zst"), "evidence"])
+    return "present"
 
 
 def _last_full_bronze() -> float | None:
     """mtime of the most recent FULL bronze set, read from the manifests —
     which are deliberately unencrypted, so this needs no marker file of its
     own and cannot disagree with what the set actually contains."""
+    try:
+        marker = json.loads(LAST_FULL_MARKER.read_text())
+        if marker.get("bronze_from"):
+            return float(marker["bronze_from"])
+    except (OSError, ValueError):
+        pass
     best = None
     for mf in sorted(STAGING.glob("20*/manifest.json")) if STAGING.exists() else []:
         try:
@@ -238,6 +277,12 @@ def archive_secrets(out_dir: Path) -> None:
         for name in (".env",):
             if (ROOT / name).exists():
                 shutil.copy2(ROOT / name, stage / name)
+        # The partner-key store and OAuth state (audit F276): a restore
+        # without them is an API every partner is locked out of.
+        keys = ROOT / ".keys"
+        if keys.exists():
+            shutil.copytree(keys, stage / ".keys",
+                            ignore=shutil.ignore_patterns("*.bak*"))
         sess_dir = ROOT / "data" / "session"
         if sess_dir.exists():
             for f in sess_dir.iterdir():
@@ -327,7 +372,15 @@ def prune_remote(remote: str) -> list[str]:
     """
     out = _run(["rclone", "lsf", "--dirs-only", remote]).stdout.decode()
     sets = sorted(d.strip("/") for d in out.splitlines() if d.strip())
-    keep = set(sets[-REMOTE_KEEP:]) | {s for s in sets if s[8:10] == "01"}
+    # ONE set per calendar month (its first), not every set cut on a 1st —
+    # nine hand-runs on 08-01 were pinned forever — and never below
+    # MIN_REMOTE_SETS (audit F274).
+    first_of_month: dict[str, str] = {}
+    for s_ in sets:
+        first_of_month.setdefault(s_[:7], s_)
+    keep = set(sets[-REMOTE_KEEP:]) | set(first_of_month.values())
+    if len(keep & set(sets)) < MIN_REMOTE_SETS:
+        keep |= set(sets[-MIN_REMOTE_SETS:])
     removed = []
     for s in sets:
         if s not in keep:
@@ -352,6 +405,7 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
         rows = dump_database(set_dir)
         dump_bytes = (set_dir / "db.dump").stat().st_size
         bronze_kind = archive_bronze(set_dir)
+        evidence_kind = archive_evidence(set_dir)
         archive_secrets(set_dir)
 
         files = {}
@@ -367,6 +421,10 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
                    "total_rows": sum(rows.values())},
             "files": files,
             "bronze_kind": bronze_kind,   # full | incremental | absent
+            "bronze_from": (datetime.fromtimestamp(_BRONZE_FROM, tz=timezone.utc).isoformat()
+                            if _BRONZE_FROM else None),
+            "bronze_objects": _BRONZE_OBJECTS,
+            "evidence": evidence_kind,    # present | absent
             "encryption": "gpg symmetric AES256",
             "keyfile_sha256_prefix": _sha256(KEYFILE)[:16],
         }
@@ -400,15 +458,20 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
         final = STAGING / name
         set_dir.rename(final)
         set_dir = final
+        if bronze_kind == "full" and _BRONZE_FROM:
+            LAST_FULL_MARKER.write_text(json.dumps({"set": name, "bronze_from": _BRONZE_FROM}))
 
         remotes = _remotes()
         uploaded, failures = [], {}
         if remotes and not dry_run:
             for remote in remotes:
                 try:
+                    # Prune BEFORE the upload it must make room for (F274):
+                    # the off-host copy died on quota with the pruning queued
+                    # behind the upload that could not happen.
+                    prune_remote(remote)
                     upload(set_dir, remote)
                     uploaded.append(f"{remote}/{name}")
-                    prune_remote(remote)
                 except Exception as exc:                           # noqa: BLE001
                     detail = (exc.stderr.decode()[:200]
                               if isinstance(exc, subprocess.CalledProcessError)
@@ -440,7 +503,6 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
             "total_rows": manifest["db"]["total_rows"],
             "dump_bytes": dump_bytes,
             "set_bytes": sum(f["bytes"] for f in files.values()),
-            "pruned_local": prune_local(),
             "finished_at": _now().isoformat(),
             "duration_s": round((_now() - started).total_seconds(), 1),
         })
@@ -452,6 +514,10 @@ def run(dry_run: bool = False, accept_shrink: str | None = None) -> dict:
         if set_dir.exists() and set_dir.name.startswith("."):
             shutil.rmtree(set_dir, ignore_errors=True)
     finally:
+        try:
+            status["pruned_local"] = prune_local()       # always, even after a failure (F274)
+        except Exception as exc:                                       # noqa: BLE001
+            status["prune_local_error"] = str(exc)[:200]
         STATUS_FILE.write_text(json.dumps(status, indent=2))
     return status
 

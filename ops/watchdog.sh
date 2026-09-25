@@ -8,5 +8,5 @@
 set -uo pipefail
 cd /home/zaid/palestine-v2
 # Exit 1 means a fault was FOUND, not that this run failed.
-export OK_EXIT_CODES=1
+export OK_EXIT_CODES=3   # 3 = faults found (a working watchdog); 1 = it crashed (audit F066)
 exec ./ops/with-heartbeat.sh watchdog 600 900 -- .venv/bin/python -m ops.watchdog

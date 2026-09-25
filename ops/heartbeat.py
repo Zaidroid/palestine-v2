@@ -74,6 +74,34 @@ ON CONFLICT (name) DO UPDATE SET
 """
 
 
+UPSERT_ATTEMPT = """
+INSERT INTO ops_heartbeat (name, last_ok, last_attempt, last_error,
+                           consecutive_failures, expected_interval_seconds,
+                           grace_seconds)
+VALUES (%s, NULL, now(), NULL, 0, %s, %s)
+ON CONFLICT (name) DO UPDATE SET
+  last_attempt = now(),
+  expected_interval_seconds = COALESCE(EXCLUDED.expected_interval_seconds,
+                                       ops_heartbeat.expected_interval_seconds),
+  grace_seconds = COALESCE(EXCLUDED.grace_seconds, ops_heartbeat.grace_seconds)
+"""
+
+
+def attempt(name: str, interval: int | None = None, grace: int | None = None) -> bool:
+    """Record that a run STARTED (audit F286). A job killed by TimeoutStartSec
+    never reached the wrapper's recording, so it read `not_running` (scheduler
+    stopped) instead of `failing`; with the attempt stamped first, a kill reads
+    as an attempt that did not succeed."""
+    try:
+        with connect() as conn, conn.cursor() as cur:
+            cur.execute(UPSERT_ATTEMPT, (name, interval, grace))
+            conn.commit()
+        return True
+    except Exception as exc:                            # noqa: BLE001
+        print(f"heartbeat attempt({name}) failed to record: {exc}", file=sys.stderr)
+        return False
+
+
 def beat(name: str, interval: int | None = None, grace: int | None = None,
          detail: dict | None = None) -> bool:
     """Record a successful cycle. Never raises — see the module docstring."""
@@ -112,7 +140,11 @@ def main() -> int:
     ap.add_argument("--grace", type=int, help="how late is late, in seconds")
     ap.add_argument("--detail", default="{}", help="JSON object")
     ap.add_argument("--fail", metavar="ERROR", help="record a failed attempt")
+    ap.add_argument("--attempt", action="store_true",
+                    help="record that a run started (before the job runs)")
     a = ap.parse_args()
+    if a.attempt:
+        return 0 if attempt(a.name, a.interval, a.grace) else 1
 
     if a.fail:
         return 0 if fail(a.name, a.fail, a.interval, a.grace) else 1

@@ -27,9 +27,19 @@ if [ "$want" = "$have" ]; then
         || { echo "valhalla at $want is unreachable despite matching IP" >&2; exit 1; }
 fi
 
-echo "valhalla moved: $have -> $want"
-tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
-sed "s|^VALHALLA_URL=.*|VALHALLA_URL=${want}|" .env > "$tmp"
-cat "$tmp" > .env          # preserve the existing 600 perms/inode
-chmod 600 .env
+echo "valhalla moved: ${have:-<absent>} -> $want"
+# ATOMIC (audit F278): the secrets file was rewritten in place through `cat >`
+# every 15 minutes, and a missing VALHALLA_URL line meant an endless restart.
+umask 077
+tmp=".env.tmp.$$"; trap 'rm -f "$tmp"' EXIT
+if [ -n "$have" ]; then
+    sed "s|^VALHALLA_URL=.*|VALHALLA_URL=${want}|" .env > "$tmp"
+else
+    { cat .env; echo "VALHALLA_URL=${want}"; } > "$tmp"
+fi
+if cmp -s "$tmp" .env; then
+    echo "no change to .env after all"; exit 0
+fi
+chmod 600 "$tmp"
+mv -f "$tmp" .env
 sudo -n systemctl restart palestine-v2-api.service && echo "api restarted"

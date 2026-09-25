@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 import os
 import sys
 import time
@@ -172,6 +173,7 @@ EXPECTED_JOBS = {
     "maintain":          (604800, 172800),
     "databank":          (86400, 21600),
     "scout":             (604800, 259200),
+    "valhalla-ip":       (900, 1800),
     # The analyst (P0 of LOCAL-ANALYST-2026-09) is a consumer loop, not a
     # timer: it beats once per tick from inside `analyst.loop`, like the poller,
     # so it has no entry in any *.sh and the cadence is duplicated from
@@ -240,6 +242,7 @@ WITH arrival AS (
     FROM state_observation
    WHERE observed_at >  now() - interval '{BASELINE_DAYS} days'
      AND observed_at <= now() - interval '{JUDGE_HOURS} hours'
+     AND modality = 'assertion'
    GROUP BY 1, 2
 ), gaps AS (
   SELECT state_kind, t,
@@ -265,6 +268,7 @@ WITH arrival AS (
   SELECT state_kind, date_trunc('minute', observed_at) AS t
     FROM state_observation
    WHERE observed_at > now() - interval '{CEILING_DAYS} days'
+     AND modality = 'assertion'
    GROUP BY 1, 2
 ), gaps AS (
   SELECT state_kind, t - lag(t) OVER (PARTITION BY state_kind ORDER BY t) AS gap
@@ -283,6 +287,7 @@ SELECT state_kind,
        max(observed_at)                                              AS latest,
        extract(epoch FROM (now() - max(observed_at)))                AS age_seconds
   FROM state_observation
+ WHERE modality = 'assertion'      -- quarantined palhub rows kept a dead feed 'ok' (audit F283)
  GROUP BY 1
 """
 
@@ -374,7 +379,9 @@ def job_checks() -> list[dict]:
             "check": "job",
             "name": r["name"],
             "status": status,
-            "fault": status in ("failing", "not_running", "never_succeeded"),
+            # `unmonitored` (cadence lost) is a fault for a job we expect (F284)
+            "fault": status in ("failing", "not_running", "never_succeeded")
+                     or (status == "unmonitored" and r["name"] in EXPECTED_JOBS),
             "age_minutes": float(r["ok_age_minutes"]) if r["ok_age_minutes"] is not None else None,
             "expected_seconds": r["expected_interval_seconds"],
             "consecutive_failures": r["consecutive_failures"],
@@ -769,6 +776,128 @@ def fuel_price_check() -> list[dict]:
              "age_minutes": None, "fault": fault, "detail": detail}]
 
 
+BACKUP_STATUS = ROOT / "ops" / "backup-status.json"
+BACKUP_MAX_AGE_S = 36 * 3600
+
+
+def backup_check() -> list[dict]:
+    """The off-host copy, judged from the status file the backup writes: not
+    ok, or older than 36 h, is a fault of its own (audit F274) — the heartbeat
+    only says the job RAN."""
+    row = {"check": "backup", "name": "backup-remote", "age_minutes": None,
+           "threshold_minutes": BACKUP_MAX_AGE_S / 60}
+    try:
+        st = json.loads(BACKUP_STATUS.read_text())
+        age = time.time() - BACKUP_STATUS.stat().st_mtime
+    except (OSError, ValueError) as exc:
+        return [{**row, "status": "missing", "fault": True, "detail": f"{exc}"[:200]}]
+    row["age_minutes"] = round(age / 60, 1)
+    if not st.get("ok"):
+        return [{**row, "status": "failed", "fault": True,
+                 "detail": str(st.get("error") or "last run not ok")[:200]}]
+    if not st.get("remotes"):
+        return [{**row, "status": "local_only", "fault": True,
+                 "detail": str(st.get("warning") or "no remote copy")[:200]}]
+    if age > BACKUP_MAX_AGE_S:
+        return [{**row, "status": "stale", "fault": True,
+                 "detail": f"last successful set {age / 3600:.0f} h ago"}]
+    return [{**row, "status": "ok", "fault": False,
+             "detail": f"set {st.get('set')} on {len(st['remotes'])} remote(s)"}]
+
+
+DOORBELL_SELFTEST_DAYS = 7
+RESEND_CAP_PER_DAY = 3
+RESEND_BACKOFF_S = 3600
+
+
+def doorbell_check(send: bool = False) -> list[dict]:
+    """Nothing used to prove the doorbell works: a dead ntfy token silenced
+    every alarm until someone ran --test by hand (audit F285). The last three
+    receipts undelivered, or no delivered self-test within 8 days, is a fault;
+    the self-test itself is sent silently once a week from here."""
+    from ops import alert as A
+    recs, _ = A._read_log()
+    receipts = [r for r in recs if r.get("delivery_of")]
+    last3 = receipts[-3:]
+    row = {"check": "dep", "name": "doorbell", "age_minutes": None, "threshold_minutes": None}
+    if len(last3) == 3 and not any(r.get("delivered") for r in last3):
+        return [{**row, "status": "undelivered", "fault": True,
+                 "detail": "the last 3 alarm deliveries failed: "
+                           + str(last3[-1].get("reason", ""))[:120]}]
+    tests = [r for r in receipts if r.get("delivery_of") == "notify-selftest" and r.get("delivered")]
+    last = tests[-1]["ts"] if tests else None
+    due = (last is None) or (
+        (datetime.now(timezone.utc) - datetime.fromisoformat(last)).days >= DOORBELL_SELFTEST_DAYS)
+    if due and not send:
+        return [{**row, "status": "ok" if last else "unproven", "fault": False,
+                 "detail": "self-test due; the watchdog run sends it"}]
+    if due:
+        rec = A.raise_alert("notify-selftest", "weekly silent doorbell test — no action needed",
+                            dedup_minutes=0, silent=True)
+        A.resolve("notify-selftest", "self-test complete", notify=False)
+        if rec.get("delivered"):
+            return [{**row, "status": "ok", "fault": False, "detail": "self-test delivered just now"}]
+        if last is not None and (datetime.now(timezone.utc) - datetime.fromisoformat(last)).days <= 8:
+            return [{**row, "status": "ok", "fault": False, "detail": f"last delivered self-test {last[:10]}"}]
+        return [{**row, "status": "silent", "fault": True,
+                 "detail": "no delivered self-test in 8 days and today's failed: "
+                           + str(rec.get("reason") or "")[:120]}]
+    return [{**row, "status": "ok", "fault": False, "detail": f"last delivered self-test {last[:10]}"}]
+
+
+def resend_undelivered() -> int:
+    """Open alarms whose latest receipt is undelivered are retried, at most
+    RESEND_CAP_PER_DAY times a day and an hour apart (F285)."""
+    from ops import alert as A
+    recs, _ = A._read_log()
+    n = 0
+    now = datetime.now(timezone.utc)
+    for a in A.open_alerts():
+        unit = a.get("unit")
+        if not unit or unit == "notify-selftest":
+            continue
+        rs = [r for r in recs if r.get("delivery_of") == unit and r["ts"] >= a["ts"]]
+        if not rs or rs[-1].get("delivered"):
+            continue
+        # the cap counts RETRIES, not the original delivery attempts
+        today = [r for r in rs if r.get("retry") and r["ts"][:10] == now.date().isoformat()]
+        last_try = datetime.fromisoformat(rs[-1]["ts"])
+        if len(today) >= RESEND_CAP_PER_DAY or (now - last_try).total_seconds() < RESEND_BACKOFF_S:
+            continue
+        A.redeliver(unit, a.get("detail", ""))
+        n += 1
+    return n
+
+
+FETCH_EVENTS = ROOT / "ops" / "fetch-events.ndjson"
+FETCH_FAIL_STREAK = 3
+
+
+def fetch_check() -> list[dict]:
+    """A supply line that failed its last three attempts is a fault (audit
+    F275): databank-sync's `|| echo` lines were read by nobody."""
+    if not FETCH_EVENTS.exists():
+        return []
+    last: dict[str, list[dict]] = {}
+    for line in FETCH_EVENTS.read_text(errors="replace").splitlines()[-2000:]:
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(r, dict) and r.get("label"):
+            last.setdefault(r["label"], []).append(r)
+    out = []
+    for label, evs in sorted(last.items()):
+        tail = evs[-FETCH_FAIL_STREAK:]
+        streak = len(tail) == FETCH_FAIL_STREAK and all(e.get("outcome") != "ok" for e in tail)
+        if streak:
+            out.append({"check": "fetch", "name": label, "age_minutes": None,
+                        "status": "failing", "fault": True,
+                        "detail": f"{FETCH_FAIL_STREAK} consecutive attempts not ok; last: "
+                                  + str(tail[-1].get("outcome"))[:60]})
+    return out
+
+
 def _already_open(key: str) -> bool:
     return any(r.get("unit") == key for r in open_alerts())
 
@@ -789,7 +918,8 @@ def all_checks(max_age_s: float = 10.0) -> dict:
     feeds = feed_checks(jobs)                       # cached cadence
     others: list[dict] = []
     for fam in (capacity_check, dependency_checks, routing_check,
-                minimax_check, fuel_price_check):
+                minimax_check, fuel_price_check, backup_check, doorbell_check,
+                fetch_check):
         try:
             others.extend(fam())
         except Exception as exc:                    # noqa: BLE001
@@ -802,7 +932,29 @@ def all_checks(max_age_s: float = 10.0) -> dict:
     return out
 
 
+FAULT_EXIT = 3          # "ran, found faults" — distinct from a crash (exit 1), audit F066
+
+
 def main() -> int:
+    """A crash and a fault used to share exit 1, so the watchdog could not be
+    watched for crashing. Now: 0 = all green, 3 = faults found (a working
+    watchdog; the unit and wrapper accept it), 1 = the watchdog itself broke,
+    which raises its own alarm and fails the unit."""
+    try:
+        return _main()
+    except SystemExit:
+        raise
+    except Exception as exc:                                    # noqa: BLE001
+        import traceback
+        traceback.print_exc()
+        try:
+            raise_alert("watchdog:self", f"the watchdog crashed: {exc!r}"[:600])
+        except Exception:                                       # noqa: BLE001
+            pass
+        return 1
+
+
+def _main() -> int:
     ap = argparse.ArgumentParser(description="check every job and feed")
     ap.add_argument("--dry-run", action="store_true", help="report, never alarm")
     ap.add_argument("--json", action="store_true")
@@ -812,7 +964,8 @@ def main() -> int:
     # The watchdog re-measures; /health reads what the watchdog recorded.
     feeds = feed_checks(jobs, measure_cadence())
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
-            + minimax_check() + fuel_price_check() + feeds)
+            + minimax_check() + fuel_price_check() + backup_check()
+            + doorbell_check(send=not a.dry_run) + fetch_check() + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:
@@ -835,15 +988,20 @@ def main() -> int:
         # Everything this watchdog raised that is now green gets closed. These
         # are conditions, not events: see ops.alert.resolve for why leaving
         # them red is worse than closing them.
+        # A feed whose collector is down is not recovered — it is still
+        # silent; its alarm stays open with no 'recovered' push (F284).
+        still_down = {f"watchdog:{r['check']}:{r['name']}" for r in rows
+                      if r.get("status") == "collector_down"}
         for r in open_alerts():
             unit = r.get("unit", "")
-            if unit.startswith("watchdog:") and unit not in faulting:
+            if unit.startswith("watchdog:") and unit not in faulting and unit not in still_down:
                 resolve(unit, "check returned to within cadence")
                 print(f"resolved {unit}")
+        resend_undelivered()
 
     if faults:
         print(f"\n{len(faults)} fault(s)", file=sys.stderr)
-        return 1
+        return FAULT_EXIT
     print(f"\nall {len(rows)} checks within cadence")
     return 0
 

@@ -12,5 +12,9 @@
 # findings themselves page through ops/mcp_accuracy_audit.py's own alert.
 set -euo pipefail
 cd /home/zaid/palestine-v2
+# The variable is read by with-heartbeat.sh, so it must be in ITS environment
+# — `env OK_EXIT_CODES=1` after the `--` handed it to the audit process and
+# every critical night was recorded as a failed job (audit F064).
+export OK_EXIT_CODES=1
 exec "$(dirname "$0")/with-heartbeat.sh" mcp-audit 86400 10800 -- \
-  env OK_EXIT_CODES=1 .venv/bin/python -m ops.mcp_accuracy_audit
+  .venv/bin/python -m ops.mcp_accuracy_audit

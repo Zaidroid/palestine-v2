@@ -223,6 +223,59 @@ def check_hypertables() -> list[str]:
     return problems
 
 
+BRONZE_SAMPLE = 50
+
+
+def bronze_chain(newest: Path) -> list[Path]:
+    """The newest FULL set at or before `newest` plus every later increment up
+    to it, oldest first, from local staging."""
+    sets = sorted(p for p in STAGING.glob("20*") if p.is_dir() and p.name <= newest.name)
+    chain: list[Path] = []
+    for p in reversed(sets):
+        try:
+            kind = json.loads((p / "manifest.json").read_text()).get("bronze_kind")
+        except (OSError, ValueError):
+            continue
+        if kind in ("full", "incremental"):
+            chain.insert(0, p)
+        if kind == "full":
+            return chain
+    return []                      # no full set in staging: nothing to replay
+
+
+def restore_bronze(chain: list[Path], work: Path) -> tuple[int, list[str]]:
+    """Decrypt and extract the chain into `work`; returns (objects, problems).
+    The weekly test used to exercise the DB dump only (audit F277)."""
+    problems: list[str] = []
+    for p in chain:
+        enc = p / "bronze.tar.zst.gpg"
+        tar = work / f"{p.name}.tar.zst"
+        _run(["gpg", "--batch", "--yes", "--quiet", "--decrypt",
+              "--passphrase-file", str(KEYFILE), "--output", str(tar), str(enc)])
+        _run(["tar", "-C", str(work), "--use-compress-program=zstd -d", "-xf", str(tar)])
+        tar.unlink(missing_ok=True)
+    objects = sum(1 for f in (work / "bronze").rglob("*") if f.is_file()) if (work / "bronze").exists() else 0
+    want = json.loads((chain[0] / "manifest.json").read_text()).get("bronze_objects")
+    if want and objects < want:
+        problems.append(f"bronze: {objects:,} objects restored, the full set recorded {want:,}")
+    return objects, problems
+
+
+def sample_bronze_refs(work: Path, n: int = BRONZE_SAMPLE) -> list[str]:
+    """`n` random claim.raw_ref from the RESTORED database must exist as
+    objects in the restored bronze tree (bronze://<source>/<sha256>)."""
+    refs = _psql(SCRATCH, f"""SELECT coalesce(string_agg(raw_ref, ','), '') FROM (
+                 SELECT raw_ref FROM claim WHERE raw_ref LIKE 'bronze://%'
+                 ORDER BY random() LIMIT {n}) s""")
+    problems = []
+    for ref in [r for r in refs.split(",") if r]:
+        src, digest = ref[len("bronze://"):].split("/", 1)
+        path = work / "bronze" / src / digest[:2] / f"{digest}.json.gz"
+        if not path.exists():
+            problems.append(f"{ref}: object missing from the restored bronze")
+    return problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--set", help="backup set name (default: latest local)")
@@ -240,6 +293,9 @@ def main() -> int:
     print(f"restore test · set {manifest['set']} · "
           f"{'REMOTE' if a.from_remote else 'local'} copy")
 
+    if manifest.get("evidence") == "present" and "evidence.tar.zst.gpg" not in manifest["files"]:
+        print("FAIL — the manifest says the evidence vault is present but the file is not listed")
+        return 1
     bad = verify_checksums(set_dir, manifest)
     if bad:
         print("FAIL — file integrity:", *bad, sep="\n  ")
@@ -249,14 +305,17 @@ def main() -> int:
     try:
         with tempfile.TemporaryDirectory() as td:
             errors = restore(set_dir, Path(td), bracket=not a.no_bracket)
-        if a.from_remote and set_dir.name.startswith(".remote-"):
-            # The downloaded copy is scratch. Left behind it accumulates one
-            # full set per weekly run on the same disk the backups exist to
-            # survive losing.
-            shutil.rmtree(set_dir, ignore_errors=True)
+            bronze_problems: list[str] = []
+            chain = bronze_chain(set_dir) if not a.from_remote else []
+            if chain:
+                with tempfile.TemporaryDirectory() as tb:
+                    objects, bronze_problems = restore_bronze(chain, Path(tb))
+                    bronze_problems += sample_bronze_refs(Path(tb))
+                print(f"  bronze chain: {len(chain)} set(s), {objects:,} objects restored")
         problems, matched, total = compare(manifest)
         problems += check_hypertables()
         problems += check_schema()
+        problems += bronze_problems
         if errors:
             problems.insert(0, f"pg_restore reported {errors} errors")
         print(f"  restored {total:,} rows across {matched} tables")
@@ -265,6 +324,10 @@ def main() -> int:
                    ', ' ORDER BY 1) FROM timescaledb_information.hypertables""")
         print(f"  hypertables: {ht}")
     finally:
+        # The downloaded remote copy goes whatever happened above (audit F277:
+        # a checksum failure left it behind).
+        if a.from_remote and set_dir.name.startswith(".remote-"):
+            shutil.rmtree(set_dir, ignore_errors=True)
         if not a.keep:
             _psql("postgres", f'DROP DATABASE IF EXISTS {SCRATCH}', quiet=True)
 

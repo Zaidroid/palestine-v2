@@ -22,11 +22,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 name="$1"; interval="$2"; grace="$3"; shift 3
 [ "${1:-}" = "--" ] && shift
 
+# The attempt is stamped BEFORE the job runs, and a TERM (systemd's
+# TimeoutStartSec kill) is recorded as a failed attempt with its reason —
+# a killed job used to read `not_running` (audit F286).
+"$ROOT/.venv/bin/python" -m ops.heartbeat "$name" --attempt \
+    --interval "$interval" --grace "$grace" || true
+trap '"$ROOT/.venv/bin/python" -m ops.heartbeat "$name" --interval "$interval" --grace "$grace" --fail "killed (TERM — timeout?)" || true; exit 143' TERM
+
 "$@"
 rc=$?
+trap - TERM
 
 # OK_EXIT_CODES lets a job say "this exit code means I worked, and found
-# something" — the watchdog exits 1 when it DETECTS a fault, which is a
+# something" — the watchdog exits 3 when it DETECTS a fault, which is a
 # successful run with a bad result.
 #
 # Without it the watchdog recorded `--fail` on every run that found anything,
@@ -42,7 +50,7 @@ done
 
 if [ "$ok" -eq 1 ]; then
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
-      --interval "$interval" --grace "$grace" || true
+      --interval "$interval" --grace "$grace" --detail "${HEARTBEAT_DETAIL:-{\}}" || true
 else
   "$ROOT/.venv/bin/python" -m ops.heartbeat "$name" \
       --interval "$interval" --grace "$grace" --fail "exited $rc" || true

@@ -9,24 +9,31 @@
 set -uo pipefail
 cd /home/zaid/palestine-v2
 
+# Failures are COUNTED and carried in the heartbeat detail, and the watchdog's
+# `fetch` family reads ops/fetch-events.ndjson (three failures in a row = a
+# fault): the `|| echo` lines were read by nobody (audit F275).
+fails=0
+step() { "$@" || { echo "$4 failed — loading yesterday's copy" >&2; fails=$((fails+1)); }; }
+
 # v2-native pre-fetches (Phase 4): sources v2 pulls for itself, before the
 # loader runs. Non-fatal by design — a failed fetch leaves yesterday's file
 # and the spec's expect floor still guards the load.
-.venv/bin/python -m ops.fetch_gho_wash || echo "gho-wash fetch failed — loading yesterday's file" >&2
+step .venv/bin/python -m ops.fetch_gho_wash
 
 # Tech4Palestine, fetched straight from the publisher (Unlicense) rather than
 # through v1. Non-fatal by design: the fetcher is atomic and floored, so a bad
 # night leaves yesterday's tree and the loader's expect floors intact — which
 # is strictly better than a truncated overwrite.
-.venv/bin/python -m ops.fetch_t4p || echo "t4p fetch failed — loading yesterday's tree" >&2
+step .venv/bin/python -m ops.fetch_t4p
 
 # Connectivity, cut from v1 2026-08-08. Same non-fatal posture, and the same
 # reason: both fetchers are atomic and floored. OONI is the one that MATTERS
 # to run — v1's copy of it died on 2026-06-09 and nobody noticed for sixty
 # days, so a silent failure here is the exact thing being fixed.
-.venv/bin/python -m ops.fetch_ooni || echo "ooni fetch failed — loading yesterday's file" >&2
-.venv/bin/python -m ops.fetch_ioda || echo "ioda fetch failed — loading yesterday's file" >&2
+step .venv/bin/python -m ops.fetch_ooni
+step .venv/bin/python -m ops.fetch_ioda
 
+export HEARTBEAT_DETAIL="{\"fetch_failures\": $fails}"
 ./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all
 rc=$?
@@ -53,6 +60,9 @@ rc=$?
 # The gap radar re-measures after every sync: freshness on the data's own
 # dates, holes, era coverage, fetch-layer health → data/gap-radar.json
 # (served at /v2/databank/radar; Monday's maintenance run reads it).
-.venv/bin/python -m ops.gap_radar || echo "gap radar failed — yesterday's radar stands" >&2
+.venv/bin/python -m ops.gap_radar
+radar=$?
+[ "$radar" -eq 4 ] && echo "gap radar: a dataset stalled since yesterday — see data/gap-radar.json newly_stalled" >&2
+[ "$radar" -ne 0 ] && [ "$radar" -ne 4 ] && echo "gap radar failed — yesterday's radar stands" >&2
 
 exit $rc

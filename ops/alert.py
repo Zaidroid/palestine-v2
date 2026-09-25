@@ -25,7 +25,7 @@ import argparse
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -42,7 +42,27 @@ def _notify(text: str, *, silent: bool = False) -> dict:
         return {"ok": False, "reason": f"{type(exc).__name__}: {exc}"[:200]}
 
 
-def raise_alert(unit: str, reason: str = "") -> dict:
+DEDUP_MINUTES = 30
+
+
+def _recently_raised(unit: str, minutes: int) -> str | None:
+    """ts of an alarm for `unit` raised within `minutes`, or None."""
+    if not minutes:
+        return None
+    recs, _ = _read_log()
+    since = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+    for r in reversed(recs):
+        if r.get("unit") == unit and not r.get("delivery_of") and not r.get("resolves"):
+            return r["ts"] if r["ts"] >= since else None
+    return None
+
+
+def raise_alert(unit: str, reason: str = "", *, dedup_minutes: int = DEDUP_MINUTES,
+                silent: bool = False) -> dict:
+    """Record an alarm and deliver it — unless the same unit raised within
+    `dedup_minutes`: then it is recorded with `suppressed_after` and NOT
+    delivered (audit F272: a failing 2-minute timer pushed 30 notifications an
+    hour). The log keeps every occurrence either way."""
     detail = reason
     if not detail and unit:
         cp = subprocess.run(["systemctl", "status", "--no-pager", "-n", "15", unit],
@@ -54,6 +74,15 @@ def raise_alert(unit: str, reason: str = "") -> dict:
         "detail": detail.strip(),
         "acknowledged": False,
     }
+    prev = _recently_raised(unit, dedup_minutes)
+    if prev:
+        rec["suppressed_after"] = prev
+        rec["delivered"] = False
+        with ALERTS.open("a") as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"ALERT {unit}: repeated within {dedup_minutes} min — recorded, not sent",
+              file=sys.stderr)
+        return rec
     with ALERTS.open("a") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
     line = detail.splitlines()[-1] if detail else "failed"
@@ -64,7 +93,7 @@ def raise_alert(unit: str, reason: str = "") -> dict:
     # an expired token or a Telegram outage. `send` swallows everything and
     # returns a reason, so nothing here can raise into a systemd OnFailure
     # handler — an alarm path that can itself fail is a second outage.
-    d = _notify(f"🔴 {unit}\n{line[:600]}")
+    d = _notify(f"🔴 {unit}\n{line[:600]}", silent=silent)
     rec["delivered"] = d["ok"]
     # WHICH channel, and WHICH message. An alarm that records "delivered" and
     # nothing else cannot be checked after the fact — and on 2026-09-22 the
@@ -88,10 +117,25 @@ def raise_alert(unit: str, reason: str = "") -> dict:
         fh.write(json.dumps(receipt, ensure_ascii=False) + "\n")
     if not d["ok"] and d["reason"] and "unconfigured" not in d["reason"]:
         print(f"  (alert delivery failed: {d['reason']})", file=sys.stderr)
+        rec["reason"] = str(d["reason"])[:200]
     return rec
 
 
-def resolve(unit: str, note: str = "") -> dict:
+def redeliver(unit: str, detail: str = "") -> dict:
+    """A second delivery attempt for an OPEN alarm whose first failed; writes
+    a receipt only (the alarm record already exists) — audit F285."""
+    line = detail.splitlines()[-1] if detail else "still open"
+    d = _notify(f"🔴 (retry) {unit}\n{line[:600]}")
+    receipt = {"ts": datetime.now(timezone.utc).isoformat(), "delivery_of": unit,
+               "delivered": d["ok"], "channel": d.get("channel", "unknown"), "retry": True}
+    if not d["ok"]:
+        receipt["reason"] = str(d.get("reason", ""))[:200]
+    with ALERTS.open("a") as fh:
+        fh.write(json.dumps(receipt, ensure_ascii=False) + "\n")
+    return receipt
+
+
+def resolve(unit: str, note: str = "", *, notify: bool = True) -> dict:
     """Close an alarm whose CONDITION no longer holds.
 
     Conditions and events need different lifetimes. "The poller has not
@@ -118,7 +162,8 @@ def resolve(unit: str, note: str = "") -> dict:
     # unable to tell "it recovered" from "it is still broken and has gone
     # quiet", and the second reading is the one that gets ignored. Silent so
     # good news never wakes anybody.
-    _notify(f"🟢 recovered: {unit}\n{note[:300]}", silent=True)
+    if notify:
+        _notify(f"🟢 recovered: {unit}\n{note[:300]}", silent=True)
     return rec
 
 
@@ -193,7 +238,8 @@ def main() -> int:
         # raise_alert, so it proves the ledger, the delivery and the channel all
         # at once. If it says delivered without a channel, nothing landed.
         rec = raise_alert("notify-test",
-                          "palestine-v2 delivery test — a human should see this")
+                          "palestine-v2 delivery test — a human should see this",
+                          dedup_minutes=0)
         print(f"raised: delivered={rec['delivered']} "
               f"channel={rec.get('channel')} id={rec.get('message_id', '-')}")
         return 0 if rec["delivered"] else 1

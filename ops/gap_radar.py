@@ -440,6 +440,18 @@ def main() -> int:
         "fetch_health": fetch_health,
         "gaps": gaps,
     }
+    # A dataset that stalled since the last radar is said, and exits 4 so the
+    # nightly job can say it too (audit F275 / P1-B.3).
+    def _key(d):
+        return d.get("dataset") or d.get("key") or d.get("name")
+    prev_stalled: set = set()
+    try:
+        prev = json.loads(OUT.read_text())
+        prev_stalled = {_key(d) for d in prev.get("datasets", []) if d.get("status") == "stalled"}
+    except (OSError, ValueError):
+        pass
+    now_stalled = {_key(d) for d in datasets if d.get("status") == "stalled"}
+    report["newly_stalled"] = sorted(x for x in (now_stalled - prev_stalled) if x)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(report, ensure_ascii=False, indent=1))
@@ -454,6 +466,9 @@ def main() -> int:
         print(f"  [{g['severity']}] {g['kind']:<12} {g['subject']:<44} "
               f"{g['measure'][:80]}")
     print(f"→ {OUT}")
+    if report["newly_stalled"]:
+        print("NEWLY STALLED:", ", ".join(report["newly_stalled"]))
+        return 4
     return 0
 
 
