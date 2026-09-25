@@ -115,6 +115,81 @@ def check_comparable(a: dict, b: dict) -> list[str]:
     return stop
 
 
+# Two series that both climb (or both fall) over the window correlate at
+# ~0.9 whatever they are: prices, population, an index — the coefficient
+# measures time, exactly the artefact the cumulative rule refuses (audit
+# 2026-09-25 F251). Spearman of value against its own order is the monotony
+# test; both sides at or above this and the pair is refused unless the caller
+# asks for the DIFFERENCED series (detrend=diff), which correlates the changes.
+MONOTONE_RHO = 0.8
+
+
+def trend_rho(xs: list[float]) -> float | None:
+    """How monotone a series is: Spearman of its values against their order."""
+    if len(xs) < MIN_N:
+        return None
+    return spearman(xs, [float(i) for i in range(len(xs))])
+
+
+def check_shape(xs: list[float], ys: list[float]) -> list[str]:
+    """Refusal reasons when BOTH series are (near-)monotone over the window."""
+    ta, tb = trend_rho(xs), trend_rho(ys)
+    if ta is None or tb is None:
+        return []
+    if abs(ta) >= MONOTONE_RHO and abs(tb) >= MONOTONE_RHO:
+        return [f"both series {'rise' if ta > 0 else 'fall'} with time over the "
+                f"window (monotony {ta:.2f} and {tb:.2f}); the coefficient would "
+                "measure time, not a relationship. Pass detrend=diff to correlate "
+                "the changes between consecutive readings instead."]
+    return []
+
+
+def differenced(series: dict) -> dict:
+    """The series of changes between consecutive readings, dated at the later
+    reading; precision carried from it."""
+    pts = [p for p in series["points"] if p.get("value") is not None]
+    out = []
+    for prev, cur in zip(pts, pts[1:]):
+        out.append({**cur, "value": float(cur["value"]) - float(prev["value"])})
+    return {**series, "points": out, "n": len(out), "detrended": "diff"}
+
+
+def collapse_dates(series: dict) -> tuple[dict, str | None]:
+    """One value per date. A breakdown series (13 markets per month) used to
+    be collapsed by 'last row wins', so rho depended on physical row order
+    (audit F043). Now the MEDIAN of the rows on a date stands for the date —
+    an explicit, order-independent rule — and the note says it was applied.
+    Pass place_id to correlate one market instead."""
+    dups, distinct = duplicate_dates(series)
+    if not dups:
+        return series, None
+    by_date: dict = {}
+    for p in series["points"]:
+        if p.get("value") is None:
+            continue
+        by_date.setdefault(p["at"], []).append(p)
+    pts = []
+    for at in sorted(by_date):
+        rows = by_date[at]
+        vals = sorted(float(r["value"]) for r in rows)
+        mid = len(vals) // 2
+        med = vals[mid] if len(vals) % 2 else (vals[mid - 1] + vals[mid]) / 2
+        pts.append({**rows[0], "value": med, "rows_on_date": len(rows)})
+    note = (f"{series.get('indicator')}: {dups} of {distinct} dates carried several rows "
+            f"(a breakdown by place, sex, age or category); the MEDIAN per date was "
+            f"correlated. Pass place_id to correlate one series of it.")
+    return {**series, "points": pts, "n": len(pts), "aggregated": "median per date"}, note
+
+
+def duplicate_dates(series: dict) -> tuple[int, int]:
+    """(dates carrying more than one row, distinct dates) — a breakdown series
+    (by place, sex, age, category) has several rows per date and no single
+    value to correlate (audit F043)."""
+    dates = [p["at"] for p in series["points"]]
+    distinct = len(set(dates))
+    return len(dates) - distinct, distinct
+
+
 def caveats(a: dict, b: dict, pairs: list, lag: int) -> list[str]:
     """Never empty. A correlation served without caveats is a claim."""
     out = ["Correlation is not causation, and neither series was collected to "

@@ -773,6 +773,35 @@ def _already_open(key: str) -> bool:
     return any(r.get("unit") == key for r in open_alerts())
 
 
+_ALL_CACHE: dict = {"at": 0.0, "rows": None}
+
+
+def all_checks(max_age_s: float = 10.0) -> dict:
+    """Every family the watchdog judges, for /health (audit 2026-09-25 F288:
+    /health read only jobs and feeds, so a full disk or a Valhalla port
+    collision left it green). Cached for `max_age_s` so a polled landing page
+    does not re-run the families every second."""
+    import time as _t
+    now = _t.monotonic()
+    if _ALL_CACHE["rows"] is not None and now - _ALL_CACHE["at"] < max_age_s:
+        return _ALL_CACHE["rows"]
+    jobs = job_checks()
+    feeds = feed_checks(jobs)                       # cached cadence
+    others: list[dict] = []
+    for fam in (capacity_check, dependency_checks, routing_check,
+                minimax_check, fuel_price_check):
+        try:
+            others.extend(fam())
+        except Exception as exc:                    # noqa: BLE001
+            others.append({"check": fam.__name__.replace("_check", "").replace("_checks", ""),
+                           "name": fam.__name__, "status": "error", "fault": True,
+                           "detail": str(exc)[:200], "age_minutes": None,
+                           "expected_seconds": None})
+    out = {"jobs": jobs, "feeds": feeds, "others": others}
+    _ALL_CACHE.update(at=now, rows=out)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="check every job and feed")
     ap.add_argument("--dry-run", action="store_true", help="report, never alarm")

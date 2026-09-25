@@ -142,7 +142,7 @@ anonymous stranger. An agent cannot reach them at all: no MCP tool contains
   not appear in it.
 - **`/health` is public but narrowed.** External callers get counts only —
   `status`, `faults_total`, `jobs_ok/jobs_total`, `feeds_ok/feeds_total`,
-  `feed_age_minutes`, `fuel_states`. The `checks` block, which names each job and
+  `families`, `maintenance`. The `checks` block, which names each job and
   its error detail, is local-only. A status endpoint was an F-83 deliverable; the
   unauthenticated form discloses no job names, paths or messages.
 - **`/v2/databank/radar` and `/v2/databank/scout` are public** (25 KB, 34 KB).

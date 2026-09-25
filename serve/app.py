@@ -21,6 +21,7 @@ from __future__ import annotations
 import functools
 
 import json
+import re
 import os
 import sys
 import threading
@@ -67,7 +68,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 
 
 def q(sql: str, params: tuple = ()) -> list[dict]:
-    with psycopg.connect(dsn(), row_factory=dict_row) as conn, conn.cursor() as cur:
+    # One pooled connection per statement when psycopg_pool is installed,
+    # a fresh one otherwise (resolve/db.py, audit F293/F287).
+    from resolve.db import connection
+    with connection() as conn, conn.cursor(row_factory=dict_row) as cur:
         cur.execute(sql, params)
         return cur.fetchall()
 
@@ -210,55 +214,48 @@ def health(request: Request,
     degraded answers with no answers. 503 is reserved for the database being
     unreachable, which is the case where this genuinely cannot serve.
     """
+    # Reachability is `SELECT 1`. The two fuel queries that stood here read
+    # state_current (hard rule 6) and published the RETIRED fuel feed's age as
+    # `feed_age_minutes` — a number that grew by 1,440 a day beside status:ok
+    # (audit F160/F364). Gone; the fields with it.
     try:
-        row = q("SELECT COUNT(*) AS n FROM state_serving WHERE state_kind LIKE 'fuel%%'")[0]
-        fresh = q("""SELECT MAX(observed_at) AS latest FROM state_current
-                     WHERE state_kind LIKE 'fuel%%'""")[0]["latest"]
-        age_min = None
-        if fresh:
-            age_min = round((datetime.now(timezone.utc) - fresh).total_seconds() / 60, 1)
+        q("SELECT 1")
     except Exception as e:                              # noqa: BLE001
         raise HTTPException(503, f"database unavailable: {e}")
 
+    # EVERY watchdog family, not only jobs and feeds: a full disk or a Valhalla
+    # port collision used to leave this green while /v2/route 503ed (F288).
     try:
-        from ops.watchdog import feed_checks, job_checks
-        jobs = job_checks()
-        feeds = feed_checks(jobs)                       # cached cadence
-        faults = [c for c in jobs + feeds if c["fault"]]
+        from ops.watchdog import all_checks
+        fam = all_checks()
+        jobs, feeds, others = fam["jobs"], fam["feeds"], fam["others"]
+        checks = jobs + feeds + others
+        faults = [c for c in checks if c["fault"]]
     except Exception as e:                              # noqa: BLE001
-        # The checks failing must not take down the endpoint that reports
-        # health — but it must not report health it could not establish
-        # either, so this is surfaced rather than swallowed into an "ok".
-        return {"status": "unknown", "fuel_states": row["n"],
-                "feed_age_minutes": age_min,
-                "error": f"health checks unavailable: {e}"}
+        return {"status": "unknown", "error": f"health checks unavailable: {e}"}
 
     from serve.ratelimit import client_ip, is_local
     local = is_local(client_ip(request))
 
+    families: dict[str, dict[str, int]] = {}
+    for c in checks:
+        f = families.setdefault(str(c.get("check") or "other"), {"ok": 0, "faults": 0})
+        f["faults" if c["fault"] else "ok"] += 1
+    from resolve.db import ROOT as _root
+    maintenance = (_root / "ops" / "maintenance.flag").exists()
+    from resolve.db import pool_status
     out: dict[str, Any] = {
-        "status": "degraded" if faults else "ok",
-        # Kept from the original response so existing callers keep working.
-        "fuel_states": row["n"],
-        "feed_age_minutes": age_min,
-        # The named list is the same internal detail `checks` withholds below —
-        # "job:maintain failing" names a job a stranger has no business knowing
-        # exists, and a list of what is currently broken is a map of where to
-        # push. The COUNT stays public alongside the status, so a degraded
-        # system still cannot be mistaken for a healthy one.
+        "status": "maintenance" if maintenance else ("degraded" if faults else "ok"),
+        "maintenance": maintenance,
         "faults": [f"{c['check']}:{c['name']} {c['status']}" for c in faults] if local else [],
         "faults_total": len(faults),
+        "families": families,
         "jobs_ok": sum(1 for c in jobs if not c["fault"]),
         "jobs_total": len(jobs),
         "feeds_ok": sum(1 for c in feeds if not c["fault"]),
         "feeds_total": len(feeds),
+        "db": pool_status() if local else {"pooled": pool_status().get("pooled")},
     }
-    # The per-check detail names internal jobs and the absolute paths of the
-    # upstream files this system reads. That is exactly what an operator needs
-    # and exactly what a stranger does not, so once the API is reachable from
-    # outside it is answered only for local callers. The COUNTS stay public:
-    # "13 of 13 jobs healthy" is a useful public promise, and hiding it would
-    # make a degraded system look identical to a healthy one.
     if verbose and local:
         out["checks"] = {
             "jobs": [{"name": c["name"], "status": c["status"],
@@ -270,6 +267,8 @@ def health(request: Request,
                        "threshold_minutes": c.get("threshold_minutes"),
                        "collector": c.get("collector"),
                        "detail": c["detail"]} for c in feeds],
+            "others": [{"family": c.get("check"), "name": c["name"], "status": c["status"],
+                        "detail": c.get("detail")} for c in others],
         }
     return out
 
@@ -401,7 +400,7 @@ CHECKPOINT_COLS = """
     c.place_id, c.name_ar, c.name_en, c.direction, c.flow, c.last_known_flow,
     c.reported_for, c.observed_at, c.age_minutes, c.confidence, c.staleness_band,
     c.independent_sources, c.contradicted_by, c.present, c.absent,
-    c.presence_age_minutes, c.passable, c.cadence_measured,
+    c.presence_age_minutes, c.passable, c.cadence_measured, c.differs_by_direction,
     ST_Y(c.centroid::geometry) AS lat, ST_X(c.centroid::geometry) AS lon
 """
 
@@ -421,6 +420,12 @@ def _checkpoint_out(r: dict, extra: dict | None = None) -> dict:
         "observed_at": r["observed_at"],
         "age_minutes": r["age_minutes"],
         "staleness_band": r["staleness_band"],
+        # Since 079 the default row is the WORSE direction: `reported_for`
+        # names the direction the reading came from and
+        # `differs_by_direction` says the two travel directions disagree, so
+        # a closure in one direction is never read as both (audit F089).
+        "reported_for": r.get("reported_for"),
+        "differs_by_direction": r.get("differs_by_direction"),
         "independent_sources": r["independent_sources"],
         "contradicted_by": r["contradicted_by"],
         # whether this reading was filed for this direction or inherited from a
@@ -460,6 +465,7 @@ def _resolve_checkpoint(name: str) -> dict | None:
     from difflib import SequenceMatcher
 
     from resolve.arabic import fold_for_match, normalize
+    from resolve.geo import _token_match
 
     n, f = normalize(name), fold_for_match(name)
     if not n:
@@ -471,17 +477,38 @@ def _resolve_checkpoint(name: str) -> dict | None:
                         ARRAY[]::text[]) AS aliases
         FROM place p
         LEFT JOIN place_alias a ON a.place_id = p.place_id
-        LEFT JOIN (SELECT place_id, COUNT(*) n FROM state_observation
+        -- Evidence for the tie-break from state_current (one row per place,
+        -- kind and direction), not a COUNT over every checkpoint_flow row ever
+        -- stored: that aggregate decompressed the whole hypertable on every
+        -- checkpoint_status call for a 0.04-point tie-break (audit F296).
+        LEFT JOIN (SELECT place_id, COUNT(*) n FROM state_current
                    WHERE state_kind = 'checkpoint_flow' GROUP BY 1) o ON o.place_id = p.place_id
         WHERE p.servable AND p.kind IN ('checkpoint','crossing','road')
         GROUP BY p.place_id, p.name_ar, p.name_en, o.n""")
 
-    best, best_score = None, 0.0
+    def _sim(a: str, b: str) -> float:
+        # A misspelling keeps its first letter (Hawara/Huwara); a lookalike of
+        # another name usually does not (Hawara/Awarta, Zatara/Atara). Both
+        # score 0.833 by pure edit similarity; the initial is what tells them
+        # apart, so a changed initial costs a tenth.
+        r_ = SequenceMatcher(None, a, b).ratio()
+        return r_ - 0.10 if (a and b and a[0] != b[0]) else r_
+
+    def _key(r) -> str:                       # rows that share a name are one candidate
+        return (r["name_en"] or r["name_ar"] or "").lower()
+
+    best, best_score, best_ratio = None, 0.0, 1.0
+    ratio_by_name: dict[str, float] = {}
     for r in rows:
         names = [x for x in (r["name_ar"], r["name_en"]) if x]
-        norms = {normalize(x) for x in names}
-        folds = {fold_for_match(x) for x in names}
+        # A Latin registry name carries a parenthetical and an apostrophe
+        # ("Za'tara (Tapuach)"): matched whole, `Zatara` sat closer to Atara's
+        # row than to its own (audit F070). The bare form is a name too.
+        bare = [re.sub(r"\s*\(.*?\)", "", x).replace("'", "").strip() for x in names]
+        norms = {normalize(x) for x in names + bare if x}
+        folds = {fold_for_match(x) for x in names + bare if x}
         aliases = set(r["aliases"] or [])
+        ratio = 1.0
 
         if n in norms:
             score = 1.00
@@ -489,24 +516,41 @@ def _resolve_checkpoint(name: str) -> dict | None:
             score = 0.95
         elif f and f in folds:
             score = 0.90
-        elif any(n and (n in x or x in n) for x in norms if x):
-            score = 0.70
+        elif any(n and (_token_match(x, n) or _token_match(n, x)) for x in norms if x):
+            # Whole-token containment ("حاجز حوارة" ⊃ "حوارة"), not a fragment
+            # inside an unrelated word (audit F070).
+            score = 0.85
         else:
-            score = max((SequenceMatcher(None, n, x).ratio() for x in norms if x),
-                        default=0.0)
-            if score < 0.78:
+            ratio = max((_sim(n, x) for x in norms if x), default=0.0)
+            if ratio < 0.78:
                 continue
-            score *= 0.8
+            score = ratio * 0.8
+            ratio_by_name[_key(r)] = max(ratio_by_name.get(_key(r), 0.0), ratio)
         # Evidence breaks ties: among equally-named candidates the one people
-        # actually report about is the one they mean.
-        score += min(r["obs"], 5000) / 5000 * 0.04
+        # actually report about is the one they mean. Capped at 1.0 — scores
+        # of 1.04 were served (F070).
+        score = min(1.0, score + min(r["obs"], 3) / 3 * 0.04)
         if score > best_score:
-            best, best_score = r, score
+            best, best_score, best_ratio = r, score, ratio
     if not best:
         return None
+    # A fuzzy match is served WITH its doubt spoken (tests/test_name_safety.py)
+    # when it is a close misspelling of one name — `Hawara` → Huwara at 0.83.
+    # It is NAMED, not served, when it is far from every name or when another
+    # NAME sits nearly as close: that is a lookalike, not a spelling (F070).
+    runner_up = max((v for k, v in ratio_by_name.items() if k != _key(best)), default=0.0)
+    uncertain = best_ratio < 1.0 and (best_ratio < FUZZY_SERVE_RATIO
+                                      or runner_up >= best_ratio - AMBIGUOUS_MARGIN)
     return {"place_id": best["place_id"],
             "name": best["name_ar"] or best["name_en"],
-            "score": round(best_score, 3)}
+            "score": round(best_score, 3),
+            "uncertain": uncertain}
+
+
+# A fuzzy match below this similarity, or with a rival this close behind it,
+# is reported as `nearest` with no reading.
+FUZZY_SERVE_RATIO = 0.80
+AMBIGUOUS_MARGIN = 0.05
 
 
 @app.get("/v2/checkpoints/nearby", tags=["checkpoints"])
@@ -572,6 +616,11 @@ def checkpoint_status(
     m = _resolve_checkpoint(name)
     if not m:
         return {"found": False, "query": name}
+    if m.get("uncertain"):
+        return {"found": False, "query": name,
+                "nearest": {"name": m["name"], "score": m["score"]},
+                "reason": "no checkpoint by that name; the nearest spelling is "
+                          "named, not served (match below the gate)"}
     rows = q(f"""SELECT {CHECKPOINT_COLS} FROM checkpoint_serving c
                  WHERE c.place_id = canonical_place(%s) AND c.direction = %s""",
              (m["place_id"], direction))
@@ -1339,10 +1388,21 @@ INSIGHTS_INC_SQL = """
 WITH anchor AS (
   SELECT ST_SetSRID(ST_MakePoint(%(lon)s, %(lat)s), 4326)::geography AS g)
 SELECT e.event_type,
-       count(*)                                                  AS events,
-       count(*) FILTER (WHERE e.independent_sources >= 2)         AS corroborated,
-       max(e.occurred_at)                                        AS newest,
-       (array_agg(p.name_ar ORDER BY e.occurred_at DESC))[1]      AS newest_place
+       -- Governorate fallbacks sit on the CITY centroid, so they always land
+       -- inside a radius around the city. They are counted beside the named
+       -- events, never among them (audit F034/F080; P0-C.2).
+       count(*) FILTER (WHERE COALESCE(e.attrs->>'place_precision','named') = 'named')
+                                                                 AS events,
+       count(*) FILTER (WHERE COALESCE(e.attrs->>'place_precision','named') <> 'named')
+                                                                 AS governorate_only,
+       count(*) FILTER (WHERE e.independent_sources >= 2
+                          AND COALESCE(e.attrs->>'place_precision','named') = 'named')
+                                                                 AS corroborated,
+       max(e.occurred_at) FILTER (WHERE COALESCE(e.attrs->>'place_precision','named') = 'named')
+                                                                 AS newest,
+       (array_agg(p.name_ar ORDER BY e.occurred_at DESC)
+          FILTER (WHERE COALESCE(e.attrs->>'place_precision','named') = 'named'))[1]
+                                                                 AS newest_place
   FROM event e
   LEFT JOIN place p ON p.place_id = e.place_id
   CROSS JOIN anchor a
@@ -1445,6 +1505,8 @@ def insights(
     # CACHE_TTL_SECONDS bounds it at a minute.
     ck = q_cached(INSIGHTS_CKPT_SQL, par)[0]
     inc = q_cached(INSIGHTS_INC_SQL, par)
+    governorate_only = sum(int(r["governorate_only"] or 0) for r in inc)
+    inc = [r for r in inc if r["events"]]
 
     presence: dict[str, dict] = {}
     for row in (ck["presence"] or []):
@@ -1501,6 +1563,10 @@ def insights(
         },
         "incidents": {
             "events": events,
+            "located_to_governorate_only": governorate_only,
+            "precision_note": "events counts incidents located to a NAMED place; those the "
+                              "classifier could pin only to the governorate are counted in "
+                              "located_to_governorate_only, never under the city",
             "by_type": [{"type": r["event_type"], "events": r["events"],
                          "corroborated": r["corroborated"],
                          "newest": r["newest"], "newest_place": r["newest_place"]}
@@ -1826,15 +1892,21 @@ _EXPORT_INCIDENT_SQL = """
     SELECT e.event_id, e.event_type, e.occurred_at, e.confidence,
            e.claim_count, e.independent_sources,
            p.name_ar, p.name_en,
+           -- A governorate-only event is a pin on the city with the city's
+           -- name unless the export says so (audit F082): the JSON route
+           -- carried these two since P0-A.4, the files did not.
+           COALESCE(e.attrs->>'place_precision', 'named') AS place_precision,
+           e.attrs->>'place_text' AS named_place,
            ST_Y(e.geom::geometry) AS lat, ST_X(e.geom::geometry) AS lon
     FROM event e LEFT JOIN place p ON p.place_id = e.place_id
     WHERE e.status = 'believed'
+      AND e.event_type <> 'fire_detection'      -- satellite pixels, not incidents (P0-A.4)
       AND e.occurred_at > now() - make_interval(days => %s)
     ORDER BY e.occurred_at DESC"""
 
 _EXPORT_INC_COLUMNS = ["event_id", "event_type", "occurred_at", "name_ar",
-                       "name_en", "lat", "lon", "confidence", "claim_count",
-                       "independent_sources"]
+                       "name_en", "place_precision", "named_place", "lat", "lon",
+                       "confidence", "claim_count", "independent_sources"]
 
 
 @app.get("/v2/export/incidents.csv", tags=["export"])
@@ -2448,7 +2520,12 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
         params["t"] = to
     pts = q(f"""SELECT v.occurred_at::date AS at, v.occurred_precision AS prec,
                        COALESCE(v.value_canonical, v.value_num) AS value,
-                       COALESCE(v.canonical_unit, v.unit) AS unit,
+                       -- The unit the VALUE is in: the resolved unit when a
+                       -- conversion happened, the raw unit otherwise — never
+                       -- the indicator's declared canonical unit, which
+                       -- labelled litre prices ILS_per_kg (audit F030).
+                       CASE WHEN v.value_canonical IS NOT NULL THEN v.resolved_unit
+                            ELSE v.unit END AS unit,
                        v.source_name, v.attribution_text
                 FROM v_observation_canonical v
                 WHERE {' AND '.join(where)} ORDER BY 1""", params)
@@ -2467,8 +2544,12 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
     for p in pts:
         p.pop("source_name", None)
         p.pop("attribution_text", None)
+    units = sorted({str(p["unit"]) for p in pts if p.get("unit")})
     return {**m, "known": bool(meta), "indicator": indicator,
             "points": pts, "n": len(pts),
+            # More than one unit in one series (108 per-litre and 854 per-kg
+            # milk points under one label, F030) is said, not blended.
+            "units": units, "unit_mixed": len(units) > 1,
             "sources": sources, "source_names": set(sources),
             "attribution": attribution}
 
@@ -2506,7 +2587,10 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
                        method: str = "spearman",
                        max_lag: int = Query(0, ge=0, le=366,
                                             description="days to scan for a lagged fit"),
-                       allow_same_concept: bool = False) -> dict:
+                       allow_same_concept: bool = False,
+                       detrend: str = Query("none", pattern="^(none|diff)$",
+                                            description="diff: correlate the changes "
+                                                        "between consecutive readings")) -> dict:
     """Whether two series move together — or an explanation of why asking is
     the wrong question.
 
@@ -2538,6 +2622,20 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
                 "note": "No coefficient is returned. These refusals are hard "
                         "by design — a number with a caveat attached gets "
                         "quoted without the caveat."}
+    # A breakdown series (13 markets per month) has no single value per date;
+    # 'last row wins' made rho depend on physical row order (F043). The
+    # median per date stands for the date, and the caveat says so.
+    sa, note_a = C.collapse_dates(sa)
+    sb, note_b = C.collapse_dates(sb)
+    aggregation = [n for n in (note_a, note_b) if n]
+    if detrend == "diff":
+        sa, sb = C.differenced(sa), C.differenced(sb)
+    else:
+        shape = C.check_shape([float(p["value"]) for p in sa["points"] if p["value"] is not None],
+                              [float(p["value"]) for p in sb["points"] if p["value"] is not None])
+        if shape:
+            return {"refused": True, "a": a, "b": b, "reasons": shape,
+                    "hint": "detrend=diff"}
     by_a = {p["at"]: p for p in sa["points"]}
     by_b = {p["at"]: p for p in sb["points"]}
     best = None
@@ -2571,13 +2669,13 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
     rho, lag, pairs = best
     ci = C.fisher_ci(rho, len(pairs))
     return {
-        "refused": False, "a": a, "b": b, "method": method,
+        "refused": False, "a": a, "b": b, "method": method, "detrend": detrend,
         "rho": round(rho, 4), "n": len(pairs), "lag_days": lag,
         "ci95": [round(ci[0], 4), round(ci[1], 4)] if ci else None,
         "overlap": {"from": min(p[2] for p in pairs).isoformat(),
                     "to": max(p[2] for p in pairs).isoformat()},
         "plain_english": C.describe(rho, sa, sb),
-        "caveats": C.caveats(sa, sb, pairs, lag),
+        "caveats": aggregation + C.caveats(sa, sb, pairs, lag),
         "attribution": sorted(set(sa["attribution"]) | set(sb["attribution"])),
     }
 
@@ -2665,6 +2763,8 @@ def databank_correlate_scan(
     for p in pts:
         grouped.setdefault(p["indicator"], []).append(p)
 
+    sa, note_a = C.collapse_dates(sa)             # median per date (F043)
+    a_vals = [float(p["value"]) for p in sa["points"] if p["value"] is not None]
     by_a = {p["at"]: p for p in sa["points"]
             if p["prec"] not in C.UNUSABLE_PRECISION and p["value"] is not None}
 
@@ -2686,6 +2786,11 @@ def databank_correlate_scan(
         # confident artifact the rest of this file refuses to produce.
         if sa["grain"] != r["grain"]:
             skipped[f"different time grain ({sa['grain']} vs {r['grain']})"] += 1
+            continue
+        sb, _note_b = C.collapse_dates(sb)
+        if C.check_shape(a_vals, [float(p["value"]) for p in sb["points"]
+                                  if p["value"] is not None]):
+            skipped["both series move with time (monotone; would measure time)"] += 1
             continue
         pairs = [(by_a[p["at"]]["value"], p["value"]) for p in sb["points"]
                  if p["at"] in by_a and p["value"] is not None
@@ -2710,6 +2815,7 @@ def databank_correlate_scan(
     return {
         "refused": False, "a": a, "method": method,
         "considered": len(rows), "tested": tested,
+        "aggregation": note_a,
         "skipped": dict(skipped),
         "capped_at": candidates,
         "truncated": len(rows) == candidates,
@@ -2790,7 +2896,12 @@ def databank_category(category: str, indicator: str | None = None,
         SELECT o.indicator, o.occurred_at, o.occurred_precision::text,
                o.value_num, o.value_text, o.unit, o.attrs,
                p.name_en AS place_en, p.name_ar AS place_ar,
-               s.attribution_text, s.license_spdx
+               s.key AS source_key, d.key AS dataset_key,
+               -- dataset-grain licence first (054): the portal row credited
+               -- OCHA/UNICEF CC-BY data to the HDX portal (audit F143)
+               COALESCE(d.attribution_text, s.attribution_text) AS attribution_text,
+               COALESCE(d.license_spdx, s.license_spdx)         AS license_spdx,
+               COALESCE(d.redistribution, s.redistribution)     AS redistribution
         FROM observation o
         JOIN dataset d ON d.dataset_id = o.dataset_id
         JOIN source s ON s.source_id = d.source_id
@@ -2805,5 +2916,7 @@ def databank_category(category: str, indicator: str | None = None,
             "items": [{k: r[k] for k in
                        ("indicator", "occurred_at", "occurred_precision",
                         "value_num", "value_text", "unit", "place_en",
-                        "place_ar", "attrs")} for r in rows],
-            "attribution": sorted({r["attribution_text"] for r in rows})}
+                        "place_ar", "attrs", "source_key", "dataset_key",
+                        "license_spdx", "redistribution")}
+                      | {"attribution": r["attribution_text"]} for r in rows],
+            "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}

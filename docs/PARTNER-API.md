@@ -324,7 +324,7 @@ Excluded, because they are outside anything this system can promise:
 
 Beyond the number, the commitment is that failure is **visible, not silent**.
 `GET /health` returns the machine's own verdict — `status`, `faults_total`,
-`jobs_ok/jobs_total`, `feeds_ok/feeds_total`, `feed_age_minutes` — and it goes
+`jobs_ok/jobs_total`, `feeds_ok/feeds_total`, `families` (ok/faults per watchdog family) — and it goes
 `degraded` rather than staying `ok` when the watchdog has faults. A halted
 backfill or a stop-the-line fault is reported there rather than discovered by you.
 
