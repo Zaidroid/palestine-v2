@@ -36,7 +36,8 @@ def test_ops_02_04_every_ok_exit_code_is_known_to_its_unit():
 def test_ops_04_a_fault_and_a_crash_have_different_exit_codes(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["watchdog", "--dry-run"])
     for fn in ("job_checks", "capacity_check", "dependency_checks", "routing_check",
-               "minimax_check", "fuel_price_check", "backup_check", "fetch_check"):
+               "minimax_check", "fuel_price_check", "backup_check", "fetch_check",
+               "source_checks"):
         monkeypatch.setattr(W, fn, lambda *a, **k: [])
     monkeypatch.setattr(W, "doorbell_check", lambda send=False: [])
     monkeypatch.setattr(W, "measure_cadence", lambda: {})

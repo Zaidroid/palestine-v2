@@ -499,3 +499,12 @@ search with no current flow leads the sentence; every checkpoint row carries `se
 summary names where a search is going on (`searching_now`, 2 now: المربعة، عين سينيا); the route now reads inspection
 sightings and speaks who was seen on the way, searching first (it spoke none before). Measured: inspection is reported
 30–130 times a day (561 in 7 days). tests/test_searching.py (8); full suite 1219 passed.
+2026-09-25 20:45 UTC · P1-A.3 silent-source flags · done (live at the next watchdog tick; /health shows it after the API
+restart) · proof: every active Telegram/RSS source judged against its own rhythm over 60 days of claims + observations
+(p95 gap, or 3× mean gap when sparse, never under a day): 30 of 31 watched sources within rhythm; SILENT: tg_areenablus
+(nothing for 776 h, ceiling 122 h — stopped 2026-08-24 and nothing said so for a month); dormant, listed not alarmed:
+tg_palmoh, tg_palrcs, tg_gedcogaza, tg_jdeconet (registered, but v2's poller does not read them — the Gaza MoH / PRCS
+channels; re-poll is Zaid's call on the scarce account), tg_almasshta (nothing in 60 d), telegram_fuel (its kind was
+retired); 17 registry-only news feeds with no collector. A silent source raises watchdog:source:<key> once and is
+resolved when it speaks again; verdicts recorded in ops_heartbeat 'sources' (EXPECTED_JOBS) so /health reads them in
+milliseconds. tests/test_source_silence.py (10); full suite 1229 passed.

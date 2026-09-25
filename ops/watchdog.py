@@ -175,6 +175,7 @@ EXPECTED_JOBS = {
     "scout":             (604800, 259200),
     "valhalla-ip":       (900, 1800),
     "coverage":          (600, 900),
+    "sources":           (600, 900),        # P1-A.3, written by the watchdog run
     # The analyst (P0 of LOCAL-ANALYST-2026-09) is a consumer loop, not a
     # timer: it beats once per tick from inside `analyst.loop`, like the poller,
     # so it has no entry in any *.sh and the cadence is duplicated from
@@ -912,6 +913,156 @@ def coverage_check() -> list[dict]:
                        f"{dir_share:.0%} of known are direction-resolved"}]
 
 
+# ── P1-A.3: every SOURCE against its own rhythm ──────────────────────────────
+# The feed family above judges each KIND of data, so one dead channel hid behind
+# the others that feed the same kind: tg_areenablus stopped on 2026-08-24 and
+# checkpoint_flow never looked late, because a dozen other channels kept it
+# fed. Same method as the feeds (minute-bucketed arrivals, the source's own p95
+# gap, never less than a day), per source, over 60 days of claims AND
+# observations — v2's poller writes claims, v1's road channels arrive as
+# observations. Sparse sources (< MIN_CEILING_ARRIVALS) get three times their
+# mean gap instead of a 24 h default that would fire on every quiet week.
+#
+# Only a source that SPOKE in the window and has since gone quiet past its own
+# ceiling is a fault. A channel nothing has delivered from in 60 days (or one
+# v2's poller does not read and v1 never delivered) is `dormant`, and a
+# registry entry that never delivered at all is `no_collector`: both are listed
+# once in the summary row, because they are decisions (retire it, or put it
+# back on a poller), not outages.
+SOURCE_SQL = f"""
+WITH arr AS (
+  SELECT source_id, date_trunc('minute', reported_at) AS t FROM claim
+   WHERE reported_at > now() - interval '{CEILING_DAYS} days'
+  UNION
+  SELECT source_id, date_trunc('minute', observed_at) FROM state_observation
+   WHERE observed_at > now() - interval '{CEILING_DAYS} days'
+     AND state_kind <> ALL(%(retired)s)
+), gaps AS (
+  SELECT source_id, t, t - lag(t) OVER (PARTITION BY source_id ORDER BY t) AS gap FROM arr
+), obs AS (
+  SELECT DISTINCT source_id FROM state_observation
+   WHERE observed_at > now() - interval '{CEILING_DAYS} days'
+)
+SELECT s.source_id, s.key, s.kind, s.name,
+       count(g.t)                                                    AS arrivals,
+       extract(epoch FROM percentile_cont(0.95) WITHIN GROUP (ORDER BY g.gap)) AS p95,
+       extract(epoch FROM avg(g.gap))                                AS mean_gap,
+       extract(epoch FROM now() - max(g.t))                          AS age_seconds,
+       (s.source_id IN (SELECT source_id FROM obs))                  AS observed,
+       (SELECT max(reported_at) FROM claim c WHERE c.source_id = s.source_id) AS last_claim
+  FROM source s LEFT JOIN gaps g USING (source_id)
+ WHERE s.kind IN ('telegram', 'rss') AND s.active
+ GROUP BY 1, 2, 3, 4
+"""
+SOURCE_RETIRED_KINDS = sorted(RETIRED_FEEDS)
+
+
+def source_ceiling(arrivals: int, p95, mean_gap) -> tuple[float, str]:
+    """How long this source may say nothing: its own p95 gap with enough
+    arrivals, three times its mean gap when sparse; never under a day."""
+    if arrivals >= MIN_CEILING_ARRIVALS and p95:
+        return max(float(p95), SILENT_AFTER_SECONDS), f"p95({CEILING_DAYS}d), n={arrivals}"
+    if arrivals >= 2 and mean_gap:
+        return (max(3 * float(mean_gap), SILENT_AFTER_SECONDS),
+                f"sparse: 3x mean gap over {arrivals} arrivals in {CEILING_DAYS}d")
+    return SILENT_AFTER_SECONDS, f"default: {arrivals} arrival(s) in {CEILING_DAYS}d"
+
+
+def classify_sources(rows: list[dict], polled: set[str]) -> list[dict]:
+    """One verdict per source (pure: the rules above, testable without a DB)."""
+    out = []
+    for r in rows:
+        n = int(r.get("arrivals") or 0)
+        age = r.get("age_seconds")
+        key = r["key"]
+        on_v2 = key.lower().removeprefix("tg_") in polled
+        base = {"check": "source", "name": key, "kind": r.get("kind"), "arrivals": n,
+                "age_minutes": round(float(age) / 60, 1) if age is not None else None}
+        if n == 0:
+            if r.get("kind") == "telegram" or r.get("last_claim"):
+                out.append({**base, "status": "dormant", "fault": False,
+                            "detail": f"nothing delivered in {CEILING_DAYS} days"
+                                      + ("" if on_v2 else "; v2's poller does not read it")})
+            else:
+                out.append({**base, "status": "no_collector", "fault": False,
+                            "detail": "registered, never delivered anything: a licence/registry entry"})
+            continue
+        if r.get("kind") == "telegram" and not on_v2 and not r.get("observed"):
+            # A v2-claim-only channel taken off the poller's list is switched
+            # off, not dead (tg_gedcogaza's last claim, 2026-07-28).
+            out.append({**base, "status": "dormant", "fault": False,
+                        "detail": "v2's poller no longer reads it and v1 never delivered from it"})
+            continue
+        ceiling, basis = source_ceiling(n, r.get("p95"), r.get("mean_gap"))
+        base["threshold_minutes"] = round(ceiling / 60, 1)
+        if age is not None and float(age) > ceiling:
+            out.append({**base, "status": "silent", "fault": True,
+                        "detail": f"nothing for {float(age) / 3600:.0f}h; its own ceiling is "
+                                  f"{ceiling / 3600:.0f}h ({basis})"})
+        else:
+            out.append({**base, "status": "ok", "fault": False, "detail": basis})
+    return out
+
+
+def summarise_sources(verdicts: list[dict]) -> dict:
+    by: dict[str, list[str]] = {}
+    for v in verdicts:
+        by.setdefault(v["status"], []).append(v["name"])
+    watched = len(by.get("ok", [])) + len(by.get("silent", []))
+    detail = (f"{len(by.get('ok', []))} of {watched} watched sources within their own rhythm"
+              + (f"; SILENT: {', '.join(by['silent'])}" if by.get("silent") else "")
+              + (f"; dormant (retire or re-poll): {', '.join(sorted(by['dormant']))}"
+                 if by.get("dormant") else "")
+              + (f"; {len(by['no_collector'])} registry entries with no collector"
+                 if by.get("no_collector") else ""))
+    return {"check": "source", "name": "sources", "age_minutes": None,
+            "status": "silent" if by.get("silent") else "ok",
+            "fault": False,          # the per-source rows carry the faults
+            "detail": detail}
+
+
+def source_checks(record: bool = True) -> list[dict]:
+    """Per-source silence, summarised: one row per silent source (a fault,
+    alarmed as watchdog:source:<key>) and one summary row naming the rest.
+    The verdicts are recorded in ops_heartbeat 'sources' so /health reads them
+    without re-running a 2 s query."""
+    from resolve.db import env_value
+    polled = {c.strip().lstrip("@").lower()
+              for c in (env_value("V2_TELEGRAM_CHANNELS") or "").split(",") if c.strip()}
+    with psycopg.connect(dsn(), row_factory=dict_row) as conn, conn.cursor() as cur:
+        cur.execute(SOURCE_SQL, {"retired": SOURCE_RETIRED_KINDS})
+        rows = cur.fetchall()
+    verdicts = classify_sources(rows, polled)
+    if record:
+        try:
+            from ops.heartbeat import beat
+            beat("sources", 600, 900, {
+                "silent": [{"name": v["name"], "age_minutes": v["age_minutes"],
+                            "detail": v["detail"]} for v in verdicts if v["status"] == "silent"],
+                "dormant": sorted(v["name"] for v in verdicts if v["status"] == "dormant"),
+                "no_collector": sorted(v["name"] for v in verdicts if v["status"] == "no_collector"),
+                "watched": sum(v["status"] in ("ok", "silent") for v in verdicts)})
+        except Exception:                                       # noqa: BLE001
+            pass
+    return [v for v in verdicts if v["status"] == "silent"] + [summarise_sources(verdicts)]
+
+
+def recorded_source_checks() -> list[dict]:
+    """What the last watchdog run found, for /health (cheap)."""
+    rows = _q("SELECT detail FROM ops_heartbeat WHERE name = 'sources'")
+    if not rows or not rows[0]["detail"]:
+        return []
+    d = rows[0]["detail"]
+    out = [{"check": "source", "name": s["name"], "status": "silent", "fault": True,
+            "age_minutes": s.get("age_minutes"), "detail": s.get("detail", "")}
+           for s in d.get("silent") or []]
+    out.append({"check": "source", "name": "sources", "status": "silent" if out else "ok",
+                "fault": False, "age_minutes": None,
+                "detail": f"{d.get('watched', 0)} watched; dormant: "
+                          f"{', '.join(d.get('dormant') or []) or 'none'}"})
+    return out
+
+
 FETCH_EVENTS = ROOT / "ops" / "fetch-events.ndjson"
 FETCH_FAIL_STREAK = 3
 
@@ -962,7 +1113,7 @@ def all_checks(max_age_s: float = 10.0) -> dict:
     others: list[dict] = []
     for fam in (capacity_check, dependency_checks, routing_check,
                 minimax_check, fuel_price_check, backup_check, doorbell_check,
-                fetch_check):
+                fetch_check, recorded_source_checks):
         try:
             others.extend(fam())
         except Exception as exc:                    # noqa: BLE001
@@ -1009,7 +1160,8 @@ def _main() -> int:
     rows = (jobs + capacity_check() + dependency_checks() + routing_check()
             + minimax_check() + fuel_price_check() + backup_check()
             + doorbell_check(send=not a.dry_run) + fetch_check()
-            + (coverage_check() if not a.dry_run else []) + feeds)
+            + (coverage_check() if not a.dry_run else [])
+            + source_checks(record=not a.dry_run) + feeds)
     faults = [r for r in rows if r["fault"]]
 
     if a.json:
