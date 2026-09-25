@@ -79,6 +79,12 @@
 > served non-commercial (G5.11); (2) the `pcbs` category holds World Bank data under PCBS's name — rename it into
 > `economic` with World Bank attribution (default), or re-route it to real PCBS.
 >
+> **P0-B.4/5 + P1-B.2 + P1-B.6 (22:50 UTC) — migration 086 + one restart** (route cautions, databank honesty, cache):
+> ```
+> cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh && sudo systemctl restart palestine-v2-api
+> ```
+> Exact rollback in 086's header. Then `tests/test_databank_honesty.py` reads 7 passed against the live API.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

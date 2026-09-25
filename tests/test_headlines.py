@@ -39,10 +39,12 @@ def test_every_public_tool_has_an_english_renderer():
 
 def test_databank_category_headline_is_the_latest_figure_not_a_row_count():
     p = payload(call("databank", category="demolitions", limit=5))
-    assert p.get("count")
+    # OCHA's demolition rows are graded no-redistribution: a partner payload
+    # carries the cited figure and a named count of withheld rows (ZAID-10).
+    assert p.get("count") or (p.get("licence") or {}).get("withheld", {}).get("rows")
     assert "سجلاً من demolitions" not in p["answer"]
     assert "آخر الأرقام" in p["answer"] and DIGITS.search(p["answer"])
-    assert p.get("latest_by_indicator")
+    assert p.get("latest_by_indicator") or (p.get("licence") or {}).get("withheld")
     assert DIGITS.search(p["answer_en"])
 
 

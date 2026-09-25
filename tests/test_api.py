@@ -92,8 +92,7 @@ CASES: dict[str, list[dict]] = {
                                  {"category": "conflict",
                                   "indicator":
                                   "conflict.westbank_cumulative_killed"},
-                                 {"category": "water"},
-                                 {"category": "no_such_category"}],
+                                 {"category": "water"}],
     "/v2/export/checkpoints.csv":     [{}],
     "/v2/export/checkpoints.geojson": [{}],
     "/v2/export/incidents.csv":       [{}, {"days": 7}],
@@ -163,6 +162,13 @@ def test_every_route_is_covered() -> None:
 
 @pytest.mark.parametrize("path,params", GET_CASES, ids=lambda v: str(v)[:40])
 def test_route_answers(path: str, params: dict) -> None:
+    # Path parameters are filled in from the case. The literal "{category}" used
+    # to be requested, and the route answered an empty 200 to ANY name, so this
+    # test never exercised a real category (found 2026-09-25 when unknown
+    # categories became a 404).
+    params = dict(params)
+    for key in [k for k in list(params) if "{" + k + "}" in path]:
+        path = path.replace("{" + key + "}", str(params.pop(key)))
     r = client.get(path, params=params)
     # 500 is the failure this file exists to catch. A 404/422 from a route that
     # was given valid input is equally a bug, so only 2xx passes here.
@@ -581,3 +587,10 @@ def test_the_scan_refuses_an_unknown_series_with_a_reason() -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["refused"] is True and body["reasons"]
+
+
+def test_an_unknown_databank_category_is_a_404_that_names_the_real_ones() -> None:
+    """It used to be an empty 200, which read as 'nothing held' (P1-B.2)."""
+    r = client.get("/v2/databank/no_such_category")
+    assert r.status_code == 404
+    assert "prisoners" in r.json()["detail"]["categories"]

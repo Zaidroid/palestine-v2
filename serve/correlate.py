@@ -94,7 +94,7 @@ def check_comparable(a: dict, b: dict) -> list[str]:
                 f"{s['indicator']} is CUMULATIVE — a running total. "
                 "Correlating running totals measures the passage of time, not "
                 "a relationship: any two rising totals correlate at ~1.0. "
-                "Difference it deliberately through v_flow and ask again.")
+                "Pass detrend=diff to correlate the changes instead.")
         if s["measure_kind"] == "status":
             stop.append(f"{s['indicator']} is categorical (status); a "
                         "correlation over category labels is meaningless.")

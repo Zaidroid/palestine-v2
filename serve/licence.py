@@ -507,5 +507,45 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
                 a = out.get(ak)
                 if isinstance(a, str) and len(a) > EXCERPT_CHARS:
                     out[ak] = a[:EXCERPT_CHARS].rstrip() + "…"
+    if tier == "partner" and emits == DATABANK:
+        # ZAID-10 (answered 2026-09-23), enforced here since 2026-09-25 (P1-B.2):
+        # rows from a publisher graded `ask` or `no-redistribution` stay out of a
+        # partner payload. 066's line still holds — a credited FACT answering a
+        # question is reporting — so the spoken answer keeps its figure and its
+        # source; what leaves is the ROWS, and the cut is named, never silent.
+        dropped: dict[str, int] = {}
+        total = 0
+        for key in ("items", "latest_by_indicator"):
+            rows = out.get(key)
+            if not isinstance(rows, list):
+                continue
+            keep = []
+            for it in rows:
+                g = it.get("redistribution") if isinstance(it, dict) else None
+                if isinstance(it, dict) and "redistribution" in it and g not in PARTNER_ALLOWED:
+                    if key == "items":
+                        k = f"{it.get('source_key') or '?'} ({g or 'ungraded'})"
+                        dropped[k] = dropped.get(k, 0) + 1
+                        total += 1
+                    continue
+                keep.append(it)
+            out[key] = keep
+        if total:
+            out["count"] = len(out.get("items") or [])
+            block["withheld"] = {
+                "rows": total, "by_source": dropped,
+                "reason": ("these publishers do not grant redistribution (or their terms "
+                           "are unread): the rows stay out of a partner payload (ZAID-10). "
+                           "The answer's figure is a cited fact with its source; read the "
+                           "rows at the publisher."),
+            }
+            # Said where it is read: "newest 10 rows shown" over an empty list
+            # would be the quietly-short payload this module exists to prevent.
+            if isinstance(out.get("answer"), str):
+                out["answer"] += (f" ({total} من السجلات محجوبة عن هاد الرد: ناشرها ما بيسمح "
+                                  "بإعادة النشر — الرقم مقتبس مع مصدره.)")
+            if isinstance(out.get("answer_en"), str):
+                out["answer_en"] += (f" ({total} rows withheld from this payload: their publisher "
+                                     "does not grant redistribution — the figure is cited with its source.)")
     out["licence"] = block
     return out

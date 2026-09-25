@@ -93,8 +93,14 @@ def q(sql: str, params: tuple = ()) -> list[dict]:
 # `as_of` NEVER routes through here: a historical answer must not be served
 # from a cache keyed on the present, so those callers keep the plain `q`.
 DATABANK_RUNS = Path(__file__).resolve().parent.parent / "ops" / "databank-runs.ndjson"
-CACHE_TTL_SECONDS = 60
+# P1-B.6 (2026-09-25): the key is the databank ONLY. The TTL was 60 s and every
+# DRY run appended to the runs ledger (2,258 of its 3,545 records), so the
+# most-called public routes were cold most of the time. Now the runs stamp is
+# the last load that actually WROTE rows, the watermark also sees inserts and
+# the held events (083), and the TTL is a safety bound, not the invalidator.
+CACHE_TTL_SECONDS = 6 * 3600
 WATERMARK_SECONDS = 300
+_RUNS_SEEN: dict[str, Any] = {"stat": None, "stamp": ""}
 # F-84: BOUNDED, because the key includes the caller's parameters. A stranger
 # varying `limit` (1..2000), `indicator` or `days` mints a new cache entry per
 # request, and one entry can hold 276 KB of rows (`limit=2000` measured), so the
@@ -109,12 +115,31 @@ _WATERMARK_LOCK = threading.Lock()
 
 
 
-def _runs_stamp() -> tuple:
+def _runs_stamp() -> str:
+    """The timestamp of the last load that wrote something. The file is only
+    re-read when its (mtime, size) changes, and then only its tail."""
     try:
         st = DATABANK_RUNS.stat()
-        return (st.st_mtime_ns, st.st_size)
     except OSError:
-        return (0, 0)
+        return ""
+    key = (st.st_mtime_ns, st.st_size)
+    if _RUNS_SEEN["stat"] != key:
+        stamp = _RUNS_SEEN["stamp"]
+        try:
+            with DATABANK_RUNS.open("rb") as fh:
+                fh.seek(max(0, st.st_size - 256 * 1024))
+                for line in fh.read().decode("utf-8", "replace").splitlines():
+                    try:
+                        rec = json.loads(line)
+                    except ValueError:
+                        continue
+                    if (not rec.get("dry_run") and ((rec.get("written") or 0)
+                                                   + (rec.get("events_written") or 0)) > 0):
+                        stamp = max(stamp, str(rec.get("ts") or ""))
+        except OSError:
+            pass
+        _RUNS_SEEN.update(stat=key, stamp=stamp)
+    return _RUNS_SEEN["stamp"]
 
 
 def _databank_watermark() -> str:
@@ -129,7 +154,12 @@ def _databank_watermark() -> str:
         with _WATERMARK_LOCK:
             if (_WATERMARK["value"] is None
                     or time.monotonic() - _WATERMARK["at"] > WATERMARK_SECONDS):
-                rows = q("SELECT max(upper(sys_period))::text AS w FROM observation")
+                # lower() sees inserts AND supersessions (upper() sees only
+                # the latter); the event table carries the held registers (083).
+                rows = q("""SELECT (SELECT max(lower(sys_period)) FROM observation)::text
+                                    || '|' || (SELECT max(upper(sys_period)) FROM observation)::text
+                                    || '|' || (SELECT max(updated_at) FROM event
+                                                WHERE attrs->>'dataset_key' LIKE 'v1_%%')::text AS w""")
                 _WATERMARK["value"] = (rows[0]["w"] if rows else "") or ""
                 _WATERMARK["at"] = time.monotonic()
     return _WATERMARK["value"]
@@ -2629,8 +2659,9 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
         ORDER BY x.n DESC LIMIT %(lim)s""", params)
     return {"indicators": rows, "count": len(rows),
             "note": "measure_kind governs what may be done with a series: a "
-                    "cumulative one must be differenced through /v2/databank/"
-                    "flow before it is compared to anything."}
+                    "cumulative one must be differenced first: pass detrend=diff "
+                    "to /v2/databank/correlate (the correlate tool's pair mode), "
+                    "which correlates the changes between readings."}
 
 
 def _wider_places(place_id: int) -> list[dict]:
@@ -3047,6 +3078,12 @@ def databank_category(category: str, indicator: str | None = None,
                         "memorial=true to read them, deliberately.",
                 "attribution": ["Data: Tech4Palestine "
                                 "(data.techforpalestine.org), public domain (Unlicense)."]}
+    # An unknown category is a 404 with the list, not an empty 200 that reads
+    # as "nothing held" (P1-B.2).
+    known = {r["key"] for r in q_cached("SELECT key FROM category WHERE active")}
+    if known and category not in known:
+        raise HTTPException(404, {"error": f"no category named {category!r}",
+                                  "categories": sorted(known)})
     if category == "water":
         # water is a DOMAIN, not just a dataset bucket (decided 2026-08-06):
         # its own datasets PLUS the JMP WASH access series that lives — with
@@ -3114,6 +3151,9 @@ def databank_category(category: str, indicator: str | None = None,
                        "license_spdx", "redistribution")}
                      | {"attribution": r["attribution_text"]} for r in rows],
            "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}
+    warnings = _serve_warnings(sorted({r["indicator"] for r in rows if r["indicator"]}))
+    if warnings:
+        out["warnings"] = warnings
     if events:
         # A register of single events is summarised, not sampled: "the newest
         # ten rows" of 589 localities says nothing about the 589 (P1-B.1).
@@ -3163,6 +3203,19 @@ def _district_1945(name: str) -> str:
         if n.startswith(pre):
             n = n[len(pre):]
     return _DISTRICTS_AR.get(n, n)
+
+
+def _serve_warnings(indicators: list[str]) -> dict:
+    """indicator -> {en, ar}: what the number is NOT, said beside it (086)."""
+    if not indicators:
+        return {}
+    try:
+        rows = q_cached("""SELECT indicator, serve_warning, serve_warning_ar FROM indicator_def
+                            WHERE indicator = ANY(%s) AND serve_warning IS NOT NULL""",
+                        (indicators,))
+    except Exception:                                            # noqa: BLE001 — before 086
+        return {}
+    return {r["indicator"]: {"en": r["serve_warning"], "ar": r["serve_warning_ar"]} for r in rows}
 
 
 def _event_rows_served() -> bool:

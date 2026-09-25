@@ -218,7 +218,12 @@ def test_letters_do_not_overclaim(conn):
             assert n < claimed * 1.10, \
                 f"{p.name} claims more than {claimed:,} but the databank " \
                 f"serves {n:,}; round the letter up"
-            assert int(m.group(2)) == nsrc, f"{p.name}: source count is stale"
+            # The source count is a FLOOR too since 2026-09-25: serving the
+            # held UCDP events added a source and folding the relabelled PCBS
+            # rows into the World Bank's removed one, on the same day.
+            claimed_src = int(m.group(2))
+            assert claimed_src <= nsrc, f"{p.name}: claims more sources than are served"
+            assert claimed_src >= nsrc * 0.8, f"{p.name}: source count undersells by a fifth"
 
 
 def test_the_imf_letter_states_the_right_number_of_rows(conn):

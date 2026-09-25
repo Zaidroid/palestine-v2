@@ -20,7 +20,7 @@ yaml = pytest.importorskip("yaml")
 ROOT = Path(__file__).resolve().parent.parent
 VERDICTS = ROOT / "db" / "scout" / "verdicts.yaml"
 SECTIONS = {"adopted", "debunked", "rejected", "dead_upstream",
-            "assessed_orgs", "candidates"}
+            "assessed_orgs", "candidates", "listed_never_landed"}
 
 
 @pytest.fixture(scope="module")

@@ -44,13 +44,22 @@ adopted:
   gaza_moh: >-
     no license statement; consumed via T4P's public-domain
     compilation (tier-1 live telegram feed is separate machinery)
-  acled: held raw via v1; ToU restrictive — serving posture unreviewed
-  insecurity_insight: CC-BY-SA
-  awsd: aid worker security DB
-  fao_diem: FAO DIEM monitoring
-  healthsites: global healthsites extract
-  hdx_hapi: baseline HAPI pull
-  reliefweb: report metadata only
+
+# Listed under `adopted` until 2026-09-25, and never landed: measured that day,
+# none has a reviewed spec, a dataset or a single served row (acled,
+# insecurity_insight, awsd, fao_diem, healthsites, hdx_hapi: no source row at
+# all; reliefweb: a source row, 0 datasets). Calling them adopted told every
+# later reader the question was settled when nothing had been built (PLAN
+# §4 R4, P1-B.2). They are open questions again; `rejected: acled-serving`
+# still stands for ACLED's serving posture.
+listed_never_landed:
+  acled: held raw via v1 only; ToU restrictive — see rejected.acled-serving
+  insecurity_insight: CC-BY-SA — a candidate for the health/aid-security pillar
+  awsd: aid worker security DB — candidate
+  fao_diem: FAO DIEM monitoring — candidate
+  healthsites: global healthsites extract — candidate
+  hdx_hapi: baseline HAPI pull — never built (IMPLEMENTATION_PLAN P4.5)
+  reliefweb: report metadata only — source row exists, no dataset
 
 debunked:
   gdelt:

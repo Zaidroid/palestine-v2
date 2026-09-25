@@ -793,6 +793,8 @@ def _event_note_en(d: dict) -> str:
 
 
 def databank(d: dict) -> str:
+    if d.get("error") and d.get("categories") and not d.get("items"):
+        return f"No category by that name. Categories: {', '.join(d['categories'])}."
     if d.get("categories"):
         top = sorted(d["categories"].items(), key=lambda kv: -kv[1])[:6]
         out = ("Historical databank — largest categories: "
@@ -818,6 +820,8 @@ def databank(d: dict) -> str:
         val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
         if isinstance(val, float) and val.is_integer():
             val = int(val)
+        elif isinstance(val, float):
+            val = round(val, 2) if abs(val) >= 1 else round(val, 4)
         unit = f" {it['unit']}" if it.get("unit") else ""
         when = str(it.get("occurred_at") or "")[:4 if it.get("occurred_precision") == "year" else 10]
         partial = " (partial year)" if (it.get("attrs") or {}).get("partial_year") else ""
@@ -835,7 +839,10 @@ def databank(d: dict) -> str:
                 + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
     return (f"{d.get('category')}" + (f" as of {d['as_of']}" if d.get("as_of") else "")
             + " — latest: " + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
-            + f" (newest {d.get('count', 0)} rows shown.)" + _event_note_en(d))
+            + f" (newest {d.get('count', 0)} rows shown.)" + _event_note_en(d)
+            + "".join(f" Note: {w['en']}" for ind, w in (d.get("warnings") or {}).items()
+                      if w.get("en") and any(it.get("indicator") == ind
+                                             for it in d.get("latest_by_indicator") or [])))
 
 
 def insights(d: dict) -> str:

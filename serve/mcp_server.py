@@ -1911,8 +1911,16 @@ def databank(category: str | None = None, indicator: str | None = None,
         return {"answer": f"ما في فئة اسمها {category}.",
                 "error": "category must be a name from /v2/databank/categories",
                 "count": 0, "items": []}
-    d = api(f"/v2/databank/{category}", indicator=indicator,
-            as_of=as_of, limit=max(limit, 12) if district else limit, district=district)
+    try:
+        d = api(f"/v2/databank/{category}", indicator=indicator,
+                as_of=as_of, limit=max(limit, 12) if district else limit, district=district)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code != 404:
+            raise
+        cats = ((exc.response.json() or {}).get("detail") or {}).get("categories") or []
+        return {"answer": f"ما في فئة اسمها {category}. الفئات: {'، '.join(cats)}.",
+                "error": f"no category named {category!r}", "categories": cats,
+                "count": 0, "items": []}
     when = f" كما كانت بتاريخ {as_of}" if as_of else ""
     if category == "displacement":
         said = _displacement_answer_ar(d, district)
@@ -1951,6 +1959,8 @@ def databank(category: str | None = None, indicator: str | None = None,
         val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
         if isinstance(val, float) and val.is_integer():
             val = int(val)
+        elif isinstance(val, float):
+            val = round(val, 2) if abs(val) >= 1 else round(val, 4)
         unit = f" {it['unit']}" if it.get("unit") else ""
         prec = it.get("occurred_precision")
         when_ = str(it.get("occurred_at") or "")[:4 if prec == "year" else 10]
@@ -1963,6 +1973,9 @@ def databank(category: str | None = None, indicator: str | None = None,
               + (f" المصدر: {src}." if src else "") + span
               + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
     answer += _event_note_ar(d)
+    for ind, w in (d.get("warnings") or {}).items():
+        if ind in newest and w.get("ar"):
+            answer += f" تنبيه: {w['ar']}"
     return {"answer": answer, "latest_by_indicator": list(newest.values())[:3],
             "series_span": series_span, **d}
 

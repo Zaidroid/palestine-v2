@@ -537,3 +537,18 @@ km (none current today); (c) OCHA's 431 recorded obstacles (v1's restrictions.ge
 within 200 m of Road 60 and almost all block a VILLAGE's access to it, so they are named only within 300 m of the origin or
 destination. All three are cautions, never blockers. tests/test_route_audit_cases.py (7): 16:47, 16:24, 15:27 and 09:00
 replayed with the audit's numbers — none reads open, the 09:00 decayed row does not block.
+2026-09-25 22:50 UTC · P1-B.2 honesty fixes + P1-B.6 cache · done on master, waits for `db/migrate.sh` (086) + API restart ·
+proof: (1) PCBS (audit DATABANK-01/F026): 086 closes the 1,856 v1_pcbs_pcbs rows byte-identical to economic's World Bank
+rows (never deleted), moves the dataset and its 204 unique rows to the worldbank source under `economic`, makes the 116
+real pcbs.gov.ps rows the `pcbs` category (renamed), and pcbs.yaml is `migrate: false` so the frozen v1 file cannot
+re-insert the copies (rolled-back dry run: 1,856 closed; pcbs = pcbs_direct only; 0 double counts). (2) serve warnings:
+indicator_def.serve_warning(_ar); casualties.annual_total now says it EXCLUDES the Gaza war dead in both answers. (3)
+ZAID-10 enforced: a partner payload drops rows graded ask/no-redistribution (OCHA demolitions/casualties, HaMoked,
+Addameer, Peace Now, Good Shepherd, IODA, heritage — 3,716 of 214,689 rows) with a named count in the licence block AND
+the spoken answer; the cited figure stays (066's line); the house tier is not cut. (4) unknown category → 404 with the
+real list (the route smoke test had been requesting the literal "{category}" and passing vacuously — fixed). (5) the
+cumulative refusal pointed at a /v2/databank/flow route that never existed → detrend=diff. (6) demolition indicators
+defined. (7) scout: 7 sources listed "adopted" with no dataset (ACLED, Insecurity Insight, AWSD, FAO DIEM, healthsites, HDX
+HAPI, ReliefWeb) moved to `listed_never_landed`. P1-B.6: the databank cache is keyed on the last load that WROTE rows +
+a watermark that sees inserts and held events; dry runs (2,258 of 3,545 ledger records) no longer invalidate it; TTL 60 s
+→ 6 h as a bound; categories warm 0.1 ms. Full suite 1243 passed + 3 by-design test updates.

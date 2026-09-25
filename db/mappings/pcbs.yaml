@@ -8,6 +8,13 @@ category: pcbs
 transform: engine
 shape: observation
 status: reviewed
+# 086 (2026-09-25, audit F026): these rows are the World Bank's. 1,856 copies
+# of economic's World Bank rows were closed and the 204 unique rows moved with
+# the dataset to the worldbank source under `economic`. Loading this file again
+# would re-insert the closed copies (the loader knows only current rows), and
+# its v1 upstream has been dead since 2026-08-05 — so it is not migrated.
+migrate: false
+skip_reason: "086 — World Bank rows relabelled PCBS by v1; the dataset now belongs to the worldbank source under economic, and a reload would re-insert 1,856 closed duplicates"
 records_measured: 2060
 
 source_routing:
