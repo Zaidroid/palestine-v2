@@ -529,3 +529,19 @@ live payload and fixed: 28 localities v1 had filed on a governorate or a same-na
 "رام الله") re-linked to their own Palestine Open Maps rows (`ops/relink_depopulated_localities.py --apply`, prior place_id
 kept) → Ramle subdistrict 70 → 77, unclassified group 32 → 4; the payload's event_summary no longer offers a sum of 1945
 populations (route change → next API restart).
+2026-09-25 22:20 UTC · P2-B.1+2 front door + docs fixed · partial (serve/ change → live at the next API restart, Zaid's
+hand) · proof: `29df6c2`. `GET /` negotiates: Chrome/Firefox/Safari Accept → the page (28 KB, Arabic first, CSP
+default-src 'none' + connect-src 'self'); `*/*`, `application/json`, none or a tie → the route map JSON unchanged
+(+ Vary: Accept). Status from /health + /v2/coverage + /v2/checkpoints/summary, chips with word + age; the 12 canonical
+questions answered live via /v2/try/{n} (partner pipeline, 2-min cache, not in the usage ledger) — 12/12 real answers on
+the dev API; `/docs/partner` renders PARTNER-API.md, `/docs/try-twelve.sh` downloadable. Links that 404'd, fixed:
+OAuth resource_documentation `/docs/PARTNER-API.md` → `/docs/partner` (old URL 301s), 401 `x-key-request`
+`zaidlab.xyz/palestine` → `/#connect`; every href on the page, every link/path in PARTNER-API.md and every URL in both
+OAuth metadata documents resolves on the dev API (method-aware). One name on consent page, resource_name, guide, README,
+mcp-registration.md (rewritten: 16 tools + 19 aliases + 3 host-only, OAuth + key); try-twelve.sh without the partner's
+name, try-ten-calls.sh retired. Playwright 360 px dark/light: scrollWidth 360 = clientWidth, 0 external requests, 0
+console errors. tests/test_front_door.py 38 passed; front_door+mcp_http+mcp_oauth+api 174 passed, 1 skipped; full
+suite 1264 passed, 7 failed — all outside this change (untracked data files a worktree lacks: identity ×4,
+insights precision, mcp-accuracy.json; letters' source count 25 vs 26 sources in the DB now). Left: `/v2` JSON and
+the OpenAPI title still say "Palestine Data Platform v2" (the JSON is held unchanged on purpose); README numbers not
+yet generated; v1's tracker and roads.zaidlab.xyz do not link back (v1 is Zaid's); palestine.zaidlab.xyz alias (D-6).
