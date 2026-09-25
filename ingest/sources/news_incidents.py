@@ -128,6 +128,21 @@ CLASSIFIER = "news"
 # until a fresh round is drawn at 1.9.0.
 CLASSIFIER_VERSION = "1.9.0"
 
+# One closure observation per (event, source, time). The insert ran after both
+# the join and the insert branch, so every re-read — each version bump without
+# --rebuild — added one more identical 'closed' row per closure (audit F205).
+CLOSURE_OBS_SQL = """
+    INSERT INTO state_observation
+      (place_id, state_kind, value, raw_value, observed_at, source_id,
+       confidence, direction, direction_explicit, modality, attrs)
+    SELECT %(place_id)s, %(kind)s, 'closed', %(raw)s, %(at)s, %(source_id)s,
+           %(conf)s, 'both', false, 'assertion', %(attrs)s
+     WHERE NOT EXISTS (
+           SELECT 1 FROM state_observation
+            WHERE place_id = %(place_id)s AND state_kind = %(kind)s
+              AND observed_at = %(at)s AND source_id = %(source_id)s
+              AND attrs->>'from_event' = %(event)s)"""
+
 # Confidence for an event, by how many INDEPENDENT groups reported it. Noisy-OR
 # on the same 0.70 single-source trust used for checkpoint state, so the two
 # layers are comparable.
@@ -649,17 +664,14 @@ def classify(limit: int | None, dry_run: bool, rebuild: bool = False) -> dict:
 
             # A closure is also a movement STATE and must decay like one.
             if itype in ("closure", "siege"):
-                cur.execute("""
-                    INSERT INTO state_observation
-                      (place_id, state_kind, value, raw_value, observed_at,
-                       source_id, confidence, direction, direction_explicit,
-                       modality, attrs)
-                    VALUES (%s,%s,'closed',%s,%s,%s,%s,'both',false,'assertion',%s)""",
-                    (place_id, STATE_KIND_CLOSURE, reading.matched, occurred,
-                     cluster[0][3], conf,
-                     json.dumps({"from_event": event_id, "incident_type": itype},
-                                ensure_ascii=False)))
-                stats["closure_states"] += 1
+                cur.execute(CLOSURE_OBS_SQL, {
+                    "place_id": place_id, "kind": STATE_KIND_CLOSURE,
+                    "raw": reading.matched, "at": occurred,
+                    "source_id": cluster[0][3], "conf": conf,
+                    "event": str(event_id),
+                    "attrs": json.dumps({"from_event": event_id, "incident_type": itype},
+                                        ensure_ascii=False)})
+                stats["closure_states"] += cur.rowcount
 
         # Record every verdict, hits and rejections alike. Re-runnable: a newer
         # classifier version overwrites its own row and leaves the claim alone.

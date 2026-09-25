@@ -1,10 +1,12 @@
-"""The v1 checkpoint import must not skip a row (audit 2026-09-25, F007).
+"""Writers that must neither skip a row nor write one twice (audit 2026-09-25).
 
-Hard rule 2 — no data loss. The importer's cursor was MAX(observed_at) over a
-state kind the crowd also writes with now(), and v1 rows inserted out of
-message-date order fell below it; either way they were skipped forever.
-These run the importer's own SQL against the database inside a transaction
-that is rolled back (main-server, or the local test DB). Skipped without one.
+Hard rule 2 — no data loss. F007: the v1 checkpoint importer's cursor was
+MAX(observed_at) over a state kind the crowd also writes with now(), and v1
+rows inserted out of message-date order fell below it; either way they were
+skipped forever. F205: the incident writer re-inserted every closure
+observation on each re-read. These run the writers' own SQL against the
+database inside a transaction that is rolled back (main-server, or the local
+test DB). Skipped without one.
 """
 from __future__ import annotations
 
@@ -87,3 +89,21 @@ def test_ingest_01c_the_re_read_reaches_behind_the_cursor():
     import inspect
     src = inspect.getsource(ck.import_updates)
     assert "since - OVERLAP" in src and ck.OVERLAP >= timedelta(hours=8)
+
+
+def test_classifier_15_a_re_read_does_not_duplicate_a_closure_observation(cur):
+    """F205 — every version bump without --rebuild inserted one more identical
+    road_closure 'closed' row per closure event."""
+    from ingest.sources.news_incidents import CLOSURE_OBS_SQL, STATE_KIND_CLOSURE
+    c, pid, sid = cur
+    params = {"place_id": pid, "kind": STATE_KIND_CLOSURE, "raw": "اغلاق",
+              "at": datetime(2099, 5, 6, 7, 8, 9, tzinfo=timezone.utc),
+              "source_id": sid, "conf": 0.7, "event": "424242",
+              "attrs": json.dumps({"from_event": 424242, "incident_type": "closure"})}
+    c.execute(CLOSURE_OBS_SQL, params)
+    first = c.rowcount
+    c.execute(CLOSURE_OBS_SQL, params)                              # the re-read
+    assert (first, c.rowcount) == (1, 0)
+    c.execute("SELECT count(*) FROM state_observation WHERE place_id=%s AND state_kind=%s",
+              (pid, STATE_KIND_CLOSURE))
+    assert c.fetchone()[0] == 1
