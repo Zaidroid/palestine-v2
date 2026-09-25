@@ -571,3 +571,10 @@ Jericho/Bethlehem sister channels 22–24 % (≈190 shared posts each way); most
 reporters, and the per-event mirror collapse the classifier already does (≥ 0.90 text similarity, 1.10.0) is the right
 grain for the copies that do occur. Nothing applied. tests/test_news_independence.py (4). Re-run monthly (it prints the
 table) — a channel that starts reposting another wholesale will cross 50 % and group itself.
+2026-09-26 00:05 UTC · P2-C.3 Tier 1 → Tier 2: a checkpoint's own history as a series · done on master, waits for the API restart
+· proof: `series(movement.checkpoint.closed_share, place=حوارة, days=365)` → 100 daily points since 2026-06-09, "آخر 3
+قراءة أعلى (0.22 مقابل 0.0)"; also closed_reports and reports; read straight from the nightly rollup (137,263 rows) rather
+than poured into databank_internal, so no published databank count is inflated by derived rows; a share of REPORTS, never
+of time (the rollup's own rule); a day with reports and none closed is a zero. Found and fixed on the way: `trend` read any
+rise over a zero median as "flat" (Huwara 0.22 vs 0.0) — the direction is now computed separately from the percentage, in
+both languages. tests/test_movement_series.py (3).

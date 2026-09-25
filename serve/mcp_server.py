@@ -1429,7 +1429,8 @@ def compare(indicators: str, place: str | None = None) -> dict:
     """
     place_id = None
     if place:
-        g = api("/v2/geo/resolve", q=place)
+        g = api("/v2/geo/resolve", q=place,
+                state_kind="checkpoint_flow" if "movement." in indicators else None)
         if g.get("found"):
             place_id = g.get("place_id")
     d = api("/v2/databank/compare", indicators=indicators, place_id=place_id)
@@ -1598,7 +1599,9 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
     """
     place_id = None
     if place:
-        g = api("/v2/geo/resolve", q=place)
+        # A movement series lives on the CHECKPOINT row, not the town (P2-C.3).
+        g = api("/v2/geo/resolve", q=place,
+                state_kind="checkpoint_flow" if indicator.startswith("movement.") else None)
         if g.get("found"):
             place_id = g.get("place_id")
     # `days` was declared, forwarded and never applied: a "30-day" trend was
@@ -1656,8 +1659,13 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
         change = None
     else:
         change = round((avg - med) / abs(med) * 100)
-    word = ("ثابت" if change is None or abs(change) < 10
-            else ("أعلى" if change > 0 else "أقل"))
+    # A zero median has no percentage, but it still has a direction: Huwara's
+    # closed share 0.22 against a median of 0.0 read "flat" (2026-09-25).
+    if change is not None:
+        direction = "flat" if abs(change) < 10 else ("higher" if change > 0 else "lower")
+    else:
+        direction = "flat" if abs(avg - med) < 1e-9 else ("higher" if avg > med else "lower")
+    word = {"flat": "ثابت", "higher": "أعلى", "lower": "أقل"}[direction]
     # The headline used to assert a direction with no date on it. The partner's
     # QA pass found series ending in December 2021 still being described as
     # "the last three readings, flat" — true, and nine months stale, which is
@@ -1687,7 +1695,7 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
             "window_days": days, "from": frm,
             "window_widened": bool(window_note),
             "recent_mean": round(avg, 4), "baseline_median": round(med, 4),
-            "change_pct": change,
+            "change_pct": change, "direction": direction,
             "first": pts[0]["at"], "last": pts[-1]["at"],
             "caveat": "compares the last three readings to the median of the "
                       "rest. Points are reports, not evenly spaced time — a "

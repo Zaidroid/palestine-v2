@@ -2664,6 +2664,64 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
                     "which correlates the changes between readings."}
 
 
+# ── P2-C.3: Tier 1 → Tier 2 — a checkpoint's own history as a series ─────────
+# The nightly rollup (ops/rollup.py) has written one row per place, kind and
+# day since 2026-06-09, and nothing in the databank could read it, so "is
+# Huwara getting worse this year" had no answer. Three series per checkpoint,
+# read straight from the rollup rather than poured into databank_internal (130k
+# derived rows would inflate every published databank count):
+#   movement.checkpoint.reports         road reports that day
+#   movement.checkpoint.closed_reports  how many of them said closed
+#   movement.checkpoint.closed_share    closed_reports / reports — a share of
+#                                       REPORTS, never of time (the rollup's rule)
+MOVEMENT_INDICATORS = {
+    "movement.checkpoint.reports": ("checkpoint_flow.reports", "count"),
+    "movement.checkpoint.closed_reports": ("checkpoint_flow.reports.closed", "count"),
+    "movement.checkpoint.closed_share": (None, "ratio"),
+}
+MOVEMENT_ATTRIBUTION = ("Derived by Palestine Data from road-channel reports "
+                        "(daily counts, ops/rollup.py); a share of reports, not of time.")
+
+
+def _movement_series(indicator: str, place_id: int | None, frm: str | None,
+                     to: str | None) -> dict:
+    raw, unit = MOVEMENT_INDICATORS[indicator]
+    meta = {"concept_key": "movement.checkpoint", "measure_kind":
+            "ratio" if unit == "ratio" else "flow", "polarity": -1 if "closed" in indicator else None,
+            "grain": "day", "place_grain": "point", "canonical_unit": unit}
+    if place_id is None:
+        return {**meta, "known": True, "indicator": indicator, "points": [], "n": 0,
+                "units": [unit], "unit_mixed": False, "sources": [], "source_names": set(),
+                "attribution": [MOVEMENT_ATTRIBUTION],
+                "note": "a movement series is per checkpoint: pass place"}
+    where, params = ["d.key = 'tier1_daily'", "upper_inf(o.sys_period)", "o.place_id = %(p)s"], {"p": place_id}
+    if frm:
+        where.append("o.occurred_at >= %(f)s"); params["f"] = frm
+    if to:
+        where.append("o.occurred_at <= %(t)s"); params["t"] = to
+    rows = q(f"""SELECT o.occurred_at::date AS at, o.indicator, o.value_num
+                   FROM observation o JOIN dataset d ON d.dataset_id = o.dataset_id
+                  WHERE {' AND '.join(where)}
+                    AND o.indicator IN ('checkpoint_flow.reports', 'checkpoint_flow.reports.closed')
+                  ORDER BY 1""", params)
+    by: dict = {}
+    for r in rows:
+        by.setdefault(r["at"], {})[r["indicator"]] = float(r["value_num"] or 0)
+    pts = []
+    for at, v in sorted(by.items()):
+        n, c = v.get("checkpoint_flow.reports", 0.0), v.get("checkpoint_flow.reports.closed", 0.0)
+        if raw is None:
+            if n > 0:
+                pts.append({"at": at, "prec": "day", "value": round(c / n, 4), "unit": unit,
+                            "reports": int(n)})
+        elif raw in v or (raw == "checkpoint_flow.reports.closed" and n > 0):
+            # a day with reports and none closed is a ZERO, not a missing day
+            pts.append({"at": at, "prec": "day", "value": v.get(raw, 0.0), "unit": unit})
+    return {**meta, "known": True, "indicator": indicator, "points": pts, "n": len(pts),
+            "units": [unit], "unit_mixed": False, "sources": ["tier1_rollup"],
+            "source_names": {"tier1_rollup"}, "attribution": [MOVEMENT_ATTRIBUTION]}
+
+
 def _wider_places(place_id: int) -> list[dict]:
     """The governorate, then the region, that contain a place."""
     return q("""
@@ -2688,6 +2746,8 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
     GOVERNORATE, so `series` with a place returned 0 points for bread in Hebron
     (Claude web's test, 2026-09-25). The widening is stated in `place_used`,
     never silent."""
+    if indicator in MOVEMENT_INDICATORS:
+        return {**_movement_series(indicator, place_id, frm, to), "place_used": None}
     s = _series_at(indicator, place_id, frm, to)
     if place_id is None or s["points"] or not s["known"]:
         return {**s, "place_used": None}

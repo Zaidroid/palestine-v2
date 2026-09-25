@@ -230,7 +230,10 @@ FACADES: dict[str, dict[str, Any]] = {
                        "median of the rest), and how old the newest reading is. Two to "
                        "six comma-separated indicators: side by side in their own units "
                        "over the window they share — nothing is rescaled onto one axis. "
-                       "Find indicator strings with correlate(search=...).",
+                       "Find indicator strings with correlate(search=...). A checkpoint's own "
+                       "history: movement.checkpoint.closed_share / closed_reports / reports "
+                       "with place=<checkpoint> (daily since 2026-06-09; a share of reports, "
+                       "never of time).",
         "schema": {"type": "object", "properties": {
             "indicators": {"type": "string",
                            "description": "one indicator string, or two to six "

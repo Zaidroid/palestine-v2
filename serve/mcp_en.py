@@ -649,8 +649,8 @@ def trend(d: dict) -> str:
         # Not enough points: the Arabic says so; "None vs None" said nothing.
         return f"Not enough readings to compare a trend (n={d.get('n', 0)})."
     c = d.get("change_pct")
-    word = ("flat" if c is None or abs(c) < 10 else
-            ("higher" if c > 0 else "lower"))
+    word = d.get("direction") or ("flat" if c is None or abs(c) < 10 else
+                                  ("higher" if c > 0 else "lower"))
     win = (f" over the last {d['window_days']} days" if d.get("window_days")
            else " over the whole series (too few points in the window asked for)"
            if d.get("window_widened") else "")
