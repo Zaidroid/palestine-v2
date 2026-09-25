@@ -97,6 +97,7 @@ _TASHKEEL = re.compile(r"[\u064B-\u0652\u0640]")     # harakat + tatweel
 def normalise(text: str) -> str:
     t = _TASHKEEL.sub("", text.translate(_DIGITS))
     t = t.replace("\u00a0", " ").replace("\u200f", "").replace("\u200e", "")
+    t = re.sub(r"(?<=\d)[،,](?=\d{1,2}\b)", ".", t)      # 8,15 -> 8.15 (F174)
     return re.sub(r"[ \t]+", " ", t)
 
 
@@ -227,7 +228,10 @@ def _sentences(text: str) -> list[str]:
 
 
 def _clauses(sentence: str) -> list[str]:
-    return [c for c in re.split(r"[،,؛;*•]|\s-\s|:\s(?=\D)", sentence) if c.strip()]
+    # A comma BETWEEN digits is a decimal ("8,15 شيكل"), never a clause
+    # boundary (audit F174); normalise() has already made it a point.
+    return [c for c in re.split(r"(?<!\d)[،,](?!\d)|[؛;*•]|\s-\s|:\s(?=\D)", sentence)
+            if c.strip()]
 
 
 def _lpg_size(raw: str) -> str | None:

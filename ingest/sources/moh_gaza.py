@@ -55,6 +55,38 @@ def _gaza_place(cur) -> int | None:
     return r[0] if r else None
 
 
+def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, claim_id, st) -> int:
+    """One row per (indicator, day). The same value again is nothing; a
+    DIFFERENT value SUPERSEDES the current row (its sys_period is closed, the
+    new row says which claim revised what) — never an in-place overwrite, and
+    reported_at is the claim's, never now() (audit F182)."""
+    cur.execute("""SELECT observation_id, value_num FROM observation
+                    WHERE dataset_id = %s AND place_id = %s AND indicator = %s
+                      AND occurred_at = %s::date AND upper_inf(sys_period)
+                      AND v1_stable_id IS NULL""",
+                (did, place_id, ind, reported_at))
+    cur_row = cur.fetchone()
+    attrs = {"tier": tier, "measure": measure, "claim_id": claim_id}
+    if cur_row and float(cur_row[1]) == float(value):
+        st["unchanged"] = st.get("unchanged", 0) + 1
+        return 0
+    if cur_row:
+        cur.execute("""UPDATE observation
+                          SET sys_period = tstzrange(lower(sys_period), now())
+                        WHERE observation_id = %s""", (cur_row[0],))
+        attrs["supersedes"] = cur_row[0]
+        attrs["previous_value"] = float(cur_row[1])
+        st["revised"] = st.get("revised", 0) + 1
+    cur.execute("""
+        INSERT INTO observation
+          (dataset_id, place_id, indicator, value_num, unit,
+           occurred_at, occurred_precision, reported_at, attrs)
+        VALUES (%s,%s,%s,%s,'count',%s::date,'day',%s,%s)""",
+        (did, place_id, ind, value, reported_at, reported_at,
+         json.dumps(attrs, ensure_ascii=False)))
+    return 1
+
+
 def load(dry_run: bool = False) -> dict:
     st = {"claims": 0, "reports": 0, "rows": 0, "no_place": 0}
     with connect() as conn, conn.cursor() as cur:
@@ -64,10 +96,18 @@ def load(dry_run: bool = False) -> dict:
             st["no_place"] = 1
             return st
 
+        # READ ONCE (audit F182): every hourly run re-read every claim and DO
+        # UPDATEd each day's row with reported_at=now(), so a revision
+        # overwrote the value it corrected and every row looked fresh. The
+        # cursor is the newest claim already recorded in this dataset's rows.
+        cur.execute("""SELECT COALESCE(max((attrs->>'claim_id')::bigint), 0)
+                         FROM observation WHERE dataset_id = %s AND attrs ? 'claim_id'""", (did,))
+        since = cur.fetchone()[0]
         cur.execute("""
             SELECT cl.claim_id, cl.raw_text, cl.reported_at
               FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
-             ORDER BY cl.reported_at""", (sid, "%التقرير الإحصائي%"))
+               AND cl.claim_id > %s
+             ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", since))
         for claim_id, text, reported_at in cur.fetchall():
             st["claims"] += 1
             rep = parse(text)
@@ -82,19 +122,8 @@ def load(dry_run: bool = False) -> dict:
                     if dry_run:
                         st["rows"] += 1
                         continue
-                    cur.execute("""
-                        INSERT INTO observation
-                          (dataset_id, place_id, indicator, value_num, unit,
-                           occurred_at, occurred_precision, reported_at, attrs)
-                        VALUES (%s,%s,%s,%s,'count',%s::date,'day',%s,%s)
-                        ON CONFLICT (dataset_id, place_id, indicator, occurred_at)
-                          WHERE place_id IS NOT NULL AND v1_stable_id IS NULL
-                        DO UPDATE SET value_num=EXCLUDED.value_num, reported_at=now()""",
-                        (did, place_id, ind, float(value),
-                         reported_at, reported_at,
-                         json.dumps({"tier": tier, "measure": measure,
-                                     "claim_id": claim_id}, ensure_ascii=False)))
-                    st["rows"] += 1
+                    st["rows"] += _upsert_day(cur, did, place_id, ind, float(value),
+                                              reported_at, tier, measure, claim_id, st)
         if not dry_run:
             conn.commit()
     return st

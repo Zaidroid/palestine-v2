@@ -227,6 +227,16 @@ def _due(cur, url: str, now: datetime) -> bool:
     return now - first < RETRY_EMPTY_FOR and now - last >= RETRY_EMPTY_EVERY
 
 
+# One outlet reached two ways is ONE witness (audit F036): its RSS item was a
+# claim under 'src:N' and its page a web unit 'web:<domain>', so it could
+# confirm its own price. The unit is the publisher's domain for both.
+PUBLISHER_OF = {"rss_qudsn": "qudsn.co", "rss_palinfo": "palinfo.com"}
+
+
+def publisher_unit(key: str, unit: str) -> str:
+    return f"web:{PUBLISHER_OF[key]}" if key in PUBLISHER_OF else unit
+
+
 def claim_rows(cur) -> list[dict]:
     cur.execute(f"""
         SELECT c.claim_id, c.raw_text, c.reported_at, s.source_id, s.key,
@@ -239,7 +249,7 @@ def claim_rows(cur) -> list[dict]:
     for claim_id, text, reported, source_id, key, unit in cur.fetchall():
         day = reported.astimezone(timezone(timedelta(hours=3))).date()
         ann = fuel_price.parse(text, day)
-        rows.append(_row(ann, outlet=key, unit=unit, text=text, url=None,
+        rows.append(_row(ann, outlet=key, unit=publisher_unit(key, unit), text=text, url=None,
                          published=reported, source_id=source_id, claim_id=claim_id))
     return rows
 

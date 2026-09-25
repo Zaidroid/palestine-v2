@@ -167,6 +167,7 @@ def load(dry_run: bool = False) -> dict:
                    place_id, state_kind, 'both', value, observed_at, source_id,
                    confidence, %s, 0, now()
             FROM state_observation WHERE state_kind = %s
+              AND modality = 'assertion'          -- belief reads assertions only (audit F073)
             ORDER BY place_id, state_kind, observed_at DESC
             ON CONFLICT (place_id, state_kind, direction) DO UPDATE SET
               value=EXCLUDED.value, observed_at=EXCLUDED.observed_at,

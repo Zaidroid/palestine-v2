@@ -62,10 +62,15 @@ SECTIONS = (
     # ("العدد التراكمي للشهداء: 73,356"), so using it as a header pattern made
     # each data line look like a section switch and the largest figures in the
     # report were silently never emitted.
-    ("cumulative", re.compile(r"الإحصائي[ةه]\s+التراكمي[ةه]|منذ\s+بداي[ةه]\s+العدوان")),
+    ("cumulative", re.compile(r"الإحصائي[ةه]\s+التراكمي[ةه]|الحصيل[ةه]\s+التراكمي[ةه]|منذ\s+بداي[ةه]\s+العدوان")),
     ("since_ceasefire", re.compile(r"منذ\s+وقف\s+إطلاق\s+النار")),
+    # A tier of its own so its totals never land under the previous one; not
+    # in INDICATORS, so never emitted (audit F176).
+    ("since_resumption", re.compile(r"منذ\s+استئناف")),
     ("daily", re.compile(r"خلال\s+ال.?\s*24\s*ساع[ةه]|الساعات\s+ال.?\s*24")),
 )
+
+_HEADER_SHAPE = re.compile(r"^\s*[🔴⭕🔻▪️◾️]+\s*\S")
 
 MEASURES = (
     ("deaths",     re.compile(r"(?:العدد\s+التراكمي\s+ل|إجمالي\s+عدد\s+ال|عدد\s+ال)?شهداء\s*:?\s*([\d]+)")),
@@ -129,6 +134,14 @@ def parse(text: str) -> MohReport:
                 current, matched_header = tier, True
                 break
         if matched_header:
+            continue
+        # A line SHAPED like a header that matched no tier (starts with the
+        # section marker, or says "منذ …" and ends with ':') switches to no
+        # tier at all: its totals were filed under the previous tier — the
+        # 72,274-in-one-day class (audit F176).
+        if _HEADER_SHAPE.match(line) or ("منذ" in line and line.rstrip().endswith(":")):
+            current = None
+            r.rejected.append(line)
             continue
         if current is None:
             continue

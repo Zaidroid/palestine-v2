@@ -314,6 +314,31 @@ def load(dry_run: bool = False) -> dict:
                      STATE_KIND, nid))
                 stats["announced"] += cur.rowcount
 
+            # THE CUT ENDS WHEN ITS WINDOW ENDS (audit F037): a 'cut' assertion
+            # decayed for ~22 h after the announced end. Once the window has
+            # passed, one 'normal' assertion dated at window_end closes it —
+            # written once per notice, only if a cut was asserted for it.
+            if window and window[1] < now and not dry_run:
+                cur.execute("""
+                    INSERT INTO state_observation
+                      (place_id,state_kind,value,raw_value,observed_at,source_id,
+                       confidence,direction,direction_explicit,modality,attrs)
+                    SELECT %s,%s,'normal',%s,%s,%s,0.9,'both',false,'assertion',%s
+                    WHERE EXISTS (
+                        SELECT 1 FROM state_observation
+                        WHERE place_id = %s AND state_kind = %s AND modality = 'assertion'
+                          AND value = 'cut' AND attrs->>'newsid' = %s)
+                      AND NOT EXISTS (
+                        SELECT 1 FROM state_observation
+                        WHERE state_kind = %s AND modality = 'assertion'
+                          AND attrs->>'newsid' = %s AND attrs->>'ended' = 'true')""",
+                    (res.place_id, STATE_KIND, f"ended: {title[:180]}", window[1], source_id,
+                     json.dumps({"newsid": nid, "title": title, "ended": True,
+                                 "window_end": window[1].isoformat(),
+                                 "url": f"{BASE}/?newsid={nid}"}, ensure_ascii=False),
+                     res.place_id, STATE_KIND, nid, STATE_KIND, nid))
+                stats["ended"] = stats.get("ended", 0) + cur.rowcount
+                stats["written"] += cur.rowcount
             if not active:
                 continue
             stats["active_now"] += 1
@@ -343,6 +368,7 @@ def load(dry_run: bool = False) -> dict:
                        place_id, state_kind, 'both', value, observed_at, source_id,
                        confidence, 1, 0, now()
                 FROM state_observation WHERE state_kind = %s
+                  AND modality = 'assertion'   -- a SCHEDULED future cut was served as active (audit F038/F073)
                 ORDER BY place_id, state_kind, observed_at DESC
                 ON CONFLICT (place_id, state_kind, direction) DO UPDATE SET
                   value=EXCLUDED.value, observed_at=EXCLUDED.observed_at,
