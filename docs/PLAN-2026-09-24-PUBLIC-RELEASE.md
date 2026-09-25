@@ -491,3 +491,4 @@ reaches the checkpoint in history/pattern/profile and locate names it; `series` 
 so; the date-collapse note counts dates; zero scan tests says so; insights ages as ages; the route's blind stretch is one
 size in both languages; `signals_agreeing` counts IODA's signals (3 of 3); checkpoint_status takes `place`; bad arguments
 answer in both languages. Full suite 1205 passed before 4 structure-pinned tests were updated (now green).
+2026-09-25 18:50 UTC · testers' serving set LIVE (API restarted by Zaid 18:45) · done · proof: production passes tests/test_testers_round_0925.py + test_facades + test_answer_contract (76 passed against :7870); through the public connector `crossings(أريحا)` returns the bridge closed and the rest stop open, `place(Huwara, history)` returns the checkpoint with place_en Huwara. Fawwaz can re-test.
