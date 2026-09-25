@@ -49,7 +49,7 @@ def test_sweep_uses_retirement_and_systemd_when_no_heartbeat_speaks(tmp_path, mo
         {"ts": "2026-08-07T20:06:41+00:00", "unit": "palestine-v2-fuel.service"},
         {"ts": "2026-09-01T00:00:00+00:00", "unit": "palestine-v2-external.service"},
         {"ts": "2026-09-25T03:00:00+00:00", "unit": "palestine-v2-api.service"}])
-    done = A.sweep({}, {"ingest-fuel": "2026-09-23T07:40:12+00:00"},
+    done = A.sweep({}, {"ingest-fuel": "2026-09-23T07:40:12+00:00", "fuel-images": "2026-09-23T07:40:12+00:00"},
                    systemd_ok_after=lambda unit, ts: unit == "palestine-v2-external.service")
     assert done == ["palestine-v2-external.service", "palestine-v2-fuel.service"]
     assert {r["unit"] for r in A.open_alerts()} == {"palestine-v2-api.service"}

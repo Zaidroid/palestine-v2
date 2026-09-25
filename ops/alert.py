@@ -189,6 +189,9 @@ def _job_of(unit: str) -> str | None:
     return None
 
 
+RETIRED_MARK: dict[str, str] = {}      # set by sweep(); read by _job_for()
+
+
 def _job_for(unit: str, jobs: dict[str, str]) -> str | None:
     """The heartbeat job a unit reports as: exact name, else the one job whose
     name contains it (palestine-v2-poller.service -> telegram-poller,
@@ -199,7 +202,13 @@ def _job_for(unit: str, jobs: dict[str, str]) -> str | None:
     if short in jobs:
         return short
     hits = [j for j in jobs if short in j]
-    return hits[0] if len(hits) == 1 else None
+    if len(hits) == 1:
+        return hits[0]
+    # several jobs carry the name (ingest-fuel, fuel-images): fine when the
+    # question is "was it retired?" and every one of them was
+    if hits and all(j in RETIRED_MARK for j in hits):
+        return hits[0]
+    return None
 
 
 def sweep(last_ok: dict[str, str], retired: dict[str, str] | None = None,
@@ -210,6 +219,7 @@ def sweep(last_ok: dict[str, str], retired: dict[str, str] | None = None,
     latest systemd run ended in success after the alarm (`systemd_ok_after(unit,
     ts) -> bool`). Silent: 600 recoveries are a ledger fact, not 600 notifications."""
     retired = retired or {}
+    RETIRED_MARK.clear(); RETIRED_MARK.update(retired)
     done: list[str] = []
     newest: dict[str, str] = {}
     for r in open_alerts():
