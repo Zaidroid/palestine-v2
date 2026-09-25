@@ -36,8 +36,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from serve.mcp_en import (effective_groups, field_words, product_labels,  # noqa: E402
-                          share_words)
+from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
+                          product_labels, searching, seen_on_route, share_words)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -174,19 +174,51 @@ DIR_IN = {"داخل": "inbound", "للداخل": "inbound", "دخول": "inbound
           "in": "inbound", "out": "outbound"}
 
 
+def _search_folds(cp: dict) -> bool:
+    """Searching is said WITH the flow word unless the road is closed — a
+    closed checkpoint with a search going on is two facts, said as two."""
+    return searching(cp) and cp.get("flow") != "closed"
+
+
+def _flow_word_ar(cp: dict) -> str:
+    """A known flow, with searching folded in: 'سالك مع تفتيش'. The ages are
+    said after, each beside its own fact."""
+    w = FLOW_AR.get(cp["flow"], cp["flow"])
+    if not _search_folds(cp):
+        return w
+    return f"{w}{' مع ' if cp['flow'] == 'open' else ' و'}تفتيش"
+
+
 def _flow_phrase(cp: dict) -> str:
     """One clause describing flow, honest about staleness."""
     if cp["flow"] != "unknown":
-        return FLOW_AR.get(cp["flow"], cp["flow"])
+        return _flow_word_ar(cp)
     last = cp.get("last_known_flow")
+    lead = ""
+    if searching(cp):
+        # A search seen recently is a CURRENT fact even when the road has no
+        # current reading; it leads, and the old flow follows with its age.
+        when = (f" ({_age_ar(int(cp['presence_age_minutes']))})"
+                if cp.get("presence_age_minutes") is not None else "")
+        lead = f"فيه تفتيش{when}، "
     if not last or last == "unknown":
-        return "ما عندي معلومات عنه"
-    return f"ما في تحديث جديد — آخر معلومة {_age_ar(cp.get('age_minutes'))}: كان {FLOW_AR.get(last, last)}"
+        return lead + ("وحركة السير ما عندي عنها معلومات" if lead else "ما عندي معلومات عنه")
+    return (lead + f"ما في تحديث جديد عن حركة السير — آخر معلومة "
+            f"{_age_ar(cp.get('age_minutes'))}: كان {FLOW_AR.get(last, last)}")
 
 
-def _presence_phrase(cp: dict) -> str:
-    who = [PRESENCE_AR.get(p, p) for p in (cp.get("present") or [])]
-    return f" وفي {' و'.join(who)}" if who else ""
+def _presence_phrase(cp: dict, fold: bool = True, end: str = ".") -> str:
+    """Who was seen there, with the sighting's age. Searching is left out
+    when the flow word already carries it (`fold`), so it is never said twice."""
+    folded = fold and (_search_folds(cp) or (cp.get("flow") == "unknown" and searching(cp)))
+    order = ["inspection", "idf", "settlers", "police"]
+    present = sorted(cp.get("present") or [], key=lambda p: order.index(p) if p in order else 9)
+    who = [PRESENCE_AR.get(p, p) for p in present if not (p == "inspection" and folded)]
+    if not who:
+        return ""
+    when = (f" ({_age_ar(int(cp['presence_age_minutes']))})"
+            if cp.get("presence_age_minutes") is not None else "")
+    return f" وفي {' و'.join(who)}{when}{end}"
 
 
 def _dir_clause_ar(row: dict | None, label: str) -> str:
@@ -227,12 +259,16 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
             and inb.get("flow") != outb.get("flow")):
         answer = (f"{nm}: {_dir_clause_ar(inb, 'للداخل')}، "
                   f"و{_dir_clause_ar(outb, 'للخارج')}."
-                  f"{_presence_phrase(d)}")
+                  f"{_presence_phrase(d, fold=False)}")
     else:
         suffix = "" if direction == "both" else f" {DIR_AR[direction]}"
-        answer = f"{nm}{suffix}: {_flow_phrase(d)}.{_presence_phrase(d)}"
+        answer = f"{nm}{suffix}: {_flow_phrase(d)}."
         if d["flow"] != "unknown":
-            answer += f" آخر تحديث {_age_ar(d.get('age_minutes'))}."
+            answer += f" آخر تحديث {_age_ar(d.get('age_minutes'))}"
+            if _search_folds(d) and d.get("presence_age_minutes") is not None:
+                answer += f"، والتفتيش {_age_ar(int(d['presence_age_minutes']))}"
+            answer += "."
+        answer += _presence_phrase(d)
 
     # A fuzzy match used to be invisible: "Zaatara" answered about عطارة, 11 km
     # away and in the opposite state, with a match score of 0.738 that never
@@ -276,7 +312,9 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
             "staleness_band": d.get("staleness_band"),
             "confidence": d.get("confidence"),
             "independent_sources": d.get("independent_sources"),
-            "present": d.get("present"), "by_direction": by,
+            "present": d.get("present"), "searching": searching(d),
+            "presence_age_minutes": d.get("presence_age_minutes"),
+            "by_direction": by,
             "lat": d.get("lat"), "lon": d.get("lon"),
             "source": d.get("attribution")}
 
@@ -418,8 +456,9 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
     else:
         closed = [r for r in known if r["flow"] == "closed"]
         # Every listed state says how old it is (F052).
+        # In a list each fact keeps its own age: the flow's, then the sighting's.
         parts = [f"{r['name']} {FLOW_AR.get(r['flow'], r['flow'])} ({_age_ar(r.get('age_minutes'))})"
-                 f"{_presence_phrase(r)}" for r in known[:4]]
+                 f"{_presence_phrase(r, fold=False, end='')}" for r in known[:4]]
         answer = f"حوالين {place or 'موقعك'}: " + "، ".join(parts) + "."
         if closed:
             answer += f" انتبه: {'، '.join(r['name'] for r in closed)} مغلق."
@@ -427,11 +466,22 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
         if counts.get("unknown"):
             answer += f" وفي {counts['unknown']} حاجز ما إلهم تحديث حديث."
 
+    # A search reported where the road itself has no current reading is still
+    # a current fact about that checkpoint (P1-A.2).
+    search_only = [r for r in res if r["flow"] == "unknown" and searching(r)]
+    if search_only:
+        answer += " وفيه تفتيش عند: " + "، ".join(
+            r["name"] + (f" ({_age_ar(int(r['presence_age_minutes']))})"
+                         if r.get("presence_age_minutes") is not None else "")
+            for r in search_only[:4]) + "."
+
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
             "origin_en": place_en,
             "direction": direction, "counts": counts, "radius_km": radius_km,
             "checkpoints": [{"name": r["name"], "name_en": r.get("name_en") or None,
                              "flow": r["flow"],
+                             "searching": searching(r),
+                             "presence_age_minutes": r.get("presence_age_minutes"),
                              "passable": r["passable"],
                              "last_known_flow": r.get("last_known_flow"),
                              "km": r.get("straight_km"),
@@ -477,9 +527,16 @@ def checkpoints_summary() -> dict:
     if dupes:
         answer += (f" (وفي {dupes} حاجز مغلق تاني بإسم مكرر — الأسماء بتتشارك "
                    f"بين مواقع مختلفة)")
+    srch = d.get("searching_now") or []
+    if srch:
+        answer += " فيه تفتيش هلأ عند: " + "، ".join(c["name"] for c in srch[:6]) + "."
     return {"answer": answer, "totals": t,
             "known_fraction": d.get("known_fraction"),
             "tracked": d.get("tracked"), "presence": d.get("presence"),
+            "searching_now": [{"place_id": c["place_id"], "name": c["name"],
+                               "name_en": c.get("name_en"), "flow": c.get("flow"),
+                               "presence_age_minutes": c.get("presence_age_minutes")}
+                              for c in (d.get("searching_now") or [])],
             "closed_now": [{"place_id": c["place_id"], "name": c["name"],
                             "name_en": c.get("name_en"),
                             "age_minutes": c["age_minutes"],
@@ -1166,9 +1223,19 @@ def can_i_travel(origin: str, destination: str) -> dict:
         doubt_note = ((" السبب: " if best.get("verdict") == "unverified" else " انتبه: ")
                       + "؛ و".join(why) + " — تأكد قبل ما تطلع.")
 
+    # WHO WAS SEEN ON THE WAY — searching first (P1-A.2). The route carried
+    # these cautions in the payload and neither answer said them.
+    seen = seen_on_route(best.get("cautions"))
+    seen_note = ""
+    if seen:
+        seen_note = " على الطريق: " + "، ".join(
+            f"{' و'.join(SEEN_WORDS[k][0] for k in kinds)} عند {c.get('place')}"
+            + (f" ({_age_ar(int(age))})" if age is not None else "")
+            for c, kinds, age in seen[:4]) + "."
+
     return {"answer": f"{say}{detail}.{doubt_note} "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
-                      f"{fresh_note}{pass_note}{cover_note}{near_note}",
+                      f"{fresh_note}{pass_note}{cover_note}{near_note}{seen_note}",
             "verdict": best["verdict"],
             "freshest_reading_minutes": freshest,
             "duration_minutes": best["duration_minutes"],

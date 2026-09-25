@@ -439,6 +439,9 @@ def _checkpoint_out(r: dict, extra: dict | None = None) -> dict:
         # fact from nobody having looked, and the more useful one to a family.
         "absent": list(r["absent"] or []),
         "presence_age_minutes": r["presence_age_minutes"],
+        # A fresh inspection sighting, said as a word beside the flow (P1-A.2);
+        # `present` stays the separate axis it has always been.
+        "searching": "inspection" in (r["present"] or []),
         **(extra or {}),
     }
 
@@ -661,6 +664,11 @@ def checkpoints_summary() -> dict:
     presence = q("""SELECT unnest(present) AS who, COUNT(*) AS n
                     FROM checkpoint_serving WHERE direction='both' AND present <> '{}'
                     GROUP BY 1 ORDER BY 2 DESC""")
+    # Where a search is going on right now, by name (P1-A.2): the count alone
+    # under `presence` told a traveller nothing they could act on.
+    searching_now = q(f"""SELECT {CHECKPOINT_COLS} FROM checkpoint_serving c
+                          WHERE c.direction = 'both' AND 'inspection' = ANY(c.present)
+                          ORDER BY c.presence_age_minutes NULLS LAST LIMIT 20""")
     totals: dict[str, int] = {}
     for r in rows:
         totals[r["flow"]] = totals.get(r["flow"], 0) + r["n"]
@@ -673,6 +681,7 @@ def checkpoints_summary() -> dict:
         "by_staleness": {f"{r['flow']}/{r['staleness_band']}": r["n"] for r in rows},
         "presence": {r["who"]: r["n"] for r in presence},
         "closed_now": [_checkpoint_out(r) for r in closed],
+        "searching_now": [_checkpoint_out(r) for r in searching_now],
         "attribution": CHECKPOINT_ATTRIBUTION,
     }
 

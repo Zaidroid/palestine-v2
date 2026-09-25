@@ -29,7 +29,7 @@ from typing import Any, Callable
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
 PRESENCE = {"idf": "army", "police": "police", "settlers": "settlers",
-            "inspection": "inspection"}
+            "inspection": "a search"}
 
 
 def _age(minutes: Any) -> str:
@@ -110,6 +110,40 @@ def product_labels(rows: list[dict], lang: str) -> list[str]:
     return out
 
 
+SEEN_ORDER = ("checkpoint_inspection", "checkpoint_idf", "checkpoint_settlers",
+              "checkpoint_police")
+SEEN_WORDS = {"checkpoint_inspection": ("تفتيش", "searching"),
+              "checkpoint_idf": ("جيش", "army"),
+              "checkpoint_settlers": ("مستوطنين", "settlers"),
+              "checkpoint_police": ("شرطة", "police")}
+
+
+def seen_on_route(cautions: list[dict] | None) -> list[tuple[dict, list[str], float | None]]:
+    """Route cautions grouped per checkpoint, searching first, each kind once
+    (state_serving carries a row per direction), with the newest sighting's age."""
+    by: dict[str, dict] = {}
+    for c in cautions or []:
+        slot = by.setdefault(c.get("place") or "?", {"c": c, "kinds": set(), "age": None})
+        slot["kinds"].add(c.get("seen"))
+        a = c.get("age_minutes")
+        if a is not None and (slot["age"] is None or a < slot["age"]):
+            slot["age"] = a
+    out = [(v["c"], [k for k in SEEN_ORDER if k in v["kinds"]], v["age"]) for v in by.values()]
+    return sorted(out, key=lambda t: (SEEN_ORDER.index(t[1][0]) if t[1] else 9,
+                                      t[2] if t[2] is not None else 1e9))
+
+
+def searching(cp: dict | None) -> bool:
+    """A fresh inspection sighting at this checkpoint (P1-A.2).
+
+    Presence rows in the serving view are already decayed by their own
+    half-life (an hour for inspection), so "present" means recently seen.
+    Searching is spoken WITH the flow word — "open, with searching" — because
+    to a traveller a search is a queue even when the road is open; it stays a
+    separate fact in the payload (`present`, `searching`)."""
+    return "inspection" in ((cp or {}).get("present") or [])
+
+
 def _n(d: dict, *keys, default=0):
     for k in keys:
         if d.get(k) is not None:
@@ -129,14 +163,37 @@ def _dir_clause(row: dict | None, label: str) -> str:
 _NOT_PLACED = "Place not recognised — try the Arabic spelling or a nearby town."
 
 
+def _search_folds(cp: dict) -> bool:
+    return searching(cp) and cp.get("flow") != "closed"
+
+
+def _flow_word(cp: dict) -> str:
+    """A known flow with searching folded in — the same rule as the Arabic."""
+    w = FLOW.get(cp["flow"], cp["flow"])
+    if not _search_folds(cp):
+        return w
+    return f"{w}, searching under way"
+
+
+def _seen(cp: dict, fold: bool = True) -> str:
+    """Who was seen there; searching left out when the flow word carries it."""
+    folded = fold and (_search_folds(cp) or (cp.get("flow") == "unknown" and searching(cp)))
+    order = ["inspection", "idf", "settlers", "police"]
+    present = sorted(cp.get("present") or [], key=lambda p: order.index(p) if p in order else 9)
+    who = [PRESENCE.get(p, p) for p in present if not (p == "inspection" and folded)]
+    if not who:
+        return ""
+    when = f" ({_age(cp['presence_age_minutes'])})" if cp.get("presence_age_minutes") is not None else ""
+    return f" Seen there: {' and '.join(who)}{when}."
+
+
 def checkpoint_status(d: dict) -> str:
     if d.get("found") is False:
         if d.get("resolved_to"):
             return f"{d['resolved_to']} is a known checkpoint, but it has never been reported."
         return f"No checkpoint found matching that name."
     flow, name = d.get("flow"), _nm(d)
-    who = [PRESENCE.get(p, p) for p in (d.get("present") or [])]
-    tail = f" {' and '.join(who)} present." if who else ""
+    tail = _seen(d)
     by = d.get("by_direction") or {}
     inb, outb = by.get("inbound") or {}, by.get("outbound") or {}
     # THE SAME FACTS THE ARABIC SENTENCE CARRIES: a direction split and a
@@ -147,17 +204,25 @@ def checkpoint_status(d: dict) -> str:
     known = [r for r in (inb, outb) if r.get("flow") not in (None, "unknown")]
     if (d.get("direction") == "both" and inb and outb and known
             and inb.get("flow") != outb.get("flow")):
-        out = f"{name}: {_dir_clause(inb, 'inbound')}, {_dir_clause(outb, 'outbound')}.{tail}"
+        out = f"{name}: {_dir_clause(inb, 'inbound')}, {_dir_clause(outb, 'outbound')}.{_seen(d, fold=False)}"
     elif flow == "unknown":
         last = d.get("last_known_flow")
+        lead = ""
+        if searching(d):
+            when = (f" ({_age(d['presence_age_minutes'])})"
+                    if d.get("presence_age_minutes") is not None else "")
+            lead = f"a search reported{when}; "
         if not last or last == "unknown":
-            out = f"{name}: nothing known about it.{tail}"
+            out = (f"{name}: {lead}nothing known about the traffic.{tail}" if lead
+                   else f"{name}: nothing known about it.{tail}")
         else:
-            out = (f"{name}: no current reading — last report {_age(d.get('age_minutes'))} "
-                   f"said {FLOW.get(last, last)}.{tail}")
+            out = (f"{name}: {lead}no current {'traffic ' if lead else ''}reading — last report "
+                   f"{_age(d.get('age_minutes'))} said {FLOW.get(last, last)}.{tail}")
     else:
-        out = (f"{name}: {FLOW.get(flow, flow)}, reported {_age(d.get('age_minutes'))}."
-               f"{tail}")
+        out = f"{name}: {_flow_word(d)}. Reported {_age(d.get('age_minutes'))}"
+        if _search_folds(d) and d.get("presence_age_minutes") is not None:
+            out += f"; the search seen {_age(d['presence_age_minutes'])}"
+        out += f".{tail}"
     score = float((d.get("match") or {}).get("score") or 0.0)
     if 0 < score < 0.8:
         out = (f"Not sure about the name — nearest match is {name}. {out} If that is "
@@ -179,10 +244,11 @@ def checkpoints_near(d: dict) -> str:
     if not cps:
         return (f"No recent checkpoint reports around {_nm(d, 'origin')}. "
                 f"{counts.get('in_radius', 0)} are in range but their last news is old.")
-    def _seen(c):
-        who = [PRESENCE.get(p, p) for p in (c.get("present") or [])]
-        return f" ({' and '.join(who)} present)" if who else ""
-    parts = [f"{_nm(c)} {FLOW.get(c['flow'], c['flow'])} ({_age(c.get('age_minutes'))}){_seen(c)}"
+    def _seen_short(c):
+        s_ = _seen(c, fold=False).strip().rstrip(".").replace("Seen there: ", "")
+        return f", {s_} seen" if s_ else ""
+    # In a list each fact keeps its own age: the flow's, then the sighting's.
+    parts = [f"{_nm(c)} {FLOW.get(c['flow'], c['flow'])} ({_age(c.get('age_minutes'))}){_seen_short(c)}"
              for c in cps[:4]]
     out = f"Around {_nm(d, 'origin')}: " + ", ".join(parts) + "."
     closed = [_nm(c) for c in cps if c["flow"] == "closed"]
@@ -190,6 +256,12 @@ def checkpoints_near(d: dict) -> str:
         out += f" Watch out: {', '.join(closed)} closed."
     if counts.get("unknown"):
         out += f" {counts['unknown']} more have no recent reading."
+    search_only = [c for c in d.get("checkpoints", []) if c.get("flow") == "unknown" and searching(c)]
+    if search_only:
+        out += " A search reported at: " + ", ".join(
+            _nm(c) + (f" ({_age(c['presence_age_minutes'])})"
+                      if c.get("presence_age_minutes") is not None else "")
+            for c in search_only[:4]) + "."
     return out
 
 
@@ -212,6 +284,9 @@ def checkpoints_summary(d: dict) -> str:
     dupes = len(d.get("closed_now") or []) - len(seen)
     if dupes:
         out += f" ({dupes} more closed under a shared name — names repeat across places.)"
+    srch = d.get("searching_now") or []
+    if srch:
+        out += " Searching now at: " + ", ".join(_nm(c) for c in srch[:6]) + "."
     return out
 
 
@@ -299,6 +374,14 @@ def can_i_travel(d: dict) -> str:
         out += (f" Warning: {w.get('name_en') or w.get('name')} was closed{when}, "
                 f"{w.get('off_route_m')} m off this route — it may not stop you, "
                 f"but know it{extra}.")
+    # WHO WAS SEEN ON THE WAY — searching first (P1-A.2). The route carried
+    # these cautions in the payload and neither answer said them.
+    seen = seen_on_route(d.get("cautions"))
+    if seen:
+        out += " On the way: " + "; ".join(
+            f"{' and '.join(SEEN_WORDS[k][1] for k in kinds)} at {_nm(c, 'place')}"
+            + (f" ({_age(age)})" if age is not None else "")
+            for c, kinds, age in seen[:4]) + "."
     return out
 
 

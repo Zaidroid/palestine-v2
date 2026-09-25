@@ -492,3 +492,10 @@ so; the date-collapse note counts dates; zero scan tests says so; insights ages 
 size in both languages; `signals_agreeing` counts IODA's signals (3 of 3); checkpoint_status takes `place`; bad arguments
 answer in both languages. Full suite 1205 passed before 4 structure-pinned tests were updated (now green).
 2026-09-25 18:50 UTC · testers' serving set LIVE (API restarted by Zaid 18:45) · done · proof: production passes tests/test_testers_round_0925.py + test_facades + test_answer_contract (76 passed against :7870); through the public connector `crossings(أريحا)` returns the bridge closed and the rest stop open, `place(Huwara, history)` returns the checkpoint with place_en Huwara. Fawwaz can re-test.
+2026-09-25 20:10 UTC · P1-A.2 "searching" presented · done on master, waits for the API restart · proof: a fresh inspection
+sighting is said as a state word beside the flow — "حوارة: سالك مع تفتيش. آخر تحديث قبل 3 دقايق، والتفتيش قبل 15 دقيقة." /
+"Huwara: open, searching under way. Reported 3 min ago; the search seen 15 min ago." — closed + search said as two facts, a
+search with no current flow leads the sentence; every checkpoint row carries `searching` (presence stays its own axis); the
+summary names where a search is going on (`searching_now`, 2 now: المربعة، عين سينيا); the route now reads inspection
+sightings and speaks who was seen on the way, searching first (it spoke none before). Measured: inspection is reported
+30–130 times a day (561 in 7 days). tests/test_searching.py (8); full suite 1219 passed.

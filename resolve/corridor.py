@@ -117,7 +117,10 @@ _HEBREW = re.compile(r"[\u0590-\u05FF]")
 # against a 35-hour reporting gap. It never blocks a route, because an army
 # sighting two hours ago says nothing reliable about now. It is surfaced as a
 # caution because a family planning a journey wants to know it was seen at all.
-PRESENCE_KINDS = ("checkpoint_idf", "checkpoint_settlers", "checkpoint_police")
+# Inspection joined 2026-09-25 (P1-A.2): a search on the way is a queue on the
+# way, and the route was the one answer that never mentioned it.
+PRESENCE_KINDS = ("checkpoint_idf", "checkpoint_settlers", "checkpoint_police",
+                  "checkpoint_inspection")
 
 ON_ROUTE_SQL = """
 WITH line AS (SELECT ST_GeogFromText(%(wkt)s) g, ST_GeomFromText(%(wkt)s, 4326) m),
@@ -743,7 +746,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         blocked_at=[c.name for c in cps if c.flow == BLOCKING],
         slow_at=[c.name for c in cps if c.flow in SLOWING],
         unreported=[c.name for c in cps if c.flow == "unknown"],
-        cautions=[{"place": c.name, "seen": p["kind"], "age_minutes": p["age_minutes"]}
+        cautions=[{"place": c.name, "place_en": c.name_en, "seen": p["kind"],
+                   "age_minutes": p["age_minutes"]}
                   for c in cps for p in c.presence],
         near_misses=near_misses,
         exit_closures=_closures_at_ends(near_misses, dist, cap=None),
