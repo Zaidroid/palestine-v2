@@ -1,5 +1,15 @@
 # Fix plan for the 2026-09-25 audit — read this first
 
+> **Handover state (2026-09-25 08:55 UTC).** 57 of the 160 confirmed tasks are done and 3 partial, on this branch,
+> in 11 commits. **`STATUS.md` lists every task as done / partial / open with its commit — read it before starting an
+> area and do not redo a done task.** Areas 01 parser, 02 belief and 03 route are finished; 04–07 and 09 are part
+> done. **`HANDS-NEEDED.md`** is the go-live order for main-server (migrations 079/080, restarts, classifier 1.9.0's
+> prerequisites, the rollout runbook). Suite on the local DB now: **927 passed / 99 failed** — regenerate your own
+> `/tmp/baseline.txt` (§2) at the start of a session; the 99 are the production-data / live-API tests.
+> Next migration numbers: **081–083** belief, 085–087 databank, 090–091 gazetteer, **092+** anything else.
+> Recommended next: finish 04 renderers and 06 rest (answers and counts that state less or more than they know),
+> then 07 classifier (F206 before any further version bump), 08 gazetteer, 11 ops.
+
 This folder turns the audit's findings into tasks one executor can do in order, one area at a time. It is written for
 a smaller model working alone (no sub-agents, no parallel fan-out). Each area file is self-contained: scope, the files
 you may edit, the tests to run, and every task with the file, line, defect, fix and evidence.
@@ -140,4 +150,6 @@ Commit `45c2b18` holds an UNREVIEWED partial attempt at many of these tasks by a
 in `33703d3`. At that commit, the parser/route/renderer/belief test files had 106 failures. For a task, you may read
 the draft for one file (`git show 45c2b18 -- cascade/checkpoint_text.py`) as a hint, but re-derive and test every
 change yourself. It also contains three drafted migrations (079 crowd never feeds incidents, 080 serving refuses
-future timestamps, 081 the `both` row sees every direction) — same rule.
+future timestamps, 081 the `both` row sees every direction) — same rule, and **their numbers are taken**: the
+committed 079 is the `both` row and 080 is crowd-never-feeds-incidents. A future-timestamp guard, if you write one,
+is a new number (081+).

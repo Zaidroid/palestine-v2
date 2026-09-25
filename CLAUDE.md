@@ -43,7 +43,12 @@ developed in place; no data loss; the Telegram account is the scarcest asset;
   `--score --round N` scores it, `ops/incident-precision.json` is the latest
   round and `serve/quality.py` puts it beside every incident count. Round 8
   (2026-09-24, classifier 1.8.0) measured 0.767 overall; 1.8.1 serves
-  unmeasured until round 9 draws a fresh sample.
+  unmeasured until round 9 draws a fresh sample. The audit branch bumps it to
+  1.9.0 — its go-live prerequisites are in the audit's `HANDS-NEEDED.md` item 9.
+- `docs/audit-2026-09-25/` — the 2026-09-25 audit: `plan/00-README.md` (how to
+  work the fix plan), `plan/STATUS.md` (every task done / partial / open, with
+  its commit), `plan/HANDS-NEEDED.md` (what only main-server can do, and the
+  rollout runbook). Read STATUS before fixing anything the audit found.
 
 ## Conventions
 

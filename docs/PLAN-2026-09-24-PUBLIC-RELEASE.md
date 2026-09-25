@@ -311,3 +311,35 @@ files, Telegram sessions, SQLite databases, backups, tiles and the 40 GB `public
 main-server, not the checkout. The old Actions workflow was moved to `ci/github-workflows/` so no CI runs on the snapshot.
 Together the two repositories are the whole project: v2 = Tier 1 + Tier 2 + API/MCP; v1 = the road-channel parser v2 still
 reads, the old site and the nightly refresh (P3 folds the parser into v2).
+2026-09-25 08:55 UTC · audit 2026-09-25 fixes, 11 commits on branch `claude/system-analysis-complete-mzpu2r` (NOT merged,
+NOT live) · partial · proof: every fix has a test that failed on the old code; full suite on a schema-only local DB with
+synthetic rolled-back rows 927 passed / 99 failed, the 99 being the baseline's production-data and live-API tests
+(baseline 821 / 99); no real data read or written. Of the audit's 160 confirmed findings, 57 are done and 3 partial
+(`docs/audit-2026-09-25/plan/STATUS.md` maps each to its commit). By area: 01 parser 14/14 (`74d914b`); 02 belief 5/5
+with migrations 079 (the `both` row is the worse direction) and 080 (crowd never feeds incidents) (`932004f`); 03 route
+3/4 + 1 partial (`d952350`: G2 coverage ≥ 0.6 enforced, doubts for `slow`, exit closures spoken for every verdict);
+04 renderers 15/29 (`c530211`, `1d5115c`); 05 transport 7/10 (`a348ccf`: batch ≤ 8 and body ≤ 256 KB, quota per
+tools/call, OAuth tokens die with their key and spend its quota, refresh rotation + client binding + 90 d, PKCE
+required, state file 0600, SSE `reset` on drop); 06 rest 7/20 (`f650da8`: /v2/insights and the kind-scoped resolver no
+longer learn, crowd notes are not news, max_lag ≤ 366, note ≤ 280); 07 classifier 3/17 → **CLASSIFIER_VERSION 1.9.0**
+(`be66fb2`: a reopening is not a closure; bounded regexes — the audit measured 45.7 s for one 3,600-char token; every pattern stem now reads 4,000 chars in < 0.1 s;
+`646746c`: a re-read no longer duplicates closure observations); 09 ingest 3/11 + F224 (`3d77f79`: poller FloodWait
+honoured while resolving and downloading, 0 channels resolved fails the heartbeat, atomic cursor file; `f5fd58d`: the v1
+import cursor ignores crowd rows and re-reads 12 h behind itself with dedup). 1.9.0 projection on the tuning sets: all
+1,045 sampled claims of rounds 1–8 read identically to 1.8.1 (a projection, not a measurement; 1.9.0 is unmeasured
+until round 9). Go-live steps, in order, with the classifier's prerequisites (HANDS §8 timeout, the F206 event-delete
+decision, `ops/project_classifier.py` read-only projection): `docs/audit-2026-09-25/plan/HANDS-NEEDED.md`.
+2026-09-25 08:55 UTC · ledger corrections (earlier lines stand as written; this records what the code showed) ·
+partial (fixed or open per item) · proof: audit 2026-09-25, `docs/audit-2026-09-25/confirmed-findings.json`. Claims above marked
+done that the code contradicted: **P0-A.1** (17:05) — place_profile anchored on one resolver (F010, now fixed
+`1d5115c`); `news` search mode drops place/kind (F047, open); `series` ignores `days` (F061/F305, open); façade
+arguments bypass the REST caps (F054, open). **P0-A.2/A.4** (17:05, `6f95df9`) — /v2/insights still learned into
+place_alias (F076/F081/F085, now fixed `f650da8`); `tests/test_answer_contract.py` never existed (F155, open); ages
+missing from answers (F052 fixed `c530211`; F056 can_i_travel, open); crossings said "no source" for decayed crossings
+(F055, fixed `1d5115c`); route waypoints not labelled as settlements (F057/F322, open — needs a data source); databank
+headline span computed over the page (F062, open). **P0-A.3** — no per-tool payload byte cap (F048, open); per-call
+boilerplate still attached (F051, open). **P0-B.2/3** — G2's coverage rule not checked on short routes (F071, fixed
+`d952350`). **P0-C** (17:05, "measured") — insights counts governorate fallbacks under the city (F034/F080, open);
+independence never fitted for news channels (F033, open); the stable key is overwritten on join and no test proves a
+rebuild keeps event ids (F477/F084, open). PLAN-09-21 **F-86** — mcp-audit's OK_EXIT_CODES reach the wrong process
+(F064, open).
