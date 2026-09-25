@@ -60,19 +60,42 @@ def api(path: str, **params) -> dict:
     if ".." in path or not _SAFE_PATH.match(path):
         raise ValueError(f"refusing to fetch an unexpected path: {path!r}")
     r = httpx.get(f"{API}{path}", params={k: v for k, v in params.items() if v is not None},
-                  timeout=30.0)
+                  timeout=API_TIMEOUT)
     r.raise_for_status()
     return r.json()
+
+
+# One slow endpoint used to turn a composite (about = 5 calls, place_profile = 6)
+# into a 30–180 s request that held an MCP worker while the client had long
+# timed out (audit 2026-09-25 F268). 8 s per call; composites mark what they
+# had to skip in `partial` rather than failing whole.
+API_TIMEOUT = float(os.environ.get("MCP_API_TIMEOUT", "8"))
+
+
+def _counted_ar(n: int, one: str, two: str, few: str, many: str) -> str:
+    """A counted noun the way it is said: 1 دقيقة, 2 دقيقتين, 3–10 دقايق,
+    11+ دقيقة (audit 2026-09-25 F504 — a voice bot read 'قبل 2 ساعة')."""
+    if n == 1:
+        return one
+    if n == 2:
+        return two
+    if 3 <= n <= 10:
+        return f"{n} {few}"
+    return f"{n} {many}"
 
 
 def _age_ar(minutes: int | None) -> str:
     if minutes is None:
         return "غير معروف"
-    if minutes < 60:
-        return f"قبل {int(minutes)} دقيقة"
-    if minutes < 1440:
-        return f"قبل {int(minutes // 60)} ساعة"
-    return f"قبل {int(minutes // 1440)} يوم"
+    m = int(minutes)
+    if m < 1:
+        # A negative age is clock skew on a future occurred_at, not a fact.
+        return "الآن"
+    if m < 60:
+        return "قبل " + _counted_ar(m, "دقيقة", "دقيقتين", "دقايق", "دقيقة")
+    if m < 1440:
+        return "قبل " + _counted_ar(m // 60, "ساعة", "ساعتين", "ساعات", "ساعة")
+    return "قبل " + _counted_ar(m // 1440, "يوم", "يومين", "أيام", "يوم")
 
 
 # ── tools ────────────────────────────────────────────────────────────────────
@@ -232,8 +255,8 @@ def checkpoint_status(name: str, direction: str = "both") -> dict:
 
     return {"answer": answer, "name": nm, "direction": direction,
             "match": d.get("match"),
-            "staleness_note": ("band is relative to this checkpoint's own reporting "
-                               "rhythm, not a fixed age"),
+            # The band's meaning is stated ONCE, in palestine://reading-contract
+            # (`staleness_band`), not per call (audit F051).
             "flow": d["flow"], "passable": d["passable"],
             "last_known_flow": d.get("last_known_flow"),
             "age_minutes": d.get("age_minutes"),
@@ -466,6 +489,9 @@ def incidents_near(place: str | None = None, lat: float | None = None,
                    lon: float | None = None, hours: int = 12,
                    radius_km: float = 25.0, limit: int = 8) -> dict:
     """What has been happening around here — raids, settler attacks, closures."""
+    # The REST route caps hours at 168; a legal call by the published schema
+    # (hours=200) came back as a 422 read aloud as "صار خطأ بالنظام" (F054).
+    hours = _clamp(hours, 1, 168, 12)
     if lat is None or lon is None:
         if not place:
             return {"answer": "لازم تحدد المكان.", "error": "need place or lat/lon"}
@@ -522,6 +548,7 @@ def incidents_near(place: str | None = None, lat: float | None = None,
 
 
 def incidents_summary(hours: int = 24) -> dict:
+    hours = _clamp(hours, 1, 168, 24)
     d = api("/v2/incidents/summary", hours=hours)
     bt = dict(d.get("by_type", {}))
     fires = bt.pop("fire_detection", None)
@@ -554,6 +581,17 @@ def _precision_ar(precision: dict | None) -> str:
     rnd = (precision or {}).get("round")
     return (f" دقّة القراءة الآلية بآخر فحص يدوي" + (f" (جولة {rnd})" if rnd else "") +
             ": " + "، ".join(bits) + ".")
+
+
+def _clamp(v, lo: int, hi: int, default: int) -> int:
+    """A caller's number brought inside the REST route's validation range.
+    The façade schemas declare the same bounds; this is what makes an
+    out-of-range argument a clamp instead of a 422 (audit F054)."""
+    try:
+        v = int(v) if v is not None else default
+    except (TypeError, ValueError):
+        v = default
+    return max(lo, min(hi, v))
 
 
 def _mins_since(iso: str | None) -> int | None:
@@ -637,14 +675,20 @@ def _dedupe_messages(items: list[dict]) -> list[dict]:
     return out
 
 
-def latest_news(area: str | None = None, limit: int = 8, kind: str = "news") -> dict:
+def latest_news(area: str | None = None, limit: int = 8, kind: str = "news",
+                hours: int | None = None) -> dict:
     """The newest messages. `kind` — news (default) leaves out the road-status
     tables, which are a feed of their own and drowned every other channel
     (five of five items were bulletins, measured 2026-09-24); roads returns
     only them; all returns everything."""
     if kind not in ("news", "roads", "all"):
         raise TypeError("kind must be news, roads or all")
-    d = api("/v2/news/latest", area=area, limit=max(limit * 4, 20) if kind != "all" else limit)
+    # `hours` reached the façade schema and stopped here: news(hours=6) returned
+    # the newest messages of any age (F047). The REST cap is 100 (F054).
+    limit = _clamp(limit, 1, 25, 8)
+    d = api("/v2/news/latest", area=area, kind=kind,
+            limit=min(max(limit * 4, 20), 100) if kind != "all" else limit,
+            hours=_clamp(hours, 1, 720, 168) if hours is not None else None)
     items = d.get("items", [])
     if kind == "news":
         items = [i for i in items if not str(i.get("text", "")).startswith(ROAD_BULLETIN)]
@@ -747,7 +791,6 @@ def crossings(area: str | None = None) -> dict:
             # its band still reads fresh — the two are gated by different rules,
             # and bare they look like a contradiction (measured on King Hussein
             # Bridge: value `unknown` beside band `live` at 691 minutes).
-            "band_note": d.get("band_note"),
             "note": ("Where basis is `checkpoint_flow` the reading is this "
                      "system's own checkpoint observation, not a crossing "
                      "authority's statement.")}
@@ -838,6 +881,7 @@ def place_history(place: str, state_kind: str | None = None,
 
 def place_pattern(place: str, state_kind: str = "checkpoint_flow",
                   days: int = 60) -> dict:
+    days = _clamp(days, 7, 365, 60)              # /v2/patterns: ge=7, le=365 (F054)
     """What usually happens here, by hour of day, local time.
 
     Two fixes from the partner's QA pass (2026-09-23). The default was
@@ -959,9 +1003,19 @@ def can_i_travel(origin: str, destination: str) -> dict:
            "unverified": "ما بقدر أأكد إنه الطريق سالك",
            "unknown": "ما في تقارير حديثة عن هالطريق"}.get(
         best["verdict"], "ما في تقارير حديثة عن هالطريق")
+    cps = best.get("checkpoints") or []
+    # THE AGE OF THE EVIDENCE, spoken (F056). "4 من 7 حواجز عليها تقارير حديثة"
+    # was read aloud with the newest of those readings 80 minutes old; the
+    # traveller heard a count and no clock.
+    known_ages = [c["age_minutes"] for c in cps if c.get("age_minutes") is not None]
+    freshest = min(known_ages) if known_ages else None
+    fresh_note = f" أحدث قراءة {_age_ar(int(freshest))}." if freshest is not None else ""
     detail = ""
     if best["blocked_at"]:
-        detail = " — مسكّر عند " + "، ".join(best["blocked_at"][:2])
+        blk = next((c for c in cps if c.get("name") in best["blocked_at"]
+                    and c.get("age_minutes") is not None), None)
+        detail = (" — مسكّر عند " + "، ".join(best["blocked_at"][:2])
+                  + (f" ({_age_ar(int(blk['age_minutes']))})" if blk else ""))
         alt = next((r for r in rs if r["verdict"] in ("likely_open", "slow")), None)
         if alt:
             # The verdict word in Arabic — the raw token ("likely_open") was
@@ -988,7 +1042,7 @@ def can_i_travel(origin: str, destination: str) -> dict:
     if blocking_nm:
         w = blocking_nm[0]
         age = w.get("age_minutes")
-        when = f" قبل {int(age)} دقيقة" if age is not None else ""
+        when = f" {_age_ar(int(age))}" if age is not None else ""
         others = len(blocking_nm) - 1
         extra = (f" و{others} إغلاقات قريبة ثانية" if others > 1
                  else " وإغلاق قريب ثاني" if others == 1 else "")
@@ -1043,8 +1097,9 @@ def can_i_travel(origin: str, destination: str) -> dict:
 
     return {"answer": f"{say}{detail}.{doubt_note} "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
-                      f"{pass_note}{cover_note}{near_note}",
+                      f"{fresh_note}{pass_note}{cover_note}{near_note}",
             "verdict": best["verdict"],
+            "freshest_reading_minutes": freshest,
             "duration_minutes": best["duration_minutes"],
             "distance_km": best["distance_km"],
             "blocked_at": best["blocked_at"],
@@ -1122,15 +1177,23 @@ def correlate(a: str | None = None, b: str | None = None,
                     "refused": True, "reasons": d["reasons"],
                     "caveat": "This is a hard refusal, not a warning. Do not "
                               "report a coefficient for this pair."}
-        return {"answer": (f"{d['plain_english']} — n={d['n']}"
-                           + (f", lag {d['lag_days']}d" if d["lag_days"] else "")
-                           + f", 95% CI {d['ci95']}."),
+        # `answer` is Arabic to be read aloud (INSTRUCTIONS); the English
+        # sentence belongs to answer_en (F505).
+        rho = d.get("rho")
+        strength = ("قوي" if rho is not None and abs(rho) >= 0.7 else
+                    "متوسط" if rho is not None and abs(rho) >= 0.4 else "ضعيف")
+        sign = "" if rho is None else (" بنفس الاتجاه" if rho > 0 else " بعكس الاتجاه")
+        return {"answer": (f"الارتباط بين {a} و{b} {strength}{sign}: ρ={rho} على "
+                           f"{d['n']} نقطة"
+                           + (f"، بتأخير {d['lag_days']} يوم" if d.get("lag_days") else "")
+                           + f"، فاصل الثقة 95%: {d['ci95']}. ارتباط مش سببية."),
                 **d}
     if search or concept:
         d = api("/v2/databank/indicators", q_=search, concept=concept, limit=25)
         inds = d["indicators"]
-        return {"answer": (f"{len(inds)} series matched: "
-                           + "، ".join(i["indicator"] for i in inds[:6])),
+        return {"answer": (f"{len(inds)} سلسلة مطابقة: "
+                           + "، ".join(i["indicator"] for i in inds[:6])
+                           + ("." if inds else " — جرّب كلمة ثانية أو `concept`.")),
                 "indicators": inds}
     d = api("/v2/databank/concepts")
     top = [c for c in d["concepts"] if c["rows_served"]][:8]
@@ -1301,7 +1364,8 @@ def place_profile(place: str, days: int = 30) -> dict:
     return out
 
 
-def search(text: str, hours: int = 168, limit: int = 20) -> dict:
+def search(text: str, hours: int = 168, limit: int = 8, area: str | None = None,
+           kind: str = "all") -> dict:
     """Free-text search across recent messages — the way people actually ask.
 
     Every other tool needs a place or an indicator string. This one takes the
@@ -1313,16 +1377,35 @@ def search(text: str, hours: int = 168, limit: int = 20) -> dict:
     none of them recent enough to reach a 100-message window. The window is now
     the caller's, and the match happens in the database.
     """
-    d = api("/v2/news/latest", text=text.strip(), hours=hours, limit=limit * 3)
-    hits = _dedupe_messages(d.get("items", []))[:limit]
+    # The façade forwarded place/kind and this dropped them, so
+    # news(text=…, place=…, kind="roads") searched West-Bank-wide including the
+    # road tables; and the schema's declared default was 8 while this said 20
+    # (F047). Same filter as latest_news; same REST caps (F054). The default
+    # here is `all`: the caller typed the words, and a road table that carries
+    # them is a hit — measured: every long message naming قلنديا in a day is
+    # a bulletin, the channel one-liners being under the 30-char floor.
+    if kind not in ("news", "roads", "all"):
+        raise TypeError("kind must be news, roads or all")
+    limit = _clamp(limit, 1, 25, 8)
+    # The road bulletin names every checkpoint every 15 minutes, so a search
+    # for a checkpoint name is bulletins all the way down: fetch the full page
+    # when they are to be filtered out, or nothing is left after the filter.
+    d = api("/v2/news/latest", text=text.strip(), area=area, kind=kind,
+            hours=_clamp(hours, 1, 720, 168), limit=min(limit * 3, 100))
+    items = d.get("items", [])
+    if kind == "news":
+        items = [i for i in items if not str(i.get("text", "")).startswith(ROAD_BULLETIN)]
+    elif kind == "roads":
+        items = [i for i in items if str(i.get("text", "")).startswith(ROAD_BULLETIN)]
+    hits = _dedupe_messages(items)[:limit]
     if not hits:
         return {"answer": f"ما لقيت ولا رسالة فيها «{text}» بالمخزون الحالي.",
                 "count": 0, "items": [],
                 "caveat": "searches the most recent ingested messages only, "
                           "not the whole archive"}
-    return {"answer": f"{len(hits)} رسالة فيها «{text}». آخرها: "
-                      f"{hits[0]['text'][:160]}",
-            "count": len(hits), "items": hits,
+    return {"answer": f"{len(hits)} رسالة فيها «{text}»" + (f" عن {area}" if area else "")
+                      + f". آخرها: {hits[0]['text'][:160]}",
+            "count": len(hits), "items": hits, "kind": kind, "area": area,
             "caveat": "matches the words as typed — a different spelling of "
                       "the same place will not match"}
 
@@ -1338,13 +1421,30 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
         g = api("/v2/geo/resolve", q=place)
         if g.get("found"):
             place_id = g.get("place_id")
+    # `days` was declared, forwarded and never applied: a "30-day" trend was
+    # computed over the whole history (F061/F305). The window is the caller's.
+    from datetime import date, timedelta
+    days = _clamp(days, 7, 3650, 90)
+    frm = (date.today() - timedelta(days=days)).isoformat()
     d = api("/v2/databank/compare", indicators=f"{indicator},{indicator}",
-            place_id=place_id)
+            place_id=place_id, frm=frm)
     pts = [p for p in (d.get("series") or [{}])[0].get("points", [])
            if p.get("value") is not None]
+    window_note = ""
+    if len(pts) < 6:
+        # An annual series holds one point in 90 days. Rather than answer
+        # "not enough points" for every slow series, widen to the whole
+        # history and SAY so — the sentence names the window it used.
+        n_win = len(pts)
+        d = api("/v2/databank/compare", indicators=f"{indicator},{indicator}",
+                place_id=place_id)
+        pts = [p for p in (d.get("series") or [{}])[0].get("points", [])
+               if p.get("value") is not None]
+        window_note = (f" (آخر {days} يوم فيها {n_win} نقطة بس، فالمقارنة على كامل السلسلة)")
+        frm, days = None, None
     if len(pts) < 6:
         return {"answer": f"ما في نقاط كفاية بـ{indicator} لأقارن باتجاه.",
-                "n": len(pts)}
+                "n": len(pts), "window_days": days, "from": frm}
 
     # Most indicators here are a BREAKDOWN, not a line: refugees.cross_border
     # is 1,157 points over 16 dates — seventy-odd rows per date, split by
@@ -1391,12 +1491,15 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
                 + (f"، قبل {age_days} يوم" if age_days is not None and age_days > 0 else ""))
     if age_days is not None and age_days > 45:
         freshest += " — السلسلة واقفة، فخُد الاتجاه بحدود عمره"
-    return {"answer": (f"{indicator}: آخر {len(recent)} قراءة {word}"
-                       + (f" بنسبة {abs(change)}% عن الوسيط التاريخي"
+    return {"answer": (f"{indicator}" + (f" خلال آخر {days} يوم" if days else "")
+                       + f": آخر {len(recent)} قراءة {word}"
+                       + (f" بنسبة {abs(change)}% عن وسيط الفترة"
                           if change is not None else "")
-                       + f" ({round(avg, 2)} مقابل {round(med, 2)})."
+                       + f" ({round(avg, 2)} مقابل {round(med, 2)})" + window_note + "."
                        + freshest + "."),
             "indicator": indicator, "n": len(pts), "last_age_days": age_days,
+            "window_days": days, "from": frm,
+            "window_widened": bool(window_note),
             "recent_mean": round(avg, 4), "baseline_median": round(med, 4),
             "change_pct": change,
             "first": pts[0]["at"], "last": pts[-1]["at"],
@@ -1532,8 +1635,23 @@ def databank(category: str | None = None, indicator: str | None = None,
         k = it.get("indicator") or "?"
         if k not in newest or str(it.get("occurred_at") or "") > str(newest[k].get("occurred_at") or ""):
             newest[k] = it
-    dates = sorted(str(it.get("occurred_at") or "")[:10] for it in items if it.get("occurred_at"))
-    span = f" السلسلة من {dates[0][:4]} إلى {dates[-1][:4]}." if dates else ""
+    # The span is the SERIES', read from the indicator registry, not the page's:
+    # the 10 newest demolition rows are all 2026 while the series runs
+    # 2009→2026 (F062). One registry lookup per named indicator, at most three.
+    series_span: dict[str, dict] = {}
+    for k in list(newest)[:3]:
+        try:
+            reg = api("/v2/databank/indicators", q_=k, limit=10)
+            row = next((i for i in reg.get("indicators", []) if i.get("indicator") == k), None)
+        except Exception:                                    # noqa: BLE001
+            row = None
+        if row:
+            series_span[k] = {"from": str(row.get("from_date") or row.get("from") or "")[:10],
+                              "to": str(row.get("to_date") or row.get("to") or "")[:10],
+                              "rows": row.get("rows_served") or row.get("n")}
+    lo = sorted(v["from"] for v in series_span.values() if v.get("from"))
+    hi = sorted(v["to"] for v in series_span.values() if v.get("to"))
+    span = f" السلسلة من {lo[0][:4]} إلى {hi[-1][:4]}." if lo and hi else ""
     bits = []
     for k, it in list(newest.items())[:3]:
         val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
@@ -1549,8 +1667,9 @@ def databank(category: str | None = None, indicator: str | None = None,
     src = "؛ ".join(d.get("attribution") or [])[:120]
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
-              + f" ({d['count']} سجل معروض" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
-    return {"answer": answer, "latest_by_indicator": list(newest.values())[:3], **d}
+              + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
+    return {"answer": answer, "latest_by_indicator": list(newest.values())[:3],
+            "series_span": series_span, **d}
 
 
 def data_gaps() -> dict:
@@ -1605,9 +1724,26 @@ def about(section: str = "overview") -> dict:
     if section != "overview":
         raise TypeError("section must be one of overview, sources, fields, gaps, stream")
     cov = coverage()
-    gaps = data_gaps()
-    st = stream_info()
-    cats = api("/v2/databank/categories")
+    # Optional sections must not sink the first call a stranger makes: each
+    # is one bounded call and `partial` names what was skipped (F268).
+    partial: list[str] = []
+
+    def _section(name, fn, default):
+        try:
+            return fn()
+        except Exception:                                    # noqa: BLE001
+            partial.append(name)
+            return default
+    gaps = _section("gaps", data_gaps, {})
+    st = _section("stream", stream_info, {})
+    cats = _section("categories", lambda: api("/v2/databank/categories"), {})
+    # "359 حاجز متابَع" counted every place row of kind checkpoint, merged
+    # duplicates included, while checkpoints() said 272 (F269): the servable
+    # set, and how many of those have a current reading, are the two facts.
+    cs = _section("checkpoints", checkpoints_summary, {})
+    tracked = cs.get("tracked")
+    with_reading = (round(tracked * cs["known_fraction"])
+                    if tracked is not None and cs.get("known_fraction") is not None else None)
     # The route lists DATASETS (category, dataset, rows…); categories are the
     # sum over them, which is also how the `databank` tool counts.
     cat_counts: dict[str, int] = {}
@@ -1630,7 +1766,9 @@ def about(section: str = "overview") -> dict:
 
     ar = (f"بيانات فلسطين: {cov.get('total_claims', 0):,} رسالة من "
           f"{len(cov.get('sources') or [])} مصدر، {sum((cov.get('live_states') or {}).values()):,} "
-          f"حالة مباشرة على {places.get('checkpoint', 0)} حاجز متابَع.")
+          + (f"حالة مباشرة على {tracked} حاجز متابَع، {with_reading} منها عليها قراءة حالية."
+             if tracked is not None
+             else f"حالة مباشرة على {places.get('checkpoint', 0)} حاجز مسجّل."))
     if no_source:
         ar += " ما في ولا مصدر لـ: " + "، ".join(no_source) + "."
     if stale:
@@ -1647,7 +1785,10 @@ def about(section: str = "overview") -> dict:
                  "live_states": cov.get("live_states"),
                  "live_fields": live,
                  "no_source": no_source, "stale": stale, "retired": retired,
-                 "checkpoints_tracked": places.get("checkpoint")},
+                 "checkpoints_tracked": tracked if tracked is not None else places.get("checkpoint"),
+                 "checkpoints_with_current_reading": with_reading,
+                 "checkpoint_rows": places.get("checkpoint")},
+        "partial": partial,
         "databank": {"rows": rows, "categories": len(cat_counts),
                      "datasets": (gaps.get("counts") or {}).get("datasets"),
                      "fresh": (gaps.get("counts") or {}).get("fresh"),
@@ -1738,8 +1879,11 @@ TOOLS = {
                "will not match.",
                {"type": "object", "properties": {
                    "text": {"type": "string"},
-                   "hours": {"type": "integer"},
-                   "limit": {"type": "integer"}},
+                   "area": {"type": "string", "description": "a governorate or town"},
+                   "hours": {"type": "integer", "default": 168, "minimum": 1, "maximum": 720},
+                   "limit": {"type": "integer", "default": 8, "minimum": 1, "maximum": 25},
+                   "kind": {"type": "string", "enum": ["news", "roads", "all"],
+                            "default": "all"}},
                 "required": ["text"]}),
     "trend": (trend,
               "Whether a databank series is above or below its own baseline — "
@@ -1915,7 +2059,9 @@ TOOLS = {
                     "(default) leaves out the road-status tables; roads returns only them.",
                     {"type": "object", "properties": {
                         "area": {"type": "string", "description": "a governorate or town"},
-                        "limit": {"type": "integer", "default": 8,
+                        "hours": {"type": "integer", "minimum": 1, "maximum": 720,
+                                  "description": "lookback window in hours"},
+                        "limit": {"type": "integer", "default": 8, "minimum": 1, "maximum": 25,
                                   "description": "how many messages to return"},
                         "kind": {"type": "string", "enum": ["news", "roads", "all"],
                                  "default": "news",
@@ -2078,6 +2224,16 @@ def _error(rid: Any, code: int, msg: str) -> None:
     sys.stdout.flush()
 
 
+def handle_stdio(req: dict) -> dict | None:
+    """One JSON-RPC message from the host, through the SAME dispatcher the HTTP
+    door uses (audit F270: stdio had its own — no ping, no instructions, no
+    outputSchema, no licence block, so the host's agents got the tools
+    without the reading contract). `host=True` keeps HOST_ONLY callable and
+    listed, because this transport IS the host; the licence tier is `house`."""
+    from serve.mcp_http import _handle
+    return _handle(req, ip="127.0.0.1", tier="house", host=True)
+
+
 def main() -> int:
     for line in sys.stdin:
         line = line.strip()
@@ -2087,42 +2243,10 @@ def main() -> int:
             req = json.loads(line)
         except json.JSONDecodeError:
             continue
-        method, rid = req.get("method"), req.get("id")
-
-        if method == "initialize":
-            _reply(rid, {"protocolVersion": PROTOCOL,
-                         "capabilities": {"tools": {}},
-                         "serverInfo": {"name": "palestine-data",
-                                        "title": "Palestine Data — live + databank",
-                                        "version": "2.1.0"}})
-        elif method == "tools/list":
-            # The same 16 public names the HTTP door lists (serve/mcp_facades.py),
-            # plus the host-only tools, because this transport IS the host.
-            from serve.mcp_facades import listed_tools
-            _reply(rid, {"tools": listed_tools(include_host_only=True)})
-        elif method == "tools/call":
-            from serve.mcp_facades import route
-            p = req.get("params", {})
-            name = p.get("name")
-            try:
-                target, args = route(name, p.get("arguments") or {})
-            except TypeError as exc:
-                _error(rid, -32602, str(exc))
-                continue
-            if target not in TOOLS:
-                _error(rid, -32602, f"unknown tool: {name}")
-                continue
-            try:
-                from serve.mcp_en import add_english
-                out = add_english(target, TOOLS[target][0](**args))
-            except Exception as exc:                    # noqa: BLE001
-                out = {"error": str(exc), "answer": "صار خطأ بالنظام."}
-            _reply(rid, {"content": [{"type": "text",
-                                      "text": json.dumps(out, ensure_ascii=False, default=str)}]})
-        elif method in ("notifications/initialized", "initialized"):
-            continue
-        elif rid is not None:
-            _error(rid, -32601, f"method not found: {method}")
+        resp = handle_stdio(req)
+        if resp is not None:
+            sys.stdout.write(json.dumps(resp, ensure_ascii=False, default=str) + "\n")
+            sys.stdout.flush()
     return 0
 
 

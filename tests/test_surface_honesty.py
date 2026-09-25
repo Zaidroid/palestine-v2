@@ -52,9 +52,14 @@ def test_a_retired_field_is_not_reported_as_a_stale_one():
     assert fields["fuel_gasoline"]["coverage_state"] == "retired"
 
 
-def test_the_staleness_band_explains_itself():
+def test_the_staleness_band_explains_itself_once_in_the_contract():
+    """Audit F051: the band note was attached to every reply and absent from
+    palestine://reading-contract, where P0-A.3 said it would live. Now the
+    contract carries it and the payload does not repeat it."""
+    from serve.mcp_http import READING_CONTRACT
+    assert "reporting rhythm" in READING_CONTRACT["staleness_band"]
     d = _tool("checkpoint_status", {"name": "حوارة"})
-    assert "reporting rhythm" in d["staleness_note"]
+    assert "staleness_note" not in d and "band_note" not in d
 
 
 def test_the_news_endpoint_still_answers_its_old_shape():

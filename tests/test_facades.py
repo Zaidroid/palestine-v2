@@ -41,9 +41,13 @@ def test_absorbed_names_are_off_the_menu_but_still_answer():
     listed = {t["name"] for t in m._tool_list()}
     assert not (F.ABSORBED & listed)
     assert all(n in s.TOOLS for n in F.ABSORBED)      # nothing was deleted
+    # F271: the envelope never carries a top-level `error`; a failed tool is
+    # `isError` with an `error` key inside the payload, so that is what this
+    # gate must read.
     for old in ("coverage", "checkpoints_summary", "where_is"):
-        assert "error" not in call(old, place="نابلس") if old == "where_is" \
-            else "error" not in call(old)
+        reply = call(old, place="نابلس") if old == "where_is" else call(old)
+        assert not reply["result"].get("isError"), payload(reply)
+        assert "error" not in payload(reply), payload(reply)
 
 
 def test_every_listed_parameter_is_described_and_every_default_declared():
@@ -92,11 +96,16 @@ def test_one_name_for_a_place():
     ("place", {"place": "قلنديا", "view": "pattern"}, "place_pattern", {"place": "قلنديا"}),
     ("place", {"place": "Nablus", "view": "locate", "state_kind": "checkpoint_status"},
      "where_is", {"place": "Nablus", "state_kind": "checkpoint_status"}),
-    ("news", {}, "latest_news", {}),
-    ("news", {"place": "رام الله", "limit": 3}, "latest_news", {"area": "رام الله", "limit": 3}),
+    # the kind is DECLARED on both routes (F047): news for the newest, all for a word search
+    ("news", {}, "latest_news", {"kind": "news"}),
+    ("news", {"place": "رام الله", "limit": 3}, "latest_news",
+     {"area": "رام الله", "limit": 3, "kind": "news"}),
     ("crossings", {}, "crossings", {}),
     ("crossings", {"place": "غزة"}, "crossings", {"area": "غزة"}),
-    ("news", {"text": "قلنديا", "hours": 24}, "search", {"text": "قلنديا", "hours": 24}),
+    ("news", {"text": "قلنديا", "hours": 24}, "search",
+     {"text": "قلنديا", "hours": 24, "kind": "all"}),
+    ("news", {"text": "قلنديا", "place": "رام الله", "kind": "roads"}, "search",
+     {"text": "قلنديا", "area": "رام الله", "kind": "roads"}),
     ("series", {"indicators": "food.price.bread"}, "trend", {"indicator": "food.price.bread"}),
     ("series", {"indicators": "a, b", "place": "Ramallah"}, "compare",
      {"indicators": "a, b", "place": "Ramallah"}),

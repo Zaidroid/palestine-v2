@@ -146,8 +146,12 @@ def can_i_travel(d: dict) -> str:
            "unknown": "No recent reports on this route"}.get(
         d.get("verdict"), str(d.get("verdict")))
     out = say
+    cps = d.get("checkpoints") or []
     if d.get("blocked_at"):
-        out += " — blocked at " + ", ".join(d["blocked_at"][:2])
+        blk = next((c for c in cps if c.get("name") in d["blocked_at"]
+                    and c.get("age_minutes") is not None), None)
+        out += (" — blocked at " + ", ".join(d["blocked_at"][:2])
+                + (f" ({_age(blk['age_minutes'])})" if blk else ""))
     # Exit closures are spoken WHATEVER THE VERDICT (F011) — see the Arabic
     # renderer in serve/mcp_server.py for the case that proved it.
     doubts = d.get("doubts") or []
@@ -177,6 +181,8 @@ def can_i_travel(d: dict) -> str:
     r0 = routes[0]
     out += (f". {r0.get('known', 0)} of {r0.get('checkpoints_on_route', 0)} "
             f"checkpoints on it have recent reports.")
+    if d.get("freshest_reading_minutes") is not None:
+        out += f" Newest reading {_age(d['freshest_reading_minutes'])}."
     # WHICH ROAD THIS IS, AND WHERE THE VERDICT IS BLIND. Both qualify the
     # sentence above, so they follow it — and the measured case is in
     # resolve/corridor.py:_corridor_for: 53 km with the first on-route checkpoint
@@ -428,9 +434,12 @@ def trend(d: dict) -> str:
     c = d.get("change_pct")
     word = ("flat" if c is None or abs(c) < 10 else
             ("higher" if c > 0 else "lower"))
-    out = (f"{d.get('indicator')}: the last readings are {word}"
+    win = (f" over the last {d['window_days']} days" if d.get("window_days")
+           else " over the whole series (too few points in the window asked for)"
+           if d.get("window_widened") else "")
+    out = (f"{d.get('indicator')}{win}: the last readings are {word}"
            + (f" by {abs(c)}%" if c is not None else "")
-           + f" against the historical median ({d.get('recent_mean')} vs "
+           + f" against the window's median ({d.get('recent_mean')} vs "
              f"{d.get('baseline_median')}).")
     age = d.get("last_age_days")
     if d.get("last"):
@@ -473,8 +482,10 @@ def correlate(d: dict) -> str:
     if d.get("plain_english"):
         return (f"{d['plain_english']} (n={d.get('n')}, 95% CI {d.get('ci95')})."
                 + (" " + d["caveats"][0] if d.get("caveats") else ""))
-    if d.get("indicators"):
-        return f"{len(d['indicators'])} series matched."
+    if "indicators" in d:
+        inds = d["indicators"]
+        return (f"{len(inds)} series matched: " + ", ".join(i["indicator"] for i in inds[:6])
+                + ("." if inds else " — try another word or a concept."))
     return "Concepts held in the databank; pass search or concept to narrow."
 
 
@@ -500,8 +511,31 @@ def databank(d: dict) -> str:
         return ("Historical databank — largest categories: "
                 + ", ".join(f"{k} ({v:,})" for k, v in top)
                 + f". {sum(d['categories'].values()):,} rows total.")
-    return (f"{d.get('count', 0)} rows from {d.get('category')}"
-            + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
+    # The same facts as the Arabic: latest value per indicator, the series'
+    # span, the source — not a row count (F062).
+    bits = []
+    for it in (d.get("latest_by_indicator") or [])[:3]:
+        val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
+        if isinstance(val, float) and val.is_integer():
+            val = int(val)
+        unit = f" {it['unit']}" if it.get("unit") else ""
+        when = str(it.get("occurred_at") or "")[:4 if it.get("occurred_precision") == "year" else 10]
+        partial = " (partial year)" if (it.get("attrs") or {}).get("partial_year") else ""
+        where = f", {it['place_en'] or it['place_ar']}" if it.get("place_en") or it.get("place_ar") else ""
+        bits.append((f"{it.get('indicator')}: {val:,}{unit} in {when}{partial}{where}"
+                     if isinstance(val, (int, float)) else
+                     f"{it.get('indicator')}: {val} in {when}{where}"))
+    spans = d.get("series_span") or {}
+    lo = sorted(v["from"] for v in spans.values() if v.get("from"))
+    hi = sorted(v["to"] for v in spans.values() if v.get("to"))
+    span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi else ""
+    src = "; ".join(d.get("attribution") or [])[:120]
+    if not bits:
+        return (f"No matching rows in {d.get('category')}"
+                + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
+    return (f"{d.get('category')}" + (f" as of {d['as_of']}" if d.get("as_of") else "")
+            + " — latest: " + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
+            + f" (newest {d.get('count', 0)} rows shown.)")
 
 
 def insights(d: dict) -> str:

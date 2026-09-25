@@ -929,12 +929,21 @@ def incidents_summary(hours: int = Query(24, ge=1, le=168)) -> dict:
 NEWS_TEXT_CHARS = 500
 
 
+ROAD_BULLETIN = "🚧"     # palhub's road tables start with it (serve/mcp_server.py too)
+
+
 @app.get("/v2/news/latest", tags=["news"])
 def news_latest(request: Request, area: str | None = None,
                 limit: int = Query(10, ge=1, le=100),
                 hours: int | None = Query(None, ge=1, le=720),
-                text: str | None = Query(None, min_length=2)) -> dict:
+                text: str | None = Query(None, min_length=2),
+                kind: str = Query("all", pattern="^(news|roads|all)$")) -> dict:
     """Most recent ingested messages, optionally filtered by area, text, window.
+
+    `kind`: news leaves out palhub's machine-generated road tables (they start
+    with 🚧 and name every checkpoint every 15 minutes, so a text search for a
+    checkpoint name over a day is bulletins all the way past any LIMIT — audit
+    F047), roads returns only them, all (default, the old shape) everything.
 
     Resolving the name first is the difference between "Ramallah" returning this
     morning's reports and returning two English-language mentions from July: the
@@ -962,6 +971,12 @@ def news_latest(request: Request, area: str | None = None,
     if text:
         where.append("c.raw_text ILIKE %s")
         params.append(f"%{text}%")
+    if kind == "news":
+        where.append("c.raw_text NOT LIKE %s")
+        params.append(f"{ROAD_BULLETIN}%")
+    elif kind == "roads":
+        where.append("c.raw_text LIKE %s")
+        params.append(f"{ROAD_BULLETIN}%")
     if hours:
         where.append("c.reported_at >= now() - make_interval(hours => %s)")
         params.append(hours)

@@ -144,6 +144,12 @@ READING_CONTRACT = {
     "refused": ("Some tools decline rather than return a misleading number. A "
                 "refusal with reasons is the answer; do not substitute an "
                 "estimate for it."),
+    "staleness_band": ("live / recent / stale / expired is relative to the place's "
+                       "OWN reporting rhythm, not a fixed age: a crossing reported "
+                       "twice a day reads `live` at an age where a checkpoint "
+                       "reported every few minutes reads `stale`. It is never a "
+                       "claim that `value` is current — `value` is gated separately "
+                       "by the confidence floor and the kind's assert ceiling."),
     "the_one_mistake": ("Reading `value` and ignoring everything beside it. "
                         "During a fuel shortage that costs somebody a tank of "
                         "petrol; at a checkpoint it can cost more."),
@@ -305,10 +311,12 @@ OUTPUT_SCHEMA = {
 }
 
 
-def _tool_list() -> list[dict]:
+def _tool_list(include_host_only: bool = False) -> list[dict]:
     """The 16 public names (serve/mcp_facades.py). Absorbed old names still
-    answer by name; they are simply not on the menu any more."""
-    return [{**t, "outputSchema": OUTPUT_SCHEMA} for t in listed_tools()]
+    answer by name; they are simply not on the menu any more. The stdio host
+    also lists HOST_ONLY (F270)."""
+    return [{**t, "outputSchema": OUTPUT_SCHEMA}
+            for t in listed_tools(include_host_only=include_host_only)]
 
 
 # ── the grading table, read once in a while rather than per call ─────────────
@@ -337,7 +345,8 @@ def _tool_grades() -> dict:
     return _GRADES["tools"]
 
 
-def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | None:
+def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
+            host: bool = False) -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
 
     Runs on the MCP executor, so it may block.
@@ -375,7 +384,7 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
     if method == "ping":
         return _ok(rid, {})
     if method == "tools/list":
-        return _ok(rid, {"tools": _tool_list()})
+        return _ok(rid, {"tools": _tool_list(include_host_only=host)})
     if method == "resources/list":
         return _ok(rid, {"resources": RESOURCES})
     if method == "resources/templates/list":
@@ -417,15 +426,16 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner") -> dict | N
             target, targs = route(name, args)
         except TypeError as exc:
             return _err(rid, -32602, _scrub(str(exc)))
-        if name in PRIVATE or target in PRIVATE:
+        if not host and (name in PRIVATE or target in PRIVATE):
             return _err(rid, -32601,
                         f"{name} is not served over HTTP — it reports the "
                         f"health of the host, not the state of the country")
-        if target not in PUBLIC_TOOLS:
+        table = TOOLS if host else PUBLIC_TOOLS
+        if target not in table:
             return _err(rid, -32602, f"unknown tool: {name}")
         started = time.monotonic()
         try:
-            out = PUBLIC_TOOLS[target][0](**targs)
+            out = table[target][0](**targs)
             failed = False
         except TypeError as exc:                            # bad arguments
             out, failed = {"error": _scrub(str(exc))}, True

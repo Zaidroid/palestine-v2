@@ -14,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from serve import mcp_en, mcp_server  # noqa: E402
 
-AGE_AR = re.compile(r"قبل \d+ (دقيقة|ساعة|يوم)")
+# 1 دقيقة · 2 دقيقتين · 3–10 دقايق · 11+ دقيقة (F504)
+AGE_AR = re.compile(r"قبل (\d+ (دقيقة|دقايق|ساعة|ساعات|يوم|أيام)|دقيقة|دقيقتين|ساعة|ساعتين|يوم|يومين)")
 AGE_EN = re.compile(r"\d+(\s?min|h|d) ago")
 
 

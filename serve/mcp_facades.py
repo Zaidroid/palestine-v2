@@ -99,9 +99,11 @@ def _r_place(a: dict) -> tuple[str, dict]:
 
 
 def _r_news(a: dict) -> tuple[str, dict]:
+    # Both modes take the place and the kind (F047); `hours` reaches both.
+    a = {**a, "area": a.get("place") or a.get("area")}
     if a.get("text"):
-        return "search", a
-    return "latest_news", {**a, "area": a.get("place") or a.get("area")}
+        return "search", {**a, "kind": a.get("kind") or "all"}
+    return "latest_news", {**a, "kind": a.get("kind") or "news"}
 
 
 def _r_crossings(a: dict) -> tuple[str, dict]:
@@ -173,12 +175,12 @@ FACADES: dict[str, dict[str, Any]] = {
             "place": {**_PLACE, "description": "centre of the search; omit for the "
                                               "West-Bank-wide summary"},
             **_LATLON,
-            "hours": {"type": "integer", "default": 12,
+            "hours": {"type": "integer", "default": 12, "minimum": 1, "maximum": 168,
                       "description": "lookback window; default 12 around a place, "
-                                     "24 for the summary"},
+                                     "24 for the summary; at most 168"},
             "radius_km": {"type": "number", "default": 25,
                           "description": "search radius around the place"},
-            "limit": {"type": "integer", "default": 8,
+            "limit": {"type": "integer", "default": 8, "minimum": 1, "maximum": 50,
                       "description": "how many incidents to list"}}},
         "route": _r_incidents},
     "place": {
@@ -193,9 +195,9 @@ FACADES: dict[str, dict[str, Any]] = {
             "view": {"type": "string",
                      "enum": ["profile", "history", "pattern", "locate"],
                      "default": "profile", "description": "which view to return"},
-            "days": {"type": "integer", "default": 30,
+            "days": {"type": "integer", "default": 30, "minimum": 7, "maximum": 365,
                      "description": "lookback window for profile and history "
-                                    "(pattern uses 60)"},
+                                    "(pattern uses 60); 7 to 365"},
             "state_kind": {"type": "string",
                            "description": "history/pattern/locate: the kind of state, "
                                           "e.g. checkpoint_flow, road_closure, "
@@ -212,14 +214,15 @@ FACADES: dict[str, dict[str, Any]] = {
                      "description": "words to match literally (a different spelling "
                                     "will not match); omit for the newest messages"},
             "place": {"type": "string",
-                      "description": "newest-messages mode: a governorate or town"},
-            "hours": {"type": "integer", "default": 168,
-                      "description": "search mode: lookback window"},
-            "limit": {"type": "integer", "default": 8,
-                      "description": "how many messages to return"},
-            "kind": {"type": "string", "enum": ["news", "roads", "all"], "default": "news",
-                     "description": "newest-messages mode: news leaves out the road-status "
-                                    "tables, roads returns only them, all returns everything"}}},
+                      "description": "a governorate or town, in either mode"},
+            "hours": {"type": "integer", "default": 168, "minimum": 1, "maximum": 720,
+                      "description": "lookback window in hours, in either mode"},
+            "limit": {"type": "integer", "default": 8, "minimum": 1, "maximum": 25,
+                      "description": "how many messages to return (at most 25)"},
+            "kind": {"type": "string", "enum": ["news", "roads", "all"],
+                     "description": "news leaves out the road-status tables, roads returns "
+                                    "only them, all returns everything; omit it and the newest "
+                                    "messages use news, a word search uses all"}}},
         "route": _r_news},
     "series": {
         "description": "A databank series over time. One indicator: is it above or "
@@ -233,8 +236,9 @@ FACADES: dict[str, dict[str, Any]] = {
                            "description": "one indicator string, or two to six "
                                           "comma-separated"},
             "place": {"type": "string", "description": "optional: restrict to one place"},
-            "days": {"type": "integer", "default": 90,
-                     "description": "single-indicator mode: the window"}},
+            "days": {"type": "integer", "default": 90, "minimum": 7, "maximum": 3650,
+                     "description": "single-indicator mode: the window the comparison "
+                                    "is computed over, 7 to 3650 days"}},
             "required": ["indicators"]},
         "route": _r_series},
     "correlate": {
