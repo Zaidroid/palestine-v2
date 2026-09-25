@@ -27,7 +27,10 @@
 # category as classified — economic.yaml's rules classify pcbs_*.
 category: economic_pcbs
 transform: python:t_economic
-v1_category: economic            # joins the economic serving views
+v1_category: pcbs                # 086: PCBS's own rows ARE the pcbs category (the World
+                                 # Bank rows v1 filed as "pcbs" moved to economic). The loader
+                                 # upserts dataset.v1_category every night, so this line is
+                                 # what keeps 086's move from being undone.
 shape: observation
 status: reviewed
 records_measured: 150            # 2026-09-25: population 30 + CPI 120
