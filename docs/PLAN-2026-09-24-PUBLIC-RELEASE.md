@@ -470,3 +470,8 @@ AR/EN content divergence (databank overview 6 vs 5, "32 sources" vs datasets, su
 language; crossings Arabic area filter (matches name_en only → "أريحا" = nothing); place "Huwara" history view; series with
 a place = 0 points; correlate scan "941 of 235 dates" + 0-tests text; insights "152,926 minutes"; route "most of the
 route" at 50 %; about says crossings have no source.
+2026-09-25 18:50 UTC · alarm pile reconciled · done · proof: `ops/alert.py --sweep` (heartbeat last_ok, retired jobs, systemd's
+own result) resolved 13 units' alarms — 664 → 5 open (measure-review ×2, f11-night, notify-test, watchdog:job:backup which the
+watchdog closes on its next run); the manual 11:31 backup recorded as its heartbeat → `/health` ok, 0 faults. From now on
+with-heartbeat.sh resolves a unit's alarm on its next good run. system_health through the MCP will read the same once the API
+restarts (Fawwaz's `48537a6` is also waiting on that restart).
