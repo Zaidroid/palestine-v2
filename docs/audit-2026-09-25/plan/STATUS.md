@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 80 done · 7 partial · 73 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 93 done · 7 partial · 60 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -153,27 +153,27 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 07 · Incident classifier and event writer — `07-classifier.md`
 
-3 done · 0 partial · 14 open of 17 confirmed; 0 of 44 verify-first done.
+17 done · 0 partial · 0 open of 17 confirmed; 0 of 44 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
 | CLASSIFIER-01 | F039 | high | **done** | `be66fb2` | A reopening report is served as a closure and writes road_closure='closed' |
 | CLASSIFIER-02 | F074 | high | **done** | `be66fb2` | Catastrophic backtracking in the settler_attack pattern: one 4 KB token stalls the classifier f |
-| CLASSIFIER-03 | F072 | high | **open** |  | Four writers bypass the modality filter and the P2.4 crowd gate for crowd-reportable kinds (pow |
-| CLASSIFIER-04 | F033 | high | **open** |  | News-channel mirrors are counted as independent sources: independence_group is never fitted for |
-| CLASSIFIER-05 | F040 | high | **open** |  | No time is read from the text: 'مساء أمس' incidents and closures get the posting time and are s |
-| CLASSIFIER-06 | F041 | high | **open** |  | A house siege writes road_closure='closed' for the whole village |
-| CLASSIFIER-07 | F096 | medium | **open** |  | The closure rule's clause guard `[^.،؛]{0,40}` is dead — normalize() removed every full stop an |
-| CLASSIFIER-08 | F097 | medium | **open** |  | Settler verbal nouns اقتلاع / احراق / تخريب / تحطيم and the verb قطع (trees) do not contain the |
-| CLASSIFIER-09 | F190 | medium | **open** |  | Army action near a settlement is filed as a settler attack (actor inverted) |
-| CLASSIFIER-10 | F192 | medium | **open** |  | The bare verbal noun اعتقال never matches the arrest pattern |
-| CLASSIFIER-11 | F099 | medium | **open** |  | 'international' reject matches اليمن inside اليمنى (right hand/leg) and الاردن inside غور الارد |
-| CLASSIFIER-12 | F100 | medium | **open** |  | 'statement', 'court', 'legal' and 'gaza' rejects fire on unanchored short branches: طالب (stude |
-| CLASSIFIER-13 | F196 | medium | **open** |  | 'مدخل <city>' loses both the governorate and the place: entrance closures of Nablus/Jenin are d |
-| CLASSIFIER-14 | F203 | medium | **open** |  | Cross-batch dedup re-introduces the 'anchored on the first report' defect: long streams split a |
+| CLASSIFIER-03 | F072 | high | **done** | `c178d67` | Four writers bypass the modality filter and the P2.4 crowd gate for crowd-reportable kinds (pow |
+| CLASSIFIER-04 | F033 | high | **done** | `c178d67` | News-channel mirrors are counted as independent sources: independence_group is never fitted for |
+| CLASSIFIER-05 | F040 | high | **done** | `c178d67` | No time is read from the text: 'مساء أمس' incidents and closures get the posting time and are s |
+| CLASSIFIER-06 | F041 | high | **done** | `c178d67` | A house siege writes road_closure='closed' for the whole village |
+| CLASSIFIER-07 | F096 | medium | **done** | `c178d67` | The closure rule's clause guard `[^.،؛]{0,40}` is dead — normalize() removed every full stop an |
+| CLASSIFIER-08 | F097 | medium | **done** | `c178d67` | Settler verbal nouns اقتلاع / احراق / تخريب / تحطيم and the verb قطع (trees) do not contain the |
+| CLASSIFIER-09 | F190 | medium | **done** | `c178d67` | Army action near a settlement is filed as a settler attack (actor inverted) |
+| CLASSIFIER-10 | F192 | medium | **done** | `c178d67` | The bare verbal noun اعتقال never matches the arrest pattern |
+| CLASSIFIER-11 | F099 | medium | **done** | `c178d67` | 'international' reject matches اليمن inside اليمنى (right hand/leg) and الاردن inside غور الارد |
+| CLASSIFIER-12 | F100 | medium | **done** | `c178d67` | 'statement', 'court', 'legal' and 'gaza' rejects fire on unanchored short branches: طالب (stude |
+| CLASSIFIER-13 | F196 | medium | **done** | `c178d67` | 'مدخل <city>' loses both the governorate and the place: entrance closures of Nablus/Jenin are d |
+| CLASSIFIER-14 | F203 | medium | **done** | `c178d67` | Cross-batch dedup re-introduces the 'anchored on the first report' defect: long streams split a |
 | CLASSIFIER-15 | F205 | medium | **done** | `646746c` | Closure observations are re-inserted on every join and every re-read: a version bump without -- |
 | CLASSIFIER-16 | F206 | medium | **done** | `f572be8` | Events are hard-deleted outside the versioning trigger: no history, as-of replay and cached eve |
-| CLASSIFIER-17 | F477 | low | **open** |  | The 'stable' key is overwritten on every join, so it no longer names the first claim and the le |
+| CLASSIFIER-17 | F477 | low | **done** | `c178d67` | The 'stable' key is overwritten on every join, so it no longer names the first claim and the le |
 
 ### 08 · Place resolution and gazetteer tooling — `08-gazetteer.md`
 

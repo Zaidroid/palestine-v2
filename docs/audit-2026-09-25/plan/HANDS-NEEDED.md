@@ -18,6 +18,11 @@
 > `~/palestine-v2/.venv/bin/pip install psycopg-pool` then restart the API; /health `db.pooled` turns true. Then raise
 > `max_connections` in `db/tuning.sql` to 40 and run `db/migrate.sh --tuning` (needs the DB container restart it prints).
 >
+> **Area 07 classifier → 1.10.0 LIVE (`c178d67`, 12:46 UTC):** re-read by hand under the lock (8 min; the timer tick
+> skipped on the lock), 34,032 claims at 1.10.0, 5,354 believed events, 48 retracted and kept. Nothing for Zaid's hands
+> here. **Round 9** (`learn/incident_precision.py --sample --round 9 --adversarial 50`) is the measurement, after a week
+> of 1.10.0 output — the numbers above are projections on tuning sets.
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

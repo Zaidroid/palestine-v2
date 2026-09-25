@@ -379,3 +379,16 @@ tests/test_rest_06b.py 12 new; on the real registry Hawara/Huwwara → حوار�
 insights رام الله carries located_to_governorate_only, incident exports carry place_precision, /health reports 6 watchdog
 families; full suite on the real DB 1093 passed / 0 failed. Serving change → needs Zaid's `restart palestine-v2-api`.
 Audit tally 80 done · 7 partial · 73 open of 160. Next: 07 classifier (14 open), 08 gazetteer, 11 ops; then P1-A palhub.
+2026-09-25 12:50 UTC · audit 07-classifier · done 13 of 13 left open → CLASSIFIER_VERSION 1.10.0 LIVE (`c178d67`) ·
+done · proof: stated time (مساء أمس → yesterday 19:00 local, precision day/hour), house sieges no longer close roads,
+anchored closure clause (emoji-glued tokens need \w boundaries), settler verbal nouns + settlers-not-settlements, bare
+اعتقال, whole-word rejects with nationality forms (عراق بورين is a village), مدخل <city>, mirrors = one voice,
+last_report_at window, stable key never rewritten, closure belief from assertions only; tests/test_classifier_07b.py 27
+new, test_news 103 green. Projections (tuning sets): round 7 0.826→0.848, round 8 0.876→0.877; corpus projection read by
+hand seven times (1,009 changes, mostly unclear→arrest 235 and unclear→settler_attack 163 recall; three regressions found
+and fixed before shipping: emoji anchors, bare عراق, re-arrests of released prisoners). Re-read by hand 12:38→12:46 UTC
+under the lock: 34,032 claims → incident 9,638 · rejected 15,893 · unclear 8,501; 5,354 believed events (named 82.1 %),
+48 retracted and kept (10,195 history versions), 14 day-precision events, 49 mirrors collapsed, 26 closure states written.
+Honest precision stays round 8's 0.767 until round 9. Audit tally 93 done · 7 partial · 60 open of 160. Also today:
+last night's backup had refused (event rows shrank under the 09-24 DELETE sweeps) → run with `--accept-shrink`, set
+2026-09-25T11-31-07Z uploaded and verified. Next: 08 gazetteer (4), 11 ops (16), 09 ingest (8), then P1-A palhub.
