@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -44,8 +45,23 @@ def finding(sev: str, tool: str, claim: str, expected, got, evidence: str = "") 
 
 
 def check(tool: str, args: dict) -> dict | None:
+    """Through the SAME dispatcher the HTTP door uses (audit F242): calling
+    the tool functions in-process skipped the façades, the licence block and
+    add_english, so every English check ran on an empty string. The usage
+    ledger is exempted for the audit's own calls."""
+    os.environ["MCP_USAGE_EXEMPT"] = "1"
+    from serve.mcp_http import _handle
     try:
-        return TOOLS[tool][0](**args)
+        reply = _handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                         "params": {"name": tool, "arguments": args}}, None, "partner")
+        if "error" in reply:
+            finding("critical", tool, "transport refused", "a payload", reply["error"])
+            return None
+        out = json.loads(reply["result"]["content"][0]["text"])
+        if reply["result"].get("isError"):
+            finding("critical", tool, "tool raised", "a payload", out.get("error"))
+            return None
+        return out
     except Exception as exc:                                     # noqa: BLE001
         finding("critical", tool, "tool raised", "a payload",
                 f"{type(exc).__name__}: {exc}", traceback.format_exc()[-400:])

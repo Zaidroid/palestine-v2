@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Build the organ C gold set — `tests/gold/moh_c.jsonl`.
+"""
+NOTE (audit 2026-09-25 F229): the 196/199 figure this produces is the brain
+engine's AGREEMENT with the deterministic reader on a gold set whose truth is
+the reader's own output; it is not the reader's precision. The reader is
+human-verified on 20 rows; hand-read a stratified >=100-row slice before wiring.
+Build the organ C gold set — `tests/gold/moh_c.jsonl`.
 
 WHY A BUILDER AND NOT A HAND-TYPED FILE
 The gold set is what F-11 scores a model against, so every row has to be

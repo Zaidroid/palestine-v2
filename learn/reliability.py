@@ -147,6 +147,16 @@ def score_kind(cur, kind: str, days: int, window_s: int) -> dict:
         b = int(observed_at.timestamp()) // window_s
         buckets[(place_id, direction, b)][unit][value].append(source_id)
 
+    return _score_buckets(buckets, kind, window_s)
+
+
+def _score_buckets(buckets, kind: str, window_s: int) -> dict:
+    """LEAVE-ONE-OUT (audit F110): each unit is scored against the majority of
+    the OTHER units in its bucket. The old consensus included the unit's own
+    vote, so a two-unit bucket could never record a miss and every unit was
+    partly judging itself. With two units the other one is the consensus: a
+    disagreement is a miss for both, an agreement a hit for both. A tie among
+    the others scores nobody and is counted."""
     per_source: dict[int, list[int]] = defaultdict(lambda: [0, 0])  # hits, misses
     # (source_value, consensus_value) counts per source, for chance correction.
     joint: dict[int, Counter] = defaultdict(Counter)
@@ -170,17 +180,21 @@ def score_kind(cur, kind: str, days: int, window_s: int) -> dict:
         if len(unit_value) < 2:
             singleton += 1
             continue
-        top = votes.most_common()
-        if len(top) > 1 and top[0][1] == top[1][1]:
-            ties += 1        # no consensus; nobody is scored
-            continue
-        consensus = top[0][0]
         compared += 1
+        scored_any = False
         for unit, v in unit_value.items():
+            others = Counter(v2 for u2, v2 in unit_value.items() if u2 != unit)
+            top = others.most_common()
+            if len(top) > 1 and top[0][1] == top[1][1]:
+                continue                      # the others tie: this unit is not scored
+            consensus = top[0][0]
+            scored_any = True
             hit = v == consensus
             for sid in by_unit[unit][v]:
                 per_source[sid][0 if hit else 1] += 1
                 joint[sid][(v, consensus)] += 1
+        if not scored_any:
+            ties += 1
 
     return {"state_kind": kind, "window_s": window_s,
             "buckets": len(buckets), "compared": compared, "ties": ties,

@@ -48,10 +48,11 @@ WINDOW_SECONDS = 600
 
 MEASURE_SQL = """
 WITH o AS (
-  SELECT place_id, state_kind, direction, source_id, value, observed_at
-  FROM state_observation
-  WHERE state_kind = ANY(%(kinds)s) AND modality = 'assertion'
-    AND observed_at > now() - INTERVAL '90 days'
+  SELECT so.place_id, so.state_kind, so.direction, so.source_id, so.value, so.observed_at
+  FROM state_observation so
+  JOIN source s ON s.source_id = so.source_id AND s.kind <> 'crowd'   -- never measured here (audit F004)
+  WHERE so.state_kind = ANY(%(kinds)s) AND so.modality = 'assertion'
+    AND so.observed_at > now() - INTERVAL '90 days'
 ),
 pairs AS (
   SELECT a.source_id AS sa, b.source_id AS sb, a.state_kind,
@@ -123,9 +124,17 @@ def cluster(apply_changes: bool) -> dict:
             ORDER BY a.agreement_rate DESC""")
         rows = cur.fetchall()
 
+        # A CROWD SUBMITTER IS NEVER TOUCHED HERE (audit F004, critical): the
+        # nightly collapse could write NULL or a copyset over crowd:unverified
+        # and grant independence that was never earned. crowd_independence is
+        # the sole writer of crowd groups.
+        cur.execute("SELECT source_id FROM source WHERE kind = 'crowd'")
+        crowd = {r[0] for r in cur.fetchall()}
         uf = _Union()
         merged: list[tuple[str, str, float, int]] = []
         for sa, sb, rate, n, ka, kb in rows:
+            if sa in crowd or sb in crowd:
+                continue
             uf.find(sa); uf.find(sb)
             if rate >= AGREEMENT_THRESHOLD and n >= MIN_CO_OBSERVATIONS:
                 uf.union(sa, sb)
@@ -150,6 +159,7 @@ def cluster(apply_changes: bool) -> dict:
             for sid in members:
                 assignments.append((name, note, sid))
 
+        assignments = [a for a in assignments if a[2] not in crowd]
         if apply_changes:
             cur.executemany("""UPDATE source SET independence_group=%s,
                                       independence_note=%s,

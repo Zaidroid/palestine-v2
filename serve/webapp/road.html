@@ -142,7 +142,8 @@ const I18N = {
         inbound:"دخول", outbound:"خروج", both:"الاتجاهين",
         idf:"جيش", police:"شرطة", settlers:"مستوطنون", inspection:"تفتيش",
         sighted:"شوهد", conf:"الثقة", sources:"مصدر مستقل",
-        foot_cov:"يغطي {n} حاجزاً · معلوم الآن {k}٪", noresult:"لا نتيجة — جرّب اسماً آخر" },
+        foot_cov:"يغطي {n} حاجزاً · معلوم الآن {k}٪", noresult:"لا نتيجة — جرّب اسماً آخر",
+        err:"تعذّر تحميل البيانات ({code}) — أعد المحاولة بعد قليل" },
   en: { brand:"The Road", ask:"Where to?", near:"Nearest", closednow:"CLOSED NOW",
         search:"Type a checkpoint… (Huwara, Qalandia, Container)",
         hint:"Type a checkpoint name, or allow location for the nearest ones.",
@@ -151,7 +152,8 @@ const I18N = {
         inbound:"in", outbound:"out", both:"both ways",
         idf:"army", police:"police", settlers:"settlers", inspection:"checks",
         sighted:"sighted", conf:"confidence", sources:"independent source(s)",
-        foot_cov:"{n} checkpoints tracked · {k}% known right now", noresult:"No match — try another name" },
+        foot_cov:"{n} checkpoints tracked · {k}% known right now", noresult:"No match — try another name",
+        err:"Could not load the data ({code}) — try again shortly" },
 };
 let LANG = localStorage.getItem("lang") || "ar";
 let CPS = [];          // features from the export
@@ -262,12 +264,19 @@ function render() {
   }
 }
 
-async function boot() {
-  applyLang();
-  const [gj, sum] = await Promise.all([
-    fetch("/v2/export/checkpoints.geojson").then(r => r.json()),
-    fetch("/v2/checkpoints/summary").then(r => r.json()),
-  ]);
+async function load() {
+  // A failed or rate-limited fetch is SAID, in words, in both languages
+  // (audit F413): a silent "…" read as "no closures".
+  let gj, sum;
+  try {
+    const [a, b] = await Promise.all([fetch("/v2/export/checkpoints.geojson"), fetch("/v2/checkpoints/summary")]);
+    if (!a.ok || !b.ok) throw new Error(String(a.ok ? b.status : a.status));
+    [gj, sum] = await Promise.all([a.json(), b.json()]);
+  } catch (e) {
+    const msg = `<div class="empty">${t("err").replace("{code}", e.message || "")}</div>`;
+    $("#cards").innerHTML = msg; $("#closed").innerHTML = msg;
+    return;
+  }
   CPS = gj.features.map(f => {
     f.properties._lat = f.geometry.coordinates[1];
     f.properties._lon = f.geometry.coordinates[0];
@@ -275,11 +284,24 @@ async function boot() {
   });
   SUMMARY = sum;
   render();
+}
+
+async function boot() {
+  applyLang();
+  await load();
+  setInterval(load, 5 * 60 * 1000);          // ages never freeze (audit F092)
 
   const es = new EventSource("/v2/stream?snapshot=false");
   es.onopen = () => $("#live").className = "live on";
   es.onerror = () => $("#live").className = "live off";
-  es.onmessage = () => {};   // liveness only in this concept
+  // A change to any checkpoint state re-fetches; decay events count too (F092).
+  es.addEventListener("state_change", ev => {
+    try {
+      const d = JSON.parse(ev.data);
+      if (d.state_kind?.startsWith("checkpoint")) load();
+    } catch {}
+  });
+  es.addEventListener("reset", () => load());
 }
 
 $("#q").addEventListener("input", e => { mode = { kind: "search", q: e.target.value }; render(); });

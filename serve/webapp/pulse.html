@@ -117,7 +117,7 @@ const I18N = {
         idf:"جيش", police:"شرطة", settlers:"مستوطنون", inspection:"تفتيش",
         min:"د", hr:"س", ago:"قبل", lastknown:"آخر معلومة",
         t_open:"سالك", t_jam:"أزمة", t_closed:"مغلق", t_unknown:"غير معروف",
-        noresult:"لا نتيجة" },
+        noresult:"لا نتيجة", err:"تعذّر تحميل البيانات ({code}) — أعد المحاولة بعد قليل" },
   en: { brand:"The Pulse", ask:"Ask about a checkpoint…",
         all:"All", closedf:"Closed", jam:"Jams", army:"Army/Checks",
         open:"open", closed:"closed", congested:"jammed", slow:"slow", unknown:"unknown",
@@ -125,12 +125,13 @@ const I18N = {
         idf:"army", police:"police", settlers:"settlers", inspection:"checks",
         min:"m", hr:"h", ago:"ago", lastknown:"last known",
         t_open:"open", t_jam:"jam", t_closed:"closed", t_unknown:"unknown",
-        noresult:"No match" },
+        noresult:"No match", err:"Could not load the data ({code}) — try again shortly" },
 };
 let LANG = localStorage.getItem("lang") || "ar";
 let ROWS = [];     // {name, name_en, dir, flow, present, age_minutes, observed_at, fresh}
 let FILTER = "all";
 let SUMMARY = null;
+let FETCHED_AT = 0;
 const $ = s => document.querySelector(s);
 const t = k => I18N[LANG][k] ?? k;
 
@@ -161,7 +162,9 @@ function rowHTML(r, fresh) {
   // say: per-direction differences and sightings. Repeating the flow word
   // three times per row was measured noise in the first screenshot pass.
   const bits = [];
-  if (r.split) bits.push(r.split.map(d => `${t(d.dir)} ${t(d.flow)}`).join(" · "));
+  // each direction carries ITS OWN age (audit F090): the worst flow used to
+  // borrow the freshest row's age, so a 3-hour closure read "مغلق · قبل 5د"
+  if (r.split) bits.push(r.split.map(d => `${t(d.dir)} ${t(d.flow)} ${ageStr(d.age_minutes)}`).join(" · "));
   else if (r.dir && r.dir !== "both") bits.push(t(r.dir));
   if ((r.present || []).length)
     bits.push(`<span class="sight">${r.present.map(x => t(x)).join("، ")}</span>`);
@@ -197,6 +200,11 @@ function render() {
   document.querySelectorAll(".f").forEach(b =>
     b.onclick = () => { FILTER = b.dataset.f; render(); });
   // feed
+  // Ages are stated relative to NOW: a page that never refreshes freezes them
+  // (audit F092), so the minutes since the fetch are added at render time.
+  const drift = FETCHED_AT ? Math.round((Date.now() - FETCHED_AT) / 60000) : 0;
+  ROWS.forEach(r => { r.age_minutes = (r._age0 ?? r.age_minutes) + drift;
+                      (r.split || []).forEach(d => d.age_minutes = (d._age0 ?? d.age_minutes) + drift); });
   const rows = ROWS.filter(keep).slice(0, 80);
   $("#feed").innerHTML = rows.map(r => rowHTML(r, r._fresh)).join("")
     || `<div class="empty">${t("noresult")}</div>`;
@@ -204,12 +212,19 @@ function render() {
   if (SUMMARY) $("#foot").textContent = SUMMARY.attribution || "";
 }
 
-async function boot() {
-  applyLang();
-  const [gj, sum] = await Promise.all([
-    fetch("/v2/export/checkpoints.geojson").then(r => r.json()),
-    fetch("/v2/checkpoints/summary").then(r => r.json()),
-  ]);
+async function load() {
+  // A failed or rate-limited fetch says so in words (audit F413); it never
+  // reads as "no closures".
+  let gj, sum;
+  try {
+    const [a, b] = await Promise.all([fetch("/v2/export/checkpoints.geojson"), fetch("/v2/checkpoints/summary")]);
+    if (!a.ok || !b.ok) throw new Error(String(a.ok ? b.status : a.status));
+    [gj, sum] = await Promise.all([a.json(), b.json()]);
+  } catch (e) {
+    $("#feed").innerHTML = `<div class="empty">${t("err").replace("{code}", e.message || "")}</div>`;
+    return;
+  }
+  FETCHED_AT = Date.now();
   SUMMARY = sum;
   // GROUP the directional siblings: a place whose in/out rows agree is one
   // fact reported once, not three lines of the same word. When they differ,
@@ -226,30 +241,48 @@ async function boot() {
     const flows = new Set(rows.filter(r => r.flow !== "unknown").map(r => r.flow));
     const split = flows.size > 1
       ? rows.filter(r => r.direction !== "both" && r.flow !== "unknown")
-            .map(r => ({ dir: r.direction, flow: r.flow }))
+            .map(r => ({ dir: r.direction, flow: r.flow, age_minutes: r.age_minutes, _age0: r.age_minutes }))
       : null;
     const present = [...new Set(rows.flatMap(r => r.present || []))];
-    return { name: worst.name_ar, name_en: worst.name_en, dir: worst.direction,
-             flow: worst.flow, split, present,
-             age_minutes: Math.min(...rows.map(r => r.age_minutes)) };
+    // the age is the age of the row that SUPPLIED the verdict (F090)
+    return { place_id: worst.place_id, name: worst.name_ar, name_en: worst.name_en,
+             dir: worst.direction, flow: worst.flow, split, present,
+             age_minutes: worst.age_minutes, _age0: worst.age_minutes };
   }).sort((a, b) => a.age_minutes - b.age_minutes);
   render();
+}
+
+async function boot() {
+  applyLang();
+  await load();
+  setInterval(load, 5 * 60 * 1000);          // ages and rows do not freeze (F092)
+  setInterval(render, 60 * 1000);
 
   const es = new EventSource("/v2/stream?snapshot=false");
   es.onopen = () => $("#live").className = "live on";
   es.onerror = () => $("#live").className = "live";
-  es.onmessage = ev => {
+  // The stream sends NAMED events; `onmessage` never fired (audit F091).
+  // A change updates the existing row in place: `to` is the new value,
+  // `decayed` means the reading aged out — never a duplicate row.
+  es.addEventListener("state_change", ev => {
     try {
       const d = JSON.parse(ev.data);
-      if (!d.place || !d.state_kind?.startsWith("checkpoint")) return;
-      ROWS.unshift({ name: d.place, name_en: d.place_en, dir: d.direction || "both",
-                     flow: d.value && d.state_kind === "checkpoint_flow" ? d.value : "unknown",
-                     present: d.state_kind !== "checkpoint_flow" && d.value === "present"
-                              ? [d.state_kind.replace("checkpoint_", "")] : [],
-                     age_minutes: 0, _fresh: true });
+      if (!d.state_kind?.startsWith("checkpoint")) return;
+      const row = ROWS.find(r => r.place_id === d.place_id);
+      if (!row) { load(); return; }
+      if (d.state_kind === "checkpoint_flow") {
+        row.flow = d.decayed ? "unknown" : (d.to || row.flow);
+        row.age_minutes = 0; row._age0 = 0; row._fresh = true;
+        if (row.split && d.direction && d.direction !== "both") {
+          const sd = row.split.find(x => x.dir === d.direction);
+          if (sd) { sd.flow = row.flow; sd.age_minutes = 0; sd._age0 = 0; }
+        }
+      }
+      FETCHED_AT = Date.now();
       render();
     } catch {}
-  };
+  });
+  es.addEventListener("reset", () => load());
 }
 
 $("#ask").addEventListener("input", e => {

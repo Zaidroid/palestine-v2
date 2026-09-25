@@ -104,6 +104,8 @@ def unmet(out: Any) -> bool:
 def record(tool: str, args: dict, ms: int, ok: bool, out: Any,
            ip: str | None = None) -> None:
     """Append one line. Never raises — see the module note."""
+    if os.environ.get("MCP_USAGE_EXEMPT") == "1":      # the audit's own calls (F242)
+        return
     try:
         line = json.dumps({
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
