@@ -130,19 +130,28 @@ def can_i_travel(d: dict) -> str:
     out = say
     if d.get("blocked_at"):
         out += " — blocked at " + ", ".join(d["blocked_at"][:2])
-    if d.get("verdict") == "unverified":
-        why = []
-        exits = [x for x in (d.get("doubts") or []) if x.get("kind") == "exit_closure"]
-        if exits:
-            why.append("a closure on the way " + "; ".join(
-                f"{'out of the origin' if x['end'] == 'origin' else 'into the destination'} at "
-                f"{x.get('name_en') or x.get('name')} ({int(x['off_route_m'])} m off the route"
-                + (f", {_age(x['age_minutes'])}" if x.get("age_minutes") is not None else "") + ")"
-                for x in exits[:3]))
-        if any(x.get("kind") == "blind_stretch" for x in d.get("doubts") or []):
-            why.append("most of the route has no tracked checkpoint")
-        if why:
-            out += " — because " + "; and ".join(why) + ". Check before travelling"
+    # Exit closures are spoken WHATEVER THE VERDICT (F011) — see the Arabic
+    # renderer in serve/mcp_server.py for the case that proved it.
+    doubts = d.get("doubts") or []
+    exits = [x for x in doubts if x.get("kind") == "exit_closure"] or [
+        dict(x, end="origin" if (x.get("along") or 0) <= 0.5 else "destination")
+        for x in (d.get("exit_closures") or [])]
+    why = []
+    if exits:
+        why.append("a closure on the way " + "; ".join(
+            f"{'out of the origin' if x['end'] == 'origin' else 'into the destination'} at "
+            f"{x.get('name_en') or x.get('name')} ({int(x['off_route_m'])} m off the route"
+            + (f", {_age(x['age_minutes'])}" if x.get("age_minutes") is not None else "") + ")"
+            for x in exits[:3]))
+    if any(x.get("kind") == "blind_stretch" for x in doubts):
+        why.append("most of the route has no tracked checkpoint")
+    low = next((x for x in doubts if x.get("kind") == "low_coverage"), None)
+    if low and low.get("fraction") is not None:
+        why.append(f"only {round(100 * low['fraction'])}% of it is watched by a "
+                   f"checkpoint with a recent report")
+    if why:
+        out += ((" — because " if d.get("verdict") == "unverified" else " — but ")
+                + "; and ".join(why) + ". Check before travelling")
     mins = d.get("duration_minutes")
     if mins:
         out += f". {round(mins)} min driving"

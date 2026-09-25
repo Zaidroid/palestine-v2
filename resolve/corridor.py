@@ -44,6 +44,7 @@ Being wrong toward "you should check" costs a phone call; being wrong toward
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import asdict, dataclass, field
 
 import httpx
@@ -103,6 +104,14 @@ UNVERIFIED_GAP_KM = 10.0
 # off-route closure is still plausibly on the way in or out rather than an
 # unrelated road that happens to pass nearby.
 ENDS_KM = 10.0
+
+# PLAN §6 G2: `open` needs the corridor to be WATCHED — coverage >= 0.6, where
+# coverage counts only checkpoints with a current reading. The absolute 10 km
+# gap above never fired on a short route: Ramallah->Bir Zeit (~10 km) with one
+# reported checkpoint at km 1 read `likely_open` over 9 unwatched km (F071).
+MIN_WATCHED_FRACTION = 0.6
+
+_HEBREW = re.compile(r"[\u0590-\u05FF]")
 
 # Presence is a SIGHTING, not a state (migration 025) — a 15-minute half-life
 # against a 35-hour reporting gap. It never blocks a route, because an army
@@ -373,15 +382,20 @@ def _score(cps: list[CheckpointOnRoute], *, coverage: dict | None = None,
     if not known:
         return "unknown", (f"No recent reports from any of the "
                            f"{len(cps)} checkpoints on this route.")
+    # Asked BEFORE `slow`, not after: "passable but congested" is the same
+    # permission-shaped claim as "open" plus a delay, and it used to return
+    # before the blind stretch and the exit closures were even looked at (F318).
+    doubts = _doubts(coverage, near_misses, distance_km)
     if slow:
         names = "، ".join(c.name for c in slow[:3])
         return "slow", (f"Passable but congested at {names}. "
                         f"{len(known)} of {len(cps)} checkpoints reported"
-                        + (f", {len(unknown)} not checked recently." if unknown else "."))
+                        + (f", {len(unknown)} not checked recently." if unknown else ".")
+                        + (" But " + "; ".join(doubts) + ". Check before travelling."
+                           if doubts else ""))
 
     # Nothing on the route contradicts "open" — now ask whether we saw enough
     # of the route, and of its two ends, to say so.
-    doubts = _doubts(coverage, near_misses, distance_km)
     if doubts:
         return "unverified", ("Nothing on this route is reported closed, but "
                               + "; ".join(doubts)
@@ -403,6 +417,12 @@ def doubt_records(coverage: dict | None, near_misses: list | None,
         out.append({"kind": "blind_stretch", "km": round(gap, 1),
                     "from_km": (coverage or {}).get("longest_gap_from_km"),
                     "to_km": (coverage or {}).get("longest_gap_to_km")})
+    elif _low_coverage(coverage):
+        c = coverage or {}
+        out.append({"kind": "low_coverage", "fraction": c.get("watched_fraction"),
+                    "km": c.get("watched_longest_gap_km"),
+                    "from_km": c.get("watched_gap_from_km"),
+                    "to_km": c.get("watched_gap_to_km")})
     for m in _closures_at_ends(near_misses, distance_km):
         out.append({"kind": "exit_closure", "name": m.get("name"),
                     "name_en": m.get("name_en"), "flow": m.get("flow"),
@@ -410,6 +430,13 @@ def doubt_records(coverage: dict | None, near_misses: list | None,
                     "age_minutes": m.get("age_minutes"),
                     "end": "origin" if (m.get("along") or 0) <= 0.5 else "destination"})
     return out
+
+
+def _low_coverage(coverage: dict | None) -> bool:
+    """G2's coverage rule, on WATCHED checkpoints. Absent when the caller did not
+    measure it (the pure _score tests), so it never fires on a guess."""
+    wf = (coverage or {}).get("watched_fraction")
+    return wf is not None and wf < MIN_WATCHED_FRACTION
 
 
 def _doubts(coverage: dict | None, near_misses: list | None,
@@ -423,6 +450,13 @@ def _doubts(coverage: dict | None, near_misses: list | None,
         to = (coverage or {}).get("longest_gap_to_km")
         where = f" ({frm:.0f}-{to:.0f} km in)" if frm is not None and to is not None else ""
         out.append(f"no checkpoint is tracked for {gap:.0f} km of it{where}")
+    elif _low_coverage(coverage):
+        c = coverage or {}
+        km, a, b = c.get("watched_longest_gap_km"), c.get("watched_gap_from_km"), c.get("watched_gap_to_km")
+        where = (f" (nothing reported for {km:.0f} km, {a:.0f}-{b:.0f} km in)"
+                 if None not in (km, a, b) else "")
+        out.append(f"only {round(100 * c['watched_fraction'])}% of it is watched by a "
+                   f"checkpoint with a recent report{where}")
 
     for m in _closures_at_ends(near_misses, distance_km):
         end = "leaving" if m["along"] <= 0.5 else "arriving at"
@@ -457,6 +491,49 @@ def _closures_at_ends(near_misses: list | None, distance_km: float | None,
     # Nearest to the alignment first — the most likely to actually be on the way.
     out = sorted(out, key=lambda m: m["off_route_m"])
     return out[:cap] if cap else out
+
+
+_SEVERITY = {"closed": 3, "congested": 2, "slow": 1, "open": 0, "unknown": -1}
+
+
+def _reconcile_directions(rows: list[tuple]) -> tuple:
+    """(value, row) for one checkpoint from its per-direction serving rows.
+
+    rows are (direction, value, age_minutes, ...). Resolved EXACTLY as
+    checkpoint_serving resolves them: for each travel direction the freshest of
+    {that direction, 'both'} (a tie goes to the direction-specific report), then
+    the worse of the two, because our inbound/outbound is relative to the
+    checkpoint and the route's direction of travel through it is unknown.
+
+    It used to be the worst across every raw row, so a 295-minute-old
+    "inbound closed" outranked a 5-minute-old "both open" from three groups and
+    can_i_travel said blocked while checkpoint_status said open (F320).
+    """
+    rows = [r for r in rows if r[0]]
+    if not rows:
+        return "unknown", None
+
+    def age(r):
+        return r[2] if r[2] is not None else 1e9
+
+    def pick(d):
+        cand = [r for r in rows if r[0] in (d, "both")]
+        return min(cand, key=lambda r: (age(r), 0 if r[0] == d else 1)) if cand else None
+
+    picks = [p for p in (pick("inbound"), pick("outbound")) if p]
+    best = max(picks, key=lambda r: (_SEVERITY.get(r[1] or "unknown", -1), -age(r)))
+    return (best[1] or "unknown"), best
+
+
+def _waypoint_name(name_ar: str | None, name_en: str | None) -> str | None:
+    """The name a traveller navigates by, or None. A name only in Hebrew script
+    ("עפרה") is a settlement's own label, not a waypoint to read to a Palestinian
+    traveller (F322). Labelling settlements that carry an Arabic name needs a
+    registry flag the gazetteer does not have yet."""
+    for n in ((name_ar or "").strip(), (name_en or "").strip()):
+        if n and not _HEBREW.search(n):
+            return n
+    return None
 
 
 def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
@@ -510,7 +587,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     # WORST direction is taken and both are reported. Guessing would be wrong
     # half the time, in a way that silently favours "it is fine".
     by_id: dict[int, CheckpointOnRoute] = {}
-    order = {"closed": 3, "congested": 2, "slow": 1, "open": 0, "unknown": -1}
+    readings: dict[int, list[tuple]] = {}
+    order = _SEVERITY
     for (pid, ar, en, along, off, lat, lon, flow, last, conf, age, srcs, direction) in rows:
         c = by_id.get(pid)
         if c is None:
@@ -522,11 +600,15 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
             c.name_en = en
         if direction:
             c.directions[direction] = v
-        if order.get(v, -1) > order.get(c.flow, -1):
-            c.flow, c.flow_last_known = v, last
-            c.confidence = float(conf) if conf is not None else None
-            c.age_minutes = float(age) if age is not None else None
-            c.independent_sources = srcs
+            readings.setdefault(pid, []).append(
+                (direction, v, float(age) if age is not None else None, last, conf, srcs))
+    for pid, c in by_id.items():
+        v, r = _reconcile_directions(readings.get(pid, []))
+        if r is not None:
+            c.flow, c.flow_last_known = v, r[3]
+            c.confidence = float(r[4]) if r[4] is not None else None
+            c.age_minutes = r[2]
+            c.independent_sources = r[5]
 
     cps = sorted(by_id.values(), key=lambda c: c.along)
     near_on_route = {c.place_id for c in cps}
@@ -572,6 +654,18 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
         "longest_gap_from_km": round(dist * gap_a, 1),
         "longest_gap_to_km": round(dist * gap_b, 1),
     }
+    # G2's coverage, on checkpoints somebody actually reported recently. The
+    # registry-based fraction above counts a checkpoint nobody has mentioned in
+    # a day as coverage; this one does not.
+    kmarks = sorted([0.0] + [c.along for c in known if 0.0 <= c.along <= 1.0] + [1.0])
+    wg, wa, wb = max((kmarks[i + 1] - kmarks[i], kmarks[i], kmarks[i + 1])
+                     for i in range(len(kmarks) - 1))
+    coverage.update({
+        "watched_fraction": round(1.0 - wg, 2),
+        "watched_longest_gap_km": round(dist * wg, 1),
+        "watched_gap_from_km": round(dist * wa, 1),
+        "watched_gap_to_km": round(dist * wb, 1),
+    })
 
     verdict, summary = _score(cps, coverage=coverage, near_misses=near_misses,
                               distance_km=dist)
@@ -601,10 +695,10 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     # each slice, is what "which towns does it go through" actually asks.
     cands = []
     for par, pen, palong, poff in pass_rows:
-        nm = (par or pen or "").strip()
+        nm = _waypoint_name(par, pen)
         if not nm or any(x in _fold_ar(nm) for x in _PASSES_NOISE):
             continue
-        cands.append((float(palong), int(poff), nm, pen, bool((par or "").strip())))
+        cands.append((float(palong), int(poff), nm, pen, nm == (par or "").strip()))
     # A PALESTINIAN TRAVELLER NAVIGATES BY THE NAMES THE ROAD SIGNS AND THE
     # CHANNELS USE. Within a slice, a place that has an Arabic name in the
     # gazetteer outranks one that has only a Latin one: the audit's
@@ -644,7 +738,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                   for c in cps for p in c.presence],
         near_misses=near_misses,
         exit_closures=_closures_at_ends(near_misses, dist, cap=None),
-        doubts=doubt_records(coverage, near_misses, dist) if verdict == "unverified" else [],
+        doubts=(doubt_records(coverage, near_misses, dist)
+                if verdict in ("unverified", "slow") else []),
         checkpoints=cps, shape=leg["shape"], is_alternate=is_alternate)
 
 

@@ -934,7 +934,12 @@ def can_i_travel(origin: str, destination: str) -> dict:
         detail = " — مسكّر عند " + "، ".join(best["blocked_at"][:2])
         alt = next((r for r in rs if r["verdict"] in ("likely_open", "slow")), None)
         if alt:
-            detail += f". بديل: {alt['duration_minutes']:.0f} دقيقة ({alt['verdict']})"
+            # The verdict word in Arabic — the raw token ("likely_open") was
+            # spoken inside the Arabic sentence.
+            alt_say = {"likely_open": "سالك على الأغلب", "slow": "سالك بس فيه ازمة"}.get(
+                alt["verdict"], "")
+            detail += (f". بديل: {alt['duration_minutes']:.0f} دقيقة"
+                       + (f" ({alt_say})" if alt_say else ""))
 
     # A closure just outside the corridor is not silence. Ein Siniya was closed
     # 85 minutes earlier while this tool said "passable, congested at Za'tara",
@@ -979,21 +984,32 @@ def can_i_travel(origin: str, destination: str) -> dict:
 
     # WHY IT IS UNVERIFIED, SAID FIRST. The reasons lived in `summary`, which no
     # spoken answer used, so "ما بقدر أأكد" arrived with no cause attached.
+    #
+    # WHATEVER THE VERDICT. The exit closures were removed from the near-miss
+    # warning below and then spoken only for `unverified`, so a `slow`, `blocked`
+    # or `unknown` route never named the closed road out of town — the audit's
+    # 15:27 Za'tara / Ein Siniya case, reintroduced (F011).
     doubt_note = ""
-    exits = [x for x in (best.get("doubts") or []) if x.get("kind") == "exit_closure"]
-    if best.get("verdict") == "unverified":
-        why = []
-        if exits:
-            why.append("إغلاق " + "، و".join(
-                f"عند {x['name']} على طريق "
-                + (f"الخروج من {origin}" if x["end"] == "origin" else f"الدخول لـ{destination}")
-                + f" ({int(x['off_route_m'])} متر عن المسار"
-                + (f"، {_age_ar(int(x['age_minutes']))}" if x.get("age_minutes") is not None else "")
-                + ")" for x in exits[:3]))
-        if any(x.get("kind") == "blind_stretch" for x in best.get("doubts") or []):
-            why.append("نص الطريق تقريباً بلا حاجز متابَع")
-        if why:
-            doubt_note = " السبب: " + "؛ و".join(why) + " — تأكد قبل ما تطلع."
+    doubts = best.get("doubts") or []
+    exits = [x for x in doubts if x.get("kind") == "exit_closure"] or [
+        dict(x, end="origin" if (x.get("along") or 0) <= 0.5 else "destination")
+        for x in (best.get("exit_closures") or [])]
+    why = []
+    if exits:
+        why.append("إغلاق " + "، و".join(
+            f"عند {x['name']} على طريق "
+            + (f"الخروج من {origin}" if x["end"] == "origin" else f"الدخول لـ{destination}")
+            + f" ({int(x['off_route_m'])} متر عن المسار"
+            + (f"، {_age_ar(int(x['age_minutes']))}" if x.get("age_minutes") is not None else "")
+            + ")" for x in exits[:3]))
+    if any(x.get("kind") == "blind_stretch" for x in doubts):
+        why.append("نص الطريق تقريباً بلا حاجز متابَع")
+    low = next((x for x in doubts if x.get("kind") == "low_coverage"), None)
+    if low and low.get("fraction") is not None:
+        why.append(f"بس {round(100 * low['fraction'])}% من الطريق عليه حاجز فيه تقرير حديث")
+    if why:
+        doubt_note = ((" السبب: " if best.get("verdict") == "unverified" else " انتبه: ")
+                      + "؛ و".join(why) + " — تأكد قبل ما تطلع.")
 
     return {"answer": f"{say}{detail}.{doubt_note} "
                       f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
