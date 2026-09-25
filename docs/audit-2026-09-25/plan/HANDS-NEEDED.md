@@ -13,6 +13,11 @@
 > live). Area 04 renderers then landed on master (`81acc75`, 13 more tasks) — all in `serve/`, so **one more
 > `sudo systemctl restart palestine-v2-api`** puts them live; nothing else is needed for it.
 >
+> **Area 06 rest landed on master (`36f75a8`, 13 tasks, 11:25 UTC)** — `serve/` + `resolve/db.py` + `ops/watchdog.py`:
+> one more `sudo systemctl restart palestine-v2-api` puts it live. Optional, for the connection pool (REST-15/16):
+> `~/palestine-v2/.venv/bin/pip install psycopg-pool` then restart the API; /health `db.pooled` turns true. Then raise
+> `max_connections` in `db/tuning.sql` to 40 and run `db/migrate.sh --tuning` (needs the DB container restart it prints).
+>
 > **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
 > 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
 >    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).

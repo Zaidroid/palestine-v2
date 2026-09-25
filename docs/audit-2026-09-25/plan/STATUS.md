@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 69 done · 5 partial · 86 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 80 done · 7 partial · 73 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -126,30 +126,30 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 
 ### 06 · REST API handlers (serve/app.py), correlation statistics, precision annotation — `06-rest.md`
 
-7 done · 0 partial · 13 open of 20 confirmed; 0 of 78 verify-first done.
+18 done · 2 partial · 0 open of 20 confirmed; 0 of 78 verify-first done.
 
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
-| REST-01 | F070 | high | **open** |  | checkpoint_status still answers the nearest Latin lookalike for any spelling 074 did not list,  |
-| REST-02 | F089 | high | **open** |  | checkpoints/summary counts only direction='both' rows, so a checkpoint closed in one direction  |
+| REST-01 | F070 | high | **done** | `36f75a8` | checkpoint_status still answers the nearest Latin lookalike for any spelling 074 did not list,  |
+| REST-02 | F089 | high | **done** | `36f75a8` | checkpoints/summary counts only direction='both' rows, so a checkpoint closed in one direction  | — *079 made the default row the worse direction; closed_now rows now carry reported_for + differs_by_direction*
 | REST-03 | F075 | high | **done** | `f650da8` | Crowd-report text is served verbatim as the newest 'news' and quoted into the spoken `answer` ( |
 | REST-04 | F079 | high | **done** | `f650da8` | Crowd reports (and their free-text notes) are served as public news on /v2/news/latest and quot |
-| REST-05 | F034 | high | **open** |  | insights counts governorate-fallback events under the city although the ledger records P0-C.2 ( |
-| REST-06 | F080 | high | **open** |  | /v2/insights counts governorate-only incidents (pinned at the city centroid) as events around t |
+| REST-05 | F034 | high | **done** | `36f75a8` | insights counts governorate-fallback events under the city although the ledger records P0-C.2 ( |
+| REST-06 | F080 | high | **done** | `36f75a8` | /v2/insights counts governorate-only incidents (pinned at the city centroid) as events around t |
 | REST-07 | F076 | high | **done** | `f650da8` | Public read routes and the crowd path write to the gazetteer: resolve_place(learn=True) inserts |
 | REST-08 | F081 | high | **done** | `f650da8` | /v2/insights writes to place_alias on a public read path (learn=True) — ledger says P0-A.2 done |
 | REST-09 | F085 | high | **done** | `f650da8` | /v2/insights still calls resolve_place with learn=True, so every test run writes into the produ |
-| REST-10 | F082 | high | **open** |  | Incident CSV/GeoJSON exports drop place_precision/named_place: governorate-only events export a |
-| REST-11 | F030 | high | **open** |  | Litre-priced food series are served labelled `ILS_per_kg`: the value is converted per litre by  |
-| REST-12 | F043 | high | **open** |  | Pairwise correlation collapses multi-row dates with 'last row wins', so the served rho for brea |
+| REST-10 | F082 | high | **done** | `36f75a8` | Incident CSV/GeoJSON exports drop place_precision/named_place: governorate-only events export a |
+| REST-11 | F030 | high | **done** | `36f75a8` | Litre-priced food series are served labelled `ILS_per_kg`: the value is converted per litre by  |
+| REST-12 | F043 | high | **done** | `36f75a8` | Pairwise correlation collapses multi-row dates with 'last row wins', so the served rho for brea | — *the median per date, stated in caveats (the audit's aggregate option), not a refusal*
 | REST-13 | F077 | high | **done** | `f650da8` | `max_lag` is unbounded: one request pins a worker thread for hours; 40 such requests block ever |
 | REST-14 | F083 | high | **done** | `f650da8` | /v2/databank/correlate max_lag is unbounded: one request can hold a worker thread for minutes ( |
-| REST-15 | F293 | medium | **open** |  | One connection per statement against max_connections=20: the real concurrency ceiling is ~17 se |
-| REST-16 | F287 | medium | **open** |  | No connection pool against max_connections=20: each query opens a connection, /health opens fiv |
-| REST-17 | F288 | medium | **open** |  | /health evaluates only the job and feed families; capacity, v1-db, Valhalla, gateway and fuel-p |
-| REST-18 | F296 | medium | **open** |  | `_resolve_checkpoint` aggregates every checkpoint_flow observation ever stored on every checkpo |
-| REST-19 | F143 | medium | **open** |  | /v2/databank/{category} reads licence and attribution from `source`, bypassing the 054 dataset- |
-| REST-20 | F251 | medium | **open** |  | Only the `cumulative` label is refused: two unrelated trending `stock` series read as 'a very s |
+| REST-15 | F293 | medium | **partial** | `36f75a8` | One connection per statement against max_connections=20: the real concurrency ceiling is ~17 se | — *pool wired behind an optional psycopg_pool import (PG_POOL_MAX); Zaid: `pip install psycopg-pool` in .venv + max_connections in db/tuning.sql*
+| REST-16 | F287 | medium | **partial** | `36f75a8` | No connection pool against max_connections=20: each query opens a connection, /health opens fiv | — *same pool; /health cached 10 s via watchdog.all_checks; the fuel queries are gone*
+| REST-17 | F288 | medium | **done** | `36f75a8` | /health evaluates only the job and feed families; capacity, v1-db, Valhalla, gateway and fuel-p |
+| REST-18 | F296 | medium | **done** | `36f75a8` | `_resolve_checkpoint` aggregates every checkpoint_flow observation ever stored on every checkpo |
+| REST-19 | F143 | medium | **done** | `36f75a8` | /v2/databank/{category} reads licence and attribution from `source`, bypassing the 054 dataset- |
+| REST-20 | F251 | medium | **done** | `36f75a8` | Only the `cumulative` label is refused: two unrelated trending `stock` series read as 'a very s |
 
 ### 07 · Incident classifier and event writer — `07-classifier.md`
 

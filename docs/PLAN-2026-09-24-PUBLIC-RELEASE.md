@@ -373,3 +373,9 @@ no-source. Open from the audit: 99 findings (STATUS.md), HANDS §8 timeout still
 F269 F270 F271 F305 F504 F505; F057 settlement labels stays open — needs a data source) · proof: `81acc75`,
 tests/test_renderers_04b.py 10 new + 3 assertions corrected; full suite on the real DB 1082 passed / 0 failed. Serving
 change → needs Zaid's `restart palestine-v2-api` (not live yet). Next: audit 06-rest (13 open), then P1-A palhub.
+2026-09-25 11:25 UTC · audit 06-rest · done 11 + partial 2 of the 13 left open (F070 F089 F034 F080 F082 F030 F043 F251
+F288 F296 F143; F293/F287 pool wired behind an optional psycopg_pool import — Zaid installs the package) · proof: `36f75a8`,
+tests/test_rest_06b.py 12 new; on the real registry Hawara/Huwwara → حوارة served with doubt, Zatara → Za'tara exact,
+insights رام الله carries located_to_governorate_only, incident exports carry place_precision, /health reports 6 watchdog
+families; full suite on the real DB 1093 passed / 0 failed. Serving change → needs Zaid's `restart palestine-v2-api`.
+Audit tally 80 done · 7 partial · 73 open of 160. Next: 07 classifier (14 open), 08 gazetteer, 11 ops; then P1-A palhub.
