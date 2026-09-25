@@ -627,3 +627,12 @@ suite 1264 passed, 7 failed — all outside this change (untracked data files a 
 insights precision, mcp-accuracy.json; letters' source count 25 vs 26 sources in the DB now). Left: `/v2` JSON and
 the OpenAPI title still say "Palestine Data Platform v2" (the JSON is held unchanged on purpose); README numbers not
 yet generated; v1's tracker and roads.zaidlab.xyz do not link back (v1 is Zaid's); palestine.zaidlab.xyz alias (D-6).
+2026-09-26 01:05 UTC · P2-C.2 press coverage linked to incidents (organ F, deterministic half) · done (links written; the
+answers show them after the API restart; hourly schedule = hands) · proof: `ops/press_links.py` joins v1's news archive
+(16,171 articles, 15 outlets) to believed incidents on a NAMED place: same half day, the place's own name as a whole word,
+and a word of the event's type; governorate/region names are too general to link (the first dry run tied "Israel detains
+150 Palestinians" to unrelated Ramallah/Nablus events). Hand check of the 37 links over 7 d: ~33 right (Biddu raid ← Quds
+News + Al Jazeera; Silwad/al-Mazra'a settlers ← Quds News + Al Jazeera; al-Mughayyir raid; Atara), the rest roundups that
+also name the village. Applied over 14 d: 59 events carry `attrs.press` (≤ 5, merged by url). Never a second witness: counts,
+corroboration and verdict are untouched. Incidents answers name the outlets ("وفي تغطية صحفية منشورة من: …").
+tests/test_press_links.py (5).

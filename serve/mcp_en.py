@@ -462,6 +462,9 @@ def incidents_near(d: dict) -> str:
     solo = sum(1 for i in items if (i.get("independent_sources") or 0) < 2)
     if solo:
         out += f" ({solo} reported by a single source only.)"
+    covered = sorted({x["source"] for i in items[:4] for x in (i.get("press") or []) if x.get("source")})
+    if covered:
+        out += f" Published coverage from: {', '.join(covered[:3])}."
     fires = (d.get("fires") or {}).get("n")
     if fires:
         out += f" Satellite fire detections in range: {fires} (no reports)."

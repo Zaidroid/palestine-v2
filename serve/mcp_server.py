@@ -616,6 +616,10 @@ def incidents_near(place: str | None = None, lat: float | None = None,
         solo = sum(1 for i in items if i["independent_sources"] < 2)
         if solo:
             answer += f" ({solo} منها من مصدر واحد بس.)"
+        # P2-C.2: published coverage, named as a source to follow, never counted.
+        covered = sorted({x["source"] for i in items[:4] for x in (i.get("press") or []) if x.get("source")})
+        if covered:
+            answer += f" وفي تغطية صحفية منشورة من: {'، '.join(covered[:3])}."
     if fires:
         answer += f" ورصد الأقمار الصناعية {len(fires)} حريق بالنطاق (بدون تقارير)."
     from serve import quality

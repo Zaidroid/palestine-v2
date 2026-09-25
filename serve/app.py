@@ -987,6 +987,10 @@ def incidents_recent(
             "reports": r["claim_count"],
             "independent_sources": r["independent_sources"],
             "channels": _channel_labels((r["attrs"] or {}).get("channels")),
+            # P2-C.2: published articles about this incident (ops/press_links.py)
+            # — a SOURCE a reader can follow, never a second witness.
+            "press": [{"source": x.get("source"), "title": x.get("title"), "url": x.get("url")}
+                      for x in ((r["attrs"] or {}).get("press") or [])][:3],
         } for r in rows],
         "attribution": "West Bank governorate news channels (Telegram) via agent2",
     }
