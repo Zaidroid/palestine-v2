@@ -41,6 +41,7 @@ def main() -> int:
     samples: dict = defaultdict(list)
     stored_versions: Counter = Counter()
     n = 0
+    unlocated = 0
     with connect() as conn:
         conn.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
         with conn.cursor(name="project") as cur:          # server-side: the corpus is large
@@ -54,6 +55,14 @@ def main() -> int:
                 r = read(text)
                 old = _label(verdict, itype, reason)
                 new = _label(r.verdict, r.incident_type, r.reject_reason)
+                # read() is the RULE stage; the stored verdict is after the
+                # LOCATION stage. A stored 'place did not resolve' against a
+                # read() incident is the same rule reading, so it is not a
+                # change of the rules (2026-09-25: 426 of 435 'changes' in the
+                # 1.9.0 projection were this and hid the 9 real ones).
+                if old == "unclear:place did not resolve" and r.verdict == "incident":
+                    unlocated += 1
+                    continue
                 if old != new:
                     moves[(old, new)] += 1
                     if len(samples[(old, new)]) < a.limit:
@@ -61,7 +70,8 @@ def main() -> int:
         conn.rollback()
     print(f"working tree = {CLASSIFIER_VERSION}; stored: "
           + ", ".join(f"{v} x{c}" for v, c in stored_versions.most_common()))
-    print(f"{n} stored classifications; {sum(moves.values())} would change")
+    print(f"{n} stored classifications; {sum(moves.values())} would change "
+          f"({unlocated} unlocated incidents compared at the rule stage only)")
     for (old, new), c in moves.most_common():
         print(f"  {c:6d}  {old}  ->  {new}   e.g. claim {samples[(old, new)]}")
     return 0

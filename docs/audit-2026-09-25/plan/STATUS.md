@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 57 done · 3 partial · 100 open** (of 160). Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 58 done · 3 partial · 99 open** (of 160). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -172,7 +172,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | CLASSIFIER-13 | F196 | medium | **open** |  | 'مدخل <city>' loses both the governorate and the place: entrance closures of Nablus/Jenin are d |
 | CLASSIFIER-14 | F203 | medium | **open** |  | Cross-batch dedup re-introduces the 'anchored on the first report' defect: long streams split a |
 | CLASSIFIER-15 | F205 | medium | **done** | `646746c` | Closure observations are re-inserted on every join and every re-read: a version bump without -- |
-| CLASSIFIER-16 | F206 | medium | **open** |  | Events are hard-deleted outside the versioning trigger: no history, as-of replay and cached eve |
+| CLASSIFIER-16 | F206 | medium | **done** | `f572be8` | Events are hard-deleted outside the versioning trigger: no history, as-of replay and cached eve |
 | CLASSIFIER-17 | F477 | low | **open** |  | The 'stable' key is overwritten on every join, so it no longer names the first claim and the le |
 
 ### 08 · Place resolution and gazetteer tooling — `08-gazetteer.md`

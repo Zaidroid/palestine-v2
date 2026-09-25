@@ -343,3 +343,22 @@ boilerplate still attached (F051, open). **P0-B.2/3** — G2's coverage rule not
 independence never fitted for news channels (F033, open); the stable key is overwritten on join and no test proves a
 rebuild keeps event ids (F477/F084, open). PLAN-09-21 **F-86** — mcp-audit's OK_EXIT_CODES reach the wrong process
 (F064, open).
+2026-09-25 09:55 UTC · audit branch `claude/system-analysis-complete-mzpu2r` verified on the real DB and MERGED to master
+(fast-forward `f572be8`), live for the timers · partial (serving waits for Zaid's hands) · proof: from the worktree
+`~/palestine-v2-audit`, full suite on the real DB 1045 passed / 17 failed → 13 worktree-missing files (167 pass with the
+files linked), 4 belief tests wait for 079/080, 1 real regression fixed `5d55ed8` (corridor gave `unknown` an age);
+079 dry run rolled back: 5 of 753 `checkpoint_serving` rows change (عناب both→closed, جبع both unknown→open on an
+inbound-only reading → 079 changed: `unknown` outranks `open`, a never-read direction counts unknown — Zaid's decision);
+belief F017 SQL dry run: 0 value changes; parser old→new on 7 d of raw lines: 158 of 19,703 readings change
+(37 unparsed→closure, 36 assertion→question, 18 congested→open on فش ازمة; 2 residual misreads: `ما رح يفتح` lost,
+`سالك مش مغلق … بس مسكرين بوابة` read closed); classifier 1.9.0 projection (fixed tool `ops/project_classifier.py`):
+9 closure→rejected:reopening are the only rule change (7 right, 2 = activists reopening a settler-closed road);
+crowd-derived incidents 0. F206 FIXED PERMANENTLY `f572be8` (Zaid: "fix it permanently"): the sweep retracts
+(`retire_unreferenced_events`, versioning trigger files the believed version), derived closure rows → modality
+`rejected` with `attrs.withdrawn_by`, a returning stable key revives the event (`reassert_closure_observations`);
+`tests/test_event_sweep.py` 3 + `test_belief_serving` 07/08. 1.9.0 corpus re-read by hand under the advisory lock
+09:48:40→09:52:13 UTC (3.5 min; the timer never collided): 33,952 claims → incident 9,221 · rejected 15,642 · unclear
+9,089; 5,106 believed events (named 4,225 = 82.7 %), 7 retracted and KEPT (event_history +10,217 versions), 9 reopening
+rejections, 5 derived closure rows withdrawn, 0 deleted. Item 8 (v1 import cursor): 0 duplicate identities over 13 h.
+ZAID'S HANDS (classifier-refused): `db/migrate.sh` (079+080) → `restart palestine-v2-api` → `restart palestine-v2-poller`
+→ HANDS §8 timeout; the block is at the top of `docs/audit-2026-09-25/plan/HANDS-NEEDED.md`.

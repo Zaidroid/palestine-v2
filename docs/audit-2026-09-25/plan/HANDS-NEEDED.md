@@ -1,5 +1,24 @@
 # Steps only Zaid's hands can do (collected while executing the plan)
 
+> **Main-server state, 2026-09-25 09:50 UTC (Fable, after verifying the branch on the real database from the
+> worktree `~/palestine-v2-audit`):** the branch is **merged into `master` (fast-forward, `f572be8`) and pushed**; the
+> checkpoints timer runs the new parser and importer (item 8 checked: 0 duplicate v1 identities); the classifier
+> **1.9.0 corpus re-read ran by hand under the advisory lock** (the timer skips while it holds it), so item 9's
+> timeout is not needed for this bump — HANDS §8 stays wanted for the next one. The F206 decision: **fixed
+> permanently** (`f572be8` — retract, never delete). 079 changed before applying: `unknown` outranks `open` in the
+> default row (Zaid's decision). Verification: full suite on the real DB 1045 passed / 17 failed → 13 were
+> worktree-missing files, 4 wait for 079/080, 1 real regression fixed (`5d55ed8`).
+>
+> **Still Zaid's hands, in this order** (the auto-mode classifier refused them for the agent):
+> 1. `cd ~/palestine-v2 && db/migrate.sh --status && db/migrate.sh` — applies 079 + 080 (both re-runnable; rollback
+>    notes inside each file). The running API serves the new `checkpoint_serving` at once (column appended, order kept).
+> 2. `sudo systemctl restart palestine-v2-api` — the serving fixes (renderers, route, transport, REST). Item 7 below.
+> 3. `sudo systemctl restart palestine-v2-poller` — the FloodWait/atomic-cursor poller.
+> 4. HANDS-2026-09-24 §8 — `TimeoutStartSec=3600` drop-in for `palestine-v2-news.service` (for the NEXT version bump).
+> After 1–2: `PALESTINE_API=http://127.0.0.1:7871 .venv/bin/python -m pytest -q tests/test_belief_serving.py` should
+> read 8 passed, and جبع / عناب / قلنديا / رام الله→نابلس through the connector should read as HANDS-NEEDED describes.
+
+
 Nothing below is live until the branch is merged and main-server runs it. `STATUS.md` says which plan tasks are done
 and by which commit. What each commit needs on main-server, in the order to do it:
 
