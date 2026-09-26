@@ -1,0 +1,20 @@
+{
+  "subject": "roads",
+  "parser": "v1 whitelist (checkpoint_updates)",
+  "gold_rows": 200,
+  "scored": 200,
+  "reading_precision": 0.814,
+  "reading_recall": 0.718,
+  "checkpoint_recall": 0.806,
+  "value_agreement_when_found": 0.926,
+  "is_road_report_agreement": 0.79,
+  "gold_readings_unregistered": 27,
+  "messages_with_readings_v1_missed": 10,
+  "counts": {
+    "tp": 288,
+    "fp": 66,
+    "fn": 113
+  },
+  "keys_unified_by": "v2 place (merges followed)",
+  "at": "2026-09-26T08:23:09+00:00"
+}

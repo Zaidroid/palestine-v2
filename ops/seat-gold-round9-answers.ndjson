@@ -1,0 +1,287 @@
+{"claim_id": 11996, "verdict": "incident", "incident_type": "arrest", "place": "سالم", "confidence": 0.9}
+{"claim_id": 25746, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.75}
+{"claim_id": 26905, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.88}
+{"claim_id": 27881, "verdict": "incident", "incident_type": "raid", "place": "المغير", "confidence": 0.85}
+{"claim_id": 29066, "verdict": "incident", "incident_type": "demolition", "place": "نحالين", "confidence": 0.9}
+{"claim_id": 29112, "verdict": "incident", "incident_type": "raid", "place": "مخيم قلنديا", "confidence": 0.8}
+{"claim_id": 29931, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.8}
+{"claim_id": 30745, "verdict": "incident", "incident_type": "raid", "place": "طوباس", "confidence": 0.95}
+{"claim_id": 30952, "verdict": "incident", "incident_type": "closure", "place": "مخيم قلنديا", "confidence": 0.85}
+{"claim_id": 30994, "verdict": "incident", "incident_type": "injury", "place": "مخيم الجلزون", "confidence": 0.5}
+{"claim_id": 31317, "verdict": "incident", "incident_type": "arrest", "place": "مخيم قلنديا", "confidence": 0.95}
+{"claim_id": 31789, "verdict": "incident", "incident_type": "raid", "place": "جنين", "confidence": 0.85}
+{"claim_id": 32751, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 33935, "verdict": "incident", "incident_type": "arrest", "place": "عنزا", "confidence": 0.9}
+{"claim_id": 35720, "verdict": "incident", "incident_type": "settler_attack", "place": "أبو فلاح", "confidence": 0.85}
+{"claim_id": 35724, "verdict": "incident", "incident_type": "closure", "place": "حي الكسارات", "confidence": 0.95}
+{"claim_id": 36004, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 36142, "verdict": "incident", "incident_type": "raid", "place": "عوريف", "confidence": 0.95}
+{"claim_id": 36778, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 38273, "verdict": "incident", "incident_type": "land_levelling", "place": "مركة", "confidence": 0.6}
+{"claim_id": 38831, "verdict": "incident", "incident_type": "land_levelling", "place": "مركة", "confidence": 0.9}
+{"claim_id": 39704, "verdict": "incident", "incident_type": "settler_attack", "place": "مراح البقار", "confidence": 0.6}
+{"claim_id": 39823, "verdict": "incident", "incident_type": "demolition", "place": "الزويدين", "confidence": 0.9}
+{"claim_id": 39862, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 40033, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.7}
+{"claim_id": 40167, "verdict": "incident", "incident_type": "shooting", "place": "مفترق بيت عينون", "confidence": 0.85}
+{"claim_id": 40289, "verdict": "incident", "incident_type": "raid", "place": "المغير", "confidence": 0.6}
+{"claim_id": 40538, "verdict": "incident", "incident_type": "demolition", "place": "عابا", "confidence": 0.9}
+{"claim_id": 40573, "verdict": "incident", "incident_type": "raid", "place": "سلواد", "confidence": 0.95}
+{"claim_id": 40579, "verdict": "incident", "incident_type": "demolition", "place": "فرش الهوى", "confidence": 0.9}
+{"claim_id": 40607, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 40631, "verdict": "incident", "incident_type": "settler_attack", "place": "دير أبو ضعيف", "confidence": 0.85}
+{"claim_id": 40640, "verdict": "incident", "incident_type": "demolition", "place": "جنين", "confidence": 0.75}
+{"claim_id": 40719, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.55}
+{"claim_id": 40723, "verdict": "incident", "incident_type": "settler_attack", "place": "قصرة", "confidence": 0.8}
+{"claim_id": 40764, "verdict": "incident", "incident_type": "settler_attack", "place": "رأس العين", "confidence": 0.8}
+{"claim_id": 41008, "verdict": "incident", "incident_type": "demolition", "place": "تل", "confidence": 0.8}
+{"claim_id": 41105, "verdict": "incident", "incident_type": "raid", "place": "جنين", "confidence": 0.8}
+{"claim_id": 41826, "verdict": "incident", "incident_type": "siege", "place": "قصرة", "confidence": 0.6}
+{"claim_id": 42055, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 42485, "verdict": "incident", "incident_type": "settler_attack", "place": "الطيبة", "confidence": 0.85}
+{"claim_id": 42578, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 42613, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 42779, "verdict": "incident", "incident_type": "raid", "place": "أوصرين", "confidence": 0.95}
+{"claim_id": 42987, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 43160, "verdict": "incident", "incident_type": "settler_attack", "place": "المسجد الأقصى", "confidence": 0.65}
+{"claim_id": 43449, "verdict": "incident", "incident_type": "siege", "place": "قصرة", "confidence": 0.8}
+{"claim_id": 43452, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.8}
+{"claim_id": 48582, "verdict": "incident", "incident_type": "arrest", "place": "الخليل", "confidence": 0.93}
+{"claim_id": 48688, "verdict": "not_incident", "incident_type": null, "place": "رام الله", "confidence": 0.55}
+{"claim_id": 48749, "verdict": "incident", "incident_type": "demolition", "place": "قلنديا البلد", "confidence": 0.7}
+{"claim_id": 48825, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 48892, "verdict": "incident", "incident_type": "raid", "place": "شقبا", "confidence": 0.9}
+{"claim_id": 49003, "verdict": "incident", "incident_type": "arrest", "place": "قباطية", "confidence": 0.9}
+{"claim_id": 49065, "verdict": "incident", "incident_type": "shooting", "place": "عزون", "confidence": 0.65}
+{"claim_id": 49137, "verdict": "incident", "incident_type": "closure", "place": "كرمي تسور", "confidence": 0.8}
+{"claim_id": 49492, "verdict": "incident", "incident_type": "arrest", "place": "", "confidence": 0.6}
+{"claim_id": 49566, "verdict": "incident", "incident_type": "arrest", "place": "رام الله", "confidence": 0.75}
+{"claim_id": 49673, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 49698, "verdict": "incident", "incident_type": "raid", "place": "الظاهرية", "confidence": 0.85}
+{"claim_id": 49776, "verdict": "incident", "incident_type": "injury", "place": "راس العين", "confidence": 0.85}
+{"claim_id": 49957, "verdict": "incident", "incident_type": "siege", "place": "رأس العين", "confidence": 0.6}
+{"claim_id": 50030, "verdict": "incident", "incident_type": "settler_attack", "place": "أم صفا", "confidence": 0.8}
+{"claim_id": 50359, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.92}
+{"claim_id": 50687, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 50726, "verdict": "incident", "incident_type": "settler_attack", "place": "قصرة", "confidence": 0.75}
+{"claim_id": 50821, "verdict": "incident", "incident_type": "arrest", "place": "بيت لحم", "confidence": 0.85}
+{"claim_id": 50824, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 50996, "verdict": "not_incident", "incident_type": null, "place": "الظاهرية", "confidence": 0.55}
+{"claim_id": 51213, "verdict": "incident", "incident_type": "arrest", "place": "حي الهدف", "confidence": 0.9}
+{"claim_id": 51270, "verdict": "incident", "incident_type": "siege", "place": "مخيم جنين", "confidence": 0.5}
+{"claim_id": 51426, "verdict": "incident", "incident_type": "death", "place": "جنين", "confidence": 0.9}
+{"claim_id": 51473, "verdict": "incident", "incident_type": "death", "place": "جنين", "confidence": 0.65}
+{"claim_id": 51492, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 51599, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 51695, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 52339, "verdict": "incident", "incident_type": "settler_attack", "place": "مفترق الخلاطة", "confidence": 0.85}
+{"claim_id": 52520, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 52555, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 54354, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 54495, "verdict": "incident", "incident_type": "raid", "place": "مخيم عسكر القديم", "confidence": 0.8}
+{"claim_id": 54504, "verdict": "incident", "incident_type": "injury", "place": "العوجا", "confidence": 0.7}
+{"claim_id": 54597, "verdict": "incident", "incident_type": "arrest", "place": "عقبة نجيلة", "confidence": 0.6}
+{"claim_id": 54699, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 54805, "verdict": "incident", "incident_type": "raid", "place": "صانور", "confidence": 0.75}
+{"claim_id": 54890, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 56240, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 56247, "verdict": "incident", "incident_type": "settler_attack", "place": "كفر مالك", "confidence": 0.85}
+{"claim_id": 56652, "verdict": "incident", "incident_type": "raid", "place": "حلحول", "confidence": 0.85}
+{"claim_id": 57125, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.7}
+{"claim_id": 57175, "verdict": "incident", "incident_type": "settler_attack", "place": "إذنا", "confidence": 0.9}
+{"claim_id": 57353, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 58067, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 58255, "verdict": "incident", "incident_type": "settler_attack", "place": "جبع", "confidence": 0.82}
+{"claim_id": 58466, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.75}
+{"claim_id": 58497, "verdict": "incident", "incident_type": "settler_attack", "place": "تجمع الزواهرة", "confidence": 0.8}
+{"claim_id": 58693, "verdict": "incident", "incident_type": "injury", "place": "مخيم قلنديا", "confidence": 0.95}
+{"claim_id": 58880, "verdict": "incident", "incident_type": "injury", "place": "معهد قلنديا", "confidence": 0.9}
+{"claim_id": 59921, "verdict": "incident", "incident_type": "closure", "place": "أم الخير", "confidence": 0.85}
+{"claim_id": 59996, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 60363, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.98}
+{"claim_id": 60642, "verdict": "incident", "incident_type": "closure", "place": "المغير", "confidence": 0.9}
+{"claim_id": 61196, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 61347, "verdict": "incident", "incident_type": "raid", "place": "نابلس", "confidence": 0.8}
+{"claim_id": 61712, "verdict": "incident", "incident_type": "raid", "place": "طمون", "confidence": 0.95}
+{"claim_id": 62179, "verdict": "incident", "incident_type": "injury", "place": "يطا", "confidence": 0.95}
+{"claim_id": 62433, "verdict": "incident", "incident_type": "demolition", "place": "الرأس الأحمر", "confidence": 0.9}
+{"claim_id": 62742, "verdict": "incident", "incident_type": "land_levelling", "place": "ضاحية الزراعة", "confidence": 0.85}
+{"claim_id": 63221, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.98}
+{"claim_id": 64035, "verdict": "incident", "incident_type": "siege", "place": "قصرة", "confidence": 0.8}
+{"claim_id": 64305, "verdict": "incident", "incident_type": "siege", "place": "رأس العين", "confidence": 0.8}
+{"claim_id": 64416, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.8}
+{"claim_id": 64557, "verdict": "incident", "incident_type": "raid", "place": "خروبة", "confidence": 0.8}
+{"claim_id": 64562, "verdict": "incident", "incident_type": "raid", "place": "خروبة", "confidence": 0.8}
+{"claim_id": 64873, "verdict": "incident", "incident_type": "death", "place": "حرش السعادة", "confidence": 0.7}
+{"claim_id": 65067, "verdict": "incident", "incident_type": "death", "place": "جنين", "confidence": 0.55}
+{"claim_id": 65072, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 65115, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 65235, "verdict": "incident", "incident_type": "settler_attack", "place": "المغير", "confidence": 0.9}
+{"claim_id": 65303, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 65437, "verdict": "not_incident", "incident_type": null, "place": "جنين", "confidence": 0.6}
+{"claim_id": 66108, "verdict": "not_incident", "incident_type": null, "place": "جنين", "confidence": 0.65}
+{"claim_id": 66265, "verdict": "incident", "incident_type": "settler_attack", "place": "رأس العين", "confidence": 0.85}
+{"claim_id": 66573, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 66673, "verdict": "incident", "incident_type": "settler_attack", "place": "قصرة", "confidence": 0.85}
+{"claim_id": 66726, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 66886, "verdict": "incident", "incident_type": "raid", "place": "دير أبو مشعل", "confidence": 0.85}
+{"claim_id": 68518, "verdict": "incident", "incident_type": "closure", "place": "المغير", "confidence": 0.85}
+{"claim_id": 68626, "verdict": "incident", "incident_type": "injury", "place": "المغير", "confidence": 0.95}
+{"claim_id": 69175, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 69525, "verdict": "incident", "incident_type": "closure", "place": "قلنديا", "confidence": 0.85}
+{"claim_id": 72264, "verdict": "incident", "incident_type": "settler_attack", "place": "الطيبة", "confidence": 0.65}
+{"claim_id": 73092, "verdict": "incident", "incident_type": "arrest", "place": "حارة غيث", "confidence": 0.75}
+{"claim_id": 74082, "verdict": "incident", "incident_type": "land_levelling", "place": "عرابة", "confidence": 0.7}
+{"claim_id": 74790, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 75006, "verdict": "incident", "incident_type": "injury", "place": "مادما", "confidence": 0.6}
+{"claim_id": 75228, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.7}
+{"claim_id": 75561, "verdict": "incident", "incident_type": "injury", "place": "بيت ريما", "confidence": 0.95}
+{"claim_id": 75565, "verdict": "incident", "incident_type": "land_levelling", "place": "عرابة", "confidence": 0.9}
+{"claim_id": 75606, "verdict": "incident", "incident_type": "settler_attack", "place": "وادي الباذان", "confidence": 0.85}
+{"claim_id": 75642, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 75714, "verdict": "incident", "incident_type": "land_levelling", "place": "عرابة", "confidence": 0.8}
+{"claim_id": 75725, "verdict": "incident", "incident_type": "settler_attack", "place": "جبل النجمة", "confidence": 0.65}
+{"claim_id": 75859, "verdict": "incident", "incident_type": "closure", "place": "بورين", "confidence": 0.9}
+{"claim_id": 75894, "verdict": "incident", "incident_type": "raid", "place": "دورا", "confidence": 0.9}
+{"claim_id": 76068, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 76128, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 76159, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.75}
+{"claim_id": 76176, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 76335, "verdict": "incident", "incident_type": "demolition", "place": "خربة بيت سكاريا", "confidence": 0.95}
+{"claim_id": 78278, "verdict": "incident", "incident_type": "raid", "place": "كفرذان", "confidence": 0.8}
+{"claim_id": 78449, "verdict": "incident", "incident_type": "raid", "place": "بني نعيم", "confidence": 0.95}
+{"claim_id": 79252, "verdict": "incident", "incident_type": "death", "place": "باب العامود", "confidence": 0.9}
+{"claim_id": 79255, "verdict": "incident", "incident_type": "death", "place": "بيت حنينا", "confidence": 0.85}
+{"claim_id": 79258, "verdict": "incident", "incident_type": "raid", "place": "مخيمي عسكر القديم والجديد", "confidence": 0.7}
+{"claim_id": 79427, "verdict": "incident", "incident_type": "siege", "place": "قصرة", "confidence": 0.65}
+{"claim_id": 79747, "verdict": "incident", "incident_type": "settler_attack", "place": "مسافر يطا", "confidence": 0.7}
+{"claim_id": 79927, "verdict": "incident", "incident_type": "arrest", "place": "مسافر يطا", "confidence": 0.9}
+{"claim_id": 80208, "verdict": "incident", "incident_type": "arrest", "place": "خلة النحلة", "confidence": 0.85}
+{"claim_id": 80838, "verdict": "incident", "incident_type": "shooting", "place": "مخيم قلنديا", "confidence": 0.6}
+{"claim_id": 81654, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 81759, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 83041, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.55}
+{"claim_id": 83587, "verdict": "incident", "incident_type": "land_levelling", "place": "عرابة", "confidence": 0.9}
+{"claim_id": 83877, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 84181, "verdict": "incident", "incident_type": "death", "place": "حجة", "confidence": 0.9}
+{"claim_id": 84426, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.8}
+{"claim_id": 86138, "verdict": "incident", "incident_type": "injury", "place": "أوصرين", "confidence": 0.85}
+{"claim_id": 86196, "verdict": "incident", "incident_type": "closure", "place": "يتما", "confidence": 0.8}
+{"claim_id": 86238, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 86251, "verdict": "incident", "incident_type": "closure", "place": "جوريش", "confidence": 0.9}
+{"claim_id": 86607, "verdict": "incident", "incident_type": "death", "place": "قبلان", "confidence": 0.9}
+{"claim_id": 86948, "verdict": "incident", "incident_type": "settler_attack", "place": "برقة", "confidence": 0.95}
+{"claim_id": 87113, "verdict": "incident", "incident_type": "raid", "place": "حي الهاشمية", "confidence": 0.9}
+{"claim_id": 87342, "verdict": "incident", "incident_type": "raid", "place": "ميثلون", "confidence": 0.95}
+{"claim_id": 87821, "verdict": "incident", "incident_type": "arrest", "place": "بيت لحم", "confidence": 0.9}
+{"claim_id": 88109, "verdict": "incident", "incident_type": "raid", "place": "عقربا", "confidence": 0.7}
+{"claim_id": 88207, "verdict": "incident", "incident_type": "settler_attack", "place": "جبل رأس العين", "confidence": 0.75}
+{"claim_id": 88604, "verdict": "incident", "incident_type": "demolition", "place": "خربة الفخيت", "confidence": 0.85}
+{"claim_id": 89244, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 89890, "verdict": "incident", "incident_type": "demolition", "place": "جنين", "confidence": 0.85}
+{"claim_id": 90020, "verdict": "incident", "incident_type": "demolition", "place": "دوار البادية", "confidence": 0.85}
+{"claim_id": 90048, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 90090, "verdict": "incident", "incident_type": "land_levelling", "place": "الشعب الأبيض", "confidence": 0.9}
+{"claim_id": 90823, "verdict": "incident", "incident_type": "arrest", "place": "تقوع", "confidence": 0.9}
+{"claim_id": 90869, "verdict": "incident", "incident_type": "arrest", "place": "تقوع", "confidence": 0.9}
+{"claim_id": 91072, "verdict": "incident", "incident_type": "raid", "place": "العرقة", "confidence": 0.9}
+{"claim_id": 91513, "verdict": "incident", "incident_type": "settler_attack", "place": "برقا", "confidence": 0.9}
+{"claim_id": 91588, "verdict": "incident", "incident_type": "demolition", "place": "بتير", "confidence": 0.9}
+{"claim_id": 91938, "verdict": "incident", "incident_type": "land_levelling", "place": "المجد", "confidence": 0.9}
+{"claim_id": 92373, "verdict": "incident", "incident_type": "raid", "place": "برقا", "confidence": 0.95}
+{"claim_id": 92383, "verdict": "incident", "incident_type": "raid", "place": "سلواد", "confidence": 0.8}
+{"claim_id": 92761, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.94}
+{"claim_id": 93543, "verdict": "incident", "incident_type": "settler_attack", "place": "بيتا", "confidence": 0.9}
+{"claim_id": 93827, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 94214, "verdict": "incident", "incident_type": "settler_attack", "place": "مفترق شلال العوجا", "confidence": 0.9}
+{"claim_id": 94299, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 94486, "verdict": "not_incident", "incident_type": null, "place": "وادي الرخيم", "confidence": 0.8}
+{"claim_id": 95437, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 95762, "verdict": "incident", "incident_type": "raid", "place": "المفقرة", "confidence": 0.9}
+{"claim_id": 96068, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 96100, "verdict": "incident", "incident_type": "raid", "place": "طولكرم", "confidence": 0.9}
+{"claim_id": 97356, "verdict": "incident", "incident_type": "arrest", "place": "بيت إكسا", "confidence": 0.95}
+{"claim_id": 97358, "verdict": "incident", "incident_type": "arrest", "place": "بيت إكسا", "confidence": 0.95}
+{"claim_id": 97836, "verdict": "incident", "incident_type": "settler_attack", "place": "يرزا", "confidence": 0.55}
+{"claim_id": 99162, "verdict": "incident", "incident_type": "land_levelling", "place": "زبدة", "confidence": 0.9}
+{"claim_id": 100105, "verdict": "incident", "incident_type": "injury", "place": "أم الشرايط", "confidence": 0.95}
+{"claim_id": 100728, "verdict": "incident", "incident_type": "death", "place": "البيرة", "confidence": 0.8}
+{"claim_id": 100896, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 102632, "verdict": "incident", "incident_type": "land_levelling", "place": "حمصة", "confidence": 0.8}
+{"claim_id": 102633, "verdict": "incident", "incident_type": "land_levelling", "place": "حمصة", "confidence": 0.8}
+{"claim_id": 102956, "verdict": "incident", "incident_type": "arrest", "place": "مخيم بلاطة", "confidence": 0.85}
+{"claim_id": 102991, "verdict": "incident", "incident_type": "settler_attack", "place": "برقا", "confidence": 0.6}
+{"claim_id": 103001, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 103137, "verdict": "incident", "incident_type": "injury", "place": "حي القرعان", "confidence": 0.9}
+{"claim_id": 103195, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.92}
+{"claim_id": 103204, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.94}
+{"claim_id": 104368, "verdict": "incident", "incident_type": "raid", "place": "بيت ساحور", "confidence": 0.95}
+{"claim_id": 104543, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 104905, "verdict": "incident", "incident_type": "injury", "place": "حاجز شعفاط", "confidence": 0.6}
+{"claim_id": 105311, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 106786, "verdict": "incident", "incident_type": "raid", "place": "المسجد الأقصى", "confidence": 0.7}
+{"claim_id": 106864, "verdict": "incident", "incident_type": "settler_attack", "place": "اغزيوه", "confidence": 0.9}
+{"claim_id": 106907, "verdict": "incident", "incident_type": "raid", "place": "جبل المشارف", "confidence": 0.55}
+{"claim_id": 106992, "verdict": "incident", "incident_type": "death", "place": "القدس", "confidence": 0.55}
+{"claim_id": 107865, "verdict": "not_incident", "incident_type": null, "place": "كوبر", "confidence": 0.9}
+{"claim_id": 108290, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}
+{"claim_id": 111358, "verdict": "incident", "incident_type": "closure", "place": "قلقيلية", "confidence": 0.85}
+{"claim_id": 111362, "verdict": "incident", "incident_type": "raid", "place": "دير دبوان", "confidence": 0.95}
+{"claim_id": 111878, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 112223, "verdict": "incident", "incident_type": "settler_attack", "place": "", "confidence": 0.5}
+{"claim_id": 112455, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.8}
+{"claim_id": 112474, "verdict": "incident", "incident_type": "closure", "place": "جبع", "confidence": 0.75}
+{"claim_id": 112588, "verdict": "incident", "incident_type": "death", "place": "غانيم", "confidence": 0.85}
+{"claim_id": 112590, "verdict": "incident", "incident_type": "closure", "place": "نعلين", "confidence": 0.9}
+{"claim_id": 112754, "verdict": "incident", "incident_type": "arrest", "place": "رام الله", "confidence": 0.8}
+{"claim_id": 112833, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.55}
+{"claim_id": 112842, "verdict": "incident", "incident_type": "raid", "place": "المسجد الأقصى", "confidence": 0.7}
+{"claim_id": 113050, "verdict": "incident", "incident_type": "arrest", "place": "جنين", "confidence": 0.9}
+{"claim_id": 113231, "verdict": "incident", "incident_type": "settler_attack", "place": "سهل مرج سيع", "confidence": 0.85}
+{"claim_id": 113298, "verdict": "incident", "incident_type": "closure", "place": "جبع", "confidence": 0.8}
+{"claim_id": 113365, "verdict": "incident", "incident_type": "closure", "place": "القدس", "confidence": 0.85}
+{"claim_id": 113369, "verdict": "incident", "incident_type": "closure", "place": "القدس", "confidence": 0.85}
+{"claim_id": 114042, "verdict": "incident", "incident_type": "arrest", "place": "يعبد", "confidence": 0.93}
+{"claim_id": 115354, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.97}
+{"claim_id": 115855, "verdict": "incident", "incident_type": "raid", "place": "نعلين", "confidence": 0.6}
+{"claim_id": 115888, "verdict": "incident", "incident_type": "closure", "place": "عرابه", "confidence": 0.8}
+{"claim_id": 121772, "verdict": "incident", "incident_type": "raid", "place": "سلواد", "confidence": 0.9}
+{"claim_id": 123554, "verdict": "incident", "incident_type": "land_levelling", "place": "جبع", "confidence": 0.9}
+{"claim_id": 123568, "verdict": "incident", "incident_type": "settler_attack", "place": "زبدا", "confidence": 0.85}
+{"claim_id": 123733, "verdict": "incident", "incident_type": "settler_attack", "place": "جبع", "confidence": 0.7}
+{"claim_id": 123833, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.95}
+{"claim_id": 123844, "verdict": "incident", "incident_type": "shooting", "place": "عيناف", "confidence": 0.75}
+{"claim_id": 123872, "verdict": "incident", "incident_type": "closure", "place": "دوار حلميش", "confidence": 0.85}
+{"claim_id": 127159, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.98}
+{"claim_id": 129741, "verdict": "incident", "incident_type": "settler_attack", "place": "رأس زيد", "confidence": 0.8}
+{"claim_id": 131038, "verdict": "incident", "incident_type": "settler_attack", "place": "رأس زيد", "confidence": 0.8}
+{"claim_id": 131062, "verdict": "incident", "incident_type": "raid", "place": "قريوت", "confidence": 0.9}
+{"claim_id": 133699, "verdict": "incident", "incident_type": "raid", "place": "سلواد", "confidence": 0.9}
+{"claim_id": 140894, "verdict": "incident", "incident_type": "land_levelling", "place": "دير نظام", "confidence": 0.8}
+{"claim_id": 141038, "verdict": "incident", "incident_type": "settler_attack", "place": "برقا", "confidence": 0.85}
+{"claim_id": 141197, "verdict": "incident", "incident_type": "shooting", "place": "بيت عور الفوقا", "confidence": 0.5}
+{"claim_id": 141203, "verdict": "incident", "incident_type": "injury", "place": "حاجز 443", "confidence": 0.75}
+{"claim_id": 141233, "verdict": "incident", "incident_type": "raid", "place": "منطقة الطبال", "confidence": 0.85}
+{"claim_id": 141315, "verdict": "incident", "incident_type": "death", "place": "بيت عور التحتا", "confidence": 0.7}
+{"claim_id": 142623, "verdict": "incident", "incident_type": "closure", "place": "دير جرير", "confidence": 0.6}
+{"claim_id": 144238, "verdict": "incident", "incident_type": "injury", "place": "قلقيلية", "confidence": 0.95}
+{"claim_id": 144269, "verdict": "incident", "incident_type": "closure", "place": "برقا", "confidence": 0.9}
+{"claim_id": 144328, "verdict": "incident", "incident_type": "demolition", "place": "بيت امرين", "confidence": 0.7}
+{"claim_id": 144916, "verdict": "incident", "incident_type": "demolition", "place": "خربة \"جنبا\"", "confidence": 0.9}
+{"claim_id": 146395, "verdict": "incident", "incident_type": "land_levelling", "place": "دير نظام", "confidence": 0.8}
+{"claim_id": 146505, "verdict": "incident", "incident_type": "land_levelling", "place": "بيت ريما", "confidence": 0.95}
+{"claim_id": 154194, "verdict": "incident", "incident_type": "siege", "place": "خربة الرأس الأحمر", "confidence": 0.85}
+{"claim_id": 154300, "verdict": "incident", "incident_type": "raid", "place": "عين اللوزة", "confidence": 0.6}
+{"claim_id": 154334, "verdict": "incident", "incident_type": "closure", "place": "بيت فوريك", "confidence": 0.9}
+{"claim_id": 154364, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.75}
+{"claim_id": 154602, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.93}
+{"claim_id": 154925, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.6}
+{"claim_id": 157851, "verdict": "incident", "incident_type": "closure", "place": "بيت فوريك", "confidence": 0.75}
+{"claim_id": 157879, "verdict": "incident", "incident_type": "land_levelling", "place": "بيت ريما", "confidence": 0.9}
+{"claim_id": 159186, "verdict": "incident", "incident_type": "land_levelling", "place": "بيت ريما", "confidence": 0.9}
+{"claim_id": 159191, "verdict": "incident", "incident_type": "closure", "place": "حاجز عطارة", "confidence": 0.95}
+{"claim_id": 160543, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.7}
+{"claim_id": 182209, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.93}
+{"claim_id": 182210, "verdict": "not_incident", "incident_type": null, "place": "عطارة", "confidence": 0.55}
+{"claim_id": 182409, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.85}
+{"claim_id": 183945, "verdict": "not_incident", "incident_type": null, "place": "", "confidence": 0.9}

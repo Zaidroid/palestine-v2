@@ -1,0 +1,204 @@
+{
+  "round": "9",
+  "prompt_version": "seat-1-13bb96b5",
+  "model": "opus",
+  "second_reader": {
+    "core": {
+      "arrest": {
+        "n": 20,
+        "regex_right": 11,
+        "seat_kept": 14,
+        "kept_right": 11,
+        "lost_right": 0,
+        "regex_precision": 0.55,
+        "served_precision": 0.786
+      },
+      "closure": {
+        "n": 20,
+        "regex_right": 20,
+        "seat_kept": 18,
+        "kept_right": 18,
+        "lost_right": 2,
+        "regex_precision": 1.0,
+        "served_precision": 1.0
+      },
+      "death": {
+        "n": 20,
+        "regex_right": 9,
+        "seat_kept": 11,
+        "kept_right": 8,
+        "lost_right": 1,
+        "regex_precision": 0.45,
+        "served_precision": 0.727
+      },
+      "demolition": {
+        "n": 20,
+        "regex_right": 12,
+        "seat_kept": 17,
+        "kept_right": 12,
+        "lost_right": 0,
+        "regex_precision": 0.6,
+        "served_precision": 0.706
+      },
+      "injury": {
+        "n": 20,
+        "regex_right": 16,
+        "seat_kept": 18,
+        "kept_right": 16,
+        "lost_right": 0,
+        "regex_precision": 0.8,
+        "served_precision": 0.889
+      },
+      "land_levelling": {
+        "n": 20,
+        "regex_right": 19,
+        "seat_kept": 20,
+        "kept_right": 19,
+        "lost_right": 0,
+        "regex_precision": 0.95,
+        "served_precision": 0.95
+      },
+      "raid": {
+        "n": 20,
+        "regex_right": 17,
+        "seat_kept": 18,
+        "kept_right": 17,
+        "lost_right": 0,
+        "regex_precision": 0.85,
+        "served_precision": 0.944
+      },
+      "settler_attack": {
+        "n": 20,
+        "regex_right": 15,
+        "seat_kept": 18,
+        "kept_right": 15,
+        "lost_right": 0,
+        "regex_precision": 0.75,
+        "served_precision": 0.833
+      },
+      "shooting": {
+        "n": 20,
+        "regex_right": 18,
+        "seat_kept": 20,
+        "kept_right": 18,
+        "lost_right": 0,
+        "regex_precision": 0.9,
+        "served_precision": 0.9
+      },
+      "siege": {
+        "n": 20,
+        "regex_right": 14,
+        "seat_kept": 15,
+        "kept_right": 13,
+        "lost_right": 1,
+        "regex_precision": 0.7,
+        "served_precision": 0.867
+      },
+      "ALL": {
+        "n": 200,
+        "regex_right": 151,
+        "seat_kept": 169,
+        "kept_right": 147,
+        "lost_right": 4,
+        "regex_precision": 0.755,
+        "served_precision": 0.87
+      }
+    },
+    "adversarial": {
+      "death": {
+        "n": 6,
+        "regex_right": 0,
+        "seat_kept": 0,
+        "kept_right": 0,
+        "lost_right": 0,
+        "regex_precision": 0.0,
+        "served_precision": null
+      },
+      "shooting": {
+        "n": 2,
+        "regex_right": 1,
+        "seat_kept": 1,
+        "kept_right": 1,
+        "lost_right": 0,
+        "regex_precision": 0.5,
+        "served_precision": 1.0
+      },
+      "raid": {
+        "n": 9,
+        "regex_right": 4,
+        "seat_kept": 4,
+        "kept_right": 4,
+        "lost_right": 0,
+        "regex_precision": 0.444,
+        "served_precision": 1.0
+      },
+      "settler_attack": {
+        "n": 3,
+        "regex_right": 1,
+        "seat_kept": 2,
+        "kept_right": 1,
+        "lost_right": 0,
+        "regex_precision": 0.333,
+        "served_precision": 0.5
+      },
+      "arrest": {
+        "n": 8,
+        "regex_right": 3,
+        "seat_kept": 4,
+        "kept_right": 3,
+        "lost_right": 0,
+        "regex_precision": 0.375,
+        "served_precision": 0.75
+      },
+      "demolition": {
+        "n": 12,
+        "regex_right": 2,
+        "seat_kept": 4,
+        "kept_right": 2,
+        "lost_right": 0,
+        "regex_precision": 0.167,
+        "served_precision": 0.5
+      },
+      "siege": {
+        "n": 2,
+        "regex_right": 1,
+        "seat_kept": 1,
+        "kept_right": 1,
+        "lost_right": 0,
+        "regex_precision": 0.5,
+        "served_precision": 1.0
+      },
+      "injury": {
+        "n": 5,
+        "regex_right": 0,
+        "seat_kept": 2,
+        "kept_right": 0,
+        "lost_right": 0,
+        "regex_precision": 0.0,
+        "served_precision": 0.0
+      },
+      "ALL": {
+        "n": 47,
+        "regex_right": 12,
+        "seat_kept": 18,
+        "kept_right": 12,
+        "lost_right": 0,
+        "regex_precision": 0.255,
+        "served_precision": 0.667
+      }
+    }
+  },
+  "answered": 287,
+  "of": 287,
+  "chunks_failed": 0,
+  "precision": 0.939,
+  "recall": 0.974,
+  "counts": {
+    "tp": 184,
+    "fp": 12,
+    "fn": 5,
+    "tn": 86
+  },
+  "type_ok_where_types_agree": "130/131",
+  "at": "2026-09-26T08:26:58+00:00"
+}

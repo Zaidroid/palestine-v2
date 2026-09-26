@@ -62,3 +62,12 @@ def test_draw_respects_the_strata_and_is_deterministic():
 def test_the_contract_has_a_scorer_for_roads():
     from ops import gold_contract
     assert gold_contract.SCORERS["roads"] is not None
+
+
+def test_alias_keys_of_one_place_are_one_checkpoint():
+    sample = [{"gold_id": "a:1", "v1": [_v1("حاجز قلنديا", "both", "open")]}]
+    gold = [_gold("a:1", [_r("قلنديا", "both", "open")])]
+    raw = rg.score(gold, sample)
+    unified = rg.score(gold, sample, {"حاجز قلنديا": "place:7", "قلنديا": "place:7"})
+    assert raw["counts"] == {"tp": 0, "fp": 1, "fn": 1}
+    assert unified["counts"] == {"tp": 1, "fp": 0, "fn": 0}

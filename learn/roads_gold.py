@@ -176,12 +176,29 @@ def write_sample() -> int:
 
 # ── scoring ──────────────────────────────────────────────────────────────────
 
-def _triples(readings, *, gold: bool) -> set[tuple[str, str, str]]:
+def key_map() -> dict[str, str] | None:
+    """v1 canonical key → the v2 place it is (merges followed). v1's registry
+    holds several keys for one checkpoint (measured on this gold: 132 keys, 130
+    mapped); scoring raw keys would call a right reading under an alias key a
+    miss AND a false positive. None where there is no database."""
+    try:
+        from resolve.db import connect
+        with connect() as c, c.cursor() as cur:
+            cur.execute("""SELECT p.source_refs->>'v1_canonical_key',
+                                  coalesce(p.merged_into, p.place_id)
+                             FROM place p WHERE p.source_refs ? 'v1_canonical_key'""")
+            return {k: f"place:{pid}" for k, pid in cur.fetchall()}
+    except Exception:                                      # noqa: BLE001
+        return None
+
+
+def _triples(readings, *, gold: bool, kmap: dict | None = None) -> set[tuple[str, str, str]]:
     out = set()
     for r in readings:
         key = r.get("canonical_key")
         if not key:
             continue
+        key = (kmap or {}).get(key, key)
         value = r.get("value") if gold else r.get("status")
         out.add((key, _norm_dir(r.get("direction")), value))
     return out
@@ -191,8 +208,10 @@ def _rate(k: int, n: int) -> float | None:
     return round(k / n, 3) if n else None
 
 
-def score(gold_rows: list[dict], sample_rows: list[dict]) -> dict:
-    """v1's parser, scored against what the seat read."""
+def score(gold_rows: list[dict], sample_rows: list[dict],
+          kmap: dict | None = None) -> dict:
+    """v1's parser, scored against what the seat read. `kmap` unifies v1's
+    alias keys onto one place (key_map()); without it keys are compared raw."""
     v1_by_id = {r["gold_id"]: r["v1"] for r in sample_rows}
     tp = fp = fn = 0
     found_keys = gold_keys = value_ok = value_n = 0
@@ -205,8 +224,8 @@ def score(gold_rows: list[dict], sample_rows: list[dict]) -> dict:
             continue
         report_n += 1
         report_agree += bool(v1) == bool(g.get("is_road_report"))
-        G = _triples(g.get("readings") or [], gold=True)
-        V = _triples(v1, gold=False)
+        G = _triples(g.get("readings") or [], gold=True, kmap=kmap)
+        V = _triples(v1, gold=False, kmap=kmap)
         unregistered += sum(1 for r in g.get("readings") or [] if not r.get("canonical_key"))
         tp += len(G & V)
         fp += len(V - G)
@@ -231,6 +250,7 @@ def score(gold_rows: list[dict], sample_rows: list[dict]) -> dict:
         "gold_readings_unregistered": unregistered,
         "messages_with_readings_v1_missed": len(missed_msgs),
         "counts": {"tp": tp, "fp": fp, "fn": fn},
+        "keys_unified_by": "v2 place (merges followed)" if kmap else "raw v1 key",
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -246,7 +266,7 @@ def contract_scorer(gold_rows: list[dict]) -> list[dict]:
         return [{"subject": "roads", "version": "v1-parser", "serving": True,
                  "servable": None, "scores": [], "gold": str(GOLD.relative_to(ROOT)),
                  "verdict": "gold present but its sample file is missing"}]
-    s = score(gold_rows, load_jsonl(SAMPLE))
+    s = score(gold_rows, load_jsonl(SAMPLE), key_map())
     return [{"subject": "roads", "version": "v1-parser", "serving": True,
              "servable": None, "gold": str(GOLD.relative_to(ROOT)), "scores": [s],
              "verdict": (f"control measured on {s['scored']} messages: reading precision "
@@ -264,7 +284,7 @@ def main(argv=None) -> int:
     if a.sample:
         write_sample()
     if a.score:
-        s = score(load_jsonl(GOLD), load_jsonl(SAMPLE))
+        s = score(load_jsonl(GOLD), load_jsonl(SAMPLE), key_map())
         RESULT.write_text(json.dumps(s, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(s, ensure_ascii=False, indent=2))
     if a.show and RESULT.exists():

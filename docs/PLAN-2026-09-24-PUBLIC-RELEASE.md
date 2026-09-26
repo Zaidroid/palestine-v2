@@ -700,3 +700,26 @@ DATABANK-05 (event identity), and the verify-first list.
 multiset decided after the whole run: a fresh load keeps all 8,495 conflict events (the set dropped 764 distinct UCDP
 events that share day, place and toll across dyads); a v1 re-hash still skips everything; rolled-back real run: 0
 written. 12-databank's confirmed list is closed; the verify-first list (V01–V19) is next where it touches G5.
+
+2026-09-26 08:30 UTC · P0-C round 9 (G3) · measured, gate FAIL · proof: `6881619`. Classifier 1.10.0 on a fresh round
+(200 core + 47 adversarial + 40 rejects, read by a Claude seat on round 8's conventions): **0.755 [0.69–0.81]**, below
+0.80. Below the per-type floor: death 0.45 (one statement reposted five times; farewell and memorial posts), arrest 0.55
+(releases, administrative-detention orders, ongoing detentions); demolition 0.60 (tree uprooting, road works). The
+round-8 projection of 0.877 for 1.10.0 was optimistic. Served quality note now states round 9.
+
+2026-09-26 08:40 UTC · P2-A.2 seat batch + G3 path · built, not installed · proof: `analyst/seat_batch.py`,
+`tests/test_seat_batch.py` (6), `ops/seat-gold-round{8,9}.json`. A seat read as a pure function (no tools,
+`--restricted`, no MCP, no settings, scratch cwd, env of HOME/PATH/LANG only; a funeral text carrying an injected
+instruction came back `not_incident`). Measured blind on the human-scored rounds: round 8 precision 0.930 / recall
+0.982 (238); round 9 0.939 / 0.974 (287). **As a second reader on what the regex serves (round 9 core): 0.755 → 0.870,
+every type ≥ 0.70 (arrest 0.79, death 0.73, demolition 0.71), 4 of 151 correct incidents lost; adversarial 0.255 →
+0.667.** Caveat stated wherever this is quoted: the gold was read by a Claude seat too, so this is agreement between
+two readings of one model family, not independent truth. Proposals are stored under classifier `seat` and serve
+nothing; whether serving should require the seat's agreement is Zaid's decision. Timer: HANDS §11.
+
+2026-09-26 08:45 UTC · P1-A.5 roads gold · done · proof: `tests/gold/roads.jsonl` (200 messages, 429 readings, seat-read),
+`ops/roads-gold-score.json`. The control organ D must beat — v1's whitelist parser, v1 alias keys unified on v2's merged
+places: **reading precision 0.814, recall 0.718; checkpoint recall 0.806; value agreement 0.926 where both found the
+checkpoint.** 13 of 70 messages v1 parsed nothing from were real reports; 27 gold readings (6.3 %) name checkpoints v1's
+registry does not hold (دوار مخماس, العروب العجوري, حاجز 17, مدخل سنجل الشرقي …). The reader flagged registry geocodes: every
+Taybeh/Karmelo key tagged Jenin (they are Ramallah), الفحص tagged Nablus (Hebron), البنانا tagged Nablus (Jericho).

@@ -1,0 +1,15 @@
+[Unit]
+Description=Palestine v2 — nightly seat batch: a Claude seat re-reads what the regex left unclear (P2-A.2)
+After=docker.service network-online.target
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+# the claude CLI lives in the user's own bin; the seat itself is run with no
+# tools, no settings and a clean environment (analyst/seat_batch.py, audit OPS-01)
+Environment=PATH=/home/zaid/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/zaid/palestine-v2/ops/with-heartbeat.sh seat-batch 86400 21600 -- /home/zaid/palestine-v2/.venv/bin/python -m analyst.seat_batch --limit 300 --chunk 25
+TimeoutStartSec=3600
+NoNewPrivileges=yes
