@@ -237,17 +237,37 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # DATABANK-V02 (2026-09-26): a locality row is a TOTAL since 2009 (dated
+    # 2009-01-01, precision unknown, coverage_start/end in attrs), not an
+    # event: registered as flow/event it was offered to flow sums beside the
+    # annual series and doubled it (14,471 locality + 14,447 annual
+    # structures). Locality = cumulative over a period; annual = a yearly
+    # flow for the region — the same definitions migration 086 writes.
     - when: {prefix: "demolitions.locality.displaced"}
       concept: displacement.internal
-      measure_kind: flow
+      measure_kind: cumulative
       polarity: -1
-      grain: event
+      grain: period
       place_grain: locality
       canonical_unit: persons
-    - when: {prefix: "demolitions."}
+    - when: {prefix: "demolitions.locality."}
+      concept: demolition
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: locality
+      canonical_unit: structures
+    - when: {prefix: "demolitions.annual_total.structures"}
       concept: demolition
       measure_kind: flow
       polarity: -1
-      grain: event
-      place_grain: locality
+      grain: year
+      place_grain: region
       canonical_unit: structures
+    - when: {prefix: "demolitions.annual_total."}
+      concept: demolition
+      measure_kind: flow
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: persons

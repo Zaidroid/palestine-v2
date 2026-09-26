@@ -384,3 +384,24 @@ def test_DATABANK_05_a_held_twin_does_not_swallow_its_new_sibling_in_any_order(
         report, log = _event_run(monkeypatch, tmp_path, order, held)
         assert log["events"] == ["u-pij"], order
         assert report["notes"]["event_new"] == 1
+
+
+# ── DATABANK-V02: a locality total is not an event flow ──────────────────────
+
+def test_DATABANK_V02_locality_totals_are_cumulative_and_annual_rows_are_yearly_flows():
+    from ops.load_registry import classify
+    rules = databank.load_spec("demolitions")["registry"]["rules"]
+    pairs = [("demolitions.locality.structures", "structures", 526),
+             ("demolitions.locality.displaced", "persons", 400),
+             ("demolitions.annual_total.structures", "structures", 18),
+             ("demolitions.annual_total.displaced", "persons", 18),
+             ("demolitions.annual_total.affected", "persons", 18)]
+    got, missing = classify(pairs, rules)
+    assert not missing
+    for ind in ("demolitions.locality.structures", "demolitions.locality.displaced"):
+        assert (got[ind]["measure_kind"], got[ind]["grain"]) == ("cumulative", "period")
+    for ind in ("demolitions.annual_total.structures", "demolitions.annual_total.displaced",
+                "demolitions.annual_total.affected"):
+        assert (got[ind]["measure_kind"], got[ind]["grain"], got[ind]["place_grain"]) == \
+            ("flow", "year", "region")
+    assert got["demolitions.annual_total.displaced"]["canonical_unit"] == "persons"

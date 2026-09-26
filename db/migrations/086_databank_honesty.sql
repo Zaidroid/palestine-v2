@@ -109,3 +109,10 @@ UPDATE indicator_def SET name_en = 'Structures demolished, by locality (OCHA)',
 UPDATE indicator_def SET name_en = 'People displaced by demolitions, by locality (OCHA)',
                          name_ar = 'أشخاص هُجّروا بسبب الهدم حسب التجمّع (أوتشا)'
  WHERE indicator = 'demolitions.locality.displaced' AND name_en IS NULL;
+
+-- DATABANK-V02: a locality row is a total since 2009, not an event; registered as flow/event it was
+-- offered to flow sums beside the annual series and doubled it. (Matches db/mappings/demolitions.yaml.)
+-- Rollback: UPDATE indicator_def SET measure_kind = 'flow', grain = 'event'
+--            WHERE indicator LIKE 'demolitions.locality.%' AND source_spec = 'demolitions';
+UPDATE indicator_def SET measure_kind = 'cumulative', grain = 'period'
+ WHERE indicator LIKE 'demolitions.locality.%' AND status <> 'reviewed';
