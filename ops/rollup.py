@@ -54,7 +54,8 @@ DATASET_KEY = "tier1_daily"
 # `unit` mirrors resolve/belief.py exactly: a source with no independence group
 # is its own unit. If the two ever disagree, a rollup would report a number of
 # observers the confidence model does not recognise.
-ROLLUP_SQL = """
+TOTALS_SQL = """
+CREATE TEMP TABLE rollup_totals ON COMMIT DROP AS
 WITH grp AS (
   SELECT source_id,
          COALESCE(independence_group, 'src:' || source_id::text) AS unit
@@ -98,17 +99,57 @@ totals AS (
          count(*)::float8
     FROM day GROUP BY 1, 2, value
 )
+SELECT * FROM totals
+"""
+
+# Before 088: the old in-place update (kept only so the nightly keeps running
+# until the index is narrowed; it is the path audit V15 found).
+UPDATE_IN_PLACE_SQL = """
 INSERT INTO observation
   (dataset_id, place_id, indicator, value_num, unit, occurred_at,
    occurred_precision, reported_at, attrs)
 SELECT %(dataset_id)s, t.place_id, t.indicator, t.value_num, 'count',
        %(day)s::date, 'day', now(),
        jsonb_build_object('state_kind', t.state_kind, 'grain', 'day')
-  FROM totals t
+  FROM rollup_totals t
 ON CONFLICT (dataset_id, place_id, indicator, occurred_at)
   WHERE place_id IS NOT NULL AND v1_stable_id IS NULL
   DO UPDATE SET value_num = EXCLUDED.value_num, reported_at = now()
 """
+
+# After 088 (DATABANK-V15, 2026-09-26): a count that CHANGED closes its row and
+# a new one is written; a count that vanished closes; an unchanged count is not
+# touched at all (not even reported_at). as_of any earlier moment returns what
+# the databank said then.
+SUPERSEDE_SQL = ("""
+UPDATE observation o
+   SET sys_period = tstzrange(lower(o.sys_period), now())
+ WHERE o.dataset_id = %(dataset_id)s AND o.occurred_at = %(day)s::date
+   AND o.place_id IS NOT NULL AND o.v1_stable_id IS NULL
+   AND upper(o.sys_period) IS NULL
+   AND NOT EXISTS (SELECT 1 FROM rollup_totals t
+                    WHERE t.place_id = o.place_id AND t.indicator = o.indicator
+                      AND t.value_num IS NOT DISTINCT FROM o.value_num)
+""", """
+INSERT INTO observation
+  (dataset_id, place_id, indicator, value_num, unit, occurred_at,
+   occurred_precision, reported_at, attrs)
+SELECT %(dataset_id)s, t.place_id, t.indicator, t.value_num, 'count',
+       %(day)s::date, 'day', now(),
+       jsonb_build_object('state_kind', t.state_kind, 'grain', 'day')
+  FROM rollup_totals t
+ WHERE NOT EXISTS (SELECT 1 FROM observation o
+                    WHERE o.dataset_id = %(dataset_id)s AND o.occurred_at = %(day)s::date
+                      AND o.place_id = t.place_id AND o.indicator = t.indicator
+                      AND o.v1_stable_id IS NULL AND upper(o.sys_period) IS NULL)
+""")
+
+
+def supersede_ready(cur) -> bool:
+    """088 applied: the rollup index holds current rows only."""
+    cur.execute("SELECT to_regclass('observation_rollup_uniq_current') IS NOT NULL "
+                "AND to_regclass('observation_rollup_uniq') IS NULL")
+    return bool(cur.fetchone()[0])
 
 # Days with observations but no rollup yet. Asked of the data rather than of a
 # cursor, so a gap left by a failed run is picked up on the next one instead of
@@ -137,20 +178,32 @@ def dataset_id(cur) -> int:
 
 
 def run(days: int, dry_run: bool = False) -> dict:
-    written, covered = 0, []
+    written, closed, covered = 0, 0, []
     with connect() as conn, conn.cursor() as cur:
         did = dataset_id(cur)
+        ready = supersede_ready(cur)
         cur.execute(PENDING_SQL, {"days": days})
         for (day,) in cur.fetchall():
             if dry_run:
                 covered.append(str(day))
                 continue
-            cur.execute(ROLLUP_SQL, {"day": day, "dataset_id": did})
+            params = {"day": day, "dataset_id": did}
+            cur.execute(TOTALS_SQL, params)
+            if ready:
+                close_sql, insert_sql = SUPERSEDE_SQL
+                cur.execute(close_sql, params)
+                closed += cur.rowcount
+                cur.execute(insert_sql, params)
+            else:
+                cur.execute(UPDATE_IN_PLACE_SQL, params)
             written += cur.rowcount
+            cur.execute("DROP TABLE rollup_totals")
             covered.append(str(day))
         if not dry_run:
             conn.commit()
-    return {"days": len(covered), "rows": written, "covered": covered}
+    return {"days": len(covered), "rows": written, "closed": closed,
+            "mode": "supersede" if ready else "update-in-place (088 not applied)",
+            "covered": covered}
 
 
 def main() -> int:
@@ -165,8 +218,8 @@ def main() -> int:
     if not r["days"]:
         print("rollup: no complete days with observations in range")
         return 0
-    print(f"rollup: {r['rows']:,} rows across {r['days']} day(s) "
-          f"[{r['covered'][0]} .. {r['covered'][-1]}]"
+    print(f"rollup: {r['rows']:,} rows written, {r['closed']:,} closed, across "
+          f"{r['days']} day(s) [{r['covered'][0]} .. {r['covered'][-1]}] — {r['mode']}"
           + (" (dry run)" if a.dry_run else ""))
     return 0
 
