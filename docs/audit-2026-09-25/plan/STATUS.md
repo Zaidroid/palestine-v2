@@ -26,6 +26,8 @@ offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked throug
 | `b28948a` | databank: a complete source's withdrawn rows close; value_num keys need a declaration | F027 F134 |
 | `9ed9977` | databank: events matched by count after the whole run, never collapsed in-run | F133 |
 | `dcc1047` | rollup: supersede instead of overwrite (088) | F142 |
+| `2ebf3fe` | databank: demolition locality totals are cumulative | F128 |
+| `c8a5439` | databank: gmotel serves, refusals counted, full-emission ceiling, first copy survives | F131 F132 F136 F344 |
 
 Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook), and the commit that adds this file.
 
@@ -260,6 +262,11 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-V09 | F135 | medium | **done** | `6e47e60` | Two same-identity rows with different content in one run: None reached the supersede list and both rows one key (reproduced, fixed) |
 | DATABANK-V11 | F137 | medium | **done** | `6e47e60` | run_all isolated only SpecRefused; any other exception skipped every later category (reproduced, fixed) |
 | DATABANK-V15 | F142 | medium | **done** | `dcc1047` | The nightly rollup overwrote value_num in place: supersedes after migration 088 (not yet applied; the old update runs until then) |
+| DATABANK-V02 | F128 | medium | **done** | `2ebf3fe` | demolitions.locality.* registered cumulative/period, annual flow/year/region, in the spec and in 086 (reproduced, fixed) |
+| DATABANK-V06 | F131 | medium | **done** | `c8a5439` | gmotel bulletins serve with the office named; only `missing` is inferred; new vocabulary fails the run (reproduced with a synthetic record, fixed) |
+| DATABANK-V07 | F132 | medium | **done** | `c8a5439` | Stable-id refusals counted per dataset; a keyed dataset's refusal fails and rolls back (measured: none on production) |
+| DATABANK-V10 | F136 | medium | **done** | `c8a5439` | max_observations judges the full emission on a real run (reproduced, fixed) |
+| DATABANK-V12 | F344 | medium | **done** | `c8a5439` | backfill_identity keeps the first-seen copy (ORDER BY lower(sys_period)) |
 | DATABANK-V08 | F134 | medium | **done** | `b28948a` | Upstream deletions never superseded: opt-in `identity.generation: complete` closes what a whole-publication source stopped sending, capped (reproduced in production, fixed) |
 
 ### 13 · Learning loop, analyst, self-measurement — `13-learning.md`
