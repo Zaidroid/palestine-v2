@@ -450,8 +450,22 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
 
     d = api("/v2/checkpoints/nearby", lat=lat, lon=lon, direction=direction,
             radius_km=radius_km, limit=limit)
-    res, counts = d.get("results", []), d.get("counts", {})
-    known = [r for r in res if r["flow"] != "unknown"]
+    nearest, counts = d.get("results", []), d.get("counts", {})
+    # Known first, then the nearest unknown (2026-09-26). The route lists the
+    # `limit` NEAREST, known or not; around central Nablus those six were all
+    # unknown while Huwara, Deir Sharaf and Awarta had readings minutes old a
+    # few km further, and the answer said "no recent updates around Nablus"
+    # with 71 in range. A fact in range outranks a silence nearer by.
+    known = []
+    if counts.get("known"):
+        k = api("/v2/checkpoints/nearby", lat=lat, lon=lon, direction=direction,
+                radius_km=radius_km, limit=50, include_unknown="false")
+        known = k.get("results", [])[:limit]
+    fill = [r for r in nearest if r["flow"] == "unknown"]
+    fill.sort(key=lambda r: (not searching(r), r.get("straight_km") or 0))
+    # a search under way is a current fact too: it keeps its place in the list
+    n_fill = max(sum(1 for r in fill if searching(r)), limit - len(known))
+    res = known + fill[:n_fill]
 
     if not known and not counts.get("in_radius"):
         # Nothing tracked in range is not "old news" (F052).
