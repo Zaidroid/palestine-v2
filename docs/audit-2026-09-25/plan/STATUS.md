@@ -269,6 +269,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-V17 | F349 | medium | **done** | `d4da0e8` | The spec decides which datasets must carry keys; 38 declared, 0 keyless current rows |
 | DATABANK-V13 | F140 | medium | **done** | `81bafac` | One export file per licence tuple (hdx carried two under one file) |
 | DATABANK-V03 | F339 | medium | **done** | `aa8be5f` | 092: a BEFORE INSERT guard for the six register datasets (not yet applied) |
+| DATABANK-V01 | F163 | medium | **done** | `bbe55fa` | v2 fetches OCHA demolitions itself (P1-B.3); the 09-26 03:42 load wrote 875 rows (revisions + 20 new) |
 | DATABANK-V04 | F129 | medium | **done** | `1cdd282` | casualties.annual_total's scope warning served via indicator_def.serve_warning (086, not yet applied) |
 | DATABANK-V05 | F130 | medium | **partial** | `b28948a` | A UNRWA re-stamp now FAILS the run (generation complete, max_absent 15) instead of doubling 75 rows; the identity still keys on the build stamp |
 | DATABANK-V16 | F144 | medium | **done** | `6e47e60` | The write path is now under test: supersede, no None to supersede, indistinguishable copies written, full-emission ceiling, event multiset, absent closes (tests/test_databank_guard_0926.py) |
