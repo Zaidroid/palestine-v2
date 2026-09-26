@@ -106,3 +106,22 @@ def test_webapp_03_04_road_refreshes_and_says_when_a_fetch_fails():
     assert 'es.addEventListener("state_change"' in h and "setInterval(load" in h
     assert "if (!a.ok || !b.ok) throw" in h
     assert h.count('err:"') == 2 and "تعذّر تحميل البيانات" in h and "Could not load" in h
+
+
+def test_a_both_report_witnesses_a_direction_report_without_being_scored_twice():
+    """2026-09-26: palhub files inbound/outbound; the channels mostly file
+    'both'. Bucketed by direction they never met — 21 comparisons in 30 days,
+    trust_weight 0.274, and the known-fraction fell from 0.59 to 0.06 at the
+    03:21 write. A 'both' reading now votes in the direction buckets as a
+    witness and is scored only in its own bucket."""
+    from collections import defaultdict
+    buckets = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    witnesses = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    buckets[(7, "inbound", 1)]["palhub"]["open"].append(10)
+    buckets[(7, "both", 1)]["channels"]["open"].append(20)
+    witnesses[(7, "inbound", 1)]["channels"]["open"].append(20)
+    out = R._score_buckets(buckets, "k", 900, witnesses)
+    assert out["per_source"][10] == {"hits": 1, "misses": 0}      # palhub scored
+    assert 20 not in out["per_source"]                             # the witness is not
+    # without witnesses palhub has no peer at all
+    assert 10 not in R._score_buckets(buckets, "k", 900)["per_source"]

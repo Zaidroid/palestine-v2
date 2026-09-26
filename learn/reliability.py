@@ -143,14 +143,29 @@ def score_kind(cur, kind: str, days: int, window_s: int) -> dict:
     # (place, direction, time bucket) -> unit -> {value: [source_ids]}
     buckets: dict[tuple, dict[str, dict[str, list[int]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list)))
+    # A 'both' report speaks for each travel direction — the serving view reads
+    # it that way (079: inbound/outbound are the freshest of that direction OR
+    # 'both'). Until 2026-09-26 the learner did not, so a reporter that files
+    # directions separately (palhub: every bulletin row is دخول/خروج) had no
+    # peer in its buckets: 21 comparisons in 30 days, a Wilson lower bound of
+    # 0.245, trust_weight 0.274 — and at 03:21 that single write took the
+    # known-fraction from 0.59 to 0.06, undoing an earn-out measured at ≥ 0.90.
+    # A 'both' reading now WITNESSES the inbound and outbound buckets: it votes
+    # there, but is scored only in its own 'both' bucket, so no reporter is
+    # counted twice.
+    witnesses: dict[tuple, dict[str, dict[str, list[int]]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(list)))
     for place_id, direction, observed_at, value, source_id, unit in rows:
         b = int(observed_at.timestamp()) // window_s
         buckets[(place_id, direction, b)][unit][value].append(source_id)
+        if direction == "both":
+            for d in ("inbound", "outbound"):
+                witnesses[(place_id, d, b)][unit][value].append(source_id)
 
-    return _score_buckets(buckets, kind, window_s)
+    return _score_buckets(buckets, kind, window_s, witnesses)
 
 
-def _score_buckets(buckets, kind: str, window_s: int) -> dict:
+def _score_buckets(buckets, kind: str, window_s: int, witnesses=None) -> dict:
     """LEAVE-ONE-OUT (audit F110): each unit is scored against the majority of
     the OTHER units in its bucket. The old consensus included the unit's own
     vote, so a two-unit bucket could never record a miss and every unit was
@@ -162,8 +177,12 @@ def _score_buckets(buckets, kind: str, window_s: int) -> dict:
     joint: dict[int, Counter] = defaultdict(Counter)
     compared = ties = singleton = 0
 
-    for _, by_unit in buckets.items():
-        if len(by_unit) < 2:
+    for key, by_unit in buckets.items():
+        # witnesses: units that spoke for this direction with a 'both' report
+        # and are not already here — they vote, they are not scored
+        wit = {u: v for u, v in ((witnesses or {}).get(key) or {}).items()
+               if u not in by_unit}
+        if len(by_unit) + len(wit) < 2:
             singleton += 1
             continue
         # ONE VOTE PER UNIT. A unit that reported two different values inside
@@ -177,13 +196,15 @@ def _score_buckets(buckets, kind: str, window_s: int) -> dict:
             v = next(iter(vals))
             unit_value[unit] = v
             votes[v] += 1
-        if len(unit_value) < 2:
+        witness_value = {u: next(iter(vals)) for u, vals in wit.items() if len(vals) == 1}
+        if not unit_value or len(unit_value) + len(witness_value) < 2:
             singleton += 1
             continue
         compared += 1
         scored_any = False
+        everyone = {**witness_value, **unit_value}
         for unit, v in unit_value.items():
-            others = Counter(v2 for u2, v2 in unit_value.items() if u2 != unit)
+            others = Counter(v2 for u2, v2 in everyone.items() if u2 != unit)
             top = others.most_common()
             if len(top) > 1 and top[0][1] == top[1][1]:
                 continue                      # the others tie: this unit is not scored
