@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — press links every hour, a two-day window (an article lands hours after the event)
+
+[Timer]
+OnBootSec=12min
+OnUnitActiveSec=1h
+AccuracySec=2min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Palestine v2 — link press coverage to incidents (P2-C.2, organ F deterministic half)
+After=docker.service
+OnFailure=palestine-v2-alert@%n.service
+
+[Service]
+Type=oneshot
+User=zaid
+WorkingDirectory=/home/zaid/palestine-v2
+ExecStart=/home/zaid/palestine-v2/ops/with-heartbeat.sh press-links 3600 7200 -- /home/zaid/palestine-v2/.venv/bin/python -m ops.press_links --days 2 --show 0
+TimeoutStartSec=600

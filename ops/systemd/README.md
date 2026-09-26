@@ -28,7 +28,7 @@ directory as the record, and keep the two in step.
     sudo systemctl enable --now palestine-v2-{api,poller,analyst}.service
     sudo systemctl enable --now $(basename -a ops/systemd/*.timer)
 
-Timers in this directory today: accuracy, backup, checkpoint-learn, checkpoints, crowd, databank, external, gaza, maintain-retry, maintain, mcp-audit, measure-review, news, palhub-roads, restore-test, rollup, scout, valhalla-ip, watchdog.
+Timers in this directory today: accuracy, backup, checkpoint-learn, checkpoints, crowd, databank, external, gaza, maintain-retry, maintain, mcp-audit, measure-review, news, palhub-roads, press-links, restore-test, rollup, scout, valhalla-ip, watchdog.
 
 ## Checking they have not drifted
 
