@@ -16,6 +16,16 @@
 concepts:
 
   # ── people harmed ────────────────────────────────────────────────────────
+  violence:
+    name_en: Violence
+    definition: Attacks on people and property, counted as events.
+  violence.settler:
+    parent: violence
+    name_en: Settler attacks
+    definition: >-
+      Attacks by Israeli settlers on Palestinians, their homes, land and
+      livestock. Was filed under movement.closure until audit V18
+      (2026-09-26). name_ar is Zaid's to write.
   mortality:
     name_en: Mortality
     name_ar: الوفيات
@@ -139,9 +149,11 @@ concepts:
     name_en: Electricity supply
     name_ar: إمدادات الكهرباء
     definition: >-
-      Generation, import, and hours of supply. NO SERIES YET — declared here
-      because the gap is the point: this is the category the source scout
-      found nothing open for, and the JDECO and PENRA letters exist to fill.
+      Electricity access and energy use — the World Bank's EG.* national
+      aggregates (access to electricity, renewable share, use per head). NO
+      series of hours of supply, generation or outages yet: that gap is the
+      one the JDECO and PENRA letters exist to fill (audit V18, 2026-09-26:
+      the definition said "no series" while 7 were served).
   health.service:
     name_en: Health services
     name_ar: الخدمات الصحية
@@ -185,6 +197,12 @@ concepts:
     name_en: Internet outages
     name_ar: انقطاع الإنترنت
     definition: Loss of internet reachability, measured from outside.
+  connectivity.access:
+    name_en: Connectivity access
+    definition: >-
+      Who is connected — subscriptions, users, secure servers (the World
+      Bank's IT.* and IS.* series). Not whether the network is up: that is
+      connectivity.outage (audit V18, 2026-09-26). name_ar is Zaid's to write.
   connectivity.censorship:
     name_en: Network interference
     definition: Blocking and interference, measured by probe.

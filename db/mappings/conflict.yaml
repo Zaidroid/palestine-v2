@@ -357,7 +357,7 @@ registry:
       place_grain: region
       canonical_unit: persons
     - when: {regex: "cumulative_settler_attacks"}
-      concept: movement.closure
+      concept: violence.settler           # was movement.closure (audit V18)
       measure_kind: cumulative
       polarity: -1
       grain: day

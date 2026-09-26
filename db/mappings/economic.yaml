@@ -454,28 +454,28 @@ registry:
         design — a series nobody has established the kind of is one nobody
         should plot against another.
     - when: {regex: "^economic\\.(it|is)_", unit: [percentage, percent, per_100]}
-      concept: connectivity.outage
+      concept: connectivity.access
       measure_kind: ratio
       grain: year
       place_grain: region
       canonical_unit: percent
     - when: {regex: "^economic\\.(it|is)_", unit: [per_1000, per_100000, births_per_woman]}
-      concept: connectivity.outage
+      concept: connectivity.access
       measure_kind: rate
       grain: year
       place_grain: region
     - when: {regex: "^economic\\.(it|is)_", unit: [index, ratio]}
-      concept: connectivity.outage
+      concept: connectivity.access
       measure_kind: index
       grain: year
       place_grain: region
     - when: {regex: "^economic\\.(it|is)_", unit: [number, count, persons, years, currency_usd, USD]}
-      concept: connectivity.outage
+      concept: connectivity.access
       measure_kind: stock
       grain: year
       place_grain: region
     - when: {regex: "^economic\\.(it|is)_"}
-      concept: connectivity.outage
+      concept: connectivity.access
       measure_kind: unclassified
       grain: year
       place_grain: region

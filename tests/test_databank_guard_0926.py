@@ -460,3 +460,18 @@ def test_DATABANK_V12_the_identity_backfill_keeps_the_first_seen_copy():
     select = src[src.index("SELECT observation_id, indicator"):]
     select = select[:select.index('(ds_id,)')]
     assert "ORDER BY lower(sys_period), observation_id" in select
+
+
+# ── DATABANK-V18: concepts say what the series hold ───────────────────────────
+
+def test_DATABANK_V18_settler_attacks_and_connectivity_access_have_their_own_concepts():
+    from ops.load_registry import classify
+    conflict = databank.load_spec("conflict")["registry"]["rules"]
+    got, _ = classify([("conflict.westbank_cumulative_settler_attacks", "events", 10)], conflict)
+    assert got["conflict.westbank_cumulative_settler_attacks"]["concept"] == "violence.settler"
+    economic = databank.load_spec("economic")["registry"]["rules"]
+    got, _ = classify([("economic.it_net_user_zs", "percent", 20)], economic)
+    assert got["economic.it_net_user_zs"]["concept"] == "connectivity.access"
+    concepts = yaml.safe_load(open("db/registry/concepts.yaml"))["concepts"]
+    assert "NO SERIES YET" not in concepts["energy.supply"]["definition"]
+    assert concepts["violence.settler"]["parent"] == "violence"
