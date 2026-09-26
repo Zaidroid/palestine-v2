@@ -42,8 +42,10 @@ THE SUBJECTS
               audit F229: agreement, not a precision. Gate: exact on every
               human-read row with at least 100 of them (F229), and exact on
               every gold row, because these numbers are served verbatim.
-  roads       tests/gold/roads.jsonl (P1-A.5, not built yet): "no gold set",
-              never a number. The hook is SCORERS["roads"].
+  roads       tests/gold/roads.jsonl (P1-A.5, built 2026-09-26 by
+              learn/roads_gold.py): v1's whitelist parser — the control organ D
+              must beat — scored per reading (checkpoint, direction, value).
+              No gold file = "no gold set", never a number.
   organ:<x>   every registered analyst organ with no gold set of its own.
 """
 from __future__ import annotations
@@ -393,6 +395,16 @@ def moh(gold_path: Path = MOH_GOLD, texts: dict | None = None, ops: Path = OPS,
 # ones above; until one is written, a gold file that exists is still reported
 # as unmeasured, and a missing one as "no gold set" — never as a number.
 SCORERS: dict[str, Callable[[list[dict]], list[dict]] | None] = {"roads": None}
+
+
+def _roads_scorer(rows: list[dict]) -> list[dict]:
+    # P1-A.5 (2026-09-26): v1's whitelist parser, the control organ D must
+    # beat, scored on the seat-read messages (learn/roads_gold.py).
+    from learn.roads_gold import contract_scorer
+    return contract_scorer(rows)
+
+
+SCORERS["roads"] = _roads_scorer
 
 
 def roads(path: Path = ROADS_GOLD) -> list[dict]:

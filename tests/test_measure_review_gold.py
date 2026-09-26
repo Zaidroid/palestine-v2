@@ -230,6 +230,8 @@ def test_roads_without_a_gold_file_says_so_and_gives_no_number(tmp_path):
 def test_the_roads_hook_reports_a_present_gold_set_and_calls_a_wired_scorer(tmp_path, monkeypatch):
     path = tmp_path / "roads.jsonl"
     path.write_text('{"id": 1}\n{"id": 2}\n')
+    # the unwired branch, stated explicitly since P1-A.5 wired a real scorer
+    monkeypatch.setitem(gc.SCORERS, "roads", None)
     [e] = gc.roads(path=path)
     assert e["servable"] is None and "gold set present (2 rows); no scorer" in e["verdict"]
     seen = []
