@@ -16,10 +16,7 @@ transform: python:t_population_wpp
 v1_category: economic            # beside the World Bank population series
 shape: observation
 status: reviewed
-migrate: false
-skip_reason: >-
-  waits for migration 089 (the un_wpp source row); flip to true once it is
-  applied — the loader refuses a dataset whose source is not in `source`
+# migrate: 089 (the un_wpp source row) applied 2026-09-26 — loads nightly
 records_measured: 888
 
 input:

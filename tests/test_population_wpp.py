@@ -36,8 +36,8 @@ def test_every_row_says_it_is_an_estimate_for_the_whole_territory():
     assert row.attrs["estimate"].startswith("modelled") and row.attrs["region"] == "Palestine"
 
 
-def test_the_spec_validates_and_waits_for_its_source_row():
+def test_the_spec_validates_and_migrates():
     s = yaml.safe_load(open("db/mappings/population_wpp.yaml"))
     assert spec_mod.validate(s, "population_wpp") == []
-    assert s["migrate"] is False and "089" in s["skip_reason"]
+    assert s.get("migrate", True) is True           # 089 applied 2026-09-26
     assert s["expect"]["min_records"] == fetch_wpp.FLOOR
