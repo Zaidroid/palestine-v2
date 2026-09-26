@@ -723,3 +723,13 @@ places: **reading precision 0.814, recall 0.718; checkpoint recall 0.806; value 
 checkpoint.** 13 of 70 messages v1 parsed nothing from were real reports; 27 gold readings (6.3 %) name checkpoints v1's
 registry does not hold (دوار مخماس, العروب العجوري, حاجز 17, مدخل سنجل الشرقي …). The reader flagged registry geocodes: every
 Taybeh/Karmelo key tagged Jenin (they are Ramallah), الفحص tagged Nablus (Hebron), البنانا tagged Nablus (Jericho).
+
+2026-09-26 09:20 UTC · audit DATABANK-V15 + a serving defect + a source outage · proof: `dcc1047`, `6fd2083`. (1) The
+nightly rollup was the databank's one mutable path (ON CONFLICT DO UPDATE, no versioning; 12,133 of 13,697 recent rows
+rewritten later). After migration 088 it supersedes; rolled-back proof: 0 rewritten, 50 stale rows closed, second run
+touches nothing. 088 is Zaid's hand; the old update runs until then. (2) `checkpoints` around Nablus said "no recent
+updates" with Surra, Huwara and Deir Sharaf minutes old: the tool took the six NEAREST, all unknown. It now names known
+checkpoints in range first (dev API: "Around Nablus: Surra open (8 min ago), Huwara open (1h ago) …"); live after the API
+restart. (3) G4 read 0.242 at 09:06 against 0.601 yesterday: palhub stopped posting at 08:19 UTC — v1's own account sees
+nothing after 08:19:24 either, so it is the source, not our poller (which itself lost the network 08:36–08:45 and
+recovered). One quiet source takes G4 from pass to fail: the gate leans on palhub.

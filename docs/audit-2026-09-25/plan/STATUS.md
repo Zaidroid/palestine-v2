@@ -25,6 +25,7 @@ offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked throug
 | `6e47e60` | databank: demolition ladder runs; indistinguishable copies kept; same-run conflicts; crashes isolated | F028 F029 F135 F137 |
 | `b28948a` | databank: a complete source's withdrawn rows close; value_num keys need a declaration | F027 F134 |
 | `9ed9977` | databank: events matched by count after the whole run, never collapsed in-run | F133 |
+| `dcc1047` | rollup: supersede instead of overwrite (088) | F142 |
 
 Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook), and the commit that adds this file.
 
@@ -258,6 +259,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-05 | F133 | medium | **done** | `9ed9977` | Event identity excludes dyad, actors and the source's own id, and has no injectivity invariant: |
 | DATABANK-V09 | F135 | medium | **done** | `6e47e60` | Two same-identity rows with different content in one run: None reached the supersede list and both rows one key (reproduced, fixed) |
 | DATABANK-V11 | F137 | medium | **done** | `6e47e60` | run_all isolated only SpecRefused; any other exception skipped every later category (reproduced, fixed) |
+| DATABANK-V15 | F142 | medium | **done** | `dcc1047` | The nightly rollup overwrote value_num in place: supersedes after migration 088 (not yet applied; the old update runs until then) |
 | DATABANK-V08 | F134 | medium | **done** | `b28948a` | Upstream deletions never superseded: opt-in `identity.generation: complete` closes what a whole-publication source stopped sending, capped (reproduced in production, fixed) |
 
 ### 13 · Learning loop, analyst, self-measurement — `13-learning.md`
