@@ -671,3 +671,13 @@ test fails any new code line that spells the path (comments and docstrings may s
 from the main checkout, because the fetched PCBS and HaMoked inputs live only there: a worktree without them fails those
 two dry runs by design (`records_read 0`). `funding` identity-invariant fails on master too (841 < 8,980 records): v1's
 funding file shrank — a separate finding, filed below.
+
+2026-09-26 07:50 UTC · finding · funding supply line, one bad night · proof: v1 `refresh-events.ndjson` unfts-funding
+2026-09-26 02:38 = OK in 13 s (46–123 s the seven nights before); v1's `static/unfts-funding.json` = 844 flows, 2017→2025
+nearly empty (FTS alone reports 2,232 flows for 2024); v1's unified `funding/all-data.json` rewritten 02:53 with 841.
+**V1'S FETCHER SKIPS ANY YEAR THAT ERRORS AND STILL WRITES THE FILE AND SAYS OK** (`scripts/sources/unfts.js`, the
+`year ${year} skipped` branch). v2's floor held: the 03:42 load refused funding (841 < 8,980), nothing was written or
+closed, the 10,185 held rows keep serving, and `palestine-v2-databank` failed and paged — the P1-B.3 behaviour. FTS
+answered 200 for 2017/2020/2023/2025 at 07:45, so the next v1 refresh should restore the file; no hand needed. If the
+refusal repeats on 09-27, v2 takes the FTS line over (the v1 row identity is a SHA-256 of the whole unified record, so
+a takeover needs a flow_id-keyed dataset and a supersede of the v1 rows, not a drop-in fetcher).
