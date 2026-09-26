@@ -89,11 +89,13 @@ def test_renderers_16_route_speaks_the_age_of_its_evidence(monkeypatch):
     out = s.can_i_travel("رام الله", "نابلس")
     ar = out["answer"]
     assert "مسكّر عند حوارة (قبل 30 دقيقة)" in ar, ar
-    assert "أحدث قراءة قبل 30 دقيقة" in ar, ar
+    # the short answer (2026-09-26) gives EVERY named checkpoint its own age
+    # instead of one "newest reading" clause
+    assert "زعترة سالك (قبل ساعة)" in ar, ar
     assert out["freshest_reading_minutes"] == 30
     assert not re.search(r"[a-z_]{4,}", ar), ar          # no Latin verdict token
     en = mcp_en.can_i_travel(out)
-    assert "blocked at حوارة (" in en and "Newest reading" in en and AGE_EN.search(en), en
+    assert "blocked at Huwara (" in en and "Za'tara open (1h ago)" in en and AGE_EN.search(en), en
 
 
 def test_renderers_21_24_series_days_is_applied_and_spoken(monkeypatch):

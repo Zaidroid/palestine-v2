@@ -1172,6 +1172,90 @@ def _tier1_cautions_ar(best: dict, origin: str, destination: str) -> str:
     return out
 
 
+ROUTE_SPOKEN_MAX = 4
+
+
+def _count_ar(n: int, what: str) -> str:
+    """حاجز ثاني / حاجزين ثانيين / 3 حواجز ثانية — not "1 حواجز"."""
+    return {1: f"حاجز ثاني {what}", 2: f"حاجزين ثانيين {what}"}.get(n, f"{n} حواجز ثانية {what}")
+
+
+def route_spoken(best: dict, rs: list, origin: str, destination: str,
+                 blocking_nm: list) -> dict:
+    """What a route answer SAYS, once, for both languages (2026-09-26)."""
+    on_way, unreported, more_open = [], 0, 0
+    for c in best.get("checkpoints") or []:
+        g = c.get("group_reading")
+        own_age = c.get("age_minutes")
+        own_known = c.get("flow") not in (None, "unknown")
+        # the checkpoint's own reading unless it is unknown or over an hour
+        # old and a sibling row of the same crossing reported more recently
+        if g and (not own_known or (own_age or 0) > 60):
+            item = {"name": c["name"], "name_en": c.get("name_en"), "flow": g["flow"],
+                    "age_minutes": g.get("age_minutes"), "via": g.get("name"),
+                    "via_en": g.get("name_en")}
+        elif own_known:
+            item = {"name": c["name"], "name_en": c.get("name_en"), "flow": c["flow"],
+                    "age_minutes": own_age}
+        else:
+            # no road reading, but a search seen there is still a current fact
+            search = next((p for p in c.get("presence") or []
+                           if p.get("kind") == "checkpoint_inspection"), None)
+            if not search:
+                unreported += 1
+                continue
+            item = {"name": c["name"], "name_en": c.get("name_en"), "flow": "unknown",
+                    "age_minutes": search.get("age_minutes")}
+        item["searching"] = any(p.get("kind") == "checkpoint_inspection"
+                                for p in c.get("presence") or [])
+        on_way.append(item)
+    if len(on_way) > ROUTE_SPOKEN_MAX:
+        # every non-open reading stays; open ones fill the rest in travel order
+        keep = {id(w) for w in on_way if w["flow"] != "open"}
+        for w in on_way:
+            if len(keep) >= ROUTE_SPOKEN_MAX:
+                break
+            keep.add(id(w))
+        more_open = sum(1 for w in on_way if id(w) not in keep)
+        on_way = [w for w in on_way if id(w) in keep]
+    exits = [x for x in (best.get("doubts") or []) if x.get("kind") == "exit_closure"] or [
+        dict(x, end="origin" if (x.get("along") or 0) <= 0.5 else "destination")
+        for x in (best.get("exit_closures") or [])]
+    cov = best.get("coverage") or {}
+    gap = None
+    blind = next((x for x in (best.get("doubts") or []) if x.get("kind") == "blind_stretch"), None)
+    if cov.get("longest_gap_km") and cov.get("coverage_fraction", 1.0) < 0.8:
+        gap = {"from_km": int(round(cov["longest_gap_from_km"])),
+               "to_km": int(round(cov["longest_gap_to_km"]))}
+    elif blind and blind.get("to_km") is not None:
+        gap = {"from_km": int(round(blind.get("from_km") or 0)),
+               "to_km": int(round(blind["to_km"]))}
+    low = next((x for x in (best.get("doubts") or []) if x.get("kind") == "low_coverage"), None)
+    low_pct = (round(100 * low["fraction"]) if low and low.get("fraction") is not None
+               and not gap and not exits else None)
+    near = None
+    if blocking_nm:
+        w = blocking_nm[0]
+        near = {"name": w["name"], "name_en": w.get("name_en"),
+                "age_minutes": w.get("age_minutes"), "off_route_m": w.get("off_route_m")}
+    return {"on_way": on_way, "unreported": unreported, "more_open": more_open,
+            "exits": [{"name": x.get("name"), "name_en": x.get("name_en"), "end": x["end"],
+                       "age_minutes": x.get("age_minutes")} for x in exits[:1]],
+            "gap": gap, "low_coverage_pct": low_pct, "near_closure": near}
+
+
+def spoken_from_payload(d: dict) -> dict:
+    """The same block rebuilt from a route PAYLOAD, for a renderer handed one
+    without it (older payloads, tests)."""
+    exits = {x.get("name") for x in (d.get("exit_closures") or [])}
+    nm = [m for m in (d.get("near_misses") or [])
+          if m.get("flow") == "closed" and m.get("name") not in exits]
+    best = {"checkpoints": d.get("checkpoints") or [], "doubts": d.get("doubts") or [],
+            "exit_closures": d.get("exit_closures") or [],
+            "coverage": ((d.get("routes") or [{}])[0].get("coverage") or d.get("coverage") or {})}
+    return route_spoken(best, [], "", "", nm)
+
+
 def can_i_travel(origin: str, destination: str) -> dict:
     """Route-level answer: can I get from A to B right now, and if not, how."""
     d = api("/v2/route/between", origin=origin, destination=destination, alternates=2)
@@ -1290,10 +1374,58 @@ def can_i_travel(origin: str, destination: str) -> dict:
             + (f" ({_age_ar(int(age))})" if age is not None else "")
             for c, kinds, age in seen[:4]) + "."
 
-    return {"answer": f"{say}{detail}.{doubt_note} "
-                      f"{best['known']} من {best['checkpoints_on_route']} حواجز عليها تقارير حديثة."
-                      f"{fresh_note}{pass_note}{cover_note}{near_note}{seen_note}"
-                      f"{_tier1_cautions_ar(best, origin, destination)}",
+    # SHORT, AND THE CHECKPOINTS FIRST (Taqwa's test, 2026-09-26): the answer
+    # ran to 444 characters of verdict, waypoints — settlements among them —
+    # coverage and nearby incidents, and never said what each checkpoint on the
+    # way was doing. Now: the verdict, each checkpoint with its state and age,
+    # the blind stretch in one clause, a closure only when there is one. Every
+    # dropped sentence's data stays in the payload (passes, coverage,
+    # incidents_near, cautions). Both languages read the same `spoken` block.
+    spoken = route_spoken(best, rs, origin, destination, blocking_nm)
+    answer = f"{say}{detail}."
+    reasons = []
+    if spoken["exits"]:
+        x = spoken["exits"][0]
+        reasons.append(f"إغلاق عند {x['name']} على طريق "
+                       + (f"الخروج من {origin}" if x["end"] == "origin" else f"الدخول لـ{destination}")
+                       + (f" ({_age_ar(int(x['age_minutes']))})" if x.get("age_minutes") is not None else ""))
+    if spoken["gap"]:
+        g = spoken["gap"]
+        reasons.append(f"من كيلو {g['from_km']} لكيلو {g['to_km']} ما في حاجز متابَع")
+    if spoken["low_coverage_pct"] is not None:
+        reasons.append(f"بس {spoken['low_coverage_pct']}% من الطريق عليه حاجز فيه تقرير حديث")
+    if reasons and best["verdict"] == "unverified":
+        answer += " السبب: " + "؛ و".join(reasons) + "."
+    # the blocking checkpoints are already the verdict's detail
+    listed = [w for w in spoken["on_way"] if w["name"] not in (best.get("blocked_at") or [])
+              and w["flow"] != "unknown"]
+    if listed:
+        answer += " الحواجز: " + "، ".join(
+            f"{w['name']} {FLOW_AR.get(w['flow'], w['flow'])}"
+            + (f" ({_age_ar(int(w['age_minutes']))}"
+               + (f"، حسب {w['via']}" if w.get("via") else "") + ")"
+               if w.get("age_minutes") is not None else "")
+            for w in listed) + "."
+    counts = ([_count_ar(spoken["more_open"], "سالك")] if spoken["more_open"] else []) + \
+             ([_count_ar(spoken["unreported"], "بلا تقرير حديث")] if spoken["unreported"] else [])
+    if counts:
+        answer += " و" + "، و".join(counts) + "."
+    if reasons and best["verdict"] != "unverified":
+        answer += " انتبه: " + "؛ و".join(reasons) + "."
+    # WHO WAS SEEN ON THE WAY — searching first (P1-A.2).
+    seen = seen_on_route(best.get("cautions"))
+    if seen:
+        answer += " على الطريق: " + "، ".join(
+            f"{' و'.join(SEEN_WORDS[k][0] for k in kinds)} عند {c.get('place')}"
+            + (f" ({_age_ar(int(age))})" if age is not None else "")
+            for c, kinds, age in seen[:3]) + "."
+    if spoken["near_closure"]:
+        w = spoken["near_closure"]
+        answer += (f" انتبه: {w['name']} مسكّر"
+                   + (f" {_age_ar(int(w['age_minutes']))}" if w.get("age_minutes") is not None else "")
+                   + " قرب الطريق.")
+    return {"answer": answer,
+            "spoken": spoken,
             "verdict": best["verdict"],
             "freshest_reading_minutes": freshest,
             "duration_minutes": best["duration_minutes"],
@@ -1320,7 +1452,8 @@ def can_i_travel(origin: str, destination: str) -> dict:
                              "independent_sources": c.get("independent_sources"),
                              "off_route_m": c.get("off_route_m"),
                              "position": round(c["along"], 3),
-                             "presence": c.get("presence") or []}
+                             "presence": c.get("presence") or [],
+                             "group_reading": c.get("group_reading")}
                             for c in (best.get("checkpoints") or [])],
             "oldest_known_minutes": best.get("oldest_known_minutes"),
             "near_misses": nm,

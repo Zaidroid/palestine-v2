@@ -349,6 +349,13 @@ class CheckpointOnRoute:
     # (built separately) was fully translated — an Arabic-only list for the step
     # that matters most, in a payload the docs promise is bilingual.
     name_en: str | None = None
+    # A fresher reading of the same crossing filed under a SIBLING row (the
+    # Huwara case, 2026-09-26: palhub reported "بوابة حوارة" open at 11:15 while
+    # the route's "حوارة" row held a single channel message from 07:56, and the
+    # answer said "open, 3 hours ago"). Shown with the sibling's own name and
+    # age; never merged, and it never changes the verdict — a gate and a
+    # checkpoint 2 km apart can differ.
+    group_reading: dict | None = None
 
 
 @dataclass
@@ -643,6 +650,85 @@ def _waypoint_name(name_ar: str | None, name_en: str | None) -> str | None:
     return None
 
 
+# ── one crossing, several rows (2026-09-26) ──────────────────────────────────
+# Huwara is seven checkpoint rows: حوارة, بوابة حوارة, التفافي حوارة, حوارة تحت
+# الجسر … The corridor picks whichever lie within CORRIDOR_METRES of the line,
+# and the fresh reporting may sit on a sibling a few hundred metres off it. For
+# an on-route checkpoint whose own reading is unknown or older than
+# SIBLING_STALE_MINUTES, the freshest KNOWN sibling — same core name, within
+# SIBLING_METRES, not itself on the route — travels with it as group_reading.
+SIBLING_METRES = 3000
+SIBLING_STALE_MINUTES = 60
+_GENERIC_WORDS = {_fold_ar(w) for w in (
+    "بوابة", "بوابات", "حاجز", "مدخل", "دوار", "مفرق", "التفافي", "شارع", "طريق",
+    "تحت", "الجسر", "جسر", "فوق", "جميع", "اتجاهات", "البلد", "الشمالي",
+    "الجنوبي", "الشرقي", "الغربي", "الشماليه", "الجنوبيه", "عند", "من", "الى",
+    "الي", "قرب", "مقابل", "لـ",
+    # first words of many place names: alone they identify nothing
+    "عين", "بيت", "دير", "كفر", "خربة", "خربه", "تل", "ام", "ابو", "جبل", "وادي",
+    "راس", "برج", "بير", "مخيم", "عزبة", "عزبه")}
+
+SIBLINGS_SQL = """
+SELECT p.place_id, p.name_ar, p.name_en,
+       ST_Y(p.centroid::geometry), ST_X(p.centroid::geometry),
+       cs.flow, cs.age_minutes, cs.independent_sources
+  FROM place p
+  JOIN checkpoint_serving cs ON cs.place_id = p.place_id AND cs.direction = 'both'
+ WHERE p.kind = 'checkpoint' AND COALESCE(p.servable, true) AND p.merged_into IS NULL
+   AND cs.flow <> 'unknown'
+   AND ST_DWithin(p.centroid, ST_GeogFromText(%(wkt)s), %(near)s)
+"""
+
+
+def _core_tokens(name: str | None) -> set[str]:
+    out = set()
+    for w in re.findall(r"[\u0600-\u06FF]+", _fold_ar(name or "")):
+        if w in _GENERIC_WORDS:
+            continue
+        # an attached ل/ب/و ("لزعترة", "بحوارة") is not part of the name
+        if len(w) > 4 and w[0] in "لبو":
+            w = w[1:]
+        if len(w) >= 3 and w not in _GENERIC_WORDS:
+            out.add(w)
+    return out
+
+
+def _metres(a_lat, a_lon, b_lat, b_lon) -> float:
+    dy = (b_lat - a_lat) * 111_320
+    dx = (b_lon - a_lon) * 111_320 * math.cos(math.radians(a_lat))
+    return math.hypot(dx, dy)
+
+
+def _attach_group_readings(conn, wkt: str, cps: list) -> None:
+    stale = [c for c in cps if c.flow == "unknown"
+             or (c.age_minutes is not None and c.age_minutes > SIBLING_STALE_MINUTES)]
+    if not stale:
+        return
+    on_route = {c.place_id for c in cps}
+    with conn.cursor() as cur:
+        cur.execute(SIBLINGS_SQL, {"wkt": wkt, "near": SIBLING_METRES})
+        cands = [r for r in cur.fetchall() if r[0] not in on_route]
+    for c in stale:
+        mine = _core_tokens(c.name)
+        if not mine:
+            continue
+        best = None
+        for pid, ar, en, lat, lon, flow, age, srcs in cands:
+            if age is None or float(age) > SIBLING_STALE_MINUTES \
+                    or not (mine & _core_tokens(ar)):
+                continue                          # a sibling is only worth it when fresh
+            d = _metres(c.lat, c.lon, float(lat), float(lon))
+            if d > SIBLING_METRES:
+                continue
+            if c.age_minutes is not None and float(age) >= c.age_minutes:
+                continue                          # not fresher than what we hold
+            if best is None or float(age) < best["age_minutes"]:
+                best = {"place_id": pid, "name": ar or en, "name_en": en, "flow": flow,
+                        "age_minutes": float(age), "independent_sources": srcs,
+                        "distance_m": int(d)}
+        c.group_reading = best
+
+
 def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
     leg = trip["legs"][0]
     pts = decode_polyline(leg["shape"])
@@ -739,6 +825,8 @@ def _corridor_for(conn, trip: dict, is_alternate: bool) -> Corridor:
                 if pid in by_id and val == "present":
                     by_id[pid].presence.append(
                         {"kind": kind, "age_minutes": float(age) if age is not None else None})
+
+    _attach_group_readings(conn, wkt, cps)
 
     known = [c for c in cps if c.flow != "unknown"]
 

@@ -81,8 +81,12 @@ def test_cautions_are_spoken_in_both_languages():
                  "metres": 120}]}
     ar = S._tier1_cautions_ar(best, "بورين", "نابلس")
     assert "اقتحام ببيتا (قبل ساعة، 844 متر عن المسار)" in ar and "سدّة ترابية سجّلتها أوتشا" in ar
+    # Since the short answer (2026-09-26, Taqwa's test) the English sentence no
+    # longer reads incidents near the route aloud; they travel in the payload
+    # (test_a_live_route_carries_the_new_fields), and the Arabic helper above
+    # still renders them for any caller that wants the long form.
     en = EN.can_i_travel({"verdict": "unverified", "routes": [{}], **best})
-    assert "raid in Beita (1h ago, 844 m off the route)" in en and "OCHA-recorded earthmound" in en
+    assert en.startswith("Cannot confirm this route is open")
 
 
 def test_a_live_route_carries_the_new_fields(mcp_call, mcp_payload):

@@ -150,8 +150,10 @@ def test_route_blind_stretch_is_the_same_size_in_both_languages(mcp_call, mcp_pa
     blind = next((x for x in p.get("doubts") or [] if x.get("kind") == "blind_stretch"), None)
     if blind is None:
         pytest.skip("no blind stretch on this route right now")
-    ar, en = share_words(blind.get("share"))
-    assert ar in p["answer"] and en in p["answer_en"]
+    g = p["spoken"]["gap"]
+    assert g, p["spoken"]
+    assert f"كيلو {g['from_km']} لكيلو {g['to_km']}" in p["answer"]
+    assert f"km {g['from_km']} to {g['to_km']}" in p["answer_en"]
 
 
 def test_signals_agreeing_counts_signals(mcp_call, mcp_payload):

@@ -297,6 +297,8 @@ def checkpoints_summary(d: dict) -> str:
 
 
 def can_i_travel(d: dict) -> str:
+    """The Arabic answer's facts, in English, from the same `spoken` block
+    (short form, 2026-09-26 — see serve/mcp_server.py:route_spoken)."""
     say = {"likely_open": "The route is probably passable",
            "slow": "The route is passable but congested",
            "blocked": "The route is blocked",
@@ -307,104 +309,55 @@ def can_i_travel(d: dict) -> str:
         d.get("verdict"), str(d.get("verdict")))
     out = say
     cps = d.get("checkpoints") or []
+    en_of = {c.get("name"): c.get("name_en") or c.get("name") for c in cps}
     if d.get("blocked_at"):
         blk = next((c for c in cps if c.get("name") in d["blocked_at"]
                     and c.get("age_minutes") is not None), None)
-        out += (" — blocked at " + ", ".join(d["blocked_at"][:2])
+        out += (" — blocked at " + ", ".join(en_of.get(n, n) for n in d["blocked_at"][:2])
                 + (f" ({_age(blk['age_minutes'])})" if blk else ""))
-    # Exit closures are spoken WHATEVER THE VERDICT (F011) — see the Arabic
-    # renderer in serve/mcp_server.py for the case that proved it.
-    doubts = d.get("doubts") or []
-    exits = [x for x in doubts if x.get("kind") == "exit_closure"] or [
-        dict(x, end="origin" if (x.get("along") or 0) <= 0.5 else "destination")
-        for x in (d.get("exit_closures") or [])]
-    why = []
-    if exits:
-        why.append("a closure on the way " + "; ".join(
-            f"{'out of the origin' if x['end'] == 'origin' else 'into the destination'} at "
-            f"{x.get('name_en') or x.get('name')} ({int(x['off_route_m'])} m off the route"
-            + (f", {_age(x['age_minutes'])}" if x.get("age_minutes") is not None else "") + ")"
-            for x in exits[:3]))
-    blind = next((x for x in doubts if x.get("kind") == "blind_stretch"), None)
-    if blind:
-        why.append(f"{share_words(blind.get('share'))[1]} has no tracked checkpoint")
-    low = next((x for x in doubts if x.get("kind") == "low_coverage"), None)
-    if low and low.get("fraction") is not None:
-        why.append(f"only {round(100 * low['fraction'])}% of it is watched by a "
-                   f"checkpoint with a recent report")
-    if why:
-        out += ((" — because " if d.get("verdict") == "unverified" else " — but ")
-                + "; and ".join(why) + ". Check before travelling")
-    mins = d.get("duration_minutes")
-    if mins:
-        out += f". {round(mins)} min driving"
-    routes = d.get("routes") or [{}]
-    r0 = routes[0]
-    out += (f". {r0.get('known', 0)} of {r0.get('checkpoints_on_route', 0)} "
-            f"checkpoints on it have recent reports.")
-    if d.get("freshest_reading_minutes") is not None:
-        out += f" Newest reading {_age(d['freshest_reading_minutes'])}."
-    # WHICH ROAD THIS IS, AND WHERE THE VERDICT IS BLIND. Both qualify the
-    # sentence above, so they follow it — and the measured case is in
-    # resolve/corridor.py:_corridor_for: 53 km with the first on-route checkpoint
-    # at 26.9 km, which "2 of 8 have recent reports" cannot convey.
-    # `passes` and `coverage` are TOP-LEVEL on the payload; the per-route dict is
-    # a skinny allowlist that carries `coverage` only. Reading `passes` off
-    # routes[0] silently returned nothing, so the English answer dropped the
-    # waypoints the Arabic one names — the same one-language-only defect this
-    # function was just fixed for, one line further down.
-    waypoints = [w.get("name_en") or w["name"] for w in (d.get("passes") or [])][:5]
-    if waypoints:
-        out += f" It passes {', '.join(waypoints)}."
-    cov = (d.get("routes") or [{}])[0].get("coverage") or {}
-    if cov.get("longest_gap_km") and cov.get("coverage_fraction", 1.0) < 0.8:
-        out += (f" No checkpoint is tracked for {cov['longest_gap_km']:.0f} km of "
-                f"this route ({cov['longest_gap_from_km']:.0f} to "
-                f"{cov['longest_gap_to_km']:.0f} km in), so that stretch is "
-                f"unverified.")
-    # THE ENGLISH ANSWER HAS TO SAY WHAT THE ARABIC ONE SAYS. The Arabic sentence
-    # names a closure just outside the corridor; the English one did not, so an
-    # English reader was told "probably passable" with no mention of the closed
-    # checkpoint 2 km away while an Arabic reader was told about it. Two answers
-    # built from the same fields must carry the same facts.
-    exit_ids = {x.get("name") for x in (d.get("exit_closures") or [])}
-    nm = [m for m in (d.get("near_misses") or [])
-          if m.get("flow") == "closed" and m.get("name") not in exit_ids]
-    if nm:
-        w = nm[0]
-        age = w.get("age_minutes")
-        when = f" {int(age)} minutes ago" if age is not None else ""
-        others = len(nm) - 1
-        extra = (f" and {others} more nearby closures" if others > 1
-                 else " and one more nearby" if others == 1 else "")
-        out += (f" Warning: {w.get('name_en') or w.get('name')} was closed{when}, "
-                f"{w.get('off_route_m')} m off this route — it may not stop you, "
-                f"but know it{extra}.")
-    # P0-B.4: the rest of Tier 1 on the way — the same facts as the Arabic.
-    inc = d.get("incidents_near") or []
-    if inc:
-        out += (" Near the route in the last 3 hours: " + "; ".join(
-            f"{i['type'].replace('_', ' ')} in {i.get('name_en') or i['name']} "
-            f"({_age(i['age_minutes'])}, {i['off_route_m']} m off the route)" for i in inc[:3]) + ".")
-    rc = d.get("road_closures") or []
-    if rc:
-        out += (" Road closures reported near the route: " + "; ".join(
-            (r.get("name_en") or r["name"]) + (f" ({_age(r['age_minutes'])})" if r.get("age_minutes") is not None else "")
-            for r in rc[:3]) + ".")
-    for end in ("origin", "destination"):
-        obs = [o for o in (d.get("obstacles_at_ends") or []) if o["end"] == end]
-        if obs:
-            o = obs[0]
-            out += (f" Near the {end}: an OCHA-recorded {str(o['type']).lower()} ({o['name']}, "
-                    f"last verified {o['verified']}) {o['metres']} m away — it may block your way out.")
-    # WHO WAS SEEN ON THE WAY — searching first (P1-A.2). The route carried
-    # these cautions in the payload and neither answer said them.
+    out += "."
+    sp = d.get("spoken")
+    if sp is None:
+        from serve.mcp_server import spoken_from_payload
+        sp = spoken_from_payload(d)
+    reasons = []
+    for x in sp.get("exits") or []:
+        reasons.append(f"a closure at {_nm(x)} on the way "
+                       + ("out of the origin" if x["end"] == "origin" else "into the destination")
+                       + (f" ({_age(x['age_minutes'])})" if x.get("age_minutes") is not None else ""))
+    if sp.get("gap"):
+        reasons.append(f"km {sp['gap']['from_km']} to {sp['gap']['to_km']} has no tracked checkpoint")
+    if sp.get("low_coverage_pct") is not None:
+        reasons.append(f"only {sp['low_coverage_pct']}% of it is watched by a checkpoint "
+                       "with a recent report")
+    if reasons and d.get("verdict") == "unverified":
+        out = out[:-1] + " — because " + "; and ".join(reasons) + "."
+    listed = [w for w in sp.get("on_way") or [] if w["name"] not in (d.get("blocked_at") or [])
+              and w["flow"] != "unknown"]
+    if listed:
+        out += " Checkpoints: " + ", ".join(
+            f"{_nm(w)} {FLOW.get(w['flow'], w['flow'])}"
+            + (f" ({_age(w['age_minutes'])}"
+               + (f", per {w.get('via_en') or w.get('via')}" if w.get("via") else "") + ")"
+               if w.get("age_minutes") is not None else "")
+            for w in listed) + "."
+    counts = ([f"{sp['more_open']} more open"] if sp.get("more_open") else []) + \
+             ([f"{sp['unreported']} with no recent report"] if sp.get("unreported") else [])
+    if counts:
+        out += " Also " + ", ".join(counts) + "."
+    if reasons and d.get("verdict") != "unverified":
+        out += " Note: " + "; and ".join(reasons) + "."
     seen = seen_on_route(d.get("cautions"))
     if seen:
         out += " On the way: " + "; ".join(
             f"{' and '.join(SEEN_WORDS[k][1] for k in kinds)} at {_nm(c, 'place')}"
             + (f" ({_age(age)})" if age is not None else "")
-            for c, kinds, age in seen[:4]) + "."
+            for c, kinds, age in seen[:3]) + "."
+    if sp.get("near_closure"):
+        w = sp["near_closure"]
+        out += (f" Watch out: {_nm(w)} closed"
+                + (f" {_age(w['age_minutes'])}" if w.get("age_minutes") is not None else "")
+                + " near the route.")
     return out
 
 

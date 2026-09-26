@@ -107,15 +107,19 @@ def test_a_closed_near_miss_is_spoken_not_only_structured(route):
     answer = route["answer"]
     # An exit closure is spoken as the REASON ("إغلاق عند X على طريق …"), not
     # repeated as a nearby-closure warning (audit F011); either form names it.
-    assert "تنبيه" in answer or "إغلاق عند" in answer, answer
+    assert "انتبه" in answer or "إغلاق عند" in answer, answer
     assert any(m["name"] in answer for m in closed), (answer, closed)
 
 
 def test_the_answer_and_the_payload_cannot_disagree_about_the_count(route):
-    """"3 of 8" is a claim about the list. Count it from the list."""
-    n = len(route["checkpoints"])
-    known = len([c for c in route["checkpoints"] if c["flow"] != "unknown"])
-    assert f"{known} من {n}" in route["answer"], route["answer"]
+    """Every checkpoint on the route is accounted for in what is spoken: named,
+    counted as more-open, or counted as unreported (the short answer,
+    2026-09-26, replaced the "3 of 8" sentence with the checkpoints themselves)."""
+    sp = route["spoken"]
+    assert len(sp["on_way"]) + sp["more_open"] + sp["unreported"] == len(route["checkpoints"])
+    for w in sp["on_way"]:
+        if w["flow"] != "unknown" and w["name"] not in (route.get("blocked_at") or []):
+            assert w["name"] in route["answer"], (w, route["answer"])
 
 
 def test_a_displaced_checkpoint_is_kept_once_with_its_best_reading(route):
