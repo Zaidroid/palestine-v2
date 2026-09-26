@@ -136,3 +136,29 @@ def test_one_renderer_for_identity() -> None:
                                    occurred_at="2026-01-01", place_id=None,
                                    value_num=None, attrs={})
     assert k2 == "ds|a.b|2026-01-01||"
+
+
+def test_DATABANK_V17_every_declared_identity_is_stored_on_every_current_row():
+    """Gate 6 inferred exemption from the DATA: a dataset whose rows all had
+    identity_key NULL passed every check, though 052's index then protects
+    nothing and the loader's guard sees an empty map. Here the SPEC decides:
+    a dataset that declares an identity (and is not `indistinguishable`)
+    carries a key on every current row. Measured 2026-09-26: 38 datasets, 0
+    rows without a key."""
+    from resolve.db import connect
+    declared = {}
+    for cat in sorted(databank.TRANSFORMERS):
+        try:
+            spec = databank.load_spec(cat)
+        except Exception:                                    # noqa: BLE001
+            continue                                         # migrate=false and friends
+        for ds in spec.get("datasets", []):
+            ident = (ds.get("overrides") or {}).get("identity") or spec.get("identity")
+            if ident and ident.get("collision_kind") != "indistinguishable":
+                declared[ds["key"]] = cat
+    with connect() as c, c.cursor() as cur:
+        cur.execute("""SELECT d.key, count(*) FROM observation o JOIN dataset d USING (dataset_id)
+                        WHERE d.key = ANY(%s) AND upper_inf(o.sys_period)
+                          AND o.identity_key IS NULL GROUP BY 1""", (list(declared),))
+        keyless = dict(cur.fetchall())
+    assert declared and not keyless, keyless
