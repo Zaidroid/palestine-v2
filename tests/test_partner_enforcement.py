@@ -45,3 +45,33 @@ def test_TRANSPORT_01_a_cited_fact_only_payload_is_the_fact_its_source_and_its_a
     house = licence.apply("connectivity_now", _ioda(), "house",
                           {"grade": "ask", "partner_tier": "cited_fact_only"})
     assert "signals" in house
+
+
+def test_TRANSPORT_06_a_stale_grade_table_is_served_while_it_refreshes_off_the_request_path(monkeypatch):
+    import threading
+    import time as _time
+    from serve import mcp_http as m
+    started = threading.Event()
+    release = threading.Event()
+
+    def slow_api(path, **kw):
+        started.set()
+        release.wait(5)
+        return {"tools": [{"tool": "checkpoint_status", "grade": "open"}]}
+
+    import serve.mcp_server as ms
+    monkeypatch.setattr(ms, "api", slow_api)
+    monkeypatch.setitem(m._GRADES, "tools", {"checkpoint_status": {"grade": "stale"}})
+    monkeypatch.setitem(m._GRADES, "at", _time.monotonic() - m._GRADES_TTL - 1)
+    monkeypatch.setitem(m._GRADES, "refreshing", False)
+    t0 = _time.monotonic()
+    got = m._tool_grades()
+    assert got["checkpoint_status"]["grade"] == "stale"          # served at once
+    assert _time.monotonic() - t0 < 0.5
+    assert started.wait(2)                                        # the refresh runs behind
+    release.set()
+    for _ in range(50):
+        if m._GRADES["tools"]["checkpoint_status"]["grade"] == "open":
+            break
+        _time.sleep(0.05)
+    assert m._GRADES["tools"]["checkpoint_status"]["grade"] == "open"
