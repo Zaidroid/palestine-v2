@@ -190,6 +190,10 @@ identity:
   # the UN 2720 mechanism dashboard — gets its OWN spec with its own key.
   # FIX FIRST if this dataset ever becomes live again.
   fields: [indicator, occurred_at, place_id, value_num]
+  value_num_reason: >-
+    Keyless (indistinguishable) — no key is stored, so nothing is revised
+    through it; the upstream is dead since 2025-01-16. The fields exist only
+    for the injectivity measurement.
   attrs: [cargo_description, donor, crossing]
   allow_collisions: 24550
   collision_kind: indistinguishable

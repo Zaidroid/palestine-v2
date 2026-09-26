@@ -73,6 +73,16 @@ datasets:
         attrs: [event_name, aggregate_label, name, asylum_country]
         allow_collisions: 1
         collision_kind: duplicate_fact
+        generation: complete
+        # DATABANK-V08/-02 (2026-09-26). v1's IDMC file is IDMC's whole list
+        # (2025 → today; the 06-25 and 09-26 snapshots share 326 of 327
+        # events), so an identity it stops emitting was renamed or revised:
+        # measured 3 held rows whose events IDMC renamed (": Unclear/Unknown
+        # - West Bank - 01/06/2026" → "Palestine: Unclear/Unknown - …"), both
+        # names current and counted. They close; a revised figure closes the
+        # old reading the same way, so value_num may stay in the key. Default
+        # ceiling 5% of held (17): if IDMC ever rolls 2025 off, the run fails
+        # loudly instead of closing a year of history.
         # The two Nur Shams rows are ONE displacement published twice, so
         # collapsing them is the correct answer and the second copy is
         # superseded. Contrast aid_access, whose duplicates are DIFFERENT
@@ -286,6 +296,15 @@ notes: |
 identity:
   fields: [indicator, occurred_at, place_id, value_num]
   attrs: [event_name, aggregate_label, name, asylum_country]
+  generation: complete
+  max_absent: 15
+  # UNHCR (1,157) and UNRWA (75) are whole publications each run. MEASURED
+  # 2026-09-26: 15 UNRWA camps held TWICE — a 08-07 run placed them nowhere
+  # (place_id NULL), a later one placed them again (Jabalia → North Gaza),
+  # place_id is in the key, so both rows stayed current and every camp from
+  # that night counted double. 15 of 90 held is above the default 5%
+  # ceiling, so the one-time close is declared, measured; UNHCR's default
+  # would be 57, so this is stricter for it, not looser.
   # NO spec-level allow_collisions. IDMC's single upstream duplicate is
   # declared on IDMC's own dataset override; putting it here would silently
   # exempt UNHCR (1,157/1,157) and UNRWA (90/90) — which key perfectly —

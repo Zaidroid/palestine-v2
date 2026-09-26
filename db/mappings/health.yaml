@@ -216,6 +216,12 @@ identity:
   # part of what makes a row itself. MEASURED 12,502 / 12,502 injective.
   fields: [indicator, occurred_at, place_id, value_num]
   attrs: [value_high, value_low]
+  value_num_reason: >-
+    MEASURED 2026-09-26: without value_num 3,471 of 12,502 rows collide —
+    GHO publishes several rows per indicator/sex/year that differ by a second
+    dimension (the cause behind an air-pollution burden, …) which v1 dropped,
+    so the value is the only field left that tells them apart. The corpus is
+    frozen (interim), so there is no revision to double-count.
 
 registry:
   max_unclassified: 0

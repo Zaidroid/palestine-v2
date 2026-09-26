@@ -406,6 +406,24 @@ _k("identity.collision_kind", "enforced",
    "duplicate_fact (keep the key, supersede the copy) vs indistinguishable "
    "(no stored key possible). Getting this backwards doubled IDMC",
    types=(str,), values=COLLISION_KINDS)
+_k("identity.generation", "enforced",
+   "`complete` = every run's input is the source's WHOLE current publication, "
+   "so a held identity the run no longer emits was withdrawn, renamed or "
+   "revised upstream and its row is closed (DATABANK-V08, 2026-09-26). Absent "
+   "= `window`: the source shows a rolling slice (Addameer's months, T4P's "
+   "730 days) and the databank keeps what fell out of it. Measured before it "
+   "was switched on: refugees held 15 UNRWA camps and 3 renamed IDMC events "
+   "twice", types=(str,), values=("complete", "window"))
+_k("identity.max_absent", "enforced",
+   "a MEASURED ceiling on rows one run may close as absent upstream; default "
+   "5% of the rows held. Above it the run FAILS — a source that lost more "
+   "than that overnight shrank (funding, 2026-09-26: 841 of 10,185), and a "
+   "shrink must never close history", types=(int,))
+_k("identity.value_num_reason", "rationale",
+   "why value_num may sit in this identity although a revised value then "
+   "reads as a new row (DATABANK-02). Required unless generation is "
+   "`complete`, where the old reading is closed as absent in the same run",
+   types=(str,))
 
 # -- fan out / shape overrides -----------------------------------------------
 _k("fan_out", "implemented",
@@ -681,6 +699,15 @@ def _cross_checks(spec: dict, category: str, out: list[Problem]) -> None:
                                "declares neither fields nor attrs — an empty "
                                "identity maps every row to one key, which "
                                "does not de-duplicate, it DELETES"))
+        if ("value_num" in (ident.get("fields") or [])
+                and ident.get("generation") != "complete"
+                and not ident.get("value_num_reason")):
+            out.append(Problem("identity.fields",
+                               "value_num in an identity makes a publisher's "
+                               "revision a second current row (DATABANK-02: "
+                               "IDMC's 106 → 120 counted 226). Declare "
+                               "generation: complete (the old reading is "
+                               "closed as absent) or a value_num_reason"))
         if ident.get("collision_kind") and not ident.get("allow_collisions"):
             out.append(Problem("identity.collision_kind",
                                "a collision kind without a measured "

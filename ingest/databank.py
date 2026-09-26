@@ -1994,6 +1994,45 @@ def run(category: str, dry_run: bool = False) -> dict:
             r.raw_ref = refs[f]
             (event_rows if isinstance(r, EventRow) else rows).append(r)
 
+        # ── withdrawn upstream (DATABANK-V08 + -02, 2026-09-26) ─────────────
+        # A dataset whose input is the source's WHOLE current publication
+        # (`identity.generation: complete`) holds nothing the source no longer
+        # says. Before this, a held identity the run stopped emitting stayed
+        # current forever: IDMC renamed three events and both names counted;
+        # one night in August placed 15 UNRWA camps nowhere, the next placed
+        # them again, and every camp from that night was counted twice; a
+        # revised value (106 → 120 displaced) was a second row beside the
+        # first. Such rows are CLOSED — sys_period ends now, the row and its
+        # value stay for as_of and rollback — never deleted. A fallback input
+        # is an old answer and closes nothing. The ceiling is what separates
+        # a correction from a shrink: above it the run fails.
+        absent: list[tuple[str, int]] = []
+        absent_over: list[str] = []
+        complete = {k: v for k, v in identity_by_ds.items()
+                    if (v or {}).get("generation") == "complete"}
+        if complete and not from_fallback:
+            held_n: Counter = Counter()
+            gone: dict[str, list[tuple[str, int]]] = defaultdict(list)
+            for k, (oid, _) in known_identities.items():
+                ds_key = k.split("|", 1)[0]
+                if oid is None or ds_key not in complete:
+                    continue
+                held_n[ds_key] += 1
+                if k not in emitted_identities:
+                    gone[ds_key].append((k, oid))
+            for ds_key, rows_gone in gone.items():
+                cap = complete[ds_key].get("max_absent")
+                if cap is None:
+                    cap = max(1, int(held_n[ds_key] * 0.05))
+                counts[f"absent_upstream:{ds_key}"] = len(rows_gone)
+                if len(rows_gone) > cap:
+                    absent_over.append(
+                        f"{ds_key}: {len(rows_gone)} held rows absent upstream "
+                        f"> max_absent {cap} of {held_n[ds_key]} — a shrink, "
+                        f"not a correction; nothing is closed")
+                else:
+                    absent.extend(rows_gone)
+
         # ── enforcement, before any write ────────────────────────────────────
         n = counts["records_read"]
         problems = []
@@ -2071,10 +2110,11 @@ def run(category: str, dry_run: bool = False) -> dict:
                 problems.append(
                     f"{ds['key']}: located {loc_ds}/{n_ds} = "
                     f"{loc_ds / n_ds:.3f} < min_located_pct {floor}")
+        problems.extend(absent_over)
         if problems:
             raise SpecRefused(f"{category}: run FAILED — " + "; ".join(problems))
 
-        written = events_written = 0
+        written = events_written = closed_absent = 0
         if not dry_run:
             dataset_ids = ensure_datasets(conn, spec, category)
             with conn.cursor() as cur:
@@ -2091,6 +2131,15 @@ def run(category: str, dry_run: bool = False) -> dict:
                                                       now())
                          WHERE observation_id = ANY(%s)
                            AND upper_inf(sys_period)""", (to_supersede,))
+                if absent:
+                    cur.execute("""
+                        UPDATE observation
+                           SET sys_period = tstzrange(lower(sys_period),
+                                                      now())
+                         WHERE observation_id = ANY(%s)
+                           AND upper_inf(sys_period)""",
+                        ([oid for _, oid in absent],))
+                    closed_absent = cur.rowcount
                 for r in rows:
                     cur.execute(INSERT_SQL, {
                         "dataset_id": dataset_ids[r.dataset_key],
@@ -2140,6 +2189,14 @@ def run(category: str, dry_run: bool = False) -> dict:
         # a correction is a fact about the SOURCE, not a plumbing detail —
         # it belongs in the run record where a reader can see what moved
         report["revisions"] = revision_samples
+    if absent:
+        # Rollback of a night's closes, exactly:
+        #   UPDATE observation SET sys_period = tstzrange(lower(sys_period), NULL)
+        #    WHERE observation_id = ANY(<absent_upstream.ids>);
+        report["absent_upstream"] = {
+            "closed": closed_absent, "would_close": len(absent),
+            "ids": [oid for _, oid in absent][:500],
+            "samples": [k for k, _ in absent][:8]}
     with RUNS.open("a") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report

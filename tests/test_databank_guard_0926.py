@@ -32,7 +32,7 @@ def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=()):
                    value_num=r.value_num, attrs=r.attrs),
                1000 + i, r.value_num, r.value_text, r.unit, r.place_id, r.attrs)
               for i, r in enumerate(held)]
-    log = {"inserts": [], "supersede": []}
+    log = {"inserts": [], "supersede": [], "updates": []}
 
     class Cur:
         rowcount = 1
@@ -44,6 +44,7 @@ def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=()):
                 log["inserts"].append(params)
             elif sql.lstrip().startswith("UPDATE observation"):
                 log["supersede"].extend(params[0])
+                log["updates"].append(list(params[0]))
         def fetchall(self):
             return stored if "identity_key" in self.sql else []
 
@@ -222,3 +223,71 @@ def test_DATABANK_V11_one_crashing_category_does_not_stop_the_night(monkeypatch)
     monkeypatch.setattr(databank, "run", fake_run)
     assert databank.run_all() == 1
     assert ran == ["a", "b", "c"]
+
+
+# ── DATABANK-V08 / -02: what a complete source stopped saying closes ─────────
+
+import pytest
+import yaml
+from ingest import spec as spec_mod
+from ingest.spec import SpecRefused as _Refused
+
+
+def _camp(name, value, place=14):
+    return Row("d", "refugees.camp_population", "2026-06-10", "day",
+               f"camp-{name}-{place}", value_num=value, unit="persons",
+               place_id=place, attrs={"name": name})
+
+
+CAMP_ID = {"fields": ["indicator", "occurred_at", "place_id", "value_num"],
+           "attrs": ["name"]}
+
+
+def test_DATABANK_V08_a_row_the_complete_source_no_longer_sends_closes(
+        monkeypatch, tmp_path):
+    held = [_camp("Jabalia", 113990), _camp("Jabalia", 113990, place=None),
+            _camp("Rafah", 125304)]
+    emitted = [_camp("Jabalia", 113990), _camp("Rafah", 125304)]
+    report, log = _write_run(monkeypatch, tmp_path, emitted,
+                             {**CAMP_ID, "generation": "complete",
+                              "max_absent": 5}, held=held)
+    assert log["inserts"] == []                  # both still held
+    assert log["updates"] == [[1001]]            # the NULL-place Jabalia
+    assert report["absent_upstream"]["closed"] == 1
+    assert report["absent_upstream"]["ids"] == [1001]
+
+
+def test_DATABANK_02_a_revised_value_closes_the_old_reading(monkeypatch, tmp_path):
+    held = [_camp("Nur Shams", 106)]
+    emitted = [_camp("Nur Shams", 120)]
+    report, log = _write_run(monkeypatch, tmp_path, emitted,
+                             {**CAMP_ID, "generation": "complete"}, held=held)
+    assert [p["value_num"] for p in log["inserts"]] == [120]
+    assert log["updates"] == [[1000]]            # 106 closed, not counted twice
+
+
+def test_DATABANK_V08_a_window_source_keeps_what_fell_out(monkeypatch, tmp_path):
+    held = [_camp("Jabalia", 113990), _camp("Rafah", 125304)]
+    report, log = _write_run(monkeypatch, tmp_path, [_camp("Rafah", 125304)],
+                             CAMP_ID, held=held)
+    assert log["updates"] == []
+    assert "absent_upstream" not in report
+
+
+def test_DATABANK_V08_a_shrink_fails_the_run_and_closes_nothing(
+        monkeypatch, tmp_path):
+    held = [_camp(f"c{i}", i + 1) for i in range(40)]
+    with pytest.raises(_Refused, match="a shrink, not a correction"):
+        _write_run(monkeypatch, tmp_path, held[:10],
+                   {**CAMP_ID, "generation": "complete"}, held=held)
+
+
+def test_DATABANK_02_the_validator_refuses_an_undeclared_value_in_the_key():
+    spec = yaml.safe_load(open("db/mappings/refugees.yaml"))
+    spec["identity"].pop("generation")
+    problems = spec_mod.validate(spec, "refugees")
+    assert any(p.path == "identity.fields" and "value_num" in p.message
+               for p in problems)
+    for cat in ("refugees", "health", "conflict", "aid_access"):
+        assert spec_mod.validate(
+            yaml.safe_load(open(f"db/mappings/{cat}.yaml")), cat) == []
