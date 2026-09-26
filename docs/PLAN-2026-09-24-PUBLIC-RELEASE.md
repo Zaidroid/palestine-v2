@@ -743,3 +743,16 @@ only in its own): palhub 609/74, reliability 0.877, trust_weight 0.963. Written 
 68 % of known direction-resolved. A collapse (below half the 6 h median) is now a watchdog FAULT; a slow gate miss
 stays a gate. Palhub itself has also been silent since 08:19 (seen by v1's account too): if it stays quiet its readings
 decay again, honestly this time.
+
+2026-09-26 10:20 UTC · P1-B.4 1948 spine, first two sources · done / waiting on 089 · proof: `44b9ddf`, `1b0d0a4`.
+(1) **UN World Population Prospects 2024** for the State of Palestine, 1950-2023 (Medium variant, projections never kept):
+12 indicators, 888 rows, every row labelled a modelled estimate; terms = the WPP 2024 publication's CC BY 3.0 IGO sentence
+(the portal's own terms page renders client-side — recorded, not hidden). Rolled-back proof: 888 written, all served, **the
+1950s go from 5 rows to 125**. Waits for migration 089 (the source row), then the spec flips to migrate. (2) **UNRWA's own
+registered-refugee release** (HDX, cc-by-igo), per field × sex × 7 age groups: 2025 Q4 = 5,964,782 (Jordan 2,398,179 · Gaza
+1,545,991 · West Bank 938,589 · Syria 357,985 · Lebanon 228,274 · Unknown 495,764). LOADED 10:05 (119 rows, served), under
+its own indicator names so it never mixes with v1's flattened UNRWA table (whose 11 summary rows, e.g. "West Bank 414,298",
+carry no field); migration 090 puts HDX's licence on the dataset. Nightly fetch + radar entry added. Registry applied: the
+new indicators and the V02 demolition fix are defined. Follow-up, not done: a category headline reads the NEWEST page, so the
+refugees answer leads with 2026 IDMC events and never states the 5.96 M total — which indicators lead a category is a design
+choice (a per-category headline list) left for the next round.
