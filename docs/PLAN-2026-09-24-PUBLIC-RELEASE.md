@@ -764,3 +764,11 @@ export file per licence tuple), V03 (092: register-identity guard), V01/V04/V16/
 the request path); G1 twelve questions 12/12 on the dev API, warm p50 ≈ 0.8 s; English incidents origin fixed. Open
 audit: RENDERERS-17 (needs a settlements source), INGEST-05/07 + OPS-01 (Zaid's decisions), DATABANK-01 (resolves with
 086). Waiting on Zaid: HANDS §12 (migrate 086-092 + API restart), analyst restart, §10/§11 timers, the G3 decision.
+
+2026-09-26 12:10 UTC · Taqwa's route test · done (needs API restart) · proof: `4671bbd`, tests/test_route_short_and_grouped.py.
+Ramallah→Nablus: not a clock bug (ingestion current to the minute). The answer shrank from 444/549 characters to ~300 and
+names each checkpoint's state and age; a stale on-route checkpoint uses a fresh sibling row of the same crossing, spoken
+with its name (Huwara: 201 min → 9 min, "per بوابة حوارة"). Palhub earn-out re-measured (28 d, ±90 min, read-only):
+open 0.860 vs control 0.887 · closed 0.658 vs 0.777 · **congested 0.217 vs 0.583** — when palhub says congested the
+channels say open 7,777 of 10,998 times, so congested stays quarantined (Zaid's call); note closed also sits 0.12 under its
+control.
