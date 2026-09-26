@@ -19,9 +19,10 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
 from resolve.arabic import normalize  # noqa: E402
 
-V1 = Path("/opt/stacks/palestine/services/westbank-alerts/data")
+V1 = v1_path("services/westbank-alerts/data")
 OUT = Path(__file__).resolve().parent / "fuel-signal-survey.md"
 
 # Vocabulary, normalized at match time so spelling variants collapse.

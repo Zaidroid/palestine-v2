@@ -27,8 +27,9 @@ import json
 from pathlib import Path
 
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 
-V1_HIST = Path("/opt/stacks/palestine/public/data/unified/historical/all-data.json")
+V1_HIST = v1_path("public/data/unified/historical/all-data.json")
 
 
 def main() -> None:

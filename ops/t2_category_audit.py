@@ -19,16 +19,23 @@ Run: .venv/bin/python -m ops.t2_category_audit
 
 from __future__ import annotations
 
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
+
 import gc
 import json
 from collections import Counter
 from pathlib import Path
 
-V1_UNIFIED = Path("/opt/stacks/palestine/public/data/unified")
+V1_UNIFIED = v1_path("public/data/unified")
 OUT = Path(__file__).resolve().parent / "t2-category-audit.json"
 
+# No-v1 mode (V1_ROOT=none, P1-C.7): the directory is absent and the audit has
+# nothing to read, so the list is empty rather than the import crashing.
 CATEGORIES = sorted(
-    p.name for p in V1_UNIFIED.iterdir()
+    p.name for p in (V1_UNIFIED.iterdir() if V1_UNIFIED.is_dir() else ())
     if p.is_dir() and p.name != "snapshots"
     and ((p / "all-data.json").exists() or (p / "partitions").is_dir())
 )

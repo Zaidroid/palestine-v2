@@ -53,12 +53,13 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "gap-radar.json"
-V1_EVENTS = Path("/opt/stacks/palestine/public/data/refresh-events.ndjson")
+V1_EVENTS = v1_path("public/data/refresh-events.ndjson")
 V2_EVENTS = ROOT / "ops" / "fetch-events.ndjson"   # ops/fetchlib.py's ledger
-V1_T4P_RAW = Path("/opt/stacks/palestine/public/data/tech4palestine")
+V1_T4P_RAW = v1_path("public/data/tech4palestine")
 
 # ── declarations: the radar's reviewable knowledge, never guessed ────────────
 

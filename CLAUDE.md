@@ -25,6 +25,11 @@ developed in place; no data loss; the Telegram account is the scarcest asset;
   classifier, no DB). Anything that imports `resolve.db.connect` or reads
   `PALESTINE_API` needs main-server; write the change, keep the tests you can
   run green, and say which ones you could not run.
+- v1's stack is read through one setting, `V1_ROOT` (environment or `.env`;
+  default `/opt/stacks/palestine`). Set `V1_ROOT=none` on a machine without v1:
+  every v1 path then points nowhere and each reader's "v1 absent" branch runs.
+  Code never spells the path itself; `resolve.db.v1_path()` does
+  (`tests/test_v1_root.py` holds that line).
 - Never fabricate a DB measurement. If a number needs the database, say so.
 
 ## The plan and the ledger

@@ -42,11 +42,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
 
 from ingest import bronze                                # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-V1_SNAPS = Path("/opt/stacks/palestine/public/data/unified/snapshots")
+V1_SNAPS = v1_path("public/data/unified/snapshots")
 VAULT = ROOT / "data" / "evidence" / "v1-snapshots"
 MANIFEST = ROOT / "data" / "evidence" / "manifest.json"
 

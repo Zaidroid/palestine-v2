@@ -23,6 +23,11 @@ skips where v1 is absent (CI, laptops) — as the other integration tests do.
 """
 from __future__ import annotations
 
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
+
 from pathlib import Path
 
 import pytest
@@ -31,7 +36,7 @@ import yaml
 from ingest import databank
 from ingest.databank import SPECS, SpecRefused, load_spec
 
-V1 = Path("/opt/stacks/palestine/public/data/unified")
+V1 = v1_path("public/data/unified")
 needs_v1 = pytest.mark.skipif(not V1.exists(), reason="v1 corpus absent")
 
 

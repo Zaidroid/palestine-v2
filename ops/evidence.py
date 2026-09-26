@@ -19,6 +19,11 @@ survivable before anything is cut.
 """
 from __future__ import annotations
 
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parent.parent))
+from resolve.db import v1_root, NO_V1  # noqa: E402
+
 import json
 import os
 from functools import lru_cache
@@ -32,7 +37,7 @@ MANIFEST = ROOT / "data" / "evidence" / "manifest.json"
 
 
 def v1_snapshots() -> Path:
-    root = os.environ.get("PALESTINE_V1_ROOT", "/opt/stacks/palestine")
+    root = str(v1_root() or NO_V1)
     return Path(root) / "public" / "data" / "unified" / "snapshots"
 
 

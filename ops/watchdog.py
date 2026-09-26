@@ -70,6 +70,7 @@ from psycopg.rows import dict_row                       # noqa: E402
 
 from ops.alert import open_alerts, raise_alert, resolve  # noqa: E402
 from resolve.db import dsn, env_value                   # noqa: E402
+from resolve.db import v1_path  # noqa: E402
 
 # Cadence is measured over three weeks ending six hours ago; the last six hours
 # are what gets judged. Long enough that a weekly rhythm is visible, short
@@ -234,7 +235,7 @@ FEED_COLLECTOR = {
 # parses every few seconds, the spool is appended continuously.
 DEPENDENCIES = {
     "v1-checkpoints-db": (
-        "/opt/stacks/palestine/services/westbank-alerts/data/checkpoints.db",
+        str(v1_path("services/westbank-alerts/data/checkpoints.db")),
         3600, "v1's checkpoint parser writes this; checkpoints stop if it does"),
 }
 

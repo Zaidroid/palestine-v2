@@ -31,9 +31,10 @@ sys.path.insert(0, str(ROOT))
 
 from resolve.arabic import normalize                                        # noqa: E402
 from resolve.db import connect, env_value                                   # noqa: E402
+from resolve.db import v1_path  # noqa: E402
 
 NEWS_DB = Path(env_value("V1_NEWS_DB") or
-               "/opt/stacks/palestine/services/westbank-alerts/data/news.db")
+               str(v1_path("services/westbank-alerts/data/news.db")))
 BEFORE, AFTER = timedelta(hours=2), timedelta(hours=12)   # an article follows the event
 PER_EVENT = 5
 

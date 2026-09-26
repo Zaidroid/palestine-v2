@@ -33,10 +33,11 @@ import yaml
 from ingest import bronze, engine
 from ingest.spec import SpecInvalid, SpecRefused, validate_or_raise
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SPECS = ROOT / "db" / "mappings"
-V1_UNIFIED = Path("/opt/stacks/palestine/public/data/unified")  # READ-ONLY
+V1_UNIFIED = v1_path("public/data/unified")  # READ-ONLY
 RUNS = ROOT / "ops" / "databank-runs.ndjson"
 
 

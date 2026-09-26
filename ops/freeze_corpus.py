@@ -36,11 +36,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FROZEN = ROOT / "data" / "frozen"
 MANIFEST = FROZEN / "manifest.json"
-V1_UNIFIED = Path("/opt/stacks/palestine/public/data/unified")   # READ-ONLY
+V1_UNIFIED = v1_path("public/data/unified")   # READ-ONLY
 
 # Measured FROZEN by ops/v1_liveness.py on 2026-08-08 across the vault's 38
 # days: content identical at both ends and at every sample in between. Listed

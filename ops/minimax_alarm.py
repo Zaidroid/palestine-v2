@@ -56,6 +56,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from resolve.db import v1_path  # noqa: E402
 
 from ops.alert import open_alerts, raise_alert, resolve          # noqa: E402
 
@@ -63,7 +64,7 @@ CONTAINER = os.environ.get("V1_ALERTS_CONTAINER", "params-alerts-api")
 V1_API = os.environ.get("V1_API_URL", "http://127.0.0.1:8081")
 CHECKPOINT_DB = os.environ.get(
     "V1_CHECKPOINT_DB",
-    "/opt/stacks/palestine/services/westbank-alerts/data/checkpoints.db")
+    str(v1_path("services/westbank-alerts/data/checkpoints.db")))
 
 # One hour is the watchdog's natural window here: v1 makes ~50 calls an hour, so
 # a dead path is unmistakable within one run and a transient blip is not.

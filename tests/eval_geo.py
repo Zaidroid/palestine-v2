@@ -23,9 +23,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 from resolve.geo import resolve_place
 
-V1_ALERTS = "/opt/stacks/palestine/services/westbank-alerts/data/alerts.db"
+V1_ALERTS = str(v1_path("services/westbank-alerts/data/alerts.db"))
 
 # Radius within which v2's answer counts as agreeing with v1's.
 TOLERANCE_KM = {"station": 8.0, "street": 8.0, "town": 12.0,

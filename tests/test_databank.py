@@ -10,9 +10,10 @@ from pathlib import Path
 import pytest
 
 from ingest import databank
+from resolve.db import v1_path
 from ingest.databank import Drop, Row, SpecRefused, load_spec, slug
 
-V1 = Path("/opt/stacks/palestine/public/data/unified")
+V1 = v1_path("public/data/unified")
 
 PLACES = {
     "region": {"Gaza Strip": 1, "West Bank": 2},

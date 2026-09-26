@@ -22,6 +22,11 @@ SAFETY
 """
 from __future__ import annotations
 
+import sys as _sys
+from pathlib import Path as _P
+_sys.path.insert(0, str(_P(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
+
 import argparse
 import asyncio
 import json
@@ -90,7 +95,7 @@ QUERIES: dict[str, list[str]] = {
 }
 
 # Already polled by v1 — do not duplicate.
-V1_ENV = Path("/opt/stacks/palestine/services/westbank-alerts/.env")
+V1_ENV = v1_path("services/westbank-alerts/.env")
 
 # Telegram search is REGIONAL, not national: "محروقات" returns Syrian and Iraqi
 # fuel channels, "كهرباء" returns Aleppo and Idlib utilities, "خدمات" returned a

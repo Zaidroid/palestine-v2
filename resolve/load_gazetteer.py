@@ -26,9 +26,10 @@ import psycopg
 
 from resolve.arabic import fold, is_generic_alias, normalize, variants
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 
-V1_ADMIN = Path("/opt/stacks/palestine/services/westbank-alerts/data/admin")
-V1_DATA = Path("/opt/stacks/palestine/services/westbank-alerts/data")
+V1_ADMIN = v1_path("services/westbank-alerts/data/admin")
+V1_DATA = v1_path("services/westbank-alerts/data")
 
 # The 16 governorates, Arabic names keyed by OCHA pcode. The OCHA file carries
 # adm2_name only in English (adm2_name1..3 are all NULL), so Arabic has to come

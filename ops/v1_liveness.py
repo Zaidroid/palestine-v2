@@ -45,10 +45,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
 
 from ops import evidence                                        # noqa: E402
 
-V1_UNIFIED = Path("/opt/stacks/palestine/public/data/unified")  # READ-ONLY
+V1_UNIFIED = v1_path("public/data/unified")  # READ-ONLY
 
 # v1's own bookkeeping, not the publisher's data. Every one of these was
 # measured to differ on 100% of records between any two rebuilds.

@@ -36,10 +36,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from resolve.db import v1_path  # noqa: E402
 
 from ops import evidence                                     # noqa: E402
 
-V1_UNIFIED = Path("/opt/stacks/palestine/public/data/unified")   # READ-ONLY
+V1_UNIFIED = v1_path("public/data/unified")   # READ-ONLY
 
 # The fields a spec's place ladder can stand on. Anything a transformer might
 # reach for; ordered as the ladders try them.

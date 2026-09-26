@@ -661,3 +661,13 @@ casualties + demolitions, PCBS population + CPI, HaMoked 219 months — radar "3
 0 supply-dead · supply lines: 0 DEAD · v2 fetches 7/7 live", exit 0, `supply-lines` heartbeat written. The 03:40 load writes
 the rows (dry-run measured by the agent: casualties 32 revisions, demolitions 855 revisions + 20 new, prisoners 12 new,
 PCBS 36 new).
+
+2026-09-26 07:30 UTC · P1-C.7 fresh-clone V1_ROOT · done · proof: `tests/test_v1_root.py` (9 green). **V1'S FOLDER IS ONE
+SETTING NOW.** Twenty files spelled `/opt/stacks/palestine` in code; all read it through `resolve.db.v1_path()`, driven by
+`V1_ROOT` (environment or `.env`, the older `PALESTINE_V1_ROOT` still honoured, default unchanged). `V1_ROOT=none` is the
+no-v1 mode: every v1 path points at a directory that does not exist and each reader's own "v1 absent" branch runs. All
+seventeen v1 readers import cleanly in that mode (the category audit crashed at import; it now lists no categories). An AST
+test fails any new code line that spells the path (comments and docstrings may still name it). The related suites were run
+from the main checkout, because the fetched PCBS and HaMoked inputs live only there: a worktree without them fails those
+two dry runs by design (`records_read 0`). `funding` identity-invariant fails on master too (841 < 8,980 records): v1's
+funding file shrank — a separate finding, filed below.

@@ -31,13 +31,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from cascade.palhub_fuel import parse_spool
 from resolve.arabic import is_generic_alias, variants
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 from resolve.belief import refresh as belief_refresh
 from resolve.geo import resolve_place
 
 # The kinds this loader owns, named so the belief refresh can be scoped to them.
 FUEL_KINDS = ("fuel_diesel", "fuel_gasoline", "cooking_gas")
 
-SPOOL_DIR = Path("/opt/stacks/palestine/services/westbank-alerts/data/tee")
+SPOOL_DIR = v1_path("services/westbank-alerts/data/tee")
 SOURCE_KEY = "telegram_fuel"
 
 # palhub splits some governorates into towns (دورا, يطا, بيتونيا), so a region

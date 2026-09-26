@@ -47,8 +47,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from cascade.checkpoint_text import FLOW_SEVERITY, read
 from resolve.belief import refresh as belief_refresh
 from resolve.db import connect
+from resolve.db import v1_path  # noqa: E402
 
-V1_DB = "/opt/stacks/palestine/services/westbank-alerts/data/checkpoints.db"
+V1_DB = str(v1_path("services/westbank-alerts/data/checkpoints.db"))
 LEGACY_KIND = "checkpoint_status"
 FLOW_KIND = "checkpoint_flow"
 PRESENCE_KIND = {"idf": "checkpoint_idf", "police": "checkpoint_police",

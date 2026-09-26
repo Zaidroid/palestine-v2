@@ -45,6 +45,27 @@ def env_value(key: str, default: str | None = None) -> str | None:
     return os.environ.get(key) or _env().get(key) or default
 
 
+# P1-C.7: v1's stack, behind ONE setting. Twenty files read
+# /opt/stacks/palestine directly, so a fresh clone on any other machine could
+# not even import them honestly. `V1_ROOT` (environment or .env; the older
+# PALESTINE_V1_ROOT is honoured) moves it; `V1_ROOT=none` is the no-v1 mode:
+# every v1 path then points at a directory that does not exist, and each caller's
+# existing "v1 file absent" handling takes over (skip, report, or fall back).
+V1_DEFAULT = "/opt/stacks/palestine"
+NO_V1 = Path("/nonexistent/no-v1")
+
+
+def v1_root() -> Path | None:
+    raw = (os.environ.get("V1_ROOT") or os.environ.get("PALESTINE_V1_ROOT")
+           or _env().get("V1_ROOT") or V1_DEFAULT).strip()
+    return None if raw.lower() in ("none", "off", "") else Path(raw)
+
+
+def v1_path(*parts: str) -> Path:
+    root = v1_root()
+    return (root if root is not None else NO_V1).joinpath(*parts)
+
+
 def dsn() -> str:
     e = _env()
     db = e.get("PGDATABASE", GUARD_DB)
