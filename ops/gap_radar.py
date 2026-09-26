@@ -172,6 +172,11 @@ SUPPLY_LINES = {
                 "successor": "Addameer (v1_prisoners_addameer, via v1's "
                              "`prisoners` step): total and administrative "
                              "detention, 2022 onward"},
+    "unrwa-registered": {"labels": ["unrwa:registered"],
+                         "feeds": ["unrwa_registered_hdx"],
+                         "fetcher": "ops/fetch_unrwa_registered.py", "every_days": 1,
+                         "note": "UNRWA's quarterly HDX release; the file holds one "
+                                 "quarter, the databank keeps every one it has seen"},
 }
 
 # v1 refresh steps that are RETIRED: a successor carries what they did, so

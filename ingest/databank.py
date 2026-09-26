@@ -1608,7 +1608,40 @@ def t_population_wpp(rec, spec, places, counts):
                 place_id=None, attrs=attrs)]
 
 
+_QUARTER_MONTH = {"Q1": "03", "Q2": "06", "Q3": "09", "Q4": "12"}
+
+
+def t_refugees_unrwa_registered(rec, spec, places, counts):
+    """P1-B.4 — registered Palestine refugees per UNRWA field, sex and age, from
+    UNRWA's own quarterly HDX release. One row per (field, column). Gaza and
+    the West Bank land on their region rows; Jordan, Lebanon, Syria and
+    "Unknown" carry the field in attrs (place NULL). The all-fields "Total"
+    row gets its OWN indicator, so a sum across fields never counts everyone
+    twice. Dated to the quarter's last month (a stock at the end of it)."""
+    year, q, field = rec.get("year"), rec.get("quarter"), rec.get("field")
+    month = _QUARTER_MONTH.get(q)
+    if not isinstance(year, int) or not month or not field:
+        return Drop("malformed")
+    total_row = field.strip().lower() == "total"
+    base = "refugees.unrwa_registered_all_fields" if total_row else "refugees.unrwa_registered"
+    region = {"gaza": "Gaza Strip", "west bank": "West Bank"}.get(field.strip().lower())
+    place_id = places["region"].get(region) if region else None
+    rows = []
+    for col, value in sorted((rec.get("counts") or {}).items()):
+        name = {"Grand Total": "total", "Female Total": "female",
+                "Male Total": "male"}.get(col, slug(col).replace("60", "60_plus")
+                                          if col.endswith("+") else slug(col))
+        attrs = {"field": field, "country": rec.get("country"), "quarter": f"{year} {q}",
+                 "as_of": "end of quarter", "column": col}
+        rows.append(Row("unrwa_registered_hdx", f"{base}.{name}", f"{year}-{month}-01",
+                        "month", f"unrwa-reg:{year}{q}:{slug(field)}:{slug(col)}",
+                        value_num=value, unit="persons", place_id=place_id,
+                        located=place_id is not None, attrs=attrs))
+    return rows
+
+
 TRANSFORMERS = {
+    "refugees_unrwa_registered": t_refugees_unrwa_registered,   # P1-B.4
     "population_wpp": t_population_wpp,   # P1-B.4: the 1950s, from the UN
     "conflict": t_conflict,
     "conflict_westbank": t_conflict_westbank,

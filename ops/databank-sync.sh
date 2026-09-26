@@ -41,6 +41,7 @@ step .venv/bin/python -m ops.fetch_ocha          # OCHA casualties + demolitions
 step .venv/bin/python -m ops.fetch_pcbs          # PCBS population + CPI
 step .venv/bin/python -m ops.fetch_hamoked       # HaMoked detention, monthly
 step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (monthly at most)
+step .venv/bin/python -m ops.fetch_unrwa_registered   # UNRWA registered refugees by field (HDX)
 
 export HEARTBEAT_DETAIL="{\"fetch_failures\": $fails}"
 # The unit's OnFailure alarm is resolved once, at the END, when the whole

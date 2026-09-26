@@ -1,0 +1,73 @@
+# refugees_unrwa_registered — registered Palestine refugees per UNRWA field,
+# sex and age, from UNRWA's own quarterly HDX release (P1-B.4, 2026-09-26).
+#
+# 2025 Q4, measured on the first fetch: 7 rows (Jordan 2,398,179 · Gaza
+# 1,545,991 · West Bank 938,589 · Syria 357,985 · Lebanon 228,274 · Unknown
+# 495,764 · Total 5,964,782), each by sex and seven age groups → 119 rows.
+# The held v1 table (refugees.registered_total, dataset v1_refugees_unrwa)
+# flattened a different release without its field labels (its "West Bank"
+# reads 414,298); this series has its own indicator names so the two never mix.
+# The all-fields Total row is refugees.unrwa_registered_all_fields.* — a sum
+# across fields of refugees.unrwa_registered.* never counts anyone twice.
+#
+# Licence: HDX's record says cc-by-igo; migration 090 writes that onto this
+# dataset with the evidence. Until it is applied the dataset inherits UNRWA's
+# source licence (UN attribution, non-commercial, unverified) — the cautious
+# default, never the permissive one.
+category: refugees_unrwa_registered
+transform: python:t_refugees_unrwa_registered
+v1_category: refugees
+shape: observation
+status: reviewed
+records_measured: 7
+
+input:
+  root: data/raw/unrwa_registered
+  glob: latest.json
+cadence: irregular               # quarterly on HDX; fetched nightly, loads only what is new
+
+source_routing:
+  by_name:
+    "UNRWA — Palestine Refugees (HDX)": unrwa
+  default: unrwa
+
+datasets:
+  - key: unrwa_registered_hdx
+    source: unrwa
+
+indicator:
+  template: "refugees.unrwa_registered.{column}"
+
+value:
+  num_from: counts
+  text_from: null
+  unit_from: null                # persons, all columns
+
+occurred_at:
+  from: quarter
+  precision: month               # the quarter's last month: a stock at its end
+  rules: []
+
+place:
+  strategy: region               # Gaza / West Bank → their region rows; other fields NULL + attrs.field
+  min_decided_pct: 1.0
+
+stable_id: stable_id             # unrwa-reg:<year><quarter>:<field>:<column>
+
+expect:
+  min_records: 6                 # the five fields and the total (Unknown may go)
+  max_observations: 2000         # 119 a quarter; ~16 quarters of headroom
+
+identity:
+  fields: [indicator, occurred_at, place_id]
+  attrs: [field]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "refugees.unrwa_registered"}
+      concept: displacement.refugee
+      measure_kind: stock
+      grain: month
+      place_grain: region
+      canonical_unit: persons
