@@ -530,6 +530,21 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
                     continue
                 keep.append(it)
             out[key] = keep
+        # A series' POINTS are rows too (compare returned OCHA's no-redistribution
+        # casualty points to partners under "filtered", audit TRANSPORT-01): the
+        # points leave, the series' summary, span and citation stay.
+        for s_ in out.get("series") or []:
+            if not isinstance(s_, dict) or "redistribution" not in s_:
+                continue
+            g = s_.get("redistribution")
+            if g not in PARTNER_ALLOWED and s_.get("points"):
+                n = len(s_["points"])
+                s_["points"] = []
+                s_["points_withheld"] = n
+                src = ", ".join(s_.get("sources") or []) or "?"
+                k = f"{src} ({g or 'ungraded'})"
+                dropped[k] = dropped.get(k, 0) + n
+                total += n
         if total:
             out["count"] = len(out.get("items") or [])
             block["withheld"] = {
@@ -547,5 +562,21 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             if isinstance(out.get("answer_en"), str):
                 out["answer_en"] += (f" ({total} rows withheld from this payload: their publisher "
                                      "does not grant redistribution — the figure is cited with its source.)")
+    if tier == "partner" and entry and entry.get("partner_tier") == "cited_fact_only":
+        # ZAID-10 for a MEASURED tool whose publisher grades `ask` (IODA): a
+        # partner gets the credited FACT — the answer, who measured it, how old
+        # it is — not the measurement series (audit TRANSPORT-01: the payload
+        # said cited_fact_only and still carried IODA's raw signals).
+        keep = {"answer", "answer_en", "attribution", "source", "license",
+                "redistribution", "observed_at", "age_minutes", "staleness_band",
+                "confidence", "region", "error"}
+        cut = sorted(k for k in list(out) if k not in keep)
+        for k in cut:
+            out.pop(k, None)
+        if cut:
+            block["stripped"] = {"keys": cut,
+                                 "reason": "the publisher grants no redistribution of its "
+                                           "measurements: a partner receives the cited fact, "
+                                           "not the series (ZAID-10)."}
     out["licence"] = block
     return out

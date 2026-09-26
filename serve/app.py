@@ -2838,7 +2838,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
                        -- labelled litre prices ILS_per_kg (audit F030).
                        CASE WHEN v.value_canonical IS NOT NULL THEN v.resolved_unit
                             ELSE v.unit END AS unit,
-                       v.source_name, v.attribution_text
+                       v.source_name, v.attribution_text, v.redistribution
                 FROM v_observation_canonical v
                 WHERE {' AND '.join(where)} ORDER BY 1""", params)
     meta = q("""SELECT concept_key, measure_kind, polarity, grain, place_grain,
@@ -2853,9 +2853,17 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
     # few kilobytes and the rest was the same sentence repeated per row.
     sources = sorted({p["source_name"] for p in pts if p["source_name"]})
     attribution = sorted({p["attribution_text"] for p in pts if p["attribution_text"]})
+    # The series' grade is its most restrictive row's (audit TRANSPORT-01): the
+    # licence layer needs it to keep a no-redistribution publisher's POINTS
+    # out of a partner payload while the cited summary stays.
+    from serve.licence import GRADE_ORDER
+    grades = {p.get("redistribution") for p in pts if p.get("redistribution")}
+    redistribution = (max(grades, key=lambda g: GRADE_ORDER.index(g) if g in GRADE_ORDER else len(GRADE_ORDER))
+                      if grades else None)
     for p in pts:
         p.pop("source_name", None)
         p.pop("attribution_text", None)
+        p.pop("redistribution", None)
     units = sorted({str(p["unit"]) for p in pts if p.get("unit")})
     return {**m, "known": bool(meta), "indicator": indicator,
             "points": pts, "n": len(pts),
@@ -2863,7 +2871,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
             # milk points under one label, F030) is said, not blended.
             "units": units, "unit_mixed": len(units) > 1,
             "sources": sources, "source_names": set(sources),
-            "attribution": attribution}
+            "attribution": attribution, "redistribution": redistribution}
 
 
 @app.get("/v2/databank/compare", tags=["databank"])
