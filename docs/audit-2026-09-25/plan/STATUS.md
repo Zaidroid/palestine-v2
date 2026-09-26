@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 147 done · 5 partial · 8 open** (of 160; 2026-09-26: DATABANK-03/-04 + V09/V11 in `6e47e60`, DATABANK-02 + V08 in `b28948a`). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 148 done · 5 partial · 7 open** (of 160; 2026-09-26: DATABANK-03/-04 + V09/V11 in `6e47e60`, DATABANK-02 + V08 in `b28948a`, DATABANK-05 in `9ed9977`). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -24,6 +24,7 @@ offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked throug
 | `f5fd58d` | ingest: the v1 import cursor is its own and re-reads behind itself | F007 |
 | `6e47e60` | databank: demolition ladder runs; indistinguishable copies kept; same-run conflicts; crashes isolated | F028 F029 F135 F137 |
 | `b28948a` | databank: a complete source's withdrawn rows close; value_num keys need a declaration | F027 F134 |
+| `9ed9977` | databank: events matched by count after the whole run, never collapsed in-run | F133 |
 
 Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook), and the commit that adds this file.
 
@@ -254,7 +255,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-02 | F027 | high | **done** | `b28948a` | value_num inside the identity makes a publisher revision an un-supersedable second current row  |
 | DATABANK-03 | F028 | high | **done** | `6e47e60` | t_demolitions has no lat/lon rung: since v1 dropped admin2_pcode (frozen 2026-08-08), all 516 l |
 | DATABANK-04 | F029 | high | **done** | `6e47e60` | A fresh real load of an `indistinguishable` dataset silently drops every identical-content row  |
-| DATABANK-05 | F133 | medium | **open** |  | Event identity excludes dyad, actors and the source's own id, and has no injectivity invariant: |
+| DATABANK-05 | F133 | medium | **done** | `9ed9977` | Event identity excludes dyad, actors and the source's own id, and has no injectivity invariant: |
 | DATABANK-V09 | F135 | medium | **done** | `6e47e60` | Two same-identity rows with different content in one run: None reached the supersede list and both rows one key (reproduced, fixed) |
 | DATABANK-V11 | F137 | medium | **done** | `6e47e60` | run_all isolated only SpecRefused; any other exception skipped every later category (reproduced, fixed) |
 | DATABANK-V08 | F134 | medium | **done** | `b28948a` | Upstream deletions never superseded: opt-in `identity.generation: complete` closes what a whole-publication source stopped sending, capped (reproduced in production, fixed) |

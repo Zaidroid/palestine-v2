@@ -695,3 +695,8 @@ value_num may stay in those keys; the validator refuses it anywhere else without
 every indistinguishable copy (aid_access would have written 25,872 of 50,059); production already held all 50,059
 (rolled-back real run: written 0). (4) One category's crash no longer skips the categories after it. Open from 12-databank:
 DATABANK-05 (event identity), and the verify-first list.
+
+2026-09-26 09:40 UTC · audit DATABANK-05 · done · proof: `9ed9977`, 3 tests (2 fail on the old loader). Event identity is a
+multiset decided after the whole run: a fresh load keeps all 8,495 conflict events (the set dropped 764 distinct UCDP
+events that share day, place and toll across dyads); a v1 re-hash still skips everything; rolled-back real run: 0
+written. 12-databank's confirmed list is closed; the verify-first list (V01–V19) is next where it touches G5.
