@@ -267,6 +267,7 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-V20 | F548 | low | **done** | `481a5b8` | The indicators note no longer sends callers to a missing /v2/databank/flow; it points to correlate with detrend=diff (verified live on the dev API 2026-09-26) |
 | DATABANK-V19 | F547 | low | **done** | `b53ed2b` | 091: widening a dataset licence needs evidence (not yet applied); G5.14 share-alike ⇔ grade PASS |
 | DATABANK-V17 | F349 | medium | **done** | `d4da0e8` | The spec decides which datasets must carry keys; 38 declared, 0 keyless current rows |
+| DATABANK-V13 | F140 | medium | **done** | `81bafac` | One export file per licence tuple (hdx carried two under one file) |
 | DATABANK-V02 | F128 | medium | **done** | `2ebf3fe` | demolitions.locality.* registered cumulative/period, annual flow/year/region, in the spec and in 086 (reproduced, fixed) |
 | DATABANK-V06 | F131 | medium | **done** | `c8a5439` | gmotel bulletins serve with the office named; only `missing` is inferred; new vocabulary fails the run (reproduced with a synthetic record, fixed) |
 | DATABANK-V07 | F132 | medium | **done** | `c8a5439` | Stable-id refusals counted per dataset; a keyed dataset's refusal fails and rolls back (measured: none on production) |
