@@ -177,3 +177,14 @@ SELECT CASE WHEN count(*) = 0
                  || 'and have none' END AS g5_13_attribution_where_owed
 FROM databank_serving
 WHERE attribution_required AND btrim(COALESCE(attribution_text, '')) = '';
+
+\echo '--- G5.14: share-alike on a served row agrees with its grade (audit V19) ---'
+-- A row that carries share-alike obligations must be graded share-alike, and a
+-- share-alike grade must carry the obligation — otherwise the tier views and
+-- the licence block disagree about what a partner may do with it.
+SELECT CASE WHEN count(*) = 0
+            THEN 'PASS (share_alike and the share-alike grade agree on every served row)'
+            ELSE 'FAIL: ' || count(*) || ' served rows where share_alike and the grade disagree' END
+       AS g5_14_share_alike_matches_grade
+FROM databank_serving
+WHERE COALESCE(share_alike, false) <> (redistribution IS NOT DISTINCT FROM 'share-alike');
