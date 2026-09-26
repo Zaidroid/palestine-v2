@@ -21,10 +21,11 @@ from ingest.databank import Row
 
 # ── a run that reaches the write, recording it ───────────────────────────────
 
-def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=()):
+def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=(), refuse=(),
+               ceiling=100000):
     spec = {"category": "phantom", "status": "reviewed", "shape": "observation",
             "identity": identity, "place": {},
-            "expect": {"min_records": 1, "max_observations": 100000},
+            "expect": {"min_records": 1, "max_observations": ceiling},
             "datasets": [{"key": "d", "source": "s"}]}
     stored = [(databank.identity_key_for(
                    identity, r.dataset_key, indicator=r.indicator,
@@ -40,8 +41,11 @@ def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=()):
         def __exit__(self, *a): return False
         def execute(self, sql, params=None):
             self.sql = sql
+            self.rowcount = 1
             if "INSERT INTO observation" in sql:
                 log["inserts"].append(params)
+                if params["v1_stable_id"] in refuse:
+                    self.rowcount = 0                 # the stable-id index said no
             elif sql.lstrip().startswith("UPDATE observation"):
                 log["supersede"].extend(params[0])
                 log["updates"].append(list(params[0]))
@@ -52,7 +56,8 @@ def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=()):
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def cursor(self): return Cur()
-        def commit(self): pass
+        def commit(self): log["committed"] = True
+        def rollback(self): log["rolled_back"] = True
 
     def transform_all(category, spec, places, counts, drops):
         for r in emitted:
@@ -405,3 +410,53 @@ def test_DATABANK_V02_locality_totals_are_cumulative_and_annual_rows_are_yearly_
         assert (got[ind]["measure_kind"], got[ind]["grain"], got[ind]["place_grain"]) == \
             ("flow", "year", "region")
     assert got["demolitions.annual_total.displaced"]["canonical_unit"] == "persons"
+
+
+# ── DATABANK-V06: a Media Office bulletin is published, not inferred ─────────
+
+def _gaza(source):
+    return {"report_date": "2026-09-20", "killed_cum": 65000, "injured_cum": 166000,
+            "report_source": source}
+
+
+def test_DATABANK_V06_media_office_bulletins_serve_and_arithmetic_does_not():
+    places = {"region": {"Gaza Strip": 1}}
+    rows = databank.t_conflict_gaza(_gaza("gmotel"), {}, places, Counter())
+    assert isinstance(rows, list) and rows[0].attrs["report_source"] == "gmotel"
+    assert databank.t_conflict_gaza(_gaza("missing"), {}, places, Counter()).reason == "t4p_inferred"
+    new = databank.t_conflict_gaza(_gaza("pressconf"), {}, places, Counter())
+    assert new.reason == "unknown_report_source"
+    declared = {d["reason"] for d in databank.load_spec("conflict_gaza")["drop"]}
+    assert "unknown_report_source" not in declared          # so the run fails
+
+
+# ── DATABANK-V07: what the stable-id index refuses is counted, and for a keyed
+#    dataset it fails the run ──────────────────────────────────────────────────
+
+def test_DATABANK_V07_a_keyed_row_refused_by_the_stable_id_index_fails_the_run(
+        monkeypatch, tmp_path):
+    with pytest.raises(_Refused, match="refused by the stable-id index"):
+        _write_run(monkeypatch, tmp_path, [_lorry(0, 5.0)], IDENT, refuse={"lorry-0"})
+
+
+def test_DATABANK_V07_a_keyless_refetch_is_counted_not_failed(monkeypatch, tmp_path):
+    ident = {**IDENT, "collision_kind": "indistinguishable", "allow_collisions": 10}
+    report, log = _write_run(monkeypatch, tmp_path, [_lorry(0), _lorry(1)], ident,
+                             refuse={"lorry-0", "lorry-1"})
+    assert report["written"] == 0 and log.get("committed")
+    assert report["notes"]["refused_by_stable_id:d"] == 2
+
+
+def test_DATABANK_V10_the_ceiling_judges_the_full_emission_on_a_real_run(monkeypatch, tmp_path):
+    rows = [_lorry(i, float(i)) for i in range(5)]
+    ident = {"fields": ["indicator", "occurred_at", "place_id", "value_num"]}
+    # four of five already held: one would be written, yet the spec emitted five
+    with pytest.raises(_Refused, match="emitted 5 > expect.max_observations 3"):
+        _write_run(monkeypatch, tmp_path, rows, ident, held=rows[:4], ceiling=3)
+
+
+def test_DATABANK_V12_the_identity_backfill_keeps_the_first_seen_copy():
+    src = open("ops/backfill_identity.py").read()
+    select = src[src.index("SELECT observation_id, indicator"):]
+    select = select[:select.index('(ds_id,)')]
+    assert "ORDER BY lower(sys_period), observation_id" in select

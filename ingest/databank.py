@@ -1529,8 +1529,16 @@ def t_conflict_gaza(rec, spec, places, counts):
     # states — and on 2026-09-13 it put 73,784 on a day the bulletin itself
     # reads 73,786. A gap is honest; an inferred value served as published is
     # not.
-    if rec.get("report_source") != "mohtel":
+    # DATABANK-V06 (2026-09-26): only "missing" is T4P's arithmetic. "gmotel"
+    # is a bulletin from the Government Media Office — a published figure,
+    # served with the office named in attrs.report_source (22 rows today, all
+    # 2023, before the cut-over). Any other value is new vocabulary: an
+    # UNDECLARED drop, so the run fails and a person reads it first.
+    source = rec.get("report_source")
+    if source == "missing":
         return Drop("t4p_inferred")
+    if source not in ("mohtel", "gmotel"):
+        return Drop("unknown_report_source")
     gaza = places["region"]["Gaza Strip"]
     attrs = {"cumulative": True, "region": "Gaza Strip",
              "report_source": rec.get("report_source")}
@@ -1909,6 +1917,8 @@ def run(category: str, dry_run: bool = False) -> dict:
             # could never fail at all
             per_ds[r.dataset_key][0] += 1
             per_ds[r.dataset_key][1] += bool(r.located)
+            if not isinstance(r, EventRow):
+                counts["observations_emitted_full"] += 1
             ident = _identity_of(r)
             if ident is not None:
                 # THE INVARIANT: an identity that cannot tell two rows
@@ -2084,10 +2094,15 @@ def run(category: str, dry_run: bool = False) -> dict:
             problems.append(f"records_read {n} < expect.min_records "
                             f"{spec['expect']['min_records']}")
         max_obs = spec["expect"].get("max_observations")
-        if max_obs and len(rows) > max_obs:
+        # DATABANK-V10 (2026-09-26): judged on the FULL emission. len(rows) is
+        # what is left after already-held rows are skipped, so on a real night
+        # it was a handful and the tripwire could never fire — only a first
+        # load or a dry run measured what the spec produces.
+        emitted_full = counts.get("observations_emitted_full", len(rows))
+        if max_obs and emitted_full > max_obs:
             # health's failure mode: a run that "succeeds with more" has
             # failed to dedupe and must say so
-            problems.append(f"emitted {len(rows)} > expect.max_observations "
+            problems.append(f"emitted {emitted_full} > expect.max_observations "
                             f"{max_obs}")
         # THE INJECTIVITY INVARIANT (added 2026-08-07 after the freeze).
         # An identity that maps two distinct rows to one key does not
@@ -2184,7 +2199,10 @@ def run(category: str, dry_run: bool = False) -> dict:
                            AND upper_inf(sys_period)""",
                         ([oid for _, oid in absent],))
                     closed_absent = cur.rowcount
+                sent: Counter = Counter()
+                took: Counter = Counter()
                 for r in rows:
+                    sent[r.dataset_key] += 1
                     cur.execute(INSERT_SQL, {
                         "dataset_id": dataset_ids[r.dataset_key],
                         "place_id": r.place_id, "indicator": r.indicator,
@@ -2197,6 +2215,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "attrs": json.dumps(r.attrs, ensure_ascii=False),
                     })
                     written += cur.rowcount
+                    took[r.dataset_key] += cur.rowcount
                 for e in event_rows:
                     attrs = dict(e.attrs)
                     attrs["v1_stable_id"] = e.v1_stable_id
@@ -2214,6 +2233,31 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "attrs": json.dumps(attrs, ensure_ascii=False),
                     })
                     events_written += cur.rowcount
+                # DATABANK-V07 (2026-09-26): a row the stable-id index refuses
+                # (ON CONFLICT DO NOTHING) landed in no bucket, so a correction
+                # lost that way (061's scenario) read as a clean run. Counted
+                # per dataset; for a dataset with a STORED identity every such
+                # row passed the identity guard as new, so a refusal means two
+                # keys disagree about one record — the run fails and rolls back.
+                # Keyless (indistinguishable) datasets refuse re-fetches by
+                # design and are only counted.
+                refused = {k: sent[k] - took[k] for k in sent if sent[k] > took[k]}
+                if refused:
+                    counts.update({f"refused_by_stable_id:{k}": v
+                                   for k, v in refused.items()})
+                keyed_refusals = {
+                    k: v for k, v in refused.items()
+                    if k in identity_by_ds and (identity_by_ds[k] or {}).get(
+                        "collision_kind") != "indistinguishable"}
+                if keyed_refusals:
+                    conn.rollback()
+                    raise SpecRefused(
+                        f"{category}: run FAILED — rows with a new identity refused "
+                        f"by the stable-id index (a key disagreement, not a "
+                        f"re-fetch): {keyed_refusals}; nothing written")
+                refused_events = len(event_rows) - events_written
+                if refused_events > 0:
+                    counts["events_refused_by_stable_id"] = refused_events
             conn.commit()
 
     report = {

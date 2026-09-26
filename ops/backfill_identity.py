@@ -65,7 +65,12 @@ def main() -> int:
                 SELECT observation_id, indicator, occurred_at, place_id,
                        value_num, attrs
                 FROM observation
-                WHERE dataset_id = %s AND upper_inf(sys_period)""", (ds_id,))
+                WHERE dataset_id = %s AND upper_inf(sys_period)
+                -- DATABANK-V12 (2026-09-26): the FIRST-SEEN copy survives, as
+                -- the reviewed rule says. Heap order let a later re-insert win
+                -- and close the older row, so as_of before the re-insert
+                -- returned nothing for a fact the databank already held.
+                ORDER BY lower(sys_period), observation_id""", (ds_id,))
             rows = cur.fetchall()
             # A dataset that DECLARES collisions cannot carry a stored key:
             # 052's index is unique and would refuse it, and appending an

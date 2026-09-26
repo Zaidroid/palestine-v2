@@ -65,7 +65,10 @@ drop:
   - reason: no_cumulative        # no bulletin that day, and T4P left it empty
     measured: 7                  # since the cut-over, at spec time
   - reason: t4p_inferred         # no bulletin that day, and T4P filled it by
-    measured: 4                  #   arithmetic (report_source != "mohtel")
+    measured: 4                  #   arithmetic (report_source "missing")
+  # unknown_report_source is deliberately NOT declared (V06): a report_source
+  # T4P never used before fails the run, so a person reads it before anything
+  # new is either served or dropped.
   - reason: missing_date
     measured: 0
 
