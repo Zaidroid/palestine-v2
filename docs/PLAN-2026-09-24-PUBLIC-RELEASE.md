@@ -681,3 +681,17 @@ closed, the 10,185 held rows keep serving, and `palestine-v2-databank` failed an
 answered 200 for 2017/2020/2023/2025 at 07:45, so the next v1 refresh should restore the file; no hand needed. If the
 refusal repeats on 09-27, v2 takes the FTS line over (the v1 row identity is a SHA-256 of the whole unified record, so
 a takeover needs a flow_id-keyed dataset and a supersede of the v1 rows, not a drop-in fetcher).
+
+2026-09-26 09:00 UTC · P1-B.2 honesty / audit DATABANK-02,-03,-04,-V08,-V09,-V11 · done · proof: `6e47e60`, `b28948a`,
+`tests/test_databank_guard_0926.py` (17; 12 fail on the old loader). **THE DATABANK STOPS COUNTING THINGS TWICE AND
+FILING TOWNS AS "WEST BANK".** (1) Demolitions: the spec's ladder now runs — pcode → OCHA's own governorate name (a new
+shared rung) → point → region; all 526 fetched localities resolve (496/499 agree with point-in-polygon; the 3 that do not
+sit on governorate lines, where the publisher's name wins). Loaded 08:15: 870 rows moved from region to governorate, 924
+current before and after, 2,631 closed rows kept. (2) Measured doubles in production, now closed by an opt-in
+`identity.generation: complete` (a whole-publication source; a held identity it stops sending closes, capped at 5% or a
+measured `max_absent`, above which the run fails and closes nothing): 15 UNRWA camps held twice, 3 IDMC events held
+under old and new names, 2 re-dated T4P West Bank points. A revised value now closes the old reading in the same run, so
+value_num may stay in those keys; the validator refuses it anywhere else without a declared reason. (3) Fresh loads keep
+every indistinguishable copy (aid_access would have written 25,872 of 50,059); production already held all 50,059
+(rolled-back real run: written 0). (4) One category's crash no longer skips the categories after it. Open from 12-databank:
+DATABANK-05 (event identity), and the verify-first list.
