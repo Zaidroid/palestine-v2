@@ -1589,7 +1589,27 @@ def t_water_gho(rec, spec, places, counts):
                 unit="percentage", place_id=None, attrs=attrs)]
 
 
+def t_population_wpp(rec, spec, places, counts):
+    """P1-B.4 — UN WPP 2024 for the State of Palestine, 1950-2023: modelled
+    estimates, one row per (year, indicator), the whole territory (place NULL,
+    attrs.region 'Palestine' — the funding convention). Every row says it is
+    an estimate; projections never reach here (ops/fetch_wpp.py keeps none)."""
+    year, ind = rec.get("year"), rec.get("indicator")
+    if not isinstance(year, int) or not ind:
+        return Drop("malformed")
+    value = rec.get("value")
+    if value is None:
+        return Drop("no_value")
+    attrs = {"region": "Palestine", "estimate": "modelled (WPP 2024, Medium variant)",
+             "wpp_column": rec.get("wpp_column"), "wpp_unit": rec.get("wpp_unit"),
+             "revision": "WPP2024"}
+    return [Row("un_wpp_2024", f"population.wpp.{ind}", f"{year}-01-01", "year",
+                rec["stable_id"], value_num=value, unit=rec.get("unit"),
+                place_id=None, attrs=attrs)]
+
+
 TRANSFORMERS = {
+    "population_wpp": t_population_wpp,   # P1-B.4: the 1950s, from the UN
     "conflict": t_conflict,
     "conflict_westbank": t_conflict_westbank,
     "conflict_gaza": t_conflict_gaza,

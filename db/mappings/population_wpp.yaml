@@ -1,0 +1,124 @@
+# population_wpp — the 1950s, from the UN (P1-B.4, 2026-09-26).
+#
+# UN DESA Population Division, World Population Prospects 2024: the State of
+# Palestine, Medium variant, 1950-2023 — twelve indicators, 888 rows measured
+# on the first fetch. MODELLED ESTIMATES: WPP reconstructs the past from
+# censuses, surveys and registration, and revises every two years; every row
+# carries attrs.estimate and attrs.revision so no answer can read one as a
+# count. The databank held 5 rows for the whole 1950s before this.
+#
+# Terms: "Figures and tables in this publication can be reproduced without
+# prior permission under a Creative Commons license (CC BY 3.0 IGO)" — the WPP
+# 2024 Summary of Results. The portal's own terms page renders client-side and
+# was not readable; migration 089's source row says so.
+category: population_wpp
+transform: python:t_population_wpp
+v1_category: economic            # beside the World Bank population series
+shape: observation
+status: reviewed
+migrate: false
+skip_reason: >-
+  waits for migration 089 (the un_wpp source row); flip to true once it is
+  applied — the loader refuses a dataset whose source is not in `source`
+records_measured: 888
+
+input:
+  root: data/raw/wpp
+  glob: palestine.json
+cadence: irregular                # WPP revises every two years; fetched monthly at most
+
+source_routing:
+  by_name:
+    "UN DESA Population Division — World Population Prospects 2024": un_wpp
+  default: un_wpp
+
+datasets:
+  - key: un_wpp_2024
+    source: un_wpp
+
+indicator:
+  template: "population.wpp.{indicator}"
+
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit
+
+occurred_at:
+  from: year
+  precision: year
+  rules: []                      # one value per calendar year; law 2
+
+place:
+  strategy: region               # the whole territory → place NULL + attrs.region
+  min_decided_pct: 1.0
+
+stable_id: stable_id             # wpp-2024:<year>:<indicator>
+
+expect:
+  min_records: 843               # 95 % of 888 (74 years × 12 indicators)
+  max_observations: 1000
+
+identity:
+  fields: [indicator, occurred_at]
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "population.wpp.population_total"}
+      concept: population.count
+      measure_kind: stock
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "^population\\.wpp\\.(births|deaths|net_migration)$"}
+      concept: population.count
+      measure_kind: flow
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "^population\\.wpp\\.(infant|under5)_mortality_rate$"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+    - when: {prefix: "population.wpp.crude_death_rate"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+    - when: {prefix: "population.wpp.life_expectancy"}
+      concept: mortality.general
+      measure_kind: index
+      polarity: 1
+      grain: year
+      place_grain: region
+      canonical_unit: years
+    - when: {prefix: "population.wpp.crude_birth_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+    - when: {prefix: "population.wpp.total_fertility_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: births_per_woman
+    - when: {prefix: "population.wpp.median_age"}
+      concept: population.structure
+      measure_kind: index
+      grain: year
+      place_grain: region
+      canonical_unit: years
+    - when: {prefix: "population.wpp.population_growth_rate"}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
