@@ -5,6 +5,10 @@
 After fixing a task: add the commit and the finding ids it closes to `C` (or to
 `PARTIAL` with what is left), update the suite numbers in the header text, and
 re-run. The task list itself is read from the NN-area.md files.
+
+WARNING (2026-09-26): `C` below is behind STATUS.md — rows were recorded by hand
+after 2026-09-25, and a re-run printed 59 done where STATUS.md held 144. Edit
+STATUS.md by hand, or bring `C` up to date first.
 """
 import json, re
 from pathlib import Path
@@ -34,6 +38,8 @@ C = {  # commit -> (short subject, finding ids)
     "3d77f79": ("ingest: poller honours FloodWait resolving/downloading, fails with nothing resolved, atomic cursor",
                 "F042 F224 F226 F218"),
     "f5fd58d": ("ingest: the v1 import cursor is its own and re-reads behind itself", "F007"),
+    "6e47e60": ("databank: demolition ladder runs; indistinguishable copies kept; same-run conflicts; crashes isolated",
+                "F028 F029 F135 F137"),
 }
 PARTIAL = {
     "F322": ("d952350", "Hebrew/Latin-only names dropped from `passes`; the settlement LABEL needs a data source (HANDS-NEEDED §5)"),
