@@ -28,6 +28,7 @@ offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked throug
 | `dcc1047` | rollup: supersede instead of overwrite (088) | F142 |
 | `2ebf3fe` | databank: demolition locality totals are cumulative | F128 |
 | `c8a5439` | databank: gmotel serves, refusals counted, full-emission ceiling, first copy survives | F131 F132 F136 F344 |
+| `33984ca` | registry: concepts say what the series hold | F442 |
 
 Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook), and the commit that adds this file.
 
@@ -262,6 +263,8 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | DATABANK-V09 | F135 | medium | **done** | `6e47e60` | Two same-identity rows with different content in one run: None reached the supersede list and both rows one key (reproduced, fixed) |
 | DATABANK-V11 | F137 | medium | **done** | `6e47e60` | run_all isolated only SpecRefused; any other exception skipped every later category (reproduced, fixed) |
 | DATABANK-V15 | F142 | medium | **done** | `dcc1047` | The nightly rollup overwrote value_num in place: supersedes after migration 088 (not yet applied; the old update runs until then) |
+| DATABANK-V18 | F442 | low | **done** | `33984ca` | violence.settler + connectivity.access concepts; energy.supply definition says what it holds (registry applied 2026-09-26) |
+| DATABANK-V20 | F548 | low | **done** | `481a5b8` | The indicators note no longer sends callers to a missing /v2/databank/flow; it points to correlate with detrend=diff (verified live on the dev API 2026-09-26) |
 | DATABANK-V02 | F128 | medium | **done** | `2ebf3fe` | demolitions.locality.* registered cumulative/period, annual flow/year/region, in the spec and in 086 (reproduced, fixed) |
 | DATABANK-V06 | F131 | medium | **done** | `c8a5439` | gmotel bulletins serve with the office named; only `missing` is inferred; new vocabulary fails the run (reproduced with a synthetic record, fixed) |
 | DATABANK-V07 | F132 | medium | **done** | `c8a5439` | Stable-id refusals counted per dataset; a keyed dataset's refusal fails and rolls back (measured: none on production) |
