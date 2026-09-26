@@ -377,6 +377,36 @@ def region_place(places: dict, region: str, attrs: dict) -> tuple[int | None, bo
     return None, False
 
 
+# The publisher's own governorate NAME, as a rung (DATABANK-03, 2026-09-26).
+# OCHA names the governorate on every demolition locality; it is the
+# publisher's admin assignment, which is why it outranks point-in-polygon at a
+# border (measured on the 526 fetched localities: 496 agree, 3 disagree —
+# Umm al-'Asafir, Ein el Qilt, Wadi Qana, all on a governorate line). Spelling
+# variants seen in the wild map onto our place names; an unknown spelling
+# falls through to the next rung, never to a guess.
+GOVERNORATE_SPELLINGS = {
+    "qalqiliya": "Qalqilya", "qalqilyah": "Qalqilya", "tulkarem": "Tulkarm",
+    "tulkarim": "Tulkarm", "ramallah and al bireh": "Ramallah",
+    "ramallah al bireh": "Ramallah", "jericho and al aghwar": "Jericho",
+    "khan yunis": "Khan Younis", "deir al balah": "Deir Al-Balah",
+    "al quds": "Jerusalem", "east jerusalem": "Jerusalem",
+}
+
+
+def governorate_by_name(places: dict, name) -> int | None:
+    if not name or not isinstance(name, str):
+        return None
+    gov = places["governorate"]
+    if name in gov:
+        return gov[name]
+    key = re.sub(r"[^a-z]+", " ", name.lower()).strip()
+    for ours, pid in gov.items():
+        if re.sub(r"[^a-z]+", " ", ours.lower()).strip() == key:
+            return pid
+    alias = GOVERNORATE_SPELLINGS.get(key)
+    return gov.get(alias) if alias else None
+
+
 def place_ladder(loc: dict, spec: dict, places: dict, attrs: dict,
                  counts: Counter, *, ds_key: str | None = None,
                  event_type: str | None = None,
@@ -426,6 +456,11 @@ def place_ladder(loc: dict, spec: dict, places: dict, attrs: dict,
             pid = places["pcode"].get(loc.get("admin2_pcode"))
             if pid is not None:
                 counts["place_rung:pcode"] += 1
+                return pid, True
+        elif rung == "governorate":
+            pid = governorate_by_name(places, loc.get("governorate"))
+            if pid is not None:
+                counts["place_rung:governorate"] += 1
                 return pid, True
         elif rung == "latlon":
             if excluded:
@@ -601,13 +636,22 @@ def t_demolitions(rec, spec, places, counts):
         # rides along because five names repeat across governorates.
         attrs["locality_name"] = loc.get("name")
         attrs["governorate"] = loc.get("governorate")
-    pid = places["pcode"].get(loc.get("admin2_pcode"))
-    if pid is not None:
-        place_id, located = pid, True                             # rung 1-2
+    # DATABANK-03 (2026-09-26): this went pcode → region, so once v1 dropped
+    # admin2_pcode (2026-08-08) and v2's own OCHA fetch carried none, every
+    # locality — Jabal al Mukabbir's 416 structures, Burqa, Tatrit — was
+    # filed under "West Bank" while holding its governorate and a point. The
+    # spec's declared ladder now runs: pcode → OCHA's governorate name →
+    # point-in-polygon → region. The point itself rides in attrs (observation
+    # rows have no geometry), so a caller can map a locality.
+    if dim == "locality":
+        if loc.get("lat") is not None and loc.get("lon") is not None:
+            attrs["lat"], attrs["lon"] = loc["lat"], loc["lon"]
+        place_id, located = place_ladder(loc, spec, places, attrs, counts,
+                                         ds_key=ds)
+        if not located:
+            counts["locality_resolution_miss"] += 1               # Al Malha
     else:
         place_id, located = region_place(places, loc.get("region"), attrs)
-        if dim == "locality":
-            counts["locality_resolution_miss"] += 1               # Al Malha
     m = rec.get("metrics") or {}
     sid = rec["stable_id"]
     rows = []
@@ -1855,19 +1899,48 @@ def run(category: str, dry_run: bool = False) -> dict:
                     if len(collision_samples[r.dataset_key]) < 3:
                         collision_samples[r.dataset_key].append(ident)
                 emitted_identities.add(ident)
-                if ident in known_identities:
+                indistinct = (identity_by_ds.get(r.dataset_key, {}) or {}).get(
+                    "collision_kind") == "indistinguishable"
+                if ident in known_identities and indistinct and \
+                        known_identities[ident][0] is None:
+                    # DATABANK-04 (2026-09-26). The map is seeded from the DB
+                    # AND from this run's own rows, and an `indistinguishable`
+                    # dataset stores no key — so the only entries it ever has
+                    # are this run's. Skipping on them dropped every identical
+                    # copy after the first: on a fresh load or a restore,
+                    # aid_access wrote 25,872 of its 50,059 lorries and
+                    # reported success. These copies are DIFFERENT things the
+                    # source records identically; each goes to the write,
+                    # where 044's stable-id index still refuses a re-fetch.
+                    counts["indistinguishable_copies_kept"] += 1
+                elif ident in known_identities:
                     oid, held = known_identities[ident]
                     fresh = content_of(
                         value_num=r.value_num, value_text=r.value_text,
                         unit=r.unit, place_id=r.place_id, attrs=r.attrs)
                     if fresh == held:
                         # already in the databank under an older v1 hash —
-                        # the 2026-08-07 doubling, prevented at the source
-                        counts["identity_already_held"] += 1
+                        # the 2026-08-07 doubling, prevented at the source.
+                        # Counted apart from a copy inside this very run,
+                        # which is a different fact about the source.
+                        counts["identity_already_held" if oid is not None
+                               else "intra_run_duplicate_collapsed"] += 1
                         # a DRY RUN reports what the spec PRODUCES (the
                         # arithmetic under test); only a real run drops
                         # the already-held rows. emitted − already_held
                         # is what a write would insert.
+                        if not dry_run:
+                            continue
+                    elif oid is None:
+                        # DATABANK-V09 (2026-09-26): the same identity twice
+                        # in ONE run with different content (a spec that
+                        # allows measured collisions). There is nothing held
+                        # to supersede — appending None and inserting both
+                        # rows under one key made 052's index abort the
+                        # transaction mid-run. The first copy stands; the
+                        # count says how often the source disagreed with
+                        # itself.
+                        counts["intra_run_conflict_kept_first"] += 1
                         if not dry_run:
                             continue
                     elif from_fallback:
@@ -2088,6 +2161,17 @@ def run_all(dry_run: bool = False) -> int:
             if "migrate=false" in str(e):
                 continue
             print(f"FAIL {cat}: {e}", file=sys.stderr)
+            failed.append(cat)
+        except Exception as e:                                  # noqa: BLE001
+            # DATABANK-V11 (2026-09-26): only SpecRefused was isolated, so a
+            # truncated raw file (JSONDecodeError) or a constraint error in one
+            # category ended the loop and every category after it went
+            # unloaded that night, with nothing naming them. run() holds its
+            # writes in one transaction per category, so a crash here commits
+            # nothing for THIS category; the rest still load.
+            import traceback
+            print(f"FAIL {cat}: {type(e).__name__}: {e}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
             failed.append(cat)
     print(json.dumps({"grew": grew, "failed": failed}, ensure_ascii=False))
     return len(failed)

@@ -59,8 +59,8 @@ PRECISIONS = ("exact", "hour", "day", "month", "year", "unknown")
 
 # Place strategies the loader knows. `fixed` and `none` are terminal; the rest
 # are rungs a ladder may also use.
-PLACE_RUNGS = ("pcode", "admin2_pcode", "latlon", "gazetteer_key", "name",
-               "region", "crossing", "none")
+PLACE_RUNGS = ("pcode", "admin2_pcode", "governorate", "latlon",
+               "gazetteer_key", "name", "region", "crossing", "none")
 
 COLLISION_KINDS = (
     # the same fact recorded twice — keep the key, supersede the copy

@@ -86,8 +86,18 @@ occurred_at:
   # carries no fetched_at on any of the 534 records.
 
 place:
-  strategy: latlon
-  # Ladder, first hit wins:
+  strategy: pcode
+  fallback: [governorate, latlon, region]
+  # DATABANK-03 (2026-09-26): the ladder below was prose until today —
+  # t_demolitions went pcode → region, and v1 dropped admin2_pcode on
+  # 2026-08-08 (v2's own OCHA fetch carries none either), so every locality
+  # sat at "West Bank". It now RUNS, for locality rows: pcode → OCHA's own
+  # governorate name (526/526 on the 09-26 fetch; one spelling, Qalqiliya,
+  # mapped) → point-in-polygon (525/526) → region. Name before point because
+  # it is the publisher's admin assignment: they disagree on 3 of 499, all on
+  # a governorate line. Annual rows stay at region by design.
+  #
+  # The original ladder notes, kept for the measurements:
   #   1. location.lat/lon (515/534 = 96.4%) → event.geom point.
   #   2. location.admin2_pcode (515/534 = 96.4%, the same rows) → place_id.
   #      pcode decides place_id even when a point is present: it is OCHA's own
@@ -99,6 +109,10 @@ place:
   #      annual rows); 'East Jerusalem' → Jerusalem governorate row +
   #      attrs.region = 'East Jerusalem' preserved (85 records).
   min_decided_pct: 1.0
+  min_located_pct: 0.9           # measured 0.942 on 2026-09-26 (870/924: every
+                                 #   locality row; the 54 misses are the annual
+                                 #   West Bank totals). A floor with teeth: a
+                                 #   ladder regression back to region fails the run.
   # Every record lands: 515 at locality precision, 18 annual rows at region,
   # and 'Al Malha' (Bethlehem) at region. 1.0 has teeth here because rung 4 is
   # only reachable by the 18 annual rows and Al Malha — a locality-dimension

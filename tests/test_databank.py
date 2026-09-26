@@ -15,10 +15,18 @@ from ingest.databank import Drop, Row, SpecRefused, load_spec, slug
 
 V1 = v1_path("public/data/unified")
 
+class _NoPoint:
+    """A point resolver that finds nothing — these records carry no lat/lon,
+    and the ladder (DATABANK-03) now asks for one before falling to region."""
+    def resolve(self, lat, lon):
+        return None
+
+
 PLACES = {
     "region": {"Gaza Strip": 1, "West Bank": 2},
     "governorate": {"Jerusalem": 11, "Qalqilya": 7, "Hebron": 13},
     "pcode": {"PS0150": 13},
+    "_pip": _NoPoint(),
 }
 
 
@@ -240,7 +248,14 @@ def test_pilot_dry_runs_reproduce_spec_arithmetic():
     # records (measured: 0 of 516 retained one, against 515 of 516 before),
     # and this assertion caught it. The arithmetic above stays strict; this
     # one asserts only that misses are COUNTED, never silently absorbed.
-    assert r["notes"].get("locality_resolution_miss", 0) >= 1
+    # Since DATABANK-03 (2026-09-26) the ladder runs and every fetched
+    # locality resolves (Al Malha included, by its governorate name), so the
+    # rule is stated exactly: each locality that falls to region or off the
+    # ladder is a counted miss, and none resolves uncounted.
+    n = r["notes"]
+    fell = n.get("place_rung:region", 0) + n.get("place_rung:exhausted", 0)
+    assert n.get("locality_resolution_miss", 0) == fell
+    assert r["located_pct"] >= load_spec("demolitions")["place"]["min_located_pct"]
 
 
 @needs_v1
