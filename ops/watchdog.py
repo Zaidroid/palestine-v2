@@ -903,6 +903,7 @@ def coverage_check() -> list[dict]:
     rec = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "tracked": tracked,
            "known": known, "known_fraction": frac, "direction_resolved": int(r["direction_resolved"] or 0),
            "direction_share": dir_share, "places_with_a_direction": int(r["places_with_a_direction"] or 0)}
+    base = recent_coverage_median(COVERAGE_LEDGER, datetime.now(timezone.utc))
     try:
         from ops.heartbeat import beat
         beat("coverage", 600, 900, rec)
@@ -911,10 +912,46 @@ def coverage_check() -> list[dict]:
     except Exception:                                           # noqa: BLE001
         pass
     below = frac < 0.60
+    # Below the gate is a gate, not an outage. A COLLAPSE is an outage: on
+    # 2026-09-26 one learner write took the known-fraction from 0.593 to 0.056
+    # in ten minutes and nothing paged for six hours (fixed in 8351ed5).
+    collapsed = base is not None and base >= COLLAPSE_FLOOR and frac < base * COLLAPSE_RATIO
     return [{"check": "coverage", "name": "known-fraction", "age_minutes": None,
-             "status": "below_gate" if below else "ok", "fault": False,      # a gate, not an outage
+             "status": "collapsed" if collapsed else ("below_gate" if below else "ok"),
+             "fault": collapsed,
              "detail": f"{known} of {tracked} checkpoints known ({frac:.2f}; G4 gate 0.60); "
-                       f"{dir_share:.0%} of known are direction-resolved"}]
+                       f"{dir_share:.0%} of known are direction-resolved"
+                       + (f"; COLLAPSED from a {COLLAPSE_WINDOW_H} h median of {base:.2f} — "
+                          f"a source silenced or a learner write, not a quiet road"
+                          if collapsed else "")}]
+
+
+COLLAPSE_WINDOW_H = 6
+COLLAPSE_RATIO = 0.5
+COLLAPSE_FLOOR = 0.3
+
+
+def recent_coverage_median(path: Path, now: datetime,
+                           hours: int = COLLAPSE_WINDOW_H) -> float | None:
+    """Median known-fraction over the last `hours` of the coverage ledger
+    (read BEFORE this run appends), or None with fewer than 6 readings."""
+    try:
+        lines = path.read_text().splitlines()[-200:]
+    except OSError:
+        return None
+    cutoff = now.timestamp() - hours * 3600
+    vals = []
+    for line in lines:
+        try:
+            r = json.loads(line)
+            if datetime.fromisoformat(r["ts"]).timestamp() >= cutoff:
+                vals.append(float(r["known_fraction"]))
+        except (ValueError, KeyError, TypeError):
+            continue
+    if len(vals) < 6:
+        return None
+    vals.sort()
+    return vals[len(vals) // 2]
 
 
 # ── P1-A.3: every SOURCE against its own rhythm ──────────────────────────────

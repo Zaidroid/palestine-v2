@@ -733,3 +733,13 @@ checkpoints in range first (dev API: "Around Nablus: Surra open (8 min ago), Huw
 restart. (3) G4 read 0.242 at 09:06 against 0.601 yesterday: palhub stopped posting at 08:19 UTC — v1's own account sees
 nothing after 08:19:24 either, so it is the source, not our poller (which itself lost the network 08:36–08:45 and
 recovered). One quiet source takes G4 from pass to fail: the gate leans on palhub.
+
+2026-09-26 09:45 UTC · G4 incident: coverage collapsed for six hours, cause found and fixed · proof: `8351ed5` + the
+collapse alarm. **Correction to the 09:20 line:** the drop began at 03:21, not with palhub's 08:19 silence. The nightly
+reliability learner bucketed readings by direction; palhub files دخول/خروج, the channels 'both', so palhub had 21
+comparisons in 30 days and was written trust_weight 0.274 — the known-fraction went 0.593 (03:15) → 0.056 (03:25),
+direction share 0.82 → 0, undoing the measured earn-out. A 'both' reading now witnesses the direction buckets (scored
+only in its own): palhub 609/74, reliability 0.877, trust_weight 0.963. Written 09:40; known 66 → 189 of 269 (0.70),
+68 % of known direction-resolved. A collapse (below half the 6 h median) is now a watchdog FAULT; a slow gate miss
+stays a gate. Palhub itself has also been silent since 08:19 (seen by v1's account too): if it stays quiet its readings
+decay again, honestly this time.

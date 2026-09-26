@@ -807,3 +807,20 @@ def test_a_broken_price_query_cannot_take_the_watchdog_down(monkeypatch):
     monkeypatch.setattr(w, "_q", boom)
     r = w.fuel_price_check()[0]
     assert r["status"] == "unreadable" and r["fault"] is True
+
+
+def test_a_coverage_collapse_is_a_fault_and_a_quiet_gate_miss_is_not(tmp_path):
+    """2026-09-26: 0.593 → 0.056 in ten minutes paged nobody for six hours."""
+    import json as _json
+    from datetime import datetime, timedelta, timezone
+    from ops import watchdog as w
+    now = datetime(2026, 9, 26, 3, 30, tzinfo=timezone.utc)
+    ledger = tmp_path / "coverage.ndjson"
+    ledger.write_text("".join(
+        _json.dumps({"ts": (now - timedelta(minutes=10 * i)).isoformat(),
+                     "known_fraction": 0.59}) + "\n" for i in range(1, 30)))
+    base = w.recent_coverage_median(ledger, now)
+    assert base == 0.59
+    assert 0.056 < base * w.COLLAPSE_RATIO                 # the 03:25 reading collapses
+    assert not (0.50 < base * w.COLLAPSE_RATIO)            # a slow slide below 0.60 does not
+    assert w.recent_coverage_median(tmp_path / "missing.ndjson", now) is None
