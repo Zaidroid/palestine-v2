@@ -45,9 +45,11 @@ Run:  .venv/bin/python -m ops.export_open_data                      # collection
 from __future__ import annotations
 
 import csv
+from collections import Counter
 import gzip
 import io
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -109,11 +111,30 @@ def export_collection(include_memorial: bool = False) -> int:
     (OUT / "by-source").mkdir(exist_ok=True)
     manifest, total = [], 0
     with connect() as conn, conn.cursor() as cur:
-        cur.execute("SELECT DISTINCT source_key FROM databank_bulk ORDER BY 1")
-        for (key,) in cur.fetchall():
+        # One file per (source, LICENCE TUPLE), not per source (audit V13,
+        # 2026-09-26): licence is dataset-grained since 054, and `hdx` already
+        # carries two tuples (education CC-BY-4.0, infrastructure
+        # CC-BY-IGO-3.0) — the old fetchone() wrote one of them over the whole
+        # file. A source with one tuple keeps its plain file name.
+        cur.execute("""SELECT DISTINCT source_key, source_name, license_spdx,
+                              attribution_text, terms_url, share_alike
+                       FROM databank_bulk ORDER BY 1, 3, 4""")
+        tuples = cur.fetchall()
+        per_key = Counter(t[0] for t in tuples)
+        seen: Counter = Counter()
+        for key, name, lic, attribution, terms, share_alike in tuples:
+            seen[key] += 1
+            fname = (f"{key}.csv.gz" if per_key[key] == 1 else
+                     f"{key}__{re.sub(r'[^a-z0-9]+', '-', (lic or 'unlicensed').lower()).strip('-')}"
+                     f"-{seen[key]}.csv.gz")
             cur.execute(f"SELECT {', '.join(COLUMNS)} FROM databank_bulk "
                         f"WHERE source_key = %s AND {mem_sql} "
-                        "ORDER BY v1_category, indicator, occurred_at", (key,))
+                        "AND license_spdx IS NOT DISTINCT FROM %s "
+                        "AND attribution_text IS NOT DISTINCT FROM %s "
+                        "AND terms_url IS NOT DISTINCT FROM %s "
+                        "AND share_alike IS NOT DISTINCT FROM %s "
+                        "ORDER BY v1_category, indicator, occurred_at",
+                        (key, lic, attribution, terms, share_alike))
             rows = cur.fetchall()
             buf = io.StringIO()
             w = csv.writer(buf)
@@ -121,16 +142,12 @@ def export_collection(include_memorial: bool = False) -> int:
             for r in rows:
                 w.writerow([json.dumps(x, ensure_ascii=False, default=str)
                             if isinstance(x, dict) else x for x in r])
-            (OUT / "by-source" / f"{key}.csv.gz").write_bytes(
+            (OUT / "by-source" / fname).write_bytes(
                 gzip.compress(buf.getvalue().encode()))
-            cur.execute("""SELECT DISTINCT source_name, license_spdx,
-                                  attribution_text, terms_url, share_alike
-                           FROM databank_bulk WHERE source_key = %s""", (key,))
-            meta = cur.fetchone()
-            manifest.append({"file": f"by-source/{key}.csv.gz", "rows": len(rows),
-                             "source_key": key, "source_name": meta[0],
-                             "license_spdx": meta[1], "attribution": meta[2],
-                             "terms_url": meta[3], "share_alike": meta[4]})
+            manifest.append({"file": f"by-source/{fname}", "rows": len(rows),
+                             "source_key": key, "source_name": name,
+                             "license_spdx": lic, "attribution": attribution,
+                             "terms_url": terms, "share_alike": share_alike})
             total += len(rows)
         cur.execute("""SELECT v1_category, source_name, license_spdx, rows_held,
                               from_date, to_date, reason, permission_status,
