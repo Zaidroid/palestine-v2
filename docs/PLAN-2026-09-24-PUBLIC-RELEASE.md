@@ -756,3 +756,11 @@ carry no field); migration 090 puts HDX's licence on the dataset. Nightly fetch 
 new indicators and the V02 demolition fix are defined. Follow-up, not done: a category headline reads the NEWEST page, so the
 refugees answer leads with 2026 IDMC events and never states the 5.96 M total — which indicators lead a category is a design
 choice (a per-category headline list) left for the next round.
+
+2026-09-26 11:30 UTC · session close · proof: master at push. Since 10:20: DATABANK-V18 (concepts: violence.settler,
+connectivity.access; registry applied), V19 (091: widening a dataset licence needs evidence; G5.14 PASS), V17, V13 (one
+export file per licence tuple), V03 (092: register-identity guard), V01/V04/V16/V20 recorded, V05 partial; TRANSPORT-01
+(partner tiers enforced on compare points and connectivity), -02 (48 KB reply budget, cuts named), -06 (grade table off
+the request path); G1 twelve questions 12/12 on the dev API, warm p50 ≈ 0.8 s; English incidents origin fixed. Open
+audit: RENDERERS-17 (needs a settlements source), INGEST-05/07 + OPS-01 (Zaid's decisions), DATABANK-01 (resolves with
+086). Waiting on Zaid: HANDS §12 (migrate 086-092 + API restart), analyst restart, §10/§11 timers, the G3 decision.

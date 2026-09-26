@@ -5,7 +5,7 @@ Read this before starting an area: a task marked **done** is fixed and has a tes
 do not redo it. **partial** says what is left. Everything is proven only on the schema-only local database and
 offline fixtures — none of it is live until `HANDS-NEEDED.md` is worked through on main-server.
 
-**Confirmed tasks: 149 done · 5 partial · 6 open** (of 160; 2026-09-26: DATABANK-03/-04 + V09/V11 in `6e47e60`, DATABANK-02 + V08 in `b28948a`, DATABANK-05 in `9ed9977`). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
+**Confirmed tasks: 151 done · 5 partial · 4 open** (of 160; 2026-09-26: DATABANK-03/-04 + V09/V11 in `6e47e60`, DATABANK-02 + V08 in `b28948a`, DATABANK-05 in `9ed9977`). Main-server 2026-09-25 09:50 UTC: the branch is merged to master and live for the timers (see `HANDS-NEEDED.md` top); CLASSIFIER-16 (F206) done in `f572be8`; the ROUTE age regression fixed in `5d55ed8`. Local suite: 927 passed / 99 failed; the 99 are the baseline's production-data and live-API tests (the baseline was 821 / 99).
 
 ## Commits
 
@@ -122,11 +122,11 @@ Docs-only commits: `d273191` (the plan), `7188a2f`, `81d0b1f` (rollout runbook),
 | task | finding | severity | status | commit | title |
 |---|---|---|---|---|---|
 | TRANSPORT-01 | F086 | high | **done** | `3f8b84c` | ZAID-10 partner tiers `filtered` and `cited_fact_only` are labels only: nothing filters databan |
-| TRANSPORT-02 | F048 | high | **open** |  | No per-tool payload byte cap exists, and every reply is serialised twice (text + structuredCont |
+| TRANSPORT-02 | F048 | high | **done** | `8053821` | No per-tool payload byte cap exists, and every reply is serialised twice (text + structuredCont |
 | TRANSPORT-03 | F087 | high | **done** | `a348ccf` | OAuth tokens skip the per-key quota and never re-check the key: a revoked partner key keeps its |
 | TRANSPORT-04 | F088 | high | **done** | `a348ccf` | One POST can carry an unbounded JSON-RPC batch: quota, limiter and body size are all counted pe |
 | TRANSPORT-05 | F078 | high | **done** | `a348ccf` | JSON-RPC batches bypass the rate limiter and the per-key daily quota; request body and batch si |
-| TRANSPORT-06 | F301 | medium | **open** |  | Licence-grade refresh runs three full-table scans on the MCP request path once a minute, ahead  |
+| TRANSPORT-06 | F301 | medium | **done** | `c29dee4` | Licence-grade refresh runs three full-table scans on the MCP request path once a minute, ahead  |
 | TRANSPORT-07 | F357 | medium | **done** | `a348ccf` | OAuth tokens skip the daily quota and key revocation; refresh tokens are never rotated, not bou |
 | TRANSPORT-08 | F396 | medium | **done** | `a348ccf` | _save() rewrites .keys/oauth-state.json with mode 0644 on every token issue, so the planned chm |
 | TRANSPORT-09 | F359 | medium | **done** | `a348ccf` | PKCE is optional and dynamic registration is open with any redirect_uri, while the consent page |
