@@ -58,3 +58,15 @@ def test_a_search_under_way_keeps_its_place(monkeypatch):
     p = mcp_server.checkpoints_near(place="نابلس")
     assert "بيتا" in [c["name"] for c in p["checkpoints"]]
     assert "تفتيش" in p["answer"]
+
+
+def test_the_english_incidents_answer_names_the_place_in_english(monkeypatch):
+    """09-26 twelve-question run: "Around رام الله: settler attack in Yabrud …"."""
+    def api(path, **kw):
+        if path == "/v2/geo/resolve":
+            return {"found": True, "lat": 31.9, "lon": 35.2, "name": "رام الله", "name_en": "Ramallah"}
+        return {"items": [], "count": 0}
+    monkeypatch.setattr(mcp_server, "api", api)
+    p = mcp_server.incidents_near(place="رام الله")
+    assert p.get("origin_en") == "Ramallah"
+    assert "رام الله" not in mcp_en.incidents_near(p)

@@ -446,7 +446,7 @@ def incidents_near(d: dict) -> str:
         return _NOT_PLACED
     items = d.get("incidents") or []
     if not items:
-        return (f"No incidents recorded around {d.get('origin')} in the last "
+        return (f"No incidents recorded around {_nm(d, 'origin')} in the last "
                 f"{d.get('hours')} hours.")
     bits = []
     for i in items[:4]:
@@ -458,7 +458,7 @@ def incidents_near(d: dict) -> str:
         elif prec not in (None, "named"):
             where = f"{where} governorate (village not resolved)"
         bits.append(f"{i['type'].replace('_', ' ')} in {where} {_age(_mins(i.get('occurred_at')))}")
-    out = f"Around {d.get('origin')}: " + ", ".join(bits) + "."
+    out = f"Around {_nm(d, 'origin')}: " + ", ".join(bits) + "."
     solo = sum(1 for i in items if (i.get("independent_sources") or 0) < 2)
     if solo:
         out += f" ({solo} reported by a single source only.)"

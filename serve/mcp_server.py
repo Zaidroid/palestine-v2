@@ -456,11 +456,12 @@ def checkpoints_near(place: str | None = None, lat: float | None = None,
     # unknown while Huwara, Deir Sharaf and Awarta had readings minutes old a
     # few km further, and the answer said "no recent updates around Nablus"
     # with 71 in range. A fact in range outranks a silence nearer by.
-    known = []
-    if counts.get("known"):
+    known = [r for r in nearest if r["flow"] != "unknown"]
+    if (counts.get("known") or 0) > len(known):
         k = api("/v2/checkpoints/nearby", lat=lat, lon=lon, direction=direction,
                 radius_km=radius_km, limit=50, include_unknown="false")
-        known = k.get("results", [])[:limit]
+        known = k.get("results", []) or known
+    known = known[:limit]
     fill = [r for r in nearest if r["flow"] == "unknown"]
     fill.sort(key=lambda r: (not searching(r), r.get("straight_km") or 0))
     # a search under way is a current fact too: it keeps its place in the list
@@ -586,6 +587,7 @@ def incidents_near(place: str | None = None, lat: float | None = None,
                    lon: float | None = None, hours: int = 12,
                    radius_km: float = 25.0, limit: int = 8) -> dict:
     """What has been happening around here — raids, settler attacks, closures."""
+    place_en = None
     # The REST route caps hours at 168; a legal call by the published schema
     # (hours=200) came back as a 422 read aloud as "صار خطأ بالنظام" (F054).
     hours = _clamp(hours, 1, 168, 12)
@@ -596,6 +598,7 @@ def incidents_near(place: str | None = None, lat: float | None = None,
         if not geo.get("found"):
             return {"answer": f"ما عرفت وين {place}.", "error": "place not resolved"}
         lat, lon, place = geo["lat"], geo["lon"], geo["name"]
+        place_en = geo.get("name_en")
 
     d = api("/v2/incidents/recent", lat=lat, lon=lon, hours=hours,
             radius_km=radius_km, limit=limit)
@@ -640,6 +643,9 @@ def incidents_near(place: str | None = None, lat: float | None = None,
     precision = quality.summary(by_type)
     answer += _precision_ar(precision)
     return {"answer": answer, "origin": place or f"{lat:.4f},{lon:.4f}",
+            # the English answer names the place in English (09-26 twelve-question run:
+            # "Around رام الله: …")
+            "origin_en": place_en,
             "hours": hours, "count": len(items), "by_type": quality.annotate_by_type(by_type),
             "precision": precision,
             "incidents": items,
