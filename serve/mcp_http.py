@@ -366,6 +366,57 @@ def _tool_grades() -> dict:
     return _GRADES["tools"]                  # stale, while the refresh runs
 
 
+# ── a byte budget per reply (audit TRANSPORT-02) ─────────────────────────────
+# databank(limit=2000) or a wide place profile could return hundreds of KB, and
+# a model client reads all of it on every turn. The budget is enforced after the
+# English and the licence block, on what actually goes on the wire: the longest
+# list fields are halved until the reply fits, and every cut is named in
+# `truncated` (kept / of). The spoken answers are never touched — they were
+# written from the whole result.
+PAYLOAD_CAP_DEFAULT = 48_000
+PAYLOAD_CAP = {"about": 64_000}
+
+
+def payload_cap(tool: str) -> int:
+    return PAYLOAD_CAP.get(tool, PAYLOAD_CAP_DEFAULT)
+
+
+def _lists(out: dict):
+    """(holder, key, path) for every list field, top level and one level into
+    lists of dicts (series[*].points) — the places rows accumulate."""
+    for k, v in out.items():
+        if isinstance(v, list) and k not in ("answer", "answer_en"):
+            yield out, k, k
+            for i, it in enumerate(v):
+                if isinstance(it, dict):
+                    for kk, vv in it.items():
+                        if isinstance(vv, list):
+                            yield it, kk, f"{k}[{i}].{kk}"
+
+
+def cap_payload(out: dict, cap: int) -> dict:
+    size = lambda: len(json.dumps(out, ensure_ascii=False, default=str).encode())  # noqa: E731
+    truncated: dict[str, dict] = {}
+    for _ in range(40):
+        if size() <= cap:
+            break
+        cands = [(len(json.dumps(h[k], ensure_ascii=False, default=str)), h, k, p)
+                 for h, k, p in _lists(out) if len(h[k]) > 1]
+        if not cands:
+            break
+        _, holder, key, path = max(cands, key=lambda c: c[0])
+        n = len(holder[key])
+        keep = max(1, n // 2)
+        holder[key] = holder[key][:keep]
+        prev = truncated.get(path, {"of": n})
+        truncated[path] = {"kept": keep, "of": prev["of"]}
+    if truncated:
+        out["truncated"] = {"fields": truncated, "cap_bytes": cap,
+                            "note": "the reply was over its byte budget; lists were cut "
+                                    "from the end — ask for fewer rows (limit) or one view"}
+    return out
+
+
 def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
             host: bool = False, exempt: bool = False) -> dict | None:
     """One JSON-RPC message in, one response out — or None for a notification.
@@ -501,17 +552,17 @@ def _handle(msg: dict, ip: str | None = None, tier: str = "partner",
         # tool that answered; labelled with the name the caller used.
         out = licence.apply(target, out, tier, _tool_grades().get(target),
                             shown_as=name)
-        result = {
-            "content": [{"type": "text",
-                         "text": json.dumps(out, ensure_ascii=False, default=str)}],
-            "isError": failed,
-        }
+        text = json.dumps(out, ensure_ascii=False, default=str)
+        if isinstance(out, dict) and len(text.encode()) > payload_cap(target):
+            out = cap_payload(out, payload_cap(target))
+            text = json.dumps(out, ensure_ascii=False, default=str)
+        result = {"content": [{"type": "text", "text": text}], "isError": failed}
         # The text block stays for older clients, which is what the spec asks
         # for; structuredContent is the same object as data rather than as a
-        # string a client has to parse back out of a message.
+        # string a client has to parse back out of a message. Serialised ONCE
+        # and parsed back (audit TRANSPORT-02 found two full dumps per reply).
         if not failed and isinstance(out, dict):
-            result["structuredContent"] = json.loads(
-                json.dumps(out, ensure_ascii=False, default=str))
+            result["structuredContent"] = json.loads(text)
         return _ok(rid, result)
 
     if rid is None:

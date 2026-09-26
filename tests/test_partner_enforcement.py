@@ -75,3 +75,27 @@ def test_TRANSPORT_06_a_stale_grade_table_is_served_while_it_refreshes_off_the_r
             break
         _time.sleep(0.05)
     assert m._GRADES["tools"]["checkpoint_status"]["grade"] == "open"
+
+
+def test_TRANSPORT_02_a_reply_over_its_budget_is_cut_and_says_so():
+    from serve import mcp_http as m
+    out = {"answer": "a" * 100, "answer_en": "b" * 100,
+           "items": [{"row": i, "text": "x" * 200} for i in range(1000)],
+           "series": [{"points": [{"v": i} for i in range(3000)]}]}
+    got = m.cap_payload(out, 20_000)
+    import json as _j
+    assert len(_j.dumps(got, ensure_ascii=False).encode()) <= 20_000
+    assert got["answer"] == "a" * 100
+    fields = got["truncated"]["fields"]
+    assert fields["items"]["of"] == 1000 and fields["items"]["kept"] < 1000
+    small = {"answer": "x", "items": [1, 2, 3]}
+    assert "truncated" not in m.cap_payload(small, 20_000)
+
+
+def test_TRANSPORT_02_the_budget_holds_on_the_wire(mcp_call):
+    import json as _j
+    from serve import mcp_http as m
+    reply = mcp_call("databank", tier="house", category="food", limit=2000)
+    text = reply["result"]["content"][0]["text"]
+    assert len(text.encode()) <= m.payload_cap("databank")
+    assert _j.loads(text) == reply["result"]["structuredContent"]
