@@ -21,6 +21,13 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "conflict_gaza": {
+   "classified": 6,
+   "indicators": 10,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "conflict_westbank": {
    "classified": 0,
    "indicators": 10,
@@ -43,17 +50,24 @@
    "unit_conflicts": []
   },
   "demolitions": {
-   "classified": 2,
-   "indicators": 2,
+   "classified": 5,
+   "indicators": 5,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "economic": {
-   "classified": 146,
-   "indicators": 146,
+   "classified": 143,
+   "indicators": 143,
    "rows_unclassified": 0,
    "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "economic_pcbs": {
+   "classified": 0,
+   "indicators": 70,
+   "rows_unclassified": 2212,
+   "unclassified": 70,
    "unit_conflicts": []
   },
   "education": {
@@ -167,13 +181,6 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
-  "pcbs": {
-   "classified": 67,
-   "indicators": 67,
-   "rows_unclassified": 0,
-   "unclassified": 0,
-   "unit_conflicts": []
-  },
   "prisoners": {
    "classified": 6,
    "indicators": 6,
@@ -181,9 +188,23 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "prisoners_hamoked": {
+   "classified": 6,
+   "indicators": 6,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "refugees": {
-   "classified": 4,
-   "indicators": 4,
+   "classified": 38,
+   "indicators": 38,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "refugees_unrwa_registered": {
+   "classified": 34,
+   "indicators": 38,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -203,5 +224,11 @@
    "unit_conflicts": []
   }
  },
- "unclassified": []
+ "unclassified": [
+  "economic.pcbs_cpi",
+  "economic.pcbs_population",
+  "economic.pcbs_poverty_rate",
+  "pcbs.eg_elc_accs_zs",
+  "pcbs.fp_cpi_totl_zg"
+ ]
 }
