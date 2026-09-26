@@ -1760,7 +1760,17 @@ def run(category: str, dry_run: bool = False) -> dict:
     # v1_stable_id, so a re-hashed upstream re-inserts the whole history
     # (measured 2026-08-07: conflict re-added 8,282 events). An event's
     # natural identity is what happened, where, when, at what scale.
-    known_events: set[str] = set()
+    # DATABANK-05 (2026-09-26): the key (type|day|place|lat|lon|metrics)
+    # cannot tell two different events apart when they share all of it —
+    # UCDP's two Rafah-camp deaths of 1993-12-13, one per dyad (Government of
+    # Israel–PFLP, –PIJ). As a SET, the second was "already held" and a fresh
+    # load dropped 764 UCDP events. Now a MULTISET: an emitted event whose
+    # own stable id is held is held; the rest are matched against how MANY
+    # held events share their key, and only that many are skipped. A v1
+    # re-hash (new ids, same events) still skips everything; a restore or a
+    # new UCDP release keeps every distinct event. No held row is re-keyed.
+    known_events: Counter = Counter()
+    held_event_ids: set[str] = set()
 
     # [emitted, located] per dataset — a whole-category floor cannot see one
     # dataset going dark inside a healthy average, and refugees declares three
@@ -1852,7 +1862,10 @@ def run(category: str, dry_run: bool = False) -> dict:
                     known_identities[k] = (oid, content_of(
                         value_num=vn, value_text=vt, unit=un, place_id=pid,
                         attrs=at))
-            if spec.get("shape") == "event" or spec.get("shape_overrides"):
+            # every spec, not only event-shaped ones: historical declares
+            # `observation` yet emits 27 events, which were reported as new
+            # every night and refused one by one at the insert
+            if spec.get("datasets"):
                 cur.execute(
                     "SELECT event_type, occurred_at::date::text, "
                     "       place_id::text, "
@@ -1862,12 +1875,20 @@ def run(category: str, dry_run: bool = False) -> dict:
                     "WHERE attrs->>'dataset_key' = ANY(%s) "
                     "  AND upper_inf(sys_period)",
                     ([ds["key"] for ds in spec["datasets"]],))
+                held_keys = []
                 for et, oc, pid, lat, lon, met in cur.fetchall():
-                    known_events.add("|".join([
+                    held_keys.append("|".join([
                         et, oc, "None" if pid is None else pid,
                         "None" if lat is None else lat,
                         "None" if lon is None else lon,
                         json.dumps(met, sort_keys=True)]))
+                cur.execute(
+                    "SELECT attrs->>'v1_stable_id' FROM event "
+                    "WHERE attrs->>'dataset_key' = ANY(%s) "
+                    "  AND upper_inf(sys_period) AND attrs ? 'v1_stable_id'",
+                    ([ds["key"] for ds in spec["datasets"]],))
+                held_event_ids = {row[0] for row in cur.fetchall()}
+                known_events = Counter(held_keys)
         for f, r in transform_all(category, spec, places, counts, drops):
             if f not in refs:
                 refs[f] = bronze.put(f"v1_{category}", read_payload(f),
@@ -1971,14 +1992,9 @@ def run(category: str, dry_run: bool = False) -> dict:
                     known_identities[ident] = (None, content_of(
                         value_num=r.value_num, value_text=r.value_text,
                         unit=r.unit, place_id=r.place_id, attrs=r.attrs))
-            if isinstance(r, EventRow):
-                ek = _event_identity(r)
-                if ek in known_events:
-                    counts["event_already_held"] += 1
-                    if not dry_run:
-                        continue
-                else:
-                    known_events.add(ek)
+            # events are decided after the whole run is read (below): which
+            # of two same-key events is "the held one" must not depend on
+            # the order the file lists them in
             if ident is not None and (
                     identity_by_ds.get(r.dataset_key, {})
                     .get("collision_kind") != "indistinguishable"):
@@ -1993,6 +2009,34 @@ def run(category: str, dry_run: bool = False) -> dict:
             seen_stable.add(r.v1_stable_id)
             r.raw_ref = refs[f]
             (event_rows if isinstance(r, EventRow) else rows).append(r)
+
+        # ── events: held or new, by count (DATABANK-05) ─────────────────────
+        # Pass 1: an event whose own stable id is held is that held row, and
+        # uses up one held copy of its key. Pass 2: the rest match the held
+        # copies left, one each (a v1 re-hash). Whatever is left is new —
+        # including every distinct event of a same-key pair: records with
+        # distinct stable ids are distinct records (identical records were
+        # already deduped by stable id above), so nothing collapses in-run.
+        if event_rows:
+            keys = [_event_identity(e) for e in event_rows]
+            by_id = [e.v1_stable_id in held_event_ids for e in event_rows]
+            for ek, held_id in zip(keys, by_id):
+                if held_id and known_events[ek] > 0:
+                    known_events[ek] -= 1
+            keep = []
+            for e, ek, held_id in zip(event_rows, keys, by_id):
+                if held_id:
+                    counts["event_already_held"] += 1
+                elif known_events[ek] > 0:
+                    known_events[ek] -= 1
+                    counts["event_already_held"] += 1
+                else:
+                    counts["event_new"] += 1
+                    keep.append(e)
+                    continue
+                if dry_run:
+                    keep.append(e)      # a dry run reports what the spec emits
+            event_rows = keep
 
         # ── withdrawn upstream (DATABANK-V08 + -02, 2026-09-26) ─────────────
         # A dataset whose input is the source's WHOLE current publication

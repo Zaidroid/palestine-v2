@@ -291,3 +291,96 @@ def test_DATABANK_02_the_validator_refuses_an_undeclared_value_in_the_key():
     for cat in ("refugees", "health", "conflict", "aid_access"):
         assert spec_mod.validate(
             yaml.safe_load(open(f"db/mappings/{cat}.yaml")), cat) == []
+
+
+# ── DATABANK-05: events are matched by count, never collapsed in-run ─────────
+
+import json as _json
+from ingest.databank import EventRow
+
+
+def _event_run(monkeypatch, tmp_path, emitted, held=()):
+    """held: (EventRow, stable id as stored) pairs already in `event`."""
+    spec = {"category": "phantom", "status": "reviewed", "shape": "event",
+            "place": {}, "expect": {"min_records": 1, "max_observations": 100000},
+            "datasets": [{"key": "d", "source": "s"}]}
+    key_rows = [(e.event_type, str(e.occurred_at)[:10],
+                 None if e.place_id is None else str(e.place_id),
+                 None if e.lat is None else str(e.lat),
+                 None if e.lon is None else str(e.lon), e.metrics)
+                for e, _ in held]
+    id_rows = [(sid,) for _, sid in held]
+    log = {"events": []}
+
+    class Cur:
+        rowcount = 1
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def execute(self, sql, params=None):
+            self.sql = sql
+            if "INSERT INTO event" in sql:
+                log["events"].append(_json.loads(params["attrs"])["v1_stable_id"])
+        def fetchall(self):
+            if "FROM event" in self.sql and "SELECT attrs->>'v1_stable_id'" in self.sql:
+                return id_rows
+            if "FROM event" in self.sql:
+                return key_rows
+            return []
+
+    class Conn:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def cursor(self): return Cur()
+        def commit(self): pass
+
+    def transform_all(category, spec, places, counts, drops):
+        for e in emitted:
+            counts["records_read"] += 1
+            yield Path("/phantom.json"), e
+
+    monkeypatch.setattr(databank, "RUNS", tmp_path / "runs.ndjson")
+    monkeypatch.setattr(databank, "load_spec", lambda c: spec)
+    monkeypatch.setitem(databank.TRANSFORMERS, "phantom", lambda *a: [])
+    monkeypatch.setattr(databank, "connect", lambda: Conn())
+    monkeypatch.setattr(databank, "load_places", lambda conn: {})
+    monkeypatch.setattr(databank, "PointResolver", lambda conn: None)
+    monkeypatch.setattr(databank, "transform_all", transform_all)
+    monkeypatch.setattr(databank, "read_payload", lambda f: b"")
+    monkeypatch.setattr(databank.bronze, "put",
+                        lambda *a, **k: type("R", (), {"ref": "bronze:x"}))
+    monkeypatch.setattr(databank, "ensure_datasets",
+                        lambda conn, spec, category: {"d": 1})
+    return databank.run("phantom", dry_run=False), log
+
+
+def _death(sid, dyad):
+    # UCDP, 1993-12-13, Rafah camp: one death per dyad, identical otherwise
+    return EventRow("d", "conflict.state_based", "1993-12-13", "day", sid,
+                    place_id=21, lat=31.29, lon=34.25,
+                    metrics={"killed": 1}, attrs={"dyad_name": dyad})
+
+
+PFLP, PIJ = _death("u-pflp", "Israel - PFLP"), _death("u-pij", "Israel - PIJ")
+
+
+def test_DATABANK_05_a_fresh_load_keeps_both_dyads(monkeypatch, tmp_path):
+    report, log = _event_run(monkeypatch, tmp_path, [PFLP, PIJ])
+    assert sorted(log["events"]) == ["u-pflp", "u-pij"]
+    assert report["notes"]["event_new"] == 2
+
+
+def test_DATABANK_05_a_rehash_still_skips_everything(monkeypatch, tmp_path):
+    # the same two events held under v1's OLD hashes
+    held = [(PFLP, "old-1"), (PIJ, "old-2")]
+    report, log = _event_run(monkeypatch, tmp_path, [PFLP, PIJ], held)
+    assert log["events"] == []
+    assert report["notes"]["event_already_held"] == 2
+
+
+def test_DATABANK_05_a_held_twin_does_not_swallow_its_new_sibling_in_any_order(
+        monkeypatch, tmp_path):
+    held = [(PFLP, "u-pflp")]                      # only PFLP is held, by id
+    for order in ([PFLP, PIJ], [PIJ, PFLP]):
+        report, log = _event_run(monkeypatch, tmp_path, order, held)
+        assert log["events"] == ["u-pij"], order
+        assert report["notes"]["event_new"] == 1
