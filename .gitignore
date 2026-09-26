@@ -62,6 +62,8 @@ data/raw/ioda/
 data/raw/ocha/
 data/raw/pcbs/
 data/raw/hamoked/
+data/raw/wpp/
+data/raw/unrwa_registered/
 .keys/
 
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)
