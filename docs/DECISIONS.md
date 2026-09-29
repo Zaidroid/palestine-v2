@@ -678,3 +678,24 @@ migration by his hand. A proven one-line fix was therefore written down rather
 than applied. **Trap for next Monday:** do not read a red `supply-lines` as a
 broken fetcher, and do not read G4.2 as duplication — both are the system
 reporting a decision correctly through a check that predates it.
+
+## 2026-09-29 · The lost alarm is not lost: `alerts.ndjson` line 195 is a torn append
+
+`ops.alert --list` has been printing "WARNING: 1 unreadable line(s) in
+alerts.ndjson — any alarm written there is lost" on every run. It is line 195 of
+1,037, and the alarm is **recoverable**: 3,275 characters, 1,639 of them NUL
+interleaved with 1,636 real ones. Stripping the NULs gives a whole record —
+`palestine-v2-fuel.service`, 2026-08-08T07:56:24, carrying a JSON-decode
+traceback from `ingest-fuel.sh`. Its neighbours are 02:32 and 09:33 the same
+day, so the gap is that morning and the content matches an August fuel failure
+already filed; nothing current is hidden behind the warning.
+
+Half NULs interleaved with half real bytes is a write that was extended in
+metadata and never made it to disk — a host that went down mid-append. The
+finding is therefore not the one August row but that **`ops/alert.py` does not
+append atomically**, and it is the path every job's systemd `OnFailure` alarm
+takes. A crash can shred the record of the very failure that preceded it.
+
+Left untouched on purpose: rewriting a line in an append-only alarm log is a
+data correction, and the run that found it had already declined to commit code.
+Filed for Zaid with the recovered content.
