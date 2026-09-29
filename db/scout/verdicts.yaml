@@ -341,6 +341,29 @@ candidates:
       acquire data that way (policy set 2026-08-07). If pursued - rendered
       public pages/PDFs, or write to PMA. No license established either way.
 
+  # ── weekly sweep 2026-09-27, read by the 2026-09-29 maintenance run (1 new) ─
+  pcbs_escalation_impact:
+    verdict: >-
+      GOOD LICENCE, CHECK OVERLAP FIRST — cc-by confirmed at the source
+      2026-09-29 (HDX package_show: license_id "cc-by", "Creative Commons
+      Attribution International"); PCBS is already an adopted org. The reason
+      to pause is DEDUP, not terms: this is a THIRD path to Gaza casualty
+      figures the databank already holds twice (T4P public-domain compilation,
+      and gaza_moh through it). PCBS's own caveat on the page says the figures
+      arrive from other bodies and that its numbers and the Shireen site
+      disagree by update time — so adopting it would import a known
+      disagreement, not a new measurement. Spec only after measuring the
+      overlap against the held T4P series; if it lands, it is a
+      cross-check/provenance row, never a replacement total.
+    what: >-
+      key figures since 7 Oct 2023, one XLSX, registry methodology;
+      PCBS & partners (Marsud Shireen, Palestinian MoH)
+    license: cc-by (CC BY International) — verified at HDX 2026-09-29
+    effort: low (one XLSX) — but the overlap measurement is the real cost
+    trap: >-
+      Gaza-weighted while tier 1 is the West Bank; publisher-acknowledged
+      discrepancy with Shireen; dataset resource last modified 2026-09-22
+
 # METHOD LAW for every future scout (set 2026-08-07 after the PMA finding):
 # read what a browser would render and what a publisher chose to publish.
 # Never extract credentials from client bundles, never enumerate a backend,

@@ -772,3 +772,20 @@ with its name (Huwara: 201 min → 9 min, "per بوابة حوارة"). Palhub e
 open 0.860 vs control 0.887 · closed 0.658 vs 0.777 · **congested 0.217 vs 0.583** — when palhub says congested the
 channels say open 7,777 of 10,998 times, so congested stays quarantined (Zaid's call); note closed also sits 0.12 under its
 control.
+
+2026-09-29 05:5x UTC · Monday maintenance: measure, chase, file · partial (nothing fixed by design) · proof: SQL 74 PASS /
+**6 FAIL**, pytest 1,468 passed / **1 failed** / 8 skipped, standalone 34+27 clean, eval_geo GATE 0 PASS, vault `--verify`
+1,957 / 0 bad. The baseline was red on arrival and `docs/HANDOFF.md` §3 cannot see it: it pipes each gate to
+`grep -c '^PASS'` and never greps FAIL, which is how six failures survived the week. **One real defect, unfixed:**
+`_serve_warnings` (serve/app.py:3333) hands a list to `q_cached` for `ANY(%s)`; `q_cached` keys on `params`, raises
+`TypeError: unhashable type: 'list'`, and the `except Exception: return {}` at 3341 eats it — so migration 086's caveat
+never reaches an answer and `casualties.annual_total` serves "90 fatalities in 2026" without "EXCLUDES the Gaza war dead".
+**Five are stale checks, not wounds:** G2.4b predates Zaid's 09-25 earn-out (palhub serves 255 open / 66 closed, congested
+9,554 rows 100% quarantined, 0 beliefs on a quarantined row); G4.2 counts dcc1047's superseded versions as duplication
+(281 current + 281 superseded, 0 duplicates among current, and hard rule 2 forbids deleting the old one, so it can never
+be green); `supply-lines` is gap_radar exit 5 on `unrwa_registered_hdx` at 302 d against the **default** 90 d allowance
+(one loaded quarter ⇒ no learnable rhythm) while its fetcher is healthy and HDX's only xlsx *is* 2025 Q4; G5.11's ucdp
+read at the publisher — "licensed under CC BY 4.0" — against `CC-BY-IGO` held on 7,638 served rows. **Filed, unproven:**
+13 `present` beliefs with no `state_observation` at all (7 of 13 places have none of that kind ever), suspect the
+asymmetric delete at ingest/sources/checkpoints.py:172. No code committed: the verification could not go green and every
+item needs Zaid's belief, his gate wording, or his migration.

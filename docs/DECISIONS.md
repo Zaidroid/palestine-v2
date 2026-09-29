@@ -611,3 +611,70 @@ not (lat, lon). Consuming it as (lat, lon) swaps the axes, every distance comes 
 enormous, and the result reads as "no checkpoints anywhere near this route" —
 which looks exactly like a quiet corridor rather than a bug. It produced a
 confident, entirely wrong first measurement of this very corridor.
+
+## 2026-09-29 · Five of six red gates are stale checks; the sixth silently drops the casualty caveat
+
+The Monday maintenance run found the verification baseline already red: 6 SQL
+gate FAILs and 1 pytest FAIL, none of them data loss, and **none of them
+visible to the documented check**. `docs/HANDOFF.md` §3 pipes every gate file to
+`grep -c '^PASS'`, which counts passes and never looks for a FAIL line. That is
+why six failures survived a week: the 09-22 digest recorded "82 SQL PASS" and
+was not wrong, it was just not looking. Anyone re-running §3 as written will
+miss them again.
+
+**The one real defect, measured and unfixed.** `serve/app.py:3333
+_serve_warnings` passes `(indicators,)` to `q_cached` for `indicator = ANY(%s)`.
+`q_cached` (app.py:168) keys its cache on `params`, which here holds a LIST, so
+it raises `TypeError: unhashable type: 'list'` — and the `except Exception:
+return {}` on line 3341, commented "before 086", swallows it. `q(...)` returns
+the row; `q_cached(...)` raises. The cost is the caveat migration 086 exists to
+serve: the annual casualty figure goes out as "90 fatalities in 2026" with no
+word that it EXCLUDES the Gaza war dead. The cache docstring already anticipates
+exactly this class for a dict of named params — "a TypeError here would 500 the
+route rather than miss the cache" — and the list case, which `ANY(%s)` forces,
+was not covered. 086 landed 09-26 and un-skipped the test that proves the
+warning is served; it has failed every run since, so the migration's serving
+half never worked for a day.
+
+**Gate drift is the other five, and each pattern-matched a wound it did not
+have.** G2.4b says palhub authors no belief — true until Zaid's decision A on
+09-25 (`ingest/sources/palhub_roads.py:106`, e82a176) asserted open and closed.
+Measured: palhub serves 255 open and 66 closed, congested is 9,554 rows and
+100% quarantined, and **0 beliefs rest on a quarantined row**. The earn-out is
+implemented correctly and the check is a year out of date by four days. G4.2
+counts every `observation` version of a `tier1_daily` key and calls the second
+one duplication; dcc1047 made the rollup supersede instead of overwrite, so
+each revised key now keeps yesterday's version — 281 current, 281 superseded,
+**0 duplicates among current rows**. Because hard rule 2 forbids deleting the
+old version, G4.2 can never be green again. G3's `supply-lines failing` is
+`gap_radar` exiting 5 on purpose, and the dead line is `unrwa_registered_hdx`:
+last information 2025-12-01, 302 days, against the **default 90-day** allowance
+(`ops/gap_radar.py:308`) that applies because one loaded quarter yields no
+learnable rhythm. Its fetcher is healthy (fail_streak 0, last ok 03:45 that
+morning), HDX lists exactly one xlsx and it *is* 2025 Q4, and the dataset was
+last touched 2026-07-10 — an upstream alive and behind, which is neither "fresh"
+nor "dead", and the radar has no third word for it. G5.11's ucdp was read at
+the publisher the same day: "All datasets are free of charge and licensed under
+CC BY 4.0" (ucdp.uu.se/downloads). The databank holds `CC-BY-IGO` on 7,638
+served rows with `terms_verified_at` NULL — the wrong variant, though the
+commercial permission it implies is right.
+
+**Genuinely unexplained, and left alone.** 13 `state_current` beliefs, every one
+value `present`, kinds inspection/police/idf/settlers across six channels from
+2026-06-17 to 2026-09-22, have no `state_observation` behind them at all — not
+at another direction, not at any timestamp; 7 of the 13 places hold zero
+observations of that kind ever. Retention is excused (observations reach back to
+2026-06-09) and palhub is excused (0 of 13). Something writes a presence belief
+without its evidence row. The suspect is the asymmetric delete in
+`ingest/sources/checkpoints.py:172` — state_current dropped unscoped while
+state_observation is scoped to `canonical_key`, deliberately, so palhub's
+quarantined rows survive a rebuild — but that was not proven and the fix is
+belief-layer code, so it is filed, not attempted.
+
+**Why nothing was committed but review artifacts.** The run's own rule is that
+the full verification passes before any commit, and it could not: every one of
+the six needs either Zaid's belief about a source, his wording for a gate, or a
+migration by his hand. A proven one-line fix was therefore written down rather
+than applied. **Trap for next Monday:** do not read a red `supply-lines` as a
+broken fetcher, and do not read G4.2 as duplication — both are the system
+reporting a decision correctly through a check that predates it.
