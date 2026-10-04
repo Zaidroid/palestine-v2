@@ -499,13 +499,47 @@ def test_the_nightly_runs_the_four_fetchers_and_fails_on_a_dead_line():
         assert f"step .venv/bin/python -m {mod}" in sh
     assert sh.index("ops.fetch_hamoked") < sh.index("ingest.databank --all")
     assert "with-heartbeat.sh supply-lines 86400 21600 -- \\\n  .venv/bin/python -m ops.gap_radar" in sh
-    assert "final=$rc" in sh and "[ \"$final\" -eq 0 ] && final=$radar" in sh
+    assert "final=$rc" in sh
+    # 2026-10-04 (batch 0): `final=$rc` alone kept ONLY the loader's code, so a
+    # night where the loader refused AND the radar found a dead supply line
+    # exited 1 -- systemd's alarm said "exited 1" and the reader never learned a
+    # supply line was dead too. Both halves failing now exits 5 (a dead supply
+    # line fails the night) and names both in the journal; the loader's own
+    # code stays in stderr, the heartbeat's fetch_failures, and the run ledger.
+    assert '[ "$final" -ne 0 ] && [ "$radar" -eq 5 ]' in sh
+    assert "both halves failed: loader exit $rc AND gap radar exit 5" in sh
+    assert "final=5" in sh
     assert sh.rstrip().endswith("exit $final")
     assert "ops.alert --resolve palestine-v2-databank.service" in sh
     from ops.watchdog import EXPECTED_JOBS
     assert EXPECTED_JOBS["supply-lines"] == (86400, 21600)
     wrap = (ROOT / "ops" / "with-heartbeat.sh").read_text()
     assert 'if [ "${HEARTBEAT_RESOLVE:-1}" != 0 ]; then' in wrap
+
+
+def test_both_halves_failing_still_exits_five():
+    """Behavioural, not textual: run the script's REAL exit block over all four
+    combinations of loader exit x radar exit.
+
+    The assertion above pins the shape; this pins the behaviour, which is what
+    actually broke on 2026-10-04 (loader refused AND the radar found a dead
+    supply line -> exit 1, and the radar's verdict was gone). The alert is
+    stubbed to `true` so this never touches a real alarm.
+    """
+    import subprocess
+    sh = (ROOT / "ops" / "databank-sync.sh").read_text()
+    block = sh[sh.index("final=$rc"):].replace(
+        ".venv/bin/python -m ops.alert --resolve palestine-v2-databank.service",
+        "true")
+    assert "exit $final" in block
+    for rc, radar, expected in ((0, 5, 5), (0, 0, 0), (1, 5, 5), (1, 0, 1)):
+        script = (f"set -uo pipefail\nrc={rc}\nradar={radar}\n"
+                  f"( {block} )\necho \"CODE=$?\"\n")
+        out = subprocess.run(["bash", "-c", script],
+                             capture_output=True, text=True, timeout=30)
+        assert f"CODE={expected}" in out.stdout, (
+            f"loader={rc} radar={radar} expected exit {expected}; "
+            f"got {out.stdout!r} {out.stderr!r}")
 
 
 def test_a_dry_run_leaves_no_ledger_line(monkeypatch, tmp_path):

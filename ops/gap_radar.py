@@ -71,6 +71,17 @@ DEAD_UPSTREAM = {
         "T4P's infrastructure-damaged series ended 2025-10-05 — verified "
         "against their live API 2026-08-06; UNOSAT and the unified infra "
         "sources carry the category forward.",
+    "unrwa_registered_hdx":
+        "UNRWA has published no quarter after 2025 Q4. HDX's dataset carries "
+        "exactly one resource, '..._2025 Q4.xlsx', created and last modified "
+        "2026-07-10 and untouched since (package_show, verified 2026-10-04) "
+        "-- so the register is not behind, it is the whole of what exists. "
+        "The fetcher is healthy and re-read it tonight; there is simply no "
+        "newer quarter to load. This is DEAD_UPSTREAM, not a cadence problem: "
+        "do NOT widen ALLOWANCE_OVERRIDE_DAYS to quiet it, that would let the "
+        "databank go green while the series never updates again. Re-check HDX "
+        "before clearing -- if a 2026 quarter appears, the nightly fetch loads "
+        "it and this entry should go.",
 }
 
 # Closed corpora: history, not feeds. Age is meaningless; only HOLES and the

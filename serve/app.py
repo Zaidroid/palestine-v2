@@ -165,12 +165,33 @@ def _databank_watermark() -> str:
     return _WATERMARK["value"]
 
 
+def _keyable(params):
+    """`params` in a shape that can be a dict key — lists and tuples become tuples.
+
+    `q` takes either %(name)s-style dicts or a positional sequence, and callers
+    legitimately pass a Python list: `_serve_warnings` hands `= ANY(%s)` the
+    indicator list. psycopg wants that list back unchanged, so only the KEY is
+    normalised here. Without it the key raises TypeError: unhashable type
+    'list', the caller swallows it, and the row is served with none of its
+    honesty metadata — which is how `casualties.annual_total` reached every
+    answer without the "EXCLUDES the Gaza war dead" caveat (red since 086;
+    tests/test_databank_honesty.py::test_the_annual_casualty_figure_carries_its_warning).
+    """
+    if isinstance(params, dict):
+        return tuple(sorted(params.items()))
+    if isinstance(params, (list, tuple)):
+        return tuple(_keyable(p) for p in params)
+    return params
+
+
 def q_cached(sql: str, params: tuple = ()) -> list[dict]:
     """`q` with a memory, for the aggregates that read the whole databank."""
     # A dict of named parameters is not hashable and must still key the cache:
     # `insights` passes %(lat)s-style params, and a TypeError here would 500 the
-    # route rather than miss the cache.
-    key = (sql, tuple(sorted(params.items())) if isinstance(params, dict) else params)
+    # route rather than miss the cache. A list needs the same treatment, and
+    # there a swallowed TypeError is worse than a miss: it is a silently
+    # degraded answer. See `_keyable`.
+    key = (sql, _keyable(params))
     stamp = (_runs_stamp(), _databank_watermark())
     entry = _QUERY_CACHE.get(key)
     now = time.monotonic()

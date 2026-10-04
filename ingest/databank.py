@@ -1775,6 +1775,33 @@ def transform_all(category: str, spec: dict, places: dict, counts: Counter,
                 yield f, r
 
 
+def _record_refusal(category: str, reason: str, counts: Counter,
+                    drops: Counter, dry_run: bool) -> None:
+    """A refused run leaves the same trace a successful one does.
+
+    Both `raise SpecRefused` sites in `run` fire BEFORE the run report is
+    written, so a category that failed its own spec check vanished from
+    ops/databank-runs.ndjson with nothing to explain it — the ledger simply
+    stopped. That is how 2026-10-04's `land` refusal (HDX 502 -> v1's 12-row
+    fallback, correctly caught by min_records 627) left no evidence it had
+    ever run. Refusals are the runs most worth reading: they are the ones
+    where the floor did its job.
+    """
+    report = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "category": category, "dry_run": dry_run, "status": "refused",
+        "reason": reason,
+        "records_read": counts.get("records_read", 0),
+        "drops": dict(drops),
+        "notes": {k: v for k, v in counts.items() if k != "records_read"},
+    }
+    try:
+        with RUNS.open("a") as fh:
+            fh.write(json.dumps(report, ensure_ascii=False) + "\n")
+    except OSError:
+        pass          # never let the audit trail break the refusal it records
+
+
 def run(category: str, dry_run: bool = False) -> dict:
     spec = load_spec(category)
     if category not in TRANSFORMERS:
@@ -2224,7 +2251,9 @@ def run(category: str, dry_run: bool = False) -> dict:
                     f"{loc_ds / n_ds:.3f} < min_located_pct {floor}")
         problems.extend(absent_over)
         if problems:
-            raise SpecRefused(f"{category}: run FAILED — " + "; ".join(problems))
+            why = f"{category}: run FAILED — " + "; ".join(problems)
+            _record_refusal(category, why, counts, drops, dry_run)
+            raise SpecRefused(why)
 
         written = events_written = closed_absent = 0
         if not dry_run:
@@ -2304,10 +2333,11 @@ def run(category: str, dry_run: bool = False) -> dict:
                         "collision_kind") != "indistinguishable"}
                 if keyed_refusals:
                     conn.rollback()
-                    raise SpecRefused(
-                        f"{category}: run FAILED — rows with a new identity refused "
-                        f"by the stable-id index (a key disagreement, not a "
-                        f"re-fetch): {keyed_refusals}; nothing written")
+                    why = (f"{category}: run FAILED — rows with a new identity "
+                           f"refused by the stable-id index (a key disagreement, "
+                           f"not a re-fetch): {keyed_refusals}; nothing written")
+                    _record_refusal(category, why, counts, drops, dry_run)
+                    raise SpecRefused(why)
                 refused_events = len(event_rows) - events_written
                 if refused_events > 0:
                     counts["events_refused_by_stable_id"] = refused_events

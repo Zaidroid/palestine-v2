@@ -93,7 +93,19 @@ elif [ "$radar" -ne 0 ]; then
 fi
 
 final=$rc
-[ "$final" -eq 0 ] && final=$radar
+if [ "$final" -ne 0 ] && [ "$radar" -eq 5 ]; then
+  # BOTH halves failed. `final=$rc` on its own kept only the loader's code, so
+  # on 2026-10-04 the alarm said "exited 1" and the reader never learned that a
+  # supply line was dead as well — the loader's crash silently swallowed the
+  # radar's verdict, which is the fact that must never be lost. Exit 5 (a dead
+  # supply line fails the night) and name both in the journal; the loader's
+  # code is preserved in stderr, the heartbeat's fetch_failures, and the run
+  # ledger, so nothing here is discarded either.
+  echo "both halves failed: loader exit $rc AND gap radar exit 5 (dead supply line)" >&2
+  final=5
+elif [ "$final" -eq 0 ]; then
+  final=$radar
+fi
 if [ "$final" -eq 0 ]; then
   # The whole night passed: close the unit's alarm if one is open.
   .venv/bin/python -m ops.alert --resolve palestine-v2-databank.service >/dev/null 2>&1 || true
