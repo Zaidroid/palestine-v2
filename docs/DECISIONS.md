@@ -699,3 +699,86 @@ takes. A crash can shred the record of the very failure that preceded it.
 Left untouched on purpose: rewriting a line in an append-only alarm log is a
 data correction, and the run that found it had already declined to commit code.
 Filed for Zaid with the recovered content.
+
+## 2026-10-05 · Half the road map stopped being readable, and the channel got LOUDER
+
+At **2026-10-03, in the 19:00 hour**, PalHub changed how it posts. Six of its
+twelve governorate road bulletins stopped arriving as text — الخليل, بيت لحم,
+أريحا, سلفيت, طوباس and أخرى; the last southern text bulletin is 18:31:15. The
+six northern areas — نابلس, جنين, طولكرم, قلقيلية, رام الله والبيرة,
+ضواحي القدس — never missed a cycle.
+
+**The publisher did not stop, and this is the whole lesson.** The channel went
+from 24 messages an hour, none of them empty, to **40 an hour of which 28 carry
+no text at all** — it is posting *more* than before. Empty-text messages on this
+channel ran 0–3 a day for the previous three weeks; they were 140 on 10-03, 650
+on 10-04, 532 on 10-05. Readable readings a day fell 17,406 → 8,794.
+
+The strong hypothesis is that those six areas moved to rendered image cards,
+because this same publisher's fuel channel did exactly that on 2026-08-23. It is
+**not proven**: `MEDIA_CHANNELS` is empty, so the poller downloads no media for
+this channel, and reading Telegram directly while the poller runs is forbidden.
+What is proven is narrower and enough: the text went away, the messages did not.
+
+Two things downstream turned red and **neither of them is an alarm**. The
+known-fraction fell from 169 known to 134 between 00:11 and 00:41 on 10-04 and
+has sat at 0.49–0.54 since, against a 0.60 gate and a 0.633–0.664 median over
+the ten days before. It reports as `below_gate`, which is deliberately
+`fault: false` — "below the gate is a gate, not an outage" — and the collapse
+detector added after 2026-09-26 needs a fall to under half the six-hour median,
+i.e. below 0.33. A 26% loss of coverage passed silently for two days. The other
+red is the single pytest failure,
+`test_most_of_the_bulletin_resolves_after_081`, which sees 116 names where it
+demands 150: **red on arrival, and upstream**. The parser is not broken — it
+still reads 8,794 readings a day out of the six surviving areas.
+
+The lesson is not the threshold, it is the shape: **every liveness check here is
+binary.** A source is silent or it is not. `tg_palhubapproad` is the loudest
+channel in the system and it got *louder* while losing half of what it carries,
+so nothing that watches for silence could ever have seen this. Nothing measures
+a feed's breadth.
+
+`tg_palhubappfuel`'s own silence, by contrast, costs nothing and should not be
+read as a loss: the poller reaches it fine (heartbeat `channel_failures 0`,
+`unresolved []`), and over 30 days it produced 20,004 claims that are **all
+`unclassified`, 0 placed, 0 linked to an event**, with `feeds_incidents` false.
+It has been pure noise on the scarcest asset since the fuel-card vertical was
+retired on 2026-09-23.
+
+**Trap for next Monday:** do not read the road channel's healthy message count
+as healthy coverage, and do not re-derive this as "the publisher stopped" — the
+first pass of this very run did, from the parsed-bulletin count alone, and the
+raw claim count disproved it.
+
+## 2026-10-05 · CORRECTION: the 13 ungrounded beliefs are migration 082, not the asymmetric delete
+
+Last Monday filed 13 `state_current` beliefs with no `state_observation` as
+"genuinely unexplained", and named the asymmetric delete at
+`ingest/sources/checkpoints.py:172` as the suspect. **That suspect is wrong.**
+
+All 13 carry one and the same `updated_at` — `2026-09-25 17:31:28.738115+00`,
+to the microsecond — which is the minute migration 082 was applied (`fc93d85`,
+"082 applied, API restarted"). Every other checkpoint belief is rewritten every
+two minutes; these 13 are the only ones frozen, ten days stale. And the evidence
+was never lost: each of the 13 has an observation of the same kind, value,
+direction, source and *exact* `observed_at` sitting under a `place_id` that is
+`merged_into` the belief's place, with `merged_by = '082'` — 1736→1501,
+1737→1488, 1717→1520, 1743→1582, 1738→1633, 1641→1739, 1535→1767, 1643→1797.
+
+082 states the cause in its own header: "Their observations **of the last two
+days** and their beliefs move to the survivor; **older observations stay**
+(compressed chunks; the resolver and the serving views follow `merged_into` for
+history)." It moved every belief and two days of observations, by design.
+G2.4 and G2.5 compare `place_id` literally and do not follow `merged_into`,
+which is why both fail on exactly the same 13 rows — one cause, two gates, and a
+third member of the family last Monday named: a check that predates the decision
+it is testing.
+
+**Nothing is mis-served.** All 13 reach `state_serving` and all 13 come out
+`value = unknown`, `staleness_band = expired`, `confidence 0`. The three-state
+vocabulary did its job; the gate is measuring provenance, not harm.
+
+Left alone on purpose: the fix is either new gate wording or a data migration
+re-pointing observations, and both are Zaid's hand. **Trap for next Monday:** do
+not re-open this as a belief-layer bug, and do not read a frozen `updated_at` as
+a dead writer — it is the fingerprint of a merge.
