@@ -17,17 +17,24 @@ TAIL = "\n🔴 منذ وقف إطلاق النار (11 أكتوبر):\nإجما�
 
 def test_number_first_lines_after_the_24_hour_header():
     r = parse(HEAD + "5 شهداء، بينهم شهيد متأثر بجراحه.\n35 إصابة." + TAIL)
-    assert r.tiers["daily"] == {"deaths": 5, "injuries": 35}
+    assert _di(r) == (5, 35)
     assert r.tiers["since_ceasefire"] == {"deaths": 1408, "injuries": 4916}
+
+
+def _di(r):
+    """deaths and injuries only: since 2026-10-11 the day's tier also carries the
+    breakdown (new, succumbed, recovered) when the bulletin gives it."""
+    return r.tiers["daily"]["deaths"], r.tiers["daily"]["injuries"]
 
 
 def test_bullets_and_dashes_are_data_not_headers():
     r = parse(HEAD + "▪️1 شهيد متأثر باصابته.\n▪️ 1 إصابة." + TAIL)
-    assert r.tiers["daily"] == {"deaths": 1, "injuries": 1}
+    assert _di(r) == (1, 1)
     r = parse(HEAD + "- 3 شهداء جدد\n- 18 إصابة" + TAIL)
-    assert r.tiers["daily"] == {"deaths": 3, "injuries": 18}
+    assert _di(r) == (3, 18)
     r = parse(HEAD + "5 شهداء(4 شهداء جدد+ 1 شهيد متاثر بجراحه) .\n14 إصابة." + TAIL)
-    assert r.tiers["daily"] == {"deaths": 5, "injuries": 14}
+    assert _di(r) == (5, 14)
+    assert r.tiers["daily"]["new"] == 4 and r.tiers["daily"]["succumbed"] == 1
 
 
 def test_both_counts_on_one_line_joined_by_and():

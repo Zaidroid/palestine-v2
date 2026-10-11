@@ -199,7 +199,10 @@ def test_the_fields_it_compares_are_the_ingests_own_indicators():
     """Built from cascade.moh_gaza.INDICATORS, so a rename there cannot leave
     organ C comparing a number with a different series of the same name."""
     from cascade.moh_gaza import INDICATORS
-    assert set(SERIES_FIELDS.values()) == set(INDICATORS.values())
+    # A SUBSET since 2026-10-11: the ingest also files the archive's measures
+    # (periods, recoveries, aid seekers, famine) that organ C does not read;
+    # what organ C compares must still be one of the ingest's own names.
+    assert set(SERIES_FIELDS.values()) <= set(INDICATORS.values())
 
 
 # ── what it declines ────────────────────────────────────────────────────────

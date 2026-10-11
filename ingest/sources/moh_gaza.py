@@ -26,6 +26,9 @@ from resolve.db import connect                                # noqa: E402
 
 SOURCE_KEY = "tg_mohmediagaza"
 DATASET_KEY = "gaza_moh_daily"
+# [إا]: the 2024 bulletins wrote "الاحصائي" without the hamza and a LIKE on the
+# hamza spelling never selected them (2026-10-11, the archive read).
+REPORT_RX = r"التقرير\s+ال[إا]حصائي"
 
 
 def _dataset(cur) -> tuple[int, int]:
@@ -119,15 +122,15 @@ def load(dry_run: bool = False, reread_since: str | None = None) -> dict:
         if reread_since:
             cur.execute("""
                 SELECT cl.claim_id, cl.raw_text, cl.reported_at
-                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
+                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text ~ %s
                    AND cl.reported_at >= %s::date
-                 ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", reread_since))
+                 ORDER BY cl.reported_at, cl.claim_id""", (sid, REPORT_RX, reread_since))
         else:
             cur.execute("""
                 SELECT cl.claim_id, cl.raw_text, cl.reported_at
-                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text LIKE %s
+                  FROM claim cl WHERE cl.source_id=%s AND cl.raw_text ~ %s
                    AND cl.claim_id > %s
-                 ORDER BY cl.reported_at, cl.claim_id""", (sid, "%التقرير الإحصائي%", since))
+                 ORDER BY cl.reported_at, cl.claim_id""", (sid, REPORT_RX, since))
         for claim_id, text, reported_at in cur.fetchall():
             st["claims"] += 1
             rep = parse(text)

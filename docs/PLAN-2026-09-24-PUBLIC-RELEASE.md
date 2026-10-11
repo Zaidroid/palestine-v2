@@ -807,3 +807,14 @@ FAO DIEM (124), v1's classifier entities (9,665), the Ministry's 861 daily repor
 fao_diem.yaml, db/migrations/094 (source fao_diem, HDX licence "Other" → ask). NOT loaded, by decision: v1's classifier
 entities (9,665 rows at 0.64 confidence, place "West Bank" on most — v2's own classifier supersedes them); HAPI (its only
 non-duplicate table is ACLED-derived); ACLED raw (EULA: never served; a hold-only grade does not exist yet).
+
+2026-10-11 13:40 UTC · The Ministry's archive becomes readable (fragments, third batch) · done in code, the re-read is
+Zaid's hand · proof: cascade/moh_gaza.py reads the three shapes of the daily report since February 2024 ("الاحصائي"
+without the hamza was not a report before; the 2024 one-line day; the 2025 "وصل مستشفيات … خلال 72 ساعة" with its
+recovered/succumbed/new split; the resumption toll since 18 March 2025; the aid-seeker and famine tolls; December 2025's
+heading-with-hours; counts written as words). Harness over the 837 archived bulletins: 836 recognised, cumulative toll
+on 834, a day or period window on 799, no cumulative step down, no day above 600. `ingest.sources.moh_gaza --dry-run
+--reread-since 2024-02-01` → 5,777 rows (the dataset holds 1,385 today). Tests: 28 pass (tests/test_moh_gaza_eras.py
+new; organ C's field test is a subset check now). A 48/72-hour block is its own tier (`gaza.moh.*.period` + hours).
+Known gaps: 37 bulletins with no readable window (rare phrasings), listed in the session; gaza_moh_daily still has no
+v1_stable_id and so is absent from databank_serving (audit finding, unchanged).
