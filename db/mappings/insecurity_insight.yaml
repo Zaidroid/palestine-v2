@@ -47,9 +47,12 @@ records_measured: 20836          # 2026-10-11
 
 input:                           # v2's own raw tree, written nightly by
   root: /home/zaid/palestine-v2/data/raw/insecurity_insight
-  glob: "incidents.json"         #   ops/fetch_insecurity_insight.py (reads
-                                 #   v1's normalised file through V1_ROOT; the
-                                 #   direct HDX xlsx fetch is the next step)
+  glob: "incidents.json"         #   ops/fetch_insecurity_insight.py — straight
+                                 #   from HDX's eighteen xlsx files since the
+                                 #   evening of 2026-10-11, reproducing v1's
+                                 #   normalisation and incident_id exactly
+                                 #   (20,836 of 20,836 ids identical on the day
+                                 #   of the switch); v1's file is the fallback
 
 datasets:
   - key: insecurity_insight_incidents
@@ -111,7 +114,10 @@ expect:
   max_observations: 10           # this spec emits events, not observations
 
 notes: |
-  The stable id is ii-<incident_id> (v1's content hash of the row). A re-hash
-  upstream re-matches through the multiset key. When the direct HDX fetch
-  replaces v1's parser, the id must be derived the same way or the whole file
-  will read as new events once; measure before switching.
+  The stable id is ii-<incident_id>, an md5 over category, date, coordinates,
+  perpetrator, location, description and SiND id — v1's rule, kept verbatim in
+  the fetcher so the switch to the direct read changed no id. The rule is
+  coarse: in the Protection file 6,189 of 7,400 rows share a key with an
+  earlier row (same day, no coordinates, same perpetrator and location) and
+  are dropped as duplicates, as v1 dropped them. Widening the key would admit
+  them as new events; measure first.

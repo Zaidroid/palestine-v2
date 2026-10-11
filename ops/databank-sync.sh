@@ -44,9 +44,9 @@ step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (month
 step .venv/bin/python -m ops.fetch_unrwa_registered   # UNRWA registered refugees by field (HDX)
 
 # The fragments brought in on 2026-10-11 (Zaid: the databank is for personal
-# use; everything we hold goes in). Both read v1's files through V1_ROOT for
-# now — Insecurity Insight's normalised incidents and B'Tselem's frozen CSV —
-# atomic and floored like the rest; the direct HDX fetch is the next step.
+# use; everything we hold goes in). Insecurity Insight reads HDX's eighteen
+# xlsx files directly (v1's file is its fallback); B'Tselem reads v1's frozen
+# CSV through V1_ROOT. Atomic and floored like the rest.
 step .venv/bin/python -m ops.fetch_insecurity_insight
 step .venv/bin/python -m ops.fetch_btselem_file
 # Second batch, same day: UNHCR's six population tables and FAO DIEM's four

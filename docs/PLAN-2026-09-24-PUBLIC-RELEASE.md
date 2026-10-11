@@ -829,3 +829,9 @@ db/mappings/acled_hdx.yaml + ops/fetch_acled_file.py: ACLED's HDX monthly aggreg
 130 months; v1's "ACLED raw" was never raw) → dry run 6,240 read → 10,400 observations, located 1.0. Tests: licence
 tier, spec format, facades 115 pass. Parser corrections after the first archive load (e2676b2): the one-line day is read
 before the block (2024-06-09: 698→814), mistyped totals refused, the famine total without إلى.
+
+2026-10-11 15:30 UTC · Insecurity Insight read straight from HDX · done · proof: ops/fetch_insecurity_insight.py reads the
+package's 18 xlsx files with the standard library and reproduces v1's normalisation and incident_id (md5 rule kept verbatim,
+SheetJS's _1 suffix on repeated headers, parseFloat's leading number): 20,836 of 20,836 ids identical to v1's file and 0
+field differences; loader dry run on it: 20,170 events, all already held. v1's file is the fallback when HDX fails.
+Every item of the 10-11 fragments list is now in the databank or deliberately out (classifier entities, HAPI).
