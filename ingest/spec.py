@@ -414,6 +414,12 @@ _k("identity.generation", "enforced",
    "730 days) and the databank keeps what fell out of it. Measured before it "
    "was switched on: refugees held 15 UNRWA camps and 3 renamed IDMC events "
    "twice", types=(str,), values=("complete", "window"))
+_k("identity.revises_by", "enforced",
+   "an attrs key that is the SOURCE's own record number (UN FTS flow_id). A "
+   "held row the run did not emit, whose number the run emitted under another "
+   "identity, is the older reading of that record and is closed (2026-10-11: "
+   "funding counted 53 revised flows twice and 17 as both committed and paid)",
+   types=(str,))
 _k("identity.max_absent", "enforced",
    "a MEASURED ceiling on rows one run may close as absent upstream; default "
    "5% of the rows held. Above it the run FAILS — a source that lost more "

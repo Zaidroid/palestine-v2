@@ -2206,6 +2206,8 @@ def run(category: str, dry_run: bool = False) -> dict:
 
     # Injectivity bookkeeping for the invariant below.
     emitted_identities: set[str] = set()
+    # dataset → the values of its `identity.revises_by` attr this run emitted
+    emitted_revision_ids: dict[str, set[str]] = defaultdict(set)
     identity_collisions: Counter = Counter()
     collision_samples: dict[str, list[str]] = defaultdict(list)
 
@@ -2348,6 +2350,9 @@ def run(category: str, dry_run: bool = False) -> dict:
                     if len(collision_samples[r.dataset_key]) < 3:
                         collision_samples[r.dataset_key].append(ident)
                 emitted_identities.add(ident)
+                _rev = (identity_by_ds.get(r.dataset_key, {}) or {}).get("revises_by")
+                if _rev and (r.attrs or {}).get(_rev) is not None:
+                    emitted_revision_ids[r.dataset_key].add(str(r.attrs[_rev]))
                 indistinct = (identity_by_ds.get(r.dataset_key, {}) or {}).get(
                     "collision_kind") == "indistinguishable"
                 if ident in known_identities and indistinct and \
@@ -2505,6 +2510,51 @@ def run(category: str, dry_run: bool = False) -> dict:
                 else:
                     absent.extend(rows_gone)
 
+        # ── revised under a new identity (2026-10-11) ───────────────────────
+        # Some sources number their own records and then revise them in the
+        # fields our identity is built from. UN FTS keeps a flow's id while
+        # its decision date moves and its status goes from commitment to
+        # paid; with indicator and date in the key, each revision was a second
+        # current row beside the original. Measured on 2026-10-11: 26 flows
+        # twice inside `paid` ($97.3 M counted that is not there), 27 inside
+        # `commitment` ($103.7 M), and 17 flows live as both committed and
+        # paid. A dataset that declares `identity.revises_by: <attr>` says the
+        # attr is the source's own record number: a held row this run did not
+        # emit, whose number the run DID emit under another identity, is the
+        # older reading of the same record and is closed. A held row whose
+        # number is absent from the run is left alone (that is `generation`'s
+        # question, and funding's input is a window). Same ceiling and the
+        # same refusal as an absent row: a run that would close more than
+        # that is a re-keying, not revisions.
+        revised: list[tuple[str, int]] = []
+        revising = {k: v["revises_by"] for k, v in identity_by_ds.items()
+                    if (v or {}).get("revises_by")}
+        if revising and not from_fallback:
+            held_r: Counter = Counter()
+            older: dict[str, list[tuple[str, int]]] = defaultdict(list)
+            for k, (oid, held_content) in known_identities.items():
+                ds_key = k.split("|", 1)[0]
+                if oid is None or ds_key not in revising:
+                    continue
+                held_r[ds_key] += 1
+                if k in emitted_identities:
+                    continue
+                number = (json.loads(held_content).get("a") or {}).get(revising[ds_key])
+                if number is not None and str(number) in emitted_revision_ids[ds_key]:
+                    older[ds_key].append((k, oid))
+            for ds_key, rows_old in older.items():
+                cap = identity_by_ds[ds_key].get("max_absent")
+                if cap is None:
+                    cap = max(1, int(held_r[ds_key] * 0.05))
+                counts[f"revised_upstream:{ds_key}"] = len(rows_old)
+                if len(rows_old) > cap:
+                    absent_over.append(
+                        f"{ds_key}: {len(rows_old)} held rows revised under a new "
+                        f"identity > ceiling {cap} of {held_r[ds_key]} — a re-keying, "
+                        f"not revisions; nothing is closed")
+                else:
+                    revised.extend(rows_old)
+
         # ── enforcement, before any write ────────────────────────────────────
         n = counts["records_read"]
         problems = []
@@ -2593,7 +2643,7 @@ def run(category: str, dry_run: bool = False) -> dict:
             _record_refusal(category, why, counts, drops, dry_run)
             raise SpecRefused(why)
 
-        written = events_written = closed_absent = 0
+        written = events_written = closed_absent = closed_revised = 0
         if not dry_run:
             dataset_ids = ensure_datasets(conn, spec, category)
             with conn.cursor() as cur:
@@ -2619,6 +2669,15 @@ def run(category: str, dry_run: bool = False) -> dict:
                            AND upper_inf(sys_period)""",
                         ([oid for _, oid in absent],))
                     closed_absent = cur.rowcount
+                if revised:
+                    cur.execute("""
+                        UPDATE observation
+                           SET sys_period = tstzrange(lower(sys_period),
+                                                      now())
+                         WHERE observation_id = ANY(%s)
+                           AND upper_inf(sys_period)""",
+                        ([oid for _, oid in revised],))
+                    closed_revised = cur.rowcount
                 sent: Counter = Counter()
                 took: Counter = Counter()
                 for r in rows:
@@ -2706,6 +2765,14 @@ def run(category: str, dry_run: bool = False) -> dict:
             "closed": closed_absent, "would_close": len(absent),
             "ids": [oid for _, oid in absent][:500],
             "samples": [k for k, _ in absent][:8]}
+    if revised:
+        # Rollback, exactly as for absent rows:
+        #   UPDATE observation SET sys_period = tstzrange(lower(sys_period), NULL)
+        #    WHERE observation_id = ANY(<revised_upstream.ids>);
+        report["revised_upstream"] = {
+            "closed": closed_revised, "would_close": len(revised),
+            "ids": [oid for _, oid in revised][:500],
+            "samples": [k for k, _ in revised][:8]}
     with RUNS.open("a") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report

@@ -149,6 +149,15 @@ identity:
   # grants to the same recipient on the same day are two grants.
   fields: [indicator, occurred_at, place_id]
   attrs: [flow_id]                                     # = 9,991 / 9,991 ✓
+  # FTS REVISES A FLOW IN PLACE AND KEEPS ITS NUMBER (2026-10-11). The key
+  # above holds the status (the indicator) and the decision date, so a flow
+  # that moved from commitment to paid, or whose date was corrected, became a
+  # second current row: 26 flows twice inside `paid` ($97.3 M), 27 inside
+  # `commitment` ($103.7 M), 17 live as both. `revises_by` closes the older
+  # reading the night the flow reappears under its new key. It does not close
+  # a flow the file no longer carries: v1's file is a window (841 of 10,185
+  # held rows were absent from it on 2026-09-26), so that stays `window`.
+  revises_by: flow_id
 
 registry:
   max_unclassified: 0
