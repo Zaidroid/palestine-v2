@@ -168,6 +168,13 @@ def import_updates(full: bool = False) -> dict:
         cache = _channel_sources(cur)
         from ingest.sources import roads
         v2_reads = stats["facts_left_to_v2"] = roads.enabled(cur)
+        if full and v2_reads:
+            # --full deletes this importer's rows and rebuilds them from v1. With
+            # the v2 reader on it would rebuild the archival rows only, and the
+            # reader does not re-read a message it has read: every fact this
+            # importer ever wrote would be gone and nothing would write it back.
+            raise SystemExit("refusing --full while the v2 road reader is on: the facts would be "
+                             "deleted and not rebuilt. Run it with ROADS_READER=off.")
 
         if full:
             # Rebuild from v1, which is the source of truth and is untouched by
@@ -194,6 +201,17 @@ def import_updates(full: bool = False) -> dict:
             since = since - OVERLAP
             cur.execute(SEEN_SQL, (LEGACY_KIND, since))
             seen = {tuple(r) for r in cur.fetchall()}
+        # Where this importer writes facts (the reader off, or a rebuild), never
+        # beside one the v2 reader already wrote for the same message and place:
+        # switching the reader off and on again must not count a report twice.
+        v2_has: set[tuple] = set()
+        if not v2_reads:
+            cur.execute("""SELECT attrs->>'channel', attrs->>'msg_id', place_id, state_kind
+                             FROM state_observation
+                            WHERE state_kind = ANY(%s) AND attrs->>'reader' = 'v2'"""
+                        + (" AND observed_at >= %s" if since else ""),
+                        (list(ALL_KINDS), since) if since else (list(ALL_KINDS),))
+            v2_has = set(cur.fetchall())
 
         db = _ro()
         sql = ("SELECT canonical_key,status,status_raw,direction,source_channel,"
@@ -243,6 +261,8 @@ def import_updates(full: bool = False) -> dict:
             for f in r.facts:
                 kind = FLOW_KIND if f.axis == "flow" else PRESENCE_KIND.get(f.value)
                 if not kind:
+                    continue
+                if (channel, None if msg_id is None else str(msg_id), pid, kind) in v2_has:
                     continue
                 # `absence` shares the presence state_kind and carries the
                 # opposite value, so "no army here" can contradict "army here"
