@@ -76,15 +76,22 @@ def test_declared_names_sit_on_servable_accepted_rows_once():
     with connect() as conn, conn.cursor() as cur:
         if not _applied(cur):
             pytest.skip(f"{MIGRATION} not applied")
-        cur.execute("""SELECT n, p.place_id, p.kind, p.servable, p.merged_into
-                         FROM place p, jsonb_array_elements_text(p.attrs->'palhub_names') n
+        # Judged on the row a declaration LANDS on: one declared on a row
+        # that 097 later merged means the survivor.
+        cur.execute("""SELECT n, t.place_id, t.kind, t.servable, t.merged_into
+                         FROM place p
+                         JOIN place t ON t.place_id = COALESCE(p.merged_into, p.place_id),
+                              jsonb_array_elements_text(p.attrs->'palhub_names') n
                         WHERE p.attrs ? 'palhub_names'""")
         rows = cur.fetchall()
     assert len(rows) >= 60
     bad = [r for r in rows if r[2] not in PR.ACCEPTED_KINDS or not r[3] or r[4] is not None]
     assert bad == [], bad
-    names = [r[0] for r in rows]
-    assert len(names) == len(set(names)), "a palhub name declared on two rows"
+    lands: dict[str, set[int]] = {}
+    for r in rows:
+        lands.setdefault(r[0], set()).add(r[1])
+    two = {n: ids for n, ids in lands.items() if len(ids) > 1}
+    assert two == {}, f"a palhub name that lands on two places: {two}"
 
 
 def test_most_of_the_bulletin_resolves_after_081():
@@ -96,7 +103,9 @@ def test_most_of_the_bulletin_resolves_after_081():
             pytest.skip(f"{MIGRATION} not applied")
         resolved = _resolve_all(conn, cur)
     unresolved = sorted(n for n, r in resolved.items() if r is None)
-    assert len(resolved) >= 150
+    # ~190 names until 2026-10-03 19:00 UTC, when the board moved six of its
+    # twelve areas into photo cards; the six still sent as text carry ~115.
+    assert len(resolved) >= 100
     assert len(unresolved) <= 22, unresolved
 
 
@@ -124,7 +133,7 @@ def test_declared_wording_beats_the_resolver():
         if not _applied(cur):
             pytest.skip(f"{MIGRATION} not applied")
         declared = PR._declared_names(cur)
-        cur.execute("""SELECT n, p.place_id FROM place p,
+        cur.execute("""SELECT n, COALESCE(p.merged_into, p.place_id) FROM place p,
                        jsonb_array_elements_text(p.attrs->'palhub_names') n
                         WHERE p.attrs->>'palhub_names_by' = '081' LIMIT 5""")
         sample = cur.fetchall()

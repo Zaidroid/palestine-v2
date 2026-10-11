@@ -40,6 +40,11 @@ cd /home/zaid/palestine-v2
 # newly-detected copyset vote several times.
 .venv/bin/python -m learn.reliability --days 30 --write
 
+# Trust by place (099): where the board's word has earned belief and where it
+# has not, measured against the channels. Writes nothing until the table
+# exists; a failure here must not cost the night's other fits.
+.venv/bin/python -m learn.place_trust --write || echo "place_trust failed (non-fatal)"
+
 # Independence groups and trust weights both feed base_confidence, so belief
 # must be recomputed after they move — otherwise the new values do not reach
 # anything served until the next report happens to arrive.

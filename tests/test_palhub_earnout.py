@@ -15,7 +15,7 @@ def test_open_and_closed_are_asserted_congested_stays_quarantined():
     assert PR.modality_for("open") == "assertion" and PR.modality_for("closed") == "assertion"
     assert PR.modality_for("congested") == "quarantined" and PR.modality_for("slow") == "quarantined"
     assert PR.modality_for("anything-else") == "quarantined"
-    assert "modality_for(rd.value)" in inspect.getsource(PR.load)
+    assert "modality_for(rd.value, rd.severity, place.place_id, trust)" in inspect.getsource(PR.load)
 
 
 def test_the_measurements_read_every_palhub_row_whatever_its_modality():

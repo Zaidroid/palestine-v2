@@ -106,7 +106,24 @@ MODALITY_BY_VALUE = {"open": "assertion", "closed": "assertion",
 EARN_OUT = "2026-09-25 A: open+closed asserted, congested quarantined"
 
 
-def modality_for(value: str) -> str:
+# ...AND BY PLACE (2026-10-11, learn/place_trust.py, migration 099). The class
+# rule above treats the board's `closed` at بيت ليد, where the channels said
+# open 92 times in 92, like its `closed` at كفر الديك, where they agreed 296
+# times in 296. The board restates whatever its users last set, so it is right
+# where they pass often and repeats yesterday where they do not. Where a place
+# has been measured and the measurement overrules the class rule, the place
+# wins: an `open` or `closed` the board has not earned THERE is held, and a
+# congestion it has earned THERE is asserted. A place nobody else reports on
+# has no measurement and keeps the class rule.
+def modality_for(value: str, severity=None, place_id: int | None = None,
+                 trust: dict | None = None) -> str:
+    if trust and place_id is not None:
+        from learn.place_trust import claim_class
+        verdict = trust.get((place_id, claim_class(value, severity)))
+        if verdict == "assert":
+            return "assertion"
+        if verdict == "hold":
+            return MODALITY
     return MODALITY_BY_VALUE.get(value, MODALITY)
 
 # "أخرى" is Palhub's catch-all bucket and names no governorate; those rows
@@ -166,10 +183,16 @@ def _area_map(cur) -> dict[str, str]:
 # and corroborated exactly like checkpoints, so a palhub reading may land there.
 ACCEPTED_KINDS = ("checkpoint", "crossing", "road")
 
+# A declaration follows a merge (097 merged 19 duplicate rows): the wording
+# declared on a row that was later merged into another means the survivor.
+# Left on the merged row alone it was dropped, and the name fell back to the
+# fuzzy resolver it had been declared to overrule.
 DECLARED_SQL = """
-SELECT n, p.place_id
-  FROM place p, jsonb_array_elements_text(p.attrs->'palhub_names') n
- WHERE p.kind = ANY(%s) AND p.servable AND p.merged_into IS NULL
+SELECT n, t.place_id
+  FROM place p
+  JOIN place t ON t.place_id = COALESCE(p.merged_into, p.place_id),
+       jsonb_array_elements_text(p.attrs->'palhub_names') n
+ WHERE t.kind = ANY(%s) AND t.servable AND t.merged_into IS NULL
    AND p.attrs ? 'palhub_names'
 """
 
@@ -294,6 +317,8 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
         source_id = _ensure_source(cur)
         areas = _area_map(cur)
         declared = _declared_names(cur)
+        from learn.place_trust import load as load_place_trust
+        trust = load_place_trust(cur)
 
         # What this source has already said, so an unchanged restatement can be
         # skipped without another query per checkpoint.
@@ -355,12 +380,17 @@ def load(limit: int = 2000, dry_run: bool = False) -> dict:
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,true,%s,%s)""",
                         (place.place_id, STATE_KIND, rd.value, rd.raw_status,
                          observed_at, source_id, claim_id, PARSE_CONFIDENCE,
-                         rd.direction, modality_for(rd.value),
+                         rd.direction,
+                         modality_for(rd.value, rd.severity, place.place_id, trust),
                          json.dumps({"palhub_area": b.area,
                                      "palhub_name": rd.name,
                                      "palhub_severity": rd.severity,
                                      "palhub_updated_local": b.updated_local,
-                                     "earn_out": EARN_OUT},
+                                     "earn_out": EARN_OUT,
+                                     **({"trust": "by place (099)"}
+                                        if modality_for(rd.value, rd.severity,
+                                                        place.place_id, trust)
+                                        != modality_for(rd.value) else {})},
                                     ensure_ascii=False)))
                 last[key] = (rd.value, observed_at)
                 stats["written"] += 1
