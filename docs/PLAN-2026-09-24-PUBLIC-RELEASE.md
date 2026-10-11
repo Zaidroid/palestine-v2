@@ -935,3 +935,56 @@ question) goes from open to closed. The re-freeze also corrects two other kinds 
 road_closure 747 → 610 reports (duplicates on merged rows) and power 100 → 103. tests/test_reread_stored.py 7.
 NOT reachable by any re-read: names v1's matcher never let through before 31 July (the raw messages were not kept),
 v1's own database and public map, and the two films' data files.
+
+2026-10-11 22:40 UTC · why half the map is unknown: the board's photo cards · found, flagged, one decision is Zaid's
+(HANDS §13d) · proof: `ops/coverage.ndjson` daily medians 0.638–0.664 from 25 Sep to 3 Oct (the G4 gate was being
+met), 0.492 on 4 Oct and 0.49–0.53 since. On 2026-10-03 19:00 UTC @palhubapproad stopped sending six of its twelve
+areas as text (الخليل، بيت لحم، سلفيت، أريحا، طوباس، أخرى) and started sending 14 photo messages a cycle
+(claim rows with empty text: 0 before, ~670 a day since; bronze says MessageMediaPhoto, no caption). The board's
+reach fell from 164 places a day to 98. Right now 123 served places are unknown and 110 of them have no board row in
+six hours. My sentence of 19:10 ("the rest is supply") was right in kind and missed the cause: it is one source's
+format, eight days old, and nothing told anyone, because the channel posted MORE messages (silence rule green) and
+the fall was under a half (collapse rule green). Built: ops/watchdog.py judges each large source on its reach
+(place-hours in 24 h against its own 28 days, five robust deviations and 0.8 of the median); back-tested on 40 days
+it fires on the board from 4 Oct and once elsewhere (a day v1 delivered nothing from a channel). The poller takes
+`V2_TELEGRAM_MEDIA_CHANNELS` from .env (empty by default). Not built: the card reader, which needs cards on disk;
+turning the downloads on (~670 a day on agent2) is hard rule 3 and Zaid's call. Commit 9458007.
+
+2026-10-11 22:45 UTC · finding 03, the board's trust by place · built and rehearsed; migration 099 and the first
+fill are Zaid's hand (HANDS §13d) · proof: 42 days, 102,844 pairs against the road channels within 45 minutes. By
+the board's own word: مفتوح agrees 0.877, مغلق 0.721, أزمة خانقة 0.492, أزمة متوسطة 0.118 (the channels say open
+0.814 of the time: it is their "open"). By place the same word ranges from 0.00 (its closed at بيت ليد, open 92
+of 92) to 1.00 (كفر الديك 296 of 296). learn/place_trust.py folds pairs into hour cells, takes Wilson bounds, and
+compares with the channels' own agreement on that value (open 0.841, closed 0.647, congested 0.452 by the same
+count) less 0.15: 25 (place, claim) pairs where its open or closed is held (upper bound under the bar), 21 where a
+congestion is asserted (lower bound over it), everything else keeps decision A. The ingest reads the verdicts when it
+writes; nothing stored changes. Scratch rehearsal: 099 applied, 514 rows, 46 moved, second run identical. Also fixed:
+three board names declared on rows 097 merged had fallen back to the fuzzy resolver. Commit 30445ef.
+NOT decided by me: severe congestion as a class is 0.10 under its control, closer than `closed` was when decision A
+promoted it; promoting it everywhere would be a change to that decision.
+
+2026-10-11 22:50 UTC · roads gold round 2, read blind · done · proof: tests/gold/roads-2.jsonl, 200 messages of
+27 Sep–11 Oct, none in round 1, labelled by four seats that saw neither parser nor register (103 reports, 434
+readings, 25 on places v1's registry lacks). As first scored: v1's parser 0.817 precision / 0.721 recall; v2's
+reader 0.940 / 0.919. Round 1, which the register was tuned on, gives the reader 0.942 / 0.928 by the same count,
+so the bias I warned of was about one point of recall. Three misreads the round exposed are fixed (a checkpoint and
+a search after a dash; a search after a lone waw takes the jam's direction when nothing later names one; a
+publisher's hashtag is not police at the crossing), each checked against all 74,928 distinct stored lines: 97 read
+differently, 90 of them a sighting gained, none a regression I could find. The scorer counted one checkpoint once
+per gold reading (checkpoint recall reached 1.016) and judged a flow against a presence; both fixed, and v1 keys
+with no v2 link land on their v2 place through the register. After all of it round 2 reads 0.949 / 0.951; the
+first score stays in ops/roads-gold-score.json as the blind one. Seven names the round found are aliases for
+Zaid's hand (المساكن alone is 626 mentions in 45 days, unread; «نفق حبله» wrote 50 false readings on a Bethlehem
+tunnel). Commit c650163.
+
+2026-10-11 23:05 UTC · finding 05, news classifier 1.11.0 · built, live at the next tick, unmeasured until round 10
+· proof: round 9's 20 deaths and 20 arrests read row by row; rules in commit 9e3fee4 (time served, custody that
+continues, administrative detention, the last look, a notice with words between, bulldozers with no هدم, what is
+expected around a holiday, a past year named bare, a criminal stabbing; a demolition carried out is kept whatever
+notices it mentions). `ops/rescore_round.py 9`: of the 247 rows served then, 41 wrong ones are no longer served and
+no right one is lost; projected 0.66 → 0.819 (arrest 0.778, death 0.562, demolition 0.824). That is tuning data.
+What the rules cannot reach: features and commentary that narrate a death (seven of the remaining wrong deaths).
+NOT built on the serving side, because each changes what a partner reads and wants Zaid's eye first: direction as
+the default answer (plan D), the checkpoint sighting under its own word (its 15-minute half-life is already the
+army-presence kind's).
+
