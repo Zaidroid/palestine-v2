@@ -127,7 +127,21 @@ CLASSIFIER = "news"
 # settler_attack quantifiers are bounded to a word, which ends the cubic
 # backtracking that let one long token stall the timer (F074). Unmeasured
 # until a fresh round is drawn at 1.9.0.
-CLASSIFIER_VERSION = "1.10.0"
+#
+# 1.11.0 — round 9 (2026-09-26, n=200 at 1.10.0) measured 0.755 overall, death
+# 0.45 and arrest 0.55. Read row by row on 2026-10-11: a release told with the
+# verb past the head of the text, time served, custody that continues and a
+# transfer to administrative detention were arrests; the last look at a body,
+# a cousin's death learned on release and a faction's "confirms once again"
+# were deaths; a notice with words between it and the act, a warning and an
+# order signed were demolitions, and so were bulldozers uprooting olive trees
+# (now land_levelling). Also rejected: what is expected around a holiday, a
+# correspondent's digest, a past year named bare, a criminal stabbing. A
+# demolition carried out is kept whatever notices the text mentions. Projected
+# on round 9's own 247 served rows: 41 wrong rows dropped, no right row lost
+# (ops/rescore_round.py 9 → 0.819). That is tuning data now: 1.11.0 has NO
+# held-out precision until round 10.
+CLASSIFIER_VERSION = "1.11.0"
 
 # One closure observation per (event, source, time). The insert ran after both
 # the join and the insert branch, so every re-read — each version bump without

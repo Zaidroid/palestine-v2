@@ -319,12 +319,21 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
                        r"^\W*(?:\S+\s+){0,5}?(?:(?:[يت]صدر\w*|اصدر\w*)\s+(?:\S+\s+){0,3}?اوامر|"
                        r"اوامر\s+(?:عسكريه|بتجريف|جديده|مصادره))|"
                        r"اصدار\s+[\d٠-٩]+\s+(?:امر|اوامر)|[\d٠-٩]+\s+(?:امر|اوامر)\s+(?:هدم|عسكري\w*|مصادره)|"
-                       r"اخطار\w*\s+(?:الاحتلال\s+)?ب?هدم\w*)"),
+                       r"اخطار\w*\s+(?:الاحتلال\s+)?ب?هدم\w*|"
+                       # Round 9: the notice with words between it and the act
+                       # ("يخطر المواطن فلان بهدم", "اخطارات تقضي بهدم", "بعد
+                       # اخطارهم من قوات الاحتلال لهدمها"), the warning verb
+                       # ("تنذر بهدم"), an eviction "in preparation for"
+                       # demolishing, and an order signed.
+                       r"(?:[يت]خطر\w*|اخطرت?|اخطار\w*)\s+(?:\S+\s+){0,7}?(?:ب|ل|بال|لل)(?:هدم|ازاله)\w*|"
+                       r"[يت]نذر\w*\s+(?:\S+\s+){0,3}?ب?هدم|تمهيدا\s+ل(?:هدم|ازاله)\w*|"
+                       r"قرار\s+(?:ب|بال)?هدم)"),
     # Follow-ups about an earlier event: a release days later, a family
     # inspecting old damage. Measured as four of seventeen sampled
     # `demolition` incidents — all one story about a woman freed after 8 days,
     # filed as a fresh demolition because the sentence mentions هدم.
-    ("aftermath", r"(الافراج عن|افرجت?\s+\S*\s*عن|بعد\s+[\d٠-٩]+\s+(ايام|يوما|شهر)|"
+    ("aftermath", r"(الافراج عن|افرجت?\s+\S*\s*عن|"
+                  r"بعد\s+[\d٠-٩]+\s+(ايام|يوما|ا?شهر|شهور|اسابيع|اعوام|سنوات)|"
                   # Round 5: a woman "خارج السجن" after a year served as a
                   # fresh arrest; a phone that exploded "قبل ايام" as a fresh
                   # injury; Al Jazeera's reconstruction of a months-old battle
@@ -370,6 +379,9 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     ("propaganda", r"(ارث العاروري|رساله الشيخ القائد|قناه ارث)"),
     # Court news: an acquittal months after the assault, a detention extended.
     ("court", r"([يت]برئ\w*|تبرئه|براءه\s+|تمديد\s+(?:ال)?اعتقال|[يت]مدد\w*\s+(?:ال)?اعتقال|"
+              # Round 9: "يحوّل الصحفي فلان إلى الاعتقال الإداري لمدة 4 أشهر".
+              r"(?:[يت]حول\w*|تحويل)\s+(?:\S+\s+){0,9}?(?:الي|ل)\s*(?:ال)?اعتقال\s+(?:ال)?اداري|"
+              r"(?:ال)?اعتقال\s+(?:ال)?اداري\s+لمده|حكما\s+اداريا|"
               r"[يت]جدد\w*\s+(?:ال)?اعتقال|تجديد\s+(?:ال)?اعتقال|"
               r"الحكم\s+علي|[يت]حكم\w*\s+علي|محكمه\s+\S+\s+(?:تقضي|تصدر|ترفض|تقرر))"),
     # A vigil, a march, a ceremony at the head of the text is the subject.
@@ -406,7 +418,11 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
     ("history", r"((?<!\w)(?:في|منذ|خلال|بدايه|نهايه|مطلع)\s+(?:عام|العام|سنه)\s+(?:19\d\d|20[01]\d|202[0-5])(?!\d)|"
                 r"(?<!\w)(?:عام|عامان|عامين|سنه|سنتان|سنتين|سنوات|شهور|اشهر)\s+علي\s+"
                 r"(?:الغياب|استشهاد|رحيل|اغتيال|مجزره|اعتقال)|"
-                r"^\W*(?:\S+\s+){0,3}?كيف(?!\w))"),
+                r"^\W*(?:\S+\s+){0,3}?كيف(?!\w)|"
+                # Round 9: the year named bare ("اصابته برصاص الاحتلال في جنين
+                # عام 2023"), and an injury "more than a month ago".
+                r"(?<!\w)عام\s+(?:19\d\d|20[01]\d|202[0-5])(?!\d)|"
+                r"قبل\s+اكثر\s+من\s+(?:شهر|عام|اسبوع|اسبوعين|شهرين))"),
     # Commentary, memorials, media promos — not events.
     #
     # SHORT TERMS ARE ANCHORED TO TOKEN BOUNDARIES, and the reason is the worst
@@ -432,7 +448,13 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
                    r"لم\s+تعد\s+المسافه|يلتهم\s+الاستيطان|"
                    r"حكاية شهيد|تابعونا|اشترك|قناتنا|هل بات|كيف يحاول|"
                    r"ترجمه\s+خاصه|تخيل\s+نفسك|صرخه\s+من|"
-                   r"في مثل هذا اليوم|رساله صمود)"),
+                   r"في مثل هذا اليوم|رساله صمود|"
+                   # Round 9: what is EXPECTED around a holiday ("مع اقتراب
+                   # عيد العرش .. توقعات بتصاعد الاقتحامات") and a call to
+                   # turn out for it are not the incursion; a correspondent's
+                   # digest is many events and no one place.
+                   r"مع\s+اقتراب|رابطوا\s+في|(?:ال)?حشد\s+والرباط|نلبي\s+النداء|"
+                   r"بايجاز\s+مع\s+مراسل)"),
     # Institutional statements rather than a located happening.
     # طالب = a student as often as the verb "demanded"; تصريح = a permit as
     # often as a statement (audit F100): the verb needs its ب, the statement
@@ -450,6 +472,9 @@ REJECT_PATTERNS: list[tuple[str, str]] = [
                   # Round 8: a faction official or a party speaking, in the
                   # third person or the first-person plural.
                   r"القيادي\s+في|القياديه\s+في|\bحماس\s*:|\bفتح\s*:|الجهاد\s+الاسلامي|"
+                  # Round 9: the speaker named at the end without the article
+                  # ("… قيادي في حركة حماس"), and the sentence that argues.
+                  r"قيادي\s+في\s+حركه|يؤكد\s+مجددا|"
                   r"زياره\s+(?:اجراها\s+)?المحامي|تفاصيل\s+ظروف\s+اعتقال|"
                   r"الناطق\s+باسم|المتحدث\s+باسم|\bنحذر\b|\bنبارك\b|\bندعو\b|\bنناشد\b|"
                   # First-person-plural statements and calls to action are a
@@ -642,6 +667,9 @@ _INCIDENT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in INCIDENT_PATTERNS]
 _FUNERAL_RE = re.compile(_norm_pat(
     r"(تشييع|شيعت|شيع\s+جثمان|[يت]شيع\w*|جنازه|جنازة|موكب\s+(?:الشهيد|جنازه|جنازة|تشييع)|"
     r"\bنعي\b|[يت]نعي|ينعي|تنعي|ننعي|بيت\s+عزاء|عزاء|وداع\s+الشهيد|[يت]ودع\w*|يوم\s+الوداع|"
+    # Round 9: "يلقون نظرة الوداع الأخيرة على جثمانه", a prisoner freed "ليفجع
+    # باستشهاد ابن عمه", a post the dead man wrote, what was left "بعد استشهاده".
+    r"نظره\s+الوداع|فجع\w*\s+باستشهاد|منشور\s+سابق|(?:بعد|عقب)\s+استشهاد(?:ه|ها|هم)(?!\w)|"
     # Round 8: "a sad farewell to the young man", "scenes from the farewell of",
     # "during the farewell of his brother", a body handed back months later, a
     # grave visited, a martyr of two years ago.
@@ -667,11 +695,29 @@ _REJECT_RE = [(lbl, re.compile(_norm_pat(p))) for lbl, p in REJECT_PATTERNS]
 # verb follows (round 8: "وداع الشهيد الفتى .. خلال هجوم للمستوطنين" served as a
 # settler attack). Not تشييع: a funeral procession attacked is an event.
 _HEAD_FUNERAL_RE = re.compile(_norm_pat(
-    r"^\W*(?:\S+\s+){0,3}?(?:وداع|جنازه|موكب\s+(?:الشهيد|الجنازه)|ننعي|نعي)\b"))
+    r"^\W*(?:\S+\s+){0,3}?(?:وداع|جنازه|موكب\s+(?:الشهيد|الجنازه)|ننعي|نعي)\b|"
+    # Round 9: "يلقون نظرة الوداع الأخيرة عليهما، عقب ارتقائهما خلال التصدي لهجوم
+    # مستوطنين" was served as a settler attack. The last look is the subject
+    # wherever it stands.
+    r"نظره\s+الوداع"))
+_CRIMINAL_RE = re.compile(_norm_pat(r"(?<!\w)(?:ال)?جنائي(?:ه)?(?!\w)"))
 _RELEASE_RE = re.compile(_norm_pat(r"^\W*(?:\S+\s+){0,4}?(?:[يت]فرج\w*\s+عن|الافراج\s+عن)"
                                    r"|(?<!\w)(?:ال)?اسير(?:ه)?\s+(?:ال)?محرر(?:ه)?(?!\w)"
                                    r"|بعد\s+سنوات\s+من\s+الاعتقال"))
 _HARM_RE = re.compile(_norm_pat(r"(بالضرب|تنكيل|اصاب|إصاب|استشه|ارتقي|ارتقى)"))
+# Round 9 (arrest 0.55): eight of twenty were not arrests. A release with the
+# verb past the head of the text ("عامين من الاعتقال .. قوات الاحتلال تفرج عن
+# الاسير"), time served ("بعد 6 اشهر من الاعتقال", "يعانق الحريه"), custody that
+# continues ("تواصل اعتقال", "مضي علي اعتقاله", "اثناء اعتقاله"), and a police
+# case ("اعتقال مشتبه به"). None is read as a release when the text also
+# CONJUGATES the arrest ("اعتقلت", "تعتقل"): that is a fresh arrest told with
+# its history.
+_ARREST_VERB_RE = re.compile(_norm_pat(r"(?<!\w)[وف]?[اتين]عتقل\w*"))
+_NOT_AN_ARREST_RE = re.compile(_norm_pat(
+    r"((?:[يت]فرج\w*|افرج\w*)\s+عن|[يت]عانق\w*\s+(?:ال)?حريه|"
+    r"(?:عام|عامين|شهر|شهرين|اشهر|شهور|سنوات|اعوام|يوما|ايام)\s+من\s+(?:ال)?اعتقال|"
+    r"[يت]واصل\w*\s+اعتقال|مضي\s+علي\s+اعتقال\w*|(?:اثناء|خلال)\s+(?:اعتقال|احتجاز)(?:ه|ها|هم)(?!\w)|"
+    r"اعتقال\s+(?:ال)?مشتبه)"))
 _ACCIDENT_RE = re.compile(_norm_pat(r"حادث\s+(?:سير|مروري|طرق|تصادم)"))
 _REARREST_RE = re.compile(_norm_pat(
     r"[اتين]عتقل\w*\s+(?:\S+\s+){0,3}?(?:ال)?اسير(?:ه)?\s+(?:ال)?محرر"))
@@ -680,6 +726,13 @@ _SIEGE_WORDS_RE = re.compile(_norm_pat(r"(حصار|محاصر)"))
 _RAID_VERB_RE = re.compile(_norm_pat(r"([اتين]?قتح\w*|[تي]?داهم\w*|مداهم\w*|توغل\w*)"))
 _ARMY_RE = re.compile(_norm_pat(r"(قوات|جيش|جنود|الاحتلال|شرطه|قوه)"))
 _SETTLER_RE = re.compile(_norm_pat(r"(مستوطن|قطعان)"))
+_DEMOLISH_STEM_RE = re.compile(_norm_pat(r"هدم"))
+# The demolition conjugated or begun: يهدم / تهدم / هدمت, "شرعت … بهدم". Not
+# the noun after a preposition (بهدم، لهدم) and not the future (ستهدم).
+_DEMOLITION_ACT_RE = re.compile(_norm_pat(
+    r"(?<!\w)[وف]?(?:[يت]هدم\w*|هدمت|هدموا)(?!\w)|"
+    r"(?<!\w)[وف]?(?:شرع\w*|[يت]شرع\w*|باشر\w*|[يت]باشر\w*|بدا\w*|[يت]بدا\w*)\s+(?:\S+\s+){0,3}?ب?(?:ال)?هدم|"
+    r"(?:عمليه|عمليات)\s+(?:ال)?هدم"))
 _HOMES_LEVELLED_RE = re.compile(_norm_pat(
     r"(?:تجريف|[يت]جرف\w*|جرفت)\s+(?:\S+\s+){0,3}?(?:مساكن|منازل|منزل|مسكن|بركسات|بركس|بيوت(?!ا?\s+بلاستيك)ا?)"))
 
@@ -1097,6 +1150,11 @@ def read(text: str | None) -> NewsReading:
     norm = normalize(text)
 
     rej = _first_match(norm, _REJECT_RE)
+    # A demolition carried out is an act, whatever notices the text also
+    # mentions ("شرعت آليات الاحتلال بهدم نحو 40 منشأة كانت قد تلقت إخطارات
+    # سابقة بالهدم"). The notice reject stands only where nothing was demolished.
+    if rej and rej[0] == "notice not act" and _DEMOLITION_ACT_RE.search(norm):
+        rej = _first_match(norm, [(l, r) for l, r in _REJECT_RE if l != "notice not act"])
     if rej:
         return NewsReading(verdict="rejected", reject_reason=rej[0], matched=rej[1])
 
@@ -1130,6 +1188,14 @@ def read(text: str | None) -> NewsReading:
                            matched=_RELEASE_RE.search(norm).group(0)[:60])
     # a traffic accident is not an occupation injury (a road it closes is
     # still a closure, so only these two types);
+    if itype == "arrest" and not _ARREST_VERB_RE.search(norm) and not _REARREST_RE.search(norm):
+        na = _NOT_AN_ARREST_RE.search(norm)
+        if na:
+            return NewsReading(verdict="rejected", reject_reason="release or custody, not an arrest",
+                               matched=na.group(0)[:60])
+    if itype in ("injury", "death") and _CRIMINAL_RE.search(norm):
+        return NewsReading(verdict="rejected", reject_reason="criminal case",
+                           matched=_CRIMINAL_RE.search(norm).group(0)[:60])
     if itype in ("injury", "death") and _ACCIDENT_RE.search(norm):
         return NewsReading(verdict="rejected", reject_reason="traffic accident",
                            matched=_ACCIDENT_RE.search(norm).group(0)[:60])
@@ -1148,6 +1214,11 @@ def read(text: str | None) -> NewsReading:
     # homes bulldozed are a demolition, whatever the verb.
     if itype == "land_levelling" and _HOMES_LEVELLED_RE.search(norm):
         itype = "demolition"
+    # Round 9: "جرافات الاحتلال تقتلع عشرات اشجار الزيتون", "جرافات الاحتلال
+    # تشرع بتوسيع الشارع" were demolitions because the pattern takes the word
+    # جرافات. Bulldozers with no هدم anywhere are working land.
+    if itype == "demolition" and inc[1].strip() == "جرافات" and not _DEMOLISH_STEM_RE.search(norm):
+        itype = "land_levelling"
     # a reopening is not a closure (audit F039, see _reopening).
     if itype == "closure":
         reopened = _reopening(norm)

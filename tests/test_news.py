@@ -670,3 +670,68 @@ def test_classifier_02_one_long_token_cannot_stall_the_reader(stem):
     t0 = time.perf_counter()
     read(stem * (4000 // len(stem)))
     assert time.perf_counter() - t0 < 1.0
+
+
+# ── classifier 1.11.0: round 9 read row by row (2026-10-11) ──────────────────
+
+@pytest.mark.parametrize("text, why", [
+    ("🥀🕊 عامين من الاعتقال تُلخص حالة السجون ! قوات الاحتلال تفرج عن الأسير نديم أبو الرب من مدينة طولكرم في الضفة الغربية.",
+     "release or custody, not an arrest"),
+    ("لحظة لقاء الأسير محمد منير من قرية كفر مالك، شمال شرق رام الله بوالدته وعائلته بعد 6 أشهر من الاعتقال في سجون الاحتلال.",
+     "aftermath"),
+    ("أجهزة السلطة تواصل اعتقال الشاب محمد البالي من جنين في سجن الجنيد بمدينة نابلس منذ أكثر من عامين",
+     "release or custody, not an arrest"),
+    ("الاحتلال يحوّل الصحفي محمد عوض من رام الله إلى الاعتقال الإداري لمدة 4 أشهر.", "court"),
+    ("مصادر عبرية: العثور على جثمان المواطنة فاطمة الرجبي من القدس بعد اختفائها واعتقال مشتبه به في القضية، والتحقيقات جارية.",
+     "release or custody, not an arrest"),
+])
+def test_time_served_custody_and_rulings_are_not_arrests(text, why):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == why, r
+
+
+def test_a_fresh_arrest_told_with_its_history_is_still_an_arrest():
+    r = read("قوات الاحتلال تعتقل الشاب أمير بدارنه من بلدة يعبد غرب جنين وتواصل اعتقال شقيقه منذ شهور")
+    assert r.verdict == "incident" and r.incident_type == "arrest", r
+
+
+@pytest.mark.parametrize("text", [
+    "عائلة وأصدقاء الشهيد الطفل سليم فقها يلقون نظرة الوداع الأخيرة على جثمانه، بعد استشهاده برصاص الاحتلال قرب بلدة سنجل شمال رام الله.",
+    "أقارب الشهيدين يلقون نظرة الوداع الأخيرة عليهما، عقب ارتقائهما خلال التصدي لهجوم مستوطنين على بلدة المغير شمال شرق رام الله، أمس.",
+    "الأسير المحرر يامن نعسان من قرية المغير شرق رام الله يعانق الحرية بعد 8 أشهر من الاعتقال ليفجع باستشهاد ابن عمه.",
+])
+def test_the_last_look_is_a_funeral_whatever_else_the_text_says(text):
+    r = read(text)
+    assert r.verdict == "rejected", r
+
+
+@pytest.mark.parametrize("text", [
+    "قوات الجيش الإسرائيلي تنذر بهدم مدرسة خلة الضبع في مسافر يطا بالخليل جنوبي الضفة الغربية",
+    "الاحتلال يخطر المواطن عبد السلام عامر بهدم أربعة بركسات في جنين، بينها إسطبلان للخيل",
+    "قوات الاحتلال توزع إخطارات تقضي بهدم عدد من المنازل والمنشآت في قرية كفر صور، جنوب طولكرم.",
+    "سلطات الاحتلال تجبر عائلة بدران على تفريغ بنايتهم السكنية في حي البستان ببلدة سلوان تمهيدا لهدمها",
+    "قائد جيش الإحتلال بالضفة الغربية يوقع على قرار هدم منزل الشهيد فاروق رمضان من قرية تل في نابلس",
+])
+def test_a_warning_an_order_and_a_notice_with_words_between_are_notices(text):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == "notice not act", r
+
+
+def test_bulldozers_uprooting_trees_are_land_work_not_a_demolition():
+    r = read("مصادر محلية| جرافات الاحتلال تقتلع عشرات أشجار الزيتون من أراضي المواطنين في قرية جبع شمال القدس")
+    assert r.verdict == "incident" and r.incident_type == "land_levelling", r
+    r = read("جرافات الاحتلال تهدم خيام ومنشآت زراعية في منطقة الرأس الأحمر بالأغوار الشمالية في طوباس")
+    assert r.verdict == "incident" and r.incident_type == "demolition", r
+
+
+@pytest.mark.parametrize("text, why", [
+    ("مع اقتراب عيد العرش التوراتي، تتصاعد التحذيرات المقدسية من اقتحامات واسعة وطقوس تستهدف المسجد الأقصى المبارك في القدس",
+     "commentary"),
+    ("الشاب علاء مرشود يدير كشكًا صغيرًا لإعالة أسرته، بعد أن بُترت يده جراء إصابته برصاص الاحتلال في جنين عام 2023",
+     "history"),
+    ("عاجل عملية طعن جنائية وقعت في حاجز شعفاط في القدس وصلت قوات الأمن إلى الموقع وهناك إصابة بالمكان",
+     "criminal case"),
+])
+def test_what_is_expected_what_is_past_and_what_is_criminal(text, why):
+    r = read(text)
+    assert r.verdict == "rejected" and r.reject_reason == why, r
