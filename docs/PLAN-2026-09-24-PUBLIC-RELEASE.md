@@ -879,3 +879,24 @@ matcher let almost none through. @hawajezaldefa (2,387 members) is a candidate f
 (6) THE POLLER is still v1's. What is ready: the reader takes a road channel's messages from claim as soon as v2's poller
 carries it (source.feeds_roads; the poller now records what a message replies to), so the move is one line in .env.
 Not done by me: it puts fifteen more channels, 4,000 messages a day, on agent2 (hard rule 3).
+
+2026-10-11 19:10 UTC · the road register's first names, researched · decided on evidence, written by Zaid (HANDS §13b) ·
+proof: 097 applied and the backfill run by Zaid at ~16:15 UTC (280,007 messages read, 85,365 facts written on 248
+places, 127,191 left as the importer wrote them, none written twice; known share 0.523 at 16:24). The ten names the
+backfill counted most, each tested two ways: (a) is it listed beside a registered name in the same message with its own
+status, (b) over 73 days, when the name is not open, is a registered row also not open within 45 minutes.
+ALIASES: مردا الغربي = بوابة مردا الغربية (1.00 of 26; 0.00 against the eastern gate); الهجرة الترابية = الهجرة (1.00 of
+157); سنجل الشرقي = سنجل (0.97 same state over 489; "مدخل سنجل الشرقي" is the same bulletin slot under a newer
+wording, and the two never appear as separate items); بوابة حوارة البلد = بوابة حوارة (0.57 against 0.33 and 0.29
+for the other two Huwara rows; same slot). OWN PLACES: عطارة القديمة matches none of the three Atara rows (0.46,
+0.42, 0.06); عورتا البلد 0.27; عين سينيا البلد 0.23; دير شرف البلد and حزما البلد are listed beside their checkpoint
+with a different status (90 of 198 and 12 of 13 messages). LOCATED: دوار الطنيب at OSM roundabout way 1202428713
+(32.26538, 35.16796) on Road 60: no map names it, but the channels route "قدوميم – دوار الطنيب – حاجز عناب" 142
+times and put it between مفرق جيت and دوار دير شرف, and the register's دير شرف sits on the next roundabout east
+("כיכר שומרון" in OSM). المهلل is a neighbourhood of Ni'lin (WAFA, 8 Aug 2026: "حاجز قرب منطقة المهلل في نعلين";
+Palestine Remembered: "حي المهلل - نعلين"), between Ni'lin and Deir Qaddis by the channels' own lines; no map gives
+the gate. NOT FOUND: the point of بوابة عطارة القديمة and of مدخل سلفيت الغربي. Those three go in at their town's
+centre, labelled approx-anchor, until pinned. ops/road_register.py gained --anchor, --approx, --also and --pin; the
+whole block was run on a scratch copy and 18 real messages then read against it land on the intended rows.
+A mistake of mine the same hour: `ops.watchdog --dry-run` on a read-only connection crashed on its own INSERT and
+pushed a real `watchdog:self` alarm at 16:21 UTC; the 16:24 run resolved it.
