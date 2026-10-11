@@ -39,6 +39,16 @@ THE SCORE
 At the level of one reading = (checkpoint, direction, value): precision of v1's
 readings, recall of the gold's registered readings, and — for checkpoints both
 found — whether the value agrees. v1's blank direction reads as `both`.
+
+THE READER THAT HAD TO BEAT IT (2026-10-11)
+Organ D was to be a model. What beat the control first is not one: v2's own
+deterministic reader (cascade/road_message.py over resolve/road_names.py),
+scored here by the same count — `score_reader`. One caution travels with its
+number: this gold was READ on 2026-10-11 to find the names the register lacked
+(migration 097), so the reader's recall on it is the recall of a register
+tuned on these 200 messages. Its precision, and v1's numbers, are not touched
+by that. A fresh draw (`--sample`), read by a seat that has not seen the
+register, is the unbiased figure and is owed.
 """
 from __future__ import annotations
 
@@ -255,6 +265,77 @@ def score(gold_rows: list[dict], sample_rows: list[dict],
     }
 
 
+def reader_triples(text: str, lex) -> set[tuple[str, str, str]]:
+    """What v2's reader says of a message, as (place, direction, value). An
+    absence ("no army here") is no reading in this gold and is left out."""
+    from cascade.road_message import read_message
+    out = set()
+    for r in read_message(text, lex):
+        if r.modality != "assertion":
+            continue
+        for f in r.facts:
+            if f.axis != "absence":
+                out.add((f"place:{r.place_id}", _norm_dir(f.direction), f.value))
+    return out
+
+
+def score_reader(gold_rows: list[dict], sample_rows: list[dict], lex, kmap: dict) -> dict:
+    """v2's reader against the same gold, by the same count as `score`.
+
+    `kmap` is required: the gold names checkpoints by v1's key and the reader
+    by v2's place. A reading on a place v1's registry never held cannot be in
+    this gold (the seat labelled such names null), so it is counted apart and
+    kept out of the precision — it is neither confirmed nor refuted here.
+    """
+    text_of = {r["gold_id"]: r["text"] for r in sample_rows}
+    in_v1 = set(kmap.values())
+    tp = fp = fn = found = gold_keys = value_ok = outside = 0
+    for g in gold_rows:
+        if g["gold_id"] not in text_of:
+            continue
+        G = _triples(g.get("readings") or [], gold=True, kmap=kmap)
+        V = reader_triples(text_of[g["gold_id"]], lex)
+        outside += sum(1 for k, _, _ in V if k not in in_v1)
+        V = {t for t in V if t[0] in in_v1}
+        tp += len(G & V)
+        fp += len(V - G)
+        fn += len(G - V)
+        vk = {(k, d): v for k, d, v in V}
+        gold_keys += len({(k, d) for k, d, _ in G})
+        for k, d, v in G:
+            if (k, d) in vk:
+                found += 1
+                value_ok += vk[(k, d)] == v
+    return {
+        "subject": "roads", "parser": "v2 reader (cascade/road_message.py)",
+        "scored": len(text_of),
+        "reading_precision": _rate(tp, tp + fp), "reading_recall": _rate(tp, tp + fn),
+        "checkpoint_recall": _rate(found, gold_keys),
+        "value_agreement_when_found": _rate(value_ok, found),
+        "readings_on_places_outside_v1_registry": outside,
+        "counts": {"tp": tp, "fp": fp, "fn": fn},
+        "names_in_register": len(lex.names),
+        "caution": "the register was extended on 2026-10-11 from a reading of this gold; "
+                   "recall here is not an unbiased figure until a fresh sample is read",
+        "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+
+def _reader_score(gold_rows: list[dict], sample_rows: list[dict]) -> dict | None:
+    """The reader's score against the register as it stands; None with no database."""
+    kmap = key_map()
+    if not kmap:
+        return None
+    try:
+        from resolve.db import connect
+        from resolve.road_names import load
+        with connect() as c, c.cursor() as cur:
+            lex = load(cur)
+    except Exception:                                      # noqa: BLE001
+        return None
+    return score_reader(gold_rows, sample_rows, lex, kmap)
+
+
 def load_jsonl(p: Path) -> list[dict]:
     return [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
 
@@ -266,13 +347,25 @@ def contract_scorer(gold_rows: list[dict]) -> list[dict]:
         return [{"subject": "roads", "version": "v1-parser", "serving": True,
                  "servable": None, "scores": [], "gold": str(GOLD.relative_to(ROOT)),
                  "verdict": "gold present but its sample file is missing"}]
-    s = score(gold_rows, load_jsonl(SAMPLE), key_map())
-    return [{"subject": "roads", "version": "v1-parser", "serving": True,
+    sample = load_jsonl(SAMPLE)
+    s = score(gold_rows, sample, key_map())
+    rows = [{"subject": "roads", "version": "v1-parser", "serving": True,
              "servable": None, "gold": str(GOLD.relative_to(ROOT)), "scores": [s],
              "verdict": (f"control measured on {s['scored']} messages: reading precision "
                          f"{s['reading_precision']}, recall {s['reading_recall']}; "
                          f"{s['gold_readings_unregistered']} gold readings name checkpoints "
                          f"v1 does not hold")}]
+    r = _reader_score(gold_rows, sample)
+    if r:
+        beats = (r["reading_precision"] or 0) > (s["reading_precision"] or 0) and \
+                (r["reading_recall"] or 0) > (s["reading_recall"] or 0)
+        rows.append({"subject": "roads", "version": "v2-reader", "serving": True,
+                     "servable": beats, "gold": str(GOLD.relative_to(ROOT)), "scores": [r],
+                     "verdict": (f"reading precision {r['reading_precision']}, recall "
+                                 f"{r['reading_recall']} against the control's "
+                                 f"{s['reading_precision']} / {s['reading_recall']}; "
+                                 + r["caution"])})
+    return rows
 
 
 def main(argv=None) -> int:
@@ -284,7 +377,11 @@ def main(argv=None) -> int:
     if a.sample:
         write_sample()
     if a.score:
-        s = score(load_jsonl(GOLD), load_jsonl(SAMPLE), key_map())
+        gold, sample = load_jsonl(GOLD), load_jsonl(SAMPLE)
+        s = score(gold, sample, key_map())
+        r = _reader_score(gold, sample)
+        if r:
+            s["v2_reader"] = r
         RESULT.write_text(json.dumps(s, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(s, ensure_ascii=False, indent=2))
     if a.show and RESULT.exists():

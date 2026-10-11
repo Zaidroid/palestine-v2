@@ -321,6 +321,10 @@ def store(channel: str, messages, media_refs: dict | None = None) -> int:
             code, detector = detect_quietly(text)
             attrs = {"channel": channel, "views": getattr(m, "views", None),
                      "fwd_from": _fwd_id(m),
+                     # A road channel's "سالك" answers the message it replies
+                     # to; the road reader needs to know which (2026-10-11).
+                     "reply_to": (str(getattr(m, "reply_to_msg_id", None))
+                                  if getattr(m, "reply_to_msg_id", None) else None),
                      # The image ingester finds its work by this key, so
                      # it is on the CLAIM rather than only in bronze.
                      "media_ref": media_refs.get(getattr(m, "id", None)),

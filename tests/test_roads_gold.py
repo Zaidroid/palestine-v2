@@ -71,3 +71,24 @@ def test_alias_keys_of_one_place_are_one_checkpoint():
     unified = rg.score(gold, sample, {"حاجز قلنديا": "place:7", "قلنديا": "place:7"})
     assert raw["counts"] == {"tp": 0, "fp": 1, "fn": 1}
     assert unified["counts"] == {"tp": 1, "fp": 0, "fn": 0}
+
+
+def test_the_reader_is_scored_by_the_same_count_and_outside_readings_kept_apart():
+    """A reading on a place v1's registry never held is neither right nor wrong
+    in this gold: it is counted apart, not as a false positive."""
+    from resolve.road_names import assemble
+    places = [(1, None, True, "عطارة", "Atara", "عطاره", []),
+              (2, None, True, "عين سينيا", "Ein Sinya", "عين_سينيا", []),
+              (3, None, True, "المهلل", "Al-Muhallal", None, [])]       # not in v1's registry
+    lex = assemble(places, [], [], {})
+    kmap = {"عطاره": "place:1", "عين_سينيا": "place:2"}
+    sample = [{"gold_id": "a:1", "text": "عطاره وعين سينيا سالكات\nالمهلل مسكر"},
+              {"gold_id": "a:2", "text": "عطاره حاجز للخارج"}]
+    gold = [_gold("a:1", [_r("عطاره", "both", "open"), _r("عين_سينيا", "both", "closed"),
+                          {"name": "المهلل", "canonical_key": None, "direction": "both",
+                           "kind": "flow", "value": "closed"}]),
+            _gold("a:2", [_r("عطاره", "outbound", "idf", kind="presence")])]
+    s = rg.score_reader(gold, sample, lex, kmap)
+    assert s["counts"] == {"tp": 2, "fp": 1, "fn": 1}        # عين سينيا: open said, closed read
+    assert s["readings_on_places_outside_v1_registry"] == 1
+    assert s["checkpoint_recall"] == 1.0 and s["value_agreement_when_found"] == round(2 / 3, 3)

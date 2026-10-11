@@ -25,6 +25,14 @@ WHAT GETS WRITTEN, AND WHY TWICE
                       sighting decays on its own clock instead of erasing the
                       answer to "can I get through?".
 
+SINCE 2026-10-11: THE FACTS ARE THE V2 READER'S
+ingest/sources/roads.py reads the raw messages itself — its own matcher over
+v2's own register — and writes checkpoint_flow and the presence kinds. While
+it is on (migration 097 applied, ROADS_READER not "off") this importer writes
+ONLY the archival row: v1's verdict on every update, which is now the control
+the v2 reader is measured against, not the gate a report has to pass. With
+the reader off this module behaves exactly as it did.
+
 ATTRIBUTION IS PER CHANNEL
 Every observation used to be credited to one synthetic source, which made
 `independent_sources` a constant 1 and corroboration inert. Each report is now
@@ -145,7 +153,7 @@ def _v1_identity(channel, msg_id, key, v1dir, raw_line, observed) -> tuple:
 def import_updates(full: bool = False) -> dict:
     stats = {"read": 0, "legacy": 0, "flow": 0, "presence": 0, "absence": 0,
              "questions": 0, "unparsed": 0, "skipped_no_place": 0, "already_imported": 0,
-             "unmatched_keys": set()}
+             "unmatched_keys": set(), "facts_left_to_v2": False}
     rows: list[tuple] = []
 
     with connect() as conn, conn.cursor() as cur:
@@ -158,6 +166,8 @@ def import_updates(full: bool = False) -> dict:
         cur.execute(BELIEF_LOCK_SQL)
         places = _place_map(cur)
         cache = _channel_sources(cur)
+        from ingest.sources import roads
+        v2_reads = stats["facts_left_to_v2"] = roads.enabled(cur)
 
         if full:
             # Rebuild from v1, which is the source of truth and is untouched by
@@ -226,6 +236,8 @@ def import_updates(full: bool = False) -> dict:
             if r.modality == "unparsed":
                 stats["unparsed"] += 1
                 continue
+            if v2_reads:
+                continue          # the v2 reader writes the facts, from the message
 
             # 2. Re-parsed facts, one row per (direction, axis, value).
             for f in r.facts:
@@ -239,6 +251,8 @@ def import_updates(full: bool = False) -> dict:
                 value = (f.value if f.axis == "flow"
                          else "absent" if f.axis == "absence" else "present")
                 fa = dict(attrs, clause=f.clause, axis=f.axis)
+                if f.tag:
+                    fa["sighting"] = f.tag
                 rows.append((pid, kind, value, raw_line and raw_line[:200], observed,
                              source_id, f.confidence, f.direction, f.direction_explicit,
                              "assertion", json.dumps(fa, ensure_ascii=False)))
@@ -333,12 +347,16 @@ def main() -> int:
     if not (a.cadence or a.state_only):
         s = import_updates(a.full)
         print(f"read {s['read']} v1 updates · archived {s['legacy']} · "
-              f"flow {s['flow']} · presence {s['presence']}")
+              + ("facts left to the v2 reader" if s["facts_left_to_v2"]
+                 else f"flow {s['flow']} · presence {s['presence']}"))
         print(f"  excluded from belief: {s['questions']} questions, "
               f"{s['unparsed']} unreadable (both retained)")
         if s["skipped_no_place"]:
             print(f"  skipped {s['skipped_no_place']} with no matching place "
                   f"(e.g. {', '.join(s['unmatched_keys'][:5])})")
+        if s["facts_left_to_v2"]:
+            from ingest.sources import roads
+            roads.main([])
     if not a.cadence:
         r = refresh_state()
         print(f"belief refreshed: {r['rows']} rows")
