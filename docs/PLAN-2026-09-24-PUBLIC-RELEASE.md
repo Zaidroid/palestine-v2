@@ -993,3 +993,31 @@ read up to 21:00. The four entries I stamped 17:40, 19:10 (the register's first 
 carry Hebron time (UTC+3): they were written at about 14:40, 16:10, 16:40 and 18:00 UTC. The times quoted INSIDE
 them (16:15, 16:21, 16:24 UTC) are real UTC. The four entries of 19:10 UTC above are stamped from the clock.
 
+2026-10-11 19:20 UTC · databank item 3, funding counted twice · fixed in the loader; live with the nightly sync ·
+proof: UN FTS keeps a flow's id while its date moves and its status goes from commitment to paid; the dataset's
+identity holds both, so a revision was a second current row. `identity.revises_by: flow_id` (ingest/databank.py,
+ingest/spec.py, db/mappings/funding.yaml): a held row the run did not emit, whose number the run emitted under another
+identity, is closed, with the ids in the run report for rollback. `ingest.databank funding --dry-run` on production:
+10,341 records, all held, 70 would close (27 in paid, 43 in commitment; the audit's 26 + 27 + 17). The same load run
+for real on a scratch copy: 70 closed, no flow id left with two current rows, paid 17.045 → 15.748 B USD, commitment
+5.990 → 5.801 B, a second run closes nothing. tests/test_databank.py, test_engine.py, test_spec_format.py,
+test_ingest_integrity.py 115 green. Commit 5df776a. The audit's "$97.3 M inside paid" was the excess where one flow
+sat twice under paid; the larger fall is one flow FTS now lists as a commitment of 1.08 B that we still held as
+1.2 B paid.
+READ, NOT YET WRITTEN: item 1, the yearly casualties figure has carried its warning since 086; the 30 breakdown rows
+(casualties.region.*, .governorate.*, .demographic.*, .weapon.*) carry none, dataset 146's attrs are empty, and only
+/v2/databank/{category} attaches warnings (series, compare, correlate do not). Item 2, v1_infrastructure_tech4palestine
+holds 2,920 rows at place 15 (Gaza governorate, in the store since 2026-06-25) and the same 2,920 at place 1 (Gaza
+Strip, ingested 2026-08-07); the spec's identity includes place_id and was "measured injective" against rows that
+already held both; fix = close the place-15 copy, measure_kind cumulative, place_grain region, in the spec's registry
+rule too. Item 4, `generation: complete` exists and refugees, conflict, FAO DIEM and UNHCR declare it; the roster does
+not.
+
+2026-10-11 19:20 UTC · classifier 1.11.0, the re-read · done by the timer at 19:13 UTC · proof: claim_classification
+is 44,360 rows at 1.11.0 (incident 11,969, rejected 20,649, unclear 11,742; at 1.10.0: 12,116 / 20,355 / 11,887).
+Believed events 7,074 → 6,984, retracted 48 → 208, none deleted; 6,808 of the 6,984 are older than a day and kept
+their ids. Since 1 July the stream reads raid 2,798, settler_attack 1,751, arrest 443, shooting 422, closure 392,
+injury 330, demolition 281, siege 191, land_levelling 185, death 170. Round 10 is not drawn: owed. Also checked and
+still open: none of the 15 incident channels carries an independence group (learn/news_independence.py exists).
+Work stopped here at Zaid's word; the audit page is version 6 with the state and a five-series plan for shorts.
+
