@@ -238,3 +238,12 @@ def test_ingest_f218_the_cursor_file_is_replaced_not_truncated(monkeypatch, tmp_
     import inspect
     assert telegram_poller._load_state() == {"a": 5}
     assert "os.replace" in inspect.getsource(telegram_poller._save_state)
+
+
+def test_media_channels_come_from_env_and_default_to_none():
+    """Photos are archived only for channels `.env` names (2026-10-11: the
+    board's photo cards). An empty or missing line archives nothing."""
+    assert telegram_poller.media_channels({}) == set()
+    assert telegram_poller.media_channels({"V2_TELEGRAM_MEDIA_CHANNELS": ""}) == set()
+    assert telegram_poller.media_channels(
+        {"V2_TELEGRAM_MEDIA_CHANNELS": " @PalhubAppRoad, ,other "}) == {"palhubapproad", "other"}

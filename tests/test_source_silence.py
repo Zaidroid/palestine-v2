@@ -86,4 +86,42 @@ def test_the_sources_job_is_expected_and_on_the_health_page():
 def test_the_real_query_runs_and_every_verdict_is_known():
     rows = W.source_checks(record=False)
     assert rows[-1]["name"] == "sources"
-    assert all(r["status"] in ("silent", "ok") for r in rows)
+    assert all(r["status"] in ("silent", "narrowed", "ok") for r in rows)
+
+
+# ── reach: a source that still speaks, about fewer places ────────────────────
+
+def _reach(key, today, base):
+    return [{"key": key, "back": 0, "reach": today}] + \
+           [{"key": key, "back": i + 1, "reach": v} for i, v in enumerate(base)]
+
+
+def test_palhub_as_measured_on_2026_10_04_has_narrowed():
+    # 164 places x 24 h as text until 3 October; 98 places after six areas moved
+    # into photo cards. The channel posted more messages, not fewer.
+    base = [3936, 3790, 3782, 3810, 3936, 3700, 3782] * 4
+    v = W.classify_reach(_reach("tg_palhubapproad", 2352, base))[0]
+    assert v["status"] == "narrowed" and v["fault"]
+    assert "fewer places" in v["detail"] and "2,352" in v["detail"]
+
+
+def test_a_crowd_channels_quiet_friday_is_not_a_narrowing():
+    # tg_road_jehad as measured: median 693, robust spread 362.
+    base = [693, 1100, 320, 980, 410, 700, 1210, 250, 690, 880, 300, 760, 1050, 420] * 2
+    v = W.classify_reach(_reach("tg_road_jehad", 380, base))[0]
+    assert v["status"] == "ok" and not v["fault"]
+
+
+def test_a_small_source_is_left_to_the_silence_rule():
+    assert W.classify_reach(_reach("tg_small", 0, [40] * 28)) == []
+
+
+def test_a_regular_source_on_an_ordinary_day_is_ok():
+    v = W.classify_reach(_reach("tg_board", 3700, [3782] * 28))[0]
+    assert v["status"] == "ok"
+
+
+def test_a_source_missing_days_in_its_month_counts_them_as_zero():
+    rows = [{"key": "tg_new", "back": 0, "reach": 50}] + \
+           [{"key": "tg_new", "back": i, "reach": 4000} for i in range(1, 6)]
+    assert W.classify_reach(rows) == []          # five days of history: median is 0

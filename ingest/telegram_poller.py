@@ -102,7 +102,22 @@ RECONNECT_ATTEMPTS = 6
 # 2026-09-23 and nothing reads the images, yet the poller kept downloading
 # every @palhubappfuel photo — hundreds of GetFile requests a day on the
 # scarcest account for empty claims. Add a channel here only with a reader.
+#
+# The list is now read from `.env` (`V2_TELEGRAM_MEDIA_CHANNELS`, comma
+# separated) so that turning a channel's photos on or off is one line and one
+# restart, both Zaid's hand, and never a code change. It exists again because
+# of 2026-10-03: @palhubapproad moved six of its twelve areas (Hebron,
+# Bethlehem, Salfit, Jericho, Tubas, "other") out of its text bulletins and
+# into photo cards, 14 a cycle, and 66 checkpoints lost their only regular
+# reader. The cards have to be on disk before a reader can be written against
+# them; the cost is about 670 photo downloads a day on this account.
 MEDIA_CHANNELS: set[str] = set()
+
+
+def media_channels(env: dict[str, str]) -> set[str]:
+    """Channels whose photos are archived, as `.env` names them."""
+    return {c.strip().lstrip("@").lower()
+            for c in (env.get("V2_TELEGRAM_MEDIA_CHANNELS") or "").split(",") if c.strip()}
 
 # One card is ~15 KB. A cap exists so a channel that starts posting video
 # cannot fill the disk between watchdog runs — the capacity check is the
@@ -497,6 +512,9 @@ async def run(once: bool = False, backfill: int = 0) -> int:
     if not channels:
         print("V2_TELEGRAM_CHANNELS is empty")
         return 1
+    MEDIA_CHANNELS.update(media_channels(e))
+    if MEDIA_CHANNELS:
+        print(f"Archiving photos for: {', '.join(sorted(MEDIA_CHANNELS))}")
 
     from ingest.session_lock import SessionBusy, acquire
     try:

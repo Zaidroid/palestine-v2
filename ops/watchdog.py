@@ -1062,6 +1062,68 @@ def summarise_sources(verdicts: list[dict]) -> dict:
             "detail": detail}
 
 
+# ── a source that still speaks, about fewer places ───────────────────────────
+# Silence is not the only way to lose a source. On 2026-10-03 at 19:00 UTC
+# PalHub's board moved six of its twelve areas out of its text bulletins and
+# into photo cards. The channel never went quiet (it posted MORE messages), so
+# the silence rule above stayed green; 66 checkpoints lost their only regular
+# reader and the map's known share fell from 0.66 to 0.50 overnight. The
+# collapse rule did not fire either, because it waits for a fall by half.
+# Nobody was told for eight days.
+#
+# So each source is also judged on its REACH: place-hours covered in the last
+# 24 hours (distinct place x hour, every modality — a quarantined reading is
+# still the source speaking) against its own previous 28 days. A regular source
+# has a tight spread and a 40 % fall is far outside it; a crowd channel's
+# spread is wide and an ordinary quiet day stays inside it. Both tests must
+# hold: below the median by REACH_MADS robust deviations AND below REACH_RATIO
+# of it. Sources under REACH_MIN place-hours a day are too small to judge this
+# way and are left to the silence rule. Back-tested over 40 days on the four
+# sources large enough: it fires on PalHub from 4 October on and once elsewhere
+# (a day v1 delivered nothing from a channel), nowhere else.
+REACH_DAYS = 28
+REACH_MIN = 100
+REACH_MADS = 5.0
+REACH_RATIO = 0.8
+REACH_SQL = f"""
+SELECT s.key, floor(extract(epoch FROM now() - o.observed_at) / 86400)::int AS back,
+       count(DISTINCT (o.place_id, date_trunc('hour', o.observed_at))) AS reach
+  FROM state_observation o JOIN source s USING (source_id)
+ WHERE o.observed_at > now() - interval '{REACH_DAYS + 1} days'
+   AND s.active AND s.kind IN ('telegram', 'rss')
+ GROUP BY 1, 2
+"""
+
+
+def classify_reach(rows: list[dict]) -> list[dict]:
+    """One verdict per source large enough to judge (pure, testable without a
+    DB). `rows` are (key, back, reach): back 0 is the last 24 hours."""
+    by: dict[str, dict[int, int]] = {}
+    for r in rows:
+        by.setdefault(r["key"], {})[int(r["back"])] = int(r["reach"])
+    out = []
+    for key, days in sorted(by.items()):
+        base = sorted(days.get(i, 0) for i in range(1, REACH_DAYS + 1))
+        med = (base[len(base) // 2 - 1] + base[len(base) // 2]) / 2
+        if med < REACH_MIN:
+            continue
+        dev = sorted(abs(x - med) for x in base)
+        mad = 1.4826 * (dev[len(dev) // 2 - 1] + dev[len(dev) // 2]) / 2
+        now_ = days.get(0, 0)
+        row = {"check": "source", "name": key, "age_minutes": None,
+               "reach": now_, "reach_median": round(med)}
+        if now_ < med - REACH_MADS * mad and now_ < REACH_RATIO * med:
+            out.append({**row, "status": "narrowed", "fault": True,
+                        "detail": f"still reporting, about fewer places: {now_:,} place-hours in the "
+                                  f"last day against its own median of {med:,.0f} over {REACH_DAYS} "
+                                  f"days ({now_ / med:.0%}); a section it stopped sending or a "
+                                  f"format the reader no longer takes"})
+        else:
+            out.append({**row, "status": "ok", "fault": False,
+                        "detail": f"reach {now_:,} place-hours, median {med:,.0f}"})
+    return out
+
+
 def source_checks(record: bool = True) -> list[dict]:
     """Per-source silence, summarised: one row per silent source (a fault,
     alarmed as watchdog:source:<key>) and one summary row naming the rest.
@@ -1073,19 +1135,29 @@ def source_checks(record: bool = True) -> list[dict]:
     with psycopg.connect(dsn(), row_factory=dict_row) as conn, conn.cursor() as cur:
         cur.execute(SOURCE_SQL, {"retired": SOURCE_RETIRED_KINDS})
         rows = cur.fetchall()
+        cur.execute(REACH_SQL)
+        reach_rows = cur.fetchall()
     verdicts = classify_sources(rows, polled)
+    # A silent source has also "narrowed", to nothing; silence is the statement.
+    silent = {v["name"] for v in verdicts if v["status"] == "silent"}
+    narrowed = [v for v in classify_reach(reach_rows)
+                if v["status"] == "narrowed" and v["name"] not in silent]
     if record:
         try:
             from ops.heartbeat import beat
             beat("sources", 600, 900, {
                 "silent": [{"name": v["name"], "age_minutes": v["age_minutes"],
                             "detail": v["detail"]} for v in verdicts if v["status"] == "silent"],
+                "narrowed": [{"name": v["name"], "detail": v["detail"]} for v in narrowed],
                 "dormant": sorted(v["name"] for v in verdicts if v["status"] == "dormant"),
                 "no_collector": sorted(v["name"] for v in verdicts if v["status"] == "no_collector"),
                 "watched": sum(v["status"] in ("ok", "silent") for v in verdicts)})
         except Exception:                                       # noqa: BLE001
             pass
-    return [v for v in verdicts if v["status"] == "silent"] + [summarise_sources(verdicts)]
+    summary = summarise_sources(verdicts)
+    if narrowed:
+        summary["detail"] += "; NARROWED: " + ", ".join(v["name"] for v in narrowed)
+    return [v for v in verdicts if v["status"] == "silent"] + narrowed + [summary]
 
 
 def recorded_source_checks() -> list[dict]:
@@ -1097,6 +1169,9 @@ def recorded_source_checks() -> list[dict]:
     out = [{"check": "source", "name": s["name"], "status": "silent", "fault": True,
             "age_minutes": s.get("age_minutes"), "detail": s.get("detail", "")}
            for s in d.get("silent") or []]
+    out += [{"check": "source", "name": s["name"], "status": "narrowed", "fault": True,
+             "age_minutes": None, "detail": s.get("detail", "")}
+            for s in d.get("narrowed") or []]
     out.append({"check": "source", "name": "sources", "status": "silent" if out else "ok",
                 "fault": False, "age_minutes": None,
                 "detail": f"{d.get('watched', 0)} watched; dormant: "
