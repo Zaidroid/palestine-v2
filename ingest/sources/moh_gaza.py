@@ -65,8 +65,7 @@ def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, clai
     reported_at is the claim's, never now() (audit F182)."""
     cur.execute("""SELECT observation_id, value_num FROM observation
                     WHERE dataset_id = %s AND place_id = %s AND indicator = %s
-                      AND occurred_at = %s::date AND upper_inf(sys_period)
-                      AND v1_stable_id IS NULL""",
+                      AND occurred_at = %s::date AND upper_inf(sys_period)""",
                 (did, place_id, ind, reported_at))
     cur_row = cur.fetchone()
     attrs = {"tier": tier, "measure": measure, "claim_id": claim_id}
@@ -88,14 +87,38 @@ def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, clai
         attrs["supersedes"] = cur_row[0]
         attrs["previous_value"] = float(cur_row[1])
         st["revised"] = st.get("revised", 0) + 1
+    # A stable id since 2026-10-11 (migration 095 stamps the rows already held):
+    # databank_serving carries only rows that have one, so the Ministry's own
+    # series was never served beside T4P's. One id per (indicator, day); a
+    # revision closes the old row first, so the current-rows index never sees
+    # two.
     cur.execute("""
         INSERT INTO observation
           (dataset_id, place_id, indicator, value_num, unit,
-           occurred_at, occurred_precision, reported_at, attrs)
-        VALUES (%s,%s,%s,%s,'count',%s::date,'day',%s,%s)""",
+           occurred_at, occurred_precision, reported_at, v1_stable_id, attrs)
+        VALUES (%s,%s,%s,%s,'count',%s::date,'day',%s,%s,%s)""",
         (did, place_id, ind, value, reported_at, reported_at,
+         f"moh-{ind}-{reported_at.date().isoformat()}",
          json.dumps(attrs, ensure_ascii=False)))
     return 1
+
+
+def _withdraw(cur, did, claim_id, emitted: set[str], st) -> None:
+    """A re-read with a corrected parser that no longer emits a figure this
+    very bulletin once produced CLOSES that row — it was a misreading of this
+    text, not a value the Ministry withdrew. Found 2026-10-11: 1,730,128
+    injured (a Ministry typo the parser now refuses) stayed current because
+    nothing superseded it."""
+    cur.execute("""UPDATE observation
+                      SET sys_period = tstzrange(lower(sys_period),
+                                                 greatest(clock_timestamp(),
+                                                          lower(sys_period) + interval '1 microsecond')),
+                          attrs = attrs || '{"withdrawn": "re-read no longer emits this figure"}'::jsonb
+                    WHERE dataset_id = %s AND (attrs->>'claim_id')::bigint = %s
+                      AND upper_inf(sys_period) AND NOT (indicator = ANY(%s))""",
+                (did, claim_id, list(emitted)))
+    if cur.rowcount:
+        st["withdrawn"] = st.get("withdrawn", 0) + cur.rowcount
 
 
 # One writer at a time: the hourly timer and a hand re-read must never both
@@ -145,16 +168,20 @@ def load(dry_run: bool = False, reread_since: str | None = None) -> dict:
             if not rep.is_report or not rep.tiers:
                 continue
             st["reports"] += 1
+            emitted: set[str] = set()
             for tier, measures in rep.tiers.items():
                 for measure, value in measures.items():
                     ind = INDICATORS.get((tier, measure))
                     if not ind:
                         continue
+                    emitted.add(ind)
                     if dry_run:
                         st["rows"] += 1
                         continue
                     st["rows"] += _upsert_day(cur, did, place_id, ind, float(value),
                                               reported_at, tier, measure, claim_id, st)
+            if reread_since and not dry_run:
+                _withdraw(cur, did, claim_id, emitted, st)
         if not dry_run:
             conn.commit()
     return st
@@ -173,7 +200,7 @@ def main() -> int:
     if s["no_place"]:
         print("  no Gaza region place found — cannot attribute the totals")
         return 1
-    for k in ("claims", "reports", "rows", "unchanged", "revised"):
+    for k in ("claims", "reports", "rows", "unchanged", "revised", "withdrawn"):
         print(f"  {k:12}{s.get(k, 0):>8,}")
     return 0
 
