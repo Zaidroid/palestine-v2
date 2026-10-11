@@ -900,3 +900,14 @@ centre, labelled approx-anchor, until pinned. ops/road_register.py gained --anch
 whole block was run on a scratch copy and 18 real messages then read against it land on the intended rows.
 A mistake of mine the same hour: `ops.watchdog --dry-run` on a read-only connection crashed on its own INSERT and
 pushed a real `watchdog:self` alarm at 16:21 UTC; the 16:24 run resolved it.
+
+2026-10-11 19:40 UTC · a name registered late gets its past · built; the re-read is Zaid's hand · proof: Zaid ran the
+13b block (605 names in road_alias, 8 new places, 30 candidates decided) and the new places stood at zero readings:
+the reader had already marked every old message as read. `ingest.sources.roads --reread --since DATE` goes back over
+them and writes only what is not yet written for a message and a place (by either writer), counts no candidate twice
+and marks nothing. Previewed read-only on all 280,210 messages: 3,460 facts on 49 places, 3,355 of them on the 13b
+names (بوابة المهلل 1,230, دوار الطنيب 745, بوابة عطارة القديمة 369, دير شرف البلد 209, مردا الغربية 197, …). The
+other 105 are answers that call the place "الحاجز" or "البوابة" ("البوابة مسكرة" under "شو وضع سنجل"), now read as
+about what was asked. In the same change, "البلد", "الشمالي", "حجز" stopped being fillers an hour after I made
+them so: a line led by one points at a part of a place or at something else, inherits nobody's subject, and is not
+a name waiting for a yes (cascade/road_message.NOT_NAMES; tests/test_road_reader.py 21).

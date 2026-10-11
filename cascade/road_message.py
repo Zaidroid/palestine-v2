@@ -96,10 +96,17 @@ FILLERS = _folded(
     "اليوم", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء", "الخميس", "الجمعه", "السبت", "الصبح",
     "الليله", "مبارح", "طول", "يوم", "فك", "فكو", "شكلها", "شكلهم", "حطوا", "انسحب",
     "انسحبو", "رجعو", "بدء", "بدا",
-    # Generic words the backfill counted as names 20 to 60 times each: "البلد
-    # فاتح", "البوابة مغلقة", "الطالع سالك", "الشمالي فاتح".
-    "البلد", "البوابه", "البوابات", "الحاجز", "الطالع", "النازل", "الشمالي", "الجنوبي",
-    "الشرقي", "الغربي", "الارتباط", "حجز", "مافي", "المدخل", "الدوار", "الشارع", "الخط")
+    # What an answer calls the place it was asked about: "الحاجز سالك", "البوابة
+    # مسكرة", "الطالع ازمه".
+    "البوابه", "البوابات", "الحاجز", "الطالع", "النازل", "مافي", "المدخل", "الدوار",
+    "الشارع", "الخط")
+
+# Not names, and not fillers either: each points at a PART of a place ("البلد
+# سالك" is the town road, not the checkpoint that was asked about) or at
+# something else entirely ("حجز" is a booking). A line led by one of these
+# inherits nobody's subject, and it is not a name waiting for a yes.
+NOT_NAMES = _folded("البلد", "الشمالي", "الجنوبي", "الشرقي", "الغربي", "الارتباط", "حجز",
+                    "القديم", "القديمه", "الجديد", "الجديده", "الفوقا", "التحتا")
 
 # A title names a region, not a subject: "أحوال الطرق أريحا والأغوار".
 _TITLE = _folded("احوال", "أحوال", "تحديثات", "تحديث", "محافظات", "محافظه", "منطقه", "حاله")

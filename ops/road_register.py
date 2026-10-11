@@ -235,6 +235,9 @@ def main(argv=None) -> int:
         else:
             conn.commit()
             print(json.dumps(out, ensure_ascii=False))
+            if a.alias or a.place:
+                print("  its past is still unread: .venv/bin/python -m ingest.sources.roads "
+                      "--reread --since 2026-07-31   (once, after the last decision)", file=sys.stderr)
     return 0
 
 

@@ -3,6 +3,7 @@
     .venv/bin/python -m ingest.sources.roads --dry-run            # read, write nothing
     .venv/bin/python -m ingest.sources.roads                      # what the timer does
     .venv/bin/python -m ingest.sources.roads --since 2026-07-31   # the backfill
+    .venv/bin/python -m ingest.sources.roads --reread --since 2026-07-31   # after the register grew
     .venv/bin/python -m ingest.sources.roads --candidates         # names waiting for a yes
 
 WHY (audit 2026-10-11, findings 01, 02 and 07)
@@ -40,6 +41,14 @@ update (v1's verdict, the control) and writes no facts. A fact the importer
 already wrote for the same message and place is never written twice, so the
 backfill adds only what v1's matcher lost.
 
+WHEN THE REGISTER GROWS
+A message is read once, against the register as it stood. A name registered
+afterwards (ops/road_register.py) is read from then on, and its past is still
+in the messages: `--reread` goes back over messages already read and writes
+only the facts that are not there yet — for a new place, its whole history;
+for a place that already had the reading, nothing. It counts no candidate
+twice and marks nothing as read.
+
 THE SWITCH
 On once migration 097 has given the register its tables. `ROADS_READER=off`
 in `.env` holds it back and the importer writes the facts again, as before.
@@ -59,7 +68,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from cascade.checkpoint_text import (DIRECTION_WORDS, FLOW_WORDS, PRESENCE_WORDS,  # noqa: E402
                                      _lex, _noun_kind, read, tokens)
-from cascade.road_message import FILLERS, parts_of, read_message  # noqa: E402
+from cascade.road_message import FILLERS, NOT_NAMES, parts_of, read_message  # noqa: E402
 from resolve.arabic import normalize  # noqa: E402
 from resolve.db import connect, env_value, v1_path  # noqa: E402
 from resolve.road_names import Lexicon, fold_token, load as load_lexicon  # noqa: E402
@@ -169,7 +178,7 @@ def candidate_names(text: str, lex: Lexicon) -> list[tuple[str, str, str]]:
             continue
         written = [t for t in toks[:k] if not _lex(t, DIRECTION_WORDS)]
         name = [fold_token(t) for t in written]
-        if name and not all(t in FILLERS or t.isdigit() for t in name):
+        if name and not all(t in FILLERS or t in NOT_NAMES or t.isdigit() for t in name):
             out.append((" ".join(name), " ".join(written), line.strip()[:200]))
     return out
 
@@ -202,7 +211,7 @@ def _ensure_source(cur, channel: str, ids: dict[str, int]) -> int:
 
 
 def run(since: datetime | None = None, dry_run: bool = False, force: bool = False,
-        now: datetime | None = None) -> dict:
+        now: datetime | None = None, reread: bool = False) -> dict:
     now = now or datetime.now(timezone.utc)
     since = since or (now - WINDOW).replace(hour=0, minute=0, second=0, microsecond=0)
     stats: Counter = Counter()
@@ -233,15 +242,20 @@ def run(since: datetime | None = None, dry_run: bool = False, force: bool = Fals
             msgs.update(claims)                      # v2's own copy wins
 
         seen: set[tuple[int, str]] = set()
-        if migrated and ids:
+        if migrated and ids and not reread:
             cur.execute("""SELECT source_id, external_id FROM ingest_seen
                             WHERE source_id = ANY(%s) AND external_id LIKE 'road:%%'
                               AND first_seen >= %s""", (list(ids.values()), since))
             seen = set(cur.fetchall())
+        # What is already written for a message and a place: by the importer
+        # always, and on a re-read by this reader too.
         cur.execute("""SELECT attrs->>'channel', attrs->>'msg_id', place_id, state_kind
                          FROM state_observation
-                        WHERE state_kind = ANY(%s) AND attrs ? 'canonical_key'
-                          AND observed_at >= %s""", (list(ALL_KINDS), since - timedelta(minutes=1)))
+                        WHERE state_kind = ANY(%s) AND observed_at >= %s
+                          AND (attrs ? 'canonical_key'"""
+                    + (" OR attrs->>'reader' = %s)" if reread else ")"),
+                    (list(ALL_KINDS), since - timedelta(minutes=1), READER) if reread
+                    else (list(ALL_KINDS), since - timedelta(minutes=1)))
         held = {(ch, mid, pid, kind) for ch, mid, pid, kind in cur.fetchall()}
 
         rows: list[tuple] = []
@@ -260,8 +274,9 @@ def run(since: datetime | None = None, dry_run: bool = False, force: bool = Fals
             parent = msgs.get((ch, m.reply_to)) if m.reply_to else None
             readings = read_message(m.text, lex, parent=parent.text if parent else None,
                                     home=homes.get(ch))
-            newly.append((sid, ext))
-            if not readings or parts_of(m.text, lex):
+            if not reread:
+                newly.append((sid, ext))
+            if not reread and (not readings or parts_of(m.text, lex)):
                 for name, written, line in candidate_names(m.text, lex):
                     c = cands.setdefault(name, {"n": 0, "surface": written, "example": line,
                                                 "channels": set(), "first": m.at, "last": m.at})
@@ -310,7 +325,8 @@ def run(since: datetime | None = None, dry_run: bool = False, force: bool = Fals
             _accrue(cur, cands)
             conn.commit()
     out = dict(stats)
-    out.update(enabled=True, dry_run=dry_run, since=since.isoformat(timespec="minutes"),
+    out.update(enabled=True, dry_run=dry_run, reread=reread,
+               since=since.isoformat(timespec="minutes"),
                top_candidates=[(c["surface"], c["n"]) for _, c in
                                sorted(cands.items(), key=lambda kv: -kv[1]["n"])[:8]])
     return out
@@ -362,6 +378,9 @@ def main(argv=None) -> int:
     ap.add_argument("--since", help="YYYY-MM-DD: read the spool from this day (the backfill)")
     ap.add_argument("--force", action="store_true",
                     help="run although the switch is off (with --dry-run, before migration 097)")
+    ap.add_argument("--reread", action="store_true",
+                    help="go back over messages already read and write what the register, "
+                         "as it stands now, adds (run after ops.road_register; needs --since)")
     ap.add_argument("--candidates", action="store_true", help="print the names waiting for a yes")
     a = ap.parse_args(argv)
     if a.candidates:
@@ -370,7 +389,9 @@ def main(argv=None) -> int:
             print(f"{c['mentions']:5}  {c['name']:28} {','.join(c['channels'])[:40]:40} «{line}»")
         return 0
     since = (datetime.fromisoformat(a.since).replace(tzinfo=timezone.utc) if a.since else None)
-    s = run(since=since, dry_run=a.dry_run, force=a.force)
+    if a.reread and not since:
+        ap.error("--reread needs --since YYYY-MM-DD")
+    s = run(since=since, dry_run=a.dry_run, force=a.force, reread=a.reread)
     if not s.get("enabled"):
         print("road reader is off (migration 097 not applied, or ROADS_READER=off)")
         return 0
@@ -378,11 +399,16 @@ def main(argv=None) -> int:
         print("road reader: another run holds the lock (a backfill?); this tick read nothing")
         return 0
     verb = "would write" if s["dry_run"] else "wrote"
-    print(f"road reader since {s['since']}: {s.get('messages', 0)} new messages "
-          f"({s.get('already_read', 0)} read before), {s.get('messages_with_readings', 0)} carry a reading")
+    if s.get("reread"):
+        print(f"road reader, re-reading since {s['since']}: {s.get('messages', 0)} messages, "
+              f"{s.get('messages_with_readings', 0)} carry a reading")
+    else:
+        print(f"road reader since {s['since']}: {s.get('messages', 0)} new messages "
+              f"({s.get('already_read', 0)} read before), {s.get('messages_with_readings', 0)} carry a reading")
     print(f"  {verb} {s.get('facts', 0)} facts on {s.get('places', 0)} places: "
           f"flow {s.get('flow', 0)}, presence {s.get('presence', 0)}, absence {s.get('absence', 0)}; "
-          f"{s.get('facts_already_held', 0)} left as the importer wrote them")
+          f"{s.get('facts_already_held', 0)} "
+          + ("already written" if s.get("reread") else "left as the importer wrote them"))
     print(f"  by way of: the name {s.get('readings_via_name', 0)}, the line above "
           f"{s.get('readings_via_below', 0)}, the message replied to {s.get('readings_via_reply', 0)}, "
           f"the channel's own place {s.get('readings_via_channel', 0)}; "

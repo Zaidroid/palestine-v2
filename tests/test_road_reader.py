@@ -177,6 +177,17 @@ def test_a_reply_with_a_subject_of_its_own_inherits_nothing(lex):
     assert subjects_of("عين سينيا حاجز للخارج من عطاره", lex).keys() == {2}
 
 
+def test_the_checkpoint_is_what_was_asked_about_but_the_town_is_not(lex):
+    """"الحاجز سالك" answers for the checkpoint asked about. "البلد سالك" is the
+    town road, a different row where the register holds one, and nobody's
+    where it does not."""
+    assert got("الحاجز سالك", lex, parent="كيف عطاره؟") == {1: "bot:open"}
+    assert got("البوابة مسكرة", lex, parent="شو وضع سنجل") == {6: "bot:closed"}
+    assert got("البلد سالك", lex, parent="كيف عطاره؟") == {}
+    assert got("حجز عادي مفتوح", lex, parent="كيف عطاره؟") == {}
+    assert roads.candidate_names("البلد فاتح", lex) == []          # nor a name waiting for a yes
+
+
 def test_a_crossings_channel_is_about_the_crossing_only_when_it_says_so(lex):
     assert got("تم فتح البوابة ودخول المسافرين", lex, home=10) == {10: "inb:open"}
     assert got("حجز عادي ما في بشهر 8", lex, home=10) == {}
