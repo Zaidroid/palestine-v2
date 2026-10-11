@@ -159,6 +159,8 @@ _RESUMPTION_LINE = re.compile(r"منذ\s+18\s+مارس\s+2025")
 _AID_LINE = re.compile(r"شهداء\s+المساعدات|لقم[ةه]\s+العيش")
 _FAMINE_LINE = re.compile(r"المجاع[ةه]")
 _FAMINE_DAILY = re.compile(r"(\d+)\s*حال(?:ة|ات)\s+وفا[ةه]")
+# the running total, written "إلى 188 شهيدًا" (Aug 2025) or "ليصبح العدد الإجمالي … 133 حالة وفاة" (Jul 2025)
+_FAMINE_TOTAL = re.compile(r"(?:الإجمالي|[إا]جمالي|[إا]لى)\D{0,80}?(\d+)\s*(?:حال(?:ة|ات)\s+وفا[ةه]|" + _D + ")")
 _CHILD = re.compile(r"(?:(\d+)\s*|\b)(?:طفل(?:ًا|اً|ا)?|[أا]طفال)")
 _CUM_TOTAL = re.compile(r"(?:[إا]لى|الى)\s+(\d+)\s*" + _D)
 
@@ -216,12 +218,13 @@ def _era_lines(lines: list[str], r: MohReport) -> None:
                 put("aid_seekers_daily", "injuries", i and i.group(1))
             continue
         if _FAMINE_LINE.search(line):
-            daily = _FAMINE_DAILY.search(line)
-            cum = _CUM_TOTAL.search(line)
-            if daily and _HOURS.search(line):
+            cum = _FAMINE_TOTAL.search(line)
+            head = line[:cum.start()] if cum else line      # the day's part, before the running total
+            daily = _FAMINE_DAILY.search(head)
+            if daily and _HOURS.search(head):
                 put("famine_daily", "deaths", daily.group(1))
-                put("famine_daily", "children", _child_count(line))
-            elif cum:
+                put("famine_daily", "children", _child_count(head[daily.end():]))
+            if cum:
                 put("famine", "deaths", cum.group(1))
                 put("famine", "children", _child_count(line[cum.end():]))
             continue
@@ -281,6 +284,13 @@ def parse(text: str) -> MohReport:
         else:
             lines.append(s)
 
+    # The archive's one-line shapes are read FIRST (2026-10-11): on 2024-06-09
+    # the tier machinery, reading the daily block line by line, took the
+    # Nuseirat massacre's "274 شهيد و 698 اصابة" for the day's count while the
+    # day's own line ("283 شهيد و 814 اصابة خلال ال 24 ساعة") had been skipped as
+    # a header. setdefault below keeps whatever was read here.
+    _era_lines(lines, r)
+
     current: str | None = None
     for raw in lines:
         line = raw.strip()
@@ -331,8 +341,25 @@ def parse(text: str) -> MohReport:
             # total and once broken into new/died-of-wounds. The first is the
             # total and the parenthetical breakdown must not replace it.
             r.tiers.setdefault(current, {}).setdefault(measure, val)
-    _era_lines(lines, r)
+    _sanity(r)
     return r
+
+
+# A figure the Ministry itself mistyped ("173,0128" on 2026-06-07, read as
+# 1,730,128) or that the parser took from the wrong line is refused, not served:
+# the cumulative injured have never exceeded 2.5 × the cumulative dead, and no
+# bulletin has ever reported a thousand dead in a day.
+def _sanity(r: MohReport) -> None:
+    cum = r.tiers.get("cumulative", {})
+    if cum.get("deaths") and cum.get("injuries") and cum["injuries"] > 5 * cum["deaths"]:
+        r.rejected.append(f"cumulative injuries {cum['injuries']} > 5 x deaths {cum['deaths']}")
+        del cum["injuries"]
+    for tier in ("daily", "period"):
+        t = r.tiers.get(tier, {})
+        if t.get("deaths", 0) > 1000:
+            r.rejected.append(f"{tier} deaths {t['deaths']} > 1000"); del t["deaths"]
+        if t.get("injuries", 0) > 3000:
+            r.rejected.append(f"{tier} injuries {t['injuries']} > 3000"); del t["injuries"]
 
 
 # The indicator vocabulary, so the databank rows are queryable rather than
