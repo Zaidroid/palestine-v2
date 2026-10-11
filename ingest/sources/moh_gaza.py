@@ -74,8 +74,16 @@ def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, clai
         st["unchanged"] = st.get("unchanged", 0) + 1
         return 0
     if cur_row:
+        # clock_timestamp(), not now(): two bulletins on one day inside ONE
+        # transaction (the archive re-read, 2026-03-26 at 11:01 and 11:49)
+        # gave the first row lower = now() and this close upper = now(), an
+        # EMPTY range whose upper() is NULL — so the row stayed "current" and
+        # the revised insert hit observation_rollup_uniq_current. The hourly
+        # run never saw it because its revisions span transactions.
         cur.execute("""UPDATE observation
-                          SET sys_period = tstzrange(lower(sys_period), now())
+                          SET sys_period = tstzrange(lower(sys_period),
+                                                     greatest(clock_timestamp(),
+                                                              lower(sys_period) + interval '1 microsecond'))
                         WHERE observation_id = %s""", (cur_row[0],))
         attrs["supersedes"] = cur_row[0]
         attrs["previous_value"] = float(cur_row[1])
