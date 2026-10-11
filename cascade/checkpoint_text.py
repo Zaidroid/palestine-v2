@@ -92,11 +92,70 @@ FLOW_WORDS: dict[str, str] = {
     "مقفوله": "closed", "مقفولين": "closed", "سكروه": "closed",
     "سكرت": "closed", "اغلق": "closed", "اغلقت": "closed",
     "يغلق": "closed", "تغلق": "closed",
+    # The 2026-10-11 audit read the 10,174 stored lines this table could not:
+    # "جبع سلك" (it cleared), "عين شبلي بسلك بالاتجاهين", "صره للخارج بلش يمشي",
+    # "المربعة فاضية" (empty: nothing waiting), "عين سينا مازم", "عين سينيا ارمه".
+    "بسلك": "open", "بمشي": "open", "بتمشي": "open", "يمشي": "open",
+    # "عين سينيا بحري", "دير شرف بحري حاليا بدون جيش": the channels' own word
+    # for clear. 2,242 short stored lines; a caution follows one within 45
+    # minutes 15% of the time, exactly the rate after "سالك".
+    "بحري": "open",
+    "فاضي": "open", "فاضيه": "open", "فاضيين": "open", "فاضين": "open",
+    "مازم": "congested", "ازم": "congested", "ازمات": "congested",
+    "ازمتها": "congested", "ارمه": "congested",
+    # "صره زفت لطالع", "عورتا للخارج سيء": bad, with no word for how. Read as
+    # the milder caution, at the confidence of a vague word (_SOFT).
+    "زفت": "congested", "سيء": "congested", "سيي": "congested", "سييه": "congested",
 }
+
+
+def _forms(perfects: tuple, participles: tuple, value: str, objects: bool = True) -> dict[str, str]:
+    """Every person, number and object form of a closing or opening stem.
+
+    The table above was grown one miss at a time and 383 stored closures were
+    still unread on 2026-10-11, each in a form nobody had typed in yet: "سكرو
+    النبي صالح", "مسكرينها", "مغلقات", "فتحوهم", "سالكات". These channels
+    conjugate freely, so the forms are generated from the stem instead.
+    """
+    out: dict[str, str] = {}
+    for p in perfects:
+        for subj in ("", "ت", "و", "وا"):
+            out[p + subj] = value
+            if objects:
+                for obj in ("ه", "ها", "هم", "هن"):
+                    out[p + ("و" if subj == "وا" else subj) + obj] = value
+    for p in participles:
+        for num in ("", "ه", "ا", "ين", "ات", "ان", "تين", "تان"):
+            out[p + num] = value
+        if objects:
+            for obj in ("ه", "ها", "هم", "هن"):
+                out[p + obj] = value
+                out[p + "ين" + obj] = value
+    return out
+
+
+# "فتحه" is left out: it is the noun in "اعادة اغلاقه بعد فتحه لعدة دقائق" (closed
+# again after its opening), where reading it as a verb served the gate open.
+# No form of سد: "سدة قراوة" and "سده الفحص" are places.
+_NOT_FORMS = frozenset(["فتحه"])
+for _k, _v in {
+        **_forms(("سكر", "قفل", "اغلق", "غلق"), ("مسكر", "مقفل", "مغلق", "مقفول"), "closed"),
+        **_forms(("فتح",), ("فاتح", "مفتوح"), "open"),
+        **_forms(("سلك",), ("سالك",), "open", objects=False)}.items():
+    if _k not in _NOT_FORMS:
+        FLOW_WORDS.setdefault(_k, _v)
+
+# A vague word is weaker evidence than a named state.
+# "جبع سلك" (it cleared) is news of a change: a caution follows it 29% of the
+# time against 15% after "سالك", so it is held at a lower confidence.
+_SOFT = {"زفت": 0.70, "سيء": 0.70, "سيي": 0.70, "سييه": 0.70, "سلك": 0.75, "سلكت": 0.75,
+         "فاضي": 0.85, "فاضيه": 0.85, "فاضيين": 0.85, "فاضين": 0.85}
+_EMPTY = frozenset(["فاضي", "فاضيه", "فاضيين", "فاضين"])
 
 PRESENCE_WORDS: dict[str, str] = {
     "جيش": "idf", "عسكر": "idf", "مداهمه": "idf", "دبابات": "idf",
-    "جنود": "idf", "عسكري": "idf",
+    "جنود": "idf", "عسكري": "idf", "جندي": "idf", "جنديين": "idf",
+    "مجنده": "idf", "مجندات": "idf",
     "شرطه": "police", "دوريه": "police", "الشرطه": "police",
     # مستوطين — the ن dropped — is how it is actually typed mid-incident.
     "مستوطنين": "settlers", "مستوطنون": "settlers", "مستوطن": "settlers",
@@ -157,7 +216,28 @@ PHRASES: list[tuple[str, str, str]] = [
     ("فتحت النار", "presence", "idf"), ("فتحو النار", "presence", "idf"),
     ("وفتحوا النار", "presence", "idf"), ("اطلاق النار", "presence", "idf"),
     ("اطلاق نار", "presence", "idf"),
+    # "جبع وقوف تام ولا حركة": a complete standstill. 88 stored lines.
+    ("وقوف تام", "flow", "congested"), ("وقف تام", "flow", "congested"),
+    ("توقف تام", "flow", "congested"),
+    # "قوات الاحتلال تغلق حاجز جبع": the news register for the army.
+    ("قوات الاحتلال", "presence", "idf"), ("قوات الجيش", "presence", "idf"),
+    # A crossing's own bulletin: "يعمل المعبر اليوم باتجاه المغادرين", "يشهد
+    # معبر الكرامة حركة سفر نشطة".
+    ("يعمل المعبر", "flow", "open"), ("يعمل معبر", "flow", "open"),
+    ("حركه سفر نشطه", "flow", "open"), ("حركه نشطه", "flow", "open"),
+    # Barbed wire is not "it cleared": سلك is also the noun "wire". Consumed
+    # here so the opening stem never sees it; the axis "none" records nothing.
+    ("سلك شايك", "none", ""), ("اسلاك شايكه", "none", ""),
 ]
+
+# "مفرق حارس برجع سيارات ضفة", "جسر الزاوية رجعوا الناس", "حاجز وارجاع
+# المركبات": cars are being turned back, which is a closure for whoever is
+# reading, said without one closure word.
+PHRASES += [(f"{w}{v} {q}{o}", "flow", "closed")
+            for w in ("", "و")
+            for v in ("برجعو", "برجعوا", "برجع", "بيرجعو", "بيرجعوا", "رجعو", "رجعوا", "ارجاع")
+            for q in ("", "كل ")
+            for o in ("سيارات", "السيارات", "المركبات", "مركبات", "الناس")]
 
 # Withdrawal / removal. These CLEAR presence rather than assert it, and usually
 # imply the obstacle is gone. v1 has no concept of this, so "انسحب الجيش عن صرة"
@@ -167,13 +247,18 @@ CLEARING_WORDS = frozenset([
     "ازالوا", "فكوا", "راح", "راحت", "راحوا", "غادر", "غادروا", "تركوا",
     "خلص", "خلصت", "انتهي", "انتهت", "فتحوه", "فتحوها",
     "انفكت", "انفك", "فكت", "زالت",
+    # "جبع فك الحاجز", "شالوه", "ازالو الحاجز": 179 stored lines said a
+    # checkpoint was lifted in a form this set lacked.
+    "فك", "فكو", "فكوه", "فكوها", "شالوه", "شالوها", "ازالو", "رفعو",
+    "انشال", "انرفع",
 ])
 
 # "لا" is deliberately ABSENT. In Palestinian Arabic an adjective is negated
 # with "مش", not "لا"; before a status word "لا" is nearly always the discourse
 # marker "no" answering someone — "لا مسكر" is "no, it's closed", which the
 # negation rule inverted into "open".
-NEGATORS = frozenset(["مش", "ما", "مو", "بدون", "بلا", "غير"])
+# "دون": "المربعة فاتحة من دون حاجز".
+NEGATORS = frozenset(["مش", "ما", "مو", "بدون", "دون", "بلا", "غير"])
 
 # "There is no …" written as one word. "مافي جيش" and "مفيش ازمه" are the
 # commonest ways to say the army is gone or the road is clear, and none of them
@@ -182,7 +267,7 @@ EXIST_NEG = frozenset(["مافي", "مافيش", "مافيه", "مفيش", "فش
 
 # What a negating ما / لا must stand before when it is not directly before the
 # word it negates: "ما في جيش", "لا يوجد جيش".
-_EXISTENTIAL = frozenset(["في", "فيه", "يوجد", "يوجدش"])
+_EXISTENTIAL = frozenset(["في", "فيه", "فيها", "عليه", "عليها", "يوجد", "يوجدش"])
 
 # ما after these is RELATIVE or TEMPORAL — "بعد ما سكروا" (after they closed),
 # "زي ما هو مسكر" (as it is: closed), "حسب ما سمعت مسكر" (as I heard: closed).
@@ -200,10 +285,16 @@ _FLOW_NOUNS = frozenset(["ازمه", "زحمه", "اختناق", "ازدحام",
 # now and were asserted as open/closed (F006).
 _CONDITIONALS = frozenset(["اذا", "لو", "بحال"])
 
+# "ممكن نزل الجيش": maybe. A guess is not a sighting — but what stood before
+# it is still said: "جبع فاتحه بس في جيش، بجوز يسكرو باي وقت".
+_HEDGES = frozenset(["ممكن", "يمكن", "احتمال", "بجوز", "يجوز"])
+
 # Future particles. "راح يسكروا الحاجز" is "they are GOING TO close it", and
 # راح is also a clearing verb ("راح الجيش" — the army left), so the forecast of
 # a closure was served as an OPENING (F013, F024).
 _FUTURE = frozenset(["راح", "رح", "بدهم", "بده", "بدو", "بدها"])
+
+_TOMORROW = frozenset(["غد", "غدا", "بكره", "بكرا"])
 
 # A clearing verb infers "open" only when it clears an obstacle. "الشباب تركوا
 # المكان" (the young men left the place) is not a road report (F024).
@@ -232,6 +323,9 @@ DIRECTION_WORDS: dict[str, str] = {
     # the fused forms need their own entries.
     "الجهتين": "both", "بالجهتين": "both", "عالجهتين": "both",
     "للجهتين": "both", "عالاتجاهين": "both",
+    # ع fused to the article: "عناب حاجز عالخارج".
+    "عالخارج": "outbound", "عالداخل": "inbound", "عالطرفين": "both",
+    "جهتين": "both",
 }
 
 # Emoji are used by several channels as generic ATTENTION markers, not status:
@@ -257,7 +351,15 @@ QUESTION_PHRASES = ("شو وضع", "شو اخبار", "شو الوضع", "حدا
                     # Not knowing is not reporting: "ما بعرف اذا حوارة سالك" was
                     # asserted as open at 0.90 (F006).
                     "ما بعرف", "مابعرف", "حد بعرف", "حد يعرف", "بعرف اذا",
-                    "مش عارف", "مش عارفين")
+                    "مش عارف", "مش عارفين",
+                    )
+# Opening hours are asked for, not reported: "عورتا اي ساعة بفتح", "تياسير وينتا
+# بتسكر", "بيت ايل لاي ساعة فاتح" (stored as open 40 times). Matched on whole
+# tokens: "بجوز يسكرو باي وقت" (they may close at any time) is a statement.
+QUESTION_PHRASES_EXACT = ("اي ساعه", "لاي ساعه", "اني ساعه", "اي وقت", "لاي وقت",
+                          "وينتا", "ايمتا", "ايمتي")
+
+_WHICH = frozenset(["طريق", "شارع", "مدخل", "بوابه", "معبر", "مخرج", "حاجز"])
 
 _QMARK = re.compile(r"[؟?]")
 # Clause boundaries. NOT ":" — "الداخل: سالك" must stay one clause, because the
@@ -365,6 +467,8 @@ def _future_verb(tok: str) -> bool:
     """An imperfect verb whose stem is road or presence vocabulary: يسكروا, بيفتحوا."""
     if len(tok) < 3 or tok[0] not in "يتنب":
         return False
+    if _lex(tok, FLOW_WORDS):
+        return True                 # "راح يمشي": يمشي is itself in the table
     stems = [tok[1:], "ا" + tok[1:]]
     if tok[:2] in ("بي", "بت", "بن") and len(tok) >= 4:
         stems += [tok[2:], "ا" + tok[2:]]
@@ -372,13 +476,36 @@ def _future_verb(tok: str) -> bool:
                for st in stems)
 
 
-def _not_a_report(toks: list[str]) -> str | None:
-    """Why a clause states no current fact: a condition or a forecast. None if it does."""
+def _not_a_report(toks: list[str]) -> tuple[str, int] | None:
+    """Why a clause states no current fact, and from which token: a condition
+    (the whole clause) or a forecast (from its particle on). None if it does.
+
+    The forecast used to void the whole clause, which was harmless while few
+    verbs were known. With the closing forms generated, "عورتا سالكه بالاتجاهين
+    الان 11 راح يسكرو البوابات" lost its first half — open NOW — to its second.
+    """
     if any(t in _CONDITIONALS for t in toks) or " ".join(toks[:2]) == "في حال":
-        return "conditional"
+        return ("conditional", 0)
+    # "الجسر يوم غد السبت مغلق": about tomorrow, whichever word comes first.
+    if any(_bare(t) in _TOMORROW for t in toks):
+        return ("forecast", 0)
+    # "مواعيد الحواجز التالية", "تعديل على ساعات عمل المعابر": a timetable.
+    if any(t in ("مواعيد", "مواعيده") or (t == "ساعات" and k + 1 < len(toks)
+                                          and _bare(toks[k + 1]) in ("عمل", "دوام"))
+           for k, t in enumerate(toks)):
+        return ("schedule", 0)
+    # "مفتوح من الساعة 8:00 صباحا وحتى 6:00 مساء": opening hours.
+    for k, t in enumerate(toks[:-1]):
+        if t == "من" and _bare(toks[k + 1]) == "ساعه" and any(
+                x in ("حتي", "وحتي", "الي", "لغايه", "ل") for x in toks[k + 2:]):
+            return ("schedule", 0)
+    for k, t in enumerate(toks):
+        if t in _HEDGES:
+            return ("guess", k)
     for k, t in enumerate(toks[:-1]):
         if t in _FUTURE and _future_verb(toks[k + 1]):
-            return "forecast"
+            # "ما رح يفتح": the negator belongs to the forecast.
+            return ("forecast", k - 1 if k and _neg_form(toks[k - 1]) else k)
     return None
 
 
@@ -391,6 +518,111 @@ class Fact:
     direction_explicit: bool      # False when inferred rather than stated
     confidence: float
     clause: str
+    tag: str | None = None        # "checkpoint_up": a checkpoint is operating here
+
+
+# ── the checkpoint noun as a report ──────────────────────────────────────────
+# "حاجز" is the ordinary word for a checkpoint and v1 read every use of it as
+# soldiers present — its largest false positive, removed here in August. But
+# the removal went too far. In these channels "جبع حاجز", "عطاره حاجز للخارج
+# الان", "عين سينيا محسوم للداخل" are how people say a checkpoint has gone up
+# and is stopping cars: 2,540 stored lines on 2026-10-11, a quarter of every
+# such report, and v2 kept none of them. Measured on the next report at the same
+# place within 45 minutes: a caution follows "X حاجز" 70% of the time, against
+# 56% after an army sighting this parser accepts and 35% after any line.
+#
+# What separates the report from the name is where the noun stands. BEFORE the
+# place it is part of the name ("حاجز عناب سالك"); AFTER it, or before it with
+# a locative between ("حاجز على مدخل اماتين"), it is the news. The definite
+# "الحاجز" refers to a checkpoint already known and is never the news — except
+# that it is what gets lifted ("جبع فك الحاجز").
+CHECKPOINT_NOUNS = frozenset(["حاجز", "حواجز", "محسوم", "محاسيم", "مخصوم"])
+
+# A caller that knows where the place names are (ingest/sources/roads.py does)
+# replaces each with this token before calling read(): the name can then
+# neither be read as a status nor be mistaken for the words around it.
+NAME = "zzplacezz"
+
+_NOW = frozenset(["الان", "هسا", "هسه", "هلا", "هلق", "هلقيت", "حاليا", "هسع", "توا"])
+_AT = frozenset(["علي", "ع", "عل", "عند", "تحت", "قبل", "بعد", "قرب", "جنب", "فوق",
+                 "مقابل"])
+# What stands directly before a noun that is being REFERRED to, not reported:
+# "ع حاجز جبع ازمه", "اي حاجز فيه", "من حاجز عطاره".
+_REFERS = frozenset(["علي", "ع", "عل", "عند", "بعد", "قبل", "من", "الي", "ل", "لعند",
+                     "باتجاه", "نحو", "حتي", "عن", "مع", "اي", "كل", "جميع", "اخر", "اول",
+                     "نفس", "كم", "ثاني", "تاني", "غير"])
+
+
+def _noun_kind(tok: str) -> str | None:
+    """"indef" for حاجز / محسوم, "def" for الحاجز, None for anything else."""
+    t = _ELONGATED.sub(r"\1", tok)
+    if t in CHECKPOINT_NOUNS or (len(t) > 3 and t[0] == "و" and t[1:] in CHECKPOINT_NOUNS):
+        return "indef"
+    s = _ARTICLE.sub("", t)
+    return "def" if s != t and s in CHECKPOINT_NOUNS else None
+
+
+def _noun_role(toks: list[str], i: int, kind: str, found: list,
+               subject_before: bool = False) -> tuple[str, float] | None:
+    """What the checkpoint noun at toks[i] reports: ("up", confidence),
+    ("absent", confidence), or None where it only names or refers.
+    `subject_before`: an earlier clause of the same line named the place."""
+    prev = toks[i - 1] if i else ""
+    nxt = toks[i + 1] if i + 1 < len(toks) else ""
+    # "لا حاجز للخارج" answers a question — "no; a checkpoint, outbound" as
+    # easily as "no checkpoint". Only the list form "لا حاجز ولا اشي" is read.
+    if prev == "لا":
+        return ("absent", 0.86) if "ولا" in toks[i + 1:] else None
+    if prev == "ولا":
+        return ("absent", 0.86) if any(x in ("لا", "ولا") for x in toks[:i - 1]) else None
+    fwd = toks[i + 1:i + 3]
+    if _negated(toks, i) or (
+            len(fwd) == 2 and _neg_form(fwd[0]) in ("مش", "ما", "مو")
+            and fwd[1] in ("موجود", "موجوده", "موجودين", "في", "فيه")):
+        return ("absent", 0.86)
+    if (any(_is_clearing(toks[j]) for j in range(max(0, i - 2), i))
+            or (nxt and _is_clearing(nxt))):
+        return ("absent", 0.80)
+    if kind != "indef" or prev in _REFERS:
+        return None
+    # "حاجز شرطه" is the police's and "مستوطن عامل حاجز" the settlers': each is
+    # already recorded under its own name, and neither is the army.
+    if _lex(nxt, PRESENCE_WORDS) == "police" or any(
+            f[0] == "presence" and f[1] == "settlers" for f in found):
+        return None
+    if NAME in toks:
+        before = NAME in toks[:i]
+        if nxt == NAME:
+            # "حاجز §" is the name with its prefix — unless that is the whole
+            # message and it says when: "حاجز جبع الان".
+            if before or found or not any(t in _NOW for t in toks):
+                return None
+            return ("up", 0.70)
+        if before:
+            return ("up", 0.80)
+        if NAME not in toks[i + 1:]:
+            return None
+        between = toks[i + 1:toks.index(NAME, i + 1)]
+        if between and between[0] in _AT and len(between) <= 3:
+            return ("up", 0.78)
+        return None
+    # The name is not marked: a line v1 matched, read as it was stored.
+    # "3.حاجز عناب عنبتا" in a timetable: a number is not what the noun follows.
+    if not [t for t in toks[:i] if not t.isdigit() and t not in _NOW
+            and not _lex(t, DIRECTION_WORDS)]:
+        i = 0
+        nxt = toks[1] if len(toks) > 1 else ""
+    if i == 0:
+        if nxt in _AT and len(toks) >= 3:
+            return ("up", 0.78)
+        # "🚧 فرش الهوى - حاجز": the place is the clause before this one.
+        alone = not [t for t in toks if not _noun_kind(t) and not t.isdigit()
+                     and t not in _NOW and not _lex(t, DIRECTION_WORDS)]
+        return ("up", 0.80) if subject_before and alone else None
+    rest = [t for t in toks[i + 1:] if t not in _NOW and not _lex(t, DIRECTION_WORDS)]
+    if rest and any(f[0] == "flow" for f in found):
+        return None                 # "شباب حاجز عطارة سالك": a name follows
+    return ("up", 0.80)
 
 
 @dataclass
@@ -457,6 +689,8 @@ def _is_question(raw: str, toks: list[str]) -> bool:
     joined = " ".join(toks)
     if any(p in joined for p in QUESTION_PHRASES):
         return True
+    if any(f" {p} " in f" {joined} " for p in QUESTION_PHRASES_EXACT):
+        return True
     if any(t in QUESTION_OPENERS for t in toks[:2]):
         return True
     # Disjunctive question: "بوابة بورين فاتحه ولا مسكره" — "…open OR closed?".
@@ -466,6 +700,26 @@ def _is_question(raw: str, toks: list[str]) -> bool:
     # But "ولا" before a NOUN is "and no …": "حوارة سالك ولا زحمه" is "flowing,
     # no jam" — a reassurance that was being discarded as a question — while
     # "حوارة سالك ولا لا" ("…or not?") asks and was asserted as open (F022).
+    # "اي حاجز فك", "اي حاجز", "شباب اي طريق سالكة لحوارة": WHICH checkpoint,
+    # which road — asked, not told.
+    if any(t == "اي" and (_noun_kind(toks[k + 1]) or _bare(toks[k + 1]) in _WHICH)
+           for k, t in enumerate(toks[:3]) if k + 1 < len(toks)):
+        return True
+    # "دورا فتحت ولا لسا": …or not yet?
+    if toks and toks[-1] in ("ولالسا", "ولالسه") or (
+            len(toks) >= 2 and toks[-2] in ("ولا", "والا") and toks[-1] in ("لسا", "لسه", "بعد")):
+        return True
+    # "عين سينيا سالكه ولا حاجز فهمونا", "مسكر ولا حاجز": clear, or a
+    # checkpoint? Read as "and no checkpoint" it would be a reassurance made out
+    # of somebody's doubt. The list form "لا جيش ولا حاجز" stays a statement.
+    if any(t in ("ولا", "والا") and k + 1 < len(toks) and _noun_kind(toks[k + 1])
+           and not any(x in ("لا", "ولا") for x in toks[:k])
+           and any(_lex(x, FLOW_WORDS) or _lex(x, PRESENCE_WORDS) for x in toks[:k])
+           for k, t in enumerate(toks)):
+        return True
+    # "والا" is the same "or", typed with its alef: "لسا فاتحين والا سكرو".
+    if "والا" in toks:
+        toks = ["ولا" if t == "والا" else t for t in toks]
     if "ولا" in toks:
         after = {k + 1 for k, t in enumerate(toks) if t == "ولا"}
         if any(k >= len(toks) or toks[k] in ("لا", "لاء") for k in after):
@@ -518,8 +772,8 @@ def _collapse_enumerated_both(dirs: list[tuple[int, str]],
     return out
 
 
-def _assign_directions(found: list[tuple[str, str, float, int]],
-                       dirs: list[tuple[int, str]]) -> list[tuple[str, bool]]:
+def _assign_directions(found: list[tuple], dirs: list[tuple[int, str]],
+                       toks: list[str] | None = None) -> list[tuple[str, bool]]:
     """Attach each status in a clause to a direction, clause-wide.
 
     The old rule bound each status independently — nearest direction, tie to
@@ -538,7 +792,7 @@ def _assign_directions(found: list[tuple[str, str, float, int]],
     unambiguous status pins its direction and the ambiguous one takes what
     remains.
     """
-    dirs = _collapse_enumerated_both(dirs, [p for (_, _, _, p) in found if p >= 0])
+    dirs = _collapse_enumerated_both(dirs, [f[3] for f in found if f[3] >= 0])
     n = len(found)
     if not dirs:
         return [("both", False)] * n
@@ -549,7 +803,8 @@ def _assign_directions(found: list[tuple[str, str, float, int]],
     claimed: set[int] = set()
     ties: list[tuple[int, list[int]]] = []          # (fact idx, tied dir idxs)
 
-    for fi, (_axis, _value, _conf, pos) in enumerate(found):
+    for fi, f in enumerate(found):
+        pos = f[3]
         if pos < 0:
             result[fi] = ("both", False)
             continue
@@ -568,10 +823,16 @@ def _assign_directions(found: list[tuple[str, str, float, int]],
         if len(free) == 1:
             pick = free[0]
         else:
-            # Still ambiguous: keep the old postfix preference as the last
-            # resort — among the tied, the direction that follows the status.
+            # Still ambiguous: the postfix preference as the last resort —
+            # among the tied, the direction that follows the status. Except
+            # where both neighbours are the bare noun ("الداخل سالك الخارج بس
+            # نمر صفر"): "الداخل" names a lane and what follows is said of it,
+            # while "للداخل" points back at what came before.
             pos = found[fi][3]
             pick = min(tied, key=lambda di: 0 if dirs[di][0] > pos else 1)
+            if toks and all(not toks[dirs[di][0]].startswith(("لل", "ل", "ع", "ب"))
+                            for di in tied):
+                pick = min(tied, key=lambda di: 0 if dirs[di][0] < pos else 1)
         result[fi] = (dirs[pick][1], True)
         claimed.add(pick)
 
@@ -638,10 +899,11 @@ def _cleared_nearby(toks: list[str], i: int) -> bool:
     return any(_is_clearing(toks[j]) for j in range(lo, hi) if j != i)
 
 
-def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, float, int]], bool]:
-    """Return [(axis, value, confidence, token_pos)] found in a clause, and
-    whether a clearing verb fired. `token_pos` is -1 where the finding has no
-    single anchor token (emoji, clause-level inference)."""
+def _scan_clause(clause: str, raw_clause: str,
+                 subject_before: bool = False) -> tuple[list[tuple], bool]:
+    """Return [(axis, value, confidence, token_pos[, tag])] found in a clause,
+    and whether a clearing verb fired. `token_pos` is -1 where the finding has
+    no single anchor token (emoji, clause-level inference)."""
     toks = tokens(clause)
     out: list[tuple[str, str, float, int]] = []
     consumed: set[int] = set()
@@ -662,6 +924,8 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             if toks[i:i + len(pt)] == pt:
                 consumed.update(range(i, i + len(pt)))
                 at = i if at < 0 else at
+        if axis == "none":
+            continue
         # PHRASES MUST RESPECT NEGATION, exactly as single tokens do.
         #
         # They did not, and "ما فيه جيش على الحاجز" — somebody standing there
@@ -712,9 +976,11 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
                 out.append(("flow", "open", 0.72, i))
                 continue
             if _negated(toks, i):
-                out.append(("flow", _FLIP.get(flow, flow), 0.80, i))
+                # "مش فاضي" is busy, not shut.
+                out.append(("flow", "congested" if _bare(t) in _EMPTY
+                            else _FLIP.get(flow, flow), 0.80, i))
             else:
-                out.append(("flow", flow, 0.90, i))
+                out.append(("flow", flow, _SOFT.get(t) or _SOFT.get(_bare(t), 0.90), i))
             continue
         pres = _lex(t, PRESENCE_WORDS)
         if pres:
@@ -749,11 +1015,18 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             else:
                 out.append(("presence", pres, 0.88, i))
 
-    # Predicative "حاجز": the bare noun is not a status (v1's biggest false
-    # positive), but a line that ENDS on it — "عابود حاجز", "المربعه في حاجز" —
-    # is reporting that an obstacle is there, not naming one.
-    if not out and toks and toks[-1] in ("حاجز", "حواجز"):
-        out.append(("presence", "idf", 0.70, len(toks) - 1))
+    # The checkpoint noun, where it is the news and not the name (see
+    # CHECKPOINT_NOUNS). Judged after the lexicon pass, because "حاجز § الان"
+    # is a report only when the clause says nothing else.
+    for i, t in enumerate(toks):
+        kind = None if i in consumed else _noun_kind(t)
+        if not kind:
+            continue
+        role = _noun_role(toks, i, kind, out, subject_before)
+        if role and role[0] == "up":
+            out.append(("presence", "idf", role[1], i, "checkpoint_up"))
+        elif role:
+            out.append(("absence", "idf", role[1], i))
 
     # Emoji only where the words said nothing — and never on a FUEL line.
     # "الجلمة :سولار❌بنزين❌" is a fuel-availability report at the Jalama
@@ -761,7 +1034,7 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
     # through to here and served the CROSSING as closed. The ❌ is about
     # diesel. A clause naming a fuel product keeps its words and loses only
     # the emoji inference.
-    if not out and not any(t in _FUEL_NOUNS for t in toks):
+    if not out and not any(_bare(t) in _FUEL_NOUNS for t in toks):
         # Several different emoji and no direction to bind them to: the most
         # restrictive wins. It used to be whichever came first in this dict,
         # so "✅❌" served OPEN (F003). Per-direction lines are split upstream.
@@ -780,8 +1053,8 @@ def _scan_clause(clause: str, raw_clause: str) -> tuple[list[tuple[str, str, flo
             k != j and (_in(toks[k], _OBSTACLES) or _lex(toks[k], PRESENCE_WORDS))
             for k in range(max(0, j - 2), min(len(toks), j + 3)))
         for j in range(len(toks)))
-    if (cleared and near_obstacle and not any(a == "flow" for a, _, _, _ in out)
-            and not any(a == "presence" for a, _, _, _ in out)):
+    if (cleared and near_obstacle and not any(f[0] == "flow" for f in out)
+            and not any(f[0] == "presence" for f in out)):
         out.append(("flow", "open", 0.72, -1))
     return out, cleared
 
@@ -828,6 +1101,7 @@ def read(text: str | None) -> Reading:
 
     facts: list[Fact] = []
     any_clear = False
+    subject = False
     skipped: list[str] = []
     clauses = [seg for rc in _CLAUSE_SPLIT.split(_presplit_waw(raw)) if rc and rc.strip()
                for seg in _split_emoji_directions(rc)]
@@ -835,18 +1109,26 @@ def read(text: str | None) -> Reading:
         clause = normalize(raw_clause)
         if not clause:
             continue
-        why = _not_a_report(tokens(clause))
+        ctoks = tokens(clause)
+        why = _not_a_report(ctoks)
         if why:
-            skipped.append(why)
-            continue
-        dirs = _direction_positions(tokens(clause))
-        found, cleared = _scan_clause(clause, raw_clause)
+            skipped.append(why[0])
+            if why[1] == 0:
+                continue
+            clause = " ".join(ctoks[:why[1]])
+        ctoks = tokens(clause)
+        dirs = _direction_positions(ctoks)
+        found, cleared = _scan_clause(clause, raw_clause, subject_before=subject)
+        # A clause that names something and reports nothing is the subject of
+        # the next one: "🚧 فرش الهوى - حاجز", "عورتا ⏎ حاجز".
+        subject = (NAME in ctoks) if NAME in norm_all else (subject or (bool(ctoks) and not found))
         any_clear = any_clear or cleared
-        bound = _assign_directions(found, dirs)
-        for (axis, value, conf, pos), (direction, explicit) in zip(found, bound):
-            facts.append(Fact(direction=direction, axis=axis, value=value,
-                              direction_explicit=explicit, confidence=conf,
-                              clause=raw_clause.strip()[:160]))
+        bound = _assign_directions(found, dirs, ctoks)
+        for f, (direction, explicit) in zip(found, bound):
+            facts.append(Fact(direction=direction, axis=f[0], value=f[1],
+                              direction_explicit=explicit, confidence=f[2],
+                              clause=raw_clause.strip()[:160],
+                              tag=f[4] if len(f) > 4 else None))
 
     if not facts:
         return Reading(modality="unparsed", cleared=any_clear,

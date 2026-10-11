@@ -140,7 +140,11 @@ def test_withdrawal_clears_presence():
     assert r.flow_for("both").value == "open"
     assert r.absence_for("both") == ["idf"]
     assert r.presence_for("both") == []
-    assert facts_of("عطارة شالو الحاجز") == "bot:open"
+    # A lifted checkpoint is the road open AND the soldiers gone (2026-10-11:
+    # it used to say only the first, so the army sighting it ends kept serving).
+    r = read("عطارة شالو الحاجز")
+    assert r.flow_for("both").value == "open"
+    assert r.absence_for("both") == ["idf"] and r.presence_for("both") == []
 
 
 def test_most_restrictive_flow_wins_per_direction():
@@ -466,3 +470,122 @@ def test_parser_missing_closure_forms(text, expect):
 ])
 def test_parser_emoji_per_direction(text, expect):
     assert axes_of(text) == expect
+
+
+# ── 2026-10-11: the lines the reader dropped ─────────────────────────────────
+# 10,174 stored lines were unreadable on the day of the audit. Sorted by
+# pattern, about 2,700 were reports in forms the reader refused or lacked:
+# the checkpoint noun as news, closures and openings in an unlisted form,
+# lifted checkpoints. Each case below is a stored line.
+from cascade.checkpoint_text import NAME  # noqa: E402
+
+
+def _tagged(text: str) -> list[str]:
+    return sorted(f.direction for f in read(text).facts if f.tag == "checkpoint_up")
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("عين سينيا حاجز للخارج", "out:idf"),              # 84 stored rows
+    ("جبع محسوم", "bot:idf"),
+    ("عين سينيا مخصووووم للداخل", "inb:idf"),          # misspelt and elongated
+    ("عطاره حاجز للخارج الان", "out:idf"),
+    ("حاجز تحت جسر اودلا", "bot:idf"),                 # the noun, a locative, the place
+    ("حاجز على مدخل اماتين 🚧", "bot:idf"),
+    ("🚧 فرش الهوى - حاجز", "bot:idf"),                 # the place is the clause before
+    ("ازمة وحاجز", "bot:congested bot:idf"),
+])
+def test_the_checkpoint_noun_after_the_place_is_the_news(text, expected):
+    assert facts_of(text) == expected
+    assert _tagged(text), "a checkpoint sighting carries its tag"
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("حاجز عناب سالك", "bot:open"),                    # the noun is part of the name
+    ("حاجز عناب", "UNPARSED"),                         # a name alone says nothing
+    ("حاجز للخارج", "UNPARSED"),                       # no place at all (v1 filed 361 of
+                                                       #   these under Avnei Hefetz, as open)
+    ("ع حاجز جبع ازمه", "bot:congested"),              # referred to, not reported
+    ("3.حاجز عناب عنبتا", "UNPARSED"),                 # a line of a timetable
+    ("بني نعيم حاجز شرطة عشوائي للخارج", "out:police"),   # the police's, not the army's
+    ("جسر اودلا مستوطن عامل حاجز", "bot:settlers"),
+    ("لا حاجز للخارج", "UNPARSED"),                    # "no; a checkpoint" or "no checkpoint"
+])
+def test_the_checkpoint_noun_as_a_name_is_not_a_sighting(text, expected):
+    assert facts_of(text) == expected
+    assert not _tagged(text)
+
+
+@pytest.mark.parametrize("text", [
+    "اي حاجز فك", "اي حاجز", "مسكر ولا حاجز", "عين سينيا سالكه ولا حاجز فهمونا",
+    "بوابة دورا والفوار لسا فاتحين  والا سكرو",
+    "بيت ايل لاي ساعة فاتح", "عورتا اي ساعة بفتح", "عين شبلي وينتا بسكر",
+])
+def test_a_doubt_about_a_checkpoint_is_a_question(text):
+    assert read(text).modality == "question"
+
+
+def test_neither_nor_is_a_statement():
+    r = read("ولا ازمه ولا حاجز")
+    assert r.flow_for("both").value == "open" and r.absence_for("both") == ["idf"]
+
+
+def test_any_time_is_not_what_time():
+    """"باي وقت" is "at any time": a statement that used to pass and must keep passing."""
+    assert facts_of("جبع فاتحه بس في جيش ع النقطه بجوز يسكرو باي وقت") == "bot:open bot:idf"
+
+
+@pytest.mark.parametrize("text", [
+    "عطاره فش حاجز✅✅✅", "عطاره ازمه بدون حاجز", "المربعة فاتحة من دون حاجز",
+    "لا جيش ولا حاجز", "جبع فك الحاجز", "سلواد سالك راح الحاجز ✅✅",
+])
+def test_no_checkpoint_is_an_absence_never_a_sighting(text):
+    r = read(text)
+    assert r.absence_for("both") == ["idf"] and r.presence_for("both") == []
+
+
+@pytest.mark.parametrize("text,expected", [
+    (f"{NAME} حاجز للخارج", "out:idf"),
+    (f"{NAME} فش حاجز", "bot:idf"),                     # an absence (facts_of drops the axis)
+    (f"حاجز {NAME} سالك", "bot:open"),
+    (f"حاجز {NAME}", "UNPARSED"),
+    (f"حاجز {NAME} الان", "bot:idf"),                   # the whole message, and it says when
+    (f"حاجز على {NAME}", "bot:idf"),
+    (f"ممر المشاة حاجز {NAME}", "UNPARSED"),            # the prefix of a name, mid-line
+    (f"{NAME} - حاجز", "bot:idf"),
+])
+def test_a_marked_name_settles_which_side_the_noun_is_on(text, expected):
+    assert facts_of(text) == expected
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("سكرو النبي صالح", "bot:closed"),
+    ("طيب وزعترة مسكرينها", "bot:closed"),
+    ("النبي يونس حلحول وسعير مغلقات", "bot:closed"),
+    ("هسا فتحوها عين سينيا", "bot:open"),
+    ("عين سينيا وعطارة اخر تحديث فتحوهم", "bot:open"),
+    ("بوابات حلحول وسعير وبني نعيم سالكات", "bot:open"),
+    ("جبع سلك", "bot:open"),
+    ("عطارة فاضي بالاتجاهين", "bot:open"),
+    ("مش فاضي", "bot:congested"),                       # busy, not shut
+    ("قلنديا مأزم", "bot:congested"),
+    ("جبع وقوف تام ولا حركة", "bot:congested"),
+    ("صرة للخارج ما بمشي", "out:closed"),
+    ("مفرق حارس برجع سيارات ضفة", "bot:closed"),        # turned back is closed to the reader
+    ("عورتا للخارج سيء⭕️", "out:congested"),
+])
+def test_forms_generated_from_the_stem(text, expected):
+    assert facts_of(text) == expected
+
+
+def test_wire_is_not_it_cleared():
+    assert facts_of("حطو سلك شايك عند المدخل") == "UNPARSED"
+
+
+def test_the_noun_after_an_opening_is_not_a_verb():
+    """"بعد فتحه" is "after its opening": the line reports the gate shut again."""
+    assert "open" not in facts_of("بيت فوريك تم اعادة اغلاقه بعد فتحه لعدة دقائق")
+
+
+def test_a_forecast_does_not_void_what_the_clause_says_about_now():
+    assert facts_of("وعورتا سالكه بلاتجاهين الان 11 راح يسكرو البوابات") == "bot:open"
+    assert facts_of("راح يسكروا الحاجز") == "UNPARSED"
