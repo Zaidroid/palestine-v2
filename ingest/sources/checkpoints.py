@@ -4,6 +4,7 @@
     .venv/bin/python -m ingest.sources.checkpoints --full       # from scratch
     .venv/bin/python -m ingest.sources.checkpoints --state-only # refresh belief
     .venv/bin/python -m ingest.sources.checkpoints --cadence    # cadence only
+    .venv/bin/python -m ingest.sources.checkpoints --reread --dry-run   # the stored lines, read again
 
 v1 keeps parsing new checkpoint reports every few seconds and its place matcher
 is the part of v1 that genuinely works, so v2 consumes its output rather than
@@ -300,6 +301,157 @@ def _flush(cur, rows: list[tuple]) -> None:
     rows.clear()
 
 
+# ── the stored lines, read again ─────────────────────────────────────────────
+# A line is read when it is imported, by the reader as it stood that day. When
+# the reader changes, the lines already stored keep their old reading: a
+# question that was asserted in July is still an assertion in October. `--full`
+# would rebuild everything from v1, and deletes to do it. This does not delete:
+# it reads each stored line again and changes only what differs.
+#
+#   the archival row   its modality becomes what the reader says now
+#                      (attrs.modality_before_reread keeps what it was)
+#   a fact no longer read from the line
+#                      modality 'superseded' (attrs.modality_before, superseded_by)
+#   a fact the line now yields and nobody wrote
+#                      inserted, marked attrs.written_by_reread
+#
+# "Nobody" includes v2's own reader: where it already wrote a fact for the
+# same message and place, the importer's line adds none beside it.
+REREAD_TAG = "reread-2026-10-11"
+
+REREAD_ROWS_SQL = """
+SELECT state_obs_id, observed_at, place_id, state_kind, value, direction, modality,
+       source_id, attrs
+  FROM state_observation
+ WHERE state_kind = ANY(%s) AND attrs ? 'canonical_key'
+   AND observed_at >= %s AND observed_at < %s
+"""
+
+
+def _reread_plan(rows: list[tuple], reading, v2_kinds: set[str]) -> dict:
+    """What re-reading ONE stored v1 update changes (pure).
+
+    `rows` are the importer's rows for it: its archival row(s) and its facts.
+    `reading` is the reader's verdict on its line now. `v2_kinds` are the state
+    kinds v2's own reader already wrote for this message and place.
+    """
+    arch = [r for r in rows if r[3] == LEGACY_KIND]
+    facts = [r for r in rows if r[3] != LEGACY_KIND and r[6] == "assertion"]
+    plan = {"archival": [], "supersede": [], "insert": []}
+    if not arch:
+        return plan
+    plan["archival"] = [(r[0], r[1], r[2], r[6], reading.modality)
+                        for r in arch if r[6] != reading.modality]
+    new: dict[tuple[str, str, str], object] = {}
+    if reading.modality == "assertion":
+        for f in reading.facts:
+            kind = FLOW_KIND if f.axis == "flow" else PRESENCE_KIND.get(f.value)
+            if kind:
+                value = (f.value if f.axis == "flow"
+                         else "absent" if f.axis == "absence" else "present")
+                new[(kind, f.direction, value)] = f
+    old = {(r[3], r[5], r[4]) for r in facts}
+    plan["supersede"] = [(r[0], r[1], r[2], r[3]) for r in facts
+                         if (r[3], r[5], r[4]) not in new]
+    plan["insert"] = [(k, f) for k, f in new.items() if k not in old and k[0] not in v2_kinds]
+    return plan
+
+
+def reread_stored(since: datetime | None = None, dry_run: bool = True) -> dict:
+    """Read every stored v1 line again with the reader as it stands now."""
+    from collections import Counter, defaultdict
+    stats: Counter = Counter()
+    long_lines: dict[tuple, str] = {}
+    try:
+        db = _ro()
+        for ch, mid, key, line in db.execute(
+                "SELECT source_channel, source_msg_id, canonical_key, raw_line "
+                "FROM checkpoint_updates WHERE length(raw_line) > 300"):
+            long_lines[(ch, None if mid is None else str(mid), key, line[:300])] = line
+        db.close()
+    except sqlite3.Error:
+        pass                      # v1 absent: a line cut at 300 characters is read as stored
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT min(observed_at)::date, max(observed_at)::date + 1
+                         FROM state_observation
+                        WHERE state_kind = %s AND attrs ? 'canonical_key'""", (LEGACY_KIND,))
+        first, last = cur.fetchone()
+        if first is None:
+            return dict(stats)
+        if since and since.date() > first:
+            first = since.date()
+        if not dry_run:
+            from resolve.belief import BELIEF_LOCK_SQL
+            cur.execute("""SELECT pg_get_constraintdef(c.oid) LIKE '%%superseded%%'
+                             FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid
+                            WHERE c.conname = 'state_observation_modality_check'
+                              AND t.relname = 'state_observation'""")
+            if not (cur.fetchone() or [False])[0]:
+                raise SystemExit("migration 098 is not applied: 'superseded' is not a modality yet")
+        day = first
+        while day < last:
+            nxt = day + timedelta(days=1)
+            cur.execute(REREAD_ROWS_SQL, (list((LEGACY_KIND, *ALL_KINDS)), day, nxt))
+            groups: dict[tuple, list] = defaultdict(list)
+            for r in cur.fetchall():
+                a = r[8]
+                groups[(a.get("channel"), a.get("msg_id"), a.get("canonical_key"),
+                        a.get("v1_direction"), a.get("raw_line"), r[1], r[2])].append(r)
+            cur.execute("""SELECT attrs->>'channel', attrs->>'msg_id', place_id, state_kind
+                             FROM state_observation
+                            WHERE state_kind = ANY(%s) AND attrs->>'reader' = 'v2'
+                              AND observed_at >= %s AND observed_at < %s""",
+                        (list(ALL_KINDS), day, nxt))
+            v2: dict[tuple, set] = defaultdict(set)
+            for ch, mid, pid, kind in cur.fetchall():
+                v2[(ch, mid, pid)].add(kind)
+            arch_upd, sup_upd, ins = [], [], []
+            era = "before the spool" if str(day) < "2026-07-31" else "since 31 July"
+            for (ch, mid, key, _v1dir, line, at, pid), rows in groups.items():
+                mid_s = None if mid is None else str(mid)
+                full = long_lines.get((ch, mid_s, key, line), line) if line and len(line) >= 300 else line
+                plan = _reread_plan(rows, read(full), v2.get((ch, mid_s, pid), set()))
+                stats["lines"] += 1
+                arch_row = next((r for r in rows if r[3] == LEGACY_KIND), None)
+                for oid, oat, opid, was, now_ in plan["archival"]:
+                    stats[f"{era}: line {was} → {now_}"] += 1
+                    arch_upd.append((now_, json.dumps({"modality_before_reread": was,
+                                                       "reread": REREAD_TAG}),
+                                     opid, LEGACY_KIND, oat, oid))
+                for oid, oat, opid, okind in plan["supersede"]:
+                    stats[f"{era}: facts superseded"] += 1
+                    sup_upd.append((json.dumps({"modality_before": "assertion",
+                                                "superseded_by": REREAD_TAG}),
+                                    opid, okind, oat, oid))
+                for (kind, direction, value), f in plan["insert"]:
+                    stats[f"{era}: facts written"] += 1
+                    fa = dict(arch_row[8], clause=f.clause, axis=f.axis, written_by_reread=REREAD_TAG)
+                    if f.tag:
+                        fa["sighting"] = f.tag
+                    ins.append((pid, kind, value, (full or "")[:200], at, arch_row[7], f.confidence,
+                                direction, f.direction_explicit, "assertion",
+                                json.dumps(fa, ensure_ascii=False)))
+            if not dry_run and (arch_upd or sup_upd or ins):
+                # The old days are compressed. An UPDATE there decompresses the
+                # batches it touches; the default cap (100,000 tuples) is a
+                # guard against accidents, and this is deliberate.
+                cur.execute("SET LOCAL timescaledb.max_tuples_decompressed_per_dml_transaction = 0")
+                cur.execute(BELIEF_LOCK_SQL)
+                cur.executemany("""UPDATE state_observation
+                                      SET modality = %s, attrs = attrs || %s::jsonb
+                                    WHERE place_id = %s AND state_kind = %s
+                                      AND observed_at = %s AND state_obs_id = %s""", arch_upd)
+                cur.executemany("""UPDATE state_observation
+                                      SET modality = 'superseded', attrs = attrs || %s::jsonb
+                                    WHERE place_id = %s AND state_kind = %s
+                                      AND observed_at = %s AND state_obs_id = %s""", sup_upd)
+                _flush(cur, ins)
+                conn.commit()              # a day at a time: a stopped run loses nothing
+                stats["days_changed"] += 1
+            day = nxt
+    return dict(stats)
+
+
 # ── belief ───────────────────────────────────────────────────────────────────
 
 def refresh_state() -> dict:
@@ -362,7 +514,23 @@ def main() -> int:
     ap.add_argument("--full", action="store_true", help="rebuild all history from v1")
     ap.add_argument("--cadence", action="store_true", help="recompute cadence only")
     ap.add_argument("--state-only", action="store_true", help="refresh belief only")
+    ap.add_argument("--reread", action="store_true",
+                    help="read every stored line again with the reader as it stands; "
+                         "supersede what differs (needs migration 098)")
+    ap.add_argument("--since", help="with --reread: YYYY-MM-DD, the first day to re-read")
+    ap.add_argument("--dry-run", action="store_true", help="with --reread: count, write nothing")
     a = ap.parse_args()
+
+    if a.reread:
+        since = datetime.fromisoformat(a.since).replace(tzinfo=timezone.utc) if a.since else None
+        s = reread_stored(since, dry_run=a.dry_run)
+        print(f"{'would change' if a.dry_run else 'changed'}, over {s.pop('lines', 0)} stored lines"
+              + (f" on {s.pop('days_changed', 0)} days" if not a.dry_run else "") + ":")
+        for k in sorted(s):
+            print(f"  {s[k]:7}  {k}")
+        if not s:
+            print("  nothing: every stored line already carries the reader's current reading")
+        return 0
 
     if not (a.cadence or a.state_only):
         s = import_updates(a.full)

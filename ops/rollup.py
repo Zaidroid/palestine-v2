@@ -74,10 +74,16 @@ day AS (
   -- every distinct thing that was actually SAID. The key matches the one
   -- tests/test_no_data_loss.sql uses to distinguish real growth from
   -- duplication, so the two agree about what an observation is.
-  SELECT DISTINCT o.place_id, o.state_kind, o.value, o.source_id,
-         o.observed_at, g.unit
+  --
+  -- A DAY IS COUNTED ON THE ROW THE PLACE IS NOW. Reports keep the row they
+  -- were filed under, so a checkpoint held twice and merged (082, 097) had its
+  -- past split over two rows: 9,243 frozen rows sat on 32 merged places on
+  -- 2026-10-11, and the surviving row's series started on the day of the merge.
+  SELECT DISTINCT coalesce(p.merged_into, o.place_id) AS place_id, o.state_kind, o.value,
+         o.source_id, o.observed_at, g.unit
     FROM state_observation o
     JOIN grp g USING (source_id)
+    JOIN place p ON p.place_id = o.place_id
    WHERE o.modality = 'assertion'
      AND o.place_id IS NOT NULL
      AND o.observed_at >= %(day)s::date

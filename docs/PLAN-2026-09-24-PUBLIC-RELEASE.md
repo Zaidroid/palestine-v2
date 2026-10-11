@@ -911,3 +911,27 @@ other 105 are answers that call the place "الحاجز" or "البوابة" ("�
 about what was asked. In the same change, "البلد", "الشمالي", "حجز" stopped being fillers an hour after I made
 them so: a line led by one points at a part of a place or at something else, inherits nobody's subject, and is not
 a name waiting for a yes (cascade/road_message.NOT_NAMES; tests/test_road_reader.py 21).
+
+2026-10-11 21:00 UTC · the stored road history takes the new reading; the databank's daily history is re-frozen on it ·
+built and rehearsed; three commands are Zaid's hand (HANDS §13c) · proof: Zaid asked whether today's fixes reach what is
+already saved. They did not, in three places: (1) a fact the importer wrote under an older reading stayed (the v2
+reader's backfill only ADDS what is missing); (2) nothing before 31 July was touched; (3) `tier1_daily`, the databank's
+frozen daily count, held 275,811 reports against 416,906 in the store for the same 119 days (118 days differ), and
+9,243 of its rows sat on 32 merged places because the rollup counted on the row a report was filed under.
+`ingest.sources.checkpoints --reread` reads every stored v1 line again (253,326) and changes only what differs: the
+archival row's modality (4,728: 3,852 unreadable → report, 561 report → question, 191 report → not a report, 104
+unreadable → question, 20 question → report), 2,598 facts marked `superseded` (migration 098; what each was stays on
+the row), 4,316 facts written (2,994 of them before 31 July, where no raw message exists and the stored line is all
+there is). It writes nothing beside a fact v2's own reader already wrote. ops/rollup.py now counts a day on the row
+the place IS (coalesce(merged_into, place_id)). Rehearsed on a throwaway copy with the real hypertable shape (daily
+chunks, 117 of 120 compressed, segment by place and kind): 098 applies on the compressed table; the re-read ran in
+2 min 02 s and changed exactly what the read-only dry run on production predicted; rows 1,172,704 → 1,177,020 (none
+deleted); a second run changed nothing; `ops.rollup --days 130` ran in 48 s, after which frozen = stored on 119 of
+119 days (570,308 reports), no current row sits on a merged place, no empty validity range, and the eight places
+registered tonight have a series (بوابة المهلل 982 flow reports from 31 July). Sampled superseded facts read right
+(«عطارة سالك … مافي جيش عالحاجز» army present → absent; «معبر الكرامة مغلق … يوم غدٍ» taken back; «دير شرف الخارج سالك
+الداخل بدخلو عكس السير» inbound → outbound); one that does not: «العيزريه فاتحه ولد مسكرا» (a typo of ولا, a
+question) goes from open to closed. The re-freeze also corrects two other kinds on production by the same rule:
+road_closure 747 → 610 reports (duplicates on merged rows) and power 100 → 103. tests/test_reread_stored.py 7.
+NOT reachable by any re-read: names v1's matcher never let through before 31 July (the raw messages were not kept),
+v1's own database and public map, and the two films' data files.
