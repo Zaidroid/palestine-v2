@@ -1,0 +1,84 @@
+# acled_hdx — ACLED's public monthly aggregates for Palestine (HDX): events and
+# fatalities per governorate per month for political violence, civilian
+# targeting and demonstrations. HELD under the `internal` grade (096), which
+# every serving view excludes: ACLED's EULA, read 2026-08-07, says ACLED must
+# never be served from the databank in any form, and that ruling stands. The
+# rows exist for Zaid's own analysis and for checking the news classifier's
+# counts against an outside series (Zaid, 2026-10-11: "the databank right now
+# is for personal use, build these as part of it").
+#
+# WHAT A ROW IS. One governorate × one month × one family becomes two
+# observations: acled.<family>.events and acled.<family>.fatalities (the
+# demonstrations file carries no fatalities). occurred_at = the first of the
+# month at month precision; place = the governorate by its pcode (ACLED uses
+# the same PS01xx / PS02xx codes as our place table). 16 governorates × 130
+# months × 3 families = 6,240 rows in v1's files on 2026-10-11.
+category: acled_hdx
+transform: python:t_acled_hdx
+v1_category: conflict
+shape: observation
+status: reviewed
+records_measured: 6240
+
+input:
+  root: /home/zaid/palestine-v2/data/raw/acled
+  glob: ["political_violence.json", "civilian_targeting.json", "demonstrations.json"]
+  # ops/fetch_acled_file.py, reading v1's normalised HDX workbooks through V1_ROOT
+
+datasets:
+  - key: acled_hdx_monthly
+    source: acled                # 096: internal — held, never served
+
+drop:
+  - reason: missing_month
+    measured: 0
+  - reason: no_values
+    measured: 0
+
+occurred_at:
+  from: date_period
+  precision: month
+
+place:
+  strategy: pcode
+  fallback: [region, none]
+  min_decided_pct: 1.0
+  min_located_pct: 0.99          # every row carries a governorate pcode
+
+attrs_passthrough:
+  - family
+  - admin1
+  - admin2
+
+identity:
+  fields: [indicator, occurred_at, place_id]
+  generation: complete           # each file is the whole series
+  max_absent: 400
+
+expect:
+  min_records: 5000
+  max_observations: 14000        # 6,240 rows × up to 2 figures = 10,400 at most
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "\\.fatalities$"}
+      concept: mortality.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+    - when: {regex: "\\.events$"}
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: events
+
+notes: |
+  Stable ids are acled-<family>-<pcode>-<month>-<figure>; ACLED revises recent
+  months in place, so a changed count supersedes. Never widen the source row's
+  grade without reading ACLED's HDX terms for these aggregates specifically and
+  recording the reading in terms_evidence.

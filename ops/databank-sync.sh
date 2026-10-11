@@ -53,6 +53,7 @@ step .venv/bin/python -m ops.fetch_btselem_file
 # survey files, both straight from HDX.
 step .venv/bin/python -m ops.fetch_unhcr_hdx
 step .venv/bin/python -m ops.fetch_fao_diem
+step .venv/bin/python -m ops.fetch_acled_file      # held under `internal`, never served (096)
 
 export HEARTBEAT_DETAIL="{\"fetch_failures\": $fails}"
 # The unit's OnFailure alarm is resolved once, at the END, when the whole

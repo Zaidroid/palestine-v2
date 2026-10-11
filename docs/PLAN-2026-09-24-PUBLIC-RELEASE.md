@@ -818,3 +818,14 @@ on 834, a day or period window on 799, no cumulative step down, no day above 600
 new; organ C's field test is a subset check now). A 48/72-hour block is its own tier (`gaza.moh.*.period` + hours).
 Known gaps: 37 bulletins with no readable window (rare phrasings), listed in the session; gaza_moh_daily still has no
 v1_stable_id and so is absent from databank_serving (audit finding, unchanged).
+
+2026-10-11 14:20 UTC · Fragments, fourth batch: the Ministry's series served, a hold-only grade, ACLED held · done in
+code; migrations 095/096, the re-read, the load and the API restart are Zaid's hand · proof: `ingest.sources.moh_gaza`
+writes v1_stable_id (moh-<indicator>-<day>) and 095 stamps the 5,762 current + 112 closed rows, so gaza_moh_daily enters
+databank_serving; a re-read now withdraws a figure the same bulletin no longer yields (closes it, attrs.withdrawn) — the
+1,730,128 injured of 2026-06-07 and July 2025's famine children. 096: grade `internal` (source/dataset CHECKs widened,
+databank_serving excludes it, v_withheld names it), source row `acled`, serve/licence.py GRADE_ORDER +internal.
+db/mappings/acled_hdx.yaml + ops/fetch_acled_file.py: ACLED's HDX monthly aggregates (3 families × 16 governorates ×
+130 months; v1's "ACLED raw" was never raw) → dry run 6,240 read → 10,400 observations, located 1.0. Tests: licence
+tier, spec format, facades 115 pass. Parser corrections after the first archive load (e2676b2): the one-line day is read
+before the block (2024-06-09: 698→814), mistyped totals refused, the famine total without إلى.

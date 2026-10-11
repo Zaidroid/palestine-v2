@@ -1944,7 +1944,37 @@ def t_fao_diem(rec, spec, places, counts):
     return rows or Drop("no_values")
 
 
+# ── acled_hdx — ACLED's monthly governorate aggregates, HELD under `internal` ─
+# (acled_hdx.yaml, 2026-10-11; ops/fetch_acled_file.py adds `family`).
+_ACLED_REGION = {"PS01": "West Bank", "PS02": "Gaza Strip"}
+
+
+def t_acled_hdx(rec, spec, places, counts):
+    ds = "acled_hdx_monthly"
+    period = str(rec.get("date_period") or "")
+    if not re.fullmatch(r"\d{4}-\d{2}", period):
+        return Drop("missing_month")
+    day = period + "-01"
+    family = rec.get("family") or "unknown"
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    pid = places["pcode"].get(rec.get("admin2_pcode"))
+    located = pid is not None
+    if pid is None:
+        pid, located = region_place(places, _ACLED_REGION.get(rec.get("admin1_pcode") or "", "Palestine"), attrs)
+    rows = []
+    for field_name, indicator, unit in (("events", f"acled.{family}.events", "events"),
+                                        ("fatalities", f"acled.{family}.fatalities", "persons")):
+        v = _num(rec.get(field_name))
+        if v is None:
+            continue
+        sid = f"acled-{family}-{rec.get('admin2_pcode')}-{period}-{field_name}"
+        rows.append(Row(ds, indicator, day, "month", sid, value_num=v, unit=unit,
+                        place_id=pid, located=located, attrs=attrs))
+    return rows or Drop("no_values")
+
+
 TRANSFORMERS = {
+    "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal
     "insecurity_insight": t_insecurity_insight,                 # 2026-10-11
     "btselem_fatalities": t_btselem_fatalities,                 # 2026-10-11
     "unhcr_population": t_unhcr_population,                     # 2026-10-11

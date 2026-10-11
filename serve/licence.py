@@ -50,7 +50,10 @@ from typing import Any
 # Grades in order of how much they permit. A tool inherits the WORST grade among
 # the sources it reads, because a payload is as redistributable as its least
 # redistributable datum.
-GRADE_ORDER = ("open", "attribution", "share-alike", "ask", "no-redistribution")
+# `internal` (096, 2026-10-11): held for Zaid's own analysis and never served by
+# any view — the grade ACLED's EULA requires. Strictest of all, so a payload that
+# somehow read such a row would inherit it and say so.
+GRADE_ORDER = ("open", "attribution", "share-alike", "ask", "no-redistribution", "internal")
 
 # What the commercial partner tier may carry as DATA. `ask` is excluded on
 # purpose: a publisher whose terms nobody has read has not said no, which is not
