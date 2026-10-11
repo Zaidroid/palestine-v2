@@ -43,6 +43,17 @@ step .venv/bin/python -m ops.fetch_hamoked       # HaMoked detention, monthly
 step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (monthly at most)
 step .venv/bin/python -m ops.fetch_unrwa_registered   # UNRWA registered refugees by field (HDX)
 
+# The fragments brought in on 2026-10-11 (Zaid: the databank is for personal
+# use; everything we hold goes in). Both read v1's files through V1_ROOT for
+# now — Insecurity Insight's normalised incidents and B'Tselem's frozen CSV —
+# atomic and floored like the rest; the direct HDX fetch is the next step.
+step .venv/bin/python -m ops.fetch_insecurity_insight
+step .venv/bin/python -m ops.fetch_btselem_file
+# Second batch, same day: UNHCR's six population tables and FAO DIEM's four
+# survey files, both straight from HDX.
+step .venv/bin/python -m ops.fetch_unhcr_hdx
+step .venv/bin/python -m ops.fetch_fao_diem
+
 export HEARTBEAT_DETAIL="{\"fetch_failures\": $fails}"
 # The unit's OnFailure alarm is resolved once, at the END, when the whole
 # night passed — not by this step alone, or a dead supply line found below

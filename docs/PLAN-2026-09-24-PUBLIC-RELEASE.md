@@ -789,3 +789,21 @@ read at the publisher — "licensed under CC BY 4.0" — against `CC-BY-IGO` hel
 13 `present` beliefs with no `state_observation` at all (7 of 13 places have none of that kind ever), suspect the
 asymmetric delete at ingest/sources/checkpoints.py:172. No code committed: the verification could not go green and every
 item needs Zaid's belief, his gate wording, or his migration.
+
+2026-10-11 12:10 UTC · The fragments come into the databank (Zaid: "the databank right now is for personal use, build
+these as part of it") · partial, UNCOMMITTED, awaiting migration 093 (Zaid's hand) · proof: `ingest.spec` 0 invalid;
+dry runs — `insecurity_insight` 20,836 read → 20,170 events (666 superseded by the later SHCC file, located 0.174),
+`btselem_fatalities` 11,124 → 11,124 rows (located 0.932), `conflict_gaza` 1,100 → 9,130 observations (the six detail
+cumulatives + five daily flows from 2023-10-07, 40 inferred days dropped, 96 already held). New: ops/fetch_insecurity_insight.py,
+ops/fetch_btselem_file.py (both read v1 through V1_ROOT), db/mappings/insecurity_insight.yaml, btselem_fatalities.yaml,
+conflict_gaza.yaml widened, databank-sync.sh steps, db/migrations/093 (source row + event view widened to attack.*).
+Still outside the databank after this: HAPI (62,841), UNHCR demographics (9,246), ACLED raw (6,240, held-only by EULA),
+FAO DIEM (124), v1's classifier entities (9,665), the Ministry's 861 daily reports (parser), see the 10-11 audit page.
+
+2026-10-11 12:55 UTC · Fragments, second batch · partial, UNCOMMITTED, awaiting migration 094 (Zaid's hand) · proof:
+`ingest.spec` 0 invalid; dry runs — `unhcr_population` 9,214 read (six HDX tables fetched by ops/fetch_unhcr_hdx.py) →
+45,197 observations (8 residing rows dropped as duplicates of the originating table, 195 deduped); `fao_diem` 124 read
+(four HDX files, ops/fetch_fao_diem.py, PSE rows only) → 13,696 observations, located 0.968. New: db/mappings/unhcr_population.yaml,
+fao_diem.yaml, db/migrations/094 (source fao_diem, HDX licence "Other" → ask). NOT loaded, by decision: v1's classifier
+entities (9,665 rows at 0.64 confidence, place "West Bank" on most — v2's own classifier supersedes them); HAPI (its only
+non-duplicate table is ACLED-derived); ACLED raw (EULA: never served; a hold-only grade does not exist yet).

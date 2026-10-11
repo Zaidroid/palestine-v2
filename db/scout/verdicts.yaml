@@ -54,7 +54,10 @@ adopted:
 # still stands for ACLED's serving posture.
 listed_never_landed:
   acled: held raw via v1 only; ToU restrictive — see rejected.acled-serving
-  insecurity_insight: CC-BY-SA — a candidate for the health/aid-security pillar
+  insecurity_insight: >-
+    CC-BY-SA — LANDED 2026-10-11: db/mappings/insecurity_insight.yaml, 20,170
+    events (ops/fetch_insecurity_insight.py reads v1's normalised file; the
+    direct HDX xlsx fetch is the next step); source row in migration 093
   awsd: aid worker security DB — candidate
   fao_diem: FAO DIEM monitoring — candidate
   healthsites: global healthsites extract — candidate
@@ -122,6 +125,14 @@ rejected:
     reason: >-
       bulk ingestion is "expansive use" requiring express written
       consent; revisit only by asking B'Tselem in writing
+    amended: 2026-10-11
+    amendment: >-
+      [ZAID] "the databank right now is for personal use, build these as
+      part of it" — the frozen 2000-2023 file v1 held (11,124 rows) is loaded
+      in full (btselem_fatalities.yaml) with the source row unchanged:
+      no-redistribution, commercial_use=false, so the partner and bulk
+      tiers never carry it. Per-row public serving and the current export
+      still wait on the letter (db/scout/letters/btselem_bulk.md, not sent).
 
 dead_upstream:
   unrwa-aid-trucks: {date: 2025-01-16, note: operational ban}

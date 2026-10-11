@@ -20,6 +20,7 @@ Run:  .venv/bin/python -m ingest.databank <category> [--dry-run]
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import re
 import sys
@@ -387,7 +388,8 @@ def region_place(places: dict, region: str, attrs: dict) -> tuple[int | None, bo
 GOVERNORATE_SPELLINGS = {
     "qalqiliya": "Qalqilya", "qalqilyah": "Qalqilya", "tulkarem": "Tulkarm",
     "tulkarim": "Tulkarm", "ramallah and al bireh": "Ramallah",
-    "ramallah al bireh": "Ramallah", "jericho and al aghwar": "Jericho",
+    "ramallah al bireh": "Ramallah", "ramallah and al bira": "Ramallah",
+    "jericho and al aghwar": "Jericho",
     "khan yunis": "Khan Younis", "deir al balah": "Deir Al-Balah",
     "al quds": "Jerusalem", "east jerusalem": "Jerusalem",
 }
@@ -1516,11 +1518,11 @@ def t_conflict_gaza(rec, spec, places, counts):
     day = str(rec.get("report_date") or "")[:10]
     if not day:
         return Drop("missing_date")
-    if day < GAZA_CUTOVER:
-        return Drop("before_cutover")
+    # Until 2026-10-11 a day before the cut-over was dropped here whole; the
+    # detail series now load from the first bulletin, so the cut-over applies
+    # only to the two legacy totals (below) and a day with no total at all can
+    # still carry its detail.
     killed, injured = rec.get("killed_cum"), rec.get("injured_cum")
-    if killed is None and injured is None:
-        return Drop("no_cumulative")
     # T4P fills a day with no Ministry bulletin by subtracting the NEXT
     # bulletin's 24 h line from its total, and marks it report_source
     # "missing". Measured 2026-09-23: all 9 such rows in 2026 equal exactly
@@ -1543,15 +1545,62 @@ def t_conflict_gaza(rec, spec, places, counts):
     attrs = {"cumulative": True, "region": "Gaza Strip",
              "report_source": rec.get("report_source")}
     rows = []
-    for value, field_name, indicator in (
-            (killed, "killed_cum", "conflict.gaza_cumulative_killed"),
-            (injured, "injured_cum", "conflict.gaza_cumulative_injured")):
-        if value is None:
-            counts[f"one_total_missing:{field_name}"] += 1
+    # The two legacy totals start the day after v1's frozen series ends (the
+    # cut-over); the detail series below never existed in the databank, so
+    # they load from the first bulletin (2026-10-11, the fragments decision).
+    if day >= GAZA_CUTOVER:
+        for value, field_name, indicator in (
+                (killed, "killed_cum", "conflict.gaza_cumulative_killed"),
+                (injured, "injured_cum", "conflict.gaza_cumulative_injured")):
+            if value is None:
+                counts[f"one_total_missing:{field_name}"] += 1
+                continue
+            rows.append(Row(ds, indicator, day, "day", f"t4p-gaza-{day}:{field_name}",
+                            value_num=value, unit="persons", place_id=gaza, attrs=attrs))
+    else:
+        counts["legacy_totals_before_cutover"] += 1
+    # Detail cumulatives the ingest dropped until 2026-10-11: children, women,
+    # medical staff, press, civil defence and "massacres" (T4P's count of
+    # families with several members killed). T4P's `ext_` prefix means
+    # "extended": on a bulletin day the value is the bulletin's; on a
+    # "missing" day it is T4P's carry-forward, and those days were dropped
+    # above, so nothing here is inferred.
+    for field_name, indicator, unit in _GAZA_DETAIL_CUMS:
+        value = rec.get(field_name)
+        if value in (None, ""):
             continue
         rows.append(Row(ds, indicator, day, "day", f"t4p-gaza-{day}:{field_name}",
-                        value_num=value, unit="persons", place_id=gaza, attrs=attrs))
-    return rows
+                        value_num=value, unit=unit, place_id=gaza, attrs=attrs))
+    # The bulletin's own 24-hour line and its split (newly killed since the
+    # ceasefire, died of wounds, added by the Ministry's judicial committee):
+    # flows, summable, with the period the bulletin covered in attrs — the B2
+    # finding is exactly that a 24 h line is not a difference of totals.
+    daily_attrs = {"region": "Gaza Strip", "report_source": rec.get("report_source"),
+                   "report_period_hours": rec.get("report_period")}
+    for field_name, indicator in _GAZA_DAILY_FLOWS:
+        value = rec.get(field_name)
+        if value in (None, ""):
+            continue
+        rows.append(Row(ds, indicator, day, "day", f"t4p-gaza-{day}:{field_name}",
+                        value_num=value, unit="persons", place_id=gaza, attrs=daily_attrs))
+    return rows or Drop("no_metrics")
+
+
+_GAZA_DETAIL_CUMS = (
+    ("ext_killed_children_cum", "conflict.gaza_cumulative_killed_children", "persons"),
+    ("ext_killed_women_cum", "conflict.gaza_cumulative_killed_women", "persons"),
+    ("ext_med_killed_cum", "conflict.gaza_cumulative_killed_medical", "persons"),
+    ("ext_press_killed_cum", "conflict.gaza_cumulative_killed_press", "persons"),
+    ("ext_civdef_killed_cum", "conflict.gaza_cumulative_killed_civil_defence", "persons"),
+    ("ext_massacres_cum", "conflict.gaza_cumulative_massacres", "events"),
+)
+_GAZA_DAILY_FLOWS = (
+    ("killed", "conflict.gaza_daily_killed"),
+    ("injured", "conflict.gaza_daily_injured"),
+    ("killed_truce_new", "conflict.gaza_daily_killed_new"),
+    ("killed_succumbed", "conflict.gaza_daily_killed_succumbed"),
+    ("killed_committee", "conflict.gaza_daily_killed_committee"),
+)
 
 
 # ── water_gho — WHO GHO WASH indicators, v2's own fetch ──────────────────────
@@ -1640,7 +1689,266 @@ def t_refugees_unrwa_registered(rec, spec, places, counts):
     return rows
 
 
+# ── insecurity_insight — one event per incident, weapon and victims kept ─────
+# (insecurity_insight.yaml, 2026-10-11). v1's normalised HDX files, read from
+# data/raw/insecurity_insight by ops/fetch_insecurity_insight.py.
+
+def _ii_content(r: dict) -> str:
+    return json.dumps([r.get("date"), r.get("category"), r.get("admin1"),
+                       r.get("weapon"), r.get("perpetrator_type"),
+                       r.get("location_type"), r.get("victims")], sort_keys=True)
+
+
+_II_OLD_FILE = "2023 PSE SHCC Health Care Data.xlsx"
+_II_NEW_FILE = "2023-2024 PSE SHCC Health Care Data.xlsx"
+_II_REGIONS = ("Gaza Strip", "West Bank", "East Jerusalem")
+
+
+def _ii_prepass(all_recs, spec, counts):
+    """The 2023-only SHCC file is covered by the 2023-2024 one: an incident
+    present in both (416 measured) is dropped from the older file, counted."""
+    t_insecurity_insight.later = {_ii_content(r) for r in all_recs
+                                  if isinstance(r, dict)
+                                  and r.get("source_dataset") == _II_NEW_FILE}
+
+
+def t_insecurity_insight(rec, spec, places, counts):
+    ds = "insecurity_insight_incidents"
+    day = str(rec.get("date") or "")[:10]
+    if len(day) != 10:
+        return Drop("missing_date")
+    cat = slug(rec.get("category") or "")
+    if not cat:
+        return Drop("missing_category")
+    if (rec.get("source_dataset") == _II_OLD_FILE
+            and _ii_content(rec) in t_insecurity_insight.later):
+        return Drop("superseded_by_later_file")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    lat, lon = rec.get("latitude"), rec.get("longitude")
+    pid, located = None, False
+    if lat is not None and lon is not None:
+        pid = places["_pip"].resolve(lat, lon)
+        located = True                                  # point-grade geometry
+    else:
+        a1 = rec.get("admin1") or ""
+        if a1.endswith(" Governorate"):
+            pid = governorate_by_name(places, a1[: -len(" Governorate")])
+            located = pid is not None
+        if pid is None:
+            region = a1 if a1 in _II_REGIONS else "Palestine"
+            pid, located = region_place(places, region, attrs)
+    v = rec.get("victims") or {}
+    metrics = {k: v.get(k) for k in ("killed", "injured", "kidnapped", "arrested")
+               if v.get(k) not in (None, 0)}
+    return [EventRow(ds, f"attack.{cat}", day, "day", f"ii-{rec['incident_id']}",
+                     place_id=pid, lat=lat, lon=lon, located=located,
+                     confidence=0.7, independent_sources=1, metrics=metrics,
+                     attrs=attrs)]
+
+
+t_insecurity_insight.prepass = _ii_prepass
+t_insecurity_insight.later = set()
+
+
+# ── btselem_fatalities — one observation per person killed ───────────────────
+# (btselem_fatalities.yaml, 2026-10-11). v1's frozen CSV, converted nightly by
+# ops/fetch_btselem_file.py. Districts are the publisher's; the region is the
+# landing for the settlement bloc and the Strip itself; Israel stays NULL.
+_BTSELEM_REGION_DISTRICTS = {"Gush Katif": "Gaza Strip", "Gaza Strip": "Gaza Strip"}
+
+
+def t_btselem_fatalities(rec, spec, places, counts):
+    ds = "btselem_fatalities"
+    day = str(rec.get("date_of_event") or "")[:10]
+    if len(day) != 10:
+        return Drop("missing_date")
+    name = (rec.get("name") or "").strip()
+    if not name:
+        return Drop("missing_name")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    attrs["name"] = name
+    district = rec.get("event_location_district") or ""
+    region = rec.get("event_location_region") or ""
+    pid, located = None, False
+    if district in _BTSELEM_REGION_DISTRICTS:
+        pid, located = region_place(places, _BTSELEM_REGION_DISTRICTS[district], attrs)
+    else:
+        pid = governorate_by_name(places, district)
+        located = pid is not None
+        if pid is None:
+            counts[f"district_to_region:{district or '-'}"] += 1
+            pid, located = region_place(places, region if region in
+                                        ("Gaza Strip", "West Bank") else region or "Palestine", attrs)
+    seq = rec.get("seq") or 0
+    sid = "btselem-" + hashlib.sha1(
+        f"{name}|{day}|{rec.get('date_of_death')}|{rec.get('place_of_residence')}|{seq}"
+        .encode("utf-8")).hexdigest()[:20]
+    return [Row(ds, "fatalities.person", day, "day", sid, value_num=1,
+                value_text=name, unit="persons", place_id=pid, located=located,
+                attrs=attrs)]
+
+
+# ── unhcr_population — UNHCR's six HDX tables, one observation per figure ────
+# (unhcr_population.yaml, 2026-10-11; ops/fetch_unhcr_hdx.py adds `table`).
+
+def _num(v):
+    if v in (None, ""):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+_UNHCR_STOCKS = (("Refugees", "refugees"), ("Asylum seekers", "asylum_seekers"),
+                 ("Other people in need of international protection", "oip"),
+                 ("Internally displaced persons", "idps"), ("Stateless Persons", "stateless"),
+                 ("Others of concern to UNHCR", "others_of_concern"), ("Host community", "host_community"))
+_UNHCR_BANDS = (("0-4", "0_4"), ("5-11", "5_11"), ("12-17", "12_17"), ("18-59", "18_59"),
+                ("60 or more", "60_plus"), ("Unknown", "unknown"), ("Total", "total"))
+_UNHCR_DEMO = ([(f"{sex} {band}", f"{sex.lower()}_{s}") for sex in ("Female", "Male")
+                for band, s in _UNHCR_BANDS] + [("Total", "total")])
+_UNHCR_DECISIONS = (("Recognized", "recognized"), ("Complementary Protection", "complementary_protection"),
+                    ("Otherwise Closed", "otherwise_closed"), ("Rejected", "rejected"), ("Total Decided", "total"))
+_UNHCR_SOLUTIONS = (("Resettlement arrivals", "resettlement_arrivals"), ("Naturalisation", "naturalisation"),
+                    ("Refugee returns", "refugee_returns"), ("IDP returns", "idp_returns"))
+
+
+def _unhcr_demo_key(rec) -> str:
+    return "|".join(str(rec.get(k) or "") for k in (
+        "Year", "Country of Origin Code", "Country of Asylum Code", "Population Type",
+        "location", "urbanRural", "accommodationType"))
+
+
+def _unhcr_prepass(all_recs, spec, counts):
+    """The residing-in-Palestine table repeats the originating table's rows for
+    people who are both from and in Palestine (8 measured): one fact, two
+    files. The originating copy is kept; the residing copy is dropped, counted."""
+    t_unhcr_population.originating = {_unhcr_demo_key(r) for r in all_recs
+                                      if isinstance(r, dict)
+                                      and r.get("table") == "demographics_originating"}
+
+
+def t_unhcr_population(rec, spec, places, counts):
+    ds = "unhcr_population_hdx"
+    table = rec.get("table") or ""
+    year = str(rec.get("Year") or "")[:4]
+    if not year.isdigit():
+        return Drop("missing_year")
+    if table == "demographics_residing" and _unhcr_demo_key(rec) in t_unhcr_population.originating:
+        return Drop("duplicate_of_originating")
+    day = f"{year}-01-01"
+    code = rec.get("Country of Asylum Code") or ""
+    origin = rec.get("Country of Origin Code") or ""
+    attrs = {"table": table, "asylum_country": rec.get("Country of Asylum Name"),
+             "asylum_country_code": code, "origin_country_code": origin}
+    if code == "PSE":
+        attrs["region"] = "Palestine"           # people residing in Palestine: honest NULL place
+    rows = []
+
+    def emit(ind, value, dims=None, key="", unit="persons"):
+        a = dict(attrs)
+        a.update(dims or {})
+        sid = "unhcr-" + hashlib.sha1("|".join([table, year, origin, code, key, ind]).encode("utf-8")).hexdigest()[:20]
+        rows.append(Row(ds, ind, day, "year", sid, value_num=value, unit=unit, attrs=a))
+
+    if table == "stocks":
+        for col, s in _UNHCR_STOCKS:
+            v = _num(rec.get(col))
+            if v is not None:
+                emit(f"refugees.stock.{s}", v)
+    elif table in ("demographics_originating", "demographics_residing"):
+        dims = {"population_type": rec.get("Population Type"), "location": rec.get("location"),
+                "urban_rural": rec.get("urbanRural"), "accommodation": rec.get("accommodationType")}
+        key = "|".join(str(dims[k] or "") for k in ("population_type", "location", "urban_rural", "accommodation"))
+        for col, s in _UNHCR_DEMO:
+            v = _num(rec.get(col))
+            if v is None or (v == 0 and not s.endswith("total")):
+                continue                        # zero cells are not written, totals always are
+            emit(f"refugees.demographics.{s}", v, dims, key)
+    elif table == "applications":
+        dims = {"procedure_type": rec.get("Procedure Type"), "procedure": rec.get("Procedure Name"),
+                "application_type": rec.get("Application Type Code"),
+                "application_data": rec.get("Application Data Type")}
+        key = "|".join(str(dims[k] or "") for k in ("procedure_type", "application_type", "application_data"))
+        v = _num(rec.get("Number of Applications"))
+        if v is not None:
+            emit("refugees.asylum_applications", v, dims, key,
+                 unit="cases" if dims["application_data"] == "C" else "persons")
+    elif table == "decisions":
+        dims = {"procedure_type": rec.get("Procedure Type"), "procedure": rec.get("Procedure Name"),
+                "decision_type": rec.get("Decision Type Code"), "decision_data": rec.get("Decision Data Type")}
+        key = "|".join(str(dims[k] or "") for k in ("procedure_type", "decision_type", "decision_data"))
+        unit = "cases" if dims["decision_data"] == "C" else "persons"
+        for col, s in _UNHCR_DECISIONS:
+            v = _num(rec.get(col))
+            if v is not None:
+                emit(f"refugees.asylum_decisions.{s}", v, dims, key, unit=unit)
+    elif table == "solutions":
+        for col, s in _UNHCR_SOLUTIONS:
+            v = _num(rec.get(col))
+            if v is not None:
+                emit(f"refugees.solutions.{s}", v)
+    else:
+        counts[f"unknown_table:{table or '-'}"] += 1
+    return rows or Drop("no_values")
+
+
+t_unhcr_population.prepass = _unhcr_prepass
+t_unhcr_population.originating = set()
+
+
+# ── fao_diem — FAO DIEM household-survey aggregates, one row per figure ───────
+# (fao_diem.yaml, 2026-10-11; ops/fetch_fao_diem.py keeps the PSE rows).
+_FAO_SKIP = frozenset(("objectid", "adm0_name", "adm0_iso3", "adm0_m49", "adm1_name", "adm1_pcode",
+                       "adm2_pcode", "adm2_name", "adm_name", "adm_pcode", "adm_level", "round",
+                       "coll_start_date", "coll_end_date", "coll_mid_date", "theme"))
+_FAO_REGION = {"PS01": "West Bank", "PS02": "Gaza Strip"}
+
+
+def _fao_date(s) -> str | None:
+    try:
+        return datetime.strptime(str(s or "").split(" ")[0], "%m/%d/%Y").strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def t_fao_diem(rec, spec, places, counts):
+    ds = "fao_diem_household_surveys"
+    theme = rec.get("theme") or "unknown"
+    day = _fao_date(rec.get("coll_mid_date"))
+    if not day:
+        return Drop("missing_date")
+    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    attrs["coll_start_date"] = _fao_date(rec.get("coll_start_date"))
+    attrs["coll_end_date"] = _fao_date(rec.get("coll_end_date"))
+    pid, located = None, False
+    if str(rec.get("adm_level")) == "2":
+        pid = places["pcode"].get(rec.get("adm2_pcode"))
+        located = pid is not None
+    if pid is None:
+        region = _FAO_REGION.get(rec.get("adm1_pcode") or "") or rec.get("adm1_name") or "Palestine"
+        pid, located = region_place(places, region, attrs)
+    rows = []
+    for col, raw in rec.items():
+        if col in _FAO_SKIP or col.startswith("﻿"):
+            continue
+        v = _num(raw)
+        if v is None:
+            continue
+        unit = "count" if col.startswith(("tot_", "surveys")) else "percent"
+        sid = "fao-" + hashlib.sha1("|".join([theme, str(rec.get("round") or ""), str(rec.get("adm_pcode") or ""),
+                                              day, col]).encode("utf-8")).hexdigest()[:20]
+        rows.append(Row(ds, f"fao_diem.{theme}.{col}", day, "day", sid, value_num=v, unit=unit,
+                        place_id=pid, located=located, attrs=attrs))
+    return rows or Drop("no_values")
+
+
 TRANSFORMERS = {
+    "insecurity_insight": t_insecurity_insight,                 # 2026-10-11
+    "btselem_fatalities": t_btselem_fatalities,                 # 2026-10-11
+    "unhcr_population": t_unhcr_population,                     # 2026-10-11
+    "fao_diem": t_fao_diem,                                     # 2026-10-11
     "refugees_unrwa_registered": t_refugees_unrwa_registered,   # P1-B.4
     "population_wpp": t_population_wpp,   # P1-B.4: the 1950s, from the UN
     "conflict": t_conflict,

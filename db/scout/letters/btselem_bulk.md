@@ -12,16 +12,22 @@ I maintain a public, non-commercial databank of Palestine data and am writing fo
 the consent your licence specifically requires.
 
 Your terms permit ordinary use but define bulk use as "expansive use, which
-requires express written consent". We currently hold six event rows attributed to
-B'Tselem and have deliberately gone no further, because the licence is clear that
-what we would want next needs asking first.
+requires express written consent". We serve six aggregate rows attributed to
+B'Tselem. For my own research I also keep a copy of the 2000–2023 export of the
+database that circulates publicly (the Kaggle aggregation), and I have not
+published a row of it, because the licence is clear that what I would want next
+needs asking first.
 
 **What we would want**: the fatalities database as structured records — date,
 location, age, sex, circumstances, and your classification — with B'Tselem
 credited as the documenting organisation on every row and your methodology linked.
 
+**What we ask**: your consent to serve the records row by row with your
+attribution, and, if you are willing, access to the current export (the public
+database continues past September 2023 but refuses automated reads).
+
 If the answer is no, that is an entirely reasonable answer and we will keep to the
-six rows.
+six rows and the copy stays private.
 
 **What we would do with it**
 - Store it alongside more than 205,000 observations from 25 other sources, each row carrying

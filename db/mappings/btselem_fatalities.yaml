@@ -1,0 +1,122 @@
+# btselem_fatalities — B'Tselem's fatalities database, 2000-10-02 → 2023-09-24,
+# one OBSERVATION per person killed: 11,124 rows (10,092 Palestinians, 1,029
+# Israelis, 3 others), each with the event and death dates, age, gender,
+# citizenship, place, district and region, residence, participation in
+# hostilities, type of injury, ammunition, who killed them, and a note.
+#
+# WHY THIS SPEC EXISTS (2026-10-11). The file has sat in v1's data/historical
+# since June while the databank served six B'Tselem aggregates. The scout capped
+# exposure on 2026-08-06 ("bulk use requires express written consent") and the
+# letter was never sent. Zaid's decision of 2026-10-11: the databank is for
+# personal use and everything we hold goes in. The source row stays
+# `no-redistribution` and `commercial_use = false`, so the partner and bulk
+# tiers never carry these rows; per-row public serving waits for B'Tselem's
+# written answer (db/scout/letters/btselem_bulk.md, source_permission
+# btselem_bulk: not_asked). The letter is the next step, not a blocker.
+#
+# WHAT A ROW IS. indicator fatalities.person, value 1 person, value_text = the
+# name as the file writes it, occurred_at = date_of_event at day precision
+# (date_of_death is kept in attrs: 30 people died before the recorded event
+# date in the file, which is the file's own inconsistency, kept visible). The
+# West Bank: 2,712 people — Nablus 647, Jenin 512, Ramallah 350, Hebron 347,
+# Tulkarm 254; gunfire 2,470; by Israeli forces 2,337, by Palestinians 292, by
+# settlers 83; 515 minors, 188 women. Gaza 7,733. Israel 679 (region kept,
+# place NULL: the databank has no Israel place and will not invent one).
+#
+# PLACE. event_location_district → governorate by name through the loader's
+# spelling table (Khan Yunis, Deir al-Balah, Ramallah and al-Bira, al-Quds and
+# East Jerusalem → Jerusalem); 'Gush Katif' (70, the settlement bloc) and
+# 'Gaza Strip' (4) → the region place; 'Israel' (679) → NULL + attrs.region.
+category: btselem_fatalities
+transform: python:t_btselem_fatalities
+v1_category: casualties          # joins the casualties serving views
+shape: observation
+status: reviewed
+records_measured: 11124          # 2026-10-11; frozen upstream
+
+input:
+  root: /home/zaid/palestine-v2/data/raw/btselem
+  glob: "fatalities.json"        # ops/fetch_btselem_file.py, from v1's CSV
+                                 #   through V1_ROOT
+
+datasets:
+  - key: btselem_fatalities
+    source: btselem              # LicenseRef-BTselem, no-redistribution,
+                                 #   commercial_use=false (053; verified 2026-08-05)
+
+indicators:
+  - fatalities.person
+
+value:
+  num_from: null                 # always 1 — one row is one person
+  text_from: name
+  unit_from: {literal: persons}
+
+occurred_at:
+  from: date_of_event
+  precision: day                 # measured: 11,124 of 11,124 are YYYY-MM-DD
+
+place:
+  strategy: governorate
+  name_from: event_location_district
+  fallback: [region, none]
+  min_decided_pct: 1.0
+  min_located_pct: 0.90          # measured 2026-10-11: 10,371 of 11,124 reach a
+                                 #   governorate (0.93); Israel and Gush Katif do not
+
+attrs_passthrough:
+  - age
+  - gender
+  - citizenship
+  - event_location
+  - event_location_district
+  - event_location_region
+  - date_of_death
+  - took_part_in_the_hostilities
+  - place_of_residence
+  - place_of_residence_district
+  - type_of_injury
+  - ammunition
+  - killed_by
+  - notes
+  - seq                          # 0 for everyone; 1 for the second of two people
+                                 #   the file records with the same name on the
+                                 #   same day (13 pairs) — keeps both
+
+drop:
+  - reason: missing_date
+    measured: 0                  # the fetcher refuses a file with one
+  - reason: missing_name
+    measured: 0
+
+identity:
+  fields: [indicator, occurred_at]
+  attrs: [name, place_of_residence, seq]   # 11,124 distinct of 11,124 ✓
+
+expect:
+  min_records: 11000             # the fetcher's floor; the file is frozen
+  max_observations: 12000        # 11,124 at spec time; a re-fetch adds nothing
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: fatalities.person}
+      concept: mortality.conflict
+      measure_kind: flow         # one person on one day; summable by any cut
+      polarity: -1
+      grain: day
+      place_grain: governorate
+      canonical_unit: persons
+      name_en: "Person killed (B'Tselem fatalities database)"
+      name_ar: "شخص قُتل (قاعدة بيانات بتسيلم)"
+
+notes: |
+  Provenance (v1 data/historical/README.md): B'Tselem's database via the public
+  Kaggle aggregation, mirrored from github.com/EliBrignac/…; v1 validated it
+  against B'Tselem's published period totals (Cast Lead 1,376/1,391, Protective
+  Edge 2,195/2,251, Second Intifada 2,693/~3,189 — the named-record database is
+  narrower than headline figures). B'Tselem's live database continues past
+  September 2023 but answers automated reads with HTTP 429; the letter asks for
+  the current export. The v1 README calls the licence CC-BY-NC; the source row
+  (053) reads B'Tselem's own terms as bespoke. Either way: attribution, never
+  the partner tier, never bulk.

@@ -1,0 +1,99 @@
+# fao_diem — FAO's Data in Emergencies Monitoring household surveys for
+# Palestine: governorate-level aggregates per survey round in four thematic
+# files (food security, income shocks and needs, crop production, livestock
+# production), read from FAO's HDX release by ops/fetch_fao_diem.py.
+#
+# WHY THIS SPEC EXISTS (2026-10-11, the fragments decision). v1 fetched the four
+# files nightly into public/data/indicators (31 Palestine rows each) and nothing
+# read them; the scout listed FAO DIEM as a candidate in August. These are the
+# only household-survey figures the databank can hold on food insecurity (FIES),
+# income shocks, needs and agricultural loss by governorate.
+#
+# WHAT A ROW IS. One survey round × one governorate × one column becomes one
+# observation: indicator fao_diem.<theme>.<column> (e.g.
+# fao_diem.food_security.fies_hungry_1 = share of households that went hungry),
+# value as published, unit `percent` for the share columns and `count` for the
+# totals (surveys, tot_*_producers), occurred_at = the round's mid-collection
+# date at day precision with the start and end dates in attrs, place = the
+# governorate by its pcode (adm2_pcode) or the region for adm_level 1 rows.
+# Blank cells are not written. Columns ending _888 and _999 are the survey's
+# "don't know" / "refused" shares and are kept under their own names.
+#
+# LICENCE. HDX lists the package as "Other" (read 2026-10-11); FAO's DIEM terms
+# were not read. Source row (094): ask, commercial_use = false — held and served
+# with attribution on the public tier, withheld from partner and bulk.
+category: fao_diem
+transform: python:t_fao_diem
+v1_category: food                # joins the food serving views
+shape: observation
+status: reviewed
+records_measured: 124            # 2026-10-11: 31 rows × 4 themes
+
+input:
+  root: /home/zaid/palestine-v2/data/raw/fao_diem
+  glob: ["food_security.json", "income_shocks.json", "crop_production.json",
+         "livestock_production.json"]
+
+datasets:
+  - key: fao_diem_household_surveys
+    source: fao_diem             # 094: HDX "Other", ask
+
+drop:
+  - reason: missing_date
+    measured: 0
+  - reason: no_values
+    measured: 0
+
+occurred_at:
+  from: coll_mid_date
+  precision: day
+
+place:
+  strategy: pcode
+  fallback: [region, none]
+  min_decided_pct: 1.0
+  min_located_pct: 0.90
+
+attrs_passthrough:
+  - theme
+  - round
+  - coll_start_date
+  - coll_end_date
+  - surveys
+  - adm_level
+  - adm_name
+
+identity:
+  fields: [indicator, occurred_at, place_id]
+  attrs: [round]
+  generation: complete
+  max_absent: 2000
+
+expect:
+  min_records: 100
+  max_observations: 60000        # 124 rows × up to ~370 columns; the dry run
+                                 #   sets the measure
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {unit: count}
+      concept: food.security
+      measure_kind: stock
+      polarity: null
+      grain: period
+      place_grain: governorate
+      canonical_unit: count
+    - when: {prefix: "fao_diem."}
+      concept: food.security
+      measure_kind: ratio
+      polarity: null             # a share whose direction depends on the column
+      grain: period
+      place_grain: governorate
+      canonical_unit: percent
+
+notes: |
+  DIEM rounds are periodic (round 1 April–May 2024 onward); `grain: period`
+  marks that a row covers the collection window, not a day. The column
+  dictionary is FAO's (hh_agricactivity_*, fies_*, resp_*, …); the names are
+  kept verbatim so FAO's own documentation applies.

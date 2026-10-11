@@ -18,7 +18,15 @@
 # the day after the last frozen value, so the two datasets meet and never
 # overlap. Nothing is superseded and nothing is deleted.
 #
-# WHAT IT CARRIES. killed_cum and injured_cum, as published, on the indicators
+# SINCE 2026-10-11 IT ALSO CARRIES THE DETAIL the ingest used to drop (the
+# fragments decision): the cumulative children, women, medical, press and civil
+# defence tolls and T4P's massacre count, from the first bulletin on
+# 2023-10-07 (these never existed in the databank, so there is no overlap with
+# the frozen series), and the bulletin's own daily line with its split (new,
+# died of wounds, committee additions) — the figures an "after the ceasefire"
+# sentence needs. The two legacy totals keep the cut-over below.
+#
+# WHAT IT CARRIED FIRST. killed_cum and injured_cum, as published, on the indicators
 # the frozen series already uses (conflict.gaza_cumulative_killed/injured), so
 # a consumer reading the indicator sees one continuous series. T4P's source
 # for these figures is the Gaza Ministry of Health's daily bulletin
@@ -47,7 +55,7 @@ transform: python:t_conflict_gaza
 v1_category: conflict            # joins the conflict serving views
 shape: observation
 status: reviewed
-records_measured: 1082           # 2026-09-23: 2023-10-07 .. 2026-09-22 (the whole file is read)
+records_measured: 1100           # 2026-10-11: 2023-10-07 .. 2026-10-10 (the whole file is read)
 
 input:
   root: data/raw/tech4palestine
@@ -60,12 +68,17 @@ datasets:
     source: tech4palestine       # Unlicense — public domain (050, verified)
 
 drop:
-  - reason: before_cutover       # served by v1_conflict_tech4palestine
-    measured: 1037               # 2023-10-07 .. 2026-08-08
-  - reason: no_cumulative        # no bulletin that day, and T4P left it empty
-    measured: 7                  # since the cut-over, at spec time
+  - reason: before_cutover       # KEPT DECLARED, NO LONGER FIRES (2026-10-11):
+    measured: 0                  #   days before 2026-08-09 now load the DETAIL
+                                 #   series below; only the two legacy totals
+                                 #   skip them (counted: legacy_totals_before_cutover)
+  - reason: no_cumulative        # kept declared; folded into no_metrics
+    measured: 0
+  - reason: no_metrics           # a bulletin day with nothing at all to emit
+    measured: 0
   - reason: t4p_inferred         # no bulletin that day, and T4P filled it by
-    measured: 4                  #   arithmetic (report_source "missing")
+    measured: 40                 #   arithmetic (report_source "missing") — 40
+                                 #   across the whole file on 2026-10-11
   # unknown_report_source is deliberately NOT declared (V06): a report_source
   # T4P never used before fails the run, so a person reads it before anything
   # new is either served or dropped.
@@ -73,10 +86,11 @@ drop:
     measured: 0
 
 expect:
-  min_records: 1000              # the file is read whole; 1,082 at spec time
-  max_observations: 400          # 68 at spec time, +2 a day: ~5 months of
-                                 #   headroom. If this trips, re-measure and
-                                 #   raise deliberately.
+  min_records: 1000              # the file is read whole; 1,100 at spec time
+  max_observations: 16000        # 2026-10-11: 1,060 bulletin days × (6 detail
+                                 #   cumulatives + up to 5 daily flows) + the
+                                 #   two legacy totals since the cut-over ≈
+                                 #   12,900; +11 a day. Re-measure before raising.
 
 identity:
   fields: [indicator, occurred_at]
@@ -84,10 +98,31 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    - when: {regex: "cumulative_massacres"}
+      concept: violence
+      measure_kind: cumulative   # T4P: families with several members killed
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: events
     - when: {regex: "cumulative_(killed|injured)"}
       concept: mortality.conflict
       measure_kind: cumulative   # a running toll; NOTHING may sum it
       polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "gaza_daily_injured"}
+      concept: injury.conflict
+      measure_kind: flow         # the bulletin's own 24 h (or 48/72 h) line
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "gaza_daily_killed"}
+      concept: mortality.conflict
+      measure_kind: flow         # summable; attrs.report_period_hours says
+      polarity: -1               #   how many hours the line covered
       grain: day
       place_grain: region
       canonical_unit: persons

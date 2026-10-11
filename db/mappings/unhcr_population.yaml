@@ -1,0 +1,119 @@
+# unhcr_population — UNHCR's six tables on people originating from, or residing
+# in, the State of Palestine, read from UNHCR's own HDX release (CC BY-IGO):
+# end-year stocks by category per country of asylum back to 1976, demographics
+# by sex and age band per asylum country and location, the same for people
+# residing in Palestine, asylum applications, asylum decisions, and solutions.
+#
+# WHY THIS SPEC EXISTS (2026-10-11, the fragments decision). The databank held
+# one UNHCR series (v1_refugees_unhcr: refugees + asylum seekers summed, per
+# asylum country, 2010 → 2025, 1,157 rows) while v1 fetched all six tables
+# nightly and nothing read them. This spec reads them from the publisher
+# (ops/fetch_unhcr_hdx.py) and keeps the categories, the sexes, the ages, the
+# procedures and the outcomes the summed series lost. v1_refugees_unhcr stays
+# as it is (a different indicator on a different dataset); nothing overlaps.
+#
+# WHAT A ROW IS, by table (attrs.table):
+#   stocks          refugees.stock.{refugees|asylum_seekers|oip|idps|stateless|
+#                   others_of_concern|host_community} — persons at year end
+#   demographics_*  refugees.demographics.{female|male}_{0_4|5_11|12_17|18_59|
+#                   60_plus|unknown|total} and refugees.demographics.total, per
+#                   asylum country × population type × location × urban/rural ×
+#                   accommodation. Zero cells are not written except the three
+#                   totals (measured 2026-10-11: 67,230 cells, 20,130 non-zero).
+#   applications    refugees.asylum_applications (persons or cases: attrs.data)
+#   decisions       refugees.asylum_decisions.{recognized|complementary_protection|
+#                   otherwise_closed|rejected|total}
+#   solutions       refugees.solutions.{resettlement_arrivals|naturalisation|
+#                   refugee_returns|idp_returns}
+# Every row: occurred_at = Year at year precision; place NULL with
+# attrs.asylum_country and attrs.asylum_country_code (the place named is a
+# foreign country; residing-in-Palestine rows carry attrs.region = Palestine).
+category: unhcr_population
+transform: python:t_unhcr_population
+v1_category: refugees            # joins the refugees serving views
+shape: observation
+status: reviewed
+records_measured: 9214           # 2026-10-11: 1,862 + 4,482 + 8 + 1,402 + 1,289 + 171
+
+input:
+  root: /home/zaid/palestine-v2/data/raw/unhcr
+  glob: ["stocks.json", "demographics_originating.json", "demographics_residing.json",
+         "applications.json", "decisions.json", "solutions.json"]
+
+datasets:
+  - key: unhcr_population_hdx
+    source: unhcr                # CC-BY-4.0 at unhcr.org (verified 2026-08-08);
+                                 #   this release: CC BY-IGO on HDX, stamped in
+                                 #   the raw file
+
+drop:
+  - reason: duplicate_of_originating
+    if: "a demographics_residing row whose year, origin, asylum and dimensions also appear in demographics_originating"
+    measured: 8                  # people both from and in Palestine: one fact in two files
+  - reason: missing_year
+    measured: 0
+  - reason: no_values
+    measured: 0                  # a row with every value blank
+
+occurred_at:
+  from: Year
+  precision: year
+
+place:
+  strategy: none                 # the place named is a country of asylum
+  min_decided_pct: 1.0
+
+attrs_passthrough:
+  - table
+
+identity:
+  fields: [indicator, occurred_at]
+  attrs: [origin_country_code, asylum_country_code, population_type, location, urban_rural, accommodation,
+          procedure_type, application_type, application_data, decision_type, decision_data]
+  # origin is PSE on every originating table and VARIES on the residing table
+  #   (people from several countries residing in Palestine): without it, 24
+  #   rows collided on the first dry run
+  generation: complete           # each file is the publisher's whole table
+  max_absent: 600                # a revision closes a few rows; a shrink fails
+
+expect:
+  min_records: 8500
+  max_observations: 52000        # dry run 2026-10-11: 45,221 emitted; +~2,000 a year
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "refugees.stock."}
+      concept: displacement.refugee
+      measure_kind: stock
+      polarity: -1
+      grain: year
+      place_grain: country
+      canonical_unit: persons
+    - when: {prefix: "refugees.demographics."}
+      concept: displacement.refugee
+      measure_kind: stock
+      polarity: -1
+      grain: year
+      place_grain: country
+      canonical_unit: persons
+    - when: {prefix: "refugees.asylum_"}
+      concept: displacement.refugee
+      measure_kind: flow
+      polarity: null
+      grain: year
+      place_grain: country
+      canonical_unit: persons
+    - when: {prefix: "refugees.solutions."}
+      concept: displacement.refugee
+      measure_kind: flow
+      polarity: +1
+      grain: year
+      place_grain: country
+      canonical_unit: persons
+
+notes: |
+  Stable ids are deterministic from the row's dimensions (unhcr-<table>-<year>-
+  <asylum>-<dims>-<field>), so a re-fetch re-matches and a revised value
+  supersedes. UNHCR revises past years in place; `generation: complete` closes
+  rows the publisher withdraws, within the ceiling.

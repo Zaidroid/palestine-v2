@@ -1,0 +1,117 @@
+# insecurity_insight — Insecurity Insight's Palestine incident files (HDX,
+# CC-BY-SA), one EVENT per incident: attacks on health care, explosive-weapon
+# incidents, attacks on aid workers, education, food and water systems,
+# protection incidents and conflict-related sexual violence, 2002-04 → today,
+# each with the weapon, the reported perpetrator, the location type and the
+# victims (killed, injured, kidnapped, arrested).
+#
+# WHY THIS SPEC EXISTS (2026-10-11). The audit of that day found v1 fetching and
+# normalising these files every night since June (20,836 incidents) while the
+# databank held nothing from them: the scout file marked the source "adopted" in
+# August and no spec was written. Zaid: "I want all of those included, the
+# databank right now is for personal use, build these as part of it." This is
+# the first of the fragments to come in. It is the granular casualties-and-
+# injuries record with weapons that the databank was missing: the West Bank and
+# Gaza both, incident by incident.
+#
+# LICENCE, read at the publisher 2026-10-11 through HDX's CKAN API: "Creative
+# Commons Attribution Share-Alike (CC BY-SA)", package last modified 2026-10-05.
+# Publisher's caveat, carried on every served row through the source row:
+# "The incidents reported are not a complete nor a representative list of all
+# incidents and have not been independently verified." Source row: migration 093.
+#
+# WHAT IS DROPPED, measured 2026-10-11 on the 20,836 rows:
+#   416 rows of "2023 PSE SHCC Health Care Data.xlsx" are the same incident
+#   (same date, category, admin area, weapon, perpetrator, location type and
+#   victims) as a row of "2023-2024 PSE SHCC Health Care Data.xlsx", which
+#   covers the same year and more: the later file supersedes them. Nothing else
+#   is dropped. 7,330 further rows share that content key INSIDE one file with
+#   censored coordinates: distinct incidents the publisher could not place more
+#   finely (several strikes on health buildings in one governorate on one day),
+#   and they are kept — the loader's event identity is a multiset, so same-key
+#   events with distinct stable ids are distinct events (DATABANK-05).
+#
+# PLACE. 3,371 incidents carry coordinates (point-in-polygon → governorate);
+# "East Jerusalem" → the Jerusalem governorate; "<X> Governorate" → that
+# governorate by name; "Gaza Strip" / "West Bank" → the region place; everything
+# else ("No Information", null: 4,872) → honest NULL with attrs.region. Geo
+# precision is "censored" on 16,460 rows by the publisher's own choice, kept in
+# attrs.geo_precision so a map never pretends to know more than the source.
+category: insecurity_insight
+transform: python:t_insecurity_insight
+v1_category: conflict            # joins the conflict serving views; the event
+                                 #   view's type list is widened in 093
+shape: event
+status: reviewed
+records_measured: 20836          # 2026-10-11
+
+input:                           # v2's own raw tree, written nightly by
+  root: /home/zaid/palestine-v2/data/raw/insecurity_insight
+  glob: "incidents.json"         #   ops/fetch_insecurity_insight.py (reads
+                                 #   v1's normalised file through V1_ROOT; the
+                                 #   direct HDX xlsx fetch is the next step)
+
+datasets:
+  - key: insecurity_insight_incidents
+    source: insecurity_insight   # CC-BY-SA, verified 2026-10-11 (093)
+
+event_type:
+  template: "attack.{category}"
+  # measured values 2026-10-11: healthcare 8,569 · explosive_weapons 6,859 ·
+  #   food_systems 1,955 · protection 1,211 · education 982 · aid_worker 754 ·
+  #   water_systems 457 · sexual_violence 49
+
+metrics_from:
+  - victims.killed
+  - victims.injured
+  - victims.kidnapped
+  - victims.arrested
+  # zero and null are not written: an incident with no casualty figure has an
+  #   empty metrics object, never a false zero. Summed over the file on
+  #   2026-10-11: killed 5,685, injured 3,188.
+
+attrs_passthrough:
+  - category
+  - weapon                       # 'Firearms' 5,903 · 'Aerial Bomb: Plane' 3,014 · …; null on 6,881
+  - perpetrator_type             # 'Government: Military' 12,864 · 'Host Government: Military' 5,560 · …
+  - perpetrator_name
+  - location_type                # 'Health Building' 1,524 · 'Road' 710 · 'IDP/Refugee Camp' 350 · …
+  - organisation_affected
+  - geo_precision                # 'censored' 16,460; the publisher's own word
+  - admin1
+  - source_dataset               # which of the twelve HDX files the row came from
+
+drop:
+  - reason: superseded_by_later_file
+    if: "source_dataset == '2023 PSE SHCC Health Care Data.xlsx' and the same incident is in the 2023-2024 file"
+    measured: 666                # dry run 2026-10-11 (416 distinct content keys span the two files)
+  - reason: missing_date
+    measured: 0                  # defensive; every row carries a 10-character date
+  - reason: missing_category
+    measured: 0                  # defensive
+
+occurred_at:
+  from: date
+  precision: day                 # measured: 20,836 of 20,836 are YYYY-MM-DD
+
+place:
+  strategy: latlon
+  fallback: [governorate, region, none]
+  min_decided_pct: 1.0           # NULL is a decision
+  min_located_pct: 0.12          # measured 2026-10-11: ~3,600 of 20,420 land at
+                                 #   point or governorate grade (0.18)
+
+identity:
+  fields: [indicator, occurred_at]   # events use the loader's own multiset key
+                                     #   (type | day | place | lat | lon | metrics);
+                                     #   declared because load_spec requires it
+
+expect:
+  min_records: 18000             # 20,836 at spec time; the file only grows
+  max_observations: 10           # this spec emits events, not observations
+
+notes: |
+  The stable id is ii-<incident_id> (v1's content hash of the row). A re-hash
+  upstream re-matches through the multiset key. When the direct HDX fetch
+  replaces v1's parser, the id must be derived the same way or the whole file
+  will read as new events once; measure before switching.
