@@ -5,8 +5,8 @@
   "scored": 200,
   "reading_precision": 0.814,
   "reading_recall": 0.718,
-  "checkpoint_recall": 0.806,
-  "value_agreement_when_found": 0.926,
+  "checkpoint_recall": 0.777,
+  "value_agreement_when_found": 0.973,
   "is_road_report_agreement": 0.79,
   "gold_readings_unregistered": 27,
   "messages_with_readings_v1_missed": 10,
@@ -15,24 +15,73 @@
     "fp": 66,
     "fn": 113
   },
-  "keys_unified_by": "v2 place (merges followed)",
-  "at": "2026-10-11T16:06:12+00:00",
+  "keys_unified_by": "v2 place (merges followed); 2 unlinked v1 keys through the register",
+  "at": "2026-10-11T19:03:49+00:00",
   "v2_reader": {
     "subject": "roads",
     "parser": "v2 reader (cascade/road_message.py)",
     "scored": 200,
-    "reading_precision": 0.936,
-    "reading_recall": 0.84,
-    "checkpoint_recall": 0.878,
-    "value_agreement_when_found": 0.956,
-    "readings_on_places_outside_v1_registry": 11,
+    "reading_precision": 0.94,
+    "reading_recall": 0.943,
+    "checkpoint_recall": 0.956,
+    "value_agreement_when_found": 0.995,
+    "readings_on_places_outside_v1_registry": 16,
     "counts": {
-      "tp": 337,
-      "fp": 23,
-      "fn": 64
+      "tp": 378,
+      "fp": 24,
+      "fn": 23
     },
-    "names_in_register": 808,
+    "names_in_register": 1013,
     "caution": "the register was extended on 2026-10-11 from a reading of this gold; recall here is not an unbiased figure until a fresh sample is read",
-    "at": "2026-10-11T16:06:13+00:00"
+    "at": "2026-10-11T19:03:49+00:00"
+  },
+  "round2": {
+    "subject": "roads",
+    "parser": "v1 whitelist (checkpoint_updates)",
+    "gold_rows": 200,
+    "scored": 200,
+    "reading_precision": 0.817,
+    "reading_recall": 0.721,
+    "checkpoint_recall": 0.803,
+    "value_agreement_when_found": 0.967,
+    "is_road_report_agreement": 0.715,
+    "gold_readings_unregistered": 25,
+    "messages_with_readings_v1_missed": 10,
+    "counts": {
+      "tp": 295,
+      "fp": 66,
+      "fn": 114
+    },
+    "keys_unified_by": "v2 place (merges followed); 3 unlinked v1 keys through the register",
+    "at": "2026-10-11T19:03:50+00:00",
+    "v2_reader": {
+      "subject": "roads",
+      "parser": "v2 reader (cascade/road_message.py)",
+      "scored": 200,
+      "reading_precision": 0.949,
+      "reading_recall": 0.951,
+      "checkpoint_recall": 0.958,
+      "value_agreement_when_found": 0.99,
+      "readings_on_places_outside_v1_registry": 19,
+      "counts": {
+        "tp": 389,
+        "fp": 21,
+        "fn": 20
+      },
+      "names_in_register": 1013,
+      "caution": "round 2: drawn after the register was extended and read blind. `as_first_scored` is the blind figure; these numbers follow every fix made since from reading the round",
+      "at": "2026-10-11T19:03:51+00:00"
+    },
+    "as_first_scored": {
+      "v1_parser": {
+        "reading_precision": 0.817,
+        "reading_recall": 0.721
+      },
+      "v2_reader": {
+        "reading_precision": 0.94,
+        "reading_recall": 0.919
+      },
+      "note": "the blind figure: scored 2026-10-11 before the reader was touched again. The numbers beside it are after three fixes found by reading this round's disagreements (a checkpoint and a search after a dash, a direction lost after a lone waw, a publisher's hashtag) and after v1 keys with no v2 link were put on their v2 place through the register; they are no longer blind."
+    }
   }
 }

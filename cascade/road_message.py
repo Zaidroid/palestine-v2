@@ -32,6 +32,8 @@ writing around it.
 """
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass, field
 
 from cascade.checkpoint_text import (DIRECTION_WORDS, EMOJI_FLOW, FLOW_WORDS, NAME,
@@ -299,6 +301,20 @@ def _line(line: str, lex: Lexicon) -> tuple[list[RoadReading], list[Span], bool]
     return out, (pending + last_group if pending else last_group), True
 
 
+_HASHTAG = re.compile(r"#[^\s#]+")
+
+
+def _without_publisher_tags(text: str) -> str:
+    """"#شرطة_معبر_الكرامه" signs a post by the crossings police; it is who
+    wrote, not police seen at the crossing. A hashtag that carries a presence
+    word is a signature and is dropped; one that only names a place
+    ("#معبر_الكرامة") stays, because the channels label their posts with it."""
+    def _sub(m: re.Match) -> str:
+        words = tokens(normalize(m.group(0).replace("_", " ").lstrip("#")))
+        return " " if any(_lex(w, PRESENCE_WORDS) for w in words) else m.group(0)
+    return _HASHTAG.sub(_sub, text)
+
+
 def read_message(text: str | None, lex: Lexicon, parent: str | None = None,
                  home: int | None = None) -> list[RoadReading]:
     """Every reading in a message.
@@ -310,6 +326,7 @@ def read_message(text: str | None, lex: Lexicon, parent: str | None = None,
     """
     if not text or not text.strip():
         return []
+    text = _without_publisher_tags(text)
     out: list[RoadReading] = []
     above: list[Span] = []             # who the line above was about
     above_told = False                 # …and whether it said anything of them

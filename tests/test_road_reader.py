@@ -226,3 +226,32 @@ def test_names_nobody_registered_are_kept_for_a_yes(lex):
     assert roads.candidate_names("عطاره سالك", lex) == []          # already registered
     parts = roads.candidate_names("بوابة سنجل المحول مغلقة", lex)
     assert parts and "سنجل" in parts[0][1] and "المحول" in parts[0][1]
+
+
+# ── 2026-10-11, the blind round (tests/gold/roads-2.jsonl) ───────────────────
+
+def _facts(text, lex):
+    return {(r.place_id, f.axis, f.value, f.direction)
+            for r in read_message(text, lex) for f in r.facts}
+
+
+def test_a_checkpoint_and_a_search_after_a_dash_are_both_read(lex):
+    assert _facts("سنجل - حاجز وتفتيش", lex) == {
+        (6, "presence", "idf", "both"), (6, "presence", "inspection", "both")}
+    assert _facts("عين سينيا - الداخل سالك والخارج حاجز وتفتيش", lex) == {
+        (2, "flow", "open", "inbound"), (2, "presence", "idf", "outbound"),
+        (2, "presence", "inspection", "outbound")}
+
+
+def test_a_waw_typed_apart_keeps_the_search_in_its_direction(lex):
+    assert _facts("عناب للداخل سالك\nللخارج ازمة و تفتيش", lex) == {
+        (4, "flow", "open", "inbound"), (4, "flow", "congested", "outbound"),
+        (4, "presence", "inspection", "outbound")}
+
+
+def test_a_publishers_hashtag_is_not_police_at_the_crossing(lex):
+    text = ("صباح الخير\n#شرطة_معبر_الكرامه\n"
+            "متابعة لحركة المسافرين المغادرين اليوم الخميس من استراحة أريحا")
+    assert _facts(text, lex) == set()
+    # the place hashtag the channels label their posts with still names the place
+    assert (10, "flow", "closed", "both") in _facts("#معبر_الكرامة مغلق", lex)

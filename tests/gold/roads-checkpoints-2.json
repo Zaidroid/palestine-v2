@@ -1,0 +1,2823 @@
+[
+{
+"canonical_key": "Access_to_the_Western_Wall_Area",
+"name_ar": "Access to the Western Wall Area",
+"name_en": "Access to the Western Wall Area",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Access_to_the_bridge",
+"name_ar": "Access to the bridge",
+"name_en": "Access to the bridge",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Al_Jeb_Check_point",
+"name_ar": "Al Jeb Check point",
+"name_en": "Al Jeb Check point",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Anata_-_Shwafat_Checkpoint",
+"name_ar": "Anata - Shwafat Checkpoint",
+"name_en": "Anata - Shwafat Checkpoint",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Car-only_Checkpoint",
+"name_ar": "Car-only Checkpoint",
+"name_en": "Car-only Checkpoint",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Check_Point",
+"name_ar": "Check Point",
+"name_en": "Check Point",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Checkpoint",
+"name_ar": "Checkpoint",
+"name_en": "Checkpoint",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "DCO",
+"name_ar": "DCO",
+"name_en": "DCO (Beit El)",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Hashmonaim_Crossing",
+"name_ar": "Hashmonaim Crossing",
+"name_en": "Hashmonaim Crossing",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Maccabim_Checkpoint",
+"name_ar": "Maccabim Checkpoint",
+"name_en": "Maccabim Checkpoint",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Machpela_Checkpoint",
+"name_ar": "Machpela Checkpoint",
+"name_en": "Machpela Checkpoint",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Mizpe_Shalem_Checkpoint",
+"name_ar": "Mizpe Shalem Checkpoint",
+"name_en": "Mizpe Shalem Checkpoint",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "Tzufim_Checkpoint",
+"name_ar": "Tzufim Checkpoint",
+"name_en": "Tzufim Checkpoint",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מחסום_בל",
+"name_ar": "מחסום בל",
+"name_en": "מחסום בל",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מחסום_דיר_שרף_حاجز_ديار_شرف",
+"name_ar": "מחסום דיר שרף حاجز ديار شرف",
+"name_en": "מחסום דיר שרף حاجز ديار شرف",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מחסום_הקונטיינר",
+"name_ar": "מחסום הקונטיינר",
+"name_en": "מחסום הקונטיינר",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מחסום_רנתיס",
+"name_ar": "מחסום רנתיס",
+"name_en": "מחסום רנתיס",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מחסום_שבי_שומרון_حاجز_شافي_شمرون",
+"name_ar": "מחסום שבי שומרון حاجز شافي شمرون",
+"name_en": "מחסום שבי שומרון حاجز شافي شمرون",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "מעבר_מכבים",
+"name_ar": "מעבר מכבים",
+"name_en": "מעבר מכבים",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "שער_יקיר",
+"name_ar": "שער יקיר",
+"name_en": "שער יקיר",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ابو_العرقان",
+"name_ar": "ابو العرقان",
+"name_en": "Abu al 'Urqan",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ابو_ديس",
+"name_ar": "ابو ديس",
+"name_en": "Abu Dis",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "احوال_طرق_اريحا",
+"name_ar": "احوال طرق اريحا",
+"name_en": "Jericho",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اذنا",
+"name_ar": "اذنا",
+"name_en": "Idhna",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اريحا dco",
+"name_ar": "اريحا dco",
+"name_en": "",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اريحا الجنوبي dco",
+"name_ar": "اريحا الجنوبي dco",
+"name_en": "",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اريحا_الهيئه",
+"name_ar": "اريحا الهيئة",
+"name_en": "Jericho",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اريحا_لزعتره_لحاجز_صره",
+"name_ar": "اريحا لزعتره لحاجز صره",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "استراحة اريحا",
+"name_ar": "استراحة أريحا",
+"name_en": "Jericho rest stop (bridge terminal)",
+"governorate": "Jericho",
+"checkpoint_type": "crossing"
+},
+{
+"canonical_key": "اسكاكا",
+"name_ar": "اسكاكا",
+"name_en": "Iskaka",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشارات_35",
+"name_ar": "اشارات 35",
+"name_en": "Route 35 Signals",
+"governorate": "Hebron",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_ارائيل",
+"name_ar": "اشارات ارائيل",
+"name_en": "Ariel Junction Signals",
+"governorate": "Salfit",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_جامعه_ارئيل",
+"name_ar": "أشارات جامعة أرئيل",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشارات_زعتره",
+"name_ar": "اشارات زعترة",
+"name_en": "Za'tara Junction Signals",
+"governorate": "Nablus",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_شيلو",
+"name_ar": "اشارات شيلو",
+"name_en": "Shilo Junction Signals",
+"governorate": "Ramallah",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_عوفرا",
+"name_ar": "إشارات عوفرا",
+"name_en": "Ofra Junction",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشارات_عيلي",
+"name_ar": "اشارات عيلي",
+"name_en": "Eli Junction Signals",
+"governorate": "Nablus",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_عيون_الحراميه",
+"name_ar": "اشارات عيون الحراميه",
+"name_en": "Uyun al-Haramiyya Signals",
+"governorate": "Ramallah",
+"checkpoint_type": "traffic_signal"
+},
+{
+"canonical_key": "اشارات_معالي_فرايم",
+"name_ar": "اشارات معالي فرايم",
+"name_en": "Ma'ale Efrayim",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشاره_جامعه_ارئيل",
+"name_ar": "أشارة جامعه أرئيل",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشاره_شيلو",
+"name_ar": "أشارة شيلو",
+"name_en": "Shilo Junction Signals",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اشاره_عيلي",
+"name_ar": "أشارة عيلي",
+"name_en": "Eli Junction Signals",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "افرات",
+"name_ar": "افرات",
+"name_en": "Efrat",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "افني_حيفتس",
+"name_ar": "حاجز أفني حيفتس",
+"name_en": "Avnei Hefetz Checkpoint",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "البادان",
+"name_ar": "البادان",
+"name_en": "Wadi al-Badhan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الباذان_الصيرفي",
+"name_ar": "الباذان الصيرفي",
+"name_en": "Al Badhan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "البنانا",
+"name_ar": "البنانا",
+"name_en": "Al-Banana",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "التفافي_حواره",
+"name_ar": "التفافي حوارة",
+"name_en": "Huwara Bypass Road",
+"governorate": "Nablus",
+"checkpoint_type": "bypass_road"
+},
+{
+"canonical_key": "الجلزون",
+"name_ar": "الجلزون",
+"name_en": "Al-Jalazun Camp",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الجلمه",
+"name_ar": "الجلمة",
+"name_en": "Al-Jalama",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الجيب_فاضي",
+"name_ar": "الجيب فاضي",
+"name_en": "Al Jib",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الجيش_نزل_ع_صره",
+"name_ar": "الجيش نزل ع صره",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الحمرا",
+"name_ar": "الحمرا",
+"name_en": "Al-Hamra",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الحواور",
+"name_ar": "الحواور",
+"name_en": "Al-Hawawer",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الخضر",
+"name_ar": "الخضر",
+"name_en": "Al-Khader",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الرام",
+"name_ar": "الرام",
+"name_en": "Ar-Ram",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الزاوويه_ساالكه",
+"name_ar": "الزاوويه ساالكه",
+"name_en": "Az Zawiyah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الزعتري",
+"name_ar": "الزعتري",
+"name_en": "Az-Za'tari",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الزعيم",
+"name_ar": "الزعيم",
+"name_en": "Az Za'ayyim",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الساويه",
+"name_ar": "الساويه",
+"name_en": "As-Sawiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "السدر",
+"name_ar": "السدر",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "السموع",
+"name_ar": "السموع",
+"name_en": "As-Samu'",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الشرطه_العيزريه_راحت",
+"name_ar": "الشرطة العيزرية راحت",
+"name_en": "Al-Eizariya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الشيخ_جراح",
+"name_ar": "الشيخ جراح",
+"name_en": "Sheikh Jarrah",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الشيخ_سعد",
+"name_ar": "حاجز الشيخ سعد",
+"name_en": "Al-Sheikh Sa'd Checkpoint",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الشيوخ",
+"name_ar": "الشيوخ",
+"name_en": "Ash-Shuyukh",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الطيبة كراميلو",
+"name_ar": "الطيبة كراميلو",
+"name_en": "",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الطيبه_كارميلو",
+"name_ar": "الطيبة كارميلو",
+"name_en": "At Taybah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الظاهريه",
+"name_ar": "الظاهرية",
+"name_en": "Adh-Dhahiriya",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العبيديه",
+"name_ar": "العبيدية",
+"name_en": "Al 'Ubaydiyah",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العروب",
+"name_ar": "العروب",
+"name_en": "Al-Arroub Camp",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العروب_حلحلول_سعير",
+"name_ar": "العروب حلحلول سعير",
+"name_en": "Al-Arroub Camp",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العوجا",
+"name_ar": "العوجا",
+"name_en": "Al-Auja",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العيزريه",
+"name_ar": "العيزرية",
+"name_en": "Al-Eizariya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العيزريه_بتجاه_الجنوب",
+"name_ar": "العيزريه بتجاه الجنوب",
+"name_en": "Al-Eizariya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العيزريه_معالي_ادوميم",
+"name_ar": "العيزرية معالي ادوميم",
+"name_en": "Al-Eizariya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "العيساويه",
+"name_ar": "العيساوية",
+"name_en": "Al-Issawiya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الفارعه",
+"name_ar": "الفارعة",
+"name_en": "Al-Fara'a Camp",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الفحص",
+"name_ar": "الفحص",
+"name_en": "Al-Fahs",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الفندق",
+"name_ar": "الفندق",
+"name_en": "Al-Funduq",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الفوار",
+"name_ar": "الفوار",
+"name_en": "Al-Fawwar Camp",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكساره",
+"name_ar": "الكسارة",
+"name_en": "Al-Kassara",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكنتينر",
+"name_ar": "الكونتينر",
+"name_en": "Container (Wadi Nar)",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكونتتينر",
+"name_ar": "الكونتتينر",
+"name_en": "Container (Wadi Nar)",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكونتير",
+"name_ar": "الكونتير",
+"name_en": "Container (Wadi Nar)",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكونتينر",
+"name_ar": "الكونتينر",
+"name_en": "Container (Wadi Nar)",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الكونتينر_بحري_اتجاهين",
+"name_ar": "الكونتينر بحري اتجاهين",
+"name_en": "Container (Wadi Nar)",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اللبن",
+"name_ar": "اللبن",
+"name_en": "Al-Lubban ash-Sharqiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اللبن الشرقيه",
+"name_ar": "اللبن الشرقية",
+"name_en": "Al-Lubban ash-Sharqiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اللبن_الشرقي_الساويه",
+"name_ar": "اللبن الشرقي الساوية",
+"name_en": "As-Sawiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اللبن_الشرقيه",
+"name_ar": "اللبن الشرقية",
+"name_en": "Al-Lubban ash-Sharqiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المتوجه_دوار_عناتا_حزما",
+"name_ar": "المتوجه دوار عناتا حزما",
+"name_en": "Hizma",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المدخل_الجنوبي",
+"name_ar": "المدخل الجنوبي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المدخل_الشرق",
+"name_ar": "المدخل الشرق",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المدخل_الشمالي",
+"name_ar": "المدخل الشمالي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المدخل_الغربي",
+"name_ar": "المدخل الغربي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المربعه",
+"name_ar": "المربعة",
+"name_en": "Al-Murabba'a",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المعرجات",
+"name_ar": "المعرجات",
+"name_en": "Al-Ma'arjat",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المنشيه",
+"name_ar": "المنشية",
+"name_en": "Al-Manshiyya",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "المهلل",
+"name_ar": "المهلل",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبي إلياس",
+"name_ar": "النبي إلياس",
+"name_en": "",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبي الياس",
+"name_ar": "النبي الياس",
+"name_en": "",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبي يونس",
+"name_ar": "النبي يونس",
+"name_en": "Nabi Yunis (Halhul)",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبي_صالح",
+"name_ar": "النبي صالح",
+"name_en": "Nabi Saleh",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبي_يونس",
+"name_ar": "النبي يونس",
+"name_en": "Nabi Yunus",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النبيي_صالح",
+"name_ar": "النبيي صالح",
+"name_en": "Nabi Saleh",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النشاش",
+"name_ar": "النشاش",
+"name_en": "An-Nashash",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النفق",
+"name_ar": "النفق",
+"name_en": "Tunnels checkpoint",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "النويعمه",
+"name_ar": "النويعمة",
+"name_en": "An-Nuwei'ma",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الهجره",
+"name_ar": "الهجرة",
+"name_en": "Al-Hijra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "الولجه",
+"name_ar": "الولجة",
+"name_en": "Al-Walaja",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ام سلمونه",
+"name_ar": "ام سلمونه",
+"name_en": "",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ام_السلمونا",
+"name_ar": "ام السلمونا",
+"name_en": "Umm Salamuna",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اماتين",
+"name_ar": "اماتين",
+"name_en": "Immatain",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اندماج_جبع_حزما_ماشيه",
+"name_ar": "اندماج جبع حزما ماشية",
+"name_en": "Hizma",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "انسحب_الجيش_عن_صره",
+"name_ar": "انسحب الجيش عن صرة",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "انسحب_عن_صره_مع",
+"name_ar": "انسحب عن صرة مع",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "انشيه",
+"name_ar": "انشية",
+"name_en": "Inshiya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "اول_عورتا_البلد",
+"name_ar": "اول عورتا البلد",
+"name_en": "Awarta",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "باتجاه_قريه_رافات",
+"name_ar": "باتجاه قرية رافات",
+"name_en": "Rafat",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "باتجاه_واد_قانا",
+"name_ar": "باتجاه واد قانا",
+"name_en": "Wadi Qana",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بتما_قبلان",
+"name_ar": "بتما قبلان",
+"name_en": "Bitma-Qabalan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بحواره_مقابل_سوبرماركت_النجوم",
+"name_ar": "بحوارة مقابل سوبرماركت النجوم",
+"name_en": "Huwara",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بديا",
+"name_ar": "بديا",
+"name_en": "Bidya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بديا_قراوه",
+"name_ar": "بديا قراوه",
+"name_en": "Bidya-Qarawat Junction",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بديا_قراوه_ساللك",
+"name_ar": "بديا قراوه ساللك",
+"name_en": "Bidya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "برقه",
+"name_ar": "برقة",
+"name_en": "Burqah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "برقين",
+"name_ar": "برقين",
+"name_en": "Burqin",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بروقين",
+"name_ar": "بروقين",
+"name_en": "Bruqin",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بزاريا",
+"name_ar": "بزاريا",
+"name_en": "Bazzariya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بعد_الدوار",
+"name_ar": "بعد الدوار",
+"name_en": "Ad Dawa",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بعد_دوار_بيتا",
+"name_ar": "بعد دوار بيتا",
+"name_en": "Beita",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بلعا",
+"name_ar": "بلعا",
+"name_en": "Bal'a",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بلعين",
+"name_ar": "بلعين",
+"name_en": "Bil'in",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بني_نعيم",
+"name_ar": "بني نعيم",
+"name_en": "Bani Na'im",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابات_الطيبه",
+"name_ar": "بوابات الطيبة",
+"name_en": "At Taybah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابات_حواره_جميع_اتجاهات",
+"name_ar": "بوابات حواره جميع اتجاهات",
+"name_en": "Huwara",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_الساويه_اتجاهين",
+"name_ar": "بوابه الساويه اتجاهين",
+"name_en": "As-Sawiya",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_الطيبه",
+"name_ar": "بوابة الطيبه",
+"name_en": "At Taybah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_القبلان_اتجاهين",
+"name_ar": "قبلان",
+"name_en": "Qabalan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_النبي_صالح",
+"name_ar": "بوابة النبي صالح",
+"name_en": "Nabi Saleh Gate",
+"governorate": "Ramallah",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_بورين",
+"name_ar": "بوابه بورين",
+"name_en": "Burin Gate",
+"governorate": "Nablus",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_بيتا",
+"name_ar": "بوابة بيتا",
+"name_en": "Beita Gate",
+"governorate": "Nablus",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_ترمسعيا_اتجاهين",
+"name_ar": "بوابه ترمسعيا اتجاهين",
+"name_en": "Turmus'ayya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_جماعين_اتجاهين",
+"name_ar": "بوابه جماعين اتجاهين",
+"name_en": "Jamma'in",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_حواره",
+"name_ar": "بوابة حوارة",
+"name_en": "Huwara Gate",
+"governorate": "Nablus",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_دورا",
+"name_ar": "بوابه دورا",
+"name_en": "Dura Gate",
+"governorate": "Hebron",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_سنجل_فرعيه_اتجاهين",
+"name_ar": "بوابه سنجل فرعيه اتجاهين",
+"name_en": "Sinjil",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_عزون",
+"name_ar": "بوابة عزون",
+"name_en": "Azzun Gate",
+"governorate": "Qalqilya",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "بوابه_عقربا_اتجاهين",
+"name_ar": "بوابه عقربا اتجاهين",
+"name_en": "Aqraba",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_يبرود",
+"name_ar": "بوابة يبرود",
+"name_en": "Silwad-Yabroud",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بوابه_يتما_اتجاهين",
+"name_ar": "بوابه يتما اتجاهين",
+"name_en": "Yitma",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بورين",
+"name_ar": "بورين",
+"name_en": "Burin",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_امر",
+"name_ar": "بيت امر",
+"name_en": "Beit Ummar",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_امر_الكليه",
+"name_ar": "بيت امر الكلية",
+"name_en": "Beit Ummar College",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_اولا",
+"name_ar": "بيت اولا",
+"name_en": "Beit Ula",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_ايبا",
+"name_ar": "بيت إيبا",
+"name_en": "Beit Iba",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_ايل",
+"name_ar": "بيت ايل",
+"name_en": "Beit El",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_جالا",
+"name_ar": "بيت جالا",
+"name_en": "Beit Jala",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_ساحور",
+"name_ar": "بيت ساحور",
+"name_en": "Beit Sahour",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_عينون",
+"name_ar": "بيت عينون",
+"name_en": "Beit Ainun",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_فجار",
+"name_ar": "بيت فجار",
+"name_en": "Beit Fajjar",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_فوريك",
+"name_ar": "بيت فوريك",
+"name_en": "Beit Furik",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_كاحل",
+"name_ar": "بيت كاحل",
+"name_en": "Beit Kahil",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيت_ليد",
+"name_ar": "بيت ليد",
+"name_en": "Beit Lid",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيتا",
+"name_ar": "بيتا",
+"name_en": "Beita",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بيتونيا",
+"name_ar": "بيتونيا",
+"name_en": "Beitunia",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "بير_زيت",
+"name_ar": "بير زيت",
+"name_en": "Birzeit",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تئينيم",
+"name_ar": "معبر تئينيم",
+"name_en": "Te'enim Crossing",
+"governorate": "Tulkarm",
+"checkpoint_type": "crossing"
+},
+{
+"canonical_key": "تحت_جسر_بيت_كاحل",
+"name_ar": "تحت جسر بيت كاحل",
+"name_en": "Under Beit Kahil Bridge",
+"governorate": "Hebron",
+"checkpoint_type": "bridge"
+},
+{
+"canonical_key": "تحت_جسر_سكاكا",
+"name_ar": "تحت جسر سكاكا",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ترقوميا",
+"name_ar": "ترقوميا",
+"name_en": "Tarqumiya",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ترقوميا_المصانع",
+"name_ar": "ترقوميا المصانع",
+"name_en": "Tarqumiya Industrial Zone",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ترمسعيا",
+"name_ar": "ترمسعيا",
+"name_en": "Turmus'ayya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تفوح",
+"name_ar": "تفوح",
+"name_en": "Taffuh",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تقوع",
+"name_ar": "تقوع",
+"name_en": "Tuqu'",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تم_البوبات",
+"name_ar": "تم البوبات",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تياسير",
+"name_ar": "تياسير",
+"name_en": "Tayasir",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "تياسير_السير_للطالع_مره",
+"name_ar": "تياسير السير للطالع مره",
+"name_en": "Tayasir",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جباره",
+"name_ar": "جباره",
+"name_en": "Jabara",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جبع",
+"name_ar": "جبع",
+"name_en": "Jaba'",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جبع_راح_الجيش",
+"name_ar": "جبع راح الجيش",
+"name_en": "Jaba'",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جبع_سياره_سياره",
+"name_ar": "جبع سيارة سيارة",
+"name_en": "Jaba'",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر الملك حسين",
+"name_ar": "جسر الملك حسين",
+"name_en": "King Hussein / Allenby Bridge",
+"governorate": "Jericho",
+"checkpoint_type": "crossing"
+},
+{
+"canonical_key": "جسر_الزاويه",
+"name_ar": "الزاوية",
+"name_en": "Az Zawiyah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر_اودلا",
+"name_ar": "جسر اودلا",
+"name_en": "Awdla Bridge",
+"governorate": "Nablus",
+"checkpoint_type": "bridge"
+},
+{
+"canonical_key": "جسر_بيت_كاحل",
+"name_ar": "جسر بيت كاحل",
+"name_en": "Under Beit Kahil Bridge",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر_جيوس_عزون",
+"name_ar": "جسر جيوس عزون",
+"name_en": "Azzun",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر_حلحول",
+"name_ar": "جسر حلحول",
+"name_en": "Halhul Bridge",
+"governorate": "Hebron",
+"checkpoint_type": "bridge"
+},
+{
+"canonical_key": "جسر_سكاكا_فك",
+"name_ar": "جسر سكاكا فك",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر_سلمان_الفارسي",
+"name_ar": "جسر سلمان الفارسي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جسر_عزون_جيوس",
+"name_ar": "جسر عزون جيوس",
+"name_en": "Azzun",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جلبون",
+"name_ar": "جلبون",
+"name_en": "Jalbon",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جماعين",
+"name_ar": "جماعين",
+"name_en": "Jamma'in",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جناتا_تل_الربيع",
+"name_ar": "جناتا تل الربيع",
+"name_en": "Janata Tel ar-Rabi'",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جوره_الشمعه",
+"name_ar": "جورة الشمعة",
+"name_en": "Jurat ash-Sham'a",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جوريش",
+"name_ar": "جوريش",
+"name_en": "Jurish",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جوريش_عقربا_المجدل",
+"name_ar": "جوريش عقربا المجدل",
+"name_en": "Jurish",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جين_صافوط",
+"name_ar": "جين صافوط",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "جيوس",
+"name_ar": "جيوس",
+"name_en": "Jayyous",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حاجز_تياسير_العسكري",
+"name_ar": "حاجز تياسير العسكري",
+"name_en": "Tayaser checkpoint",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حاجز_شرق_أريحا",
+"name_ar": "حاجز شرق أريحا",
+"name_en": "Jericho - East Checkpoint",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حاجز_صره",
+"name_ar": "حاجز صرة",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حاجز_وادي_النار_/الكونتينار",
+"name_ar": "حاجز وادي النار /الكونتينار",
+"name_en": "Container Checkpoint",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حادث_سير_جبع",
+"name_ar": "حادث سير جبع",
+"name_en": "Jaba'",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حادث_سير_عطريق_المجدل",
+"name_ar": "حادث سير عطريق المجدل",
+"name_en": "Al Majd",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حارس",
+"name_ar": "حارس",
+"name_en": "Haris",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حبله",
+"name_ar": "حبلة",
+"name_en": "Habla",
+"governorate": "Qalqilya",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "حجه_الفندق",
+"name_ar": "حجة الفندق",
+"name_en": "Hajja / Al-Funduq",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حزما",
+"name_ar": "حزما",
+"name_en": "Hizma",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حزما_الشمالي_حادث_سير",
+"name_ar": "حزما الشمالي حادث سير",
+"name_en": "Hizma",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حسكا",
+"name_ar": "حسكا",
+"name_en": "Haska",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حلحول",
+"name_ar": "حلحول",
+"name_en": "Halhul",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حلميش",
+"name_ar": "حلميش",
+"name_en": "Halamish",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حواجز_اريحا",
+"name_ar": "حواجز اريحا",
+"name_en": "Jericho",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حواره",
+"name_ar": "حوارة",
+"name_en": "Huwara",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حواره_تحت_الجسر",
+"name_ar": "حوارة تحت الجسر",
+"name_en": "Huwara Under Bridge",
+"governorate": "Nablus",
+"checkpoint_type": "bridge"
+},
+{
+"canonical_key": "حواره_زعتره",
+"name_ar": "حوارة زعترة",
+"name_en": "Huwara-Za'tara Road",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حوريش",
+"name_ar": "حوريش",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حوسان",
+"name_ar": "حوسان",
+"name_en": "Husan",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "حومش",
+"name_ar": "حومش",
+"name_en": "Homesh",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "خاراس",
+"name_ar": "خاراس",
+"name_en": "Kharas",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "خربثا",
+"name_ar": "خربثا",
+"name_en": "Kharbatha al-Misbah",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "خط_يتسهار",
+"name_ar": "خط يتسهار",
+"name_en": "Yitzhar Road",
+"governorate": "Nablus",
+"checkpoint_type": "bypass_road"
+},
+{
+"canonical_key": "خله_المي",
+"name_ar": "خله المي",
+"name_en": "Khallet al-May",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دخله_ولاد_عرفات",
+"name_ar": "دخلة ولاد عرفات",
+"name_en": "Awlad Arafat Entry",
+"governorate": "Hebron",
+"checkpoint_type": "entrance"
+},
+{
+"canonical_key": "دوار كدوميم",
+"name_ar": "دوار كدوميم",
+"name_en": "Kedumim junction",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار معالي ادوميم",
+"name_ar": "دوار معالي أدوميم",
+"name_en": "Ma'ale Adumim junction",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_ارئيل",
+"name_ar": "دوار ارئيل",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_البلوطه",
+"name_ar": "دوار البلوطة",
+"name_en": "Al-Balluta Roundabout",
+"governorate": "Hebron",
+"checkpoint_type": "roundabout"
+},
+{
+"canonical_key": "دوار_الطنيب",
+"name_ar": "دوار الطنيب",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_جيت",
+"name_ar": "جيت",
+"name_en": "Jit",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_جيت_اتجاهين",
+"name_ar": "دوار جيت اتجاهين",
+"name_en": "Jit",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_سلمان_فارسي",
+"name_ar": "دوار سلمان فارسي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوار_طقوع",
+"name_ar": "ودوار تقوع",
+"name_en": "Tuqu'",
+"governorate": "Bethlehem",
+"checkpoint_type": "roundabout"
+},
+{
+"canonical_key": "دوار_كدوميمم",
+"name_ar": "دوار كدوميمم",
+"name_en": "Kedumim junction",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دوتان",
+"name_ar": "دوتان",
+"name_en": "Dotan",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دورا",
+"name_ar": "دورا",
+"name_en": "Dura",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير استيا",
+"name_ar": "دير استيا",
+"name_en": "Deir Istiya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_ابو_مشعل",
+"name_ar": "دير أبو مشعل",
+"name_en": "Deir Abu Mash'al",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_استيا",
+"name_ar": "دير استيا",
+"name_en": "Deir Istiya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_الغصون",
+"name_ar": "دير الغصون",
+"name_en": "Deir al-Ghusun",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_جرير",
+"name_ar": "دير جرير",
+"name_en": "Dayr Jarir",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_حجله",
+"name_ar": "دير حجلة",
+"name_en": "Deir Hijla",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_شرف",
+"name_ar": "دير شرف",
+"name_en": "Deir Sharaf",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "دير_نظام",
+"name_ar": "دير نظام",
+"name_en": "Deir Nidham",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ديربلوط",
+"name_ar": "دير بلوط",
+"name_en": "Dayr Ballut",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ديرستا",
+"name_ar": "دير استيا",
+"name_en": "Dayr Istiya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ديرشرف_بدون",
+"name_ar": "ديرشرف بدون",
+"name_en": "Deir Sharaf",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "راس_الجوره",
+"name_ar": "راس الجوره",
+"name_en": "Ras al-Jora",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "راس_بيت_جالا",
+"name_ar": "راس بيت جالا",
+"name_en": "Ras Beit Jala",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "رامين",
+"name_ar": "رامين",
+"name_en": "Ramin",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "رايح_جاي",
+"name_ar": "رايح جاي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "رايق",
+"name_ar": "رايق",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "روابي",
+"name_ar": "روابي",
+"name_en": "Rawabi",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "زعتره",
+"name_ar": "زعتره",
+"name_en": "Za'tara (Tapuach)",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "زعتره_بكل_الجهات",
+"name_ar": "زعترة بكل الجهات",
+"name_en": "Za'tara (Tapuach)",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "زهق",
+"name_ar": "زهق",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "زيف_يطا",
+"name_ar": "زيف يطا",
+"name_en": "Zif (Yatta Road)",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سدة قراوة",
+"name_ar": "سدة قراوة",
+"name_en": "Qarawat Bani Hassan gate",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سده_بديا_قراوه",
+"name_ar": "سدة بديا قراوة",
+"name_en": "Bidya-Qarawat Junction",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سده_كفرالديك",
+"name_ar": "كفر الديك",
+"name_en": "Kafr ad-Dik",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سعير",
+"name_ar": "سعير",
+"name_en": "Sa'ir",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سعير_واد_الشرق",
+"name_ar": "سعير واد الشرق",
+"name_en": "Sa'ir East Valley",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلفيت",
+"name_ar": "سلفيت",
+"name_en": "Salfit North",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلفيت_الشماالي",
+"name_ar": "سلفيت الشماالي",
+"name_en": "Salfit",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلفيت_الشمالي",
+"name_ar": "سلفيت الشمالي",
+"name_en": "Salfit North",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلواد",
+"name_ar": "سلواد",
+"name_en": "Silwad",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلواد_يبرود",
+"name_ar": "سلواد يبرود",
+"name_en": "Silwad-Yabroud",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سلوان",
+"name_ar": "سلوان",
+"name_en": "Silwan",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سنجل",
+"name_ar": "سنجل",
+"name_en": "Sinjil",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سيارتين_عمدخل_العيزريه",
+"name_ar": "سيارتين عمدخل العيزرية",
+"name_en": "Al-Eizariya",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سياره",
+"name_ar": "سيارة",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سياره_قبل_دوار_تقوع",
+"name_ar": "سيارة قبل دوار تقوع",
+"name_en": "Tuqu'",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سير",
+"name_ar": "سير",
+"name_en": "Tayasir",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "سيله_الظهر",
+"name_ar": "سيلة الظهر",
+"name_en": "Silat adh-Dhahr",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شارع_جنين_نابلس",
+"name_ar": "شارع جنين نابلس",
+"name_en": "Nablus",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شافي شمرون",
+"name_ar": "شافي شمرون",
+"name_en": "Shave Shomron",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شافي_شمرون",
+"name_ar": "شافي شمرون",
+"name_en": "Shavei Shomron",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شرق_اريحا",
+"name_ar": "حاجز شرق أريحا",
+"name_en": "Jericho East Checkpoint",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شعفاط",
+"name_ar": "شعفاط",
+"name_en": "Shu'fat",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شقبا_شبتين",
+"name_ar": "شقبا شبتين",
+"name_en": "Shaqba-Shabteen",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شمرون",
+"name_ar": "شمرون",
+"name_en": "Shavei Shomron",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شوفه",
+"name_ar": "حاجز شوفة",
+"name_en": "Shufa Checkpoint",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شويكه",
+"name_ar": "شويكة",
+"name_en": "Shweikeh",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "شيلو_عيلي",
+"name_ar": "شيلو عيلي",
+"name_en": "Shilo-Eli",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صررره_نسحبوو",
+"name_ar": "صررره نسحبوو",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره",
+"name_ar": "صرة بحري",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_الجيش_انسحب",
+"name_ar": "صره الجيش انسحب",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_الجيش_نزل_عليه",
+"name_ar": "صره الجيش نزل عليه",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_انسحب",
+"name_ar": "صره انسحب",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_حاجز_بدايه",
+"name_ar": "صرة حاجز بداية",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_لاول_المستوطنه",
+"name_ar": "صرة لاول المستوطنة",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_للفندق",
+"name_ar": "صره للفندق",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_نزل_عالحاجز",
+"name_ar": "صرة نزل عالحاجز",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_نزل_عليه",
+"name_ar": "صره نزل عليه",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صره_هسا_اجو_الجيش",
+"name_ar": "صره هسا اجو الجيش",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "صوريف",
+"name_ar": "صوريف",
+"name_en": "Surif",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طريق_الباذان_الصيرفي_اتجاهين",
+"name_ar": "طريق الباذان الصيرفي اتجاهين",
+"name_en": "Al Badhan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طريق_المساكن_عصيره_الشماليه",
+"name_ar": "طريق المساكن عصيره الشماليه",
+"name_en": "'Asirah ash Shamaliyah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طريق_الهجري",
+"name_ar": "طريق الهجري",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طريق_زواتا_اتجاهين",
+"name_ar": "زواتا",
+"name_en": "Zawata",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طريق_يتسهار_اتجاهين",
+"name_ar": "طريق يتسهار اتجاهين",
+"name_en": "Yitzhar",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طلوع_البرج",
+"name_ar": "طلوع البرج",
+"name_en": "Atara Tower Ascent",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "طمون",
+"name_ar": "طمون",
+"name_en": "Tamun",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عابود",
+"name_ar": "عابود",
+"name_en": "Aboud",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عتيل",
+"name_ar": "عتيل",
+"name_en": "Attil",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عرابه",
+"name_ar": "عرابة",
+"name_en": "Arraba",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عزبه_الطبيب",
+"name_ar": "عزبة الطبيب",
+"name_en": "Izbat at-Tabib",
+"governorate": "Qalqilya",
+"checkpoint_type": "gate"
+},
+{
+"canonical_key": "عزون",
+"name_ar": "عزون",
+"name_en": "Azzun",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عش غراب",
+"name_ar": "عش غراب",
+"name_en": "Ush Ghurab",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عش_غراب",
+"name_ar": "عش غراب",
+"name_en": "Ush Ghrab",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عصيون",
+"name_ar": "عصيون",
+"name_en": "Etzion junction / DCO",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره",
+"name_ar": "عطارة",
+"name_en": "Atara",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره_البرج_حتي_اللحظه",
+"name_ar": "عطاره البرج حتى اللحظه",
+"name_en": "Atara",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره_البلد",
+"name_ar": "عطارة البلد",
+"name_en": "Atara Town",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره_تحت_الجسر",
+"name_ar": "عطاره تحت الجسر",
+"name_en": "Atara",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره_شالو_الحاجز_بس",
+"name_ar": "عطارة شالو الحاجز بس",
+"name_en": "Atara",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عطاره_طلوع_البرج",
+"name_ar": "عطاره طلوع البرج",
+"name_en": "Atara Tower Ascent",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عقابا",
+"name_ar": "عقابا",
+"name_en": "Aqaba",
+"governorate": "Tubas",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عقبه_حسنه",
+"name_ar": "عقبة حسنة",
+"name_en": "Aqabat Hasna",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عقربا",
+"name_ar": "عقربا",
+"name_en": "Aqraba",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عناب",
+"name_ar": "عناب",
+"name_en": "Anab / Enav",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عناتا",
+"name_ar": "عناتا",
+"name_en": "Anata",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عنبتا",
+"name_ar": "عنبتا",
+"name_en": "Anabta",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عورتا",
+"name_ar": "عورتا",
+"name_en": "Awarta",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عيلي شيلو",
+"name_ar": "عيلي - شيلو",
+"name_en": "Eli / Shilo (Rd 60)",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عين_سينيا",
+"name_ar": "عين سينيا",
+"name_en": "Ein Sinya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عين_شبلي",
+"name_ar": "عين شبلي",
+"name_en": "Ein Shibli",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عيون الحراميه",
+"name_ar": "عيون الحرامية",
+"name_en": "Uyun al-Haramiya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "عيون_الحراميه",
+"name_ar": "عيون الحرامية",
+"name_en": "Uyun al-Haramiyya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "فرش_الهوي",
+"name_ar": "فرش الهوى",
+"name_en": "Farsh al-Hawa",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "فرش_هوا_كثافه_السير",
+"name_ar": "فرش هوا كثافه السير",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "فصايل",
+"name_ar": "فصايل",
+"name_en": "Fasayil",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قباطيه",
+"name_ar": "قباطية",
+"name_en": "Qabatiya",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قبلان",
+"name_ar": "قبلان",
+"name_en": "Bitma-Qabalan",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قدوميم",
+"name_ar": "قدوميم",
+"name_en": "Kedumim",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قراوه_بديا",
+"name_ar": "قراوة بديا",
+"name_en": "Qarawat Bani Zeid / Bidya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قصرة",
+"name_ar": "قصرة",
+"name_en": "Qusra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قفين",
+"name_ar": "قفين",
+"name_en": "Qaffin",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قلقيلية",
+"name_ar": "قلقيلية",
+"name_en": "",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قلنديا",
+"name_ar": "قلنديا",
+"name_en": "Qalandia",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "قويه",
+"name_ar": "قويه",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كانهم_بدهم_يحطو",
+"name_ar": "كانهم بدهم يحطو",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كراملو_الطيبه",
+"name_ar": "كراملو الطيبة",
+"name_en": "At Taybah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كراميلو",
+"name_ar": "كراميلو",
+"name_en": "",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كراميلو الطيبه",
+"name_ar": "كراميلو الطيبه",
+"name_en": "",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كرمه",
+"name_ar": "كرمه",
+"name_en": "Karma",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كرميلو_الطيبه",
+"name_ar": "كرميلو الطيبه",
+"name_en": "At Taybah",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كفر عقب",
+"name_ar": "كفر عقب",
+"name_en": "",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كفر لاقف",
+"name_ar": "كفر لاقف",
+"name_en": "",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كفر_الديك",
+"name_ar": "كفر الديك",
+"name_en": "Kafr ad-Dik",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كفر_ثلث",
+"name_ar": "كفر ثلث",
+"name_en": "Kafr Thulth",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كفل_حارس",
+"name_ar": "كفل حارس",
+"name_en": "Kifl Haris",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كوبر",
+"name_ar": "كوبر",
+"name_en": "Kobar",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "كوربه_صايل",
+"name_ar": "كوربة صايل",
+"name_en": "Kurbet Sayel",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "لقدوميم_لصره_يتسهار_جيت",
+"name_ar": "لقدوميم لصره يتسهار جيت",
+"name_en": "Yitzhar",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "للجنوب_اندماج",
+"name_ar": "للجنوب اندماج",
+"name_en": "Nuba",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ما_زال_عين_سيينيا",
+"name_ar": "ما زال عين سيينيا",
+"name_en": "Ein Sinya",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مخصوم_برقه",
+"name_ar": "مخصوم برقة",
+"name_en": "Burqah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مداخل_سبسطيه",
+"name_ar": "سبسطية",
+"name_en": "Sabastiyah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مداخل_سبسطيه_اتجاهين",
+"name_ar": "مداخل سبسطية اتجاهين",
+"name_en": "Sabastiyah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل قلقيلية",
+"name_ar": "مدخل قلقيلية",
+"name_en": "",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_العزبه",
+"name_ar": "مدخل العزبه",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_بزاريا",
+"name_ar": "مدخل بزاريا",
+"name_en": "Bazzariya Entrance",
+"governorate": "Nablus",
+"checkpoint_type": "entrance"
+},
+{
+"canonical_key": "مدخل_بني_زيد",
+"name_ar": "بني زيد",
+"name_en": "Bani Zayd",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_ديراستيا",
+"name_ar": "مدخل ديراستيا",
+"name_en": "Deir Istiya",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_رافات",
+"name_ar": "مدخل رافات",
+"name_en": "Rafat Entrance",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_ناقوره",
+"name_ar": "مدخل ناقوره",
+"name_en": "An-Naqura",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مدخل_ناقوره_اتجاهين",
+"name_ar": "مدخل ناقوره اتجاهين",
+"name_en": "An-Naqura",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مراح_رباح",
+"name_ar": "مراح رباح",
+"name_en": "Marah Rabah",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مراح_رياح",
+"name_ar": "مراح رياح",
+"name_en": "Marah Riyah",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مراح_معلا",
+"name_ar": "مراح معلا",
+"name_en": "Marah Ma'alla",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مردا",
+"name_ar": "مردا",
+"name_en": "Marda",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مردي_الرئيسي",
+"name_ar": "مردى الرئيسي",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مستوطنين_ع_افرات",
+"name_ar": "مستوطنين ع افرات",
+"name_en": "Efrat",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مسليه",
+"name_ar": "مسلية",
+"name_en": "Masaliya",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "معالي افرايم",
+"name_ar": "معالي أفرايم",
+"name_en": "Ma'ale Efrayim",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "معاليه_افرايم",
+"name_ar": "معاليه افرايم",
+"name_en": "Ma'ale Efrayim",
+"governorate": "Jericho",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "معبر_إِلِياهو",
+"name_ar": "معبر إِلِياهو",
+"name_en": "Eliyahu Checkpoint",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مفرق_جيت",
+"name_ar": "مفرق جيت",
+"name_en": "Jit",
+"governorate": "Qalqilya",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "مفرق_جيت_صره",
+"name_ar": "مفرق جيت صره",
+"name_en": "Surra",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "من_عين_سينا_لزعتره",
+"name_ar": "من عين سينا لزعترة",
+"name_en": "Za'tarah",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "من_قلنديا_لدوار_الرام",
+"name_ar": "من قلنديا لدوار الرام",
+"name_en": "Qalandia",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "من_نابلس_لقلقيليه",
+"name_ar": "من نابلس لقلقيلية",
+"name_en": "Nablus",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ناقورة",
+"name_ar": "ناقورة",
+"name_en": "An-Naqura",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نحالين",
+"name_ar": "نحالين",
+"name_en": "Nahalin",
+"governorate": "Bethlehem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نزول_يتسهار_مفرق",
+"name_ar": "نزول يتسهار مفرق",
+"name_en": "Yitzhar",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نصار_للاسكان",
+"name_ar": "نصار للاسكان",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نعلين",
+"name_ar": "نعلين",
+"name_en": "Ni'lin",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نقطة_تفتيش_الجبع_الاسرائيلية",
+"name_ar": "نقطة تفتيش الجبع الاسرائيلية",
+"name_en": "Jaba' Israeli Check Point",
+"governorate": "Jerusalem",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نوبا",
+"name_ar": "نوبا",
+"name_en": "Nuba",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "نور_شمس",
+"name_ar": "نور شمس",
+"name_en": "Nur Shams",
+"governorate": "Tulkarm",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "واد السمن",
+"name_ar": "وادي السمن",
+"name_en": "Wadi al-Samen",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "واد_السمن",
+"name_ar": "واد السمن",
+"name_en": "Wad as-Saman",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "واد_الشاجنه",
+"name_ar": "واد الشاجنة",
+"name_en": null,
+"governorate": null,
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "واد_قانا",
+"name_ar": "وادي قانا",
+"name_en": "Wadi Qana",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "ياسوف",
+"name_ar": "ياسوف",
+"name_en": "Yasuf",
+"governorate": "Salfit",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "يبرود_سلواد_انسحب_الجيش",
+"name_ar": "يبرود سلواد انسحب الجيش",
+"name_en": "Silwad",
+"governorate": "Ramallah",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "يتسهار",
+"name_ar": "يتسهار",
+"name_en": "Yitzhar",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "يتما",
+"name_ar": "يتما",
+"name_en": "Yitma",
+"governorate": "Nablus",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "يطا",
+"name_ar": "يطا",
+"name_en": "Yatta",
+"governorate": "Hebron",
+"checkpoint_type": "checkpoint"
+},
+{
+"canonical_key": "يعبد",
+"name_ar": "يعبد",
+"name_en": "Ya'bad",
+"governorate": "Jenin",
+"checkpoint_type": "checkpoint"
+}
+]

@@ -562,6 +562,12 @@ def _noun_kind(tok: str) -> str | None:
     return "def" if s != t and s in CHECKPOINT_NOUNS else None
 
 
+def _is_inspection(tok: str) -> bool:
+    """تفتيش / وتفتيش / تدقيق: a search, with or without its waw."""
+    return (_lex(tok, PRESENCE_WORDS) == "inspection"
+            or (len(tok) > 3 and tok[0] == "و" and _lex(tok[1:], PRESENCE_WORDS) == "inspection"))
+
+
 def _noun_role(toks: list[str], i: int, kind: str, found: list,
                subject_before: bool = False) -> tuple[str, float] | None:
     """What the checkpoint noun at toks[i] reports: ("up", confidence),
@@ -616,10 +622,14 @@ def _noun_role(toks: list[str], i: int, kind: str, found: list,
         if nxt in _AT and len(toks) >= 3:
             return ("up", 0.78)
         # "🚧 فرش الهوى - حاجز": the place is the clause before this one.
+        # "ترمسعيا - حاجز وتفتيش", "… والخارج حاجز وتفتيش": the checkpoint is
+        # up and it searches; the inspection does not make the noun a name.
         alone = not [t for t in toks if not _noun_kind(t) and not t.isdigit()
-                     and t not in _NOW and not _lex(t, DIRECTION_WORDS)]
+                     and t not in _NOW and not _lex(t, DIRECTION_WORDS)
+                     and not _is_inspection(t)]
         return ("up", 0.80) if subject_before and alone else None
-    rest = [t for t in toks[i + 1:] if t not in _NOW and not _lex(t, DIRECTION_WORDS)]
+    rest = [t for t in toks[i + 1:] if t not in _NOW and not _lex(t, DIRECTION_WORDS)
+            and not _is_inspection(t)]
     if rest and any(f[0] == "flow" for f in found):
         return None                 # "شباب حاجز عطارة سالك": a name follows
     return ("up", 0.80)
@@ -1102,10 +1112,12 @@ def read(text: str | None) -> Reading:
     facts: list[Fact] = []
     any_clear = False
     subject = False
+    last_dir: str | None = None        # the one direction the clause before named
     skipped: list[str] = []
     clauses = [seg for rc in _CLAUSE_SPLIT.split(_presplit_waw(raw)) if rc and rc.strip()
                for seg in _split_emoji_directions(rc)]
-    for raw_clause in clauses:
+    has_dir = [bool(_direction_positions(tokens(normalize(c)))) for c in clauses]
+    for n_clause, raw_clause in enumerate(clauses):
         clause = normalize(raw_clause)
         if not clause:
             continue
@@ -1121,9 +1133,29 @@ def read(text: str | None) -> Reading:
         found, cleared = _scan_clause(clause, raw_clause, subject_before=subject)
         # A clause that names something and reports nothing is the subject of
         # the next one: "🚧 فرش الهوى - حاجز", "عورتا ⏎ حاجز".
-        subject = (NAME in ctoks) if NAME in norm_all else (subject or (bool(ctoks) and not found))
+        # Once the line has named its place, later clauses that name nothing
+        # are still about it: "عين سينيا - الداخل سالك والخارج حاجز وتفتيش".
+        subject = (subject or NAME in ctoks) if NAME in norm_all else (
+            subject or (bool(ctoks) and not found))
         any_clear = any_clear or cleared
         bound = _assign_directions(found, dirs, ctoks)
+        # "للخارج ازمة و تفتيش": the waw typed apart makes the search a clause
+        # of its own with no direction, and it was read as both ways beside an
+        # outbound jam. A clause that is presence words and nothing else takes
+        # the direction of the clause it continues — when nothing after it
+        # names a direction: in "سالك للداخل حاجز وتفتيش وازمة للخارج" the
+        # search may as well belong to what follows, and stays unbound.
+        if (not dirs and last_dir and found and NAME not in ctoks
+                and not any(has_dir[n_clause + 1:])
+                and all(_lex(t, PRESENCE_WORDS) or t in _NOW or
+                        (len(t) > 3 and t[0] == "و" and _lex(t[1:], PRESENCE_WORDS))
+                        for t in ctoks)):
+            bound = [(last_dir, True)] * len(found)
+        elif dirs:
+            named = {d for _, d in dirs}
+            last_dir = named.pop() if len(named) == 1 else None
+        else:
+            last_dir = None
         for f, (direction, explicit) in zip(found, bound):
             facts.append(Fact(direction=direction, axis=f[0], value=f[1],
                               direction_explicit=explicit, confidence=f[2],

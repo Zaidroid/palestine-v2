@@ -141,8 +141,8 @@ def _allocate(pool: dict[str, list], n: int, rng: random.Random) -> list[dict]:
 
 
 def draw(n_parsed: int = N_PARSED, n_unparsed: int = N_UNPARSED,
-         msgs: list[dict] | None = None) -> list[dict]:
-    rng = random.Random(SEED)
+         msgs: list[dict] | None = None, seed: str = SEED) -> list[dict]:
+    rng = random.Random(seed)
     msgs = sorted(msgs if msgs is not None else frame(),
                   key=lambda m: (m["channel"], m["msg_id"]))
     parsed = [m for m in msgs if m["v1"]]
@@ -168,8 +168,28 @@ def draw(n_parsed: int = N_PARSED, n_unparsed: int = N_UNPARSED,
     return out
 
 
-def write_sample() -> int:
-    rows = draw()
+def round_paths(n: int = 1) -> tuple[Path, Path, Path]:
+    """(sample, gold, registry) of a round. Round 1 keeps the names it was
+    filed under; a later round is a fresh draw beside it, never over it."""
+    if n <= 1:
+        return SAMPLE, GOLD, REGISTRY
+    return (GOLD_DIR / f"roads-sample-{n}.jsonl", GOLD_DIR / f"roads-{n}.jsonl",
+            GOLD_DIR / f"roads-checkpoints-{n}.json")
+
+
+def write_sample(n: int = 1) -> int:
+    SAMPLE, _gold, REGISTRY = round_paths(n)
+    if n <= 1:
+        rows = draw()
+    else:
+        # A fresh round: its own seed, and nothing an earlier round's seat read.
+        seen = set()
+        for k in range(1, n):
+            p = round_paths(k)[0]
+            if p.exists():
+                seen |= {r["gold_id"] for r in load_jsonl(p)}
+        msgs = [m for m in frame() if f"{m['channel']}:{m['msg_id']}" not in seen]
+        rows = draw(msgs=msgs, seed=f"roads-gold-v{n}")
     GOLD_DIR.mkdir(parents=True, exist_ok=True)
     SAMPLE.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
                       encoding="utf-8")
@@ -202,6 +222,28 @@ def key_map() -> dict[str, str] | None:
         return None
 
 
+def unify_through_register(kmap: dict, keys, lex) -> dict:
+    """v1 keys that v2 holds no link for, put on the v2 place the register
+    gives the key's own words when they are one registered name and nothing
+    else ("المهلل" → بوابة المهلل, registered 2026-10-11; "دوار_ارئيل" → the
+    Ariel junction row). Without it a right reading of such a place is a miss
+    for whoever names it by v2's row and a hit only for v1's key. Returns
+    kmap with the additions; `added` lists them."""
+    out = dict(kmap)
+    for key in sorted({k for k in keys if k and k not in kmap}):
+        name = key.replace("_", " ")
+        spans = [sp for sp in lex.scan(name) if sp.place_id]
+        n_words = len(lex.words(name))
+        if len(spans) == 1 and spans[0].w0 == 0 and spans[0].w1 == n_words:
+            out[key] = f"place:{spans[0].place_id}"
+    return out
+
+
+def _all_keys(gold_rows: list[dict], sample_rows: list[dict]) -> set:
+    return ({r.get("canonical_key") for g in gold_rows for r in g.get("readings") or []}
+            | {r.get("canonical_key") for m in sample_rows for r in m.get("v1") or []})
+
+
 def _triples(readings, *, gold: bool, kmap: dict | None = None) -> set[tuple[str, str, str]]:
     out = set()
     for r in readings:
@@ -216,6 +258,33 @@ def _triples(readings, *, gold: bool, kmap: dict | None = None) -> set[tuple[str
 
 def _rate(k: int, n: int) -> float | None:
     return round(k / n, 3) if n else None
+
+
+def _kind(value) -> str:
+    return "flow" if value in FLOW else "presence"
+
+
+def _found_and_value(G: set, V: set) -> tuple[int, int, int, int]:
+    """(checkpoints found, checkpoints in the gold, values compared, values
+    agreeing). A checkpoint is one (place, direction), counted once however
+    many things the gold says of it; a value is compared with what the parser
+    said of the same place, direction AND kind — a place that is open with
+    the army present has two values, and the parser's flow is not judged
+    against the gold's presence. (Until 2026-10-11 both were counted per gold
+    reading against one value per place, which put checkpoint recall above 1
+    on a bulletin that gives a flow and a presence for the same gate.)"""
+    said: dict[tuple, set] = defaultdict(set)
+    for k, d, v in V:
+        said[(k, d, _kind(v))].add(v)
+    v_places = {(k, d) for k, d, _ in V}
+    g_places = {(k, d) for k, d, _ in G}
+    n = ok = 0
+    for k, d, v in G:
+        vals = said.get((k, d, _kind(v)))
+        if vals:
+            n += 1
+            ok += v in vals
+    return len(g_places & v_places), len(g_places), n, ok
 
 
 def score(gold_rows: list[dict], sample_rows: list[dict],
@@ -240,14 +309,11 @@ def score(gold_rows: list[dict], sample_rows: list[dict],
         tp += len(G & V)
         fp += len(V - G)
         fn += len(G - V)
-        gk = {(k, d) for k, d, _ in G}
-        vk = {(k, d): v for k, d, v in V}
-        gold_keys += len(gk)
-        for k, d, v in G:
-            if (k, d) in vk:
-                found_keys += 1
-                value_n += 1
-                value_ok += vk[(k, d)] == v
+        f, g_n, n, ok = _found_and_value(G, V)
+        found_keys += f
+        gold_keys += g_n
+        value_n += n
+        value_ok += ok
         if G and not V:
             missed_msgs.append(g["gold_id"])
     return {
@@ -289,7 +355,7 @@ def score_reader(gold_rows: list[dict], sample_rows: list[dict], lex, kmap: dict
     """
     text_of = {r["gold_id"]: r["text"] for r in sample_rows}
     in_v1 = set(kmap.values())
-    tp = fp = fn = found = gold_keys = value_ok = outside = 0
+    tp = fp = fn = found = gold_keys = value_ok = value_n = outside = 0
     for g in gold_rows:
         if g["gold_id"] not in text_of:
             continue
@@ -300,18 +366,17 @@ def score_reader(gold_rows: list[dict], sample_rows: list[dict], lex, kmap: dict
         tp += len(G & V)
         fp += len(V - G)
         fn += len(G - V)
-        vk = {(k, d): v for k, d, v in V}
-        gold_keys += len({(k, d) for k, d, _ in G})
-        for k, d, v in G:
-            if (k, d) in vk:
-                found += 1
-                value_ok += vk[(k, d)] == v
+        f, g_n, n, ok = _found_and_value(G, V)
+        found += f
+        gold_keys += g_n
+        value_n += n
+        value_ok += ok
     return {
         "subject": "roads", "parser": "v2 reader (cascade/road_message.py)",
         "scored": len(text_of),
         "reading_precision": _rate(tp, tp + fp), "reading_recall": _rate(tp, tp + fn),
         "checkpoint_recall": _rate(found, gold_keys),
-        "value_agreement_when_found": _rate(value_ok, found),
+        "value_agreement_when_found": _rate(value_ok, value_n),
         "readings_on_places_outside_v1_registry": outside,
         "counts": {"tp": tp, "fp": fp, "fn": fn},
         "names_in_register": len(lex.names),
@@ -321,18 +386,23 @@ def score_reader(gold_rows: list[dict], sample_rows: list[dict], lex, kmap: dict
     }
 
 
-def _reader_score(gold_rows: list[dict], sample_rows: list[dict]) -> dict | None:
-    """The reader's score against the register as it stands; None with no database."""
-    kmap = key_map()
-    if not kmap:
-        return None
+def _lexicon():
+    """The register as it stands; None with no database."""
     try:
         from resolve.db import connect
         from resolve.road_names import load
         with connect() as c, c.cursor() as cur:
-            lex = load(cur)
+            return load(cur)
     except Exception:                                      # noqa: BLE001
         return None
+
+
+def _reader_score(gold_rows: list[dict], sample_rows: list[dict]) -> dict | None:
+    """The reader's score against the register as it stands; None with no database."""
+    kmap, lex = key_map(), _lexicon()
+    if not kmap or not lex:
+        return None
+    kmap = unify_through_register(kmap, _all_keys(gold_rows, sample_rows), lex)
     return score_reader(gold_rows, sample_rows, lex, kmap)
 
 
@@ -348,7 +418,10 @@ def contract_scorer(gold_rows: list[dict]) -> list[dict]:
                  "servable": None, "scores": [], "gold": str(GOLD.relative_to(ROOT)),
                  "verdict": "gold present but its sample file is missing"}]
     sample = load_jsonl(SAMPLE)
-    s = score(gold_rows, sample, key_map())
+    kmap, lex = key_map(), _lexicon()
+    if kmap and lex:
+        kmap = unify_through_register(kmap, _all_keys(gold_rows, sample), lex)
+    s = score(gold_rows, sample, kmap)
     rows = [{"subject": "roads", "version": "v1-parser", "serving": True,
              "servable": None, "gold": str(GOLD.relative_to(ROOT)), "scores": [s],
              "verdict": (f"control measured on {s['scored']} messages: reading precision "
@@ -373,16 +446,44 @@ def main(argv=None) -> int:
     ap.add_argument("--sample", action="store_true")
     ap.add_argument("--score", action="store_true")
     ap.add_argument("--show", action="store_true")
+    ap.add_argument("--round", type=int, default=1,
+                    help="1 = the 2026-09-26 gold; a later round is a fresh draw")
     a = ap.parse_args(argv)
     if a.sample:
-        write_sample()
+        write_sample(a.round)
     if a.score:
-        gold, sample = load_jsonl(GOLD), load_jsonl(SAMPLE)
-        s = score(gold, sample, key_map())
-        r = _reader_score(gold, sample)
+        sample_p, gold_p, _ = round_paths(a.round)
+        gold, sample = load_jsonl(gold_p), load_jsonl(sample_p)
+        kmap, lex = key_map(), _lexicon()
+        if kmap and lex:
+            before = len(kmap)
+            kmap = unify_through_register(kmap, _all_keys(gold, sample), lex)
+        s = score(gold, sample, kmap)
+        if kmap and lex:
+            s["keys_unified_by"] += f"; {len(kmap) - before} unlinked v1 keys through the register"
+        r = score_reader(gold, sample, lex, kmap) if (kmap and lex) else None
         if r:
+            if a.round > 1:
+                # Read by a seat that saw neither parser nor the register.
+                r["caution"] = (f"round {a.round}: drawn after the register was extended and "
+                                "read blind. `as_first_scored` is the blind figure; these "
+                                "numbers follow every fix made since from reading the round")
             s["v2_reader"] = r
-        RESULT.write_text(json.dumps(s, ensure_ascii=False, indent=2) + "\n")
+        if a.round <= 1:
+            later = {k: v for k, v in (json.loads(RESULT.read_text()) if RESULT.exists()
+                                       else {}).items() if k.startswith("round")}
+            RESULT.write_text(json.dumps({**s, **later}, ensure_ascii=False, indent=2) + "\n")
+        else:
+            whole = json.loads(RESULT.read_text()) if RESULT.exists() else {}
+            # The first scoring of a round is the only blind one; it is kept.
+            first = (whole.get(f"round{a.round}") or {}).get("as_first_scored") or {
+                "v1_parser": {k: s[k] for k in ("reading_precision", "reading_recall")},
+                "v2_reader": ({k: r[k] for k in ("reading_precision", "reading_recall")}
+                              if r else None),
+                "at": s["at"]}
+            s["as_first_scored"] = first
+            whole[f"round{a.round}"] = s
+            RESULT.write_text(json.dumps(whole, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(s, ensure_ascii=False, indent=2))
     if a.show and RESULT.exists():
         print(RESULT.read_text())
