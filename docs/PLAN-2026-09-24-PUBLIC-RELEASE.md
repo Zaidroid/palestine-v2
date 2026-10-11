@@ -835,3 +835,47 @@ package's 18 xlsx files with the standard library and reproduces v1's normalisat
 SheetJS's _1 suffix on repeated headers, parseFloat's leading number): 20,836 of 20,836 ids identical to v1's file and 0
 field differences; loader dry run on it: 20,170 events, all already held. v1's file is the fallback when HDX fails.
 Every item of the 10-11 fragments list is now in the databank or deliberately out (classifier entities, HAPI).
+
+2026-10-11 17:40 UTC · live roads: one reader, v2's own matcher and v2's own register (audit 10-11 findings 01, 02, 07) ·
+built and merged; the new reader is switched on by migration 097 (Zaid's hand: HANDS §13) · proof below.
+(1) THE LINE READER (cascade/checkpoint_text.py, live at the next tick). The checkpoint noun after the place is the news
+("جبع حاجز", "عطاره حاجز للخارج الان", "عين سينيا محسوم": measured on the next report at the same place within 45 min, a
+caution follows 70% of the time against 56% after an accepted army sighting and 35% after any line); before the place it
+stays the name. Closing and opening forms are generated from the stem ("سكرو", "مسكرينها", "مغلقات", "فتحوهم",
+"سالكات"); "بحري" is the channels' word for clear (2,242 short stored lines; a caution follows 15% of the time, the rate
+after "سالك"); a lifted checkpoint is also the army gone; "وقوف تام", "مازم", "فاضي", cars turned back; opening hours,
+"tomorrow" and "maybe" are not reports of now. All 252,990 stored lines re-read old against new: 3,787 unreadable lines
+become reports, 272 lines asserted until today become questions ("بيت ايل لاي ساعة فاتح", "مسكر ولا حاجز"), 64 stop
+being asserted (the bridge "closed tomorrow" was served as closed today). Unreadable falls 10,174 → 6,492; 6,576 lines
+carry a checkpoint sighting. tests/test_checkpoint_text.py 147.
+(2) THE MATCHER AND THE MESSAGE (resolve/road_names.py, cascade/road_message.py, ingest/sources/roads.py). v2 reads the
+raw messages (v1's tee spool; claims once v2's poller carries a channel) against place + place_alias + the new
+road_alias: a name anywhere in the line, lists, a status per name, names that only say which way, parts of a place the
+register lacks, a status on the line below, and a reply read as about what was asked. Roads gold, same count as the
+control: v1's parser 0.814 precision / 0.718 recall / 0.806 checkpoint recall / 0.926 value agreement; v2's reader on
+the register as it stood 0.936 / 0.840 / 0.878 / 0.956; with 097 applied (scratch copy) 0.949 / 0.928 / 0.972 / 0.957.
+CAUTION, written into the scorer: the reader's rules and the register were extended with these 200 messages in view, so
+its recall here is not unbiased; a fresh `--sample` read by a seat is owed. Independent of the gold, read by hand:
+readings v1 does not make, 44 by name (42 right), 36 + 26 replies (54 right before the last four fixes, each of which
+has a test), 12 from the line below (9), and the 8 from "the channel's own place" (3) that made me cut that rule down to
+messages that name the gate. 73 days replayed (279,688 messages): 179,559 carry a reading, 212,056 facts, 24,413 of the
+readings through a reply. tests/test_road_reader.py 20.
+(3) THE REGISTER (db/migrations/097_road_register.sql, run whole in a throwaway container on a copy of the schema and the
+register tables before being handed over). road_alias (590 names: 80 spellings one letter or one space from a
+registered name, 96 found and 16 refused by hand; 83 other names; v1's whitelist whole, 426), road_candidate (v2's own
+list of names it could not place, for one yes a week through ops/road_register.py), source.feeds_roads / home_place_id.
+19 duplicate rows merged (082's procedure), 4 sentences stored as places hidden. v1's learned_vocab is not carried: all
+28 rows are place-name fragments recorded as statuses. NOT placed, because nothing public gives a coordinate and the
+register holds no unpinned point: المهلل (the most written-about unregistered name), دوار الطنيب.
+(4) WHAT IT DOES TO THE MAP, measured on one copy of the live data at 16:00 UTC: known share 0.493 as served (134 of
+272) → 0.508 with the duplicates merged (128 of 252) → 0.545 with the reader on (138 of 253; 11 places gain a status,
+جبع among them, one loses one to a contradiction; flow beliefs resting on two independent sources 34 → 41). The gate is
+0.60. The audit's sentence that the reader and the register were why half the map is unknown was wrong in size: they
+are worth five points; the rest is supply (at any minute about 115 places have no fresh report from anyone).
+(5) SOURCES. tg_almasshta is no longer a channel; tg_areenablus stopped reporting on 2026-08-24 and points its readers
+to @hawajezaldefa; tg_palhubappfuel's cards stopped on 2026-10-03 and the channel is now a chat group. 097 sets the
+three inactive with the reason on the row. tg_peopleofhebron was never silent: 117 messages in October, of which v1's
+matcher let almost none through. @hawajezaldefa (2,387 members) is a candidate for a poller, Zaid's call.
+(6) THE POLLER is still v1's. What is ready: the reader takes a road channel's messages from claim as soon as v2's poller
+carries it (source.feeds_roads; the poller now records what a message replies to), so the move is one line in .env.
+Not done by me: it puts fifteen more channels, 4,000 messages a day, on agent2 (hard rule 3).
