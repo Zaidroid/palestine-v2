@@ -1,0 +1,31 @@
+[
+{
+"page": 1,
+"pages": 1,
+"per_page": "50",
+"total": 1
+},
+[
+{
+"id": "SP.URB.TOTL.IN.ZS",
+"name": "سكان المناطق الحضرية (% من إجمالي عدد السكان)",
+"unit": "",
+"source": {
+"id": "2",
+"value": "مؤشرات التنمية العالمية"
+},
+"sourceNote": "Urban population refers to people living in urban areas as defined by national statistical offices. The data are collected and smoothed by United Nations Population Division.",
+"sourceOrganization": "الأمم المتحدة، آفاق التحضر في العالم.",
+"topics": [
+{
+"id": "19",
+"value": "تغير المناخ "
+},
+{
+"id": "16",
+"value": "التنمية الحضرية"
+}
+]
+}
+]
+]

@@ -199,6 +199,21 @@ SUPPLY_LINES = {
                     "replaces": "pcbs-indicators",
                     "note": "pcbs_poverty_rate has no source on PCBS's rebuilt "
                             "site; its 2 held rows are not refreshed"},
+    # The `economic` category's two datasets, read from the publishers since
+    # 2026-10-12. Both write a line every night, including the nights they
+    # find the publisher's vintage unchanged and re-read nothing.
+    "worldbank": {"labels": ["worldbank:indicators"],
+                  "feeds": ["v1_economic_worldbank"],
+                  "fetcher": "ops/fetch_worldbank.py", "every_days": 1,
+                  "replaces": "worldbank",
+                  "note": "125 held World Bank series for PSE; a series that "
+                          "fails or is archived is named in the ledger line's "
+                          "`missing` while the rest are written"},
+    "imf": {"labels": ["imf:datamapper"], "feeds": ["v1_economic_imf"],
+            "fetcher": "ops/fetch_imf.py", "every_days": 1,
+            "replaces": "imf-economic",
+            "note": "18 held IMF DataMapper series for WBG; the World Economic "
+                    "Outlook moves twice a year (April, October)"},
     "hamoked": {"labels": ["hamoked:detention"],
                 "feeds": ["v1_prisoners_hamoked"],
                 "fetcher": "ops/fetch_hamoked.py", "every_days": 1,
@@ -222,6 +237,8 @@ RETIRED_V1_STEPS = {
     "ocha-casualties": "v2 supply line ocha-casualties (ops/fetch_ocha.py)",
     "ocha-demolitions": "v2 supply line ocha-demolitions (ops/fetch_ocha.py)",
     "pcbs-indicators": "v2 supply line pcbs-direct (ops/fetch_pcbs.py)",
+    "worldbank": "v2 supply line worldbank (ops/fetch_worldbank.py)",
+    "imf-economic": "v2 supply line imf (ops/fetch_imf.py)",
     "hamoked-detention": "v2 supply line hamoked (ops/fetch_hamoked.py)",
     "databank-martyrs": "v2 Tier 2 databank (martyrs_snapshot_2023, from T4P)",
     "databank-btselem": "v2 Tier 2 databank (v1's people-killed backfill; the "

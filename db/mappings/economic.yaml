@@ -12,6 +12,27 @@
 # economic_pcbs.yaml loads it into the SAME dataset, v1_economic_pcbs_direct.
 # This spec keeps World Bank and IMF and drops v1's stale PCBS records by
 # name — declared and counted.
+#
+# WORLD BANK AND IMF CUT FROM v1 2026-10-12. Until then this spec had no
+# `input:` and read v1's unified file, so both datasets would have stopped the
+# day v1 is switched off. ops/fetch_worldbank.py and ops/fetch_imf.py now read
+# the two publishers' own APIs (the same ones v1 read: api.worldbank.org/v2
+# for PSE, the IMF DataMapper for WBG) and write the record shape t_economic
+# already transforms. Same indicator strings, same identity
+# (indicator, occurred_at, place_id), same attrs. Two things are new, both the
+# publishers' own: the IMF's unit on every IMF row (v1 discarded it), and, in
+# each raw file's metadata, the publisher's vintage and its name for every
+# series (the World Bank's in English and Arabic).
+#
+# THE LIST OF SERIES IS HELD IN THE FETCHERS, NOT DISCOVERED. 125 World Bank
+# codes and 18 IMF codes: exactly what is held. A code that is not in
+# fetch_worldbank.SERIES / fetch_imf.CODES is not fetched, however many the
+# publisher offers; adding one needs a registry rule below and Zaid's word.
+#
+# THE FROZEN CORPUS IS THE FALLBACK. data/frozen/economic.json.gz is v1's
+# unified file of 2026-10-12 (3,541 World Bank + 474 IMF + 142 PCBS records
+# this spec drops as `moved`). A machine that has never fetched loads it —
+# additive only: a run reading the fallback never supersedes a held row.
 category: economic
 transform: python:t_economic
 shape: observation
@@ -29,6 +50,16 @@ source_routing:
     # records (license 'verify-required', url https://www.pcbs.gov.ps —
     # measured 142/142). pcbs.yaml's World Bank relabel is untouched.
   default: null           # measured: 0 records with sources: []
+
+input:
+  root: data/raw
+  glob:
+    - worldbank/indicators.json     # ops/fetch_worldbank.py
+    - imf/indicators.json           # ops/fetch_imf.py
+  fallback:
+    root: data/frozen
+    glob: economic.json.gz
+cadence: annual                     # both publish yearly points; fetched nightly
 
 datasets:
   # ── World Bank: 125 codes, 1960 → 2025, annual ────────────────────────────
@@ -64,12 +95,17 @@ datasets:
       value:
         num_from: metrics.value
         text_from: null
-        unit_from: null        # metrics.unit is the literal 'number' on
-                               #   474/474 — measured wrong for GDP in USD,
-                               #   inflation in percent and unemployment in
-                               #   percent alike. indicator_name carries the
-                               #   real unit and goes to attrs. Same defeat
-                               #   water hit with 'count'.
+        unit_from: metrics.unit  # the IMF's own unit string, verbatim
+                               #   ("Billions of U.S. dollars", "Percent of
+                               #   GDP", "Annual percent change"), written by
+                               #   ops/fetch_imf.py since 2026-10-12. v1's
+                               #   file carried the literal 'number' on
+                               #   474/474 — wrong for GDP in dollars and
+                               #   inflation in percent alike, the defeat
+                               #   water hit with 'count' — and this was
+                               #   `null` because of it. t_economic still
+                               #   reads that placeholder as no unit, so the
+                               #   frozen fallback cannot bring it back.
       place:
         strategy: region       # region='Palestine' on 474/474
         min_decided_pct: 1.0
@@ -183,13 +219,33 @@ notes: |
   negative-freshness defeat. Left in deliberately, with this note, so a
   future reader does not "fix" them into day precision.
 
-  IMF's UNIT FIELD IS A LIE ON EVERY ROW. metrics.unit == 'number' on
-  474/474 IMF records, covering NGDPD (billions USD), LUR (percent),
-  PCPIPCH (percent change), BCA_NGDPD (percent of GDP) and 14 more. This is
-  water's 'count' defeat repeated: a unit column that is uniform is not a
-  unit, it is a placeholder. unit_from is nulled for that dataset and
-  indicator_name is the honest carrier. The World Bank rows are fine —
-  ten distinct units that vary sensibly with the indicator.
+  IMF's UNIT FIELD WAS A LIE ON EVERY ROW OF v1's FILE. metrics.unit ==
+  'number' on 474/474 IMF records, covering NGDPD (billions USD), LUR
+  (percent), PCPIPCH (percent change), BCA_NGDPD (percent of GDP) and 14
+  more. This is water's 'count' defeat repeated: a unit column that is
+  uniform is not a unit, it is a placeholder. Until 2026-10-12 unit_from was
+  nulled for that dataset and the rows had no unit at all. The IMF does
+  publish one per indicator; ops/fetch_imf.py carries it, and the 474 held
+  rows are superseded once, unit null → the IMF's string, values unchanged.
+  The strings are the IMF's (11 distinct) and have no alias in
+  db/registry/units.yaml yet, so value_canonical stays NULL for them and the
+  18 IMF indicators stay `unclassified` under the last rule below until
+  someone decides their kind. The World Bank rows carry v1's unit tokens
+  (eight distinct, derived from the label) exactly as held.
+
+  THE WORLD BANK LABELS ARE v1's, NOT THE BANK's. attrs.indicator_name on the
+  held rows is the label v1 typed for each code, and fetch_worldbank.SERIES
+  keeps it so that no row changes. The Bank's own name for each series (and
+  its Arabic name, which it gives for 90 of the 125) is in
+  data/raw/worldbank/indicators.json under metadata.indicators[code]; where
+  the two disagree the Bank's is right. Measured 2026-10-12: 24 labels (733
+  rows) are not the Bank's name. 13 differ in wording only ("(modeled ILO
+  estimate)", "% of total population"). 11, on 171 rows, name a different
+  quantity: EG.ELC.RNWX.ZS, ER.H2O.FWST.ZS, FS.AST.PRVT.GD.ZS,
+  SE.TER.GRAD.FE.SI.ZS, SH.PRV.SMOK, SL.UEM.ADVN.ZS and the five SI.POV
+  lines, which the Bank moved from 2017 to 2021 PPP ($2.15 → $3.00 a day)
+  while the label stayed. Correcting one is a change to SERIES and supersedes
+  that series' rows; it has not been done here.
 
   OVERLAP WITH THE `pcbs` CATEGORY. 1,856 (indicator_code, date) pairs in
   the pcbs category duplicate rows in this one, with identical values and

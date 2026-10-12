@@ -32,6 +32,17 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/demolitions/all-data.json",
   "why": "OCHA oPt demolition register. Static."
  },
+ "economic": {
+  "bytes_gzipped": 308919,
+  "bytes_uncompressed": 7751104,
+  "evidence": "taken from v1's unified file on 2026-10-12 (v1's refresh of 03:23 UTC) at the hand-over to ops/fetch_worldbank.py and ops/fetch_imf.py. Compared with the store's current rows the same day, read-only: 4,157 records read, 142 dropped as `moved`, 3,541 World Bank and 474 IMF rows emitted, every one matched to a held identity with the same content. The two fetchers' own files, same evening: 3,541 of 3,541 World Bank rows matched with the same content; 474 of 474 IMF rows matched on identity and value, differing only in the unit the IMF states and v1 dropped.",
+  "file": "economic.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 4157,
+  "sha256_uncompressed": "9bfdf122e2a0daeeff74b3435a4ca1683607458c8a1312543717a68801fbf0ea",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/economic/all-data.json",
+  "why": "NOT a finished corpus: the fallback of db/mappings/economic.yaml. v1's unified economic file as generated 2026-10-12T03:23:17Z: World Bank 3,541 records, IMF 474, and 142 PCBS-direct records the spec drops as `moved`. The live inputs are data/raw/worldbank/indicators.json and data/raw/imf/indicators.json; a machine that has never fetched reads this instead, additive only."
+ },
  "education": {
   "bytes_gzipped": 238527,
   "bytes_uncompressed": 4533829,

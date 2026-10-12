@@ -1,0 +1,1068 @@
+[
+{
+"page": 1,
+"pages": 1,
+"per_page": 400,
+"total": 66,
+"sourceid": "2",
+"lastupdated": "2026-10-08"
+},
+[
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2025",
+"value": 87.3818962963393,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2024",
+"value": 87.1196014117004,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2023",
+"value": 86.8576870415886,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2022",
+"value": 86.5961423216016,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2021",
+"value": 86.334956387337,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2020",
+"value": 86.0741183743925,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2019",
+"value": 85.8136174183656,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2018",
+"value": 85.5351131070872,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2017",
+"value": 85.3782255354,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2016",
+"value": 85.3377390706351,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2015",
+"value": 85.2182174537886,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2014",
+"value": 85.0433335176723,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2013",
+"value": 84.8178459889593,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2012",
+"value": 84.5465135943222,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2011",
+"value": 84.2340950604341,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2010",
+"value": 83.8853491139676,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2009",
+"value": 83.5050344815957,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2008",
+"value": 83.0979098899913,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2007",
+"value": 82.596126313073,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2006",
+"value": 81.7611786265942,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2005",
+"value": 80.5172240645229,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2004",
+"value": 78.9926422349822,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2003",
+"value": 77.2865026687292,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2002",
+"value": 75.4978748965208,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2001",
+"value": 73.7258284491139,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "2000",
+"value": 72.0694328572656,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1999",
+"value": 70.6277576517327,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1998",
+"value": 69.4998723632721,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1997",
+"value": 68.7351827543561,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1996",
+"value": 68.1108382243154,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1995",
+"value": 67.5359347159403,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1994",
+"value": 67.0135359888796,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1993",
+"value": 66.5380301106892,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1992",
+"value": 66.1038051489255,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1991",
+"value": 65.7052491711444,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1990",
+"value": 65.3367502449023,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1989",
+"value": 64.9926964377552,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1988",
+"value": 64.6674758172593,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1987",
+"value": 64.3554764509707,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1986",
+"value": 64.0510864064457,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1985",
+"value": 63.7486937512403,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1984",
+"value": 63.4426865529107,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1983",
+"value": 63.127452879013,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1982",
+"value": 62.7973807971035,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1981",
+"value": 62.4468583747383,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1980",
+"value": 62.0702736794735,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1979",
+"value": 61.6620147788652,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1978",
+"value": 61.2164697404697,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1977",
+"value": 60.7280266318431,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1976",
+"value": 60.1910735205415,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1975",
+"value": 59.5999984741211,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1974",
+"value": 58.9077011962317,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1973",
+"value": 58.0837725315867,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1972",
+"value": 57.1476372593373,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1971",
+"value": 56.1187201586349,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1970",
+"value": 55.016446008631,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1969",
+"value": 53.8602395884769,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1968",
+"value": 52.6695256773239,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1967",
+"value": 51.4637290543234,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1966",
+"value": 50.2622744986269,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1965",
+"value": 49.0845867893855,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1964",
+"value": 47.9500907057508,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1963",
+"value": 46.8782110268741,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1962",
+"value": 45.8883725319067,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1961",
+"value": 45,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+},
+{
+"indicator": {
+"id": "SP.URB.TOTL.IN.ZS",
+"value": "Urban population (% of total population)"
+},
+"country": {
+"id": "PS",
+"value": "West Bank and Gaza"
+},
+"countryiso3code": "PSE",
+"date": "1960",
+"value": 44.1830150432117,
+"unit": "",
+"obs_status": "",
+"decimal": 0
+}
+]
+]
