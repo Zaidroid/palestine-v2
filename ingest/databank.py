@@ -2210,6 +2210,18 @@ def _record_refusal(category: str, reason: str, counts: Counter,
         pass          # never let the audit trail break the refusal it records
 
 
+# How a row stops being current. `tstzrange(lower(sys_period), now())` is an
+# EMPTY range for a row born in this same transaction (its lower bound IS
+# now()), and an empty range has no upper bound: the row stays "current" and
+# the row meant to replace it hits the unique index. It bit the Ministry
+# re-read on 2026-10-11 (two bulletins for one day in one transaction) and the
+# same expression stood here and in three repair scripts, waiting for the first
+# run that revises a row it has just written. A row from an earlier
+# transaction closes at now() exactly as before, so its successor still abuts.
+CLOSE_NOW = ("tstzrange(lower(sys_period), "
+             "greatest(now(), lower(sys_period) + interval '1 microsecond'))")
+
+
 def run(category: str, dry_run: bool = False) -> dict:
     spec = load_spec(category)
     if category not in TRANSFORMERS:
@@ -2765,26 +2777,23 @@ def run(category: str, dry_run: bool = False) -> dict:
                     # land once the stale one has stopped being current. If
                     # anything below fails, the rollback restores the old
                     # reading — a correction is never applied halfway.
-                    cur.execute("""
+                    cur.execute(f"""
                         UPDATE observation
-                           SET sys_period = tstzrange(lower(sys_period),
-                                                      now())
+                           SET sys_period = {CLOSE_NOW}
                          WHERE observation_id = ANY(%s)
                            AND upper_inf(sys_period)""", (to_supersede,))
                 if absent:
-                    cur.execute("""
+                    cur.execute(f"""
                         UPDATE observation
-                           SET sys_period = tstzrange(lower(sys_period),
-                                                      now())
+                           SET sys_period = {CLOSE_NOW}
                          WHERE observation_id = ANY(%s)
                            AND upper_inf(sys_period)""",
                         ([oid for _, oid in absent],))
                     closed_absent = cur.rowcount
                 if revised:
-                    cur.execute("""
+                    cur.execute(f"""
                         UPDATE observation
-                           SET sys_period = tstzrange(lower(sys_period),
-                                                      now())
+                           SET sys_period = {CLOSE_NOW}
                          WHERE observation_id = ANY(%s)
                            AND upper_inf(sys_period)""",
                         ([oid for _, oid in revised],))

@@ -35,6 +35,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from ingest.databank import CLOSE_NOW                            # noqa: E402
 from resolve.db import connect                                   # noqa: E402
 
 FIND = """
@@ -62,7 +63,7 @@ def main(argv: list[str]) -> int:
         if apply:
             cur.execute(
                 "UPDATE observation "
-                "SET sys_period = tstzrange(lower(sys_period), now()) "
+                f"SET sys_period = {CLOSE_NOW} "
                 "WHERE observation_id = ANY(%s)",
                 ([r[0] for r in rows],))
             print(f"\nsuperseded {cur.rowcount} row(s) — still readable at "

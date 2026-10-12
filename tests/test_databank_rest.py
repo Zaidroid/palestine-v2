@@ -213,3 +213,21 @@ def test_the_mcp_tool_can_ask_for_the_differenced_series():
     assert '"detrend": {"type": "string", "enum": ["none", "diff"]' in \
         (ROOT / "serve" / "mcp_facades.py").read_text()
     assert mcp_facades is not None
+
+
+# ── a row closed in the transaction that wrote it ────────────────────────────
+
+def test_no_ingest_path_closes_a_row_into_an_empty_range():
+    """tstzrange(lower, now()) is EMPTY for a row born in the same transaction:
+    it is then current under `upper(sys_period) IS NULL`, absent from every
+    as_of, and its replacement hits the unique index (the Ministry re-read,
+    2026-10-11)."""
+    import re
+    from ingest.databank import CLOSE_NOW
+    assert "greatest(now(), lower(sys_period) + interval '1 microsecond')" in CLOSE_NOW
+    bare = re.compile(r"SET sys_period = tstzrange\(lower\(sys_period\),\s*now\(\)\)")
+    for rel in ("ingest/databank.py", "ops/repair_identity.py",
+                "ops/backfill_identity.py", "ops/repair_conflict_region.py",
+                "ingest/sources/moh_gaza.py"):
+        assert not bare.search((ROOT / rel).read_text()), rel
+    assert (ROOT / "ingest" / "databank.py").read_text().count("SET sys_period = {CLOSE_NOW}") == 3

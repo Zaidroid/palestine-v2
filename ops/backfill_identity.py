@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ingest.databank import (SPECS, SpecRefused,                 # noqa: E402
                              identity_key_for, load_spec)
+from ingest.databank import CLOSE_NOW                            # noqa: E402
 from resolve.db import connect                                   # noqa: E402
 
 
@@ -117,7 +118,7 @@ def main() -> int:
                     # readable at their own as_of.
                     cur.execute(
                         "UPDATE observation "
-                        "SET sys_period = tstzrange(lower(sys_period), now()) "
+                        f"SET sys_period = {CLOSE_NOW} "
                         "WHERE observation_id = ANY(%s)", (extras,))
                     report[ds_key]["superseded_duplicates"] = len(extras)
                 cur.execute("CREATE TEMP TABLE _ik (k TEXT, oid BIGINT) "

@@ -49,6 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ingest.databank import (SPECS, SpecRefused,                 # noqa: E402
                              identity_key_for, load_spec)
+from ingest.databank import CLOSE_NOW                            # noqa: E402
 from resolve.db import connect                                   # noqa: E402
 
 
@@ -144,9 +145,9 @@ def main() -> int:
                     doom.append(oid)
             doomed[key]["would_supersede"] = len(doom)
             if apply and doom:
-                cur.execute("""
+                cur.execute(f"""
                     UPDATE observation
-                       SET sys_period = tstzrange(lower(sys_period), now())
+                       SET sys_period = {CLOSE_NOW}
                      WHERE observation_id = ANY(%s)""", (doom,))
                 doomed[key]["superseded"] = cur.rowcount
                 closed += cur.rowcount
