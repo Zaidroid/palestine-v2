@@ -782,3 +782,170 @@ Left alone on purpose: the fix is either new gate wording or a data migration
 re-pointing observations, and both are Zaid's hand. **Trap for next Monday:** do
 not re-open this as a belief-layer bug, and do not read a frozen `updated_at` as
 a dead writer — it is the fingerprint of a merge.
+
+## 2026-10-12 · MAINTENANCE · Round 10: the re-read promised 0.819, the hand scored 0.740
+
+The gold contract carried classifier 1.11.0 at **0.819**, a *projection* over
+round 9's already-scored claims (`ops/incident-precision-round9-rescored-1.11.0.json`).
+Round 10 drew 290 fresh claims — 200 core at 20 per type, 50 adversarial, 40
+rejects, every one of the 250 served rows classified at 1.11.0 — and every one
+was read by hand: **0.740 [0.675–0.796], n=200, GATE FAIL.** The projection was
+**0.079 optimistic**, because it measures how 1.11.0 re-reads a sample chosen
+and scored against 1.10.0, which is a different question from how it reads a
+fresh week.
+
+What 1.11.0 genuinely fixed, measured: **death 0.45 → 0.600, arrest 0.55 →
+0.750.** What it did not: **siege 0.682 → 0.450** and **demolition 0.6 → 0.550**,
+both under the 0.6 floor, and overall 0.755 → 0.740 with the intervals
+overlapping — flat, not a regression. Miss rate **11 of 40 = 27.5%**
+(conservative by construction: `REJECT_SQL` skips the mechanical rejects).
+
+**Half of `siege` is not a report at all** (10 of 20): an essay on the decades
+before 7 October, a Hamas statement, a woman's testimony to camera, a teacher's
+interview, a eulogy for the very commander a `death` claim also carried
+(97040 / 64703), a photo caption whose `place_text` was a person's name
+("ام شادي" → Nablus), and two analyses whose `place_text` was not a place at
+all ("استيطانيه متكامله هكذا" → Jerusalem). The word حصار is doing work the
+type cannot.
+
+**Nine defect classes, each provable, NONE fixed.** Fixing any one of them makes
+round 10 tuning data and 1.11.0 unmeasured one day after its first honest
+measurement — the exact trap of 2026-09-22. Filed instead:
+
+1. **A warning is still not a demolition, in three forms the reject misses.**
+   1.11.0 rejects `تخطر بهدم`. It does not reject the noun `إخطار بهدم`
+   (62430, 36 notices), nor `تخطر … بالهدم` (43198), nor `يخطر بوقف بناء وهدم`
+   (72495). All three serve as demolitions.
+2. **Levelling NEAR homes is promoted to demolition OF homes.**
+   `_HOMES_LEVELLED_RE` (`cascade/news.py:736`) allows three tokens between the
+   verb and منازل and excludes no proximity word, so "تجريف **قرب** منازل
+   الفلسطينيين" (90666) is promoted at `news.py:1215`.
+3. **Round 9's bulldozer demotion eats real demolitions.** `news.py:1221`
+   demotes demolition → land_levelling when the trigger word is جرافات and no
+   هدم stem appears. So "جرافات الاحتلال تدمر بنايتين وتحولهما إلى ركام" (69522)
+   and "تحول منزلاً إلى ركام بعد تشريد ساكنيه" (72555) are levelling — while
+   **72250, the same neighbourhood on the same days with هدم, is a demolition.**
+   The verb alone decides the type.
+4. **"The last look is not a death" does not catch the last look.** 211670,
+   "نظراتُ الوداع الأخير على الشهيد علي البزاري", still serves as a death.
+5. **A body returned is counted as a death today.** 213225 — handed over today,
+   died in Megiddo in March 2026. Typed `death`, it dates a March death to now.
+6. **The news is the selfie, not the death.** 207243 (soldiers photographing
+   themselves with a body) is typed `death` and double-counts a death that
+   207399 and 207116 already report.
+7. **A monument bearing 40 names reads as 40 deaths.** 210457 — the Birzeit
+   University martyrs' memorial demolished; "يحمل أسماء 40 شهيدًا" satisfied the
+   count-and-casualty frame.
+8. **تفجير is still absent from the lexicon — filed in round 7, still open.**
+   210292 and 211470 are missed demolitions, and **211470 is the same house
+   211336 catches with هدم.** Caught by one verb, missed by the other.
+9. **Three gazetteer gaps and a word read as a place.** رأس عطية missing
+   (192423 missed); `جامعة بيرزيت` fails where `بلدة بيرزيت` resolves (183995
+   missed); `قبر يوسف` resolves only when a governorate word sits beside it
+   (196110 caught, 197465 missed — 2,000 settlers, 8 hours of closure); and
+   `الزيتون` (olives) became the village Az Zaytun (217484).
+
+**Needing Zaid, not a patch.** Six claims report real injury or death with **no
+occupation actor**: a traffic accident (217931), a stabbing between residents
+(209911), a driver running over a policeman (193444), a gold-shop robbery
+killing (194572), a stone falling on a labourer (53828), a man dying of burns in
+his own shop (56568). I scored all six `is_incident = false` and said so in each
+note, but the taxonomy has no word for "this happened, and not to us". One claim
+is **outside the West Bank**: 142624, a fire trapping settlers in حارة اليهود
+**غرب** القدس, typed `siege` off يحاصر and served as a West Bank incident.
+
+**Two per-type floors disagree in the code.**
+`learn/incident_precision.py:104` GATE_PER_TYPE = **0.60**;
+`serve/quality.py:20` GATE_TYPE = **0.70**; `ops/gold_contract.py` reports the
+0.7 one as "source: serve/quality.py (G3)". Under 0.70, death (0.600) joins
+siege and demolition below the floor and raid sits exactly on it. A gate number
+is policy, so neither was touched.
+
+**Trap for next Monday:** do not read the gold contract's projection as a
+measurement — it was 0.079 optimistic this time — and do not fix a classifier
+rule in the same run that measures the classifier.
+
+## 2026-10-12 · MAINTENANCE · The hand-over check compared the wrong number, and a true declaration read dead
+
+`ops.gap_radar` reported **three datasets newly STALLED at severity 5** at 03:52
+(the journal says so in its own words: `NEWLY STALLED: btselem_fatalities,
+fao_diem_household_surveys, v1_conflict_tech4palestine`), and exited 5 — the
+June-9 failure class by its shape. One of the three was the radar's own bug.
+
+`CONTINUED_BY` already declares `v1_conflict_tech4palestine → t4p_gaza_daily`,
+and the hand-over is exact: the frozen series ends **2026-08-08**, and the
+successor's `conflict.gaza_cumulative_killed` / `_injured` begin **2026-08-09**.
+Measured on main-server, one day, as `conflict_gaza.yaml` designed it. But the
+fragments commit of 2026-10-11 gave `t4p_gaza_daily` **eight more indicators**
+(children, women, medical, press, civil defence, massacres, daily killed and
+injured) reaching back to **2023-10-07** — indicators the predecessor never
+held, so they overlap nothing and cannot double-count. The check took
+`min(occurred_at)` across the **whole** successor, read 2023-10-07, measured the
+hand-over at **−1036 days**, rejected a declaration that was true, and reported
+the predecessor stalled.
+
+Fixed, test first: `continued_successors()` and `_hands_over()` are now their own
+functions and the SQL intersects the two datasets' indicators, so the window is
+measured only on what actually hands over. On production the radar now reads
+`1 continued`, stalled 3 → 2, dead supply lines 3 → 2. The two that remain are
+real and are Zaid's to declare.
+
+**Trap for next Monday:** `newly_stalled` in `data/gap-radar.json` is relative to
+the **previous run**, not to last Monday. Re-running the radar by hand empties it.
+Read the journal, not the file, to learn what last night actually saw.
+
+## 2026-10-12 · MAINTENANCE · unhcr_population refuses to load: the publisher published 39 cells twice
+
+The nightly databank job exits 1 and has since 2026-10-11 — `both halves failed:
+loader exit 1 AND gap radar exit 5`. The loader half is one spec:
+`FAIL unhcr_population: identity is not injective for unhcr_population_hdx:
+192 collisions (allowed 0)`.
+
+It is not a missing identity attr. Read at the publisher's file
+(`data/raw/unhcr/demographics_originating.json`, fetched 03:42 today), **39
+dimension keys appear twice**, and the colliding rows differ in **no dimension
+column at all** — only in their values. The 2013 PSE→BEL pair:
+`Female Total` 0 vs 19, `Male Total` 0 vs 46, `Total` 60 vs 65. Every one of
+Year, origin, asylum, population type, location, urbanRural and
+accommodationType is identical.
+
+It is a publisher revision that arrived today: the 10-11 load emitted 45,221
+observations with 24 intra-run conflicts and wrote 45,197 cleanly; today's file
+emits **45,389** (+168 rows, `revisions: 171`) and the conflicts rise to 192.
+`identity.revises_by` — the mechanism 5df776a added for exactly this on funding —
+cannot reach it: UNHCR's table carries **no record number**, so there is no attr
+to key the newer reading by.
+
+**Nothing is lost and nothing is wrong**: the 45,197 rows of 10-11 still serve,
+and the loader refusing an ambiguous row is the no-data-loss discipline working.
+The dataset has simply stopped taking updates. What a doubled cell MEANS — sum,
+latest wins, keep both under a `seq` as `btselem_fatalities` does, or refuse —
+is a decision about the publisher's intent, so it was not made here.
+
+## 2026-10-12 · MAINTENANCE · The south is not gone; it alternates day by day
+
+Last Monday filed the southern road text as lost since 2026-10-03. It is not
+lost — it **oscillates**, and the instrument that shows this is the breadth check
+Zaid built in answer to that very question (9458007, "a source that still speaks
+about fewer places").
+
+Distinct places `tg_palhubapproad` reports per day: 164, 165 (10-02, 10-03),
+then **98, 98, 98, 98, 97** (10-04 → 10-08), then **166** (10-09), 145 (10-10),
+**99** (10-11), **166** (10-12). The places that appear on a wide day and vanish
+on a narrow one are exactly the six governorates that went dark: Idhna, As-Samu',
+Ash-Shuyukh, Adh-Dhahiriya, al-Arroub, al-Fawwar, Abu al-Asja, Umm ash-Shaqhan
+(Hebron); al-Khader, al-'Ubaydiyah, an-Nashash, Container/Wadi Nar, Tunnels
+(Bethlehem); Jericho South DCO, al-Banana (Jericho); az-Zawiyah, Ariel Junction
+(Salfit).
+
+**It is not our code.** 10-09 was already wide, and every road-reader commit
+landed on 10-11 between 16:09 and 19:05 — after the recovery began and on a day
+that read **narrow**. The pattern is the publisher's.
+
+Consequence: **known-fraction now flaps across its own gate** — 0.54 last
+Monday, **0.61 today** (162 of 266, G4 gate 0.60). A southern checkpoint answers
+with a value on some days and `unknown` on others, which is honest each time and
+unstable across days.
+
+**Trap for next Monday:** do not read a single day's known-fraction as a trend,
+in either direction, and do not read the 0.61 as the south being fixed.
