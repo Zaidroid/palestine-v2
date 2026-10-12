@@ -268,7 +268,11 @@ FACADES: dict[str, dict[str, Any]] = {
                         "description": "pair mode: days to scan for a lagged fit "
                                        "(at most 366); adds a caveat"},
             "allow_same_concept": {"type": "boolean", "default": False,
-                                   "description": "also test series of the same concept"}}},
+                                   "description": "also test series of the same concept"},
+            "detrend": {"type": "string", "enum": ["none", "diff"], "default": "none",
+                        "description": "pair mode: `diff` correlates the changes between "
+                                       "consecutive readings (the way to compare running "
+                                       "totals, or two series that both rise with time)"}}},
         "route": _r_correlate},
     "crossings": {
         "description": "Status of Gaza and West Bank crossings (Rafah, Kerem Shalom, Erez, "

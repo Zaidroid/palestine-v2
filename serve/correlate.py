@@ -19,6 +19,11 @@ instead of a number, never a number with a warning attached:
   measure_kind unclassified — nobody established what kind of number it is
   identical concepts     correlating a series with itself, or with its own
                          subtotal, is arithmetic dressed as a finding
+  mixed time grains      a daily series and a yearly one meet only on dates
+                         they share by accident (2026-10-12; the scan had
+                         this rule, the pairwise call did not)
+  mixed units            one label holding prices per kg and per litre, or
+                         counts and percentages, has no single line
 
 No numpy or scipy on this host, so Pearson and Spearman are implemented
 directly. They are twelve lines each and the arithmetic is not the hard part
@@ -68,6 +73,14 @@ def spearman(xs: list[float], ys: list[float]) -> float | None:
     return pearson(rank(xs), rank(ys))
 
 
+def z_for_shifts(shifts: int) -> float:
+    """The two-sided 95% z, widened for the number of shifts a lag search
+    tried (Bonferroni). Trying 15 shifts and keeping the best one is 15 tests;
+    an interval computed as if it were one is too narrow by construction."""
+    from statistics import NormalDist
+    return NormalDist().inv_cdf(1 - 0.025 / max(1, int(shifts)))
+
+
 def fisher_ci(r: float, n: int, z: float = 1.96) -> tuple[float, float] | None:
     """Fisher z interval. Reported because a rho without an interval invites
     the reader to treat 0.6 from 13 points as 0.6 from 1,300."""
@@ -79,8 +92,20 @@ def fisher_ci(r: float, n: int, z: float = 1.96) -> tuple[float, float] | None:
     return (math.tanh(lo), math.tanh(hi))
 
 
-def check_comparable(a: dict, b: dict) -> list[str]:
-    """Every reason these two series must not be correlated. Empty means go."""
+GRAIN_WORD = {"day": "daily", "month": "monthly", "year": "yearly",
+              "event": "a list of events", "register": "a register",
+              "period": "period totals", "snapshot": "one snapshot",
+              "census": "a census"}
+
+
+def check_comparable(a: dict, b: dict, detrend: str = "none") -> list[str]:
+    """Every reason these two series must not be correlated. Empty means go.
+
+    `detrend="diff"` is the caller saying "correlate the changes". Until
+    2026-10-12 this ran before the differencing and never heard about it, so
+    the cumulative refusal's own advice ("pass detrend=diff") could not work:
+    the second call was refused with the same sentence. A running total that is
+    about to be differenced is not correlated as a running total."""
     stop = []
     for s in (a, b):
         if s["measure_kind"] in (None, "unclassified"):
@@ -89,12 +114,25 @@ def check_comparable(a: dict, b: dict) -> list[str]:
                 "this is (measure_kind is unclassified), so it cannot be "
                 "compared to anything. Classify it in the spec's registry "
                 "block first.")
-        if s["measure_kind"] == "cumulative":
+        if s["measure_kind"] == "cumulative" and detrend != "diff":
             stop.append(
                 f"{s['indicator']} is CUMULATIVE — a running total. "
                 "Correlating running totals measures the passage of time, not "
                 "a relationship: any two rising totals correlate at ~1.0. "
                 "Pass detrend=diff to correlate the changes instead.")
+        if s.get("unit_mixed"):
+            stop.append(
+                f"{s['indicator']} holds more than one unit "
+                f"({', '.join(s.get('units') or [])}): one line drawn through "
+                "them mixes different things. Read it with `databank` and pick "
+                "one unit's rows.")
+    ga, gb = a.get("grain"), b.get("grain")
+    if ga and gb and ga != gb:
+        stop.append(
+            f"time grains differ: {a['indicator']} is {GRAIN_WORD.get(ga, ga)} "
+            f"({ga}) and {b['indicator']} is {GRAIN_WORD.get(gb, gb)} ({gb}). "
+            "They meet only on dates they happen to share, and filling one in "
+            "to match the other would invent the points being compared.")
         if s["measure_kind"] == "status":
             stop.append(f"{s['indicator']} is categorical (status); a "
                         "correlation over category labels is meaningless.")
@@ -146,12 +184,22 @@ def check_shape(xs: list[float], ys: list[float]) -> list[str]:
 
 def differenced(series: dict) -> dict:
     """The series of changes between consecutive readings, dated at the later
-    reading; precision carried from it."""
+    reading; precision carried from it.
+
+    A running total that FALLS was corrected by its publisher: nobody was
+    un-killed. That step is left out (the rule v_flow keeps), counted in
+    `revisions_left_out`, and said in the caveats."""
     pts = [p for p in series["points"] if p.get("value") is not None]
-    out = []
+    out, revisions = [], 0
+    cumulative = series.get("measure_kind") == "cumulative"
     for prev, cur in zip(pts, pts[1:]):
-        out.append({**cur, "value": float(cur["value"]) - float(prev["value"])})
-    return {**series, "points": out, "n": len(out), "detrended": "diff"}
+        step = float(cur["value"]) - float(prev["value"])
+        if cumulative and step < 0:
+            revisions += 1
+            continue
+        out.append({**cur, "value": step})
+    return {**series, "points": out, "n": len(out), "detrended": "diff",
+            "revisions_left_out": revisions}
 
 
 def collapse_dates(series: dict) -> tuple[dict, str | None]:
@@ -193,10 +241,22 @@ def duplicate_dates(series: dict) -> tuple[int, int]:
     return sum(1 for n in per_date.values() if n > 1), len(per_date)
 
 
-def caveats(a: dict, b: dict, pairs: list, lag: int) -> list[str]:
+def caveats(a: dict, b: dict, pairs: list, lag: int, shifts: int = 1) -> list[str]:
     """Never empty. A correlation served without caveats is a claim."""
     out = ["Correlation is not causation, and neither series was collected to "
            "answer this question."]
+    for s in (a, b):
+        if s.get("detrended") == "diff" and s.get("measure_kind") == "cumulative":
+            out.append(
+                f"{s['indicator']} is a running total; what was correlated is the "
+                "change between consecutive readings, whatever the gap between them"
+                + (f" ({s['revisions_left_out']} downward correction(s) by the "
+                   "publisher left out)." if s.get("revisions_left_out") else "."))
+        if s.get("other_sources"):
+            out.append(
+                f"{s['indicator']} is published by more than one source; only "
+                f"{s.get('source_used')}'s series was used "
+                f"(not pooled: {', '.join(sorted(s['other_sources']))}).")
     n = len(pairs)
     if n < 30:
         out.append(f"n = {n}. Below about 30 overlapping points a coefficient "
@@ -210,10 +270,19 @@ def caveats(a: dict, b: dict, pairs: list, lag: int) -> list[str]:
             "not days, and were aligned to the start of the period they "
             "label.")
     if lag:
+        first, second = (a, b) if lag > 0 else (b, a)
         out.append(
-            f"a lag of {lag} period(s) was applied. A lag scan tries many "
+            f"a lag of {lag} day(s) was applied. A lag scan tries many "
             "shifts and reports the best, which finds a correlation in noise "
             "reliably; treat a lagged result as a hypothesis, not a finding.")
+        out.append(
+            f"{first['indicator']} moving before {second['indicator']} is an "
+            "order in time, not a cause: a third thing can move both, and the "
+            "earlier series can simply be reported sooner.")
+    if shifts > 1:
+        out.append(
+            f"{shifts} shifts were tried and the strongest kept; the interval "
+            "is widened for that many tries.")
     if a["source_names"] != b["source_names"]:
         out.append(
             f"different publishers ({', '.join(sorted(a['source_names']))} vs "
@@ -256,6 +325,7 @@ TIME_AR = {"month": "شهري", "year": "سنوي", "day": "يومي", "snapshot
            "event": "أحداث", "register": "سجل", "census": "تعداد", "period": "فترات"}
 
 SKIP_AR = {"cumulative — a running total": "مجموع تراكمي",
+           "more than one unit under one label": "أكثر من وحدة تحت اسم واحد",
            "categorical status": "تصنيف مش رقم",
            "different place grain": "مستوى مكان مختلف",
            "same concept as the subject": "نفس مفهوم السلسلة",
@@ -299,6 +369,15 @@ def reason_ar(reason: str) -> str:
     if m:
         return (f"مستوى المكان مختلف: {m[1]} على مستوى {GRAIN_AR.get(m[2], m[2])} و{m[3]} "
                 f"على مستوى {GRAIN_AR.get(m[4], m[4])} — الرقم رح يطلع شكله منطقي وهو بيقارن شيئين مختلفين")
+    m = _re.match(r"time grains differ: (\S+) is .*?\((\w+)\) and (\S+) is .*?\((\w+)\)", r)
+    if m:
+        return (f"الدقة الزمنية مختلفة: {m[1]} {TIME_AR.get(m[2], m[2])} و{m[3]} "
+                f"{TIME_AR.get(m[4], m[4])} — ما بيلتقوا إلا بتواريخ صدفة، وتعبئة وحدة "
+                "لتطابق الثانية بتخترع النقاط اللي بنقارنها")
+    m = _re.match(r"(\S+) holds more than one unit \((.+?)\)", r)
+    if m:
+        return (f"{m[1]} فيها أكثر من وحدة ({m[2]}) — خط واحد عليها بيخلط أشياء مختلفة. "
+                "اقرأها بـ databank واختار صفوف وحدة وحدة")
     m = _re.match(r"both series are (.+?)\. Two measures", r)
     if m:
         return (f"السلسلتين من نفس المفهوم ({m[1]}) — غالباً نفس الكمية معدودة مرتين، "

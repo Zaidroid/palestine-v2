@@ -2816,7 +2816,7 @@ def _wider_places(place_id: int) -> list[dict]:
 
 
 def _series(indicator: str, place_id: int | None, frm: str | None,
-            to: str | None) -> dict:
+            to: str | None, source: str | None = None) -> dict:
     """One databank series, at the place asked — or at the governorate or region
     that contains it when the series is not kept that finely.
 
@@ -2826,11 +2826,11 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
     never silent."""
     if indicator in MOVEMENT_INDICATORS:
         return {**_movement_series(indicator, place_id, frm, to), "place_used": None}
-    s = _series_at(indicator, place_id, frm, to)
+    s = _series_at(indicator, place_id, frm, to, source)
     if place_id is None or s["points"] or not s["known"]:
         return {**s, "place_used": None}
     for alt in _wider_places(place_id):
-        s2 = _series_at(indicator, alt["place_id"], frm, to)
+        s2 = _series_at(indicator, alt["place_id"], frm, to, source)
         if s2["points"]:
             return {**s2, "place_used": {"place_id": alt["place_id"], "name": alt["name_ar"],
                                          "name_en": alt["name_en"], "kind": alt["kind"],
@@ -2838,8 +2838,25 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
     return {**s, "place_used": None}
 
 
+def _one_source(pts: list[dict], source: str | None) -> tuple[list[dict], str | None, dict]:
+    """A series is ONE publisher's line. `prisoners.total` is published by
+    HaMoked (monthly since 2008) and by Addameer (since 2022): pooled, every
+    month of the overlap carried two values and the tools drew one line through
+    both (measured 2026-10-12: 242 rows under each of two indicators). The
+    source asked for is used; without one, the source with the most points,
+    and the others are named so the caller can ask for them."""
+    by_src: dict[str, int] = {}
+    for p in pts:
+        by_src[p.get("source_key") or "?"] = by_src.get(p.get("source_key") or "?", 0) + 1
+    if len(by_src) <= 1:
+        return pts, None, {}
+    use = source if source in by_src else sorted(by_src, key=lambda k: (-by_src[k], k))[0]
+    return ([p for p in pts if (p.get("source_key") or "?") == use], use,
+            {k: n for k, n in by_src.items() if k != use})
+
+
 def _series_at(indicator: str, place_id: int | None, frm: str | None,
-               to: str | None) -> dict:
+               to: str | None, source: str | None = None) -> dict:
     where = ["v.indicator = %(i)s"]
     params: dict = {"i": indicator}
     if place_id is not None:
@@ -2860,7 +2877,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
                        CASE WHEN v.value_canonical IS NOT NULL THEN v.resolved_unit
                             ELSE v.unit END AS unit,
                        v.source_name, v.attribution_text, v.redistribution,
-                       v.commercial_use
+                       v.commercial_use, v.source_key
                 FROM v_observation_canonical v
                 WHERE {' AND '.join(where)} ORDER BY 1""", params)
     meta = q("""SELECT concept_key, measure_kind, polarity, grain, place_grain,
@@ -2870,6 +2887,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
     m = meta[0] if meta else {"concept_key": None, "measure_kind": None,
                               "polarity": None, "grain": None,
                               "place_grain": None, "canonical_unit": None}
+    pts, source_used, other_sources = _one_source(pts, source)
     # Attribution travels ONCE per series. It used to travel on every point:
     # two food-price series came back as 429 KB, of which the numbers were a
     # few kilobytes and the rest was the same sentence repeated per row.
@@ -2893,6 +2911,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
         p.pop("attribution_text", None)
         p.pop("redistribution", None)
         p.pop("commercial_use", None)
+        p.pop("source_key", None)
     units = sorted({str(p["unit"]) for p in pts if p.get("unit")})
     return {**m, "known": bool(meta), "indicator": indicator,
             "points": pts, "n": len(pts),
@@ -2901,12 +2920,18 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
             "units": units, "unit_mixed": len(units) > 1,
             "sources": sources, "source_names": set(sources),
             "attribution": attribution, "redistribution": redistribution,
-            "commercial_use": commercial_use}
+            "commercial_use": commercial_use,
+            **({"source_used": source_used, "other_sources": other_sources}
+               if source_used else {})}
 
 
 @app.get("/v2/databank/compare", tags=["databank"])
 def databank_compare(indicators: str, place_id: int | None = None,
-                     frm: str | None = None, to: str | None = None) -> dict:
+                     frm: str | None = None, to: str | None = None,
+                     source: str | None = Query(
+                         None, max_length=60,
+                         description="for a series more than one source publishes: "
+                                     "the source key to read (default: the longest)")) -> dict:
     """N series side by side, each keeping its own unit and attribution.
 
     Deliberately does NOT rescale anything to a common axis. Two series with
@@ -2916,7 +2941,7 @@ def databank_compare(indicators: str, place_id: int | None = None,
     keys = [s.strip() for s in indicators.split(",") if s.strip()][:6]
     if len(keys) < 2:
         raise HTTPException(422, "pass at least two indicators, comma-separated")
-    series = [_series(k, place_id, frm, to) for k in keys]
+    series = [_series(k, place_id, frm, to, source) for k in keys]
     dated = [{p["at"] for p in s["points"]} for s in series if s["points"]]
     overlap = set.intersection(*dated) if len(dated) == len(series) else set()
     out = {
@@ -2948,7 +2973,9 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
                        allow_same_concept: bool = False,
                        detrend: str = Query("none", pattern="^(none|diff)$",
                                             description="diff: correlate the changes "
-                                                        "between consecutive readings")) -> dict:
+                                                        "between consecutive readings"),
+                       a_source: str | None = Query(None, max_length=60),
+                       b_source: str | None = Query(None, max_length=60)) -> dict:
     """Whether two series move together — or an explanation of why asking is
     the wrong question.
 
@@ -2956,7 +2983,7 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
     warning stapled to it gets quoted without the warning.
     """
     out = _correlate(a, b, place_id, frm, to, method, max_lag,
-                     allow_same_concept, detrend)
+                     allow_same_concept, detrend, a_source, b_source)
     warnings = _serve_warnings(sorted({a, b}))
     if warnings:
         out["warnings"] = warnings
@@ -2965,9 +2992,11 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
 
 def _correlate(a: str, b: str, place_id: int | None, frm: str | None,
                to: str | None, method: str, max_lag: int,
-               allow_same_concept: bool, detrend: str) -> dict:
+               allow_same_concept: bool, detrend: str,
+               a_source: str | None = None, b_source: str | None = None) -> dict:
     from serve import correlate as C
-    sa, sb = _series(a, place_id, frm, to), _series(b, place_id, frm, to)
+    sa = _series(a, place_id, frm, to, a_source)
+    sb = _series(b, place_id, frm, to, b_source)
     # Three different absences, three different answers. Conflating them
     # sends the caller to fix a spec when they made a typo, or to widen a
     # date range when the series was never there.
@@ -2982,7 +3011,9 @@ def _correlate(a: str, b: str, place_id: int | None, frm: str | None,
         where = f" at place_id {place_id}" if place_id else ""
         return {"refused": True, "a": a, "b": b, "reasons": [
             f"{k} exists but has no points{where}{window}." for k in empty]}
-    stop = C.check_comparable(sa, sb)
+    # The caller's detrend choice is part of the question: a running total
+    # that is about to be differenced is not correlated as a running total.
+    stop = C.check_comparable(sa, sb, detrend)
     if allow_same_concept:
         stop = [s for s in stop if "both series are" not in s]
     if stop:
@@ -3036,15 +3067,21 @@ def _correlate(a: str, b: str, place_id: int | None, frm: str | None,
             "'unknown' precision — that date is v1's fetch stamp, not an "
             "event date (law 1)."]}
     rho, lag, pairs = best
-    ci = C.fisher_ci(rho, len(pairs))
+    # Keeping the best of K shifts is K tests; the interval says so.
+    shifts = 2 * abs(max_lag) + 1
+    ci = C.fisher_ci(rho, len(pairs), C.z_for_shifts(shifts))
     return {
         "refused": False, "a": a, "b": b, "method": method, "detrend": detrend,
         "rho": round(rho, 4), "n": len(pairs), "lag_days": lag,
         "ci95": [round(ci[0], 4), round(ci[1], 4)] if ci else None,
+        **({"shifts_tried": shifts, "ci95_widened_for_shifts": True} if shifts > 1 else {}),
+        **({"sources_used": {k: s_["source_used"] for k, s_ in ((a, sa), (b, sb))
+                             if s_.get("source_used")}}
+           if sa.get("source_used") or sb.get("source_used") else {}),
         "overlap": {"from": min(p[2] for p in pairs).isoformat(),
                     "to": max(p[2] for p in pairs).isoformat()},
         "plain_english": C.describe(rho, sa, sb),
-        "caveats": aggregation + C.caveats(sa, sb, pairs, lag),
+        "caveats": aggregation + C.caveats(sa, sb, pairs, lag, shifts),
         "attribution": sorted(set(sa["attribution"]) | set(sb["attribution"])),
     }
 
@@ -3125,12 +3162,19 @@ def databank_correlate_scan(
         params["t"] = to
     pts = q(f"""SELECT v.indicator, v.occurred_at::date AS at,
                        v.occurred_precision AS prec,
-                       COALESCE(v.value_canonical, v.value_num) AS value
+                       COALESCE(v.value_canonical, v.value_num) AS value,
+                       CASE WHEN v.value_canonical IS NOT NULL THEN v.resolved_unit
+                            ELSE v.unit END AS unit, v.source_key
                   FROM v_observation_canonical v
                  WHERE {' AND '.join(where)}""", params)
     grouped: dict[str, list] = {}
     for p in pts:
         grouped.setdefault(p["indicator"], []).append(p)
+    # one publisher's line per candidate, the same rule as a named series
+    cand_units: dict[str, list[str]] = {}
+    for ind in list(grouped):
+        grouped[ind], _used, _others = _one_source(grouped[ind], None)
+        cand_units[ind] = sorted({str(p["unit"]) for p in grouped[ind] if p.get("unit")})
 
     sa, note_a = C.collapse_dates(sa)             # median per date (F043)
     a_vals = [float(p["value"]) for p in sa["points"] if p["value"] is not None]
@@ -3139,13 +3183,9 @@ def databank_correlate_scan(
 
     hits, skipped, tested = [], Counter(), 0
     for r in rows:
-        sb = {**r, "known": True, "points": grouped.get(r["indicator"], [])}
-        stop = C.check_comparable(sa, sb)
-        if allow_same_concept:
-            stop = [s for s in stop if "both series are" not in s]
-        if stop:
-            skipped[_skip_reason(stop[0])] += 1
-            continue
+        units = cand_units.get(r["indicator"], [])
+        sb = {**r, "known": True, "points": grouped.get(r["indicator"], []),
+              "units": units, "unit_mixed": len(units) > 1}
         # Series are paired on exact dates, so a daily series and an annual one
         # can never meet and come back as "too few overlapping dates" — which
         # reads as "no relationship" when it means "these two were never
@@ -3153,8 +3193,16 @@ def databank_correlate_scan(
         # one to the other's period would create the overlap, and a number
         # built on twelve invented monthly points is exactly the kind of
         # confident artifact the rest of this file refuses to produce.
+        # (check_comparable refuses it too since 2026-10-12; counted here
+        # first so the label keeps naming both grains.)
         if sa["grain"] != r["grain"]:
             skipped[f"different time grain ({sa['grain']} vs {r['grain']})"] += 1
+            continue
+        stop = C.check_comparable(sa, sb)
+        if allow_same_concept:
+            stop = [s for s in stop if "both series are" not in s]
+        if stop:
+            skipped[_skip_reason(stop[0])] += 1
             continue
         sb, _note_b = C.collapse_dates(sb)
         if C.check_shape(a_vals, [float(p["value"]) for p in sb["points"]
@@ -3215,6 +3263,7 @@ def _skip_reason(reason: str) -> str:
                           ("categorical", "categorical status"),
                           ("place grains differ", "different place grain"),
                           ("both series are", "same concept as the subject"),
+                          ("holds more than one unit", "more than one unit under one label"),
                           ("measure_kind is unclassified", "kind unclassified")):
         if needle in reason:
             return label

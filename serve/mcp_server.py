@@ -1488,7 +1488,7 @@ def can_i_travel(origin: str, destination: str) -> dict:
 def correlate(a: str | None = None, b: str | None = None,
               concept: str | None = None, search: str | None = None,
               place_id: int | None = None, max_lag: int = 0,
-              allow_same_concept: bool = False) -> dict:
+              allow_same_concept: bool = False, detrend: str = "none") -> dict:
     """Do two series move together — or why that is the wrong question.
 
     Three modes in one tool, because an agent almost never knows the
@@ -1506,7 +1506,8 @@ def correlate(a: str | None = None, b: str | None = None,
         # so an agent's large guess scans a year instead of failing the call.
         d = api("/v2/databank/correlate", a=a, b=b, place_id=place_id,
                 max_lag=max(0, min(int(max_lag or 0), 366)),
-                allow_same_concept="true" if allow_same_concept else "false")
+                allow_same_concept="true" if allow_same_concept else "false",
+                detrend="diff" if detrend == "diff" else "none")
         if d.get("refused"):
             from serve.correlate import reason_ar
             return {"answer": "ما بحسب الارتباط هون: " + "؛ و".join(
@@ -1520,10 +1521,21 @@ def correlate(a: str | None = None, b: str | None = None,
         strength = ("قوي" if rho is not None and abs(rho) >= 0.7 else
                     "متوسط" if rho is not None and abs(rho) >= 0.4 else "ضعيف")
         sign = "" if rho is None else (" بنفس الاتجاه" if rho > 0 else " بعكس الاتجاه")
+        used = d.get("sources_used") or {}
         return {"answer": (f"الارتباط بين {a} و{b} {strength}{sign}: ρ={rho} على "
                            f"{d['n']} نقطة"
+                           + (" (على التغيّر بين كل قراءة واللي قبلها)"
+                              if d.get("detrend") == "diff" else "")
                            + (f"، بتأخير {d['lag_days']} يوم" if d.get("lag_days") else "")
-                           + f"، فاصل الثقة 95%: {d['ci95']}. ارتباط مش سببية."
+                           + f"، فاصل الثقة 95%: {d['ci95']}"
+                           + (f" (موسّع لأنه انجرّب {d['shifts_tried']} إزاحة)"
+                              if d.get("shifts_tried") else "")
+                           + ". ارتباط مش سببية."
+                           + (" واللي بيتحرّك قبل مش بالضرورة هو السبب: ممكن شي ثالث "
+                              "بيحرّكهم الثنتين، أو وحدة بتنتشر أبكر من الثانية."
+                              if d.get("lag_days") else "")
+                           + "".join(f" {k} منشورة من أكثر من مصدر؛ انقرأت من {v} لحاله."
+                                     for k, v in used.items())
                            + _warnings_ar(d)),
                 **d}
     if search or concept:
@@ -2344,7 +2356,10 @@ TOOLS = {
                       "max_lag": {"type": "integer", "minimum": 0, "maximum": 366,
                                   "description": "days to scan for a lagged "
                                                  "fit; adds a caveat"},
-                      "allow_same_concept": {"type": "boolean"}}}),
+                      "allow_same_concept": {"type": "boolean"},
+                      "detrend": {"type": "string", "enum": ["none", "diff"],
+                                  "description": "diff: correlate the changes "
+                                                 "between consecutive readings"}}}),
     "what_correlates_with": (what_correlates_with,
                              "SEARCH for series that move with a given one, "
                              "instead of naming both sides yourself. Scans "

@@ -671,8 +671,16 @@ def correlate(d: dict) -> str:
     if d.get("refused"):
         return "Refused: " + " ".join(d.get("reasons", []))[:300]
     if d.get("plain_english"):
-        return (f"{d['plain_english']} (n={d.get('n')}, 95% CI {d.get('ci95')})."
-                + (" " + d["caveats"][0] if d.get("caveats") else "")
+        # The caveats that change what the number means are said, not left in
+        # the payload: what was differenced, which publisher's line was read,
+        # and that an order in time is not a cause.
+        said = [c for c in (d.get("caveats") or [])
+                if c.startswith("Correlation is not causation")
+                or "running total" in c or "more than one source" in c
+                or "order in time" in c or "shifts were tried" in c]
+        return (f"{d['plain_english']} (n={d.get('n')}, 95% CI {d.get('ci95')})"
+                + (f", at a lag of {d['lag_days']} days" if d.get("lag_days") else "")
+                + "." + "".join(" " + c for c in said)
                 + _warnings_en(d))
     if "indicators" in d:
         inds = d["indicators"]
