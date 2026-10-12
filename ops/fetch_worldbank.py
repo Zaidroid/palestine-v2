@@ -85,6 +85,7 @@ provided to you under a Creative Commons Attribution 4.0 International License
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -310,6 +311,42 @@ def unified_record(*, stable_id: str, year: int, value, unit: str | None,
             "indicator_code": code,
             "indicator_name": label,
             "sources": [source]}
+
+
+def publisher_unit(name: str, held: str | None) -> str | None:
+    """v1's unit detector called growth rates, enrolment rates, income shares
+    and indices plain numbers (25 of the 27 series it marked `number`), and
+    the registry reads `number` as a stock. Corrected only where the Bank's
+    own name states the unit; a physical rate the vocabulary has no word for
+    (kilograms per hectare, per million people) keeps v1's token."""
+    if held != "number":
+        return held
+    n = name or ""
+    if "%" in n or n.startswith("Income share held by"):
+        return "percentage"
+    if re.search(r"\bindex\b", n, re.I):
+        return "index"
+    if re.search(r"\bratio\b", n, re.I):
+        return "ratio"
+    return held
+
+
+def relabel(doc: dict) -> dict:
+    """Every record says the Bank's own name for its code, and a unit that
+    name supports. v1's labels were typed, and eleven named another series:
+    EG.ELC.RNWX.ZS (electricity from renewables, excluding hydro) was served as
+    "Renewable energy consumption", the poverty lines at 2021 prices as the
+    2017 ones, a STEM share as all female graduates (found 2026-10-12, 171
+    rows; 13 more labels differed in wording). The values were always the
+    code's; the name now is too."""
+    names = (doc.get("metadata") or {}).get("indicators") or {}
+    for r in doc.get("data") or []:
+        said = " ".join(((names.get(r.get("indicator_code")) or {}).get("indicator_name") or "").split())
+        if said:
+            r["indicator_name"] = said
+        m = r.get("metrics") or {}
+        m["unit"] = publisher_unit(r.get("indicator_name"), m.get("unit"))
+    return doc
 
 
 def records_for(code: str, rows: list[dict]) -> list[dict]:
@@ -587,7 +624,7 @@ def main(argv: list[str]) -> int:
         print(f"  would write {OUT.relative_to(fl.ROOT)}")
         fl.stage(staged, "worldbank_indicators.json", doc)
         return 1 if missing else 0
-    fl.write_atomic(OUT, doc)
+    fl.write_atomic(OUT, relabel(doc))
     fl.event(LABEL, "ok", rows=s["records"], series=s["series_answered"],
              vintage=s["vintage"], missing=sorted(missing))
     print(f"  wrote {OUT.relative_to(fl.ROOT)}")

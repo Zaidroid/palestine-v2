@@ -567,3 +567,34 @@ def test_a_status_series_is_refused_whatever_the_grains():
     a, b = _s("x.status", "status", concept="a"), _s("y", concept="b")
     assert any("categorical" in r for r in C.check_comparable(a, b))
     assert any("categorical" in r for r in C.check_comparable(b, a))
+
+
+# ── a World Bank series is called what the Bank calls it ─────────────────────
+
+def test_a_record_carries_the_banks_own_name_for_its_code_and_a_unit_the_name_supports():
+    """v1 typed its labels. EG.ELC.RNWX.ZS (electricity from renewables,
+    excluding hydro) was served as "Renewable energy consumption"; GDP growth
+    in annual % was a plain `number`, which the registry reads as a stock."""
+    from ops import fetch_worldbank as W
+    doc = {"metadata": {"indicators": {
+               "EG.ELC.RNWX.ZS": {"indicator_name": "Electricity production from renewable sources, "
+                                                    "excluding hydroelectric (% of total)"},
+               "NY.GDP.MKTP.KD.ZG": {"indicator_name": "GDP growth (annual %)"},
+               "SP.POP.TOTL": {"indicator_name": "Population, total"}}},
+           "data": [
+               {"indicator_code": "EG.ELC.RNWX.ZS", "metrics": {"value": 1.0, "unit": "percentage"},
+                "indicator_name": "Renewable energy consumption (% of total final energy consumption)"},
+               {"indicator_code": "NY.GDP.MKTP.KD.ZG", "metrics": {"value": 2.0, "unit": "number"},
+                "indicator_name": "GDP growth (annual %)"},
+               {"indicator_code": "SP.POP.TOTL", "metrics": {"value": 5.0, "unit": "number"},
+                "indicator_name": "Population, total"},
+               {"indicator_code": "XX.UNKNOWN", "metrics": {"value": 5.0, "unit": "number"},
+                "indicator_name": "kept as it was"}]}
+    a, b, c, d = W.relabel(doc)["data"]
+    assert a["indicator_name"].startswith("Electricity production from renewable sources")
+    assert b["metrics"]["unit"] == "percentage" and c["metrics"]["unit"] == "number"
+    assert d["indicator_name"] == "kept as it was"
+    assert W.publisher_unit("Gini index", "number") == "index"
+    assert W.publisher_unit("Pupil-teacher ratio, primary", "number") == "ratio"
+    assert W.publisher_unit("Cereal yield (kg per hectare)", "number") == "number"
+    assert W.publisher_unit("anything (% of GDP)", "per_1000") == "per_1000"       # only v1's `number`

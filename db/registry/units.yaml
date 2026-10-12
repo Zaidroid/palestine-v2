@@ -140,6 +140,7 @@ units:
     name_en: index
     dimension: index
     aliases:
+      index: {}
       "Index": {}
   years:       {name_en: years,       name_ar: سنوات, dimension: time}
   km:          {name_en: kilometres,  name_ar: كيلومتر, dimension: length}
