@@ -1,0 +1,17 @@
+{
+ "at": "2026-10-12T21:34:59.607680+00:00",
+ "applied": true,
+ "incidents_in_file": 24305,
+ "held": 20174,
+ "unmatched_left_as_is": 3,
+ "moved_to_the_publishers_id": 16526,
+ "superseded_as_the_same_incident": 3645,
+ "dated_to_the_month": 23,
+ "unmatched_samples": [
+  "ii-6e877493793e82f1 @ 2023-12-27",
+  "ii-790751bbac6b8915 @ 2023-12-27",
+  "ii-8eedd9f3f69bc3d1 @ 2019-06-14"
+ ],
+ "superseded": 3645,
+ "moved": 16526
+}

@@ -394,9 +394,29 @@ def _lists(out: dict):
                             yield it, kk, f"{k}[{i}].{kk}"
 
 
+# Dictionaries keyed by indicator that sit beside the rows: what a series is
+# called and what must be said about it.
+PER_INDICATOR = ("names", "warnings")
+
+
+def _carried(out: dict) -> set:
+    """Every indicator the payload still shows a row, a newest value or a span
+    for."""
+    seen = set(out.get("series_span") or {}) if isinstance(out.get("series_span"), dict) else set()
+    for v in out.values():
+        if isinstance(v, list):
+            seen.update(it["indicator"] for it in v
+                        if isinstance(it, dict) and isinstance(it.get("indicator"), str))
+    return seen
+
+
 def cap_payload(out: dict, cap: int) -> dict:
     size = lambda: len(json.dumps(out, ensure_ascii=False, default=str).encode())  # noqa: E731
     truncated: dict[str, dict] = {}
+
+    def note(path: str, n: int, keep: int) -> None:
+        truncated[path] = {"kept": keep, "of": truncated.get(path, {"of": n})["of"]}
+
     for _ in range(40):
         if size() <= cap:
             break
@@ -408,8 +428,29 @@ def cap_payload(out: dict, cap: int) -> dict:
         n = len(holder[key])
         keep = max(1, n // 2)
         holder[key] = holder[key][:keep]
-        prev = truncated.get(path, {"of": n})
-        truncated[path] = {"kept": keep, "of": prev["of"]}
+        note(path, n, keep)
+        # THE NAMES FOLLOW THE ROWS (2026-10-12). Once every series had a name,
+        # 2,000 food rows came with 537 names: 157 KB that no list cut reached,
+        # and the reply went out at 161 KB against a 48 KB budget. A name or a
+        # warning for a series the reply no longer shows is dropped with it.
+        carried = _carried(out)
+        for k in PER_INDICATOR:
+            d = out.get(k)
+            if carried and isinstance(d, dict) and any(i not in carried for i in d):
+                out[k] = {i: v for i, v in d.items() if i in carried}
+                note(k, len(d), len(out[k]))
+    for _ in range(20):
+        # and if what is left of them is still the bulk, they are halved too
+        if size() <= cap:
+            break
+        cands = [(len(json.dumps(out[k], ensure_ascii=False, default=str)), k)
+                 for k in PER_INDICATOR if isinstance(out.get(k), dict) and len(out[k]) > 1]
+        if not cands:
+            break
+        _, k = max(cands)
+        n = len(out[k])
+        out[k] = dict(list(out[k].items())[:max(1, n // 2)])
+        note(k, n, len(out[k]))
     if truncated:
         out["truncated"] = {"fields": truncated, "cap_bytes": cap,
                             "note": "the reply was over its byte budget; lists were cut "

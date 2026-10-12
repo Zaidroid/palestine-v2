@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from serve.when import cited_en, is_cited, label_en, statements, when_en
+from serve.when import cited_en, is_cited, label_en, short_source, statements, when_en
 
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
@@ -838,7 +838,7 @@ def databank(d: dict) -> str:
     dated = any(it.get("occurred_precision") != "unknown"
                 for it in (d.get("latest_by_indicator") or [])[:3])
     span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi and dated else ""
-    src = "; ".join(d.get("attribution") or [])[:120].rstrip(". ")
+    src = short_source(d.get("attribution"))
     if not bits:
         return (f"No matching rows in {d.get('category')}"
                 + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")

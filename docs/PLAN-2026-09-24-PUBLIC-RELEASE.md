@@ -1265,3 +1265,49 @@ insecurity_insight) pass only after the command, by design. As-of harness 24/24,
   have run (the transition ceiling and the re-key guard) and pass after.
 - the eight agent worktrees are removed (branches `supply-*` kept, all merged); the scratch container and the two
   dev APIs are stopped.
+
+2026-10-12 22:15 UTC · **databank-rest: Zaid's command ran, and what the first live hour showed** · done, one restart owed.
+- **The run.** 21:31 UTC: `tmp/8-databank-rest.sh` stopped at step 1 after the fast-forward. Mine: `git log
+  --oneline | head -1` under `pipefail` exits 141, on a line the `SCRATCH=1` rehearsals skip. Nothing written.
+  Fixed (no pipe; the re-key and the health load now stop the script when they fail; an ERR trap names the line).
+  21:34–21:39 UTC: the whole run, 308 s, `"failed": []`. Migrations 104–110 in `schema_migrations` (21:34:54–57).
+- **What it wrote, as the run printed it:** re-key 16,526 moved, 3,645 superseded, 3 left, 23 dated to the month
+  (`ops/ii-rekey.json`); health 13,014 written, 12,502 closed; grew aid_un2720 3,435, cited_figures 105, conflict
+  3,179, culture 335, economic 1,692, education 2,359, fao_diem 2,089, funding 1, historical 145, infrastructure
+  603, insecurity_insight 7,771, land 692, prisoners_hamoked 220; registry 2,501 indicators with a concept, 0
+  unclassified, 0 units without an alias.
+- **Checked on the live store (read-only):** 327,805 served rows; Insecurity Insight 24,300 believed + 3,645
+  superseded; 21 datasets carry a vintage (20 + the two-register dataset by indicator); 2,480 of 2,497 served
+  series have an English name, 2,165 an Arabic one; the eight `attack.*` series are defined and named.
+- **Checked by asking the live API** (:7870, restarted 21:39:24): WHO infant mortality by sex with its cut and
+  name; World Bank `eg_elc_rnew_zs` under the Bank's name; IMF `bca_ngdpd` in "Percent of GDP";
+  `attack.healthcare` (4,959 served); UCDP `conflict.deaths.state_based` to 2025-12-26; the school register as a
+  register of June 2015; `land.checkpoint` named as the Barrier of January 2018; a FAO median with no unit; the
+  camp figures with their "about 2018 to 2020"; the committee's period series (24 rows).
+- **Checked through the public MCP door** (the claude.ai connector, partner tier): UN2720 rows withheld
+  (`un2720 (ask)`), WHO rows withheld (`non_commercial_rows: 2`), World Bank rows passed. **Not covered, and
+  pre-existing:** the plain REST routes return those rows to anyone, licence on the row (HANDS §13g, his call).
+- **The Ministry re-read:** 95 inserts = 26 new rows (17 committee figures, 9 from three day lines) + 69
+  revisions. The 69 are the replay of same-day bulletins: on 34 (series, day) pairs the first bulletin's figure
+  "revised" the held one and the second revised it back. Verified: all 34 hold the value they held before.
+  History rows of a change the Ministry never made; they stay (no deletion). **Fixed forward:** a re-read writes
+  each day's last word once (`last_word`), `--dry-run` compares against what is held and runs on a read-only
+  connection. Dry re-read of the live store with the new code: `rows 0, unchanged 5,801, revised 0`.
+- **The suite after the run, from the merged tree: 1,967 passed, 4 failed** (840 s). My "1,964 pass" of the
+  evening was measured against the store BEFORE the command. The four:
+  1. `test_TRANSPORT_02_the_budget_holds_on_the_wire` — **a real defect.** With every series named,
+     `databank(category=food, limit=2000)` carried 537 names (157 KB) that no list cut reached: 161,331 bytes
+     against the 48,000 budget. `cap_payload` now drops a name or a warning with the rows it belonged to, and
+     halves what is left if that is still the bulk. Live after the restart.
+  2. `test_the_readme_does_not_overstate_the_databank` — README floors raised: withheld 44,000 → 48,000 (48,442
+     held), share-alike 41,000 → 45,000 (45,916: Insecurity Insight's 24,300 and WHO's 13,089).
+  3. `test_nakba_places_never_capture_live_resolution` — the test asked that every `historical` row have a place;
+     33 of the 105 cited figures rightly have none. It now asks it of the gazetteer's own dataset (0 of 15,648).
+  4. `test_databank_indicator_without_category_reaches_its_rows` — the answer says a series' name now, not its
+     key; the test checks the name in both languages and the key in `series_span`.
+- Also from the first live answers: the source line of a spoken answer was cut at 120 characters inside a word
+  ("…(tracking.un2720.org). No li."). `serve/when.py short_source` stops at the last whole sentence or clause.
+- **Suite on the corrected tree against the live store: 1,977 passed, 0 failed, 3 skipped (829 s).**
+- Owed: `sudo systemctl restart palestine-v2-api` (his hand). Next check: the 03:40 UTC sync of 13 October, the
+  first with the new fetchers.
+

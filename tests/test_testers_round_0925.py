@@ -24,7 +24,12 @@ LATIN_SENTENCE = re.compile(r"\b[a-z]+ [a-z]+ [a-z]+ [a-z]+\b")   # four English
 def test_databank_indicator_without_category_reaches_its_rows(mcp_call, mcp_payload):
     p = mcp_payload(mcp_call("databank", indicator="prisoners.child"))
     assert p.get("category") == "prisoners"
-    assert "prisoners.child" in p["answer"] and "prisoners.child" in p["answer_en"]
+    # the answer says what the series is CALLED since 2026-10-12, and the key
+    # stays beside it for a machine
+    keys = [k for k in p["series_span"] if k.startswith("prisoners.child")]
+    assert keys and all(k.startswith("prisoners.child") for k in p["series_span"])
+    name = p["names"][keys[0]]
+    assert name["ar"] in p["answer"] and name["en"] in p["answer_en"]
     assert "categories" not in p                     # not the overview
 
 

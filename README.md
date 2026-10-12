@@ -69,8 +69,8 @@ was true once and quietly stopped being true.
 |---|---:|
 | queryable through the API, credited | 315,000+ |
 | exportable as a file | 280,000+ |
-| held but not exportable — see `WITHHELD.md` | 44,000+ |
-| carrying a share-alike obligation | 41,000+ |
+| held but not exportable — see `WITHHELD.md` | 48,000+ |
+| carrying a share-alike obligation | 45,000+ |
 
 **Query and bulk are different acts.** A query returning twenty credited
 demolition records is reporting a fact. A CSV of the whole table is

@@ -138,3 +138,19 @@ def label_ar(d: dict, indicator: str) -> str:
     still says more than `health.m_est_cig_curr_std.sex_fmle`."""
     n = (d.get("names") or {}).get(indicator) or {}
     return n.get("ar") or n.get("en") or indicator
+
+
+def short_source(parts, sep: str = "; ", cap: int = 120) -> str:
+    """The source line of a spoken answer: at most `cap` characters and never
+    cut inside a word. A longer attribution stops at the end of its last whole
+    sentence or clause; "…(tracking.un2720.org). No li." was read aloud on
+    2026-10-12."""
+    text = sep.join(p for p in (parts or []) if p)
+    if len(text) <= cap:
+        return text.rstrip(". ")
+    head = text[:cap + 1]
+    cut = max(head.rfind(". "), head.rfind("; "), head.rfind("؛ "))
+    if cut < 20:
+        cut = head.rfind(" ")
+    return (head[:cut] if cut > 0 else text[:cap]).rstrip(".;؛,، ")
+

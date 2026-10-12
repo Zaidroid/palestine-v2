@@ -92,6 +92,29 @@ def test_TRANSPORT_02_a_reply_over_its_budget_is_cut_and_says_so():
     assert "truncated" not in m.cap_payload(small, 20_000)
 
 
+def test_TRANSPORT_02_the_names_follow_the_rows_that_are_left():
+    """2026-10-12, the first day every series had a name: 2,000 food rows came
+    with 537 names, 157 KB no list cut reached, and the reply left at 161 KB."""
+    import json as _j
+    from serve import mcp_http as m
+    inds = [f"food.series_{i}" for i in range(500)]
+    out = {"answer": "a", "series_span": {inds[0]: {"from": "2020", "to": "2026"}},
+           "latest_by_indicator": [{"indicator": inds[0], "value_num": 1}],
+           "items": [{"indicator": i, "text": "x" * 300} for i in inds],
+           "names": {i: {"en": "n" * 150, "ar": "ن" * 80} for i in inds},
+           "warnings": {inds[0]: {"en": "w", "ar": "ت"}, inds[-1]: {"en": "w", "ar": "ت"}}}
+    got = m.cap_payload(out, 20_000)
+    assert len(_j.dumps(got, ensure_ascii=False).encode()) <= 20_000
+    shown = {it["indicator"] for it in got["items"]} | {inds[0]}
+    assert set(got["names"]) <= shown and inds[0] in got["names"]
+    assert set(got["warnings"]) == {inds[0]}, "a warning stays with a series that is still shown"
+    assert got["truncated"]["fields"]["names"]["of"] == 500
+    # names alone over the budget, with no row to follow: halved, and it says so
+    alone = m.cap_payload({"answer": "a", "names": {i: {"en": "n" * 150} for i in inds}}, 20_000)
+    assert len(_j.dumps(alone, ensure_ascii=False).encode()) <= 20_000
+    assert alone["truncated"]["fields"]["names"]["kept"] < 500
+
+
 def test_TRANSPORT_02_the_budget_holds_on_the_wire(mcp_call):
     import json as _j
     from serve import mcp_http as m

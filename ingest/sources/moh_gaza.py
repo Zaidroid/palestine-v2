@@ -37,6 +37,13 @@ def _dataset(cur) -> tuple[int, int]:
     if not row:
         raise SystemExit(f"source {SOURCE_KEY} missing — is it in the poller?")
     sid = row[0]
+    # Looked up before it is created (2026-10-12): an INSERT, even one that does
+    # nothing, cannot run on a read-only connection, so --dry-run could not be
+    # run by a hand that may only read.
+    cur.execute("SELECT dataset_id FROM dataset WHERE key=%s", (DATASET_KEY,))
+    row = cur.fetchone()
+    if row:
+        return row[0], sid
     cur.execute("""
         INSERT INTO dataset (key, name, source_id, v1_category, cadence, active, attrs)
         VALUES (%s, 'Gaza MoH daily statistical report', %s, 'conflict', 'daily', true, %s)
@@ -58,7 +65,27 @@ def _gaza_place(cur) -> int | None:
     return r[0] if r else None
 
 
-def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, claim_id, st) -> int:
+def last_word(read) -> dict:
+    """(indicator, day) -> the claim whose figure stands for that day: the last
+    bulletin of the day that states it. `read` is (claim_id, reported_at,
+    indicators) in reading order.
+
+    A RE-READ WRITES EACH DAY'S LAST WORD ONCE. Two bulletins on one day that
+    disagree (2024-06-22: 19 killed in the first post, 101 in the second) were
+    replayed in order, so the first "revised" the value already held and the
+    second revised it back: on 2026-10-12 a re-read wrote 69 revisions over 34
+    figures and left every one of them as it was. That is history of a change
+    the Ministry never made. The hourly run still writes bulletins one by one,
+    as they arrive, and that order is the real one."""
+    out: dict = {}
+    for claim_id, reported_at, indicators in read:
+        for ind in indicators:
+            out[(ind, reported_at.date())] = claim_id
+    return out
+
+
+def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, claim_id, st,
+                dry_run: bool = False) -> int:
     """One row per (indicator, day). The same value again is nothing; a
     DIFFERENT value SUPERSEDES the current row (its sys_period is closed, the
     new row says which claim revised what) — never an in-place overwrite, and
@@ -72,6 +99,12 @@ def _upsert_day(cur, did, place_id, ind, value, reported_at, tier, measure, clai
     if cur_row and float(cur_row[1]) == float(value):
         st["unchanged"] = st.get("unchanged", 0) + 1
         return 0
+    if dry_run:
+        # what a real run would write, counted against what is held and not
+        # written (it used to count every figure in every bulletin as a row)
+        if cur_row:
+            st["revised"] = st.get("revised", 0) + 1
+        return 1
     if cur_row:
         # clock_timestamp(), not now(): two bulletins on one day inside ONE
         # transaction (the archive re-read, 2026-03-26 at 11:01 and 11:49)
@@ -162,26 +195,30 @@ def load(dry_run: bool = False, reread_since: str | None = None) -> dict:
                   FROM claim cl WHERE cl.source_id=%s AND cl.raw_text ~ %s
                    AND cl.claim_id > %s
                  ORDER BY cl.reported_at, cl.claim_id""", (sid, REPORT_RX, since))
+        read = []          # (claim_id, reported_at, {indicator: (tier, measure, value)})
         for claim_id, text, reported_at in cur.fetchall():
             st["claims"] += 1
             rep = parse(text)
             if not rep.is_report or not rep.tiers:
                 continue
             st["reports"] += 1
-            emitted: set[str] = set()
+            figures = {}
             for tier, measures in rep.tiers.items():
                 for measure, value in measures.items():
                     ind = INDICATORS.get((tier, measure))
-                    if not ind:
-                        continue
-                    emitted.add(ind)
-                    if dry_run:
-                        st["rows"] += 1
-                        continue
-                    st["rows"] += _upsert_day(cur, did, place_id, ind, float(value),
-                                              reported_at, tier, measure, claim_id, st)
+                    if ind:
+                        figures[ind] = (tier, measure, float(value))
+            read.append((claim_id, reported_at, figures))
+        stands = last_word(read) if reread_since else {}
+        for claim_id, reported_at, figures in read:
+            for ind, (tier, measure, value) in figures.items():
+                if reread_since and stands[(ind, reported_at.date())] != claim_id:
+                    st["earlier_that_day"] = st.get("earlier_that_day", 0) + 1
+                    continue
+                st["rows"] += _upsert_day(cur, did, place_id, ind, value, reported_at,
+                                          tier, measure, claim_id, st, dry_run)
             if reread_since and not dry_run:
-                _withdraw(cur, did, claim_id, emitted, st)
+                _withdraw(cur, did, claim_id, set(figures), st)
         if not dry_run:
             conn.commit()
     return st

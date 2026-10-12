@@ -38,7 +38,7 @@ from typing import Any
 
 from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
                           product_labels, searching, seen_on_route, share_words)
-from serve.when import (cited_ar, is_cited, label_ar, statements,  # noqa: E402
+from serve.when import (cited_ar, is_cited, label_ar, short_source, statements,  # noqa: E402
                         when_ar)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -2176,7 +2176,7 @@ def databank(category: str | None = None, indicator: str | None = None,
         nm = label_ar(d, k)
         bits.append(f"{nm}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
                     else f"{nm}: {val} {when_}{where}")
-    src = "؛ ".join(d.get("attribution") or [])[:120].rstrip(". ")
+    src = short_source(d.get("attribution"), "؛ ")
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
               + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")

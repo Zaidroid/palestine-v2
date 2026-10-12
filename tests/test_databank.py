@@ -310,9 +310,12 @@ def test_nakba_places_never_capture_live_resolution():
                          AND attrs->>'historic' = 'mandate-palestine'""")
         assert cur.fetchone()[0] >= 1900
         # historical resolution reached 100% through them
+        # (the gazetteer's own dataset: the cited figures share the category
+        # since 2026-10-12 and a figure such as "750,000 refugees" has no one
+        # place, which is right)
         cur.execute("""SELECT count(*) - count(place_id) FROM observation o
                        JOIN dataset d ON d.dataset_id = o.dataset_id
-                       WHERE d.v1_category = 'historical'""")
+                       WHERE d.key = 'v1_historical_palopenmaps'""")
         assert cur.fetchone()[0] == 0
         # and the live resolver's name path structurally excludes them
         from resolve import geo

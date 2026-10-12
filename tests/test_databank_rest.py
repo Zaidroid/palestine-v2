@@ -623,3 +623,20 @@ def test_a_register_or_a_period_total_is_not_given_a_span_of_years():
              "latest_by_indicator": [{"indicator": "a", "value_num": 5.0, "occurred_at": "2026-01-01T00:00:00Z",
                                       "occurred_precision": "year", "attrs": {}}]}
     assert "Series 2008→2026." in mcp_en.databank(dated)
+
+
+def test_a_source_line_is_never_cut_inside_a_word():
+    """"…(tracking.un2720.org). No li." was read aloud on the first live day."""
+    from serve.when import short_source
+    un = ("Aid movements into Gaza: UN2720 Mechanism for Gaza (UNOPS), Monitoring & Tracking "
+          "Dashboard (tracking.un2720.org). No licence is stated; counts only consignments "
+          "processed through the UN2720 Mechanism.")
+    assert short_source([un]) == ("Aid movements into Gaza: UN2720 Mechanism for Gaza (UNOPS), "
+                                  "Monitoring & Tracking Dashboard (tracking.un2720.org)")
+    assert short_source(["Detention figures: HaMoked, sourced from IPS."]) == \
+        "Detention figures: HaMoked, sourced from IPS"
+    long_ = "word " * 60
+    assert len(short_source([long_])) <= 120 and short_source([long_]).endswith("word")
+    assert short_source(["أ" * 50, "ب" * 50], "؛ ") == "أ" * 50 + "؛ " + "ب" * 50
+    assert short_source(None) == ""
+
