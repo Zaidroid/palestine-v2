@@ -1,0 +1,14 @@
+date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commodity_id,unit,priceflag,pricetype,currency,price,usdprice
+#date,#adm1+name,#adm2+name,#loc+market+name,#loc+market+code,#geo+lat,#geo+lon,#item+type,#item+name,#item+code,#item+unit,#item+price+flag,#item+price+type,#currency+code,#value,#value+usd
+2007-01-15,Gaza Strip,Gaza,Gaza,2007,31.51,34.46,cereals and tubers,Bread,55,KG,actual,Retail,ILS,2,0.47
+2007-01-15,Gaza Strip,Gaza,Gaza,2007,31.51,34.46,cereals and tubers,Rice (long grain),162,KG,actual,Retail,ILS,13,3.08
+2007-01-15,Gaza Strip,Gaza,Gaza,2007,31.51,34.46,cereals and tubers,"Rice (short grain, low quality, local)",380,KG,actual,Retail,ILS,4,0.95
+2007-01-15,Gaza Strip,Gaza,Gaza,2007,31.51,34.46,milk and dairy,Milk (pasteurized),463,L,actual,Retail,ILS,6.5,1.54
+2014-05-15,Gaza Strip,Gaza,Gaza,2007,31.51,34.46,milk and dairy,Milk (pasteurized),463,KG,actual,Retail,ILS,8,2.31
+2017-01-15,West Bank,Bethlehem,Bethlehem,2004,31.71,35.2,cereals and tubers,Wheat flour,58,60 KG,actual,Retail,ILS,140,36.59
+2014-05-15,Gaza Strip,North Gaza,Gaza North,2006,31.54,34.48,cereals and tubers,Bread,55,KG,actual,Retail,ILS,2.8,0.81
+2014-05-15,West Bank,Qalqilya,Qalqiliya,1999,32.19,34.98,cereals and tubers,Bread,55,KG,actual,Retail,ILS,4,1.16
+2026-08-15,Gaza Strip,Kan Younis,Gaza Strip,8215,31.35,34.33,cereals and tubers,Bread,55,KG,actual,Retail,ILS,4.23,1.43
+2026-09-15,West Bank,Ramallah and Albireh,West Bank,8216,31.97,35.33,non-food,Fuel (diesel),284,L,actual,Retail,ILS,8.39,2.76
+2026-09-15,West Bank,Ramallah and Albireh,West Bank,8216,31.97,35.33,non-food,"Fuel (gas, cooking)",1354,12 KG,actual,Retail,ILS,87,28.62
+2026-09-15,West Bank,Ramallah and Albireh,West Bank,8216,31.97,35.33,cereals and tubers,Bread,55,KG,actual,Retail,ILS,,

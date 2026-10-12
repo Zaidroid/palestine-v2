@@ -1,0 +1,42 @@
+{
+ "success": true,
+ "result": {
+  "name": "wfp-food-prices-for-state-of-palestine",
+  "title": "State of Palestine - Food Prices",
+  "notes": "This dataset contains Food Prices data for State of Palestine, sourced from the World Food Programme Price Database. The World Food Programme Price Database covers foods such as maize, rice, beans, fish, and sugar for 98 countries and some 3000 markets. It is updated weekly but contains to a large extent monthly data. The data goes back as far as 1992 for a few countries, although many countries started reporting from 2003 or thereafter.",
+  "dataset_date": "[2007-01-15T00:00:00 TO 2026-09-15T23:59:59]",
+  "last_modified": "2026-10-11T17:57:34.360169",
+  "metadata_created": "2021-09-12T22:28:34.340027",
+  "metadata_modified": "2026-10-11T17:57:36.673784",
+  "license_id": "cc-by-igo",
+  "license_title": "Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO)",
+  "license_url": "http://creativecommons.org/licenses/by/3.0/igo/legalcode",
+  "license_other": null,
+  "dataset_source": "FPMA, Palestinian Central Bureau of Statistics(PCBS) via FAO: GIEWS, VAM",
+  "data_update_frequency": "30",
+  "organization": {
+   "name": "wfp",
+   "title": "WFP - World Food Programme"
+  },
+  "resources": [
+   {
+    "name": "State of Palestine - Food Prices",
+    "format": "CSV",
+    "url": "https://data.humdata.org/dataset/7d06b059-5831-4101-aa68-6d9123ad65b7/resource/b82509ec-d48e-41d7-b376-af51c7f66737/download/wfp_food_prices_pse.csv",
+    "last_modified": "2026-10-11T17:57:34.360169",
+    "created": "2021-09-12T22:28:34.347476",
+    "size": 3402095,
+    "description": "Food prices data"
+   },
+   {
+    "name": "State of Palestine - Markets",
+    "format": "CSV",
+    "url": "https://data.humdata.org/dataset/7d06b059-5831-4101-aa68-6d9123ad65b7/resource/11b2782c-65c4-403c-9984-68c99edc72f8/download/wfp_markets_pse.csv",
+    "last_modified": "2026-07-19T17:23:19.385346",
+    "created": "2025-05-07T02:06:18.258065",
+    "size": 3371,
+    "description": "Markets data"
+   }
+  ]
+ }
+}

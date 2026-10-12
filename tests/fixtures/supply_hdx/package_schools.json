@@ -1,0 +1,33 @@
+{
+ "success": true,
+ "result": {
+  "name": "state-of-palestine-west-bank-schools",
+  "title": "State of Palestine - West Bank schools",
+  "notes": "schools in the West Bank, source UNICEF in Jerusalem, Palestine",
+  "dataset_date": "[2015-06-01T00:00:00 TO 2015-06-01T23:59:59]",
+  "last_modified": "2021-06-10T09:47:11.782170",
+  "metadata_created": "2019-07-22T11:02:00.143109",
+  "metadata_modified": "2025-04-08T18:38:23.621818",
+  "license_id": "cc-by",
+  "license_title": "Creative Commons Attribution International (CC BY)",
+  "license_url": "http://www.opendefinition.org/licenses/cc-by",
+  "license_other": null,
+  "dataset_source": "Palestinian Authority - Ministry of Education and UNICEF",
+  "data_update_frequency": "-2",
+  "organization": {
+   "name": "ocha-opt",
+   "title": "OCHA occupied Palestinian territory (oPt)"
+  },
+  "resources": [
+   {
+    "name": "schools_WB.zip",
+    "format": "SHP",
+    "url": "https://data.humdata.org/dataset/0306a338-951c-45ec-a9b1-184a0f099d05/resource/61d4145d-0330-4135-bd53-8a3eec4c6e23/download/schools_wb.zip",
+    "last_modified": "2021-06-10T09:47:11.782170",
+    "created": "2019-07-22T11:02:01.961203",
+    "size": 187717,
+    "description": "schools in the West Bank"
+   }
+  ]
+ }
+}
