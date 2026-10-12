@@ -126,6 +126,9 @@ def check_comparable(a: dict, b: dict, detrend: str = "none") -> list[str]:
                 f"({', '.join(s.get('units') or [])}): one line drawn through "
                 "them mixes different things. Read it with `databank` and pick "
                 "one unit's rows.")
+        if s["measure_kind"] == "status":
+            stop.append(f"{s['indicator']} is categorical (status); a "
+                        "correlation over category labels is meaningless.")
     ga, gb = a.get("grain"), b.get("grain")
     if ga and gb and ga != gb:
         stop.append(
@@ -133,9 +136,6 @@ def check_comparable(a: dict, b: dict, detrend: str = "none") -> list[str]:
             f"({ga}) and {b['indicator']} is {GRAIN_WORD.get(gb, gb)} ({gb}). "
             "They meet only on dates they happen to share, and filling one in "
             "to match the other would invent the points being compared.")
-        if s["measure_kind"] == "status":
-            stop.append(f"{s['indicator']} is categorical (status); a "
-                        "correlation over category labels is meaningless.")
     if a["place_grain"] != b["place_grain"]:
         stop.append(
             f"place grains differ: {a['indicator']} is {a['place_grain']}-grade "

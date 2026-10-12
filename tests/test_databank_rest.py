@@ -559,3 +559,11 @@ def test_a_register_is_as_old_as_its_last_successful_reading():
     src = inspect.getsource(G.measure_datasets)
     assert 'ds_attrs.get("vintage_checked_at")' in src and "CHECKED_BASIS" in src
     assert "{vintage}" in G.CHECKED_BASIS
+
+
+def test_a_status_series_is_refused_whatever_the_grains():
+    """The time-grain rule was first written INSIDE the status rule's place, so
+    a categorical series was refused only when the grains also differed."""
+    a, b = _s("x.status", "status", concept="a"), _s("y", concept="b")
+    assert any("categorical" in r for r in C.check_comparable(a, b))
+    assert any("categorical" in r for r in C.check_comparable(b, a))

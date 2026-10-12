@@ -435,7 +435,8 @@ def test_the_radar_knows_the_line_and_the_publishers_cap():
 
 
 def test_the_proposed_rows_are_ask_and_match_the_spec():
-    sql = (ROOT / "db" / "proposed" / "un2720.sql").read_text()
+    # the proposal, numbered as migration 106 on 2026-10-12
+    sql = (ROOT / "db" / "migrations" / "106_un2720_aid_source.sql").read_text()
     spec = load_spec("aid_un2720")
     assert f"SELECT '{spec['datasets'][0]['source']}'," in sql
     assert f"SELECT '{spec['datasets'][0]['key']}'," in sql
