@@ -309,6 +309,14 @@ _k("value.text_from", "implemented", "dotted path or null",
 _k("value.unit_from", "implemented", "dotted path, or {literal: '...'}",
    types=(str, dict, type(None)))
 _k("value.unit_from.literal", "implemented", "a fixed unit string", types=(str,))
+_k("value.unit_by_code", "data_map",
+   "publisher's indicator code → unit, or null for 'decided: no unit can be "
+   "stated'. Read before the name rule (health: WHO GHO names that state no "
+   "unit, decided from WHO's own indicator metadata, each with its evidence "
+   "beside it). A unit is decided per indicator, never from a row's value",
+   types=(dict,),
+   child_check=lambda v: None if v is None or isinstance(v, str)
+   else f"must be a unit string or null, got {v!r}")
 _k("event_type", "implemented", "event shape only", types=(dict,))
 _k("event_type.template", "implemented", "as indicator.template", types=(str,))
 _k("metrics_from", "implemented",

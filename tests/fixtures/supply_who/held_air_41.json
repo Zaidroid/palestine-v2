@@ -1,0 +1,329 @@
+{
+ "_what": "The 18 rows the store held for WHO GHO code AIR_41 on 2026-10-12 (dataset v1_health_who, current rows), as loaded from v1's file: one dimension kept, the cause of death lost, the unit guessed per row.",
+ "rows": [
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 39.169,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 11.721,
+    "value_high": 83.25,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||39.169|83.25|11.721",
+   "v1_stable_id": "c7ebb46fe18c63ce255abc8ff5353781"
+  },
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 50.222,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 27.031,
+    "value_high": 82.055,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||50.222|82.055|27.031",
+   "v1_stable_id": "f057e547b998165839a1da422073be53"
+  },
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 102.579,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 54.411,
+    "value_high": 150.261,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||102.579|150.261|54.411",
+   "v1_stable_id": "da3e94fe8eaf7207bff249df45f757f9"
+  },
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 248.29,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 121.558,
+    "value_high": 381.584,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||248.29|381.584|121.558",
+   "v1_stable_id": "3077b823d16e51f684e2c1990ad996f1"
+  },
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 705.489,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 442.665,
+    "value_high": 915.814,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||705.489|915.814|442.665",
+   "v1_stable_id": "08da0150ea5953f7e1b7b5a84bb763b1"
+  },
+  {
+   "indicator": "health.air_41.sex_btsx",
+   "occurred_at": "2021-01-01",
+   "value_num": 1145.749,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_BTSX",
+    "name": "Both sexes",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 842.633,
+    "value_high": 1428.394,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_btsx|2021-01-01||1145.749|1428.394|842.633",
+   "v1_stable_id": "e40437a2f2ecb6dc690b90a2bf55a24c"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 9.682,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 5.211,
+    "value_high": 15.819,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||9.682|15.819|5.211",
+   "v1_stable_id": "110517e880cf4455d855ec5f5b396aaa"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 12.234,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 3.661,
+    "value_high": 26.002,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||12.234|26.002|3.661",
+   "v1_stable_id": "50f0ff811650f572878e59501ea2e346"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 42.735,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 22.668,
+    "value_high": 62.6,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||42.735|62.6|22.668",
+   "v1_stable_id": "0fe96122c49556a4ea038cb07bca629b"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 128.722,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 63.02,
+    "value_high": 197.826,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||128.722|197.826|63.02",
+   "v1_stable_id": "98ec58f7c155aef87c007f03cfd15d1f"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 290.892,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 182.523,
+    "value_high": 377.615,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||290.892|377.615|182.523",
+   "v1_stable_id": "5df0db14ef487ec07778f362813a71ca"
+  },
+  {
+   "indicator": "health.air_41.sex_fmle",
+   "occurred_at": "2021-01-01",
+   "value_num": 484.265,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_FMLE",
+    "name": "Female",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 350.778,
+    "value_high": 607.712,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_fmle|2021-01-01||484.265|607.712|350.778",
+   "v1_stable_id": "93613a037cb6efec2591bf12b4aca61d"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 26.935,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 8.06,
+    "value_high": 57.248,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||26.935|57.248|8.06",
+   "v1_stable_id": "4b563820ac14fd2e23d21eb4d2c46561"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 40.539,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 21.819,
+    "value_high": 66.235,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||40.539|66.235|21.819",
+   "v1_stable_id": "2bdf9d3593f10ec7c30467df9688f9c7"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 59.844,
+   "unit": "percentage",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 31.743,
+    "value_high": 87.661,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||59.844|87.661|31.743",
+   "v1_stable_id": "4af3456f28c35a24c32ce5b5204a50b4"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 119.569,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 58.538,
+    "value_high": 183.759,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||119.569|183.759|58.538",
+   "v1_stable_id": "bdca22d9c8df03dad9638549316731b9"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 414.597,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 260.142,
+    "value_high": 538.199,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||414.597|538.199|260.142",
+   "v1_stable_id": "de15e4c2f7479d9a6478bd17a4a691f2"
+  },
+  {
+   "indicator": "health.air_41.sex_mle",
+   "occurred_at": "2021-01-01",
+   "value_num": 661.484,
+   "unit": "number",
+   "attrs": {
+    "code": "SEX_MLE",
+    "name": "Male",
+    "type": "SEX",
+    "region": "Palestine",
+    "value_low": 487.479,
+    "value_high": 824.112,
+    "indicator_code": "AIR_41",
+    "indicator_name": "Ambient air pollution attributable deaths"
+   },
+   "identity_key": "v1_health_who|health.air_41.sex_mle|2021-01-01||661.484|824.112|487.479",
+   "v1_stable_id": "d3296688b5587254083e51b77a5ef9f5"
+  }
+ ]
+}

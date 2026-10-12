@@ -70,6 +70,9 @@ data/raw/un2720/
 data/raw/land/
 data/raw/peacenow/
 data/raw/addameer/
+# WHO GHO health rows and the per-code parts a run resumes from: regenerate with
+# ops/fetch_gho_health.py (13 MB)
+data/raw/gho/
 .keys/
 
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)
