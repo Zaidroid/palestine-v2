@@ -257,6 +257,55 @@ ERAS = [
 ]
 
 
+# ── the hand-over, measured on the indicators two datasets SHARE ─────────────
+
+HANDOVER_SQL = """
+WITH shared AS (
+  SELECT o.indicator FROM observation o JOIN dataset d USING (dataset_id)
+   WHERE d.key = %(old)s AND upper_inf(o.sys_period)
+  INTERSECT
+  SELECT o.indicator FROM observation o JOIN dataset d USING (dataset_id)
+   WHERE d.key = %(new)s AND upper_inf(o.sys_period)
+)
+SELECT (max(o.occurred_at) FILTER (WHERE d.key = %(old)s))::date,
+       (min(o.occurred_at) FILTER (WHERE d.key = %(new)s))::date
+  FROM observation o JOIN dataset d USING (dataset_id)
+ WHERE d.key IN (%(old)s, %(new)s) AND upper_inf(o.sys_period)
+   AND o.indicator IN (SELECT indicator FROM shared)
+"""
+
+
+def _hands_over(last_old, first_new) -> bool:
+    """True when the successor's first day falls 1-3 days after the
+    predecessor's last. Same window as before; only the inputs changed."""
+    return bool(last_old and first_new and 0 < (first_new - last_old).days <= 3)
+
+
+def continued_successors(cur) -> set[str]:
+    """Which CONTINUED_BY successors really picked up where their predecessor
+    stopped. Otherwise the predecessor is judged as before and a broken
+    hand-over stays visible.
+
+    MEASURED ON THE INDICATORS THE TWO DATASETS SHARE. A successor may also
+    carry indicators the predecessor never held -- t4p_gaza_daily gained the
+    cumulative children/women/medical/press/civil-defence tolls and the daily
+    line back to 2023-10-07 on 2026-10-11, where the frozen series holds only
+    gaza_cumulative_killed/_injured. Those extra indicators overlap nothing,
+    so they cannot double-count; but a min() across the whole successor read
+    2023-10-07, measured the hand-over at -1036 days, rejected a declaration
+    that was true, and reported the predecessor STALLED at severity 5 (which
+    exits this job 5). The shared indicators are the only ones that hand over,
+    so they are the only ones the window may be measured on.
+    """
+    ok: set[str] = set()
+    for old_key, new_key in CONTINUED_BY.items():
+        cur.execute(HANDOVER_SQL, {"old": old_key, "new": new_key})
+        row = cur.fetchone()
+        if row and _hands_over(row[0], row[1]):
+            ok.add(new_key)
+    return ok
+
+
 def measure_datasets(cur, today: date) -> list[dict]:
     cur.execute("""
         SELECT d.dataset_id, d.key, d.v1_category, s.key, s.license_spdx,
@@ -265,21 +314,7 @@ def measure_datasets(cur, today: date) -> list[dict]:
         WHERE d.v1_category IS NOT NULL ORDER BY d.key""")
     metas = cur.fetchall()
     out = []
-    # A successor counts only if it really picks up where the predecessor
-    # stopped: its first day is within 3 days after the predecessor's last,
-    # and it holds current rows at all. Otherwise the predecessor is judged
-    # as before, and a broken hand-over stays visible.
-    continued_ok = set()
-    for old_key, new_key in CONTINUED_BY.items():
-        cur.execute("""
-            SELECT (max(o.occurred_at) FILTER (WHERE d.key = %s))::date,
-                   (min(o.occurred_at) FILTER (WHERE d.key = %s))::date
-              FROM observation o JOIN dataset d USING (dataset_id)
-             WHERE d.key IN (%s, %s) AND upper_inf(o.sys_period)""",
-                    (old_key, new_key, old_key, new_key))
-        last_old, first_new = cur.fetchone()
-        if last_old and first_new and 0 < (first_new - last_old).days <= 3:
-            continued_ok.add(new_key)
+    continued_ok = continued_successors(cur)
     for ds_id, key, cat, src, lic, comm in metas:
         cur.execute("""
             SELECT count(*), min(occurred_at)::date, max(occurred_at)::date,

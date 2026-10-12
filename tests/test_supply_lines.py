@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -552,3 +552,50 @@ def test_a_dry_run_leaves_no_ledger_line(monkeypatch, tmp_path):
     with pytest.raises(fl.FetchRefused):
         oc.floor("ocha:casualties", 3, 44, "records", dry=False)
     assert json.loads(ledger.read_text())["outcome"] == "refused"
+
+
+# ── the hand-over check reads only the indicators two datasets SHARE ─────────
+# Regression, 2026-10-12 maintenance. CONTINUED_BY declares t4p_gaza_daily the
+# successor of v1_conflict_tech4palestine, and the hand-over is exact: the
+# frozen series ends 2026-08-08 and the successor's gaza_cumulative_killed /
+# _injured begin 2026-08-09. But the fragments commit of 2026-10-11 gave
+# t4p_gaza_daily eight MORE indicators (children, women, medical, press, civil
+# defence, massacres, daily killed/injured) reaching back to 2023-10-07 —
+# indicators the predecessor never held, so there is no overlap to double-count.
+# A min() over the whole successor therefore read 2023-10-07, the hand-over
+# measured -1036 days, the declaration was rejected, and the predecessor was
+# reported STALLED at severity 5 — which exits the nightly job 5.
+_OLD, _NEW = "v1_conflict_tech4palestine", "t4p_gaza_daily"
+_SHARED_SPAN = (date(2026, 8, 8), date(2026, 8, 9))     # measured on main-server
+_WHOLE_SPAN = (date(2026, 8, 8), date(2023, 10, 7))     # what min(*) returns
+
+
+class _HandoverCur:
+    """A cursor that answers like the real table: the shared-indicator span
+    only when the query actually restricts to shared indicators."""
+
+    def __init__(self):
+        self.restricted = None
+
+    def execute(self, sql, params=None):
+        self.restricted = "indicator" in sql.lower()
+
+    def fetchone(self):
+        return _SHARED_SPAN if self.restricted else _WHOLE_SPAN
+
+
+def test_a_successor_hands_over_on_the_indicators_it_shares_not_its_whole_span():
+    cur = _HandoverCur()
+    assert gr.continued_successors(cur) == {_NEW}, (
+        "t4p_gaza_daily continues v1_conflict_tech4palestine on the two "
+        "indicators they share; indicators the predecessor never held must "
+        "not drag the hand-over backwards")
+    assert cur.restricted, "the hand-over query must restrict to shared indicators"
+
+
+def test_the_handover_window_is_still_one_to_three_days_forward():
+    assert gr._hands_over(*_SHARED_SPAN)                  # 1 day: the real cut-over
+    assert not gr._hands_over(*_WHOLE_SPAN)               # backwards: not a hand-over
+    assert not gr._hands_over(date(2026, 8, 8), date(2026, 8, 8))      # same day
+    assert not gr._hands_over(date(2026, 8, 8), date(2026, 8, 20))     # a gap, not a hand-over
+    assert not gr._hands_over(None, date(2026, 8, 9))     # predecessor empty
