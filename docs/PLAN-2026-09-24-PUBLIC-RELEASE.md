@@ -1044,3 +1044,41 @@ closed 624 over 120 days.
 V2_TELEGRAM_MEDIA_CHANNELS line in .env, poller active with no "Archiving photos" line since its restart, health
 telegram-poller ok. One cycle was downloaded in all: 14 fuel cards, kept in bronze.
 
+2026-10-12 15:55 UTC · before the databank phase: what the 11 October loads left red · fixed, rehearsed, committed;
+one script is Zaid's hand (`tmp/5-before-databank.sh`) · proof: /health read `job:databank failing`,
+`job:supply-lines failing`. The funding fix of 5df776a was not a cause: it ran at 03:44 UTC, closed 70 rows, no
+flow id has two current rows, paid 15.748 B USD.
+(1) unhcr_population refused every night since its first load (192 identity collisions). HDX's export drops a column
+UNHCR keys on, so 90 cells come as two rows: 39 demographics, 45 applications, 6 decisions. They ADD: stocks = the sum
+of the demographics rows on 29 of 29 country-years (Canada 2020: 357 + 1,420 = 1,777), and api.unhcr.org returns the
+same pairs with `dec_level` and totals them (AUS 2000: 134 + 15 = 149; POL 2002: 5 + 5 = 10; CYP 2016 FI decisions
+163 + 10 = 173). The first load had kept the first row. The maintenance run of 05:50 read it as a publisher's
+revision of +168 rows; the file is unchanged since 10-11, the loader's dry and real modes disagreed (an id was marked
+seen only after the already-held skip). f22560b: the cell is emitted once, summed; an id is marked where it is
+checked; a repeat that says otherwise is counted and, with a declared identity, refused in every mode
+(`--all --dry-run`: every other spec passes). Scratch rehearsal of the real load: 380 revised, 45,197 current before
+and after, second run writes nothing.
+(2) gap radar exit 5: btselem_fatalities gets a declared status `awaiting_permission` (a frozen copy to 2023-09-24;
+B'Tselem continues; the letter is unsent), fao_diem_household_surveys an allowance of 450 days (rounds: May 2024,
+July 2025, June-July 2026). Read-only run: exit 0. f37c30e.
+(3) 119 beliefs no assertion stood behind (114 on merged places; none served): belief.reground, run by --state-only
+nightly and after every --reread. Gates G2.4, G2.5 (follow merges), G2.4b (per reading, since decision A), G2.10
+(same direction), G4.2 (current rows), G4.8 (the Ministry's since-ceasefire total leaves out the recovered) brought
+in line; read-only all pass except G2.4 = 9 until the first reground. 103b403.
+(4) Found through G4.8: eight bulletins of 16-27 October 2025 write the newly killed as «شهداء نتيجة استهداف مباشر»
+and were read without them: 74 people. Old against new parser on 2,720 messages: those eight change. 1be53d0.
+(5) Found through a test red since the load: organ C's lookup asked for Ministry rows WITHOUT a stable id; 095 gave
+every row one, so the bulletin of 12 October was judged not-in-series against nothing. e052e87 (analyst restart).
+(6) The public licence table graded the databank, series, compare and correlate tools `internal` since ACLED's rows
+were loaded: the grade was read over databank_internal. Now over databank_serving. 3695311 (API restart).
+(7) README floors and twelve unsent letters raised to the store (474,975 observations, 319,338 served from 30
+sources); four tests that described the day before the loads updated. fc0f9c2. Full suite before these fixes: 8
+failed / 1,624 passed, the same 8 as the maintenance run; after: 1 failing, which compares the running API with
+the tree and passes after the restart.
+(8) MINE: four scratch-rehearsal runs had appended themselves to ops/databank-runs.ndjson as real runs (funding
+10-11 19:17 ×2, unhcr 10-12 15:16 ×2). Removed; backup in the session scratchpad. Scratch runs belong in a worktree.
+NOT TOUCHED: the classifier. Round 10 (maintenance, 4a942d3) measures 1.11.0 at 0.740; of its nine defects, class 3
+(bulldozers that turn a building to rubble typed land_levelling: 11 claims, three events) and class 4 («نظرات
+الوداع» plural) come from my 1.11.0 rules. A fix makes the round tuning data, so it waits for Zaid's word on a
+round 11.
+
