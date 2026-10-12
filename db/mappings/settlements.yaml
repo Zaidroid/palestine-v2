@@ -68,7 +68,41 @@ expect:
   min_records: 46          # ≈0.9 × 51
   max_observations: 68
 
+# Format v2 `input:` — v2 reads Peace Now's page itself since 2026-10-12
+# (ops/fetch_peacenow.py → data/raw/peacenow/settlers.json, in the record
+# shape this spec already transforms). The frozen corpus is v1's unified file
+# of 2026-10-12, read only by a machine that has never fetched.
+input:
+  root: data/raw/peacenow
+  glob: settlers.json
+  fallback:
+    root: data/frozen
+    glob: settlements.json.gz
+cadence: annual            # Peace Now adds a year when the Israeli CBS
+                           #   publishes one; fetched nightly
+
 notes: |
+  WHICH YEAR A FIGURE BELONGS TO — MEASURED 2026-10-12, because Peace Now's
+  page contradicts itself. Its line chart puts 511,100 under "2024" and
+  503,732 under "2023"; two pie charts on the same page show the same 511,100
+  captioned "Source: Israeli CBS, end of 2023". The chart is right and the
+  caption is stale. The Israeli CBS (Statistical Abstract 2023 table 2.17;
+  2024 tables 2.15 and 2.17) gives the Judea and Samaria Area 1.5 thousand in
+  1972, 23.7 in 1983, 134.3 in 1995, 281.1 in 2008, 465.4 at the end of 2021,
+  478.6 at the end of 2022, and 501.1 (504.7 with foreigners) at the end of
+  2023; the chart carries 1,500 / 23,700 / 134,300 / 281,100 / 465,400 /
+  478,600 under exactly those years, and no end-of-2023 count reaches 511,100.
+  UN reports of 2025 (A/HRC/58/73, A/80/399) quote Peace Now's 503,732 as its
+  current figure, one year before the page showed 511,100. So: a chart label
+  is the figure's own year, the figure is that year's END-OF-YEAR count, and
+  the held row for label N (occurred_at N-01-01, precision year, attrs.year
+  N, reference "period-end stock") carries year N's figure under year N. No
+  held row is a year off; "the 2023 figure stored at 2024-01-01" is the stale
+  caption read as truth. (Not re-read from an archive copy of the page: the
+  Internet Archive's index answered 503 on 2026-10-12.) What remains is the
+  databank-wide convention in the OPEN QUESTION below (a year-end stock
+  anchored at the start of its year), unchanged here.
+
   Measured from ops/t2-category-audit.json and the v1 file itself:
 
   - 51 records, one source, one event_type, one region. dates 1967-12-31 ..

@@ -108,6 +108,17 @@ CLOSED_CORPUS = {
     # Hand-entered statements about dated events (2026-10-12): a figure for
     # 1948 does not go stale, and the file grows only when a person adds one.
     "cited_figures",
+    # Frozen 2026-10-12 (db/mappings/culture.yaml): v1's nightly Wikidata
+    # query result, carried in data/frozen/ and no longer fetched. As a
+    # register its age is "days since the last ingest" against a learned
+    # 12-day allowance, so without this entry the frozen corpus reads STALLED
+    # 24 days after its last new row (2026-10-10) and fails the night as a
+    # dead data line. The other static registers judged the same way
+    # (v1_land_ocha, v1_land_peace_now, v1_education_hdx,
+    # v1_infrastructure_hdx, v1_refugees_unrwa: last ingest 2026-08-05..09,
+    # allowance 90) reach STALLED in the first week of February 2027 and
+    # need the same answer; that is not decided here.
+    "v1_culture_heritage_composite",
 }
 
 # Datasets whose series another dataset CONTINUES. Their age stops mattering

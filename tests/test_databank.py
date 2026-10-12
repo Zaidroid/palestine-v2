@@ -214,12 +214,22 @@ def test_pilot_dry_runs_reproduce_spec_arithmetic():
     # P1-B.3 (2026-09-25): HaMoked is read by prisoners_hamoked.yaml from
     # v2's own fetch now, so v1's HaMoked records are a declared, counted
     # `moved` drop here — every one of them, and nothing else.
+    #
+    # supply-scrapes (2026-10-12): Addameer is v2's own fetch too
+    # (ops/fetch_addameer.py → data/raw/addameer), so the records are counted
+    # from whatever the spec reads: the fetched file (Addameer alone, nothing
+    # to drop) or, on a machine that has never fetched, the frozen copy of
+    # v1's whole file (864 HaMoked moved). The arithmetic holds for both.
     spec = load_spec("prisoners")
-    recs = json.loads((V1 / "prisoners" / "all-data.json").read_bytes())["data"]
+    recs = [rec for f in databank.iter_v1_files("prisoners", spec)
+            for rec in json.loads(databank.read_payload(f))["data"]]
     by_source = Counter(rec["sources"][0]["name"] for rec in recs)
     r = databank.run("prisoners", dry_run=True)
     assert r["records_read"] == len(recs)
-    assert r["drops"] == {"moved": by_source["HaMoked"]}
+    assert r["drops"] == ({"moved": by_source["HaMoked"]}
+                          if by_source["HaMoked"] else {})
+    if databank.reads_fallback(spec):
+        assert by_source["HaMoked"] == 864
     assert r["observations_emitted"] == len(recs) - by_source["HaMoked"]
     routing = spec["source_routing"]
     assert set(by_source) <= set(routing["by_name"]) | set(routing["moved"])

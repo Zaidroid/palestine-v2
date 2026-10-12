@@ -10,9 +10,18 @@
 # the June copy. ops/fetch_hamoked.py now reads HaMoked itself and
 # prisoners_hamoked.yaml loads it into the SAME dataset (v1_prisoners_hamoked),
 # so the series continues and a month HaMoked revises supersedes the held
-# reading. This spec keeps Addameer (still fetched by v1's `prisoners` step)
-# and drops v1's stale HaMoked records by name — declared and counted, never
-# an unroutable failure.
+# reading. This spec keeps Addameer and drops v1's stale HaMoked records by
+# name — declared and counted, never an unroutable failure.
+#
+# ADDAMEER MOVED 2026-10-12 (branch supply-scrapes). ops/fetch_addameer.py
+# reads addameer.ps/statistics itself (v1's `prisoners` step did until then)
+# into data/raw/addameer/statistics.json, in the record shape t_prisoners
+# reads; see `input:` below. The window on the page rolls (14 months of total
+# and administrative on 2026-10-12, 22 held): months that leave it stay held.
+# Child and female come from the page's dated block and are filed under THAT
+# date's month; v1 filed them under the month it ran in, so on the first days
+# of a month the databank served last month's two figures under the new month
+# (history of 2026-08, -09 and -10 in the store).
 category: prisoners
 transform: python:t_prisoners
 shape: observation
@@ -30,7 +39,11 @@ drop:
   - reason: moved
     if: "sources[0].name is HaMoked — read by prisoners_hamoked.yaml now"
     measured: 864          # v1's unified file, frozen at June 2026 since the
-                           #   step died; 4 series × 216 months
+                           #   step died; 4 series × 216 months. Since
+                           #   2026-10-12 these exist only in the fallback
+                           #   (data/frozen/prisoners.json.gz is v1's whole
+                           #   file); the fetched input holds Addameer alone
+                           #   and drops nothing.
 
 datasets:
   # v1_prisoners_hamoked is declared by prisoners_hamoked.yaml (P1-B.3).
@@ -81,8 +94,26 @@ attrs_passthrough:
   - location.region
 
 expect:
-  min_records: 800          # 0.9 × 890
-  max_observations: 1040
+  min_records: 20           # the fetcher's own floor (ten months of total and
+                            #   administrative); 30 records on 2026-10-12.
+                            #   Was 800 while the input was v1's whole file
+                            #   (864 HaMoked + Addameer); the fallback still
+                            #   reads 894 and drops 864.
+  max_observations: 60      # 30 emitted on 2026-10-12 (14 months × 2 + child
+                            #   + female); the page's window is about 14
+                            #   entries. Twice that is a page that changed.
+
+# Format v2 `input:` — v2's own fetch (2026-10-12). The frozen corpus is v1's
+# unified file of that day and is read only by a machine that has never
+# fetched (additive only).
+input:
+  root: data/raw/addameer
+  glob: statistics.json
+  fallback:
+    root: data/frozen
+    glob: prisoners.json.gz
+cadence: monthly            # Addameer posts a dated block about once a month
+                            #   (sometimes twice); fetched nightly
 
 notes: |
   UNSELLABLE UNTIL ZAID READS THE TERMS. Measured source × license:

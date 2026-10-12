@@ -1,0 +1,24 @@
+{
+ "success": true,
+ "result": {
+  "name": "state-of-palestine-settlements",
+  "title": "State of Palestine Settlements",
+  "dataset_date": "[2018-12-30T00:00:00 TO 2018-12-31T23:59:59]",
+  "dataset_source": "Peace Now and OCHA oPt",
+  "license_id": "cc-by-igo",
+  "license_title": "Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO)",
+  "methodology": "Direct Observational Data/Anecdotal Data",
+  "methodology_other": null,
+  "caveats": "Settlements data provided by Peace Now",
+  "notes": "Settlements in the occupied Palestinian territory.",
+  "resources": [
+   {
+    "id": "05d6421b-e796-4940-ae9e-a55858e96664",
+    "name": "settlements_peacenow.zip",
+    "format": "SHP",
+    "url": "https://data.humdata.org/dataset/0d6d3717-afc1-4f6b-a003-c7e458298928/resource/05d6421b-e796-4940-ae9e-a55858e96664/download/settlements_peacenow.zip",
+    "last_modified": "2021-06-03T13:47:14.947896"
+   }
+  ]
+ }
+}

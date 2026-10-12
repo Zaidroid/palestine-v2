@@ -1,0 +1,85 @@
+{
+ "totalIncidents": 552,
+ "fiveDayIncidents": 4,
+ "thirtyDayIncidents": 125,
+ "displacedPeople": 2626,
+ "structures": 1803,
+ "menDisplaced": 701,
+ "womenDisplaced": 715,
+ "childrenDisplaced": 1201,
+ "oldestDateofincident": "2025-09-08T00:00:00.000Z",
+ "newestDateofincident": "2026-10-08T00:00:00.000Z",
+ "mostRecentTimestamp": "10.12.2026 06:01:31",
+ "fiveDayAverage": {
+  "incidents": 0.4,
+  "structures": 0.8,
+  "displacedPeople": 8.7,
+  "menDisplaced": 2.2,
+  "womenDisplaced": 1.8,
+  "childrenDisplaced": 4.2
+ },
+ "thirtyDayAverage": {
+  "incidents": 1.3888888888888888,
+  "structures": 5.866666666666666,
+  "displacedPeople": 8.444444444444445,
+  "menDisplaced": 2.1333333333333333,
+  "womenDisplaced": 2.3555555555555556,
+  "childrenDisplaced": 3.8555555555555556
+ },
+ "chartData": [
+  {
+   "date": "2025-09-08",
+   "incidents": 5,
+   "displacedPeople": 14,
+   "structures": 31,
+   "menDisplaced": 4,
+   "womenDisplaced": 3,
+   "childrenDisplaced": 7
+  },
+  {
+   "date": "2025-09-09",
+   "incidents": 2,
+   "displacedPeople": 13,
+   "structures": 5,
+   "menDisplaced": 0,
+   "womenDisplaced": 3,
+   "childrenDisplaced": 10
+  },
+  {
+   "date": "2026-01-04",
+   "incidents": 1,
+   "displacedPeople": 8,
+   "structures": 0,
+   "menDisplaced": 2,
+   "womenDisplaced": 3,
+   "childrenDisplaced": 3
+  },
+  {
+   "date": "2026-07-26",
+   "incidents": 1,
+   "displacedPeople": 9,
+   "structures": 0,
+   "menDisplaced": 2,
+   "womenDisplaced": 7,
+   "childrenDisplaced": 0
+  },
+  {
+   "date": "2026-10-07",
+   "incidents": 1,
+   "displacedPeople": 8,
+   "structures": 1,
+   "menDisplaced": 2,
+   "womenDisplaced": 2,
+   "childrenDisplaced": 4
+  },
+  {
+   "date": "2026-10-08",
+   "incidents": 1,
+   "displacedPeople": 4,
+   "structures": 1,
+   "menDisplaced": 1,
+   "womenDisplaced": 1,
+   "childrenDisplaced": 2
+  }
+ ]
+}

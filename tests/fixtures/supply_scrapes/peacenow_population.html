@@ -1,0 +1,443 @@
+<!-- peacenow.org.il/en/settlements-watch/settlements-data/population, read 2026-10-12: the two pie charts with their captions, the population chart, the outposts chart and the footer, cut from the page as served -->
+<html><body>
+<script type="text/javascript">
+                    jQuery(document).ready(function($) {
+                        var title = "West Bank Population";
+                        var subtitle = null;
+                        var direction = 'ltr';
+                        var textdirection = 'left';
+                        var rtltrue = false;
+                        var percentName = "percent of ";
+
+                        $('#container1').highcharts({
+                            chart: {
+                                style: {
+                                    direction: direction,
+                                    fontFamily: '', // default font
+                                    fontSize: '20px',
+                                    fontWeight: 'normal'
+                                },
+                                type: 'pie',
+                                options3d: {
+                                    enabled: true,
+                                    alpha: 45,
+                                }
+                            },
+                            colors: ['#b10e00', '#333333', '#666666', '#999999', '#cccccc', '#000000'],
+                            title: {
+                                text: title,
+                                useHTML: true,
+                                margin: 10,
+                                style: {
+                                    "fontFamily": "Alef Hebrew",
+                                    "fontWeight": "bold",
+                                    "color": "#333333"
+                                },
+                            },
+                            subtitle: {
+                                text: subtitle
+                            },
+                            plotOptions: {
+                                pie: {
+                                    innerSize: 80,
+                                    depth: 25,
+                                    backgroundColor: "none",
+                                    "dataLabels": {
+                                        allowOverlap: true,
+                                        enabled: true,
+                                        useHTML: true,
+                                        fontSize: '14px',
+                                        fontWeight: 'normal',
+                                                                                formatter: function() {
+                                            //                                                            console.log(this);
+                                            return this.point.y.toLocaleString("en") + '<br>' + this.point.name;
+                                        },
+                                                                                style: {
+                                            "color": "contrast",
+                                            "fontSize": "14px",
+                                            "fontWeight": "normal",
+                                            "textShadow": "0 0 6px contrast, 0 0 3px contrast"
+                                        }
+                                    },
+                                    showInLegend: true,
+                                    point: {
+                                        events: {
+                                            legendItemClick: function(e) {
+                                                e.preventDefault();
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            labels: {
+                                enabled: true,
+                                style: {
+                                    direction: direction
+                                }
+                            },
+
+                            legend: {
+                                useHTML: true,
+                                rtl: rtltrue,
+                                labelFormatter: function() {
+                                    return percentName + this.name + ': ' + '<b>' + Math.round(this.percentage) + '%</b>';
+                                },
+                                borderWidth: 1,
+                                symbolWidth: 12,
+                                margin: 30,
+                                itemMarginBottom: 5,
+                                itemMarginTop: 5,
+                                itemStyle: {
+                                    "color": "contrast",
+                                    "fontSize": "14px",
+                                    "fontWeight": "normal",
+                                    "textShadow": "0 0 6px contrast, 0 0 3px contrast",
+                                    "cursor": "default"
+                                }
+
+
+                            },
+                            tooltip: {
+                                enabled: true,
+                                useHTML: true,
+                                pointFormat: '<span style="color:{point.color}">\u25CF </span><b>{point.y}</b>'
+                            },
+
+                            series: [{
+                                name: 'default name',
+                                data: [
+                                    ["", 2998982], ["", 511100]                                ]
+                            }]
+                        });
+                    });
+                    </script>
+<div class="right rightEntry"><p><p dir="ltr">More then 3 Million people live in the West Bank, 85% of them are Palestinians.
+Source: Israeli and Palestinian CBS, end of 2023</p></p></div>
+<script type="text/javascript">
+                    jQuery(document).ready(function($) {
+                        var title = "Settlers as Portion of the Israeli Population";
+                        var subtitle = "Source: Central Bureau of Statistics (ICBS)";
+                        var direction = 'ltr';
+                        var textdirection = 'left';
+                        var rtltrue = false;
+                        var percentName = "percent of ";
+
+                        $('#container2').highcharts({
+                            chart: {
+                                style: {
+                                    direction: direction,
+                                    fontFamily: '', // default font
+                                    fontSize: '20px',
+                                    fontWeight: 'normal'
+                                },
+                                type: 'pie',
+                                options3d: {
+                                    enabled: true,
+                                    alpha: 45,
+                                }
+                            },
+                            colors: ['#b10e00', '#333333', '#666666', '#999999', '#cccccc', '#000000'],
+                            title: {
+                                text: title,
+                                useHTML: true,
+                                margin: 10,
+                                style: {
+                                    "fontFamily": "Alef Hebrew",
+                                    "fontWeight": "bold",
+                                    "color": "#333333"
+                                },
+                            },
+                            subtitle: {
+                                text: subtitle
+                            },
+                            plotOptions: {
+                                pie: {
+                                    innerSize: 80,
+                                    depth: 25,
+                                    backgroundColor: "none",
+                                    "dataLabels": {
+                                        allowOverlap: true,
+                                        enabled: true,
+                                        useHTML: true,
+                                        fontSize: '14px',
+                                        fontWeight: 'normal',
+                                                                                formatter: function() {
+                                            //                                                            console.log(this);
+                                            return this.point.y.toLocaleString("en") + '<br>' + this.point.name;
+                                        },
+                                                                                style: {
+                                            "color": "contrast",
+                                            "fontSize": "14px",
+                                            "fontWeight": "normal",
+                                            "textShadow": "0 0 6px contrast, 0 0 3px contrast"
+                                        }
+                                    },
+                                    showInLegend: true,
+                                    point: {
+                                        events: {
+                                            legendItemClick: function(e) {
+                                                e.preventDefault();
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            labels: {
+                                enabled: true,
+                                style: {
+                                    direction: direction
+                                }
+                            },
+
+                            legend: {
+                                useHTML: true,
+                                rtl: rtltrue,
+                                labelFormatter: function() {
+                                    return percentName + this.name + ': ' + '<b>' + Math.round(this.percentage) + '%</b>';
+                                },
+                                borderWidth: 1,
+                                symbolWidth: 12,
+                                margin: 30,
+                                itemMarginBottom: 5,
+                                itemMarginTop: 5,
+                                itemStyle: {
+                                    "color": "contrast",
+                                    "fontSize": "14px",
+                                    "fontWeight": "normal",
+                                    "textShadow": "0 0 6px contrast, 0 0 3px contrast",
+                                    "cursor": "default"
+                                }
+
+
+                            },
+                            tooltip: {
+                                enabled: true,
+                                useHTML: true,
+                                pointFormat: '<span style="color:{point.color}">\u25CF </span><b>{point.y}</b>'
+                            },
+
+                            series: [{
+                                name: 'default name',
+                                data: [
+                                    ["", 10065500], ["", 511100]                                ]
+                            }]
+                        });
+                    });
+                    </script>
+<div class="right rightEntry"><p>Source: Israeli CBS, end of 2023</p></div>
+<script type="text/javascript">
+                    jQuery(document).ready(function($) {
+                        var title = "Number of Settlers by Year";
+                        var subtitle = "Source: ICBS";
+                        $('#container5').highcharts({
+                            chart: {
+                                type: 'column',
+                                style: {
+                                    fontFamily: '"Alef Hebrew", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif', // default font
+                                    fontSize: '14px'
+                                }
+                            },
+                            colors: ['#b10e00', '#333333', '#666666', '#999999', '#cccccc', '#000000'],
+                            title: {
+                                text: title,
+                                useHTML: true,
+                                align: 'center',
+                                style: {
+                                    "fontFamily": "Alef Hebrew",
+                                    "fontWeight": "bold",
+                                    "color": "#333333"
+                                },
+                                x: 20,
+                                margin: 20
+                            },
+                            subtitle: {
+                                text: subtitle,
+                                align: 'center',
+                                useHTML: true,
+                                x: 20
+                            },
+                            plotOptions: {
+                                bar: {
+                                    backgroundColor: "none",
+                                    dataLabels: {
+                                        enabled: true,
+                                        useHTML: true,
+                                        fontSize: '20px',
+                                        fontWeight: 'normal'
+                                    },
+                                },
+                                series: {
+                                    dataLabels: {
+                                        enabled: true,
+                                                                                inside: true
+                                                                            }
+                                }
+                            },
+
+                            xAxis: {
+                                title: {
+                                    enabled: true,
+                                    text: 'Year',
+                                    style: {
+                                        "fontFamily": "Alef Hebrew",
+                                        "fontWeight": "bold",
+                                        "color": "#333333"
+                                    },
+                                    margin: 20,
+                                    x: -10
+                                },
+                                categories: ["1967","1972","1976","1977","1978","1979","1980","1981","1982","1983","1984","1985","1986","1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024"],
+                                labels: {
+                                    useHTML: true
+                                }
+                            },
+                            yAxis: {
+                                title: {
+                                    enabled: true,
+                                    text: 'Population',
+                                    style: {
+                                        "fontFamily": "Alef Hebrew",
+                                        "fontWeight": "bold",
+                                        "color": "#333333"
+                                    },
+                                    margin: 20
+                                },
+                                labels: {
+                                    useHTML: true
+                                }
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            labels: {
+                                style: {
+                                    direction: 'rtl'
+                                },
+                            },
+
+                            tooltip: {
+                                useHTML: true
+                            },
+
+                            series: [{
+                                                                dataLabels: [{
+                                    align: 'center',
+                                    verticalAlign: 'top',
+                                    format: '{y}'
+                                }],
+                                                                name: 'Population',
+                                data: [0,1500,3200,4400,7800,10000,12500,16200,21700,23700,36900,46100,53400,60300,66500,73000,81900,94100,105400,116300,127800,134300,146900,160200,172200,183900,198300,208300,220000,231800,243900,247300,261600,276100,281100,296700,311100,325500,341400,356500,370700,385900,399300,413400,427800,441600,451700,465400,478600,503732,511100],
+                            }]
+                        });
+                    });
+                    </script>
+<div class="right rightEntry"><p>Source: Israeli CBS</p></div>
+<script type="text/javascript">
+                    jQuery(document).ready(function($) {
+                        var title = "Number of Outposts Established per Year";
+                        var subtitle = "";
+                        $('#container6').highcharts({
+                            chart: {
+                                type: 'column',
+                                style: {
+                                    fontFamily: '"Alef Hebrew", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif', // default font
+                                    fontSize: '14px'
+                                }
+                            },
+                            colors: ['#b10e00', '#333333', '#666666', '#999999', '#cccccc', '#000000'],
+                            title: {
+                                text: title,
+                                useHTML: true,
+                                align: 'center',
+                                style: {
+                                    "fontFamily": "Alef Hebrew",
+                                    "fontWeight": "bold",
+                                    "color": "#333333"
+                                },
+                                x: 20,
+                                margin: 20
+                            },
+                            subtitle: {
+                                text: subtitle,
+                                align: 'center',
+                                useHTML: true,
+                                x: 20
+                            },
+                            plotOptions: {
+                                bar: {
+                                    backgroundColor: "none",
+                                    dataLabels: {
+                                        enabled: true,
+                                        useHTML: true,
+                                        fontSize: '20px',
+                                        fontWeight: 'normal'
+                                    },
+                                },
+                                series: {
+                                    dataLabels: {
+                                        enabled: true,
+                                                                                inside: true
+                                                                            }
+                                }
+                            },
+
+                            xAxis: {
+                                title: {
+                                    enabled: true,
+                                    text: 'Years',
+                                    style: {
+                                        "fontFamily": "Alef Hebrew",
+                                        "fontWeight": "bold",
+                                        "color": "#333333"
+                                    },
+                                    margin: 20,
+                                    x: -10
+                                },
+                                categories: ["1991"," 1996"," 1997"," 1998"," 1999"," 2000"," 2001"," 2002"," 2003"," 2004"," 2005"," 2006"," 2007"," 2008"," 2009"," 2010"," 2011"," 2012"," 2013"," 2014"," 2015"," 2016"," 2017"," 2018"," 2019"," 2020"," 2021"," 2022"," 2023"," 2024"," 2025"," 2026"],
+                                labels: {
+                                    useHTML: true
+                                }
+                            },
+                            yAxis: {
+                                title: {
+                                    enabled: true,
+                                    text: 'Number of Outposts Established',
+                                    style: {
+                                        "fontFamily": "Alef Hebrew",
+                                        "fontWeight": "bold",
+                                        "color": "#333333"
+                                    },
+                                    margin: 20
+                                },
+                                labels: {
+                                    useHTML: true
+                                }
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            labels: {
+                                style: {
+                                    direction: 'rtl'
+                                },
+                            },
+
+                            tooltip: {
+                                useHTML: true
+                            },
+
+                            series: [{
+                                                                dataLabels: [{
+                                    align: 'center',
+                                    verticalAlign: 'top',
+                                    format: '{y}'
+                                }],
+                                                                name: 'Number of Outposts Established',
+                                data: [2, 4, 6, 14, 21, 1, 20, 22, 3, 3, 1, 0, 0, 2, 0, 0, 0, 7, 4, 4, 3, 3, 4, 11, 18, 12, 15, 7, 32, 62, 91, 65],
+                            }]
+                        });
+                    });
+                    </script>
+<footer><span class="left">&copy;
+			                2026 Peace Now</span></footer>
+</body></html>
