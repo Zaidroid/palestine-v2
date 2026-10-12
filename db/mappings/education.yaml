@@ -59,25 +59,39 @@ expect:
   min_records: 2123                     # 0.9 × 2359
   max_observations: 2730    # 1.15 x measured emission
 
-# ── FROZEN 2026-08-08 (Stage 7, the v1 cut) ─────────────────────────────────
-# This corpus is finished. ops/v1_liveness.py measured its content unchanged
-# across all 38 vaulted days — identical at both ends and every sample
-# between — once v1's own churn is removed (its re-derived stable_id, its
-# ingest stamp, its flapping geo enrichment). v1 rewrote the file nightly and
-# changed nothing a publisher said.
+# ── LIVE AGAIN 2026-10-12 (the supply line v2 took over) ────────────────────
+# Frozen on 2026-08-08 because the content had not moved in 38 vaulted days.
+# It had not moved because the publisher's file has not: HDX dataset
+# `state-of-palestine-west-bank-schools` (contributed by OCHA oPt; source "the
+# Palestinian Authority - Ministry of Education and UNICEF"; CC BY) carries
+# one shapefile, last replaced on 2021-06-10, and says the register is as of
+# 2015-06-01. The frozen rows said none of that: each was dated by the day v1
+# downloaded it.
 #
-# So it is read from THIS REPOSITORY now, not from /opt/stacks/palestine. The
-# id re-hash, the geo flap and the silent stall stop being risks this
-# category is guarded against and become risks it cannot have. And a fresh
-# clone can load it, which is the difference between open-source code and an
-# open-source project.
+# ops/fetch_hdx_schools.py reads that shapefile from HDX into
+# data/raw/hdx_schools/schools.json, nightly, before the loader, in the record
+# shape t_education already reads. Measured on the day of the cut: 2,359
+# schools fetched, 2,359 matched on the declared identity (the publisher's
+# school number); 2,028 identical in content and 331 corrected, all of them an
+# Arabic name v1 had read in the wrong encoding and the loader could not
+# repair (the letter ف). No school added, none removed.
 #
-# To unfreeze: delete this block and the `cadence`, and re-measure with
-# ops/v1_liveness.py first — a corpus that started moving again is a finding.
+# The publisher's vintage is written once per dataset, not per row (a row's
+# attrs are part of its content, so stamping 2,359 rows would revise all of
+# them): the raw file's metadata carries vintage / vintage_basis / vintage_url
+# / vintage_checked_at, and db/proposed/hdx.sql holds the matching UPDATE of
+# dataset.attrs.
+#
+# THE FROZEN CORPUS STAYS, AS THE FALLBACK. A machine that has never fetched
+# reads data/frozen/education.json.gz instead — additive only: a run reading
+# the fallback never supersedes a held row.
 input:
-  root: data/frozen
-  glob: education.json.gz
-cadence: frozen
+  root: data/raw/hdx_schools
+  glob: schools.json
+  fallback:
+    root: data/frozen
+    glob: education.json.gz
+cadence: daily
 
 notes: |
   NO HONEST DATE EXISTS. Scanned every string and numeric field of all 2,359

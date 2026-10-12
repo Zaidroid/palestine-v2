@@ -414,11 +414,15 @@ def test_water_gho_prefers_numeric_and_drops_unparseable():
 
 # ── Stage 7: the frozen corpora ──────────────────────────────────────────────
 
-FROZEN_CATEGORIES = ("aid_access", "education", "historical",
-                     "infrastructure")
+FROZEN_CATEGORIES = ("aid_access", "historical")
 # Frozen 2026-08-08, live again 2026-09-25 (P1-B.3): v2 fetches them itself
 # and keeps the frozen corpus as the fallback a fresh clone reads.
 REVIVED_CATEGORIES = ("casualties", "demolitions")
+# Live again 2026-10-12 (education and infrastructure, frozen until then) or
+# cut from v1's tree that day (food): each reads its own fetch from HDX and
+# keeps a frozen corpus as the fallback. tests/test_supply_hdx.py holds their
+# input blocks; here they only have to survive v1 disappearing.
+HDX_CATEGORIES = ("education", "infrastructure", "food")
 
 
 def test_frozen_specs_read_this_repository_not_v1() -> None:
@@ -454,7 +458,7 @@ def test_the_unplug_test_frozen_categories_survive_v1_disappearing(
     from pathlib import Path
     import ingest.databank as db
     monkeypatch.setattr(db, "V1_UNIFIED", Path("/nonexistent/v1-is-gone"))
-    for cat in FROZEN_CATEGORIES + REVIVED_CATEGORIES:
+    for cat in FROZEN_CATEGORIES + REVIVED_CATEGORIES + HDX_CATEGORIES:
         report = db.run(cat, dry_run=True)
         assert report["records_read"] > 0, f"{cat} read nothing without v1"
 

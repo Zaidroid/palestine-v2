@@ -1,0 +1,1873 @@
+{
+ "schools": [
+  {
+   "id": "wb-school-ekcswr",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "jenin sec. girls",
+    "governorate": "Ø¬Ù†ÙŠÙ†",
+    "region": "West Bank",
+    "lat": 32.45975900025752,
+    "lon": 35.295674446184194,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "Ø¬Ù†ÙŠÙ†",
+    "coordinates": [
+     35.3,
+     32.45
+    ],
+    "admin_levels": {
+     "level1": "Jenin"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Jenin",
+     "distance_to_border": 16649.999999999844
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "jenin sec. girls (Ø¬Ù†ÙŠÙ†)",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.068Z"
+    }
+   ],
+   "school_name": "jenin sec. girls",
+   "school_name_ar": "Ø¨Ù†Ø§Øª Ø¬Ù†ÙŠÙ† Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©",
+   "school_id": 10111007,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "ec209bbee36798061fe7b42c515ecf4a"
+  },
+  {
+   "id": "wb-school-a2bjxm",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "yousif athmi pr boys",
+    "governorate": "Ø¬Ù†ÙŠÙ†",
+    "region": "West Bank",
+    "lat": 32.465224219158245,
+    "lon": 35.307393952223265,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "Ø¬Ù†ÙŠÙ†",
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "yousif athmi pr boys (Ø¬Ù†ÙŠÙ†)",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.069Z"
+    }
+   ],
+   "school_name": "yousif athmi pr boys",
+   "school_name_ar": "ÙŠÙˆØ³Ù Ø§Ù„Ø¹Ø¸Ù…Ø© Ø§Ù„Ø§Ø³Ø§Ø³ÙŠØ© Ù„Ù„Ø¨Ù†ÙŠÙ†",
+   "school_id": 10111096,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "fa2f7c6469a2373872fb1af1d5152cdf"
+  },
+  {
+   "id": "wb-school-rmknbb",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "That Al Netakeen girls basic",
+    "governorate": "ÙŠØ·Ø§",
+    "region": "West Bank",
+    "lat": 31.44642421354075,
+    "lon": 35.076992014349685,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "ÙŠØ·Ø§",
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "That Al Netakeen girls basic (ÙŠØ·Ø§)",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.119Z"
+    }
+   ],
+   "school_name": "That Al Netakeen girls basic",
+   "school_name_ar": "Â Â Â Â Â Â Â Â Â Â Â  Ø¨Ù†Ø§Øª Ø°Ø§Øª Ø§Ù„Ù†Ø·Ø§Ù‚ÙŠÙ† Ø§Ù„Ø§Ø³Ø§Ø³ÙŠØ©",
+   "school_id": 23112030,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "b5f23840da6dce7a706ac99a7fec372a"
+  },
+  {
+   "id": "wb-school-7kjpoe",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Ø§Ù„ÙØ±ÙŠØ± Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©-Ø§Ù„Ø¨Ø§Ø¨ Ø§Ù„Ø¬Ø¯ÙŠØ¯",
+    "governorate": "Ø§Ù„Ù‚Ø¯Ø³",
+    "region": "West Bank",
+    "lat": 31.77825582317763,
+    "lon": 35.22540335319576,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "Ø§Ù„Ù‚Ø¯Ø³ (Ø¨ÙŠØª Ø§Ù„Ù…Ù‚Ø¯Ø³)",
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "Ø§Ù„ÙØ±ÙŠØ± Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©-Ø§Ù„Ø¨Ø§Ø¨ Ø§Ù„Ø¬Ø¯ÙŠØ¯ (Ø§Ù„Ù‚Ø¯Ø³ (Ø¨ÙŠØª Ø§Ù„Ù…Ù‚Ø¯Ø³))",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.116Z"
+    }
+   ],
+   "school_name": "Ø§Ù„ÙØ±ÙŠØ± Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©-Ø§Ù„Ø¨Ø§Ø¨ Ø§Ù„Ø¬Ø¯ÙŠØ¯",
+   "school_name_ar": "Ø§Ù„ÙØ±ÙŠØ± Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©-Ø§Ù„Ø¨Ø§Ø¨ Ø§Ù„Ø¬Ø¯ÙŠØ¯",
+   "school_id": 20321726,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "54e7ed80d1d86bf21cfb4ab38972838d"
+  },
+  {
+   "id": "wb-school-wgcwhf",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "battir.s.s.f.b",
+    "governorate": "Ø¨ÙŠØª Ù„Ø­Ù…",
+    "region": "West Bank",
+    "lat": 31.732085000342977,
+    "lon": 35.14201900004764,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "Ø¨ØªÙŠØ±**",
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "battir.s.s.f.b (Ø¨ØªÙŠØ±**)",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.118Z"
+    }
+   ],
+   "school_name": "battir.s.s.f.b",
+   "school_name_ar": "Ø°ÙƒÙˆØ± Ø¨ØªÙŠØ± Ø§Ù„Ø«Ø§Ù†ÙˆÙŠØ©",
+   "school_id": 22112108,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "e2ff16cc1804ca32ac23eaad8bbe146f"
+  },
+  {
+   "id": "wb-school-2xs765",
+   "date": "2026-08-07",
+   "category": "education",
+   "event_type": "school_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "hifa pr girls",
+    "governorate": "Ø¬Ù†ÙŠÙ†",
+    "region": "West Bank",
+    "lat": 32.46365249489253,
+    "lon": 35.3086622345179,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "locality": "Ø¬Ù†ÙŠÙ†",
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "students"
+   },
+   "description": "hifa pr girls (Ø¬Ù†ÙŠÙ†)",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.069Z"
+    }
+   ],
+   "school_name": "hifa pr girls",
+   "school_name_ar": "Ø­ÙŠÙØ§ Ø§Ù„Ø§Ø³Ø§Ø³ÙŠØ© Ù„Ù„Ø¨Ù†Ø§Øª",
+   "school_id": 10111180,
+   "school_type": "Unknown",
+   "education_level": null,
+   "school_status": "Active",
+   "stable_id": "011efc5f113e83056d23b4d5eb0409de"
+  }
+ ],
+ "village_boundaries": [
+  {
+   "id": "wb-village-7yov4g",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "locality_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Unknown Locality",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 32.51686955552672,
+    "lon": 35.17841313691793,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "persons"
+   },
+   "description": "Unknown Locality",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.416Z"
+    }
+   ],
+   "locality_name": "Unknown Locality",
+   "locality_type": "Village",
+   "population": null,
+   "area_km2": null,
+   "stable_id": "8acaac02751c8a683ebc337c7c180aae"
+  },
+  {
+   "id": "wb-village-u6c9n2",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "locality_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Unknown Locality",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 31.595597875448135,
+    "lon": 34.95730593600354,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "persons"
+   },
+   "description": "Unknown Locality",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.426Z"
+    }
+   ],
+   "locality_name": "Unknown Locality",
+   "locality_type": "Village",
+   "population": null,
+   "area_km2": null,
+   "stable_id": "ca2746c00aac6d64102ea1ff0770f5ed"
+  },
+  {
+   "id": "wb-village-1fjg",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "locality_record",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Unknown Locality",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 31.825554651474125,
+    "lon": 35.04414128531961,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "persons"
+   },
+   "description": "Unknown Locality",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.425Z"
+    }
+   ],
+   "locality_name": "Unknown Locality",
+   "locality_type": "Village",
+   "population": null,
+   "area_km2": null,
+   "stable_id": "a99e766ec43b73cbd109133002088212"
+  }
+ ],
+ "barrier": [
+  {
+   "id": "wb-barrier-56i4z4",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "barrier_segment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Separation Barrier Segment",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 3562238.0814999994,
+    "lon": 684672.9753999999,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "km"
+   },
+   "description": "Concrete segment",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.613Z"
+    }
+   ],
+   "barrier_type": "Concrete",
+   "barrier_status": "Constructed",
+   "length_km": null,
+   "construction_year": null,
+   "stable_id": "b856085710c974d3a34b97a50f724beb"
+  },
+  {
+   "id": "wb-barrier-ije6yd",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "barrier_segment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Separation Barrier Segment",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": null,
+    "lon": null,
+    "precision": "region",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "km"
+   },
+   "description": "NA segment",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.614Z"
+    }
+   ],
+   "barrier_type": "NA",
+   "barrier_status": "Projected",
+   "length_km": null,
+   "construction_year": null,
+   "stable_id": "434767d508352205a35922ed3397ab91"
+  },
+  {
+   "id": "wb-barrier-6gas8c",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "barrier_segment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Separation Barrier Segment",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 3518667.9093999993,
+    "lon": 714178.5302999998,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "km"
+   },
+   "description": "Barrier segment",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.616Z"
+    }
+   ],
+   "barrier_type": "Wall",
+   "barrier_status": "Constructed",
+   "length_km": null,
+   "construction_year": null,
+   "stable_id": "053c75713ae4f377a9427ef2a5e894a7"
+  },
+  {
+   "id": "wb-barrier-ije5co",
+   "date": "2026-08-07",
+   "category": "infrastructure",
+   "event_type": "barrier_segment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Separation Barrier Segment",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 3560904.9043000005,
+    "lon": 693310.3973000003,
+    "precision": "exact",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 0,
+    "unit": "km"
+   },
+   "description": "NA segment",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1035,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "HDX",
+     "organization": "HDX",
+     "url": null,
+     "license": "varies",
+     "fetched_at": "2026-08-07T03:37:09.614Z"
+    }
+   ],
+   "barrier_type": "NA",
+   "barrier_status": "Projected",
+   "length_km": null,
+   "construction_year": null,
+   "stable_id": "5e70d4a9add97393f9b81f7e22c908db"
+  }
+ ],
+ "unosat": [
+  {
+   "id": "unosat-cda-governorate-2023-10-10",
+   "date": "2023-10-10",
+   "category": "infrastructure",
+   "event_type": "satellite_damage_assessment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Governorate",
+    "governorate": null,
+    "region": "Gaza Strip",
+    "lat": null,
+    "lon": null,
+    "precision": "region",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "structures",
+    "structures_destroyed": null,
+    "structures_severely_damaged": 148,
+    "structures_moderately_damaged": 365,
+    "structures_possibly_damaged": null,
+    "structures_total_affected": 741,
+    "housing_units_damaged": null,
+    "percent_structures_damaged": null
+   },
+   "description": "UNOSAT satellite damage assessment (governorate) as of 2023-10-10: ? destroyed, 741 total affected structures",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 3,
+    "baseline_date": "2023-10-07",
+    "conflict_phase": "gaza-war-2023"
+   },
+   "quality": {
+    "score": 1,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "UNOSAT Gaza damage assessments",
+     "organization": "UNITAR/UNOSAT",
+     "url": "https://data.humdata.org/dataset/unosat-gaza-governorate-damage-assessment-gaza-strip-occupied-palestinian-territory",
+     "license": "CC-BY-SA"
+    }
+   ],
+   "assessment_scope": "governorate",
+   "geodatabase_url": "https://unosat.org/static/unosat_filesystem/3690/UNOSAT_CE20231007PSE_Gaza_Governorate_DA_20231010_GDB.zip",
+   "stable_id": "c743a0b539c34bf66a1bbe6cd7ce8f27"
+  },
+  {
+   "id": "unosat-cda-strip-2024-09-03",
+   "date": "2024-09-03",
+   "category": "infrastructure",
+   "event_type": "satellite_damage_assessment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Strip",
+    "governorate": null,
+    "region": "Gaza Strip",
+    "lat": null,
+    "lon": null,
+    "precision": "region",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "structures",
+    "structures_destroyed": 52564,
+    "structures_severely_damaged": 18913,
+    "structures_moderately_damaged": 56710,
+    "structures_possibly_damaged": 35591,
+    "structures_total_affected": 163778,
+    "housing_units_damaged": null,
+    "percent_structures_damaged": null
+   },
+   "description": "UNOSAT satellite damage assessment (strip) as of 2024-09-03: 52,564 destroyed, 163,778 total affected structures",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 332,
+    "baseline_date": "2023-10-07",
+    "conflict_phase": "gaza-war-2023"
+   },
+   "quality": {
+    "score": 1,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "UNOSAT Gaza damage assessments",
+     "organization": "UNITAR/UNOSAT",
+     "url": "https://data.humdata.org/dataset/unosat-gaza-strip-comprehensive-damage-assessment-september-2024",
+     "license": "CC-BY-SA"
+    }
+   ],
+   "assessment_scope": "strip",
+   "geodatabase_url": "https://unosat.org/static/unosat_filesystem/3984/OCHA-OPT-017_UNOSAT_A3_Gaza_Strip_OPT_CDA_GDB_06092024.zip",
+   "stable_id": "a611a3f80736b1045765d7c4c62a7f72"
+  },
+  {
+   "id": "unosat-cda-governorate-2025-09-22",
+   "date": "2025-09-22",
+   "category": "infrastructure",
+   "event_type": "satellite_damage_assessment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Governorate",
+    "governorate": null,
+    "region": "Gaza Strip",
+    "lat": null,
+    "lon": null,
+    "precision": "region",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "structures",
+    "structures_destroyed": 17734,
+    "structures_severely_damaged": 4345,
+    "structures_moderately_damaged": 11201,
+    "structures_possibly_damaged": 7941,
+    "structures_total_affected": 41221,
+    "housing_units_damaged": 81159,
+    "percent_structures_damaged": 83
+   },
+   "description": "UNOSAT satellite damage assessment (governorate) as of 2025-09-22: 17,734 destroyed, 41,221 total affected structures",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 716,
+    "baseline_date": "2023-10-07",
+    "conflict_phase": "ongoing"
+   },
+   "quality": {
+    "score": 1,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "UNOSAT Gaza damage assessments",
+     "organization": "UNITAR/UNOSAT",
+     "url": "https://data.humdata.org/dataset/unosat-gaza-governorate-comprehensive-damage-assessment-22-23-september-2025",
+     "license": "CC-BY-SA"
+    }
+   ],
+   "assessment_scope": "governorate",
+   "geodatabase_url": "https://unosat.org/static/unosat_filesystem/4205/OCHA-OPT-030_UNOSAT_A3_Gaza_Governorate_CDA_22-23September2025_GDB.zip",
+   "stable_id": "2556fed71d8636b787a54c09af62fb6d"
+  },
+  {
+   "id": "unosat-cda-strip-2025-10-11",
+   "date": "2025-10-11",
+   "category": "infrastructure",
+   "event_type": "satellite_damage_assessment",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Strip",
+    "governorate": null,
+    "region": "Gaza Strip",
+    "lat": null,
+    "lon": null,
+    "precision": "region",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "structures",
+    "structures_destroyed": 123464,
+    "structures_severely_damaged": 17116,
+    "structures_moderately_damaged": 33857,
+    "structures_possibly_damaged": 23836,
+    "structures_total_affected": 198273,
+    "housing_units_damaged": 320622,
+    "percent_structures_damaged": 81
+   },
+   "description": "UNOSAT satellite damage assessment (strip) as of 2025-10-11: 123,464 destroyed, 198,273 total affected structures",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 735,
+    "baseline_date": "2023-10-07",
+    "conflict_phase": "ongoing"
+   },
+   "quality": {
+    "score": 1,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "UNOSAT Gaza damage assessments",
+     "organization": "UNITAR/UNOSAT",
+     "url": "https://data.humdata.org/dataset/unosat-gaza-strip-comprehensive-damage-assessment-11-october-2025",
+     "license": "CC-BY-SA"
+    }
+   ],
+   "assessment_scope": "strip",
+   "geodatabase_url": "https://unosat.org/static/unosat_filesystem/4213/OCHA-CBPF-OPT-031_UNOSAT_Gaza_Strip_CDA_11October2025_GDB.zip",
+   "stable_id": "3e9843d9ff077a4e76a162f576d62383"
+  }
+ ],
+ "food": [
+  {
+   "id": "wfp-price-2007-01-15-rskz7m",
+   "date": "2007-01-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza",
+    "governorate": "Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.51,
+    "lon": 34.46,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 2,
+    "price_usd": 0.47
+   },
+   "description": "Bread (Retail) at Gaza: 2 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -6109,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "winter"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Bread",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "bcae4afad7fb9728c4c905b6ba9d511e"
+  },
+  {
+   "id": "wfp-price-2007-01-15-ions5z",
+   "date": "2007-01-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza",
+    "governorate": "Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.51,
+    "lon": 34.46,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 13,
+    "price_usd": 3.08
+   },
+   "description": "Rice (long grain) (Retail) at Gaza: 13 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -6109,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "winter"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Rice (long grain)",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "eac4eba0c989e8c3dfd23170c58e127e"
+  },
+  {
+   "id": "wfp-price-2007-01-15-iim22x",
+   "date": "2007-01-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza",
+    "governorate": "Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.51,
+    "lon": 34.46,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 4,
+    "price_usd": 0.95
+   },
+   "description": "Rice (short grain, low quality, local) (Retail) at Gaza: 4 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -6109,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "winter"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Rice (short grain, low quality, local)",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "06cb7f87b2cfd22bb644aa7df40c3041"
+  },
+  {
+   "id": "wfp-price-2007-01-15-ng5foo",
+   "date": "2007-01-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza",
+    "governorate": "Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.51,
+    "lon": 34.46,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/L",
+    "price": 6.5,
+    "price_usd": 1.54
+   },
+   "description": "Milk (pasteurized) (Retail) at Gaza: 6.5 ILS/L",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -6109,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "winter"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Milk (pasteurized)",
+   "commodity_category": "milk and dairy",
+   "price_type": "Retail",
+   "stable_id": "c671f4239d5e842f6c500b9d30a42c73"
+  },
+  {
+   "id": "wfp-price-2014-05-15-ng5foo",
+   "date": "2014-05-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza",
+    "governorate": "Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.51,
+    "lon": 34.46,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 8,
+    "price_usd": 2.31
+   },
+   "description": "Milk (pasteurized) (Retail) at Gaza: 8 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -3432,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "spring"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Milk (pasteurized)",
+   "commodity_category": "milk and dairy",
+   "price_type": "Retail",
+   "stable_id": "17149f055d0932007971d6059d005cde"
+  },
+  {
+   "id": "wfp-price-2017-01-15-xxwmq6",
+   "date": "2017-01-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Bethlehem",
+    "governorate": "Bethlehem",
+    "region": "West Bank",
+    "lat": 31.71,
+    "lon": 35.2,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     35.2,
+     31.7
+    ],
+    "admin_levels": {
+     "level1": "Bethlehem"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Bethlehem",
+     "distance_to_border": 33300.00000000047
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/60 KG",
+    "price": 140,
+    "price_usd": 36.59
+   },
+   "description": "Wheat flour (Retail) at Bethlehem: 140 ILS/60 KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -2456,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "winter"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Wheat flour",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "5bcb0db40be98dea33e30df0087bf0bd"
+  },
+  {
+   "id": "wfp-price-2014-05-15-2ksihv",
+   "date": "2014-05-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza North",
+    "governorate": "North Gaza",
+    "region": "Gaza Strip",
+    "lat": 31.54,
+    "lon": 34.48,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 2.8,
+    "price_usd": 0.81
+   },
+   "description": "Bread (Retail) at Gaza North: 2.8 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -3432,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "spring"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Bread",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "cb11d374f71d1c5435d598c6b652e8a5"
+  },
+  {
+   "id": "wfp-price-2014-05-15-ezi2q2",
+   "date": "2014-05-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Qalqiliya",
+    "governorate": "Qalqilya",
+    "region": "West Bank",
+    "lat": 32.19,
+    "lon": 34.98,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 4,
+    "price_usd": 1.16
+   },
+   "description": "Bread (Retail) at Qalqiliya: 4 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": -3432,
+    "baseline_period": "before_baseline",
+    "conflict_phase": "pre-escalation",
+    "season": "spring"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Bread",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "83b9c5b9db220e65f6f13b29830aea18"
+  },
+  {
+   "id": "wfp-price-2026-08-15-u4z106",
+   "date": "2026-08-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Strip",
+    "governorate": "Kan Younis",
+    "region": "Gaza Strip",
+    "lat": 31.35,
+    "lon": 34.33,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "coordinates": [
+     34.45,
+     31.5
+    ],
+    "admin_levels": {
+     "level1": "Gaza"
+    },
+    "region_type": "urban",
+    "proximity": {
+     "nearest_city": "Gaza City",
+     "distance_to_border": 11100.000000000158
+    }
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/KG",
+    "price": 4.23,
+    "price_usd": 1.43
+   },
+   "description": "Bread (Retail) at Gaza Strip: 4.23 ILS/KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1043,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "summer"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Bread",
+   "commodity_category": "cereals and tubers",
+   "price_type": "Retail",
+   "stable_id": "7ca3d1b32340e8a9d2d30c228f4a64c2"
+  },
+  {
+   "id": "wfp-price-2026-09-15-udk86b",
+   "date": "2026-09-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "West Bank",
+    "governorate": "Ramallah and Albireh",
+    "region": "West Bank",
+    "lat": 31.97,
+    "lon": 35.33,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/L",
+    "price": 8.39,
+    "price_usd": 2.76
+   },
+   "description": "Fuel (diesel) (Retail) at West Bank: 8.39 ILS/L",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1074,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "autumn"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Fuel (diesel)",
+   "commodity_category": "non-food",
+   "price_type": "Retail",
+   "stable_id": "add54e477f2cbf2cdf119b028444e0cb"
+  },
+  {
+   "id": "wfp-price-2026-09-15-atkl4g",
+   "date": "2026-09-15",
+   "category": "food",
+   "event_type": "food_price",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "West Bank",
+    "governorate": "Ramallah and Albireh",
+    "region": "West Bank",
+    "lat": 31.97,
+    "lon": 35.33,
+    "precision": "market",
+    "gazetteer_key": null,
+    "admin1": null,
+    "admin2": null,
+    "admin2_pcode": null,
+    "region_type": null
+   },
+   "metrics": {
+    "killed": 0,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 0,
+    "value": 0,
+    "unit": "ILS/12 KG",
+    "price": 87,
+    "price_usd": 28.62
+   },
+   "description": "Fuel (gas, cooking) (Retail) at West Bank: 87 ILS/12 KG",
+   "actors": [],
+   "severity_index": 0,
+   "temporal_context": {
+    "days_since_baseline": 1074,
+    "baseline_period": "after_baseline",
+    "conflict_phase": "ongoing-conflict",
+    "season": "autumn"
+   },
+   "quality": {
+    "score": 0,
+    "completeness": 0,
+    "consistency": 0,
+    "accuracy": 0,
+    "confidence": "low",
+    "verified": false
+   },
+   "sources": [
+    {
+     "name": "WFP Food Prices",
+     "organization": "World Food Programme",
+     "url": "https://data.humdata.org/dataset/wfp-food-prices-for-state-of-palestine",
+     "license": "CC-BY-IGO"
+    }
+   ],
+   "commodity": "Fuel (gas, cooking)",
+   "commodity_category": "non-food",
+   "price_type": "Retail",
+   "stable_id": "05f627922d2d5e8e356374136cc223e1"
+  }
+ ]
+}

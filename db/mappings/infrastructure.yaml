@@ -39,6 +39,14 @@ datasets:
   - key: v1_infrastructure_hdx
     source: hdx
     overrides:
+      place:
+        min_located_pct: 0.56         # MEASURED 2026-10-12: 341 of 603 = 0.566.
+                                      #   341 of the 342 village boundaries land
+                                      #   in a governorate by their point; the
+                                      #   261 barrier segments never can (their
+                                      #   coordinates are metres). This is the
+                                      #   only dataset here that carries real
+                                      #   geo, so it is the one the floor guards.
       identity:
         # 603 West Bank barrier segments whose location.name is the literal
         # "Unknown Locality" or "Separation Barrier Segment" — the SOURCE has
@@ -97,12 +105,32 @@ occurred_at:
 place:
   strategy: pcode                # location.admin2_pcode, 3261/3537 = 0.922
   fallback: [latlon, region]     # FORMAT EXTENSION — see open questions
-  latlon_exclude: [barrier_segment]   # barrier lat/lon are PROJECTED METRES,
-                                      #   not degrees — see notes. FORMAT
-                                      #   EXTENSION, and a hard safety rule.
-  min_located_pct: 0.92         # the measured pcode rate; a floor, not a
-                                 #   target — the region tier means nothing
-                                 #   should actually land unresolved
+  latlon_exclude:
+    - barrier_segment            # barrier lat/lon are PROJECTED METRES, not
+                                 #   degrees (the file's own .prj: WGS 84 / UTM
+                                 #   zone 36N) — see notes. A hard safety rule.
+    - infrastructure_damage      # ADDED 2026-10-12, and it is what makes
+                                 #   migration 101 hold. Tech for Palestine's
+                                 #   four series are totals for the whole
+                                 #   Strip; every record carries the same
+                                 #   point (31.5, 34.466667) and says
+                                 #   precision 'region'. The latlon rung read
+                                 #   that point as Gaza GOVERNORATE (place
+                                 #   15). Migration 101 closed the place-15
+                                 #   copy and kept the Strip's (place 1) on
+                                 #   the belief that the loader emits place 1;
+                                 #   it emitted 15. Measured after 101, before
+                                 #   this line: 2,920 emitted identities, 0
+                                 #   held, and every one of them carrying the
+                                 #   stable id of a current place-1 row — a
+                                 #   real run refuses that at the stable-id
+                                 #   index and fails the category. With this
+                                 #   line the rung is skipped, the region rung
+                                 #   lands the Strip, and 2,920 of 2,920 match.
+  # NO CATEGORY-WIDE min_located_pct ANY MORE. It was 0.92, "the measured
+  # pcode rate", and 2,920 of the 3,261 rows that carried it were the Strip
+  # totals above, located only by a centroid that was never a place. The floor
+  # that means something is per dataset: see v1_infrastructure_hdx.
 
 stable_id: stable_id             # 3537 distinct; `id` also 3537 distinct
 attrs_passthrough:
@@ -129,25 +157,45 @@ expect:
                                  #   new fact — which the injectivity check
                                  #   structurally cannot see.
 
-# ── FROZEN 2026-08-08 (Stage 7, the v1 cut) ─────────────────────────────────
-# This corpus is finished. ops/v1_liveness.py measured its content unchanged
-# across all 38 vaulted days — identical at both ends and every sample
-# between — once v1's own churn is removed (its re-derived stable_id, its
-# ingest stamp, its flapping geo enrichment). v1 rewrote the file nightly and
-# changed nothing a publisher said.
+# ── LIVE AGAIN 2026-10-12 (the supply line v2 took over) ────────────────────
+# Frozen on 2026-08-08 as one finished corpus. Only one of its four parts is
+# finished. ops/fetch_hdx_infrastructure.py now writes each part to its own
+# file under data/raw/infrastructure/, nightly, before the loader, in the
+# record shape t_infrastructure already reads:
 #
-# So it is read from THIS REPOSITORY now, not from /opt/stacks/palestine. The
-# id re-hash, the geo flap and the silent stall stop being risks this
-# category is guarded against and become risks it cannot have. And a fresh
-# clone can load it, which is the difference between open-source code and an
-# open-source project.
+#   tech4palestine.json      the 2,920 Tech for Palestine records, COPIED from
+#                            data/frozen/infrastructure.json.gz unchanged. The
+#                            series ended upstream on 2025-10-05; nothing is
+#                            fetched for it.
+#   barrier.json             HDX `west-bank-barrier` (OCHA oPt, CC BY), the
+#                            Barrier as of January 2018: 261 segments.
+#   village_boundaries.json  HDX `state-of-palestine-village-boundary-in-the-
+#                            west-bank` (OCHA oPt; source PA Ministry of
+#                            Planning; CC BY): 342 Mandate-era boundaries.
+#   unosat.json              UNOSAT's Gaza damage assessments (CC BY-SA), one
+#                            per assessment, from the UNOSAT datasets on HDX.
 #
-# To unfreeze: delete this block and the `cadence`, and re-measure with
-# ops/v1_liveness.py first — a corpus that started moving again is a finding.
+# Measured on the day of the cut, per dataset, identity AND content:
+#   v1_infrastructure_tech4palestine  2,920 held · 2,920 matched
+#   v1_infrastructure_hdx               603 held ·   603 matched
+#   v1_infrastructure_unosat             14 held ·    14 matched
+# Nothing new, nothing revised, nothing left unmatched. Neither HDX file has
+# been replaced since July 2019, and UNOSAT has put no Gaza damage assessment
+# on HDX after the one of 11 October 2025.
+#
+# Each raw file's metadata carries the publisher's vintage. The two registers
+# share one dataset and have two different dates (the Barrier 2018-01-01, the
+# boundaries 2019-07-24), so db/proposed/hdx.sql writes them per indicator.
+#
+# THE FROZEN CORPUS STAYS, AS THE FALLBACK. A machine that has never fetched
+# reads data/frozen/infrastructure.json.gz instead — additive only.
 input:
-  root: data/frozen
-  glob: infrastructure.json.gz
-cadence: frozen
+  root: data/raw/infrastructure
+  glob: [tech4palestine.json, barrier.json, village_boundaries.json, unosat.json]
+  fallback:
+    root: data/frozen
+    glob: infrastructure.json.gz
+cadence: daily
 
 notes: |
   FOUR SUB-DATASETS, MEASURED. event_type × source is 1:1 except that HDX

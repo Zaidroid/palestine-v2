@@ -103,6 +103,32 @@ expect:
   min_records: 24000              # ≈0.9 × 26,814
   max_observations: 30900
 
+# ── CUT FROM V1 2026-10-12 (the supply line v2 took over) ────────────────────
+# Until this day the loader read v1's unified tree for food: v1 downloaded
+# WFP's CSV from HDX every night, rewrote it as 79 quarterly files, and those
+# were the input. ops/fetch_wfp_food.py now reads the same CSV from HDX
+# (dataset wfp-food-prices-for-state-of-palestine) into
+# data/raw/wfp_food/food_prices.json, nightly, before the loader — in the
+# record shape t_food already reads, so nothing about a row changes. Measured
+# on the day of the cut: 27,235 rows fetched, 27,235 matched to a held row on
+# identity AND content, 0 revised, 0 new.
+#
+# THE FALLBACK. A machine that has never fetched (a fresh clone) reads
+# data/frozen/food.json.gz: v1's unified food as it stood on the day of the
+# cut (27,235 records, 2007-01 to 2026-09). Additive only: a run reading the
+# fallback never supersedes or closes a held row.
+#
+# The raw file's metadata carries what WFP says about the file: `vintage`
+# (the day WFP last replaced it on HDX), `dataset_date`, the licence as HDX
+# words it, and the 41 commodity names.
+input:
+  root: data/raw/wfp_food
+  glob: food_prices.json
+  fallback:
+    root: data/frozen
+    glob: food.json.gz
+cadence: daily
+
 notes: |
   MEASURED by a full census of all 78 quarterly partitions (2007-Q1 …
   2026-Q2). One key-set across all 78 files — the record shape does not drift
@@ -177,6 +203,24 @@ identity:
   # 26,814 WFP market prices: one per (commodity indicator, day, market).
   # MEASURED 26,814 / 26,814 injective.
   fields: [indicator, occurred_at, place_id]
+  # DO NOT DECLARE `generation: complete` HERE — WFP'S FILE FLAPS (2026-10-12).
+  # The CSV looks like a whole publication (every month from 2007-01 in one
+  # file), and on the day of the cut the databank held 231 current rows that
+  # were not in it. They are not withdrawals. The vault's 64 nightly copies of
+  # this input (2026-08-07 to 2026-10-12) show the file replaced about once a
+  # week, ten times, and five of the ten came back SHORT by rows scattered over
+  # 92 to 185 different months; the next file restored every one of them
+  # (1,354 of 1,354, 784 of 784, 369 of 369, 210 of 210; the fifth is tonight's):
+  #   2026-08-17  25,814 rows (1,354 fewer)   2026-08-24  27,234 (all back)
+  #   2026-08-31  26,450 (784 fewer)          2026-09-07  27,234 (all back)
+  #   2026-09-14  26,865 (369 fewer)          2026-09-21  27,234 (all back)
+  #   2026-09-29  27,256 (210 fewer, 232 new) 2026-10-05  27,466 (all back)
+  #   2026-10-12  27,235 (231 fewer)
+  # 2,300 different price points left the file and returned inside those nine
+  # weeks. Without `generation` the databank keeps a point once WFP has
+  # published it, which is why it holds the full 27,466 today; with it, every
+  # short week would close hundreds of good rows (or fail the run on the
+  # ceiling) and the next week would write them again.
 
 registry:
   max_unclassified: 0

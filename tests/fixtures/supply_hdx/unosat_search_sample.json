@@ -1,0 +1,206 @@
+{
+ "success": true,
+ "result": {
+  "count": 8,
+  "results": [
+   {
+    "name": "unosat-gaza-strip-comprehensive-damage-assessment-11-october-2025",
+    "title": "UNOSAT Gaza Strip Comprehensive Damage Assessment - 11 October 2025",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates a satellite imagery based comprehensive assessment of damage and destruction to structures within the area of interest in the Gaza Strip, Occupied Palestinian Territory. The analysis is based on images collected on 11 October 2025 when compared to images collected on 01 May 2023, 10 May 2023, 18 September 2023, 15 October 2023, 07 November 2023, 26 November 2023, 06-07 January 2024, 29 February 2024, 31 March-01 April 2024, 03 May 2024, 06 July 2024, 03-06 September 2024, 01 December 2024, 25 February 2025, 04 April 2025, and 08 July 2025.  \r\n  \r\nAccording to satellite imagery analysis, as of 11 October 2025, approximately 81% of all structures in the Gaza Strip are damaged. Among the damaged structures, UNOSAT identified 123,464 destroyed structures, 17,116 severely damaged structures, 33,857 moderately damaged structures, and 23,836 possibly damaged structures for a total of 198,273 affected structures. Compared to the 8 July 2025 assessment, this corresponds to a 4% increase in total affected structures, and an 18% increase in destroyed structures, indicating worsening damage. An estimated 320,622 housing units have been damaged, 12% more than on 08 July 2025. The governorates of Gaza and North Gaza experienced the largest increases in damage compared to July 2025, with approximately 4,243 newly affected structures in Gaza and 1,442 in North Gaza. According to the Population Movement Monitoring – 3rd Monthly Update from September 1–30, 379,851 people were displaced in September, with the majority of them being within the Gaza Governorate. In October, over 0.5 million people were displaced from the Gaza Governorate to the southern Governorates (until October 10). This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2025-10-31T00:00:00 TO 2025-10-31T23:59:59]",
+    "last_modified": "2025-10-31T14:22:47",
+    "metadata_created": "2025-11-03T10:36:29.154346",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "OCHA-CBPF-OPT-031_UNOSAT_Gaza_Strip_CDA_11October2025_GDB.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4213/OCHA-CBPF-OPT-031_UNOSAT_Gaza_Strip_CDA_11October2025_GDB.zip",
+      "last_modified": "2025-10-31T14:22:47"
+     }
+    ]
+   },
+   {
+    "name": "unosat-gaza-governorate-comprehensive-damage-assessment-22-23-september-2025",
+    "title": "UNOSAT Gaza Governorate Comprehensive Damage Assessment - 22- 23 September 2025",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates a satellite imagery based comprehensive assessment of damage and destruction to structures within the area of interest in Gaza City, Gaza Governorate, Gaza Strip, Occupied Palestinian Territory. The analysis is based on satellite imagery collected on 22–23 September 2025, compared with imagery from 8 July 2025. Additional satellite images used for reference and temporal comparison are listed in the copyright section.  \r\n  \r\nAccording to satellite imagery analysis, as of 22-23 September 2025, approximately 83% of all structures in Gaza City are damaged. Among the damaged structures, UNOSAT identified 17,734 destroyed structures, 4,345 severely damaged structures, 11,201 moderately damaged structures, and 7,941 possibly damaged structures for a total of 41,221 affected structures. Compared to the 8 July 2025 assessment, this corresponds to a 7% increase in total affected structures, and a 36% increase in destroyed structures, indicating worsening damage. An estimated 81,159 housing units have been damaged, 16% more than on 8 July 2025, which corresponds to approximately 467,523 displaced persons, according to SMC Partners' assessment (4 October 2025). The neighborhoods of Az Zaitoun and At Turukman - Ijdeedeh experienced the largest increases in damage compared to July 2025, with approximately 2,568 newly affected structures in Az Zaitoun and 1,440 in At Turukman -Ijdeedeh. This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2025-10-07T00:00:00 TO 2025-10-07T23:59:59]",
+    "last_modified": "2025-10-08T10:20:41",
+    "metadata_created": "2025-10-09T09:35:19.689616",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "OCHA-OPT-030_UNOSAT_A3_Gaza_Governorate_CDA_22-23September2025_GDB.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4205/OCHA-OPT-030_UNOSAT_A3_Gaza_Governorate_CDA_22-23September2025_GDB.zip",
+      "last_modified": "2025-10-08T10:20:41"
+     }
+    ]
+   },
+   {
+    "name": "unosat-gaza-governorate-comprehensive-damage-assessment-23-september-2025",
+    "title": "UNOSAT Gaza Governorate Comprehensive Damage Assessment - 23 September 2025",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates a satellite imagery based comprehensive assessment of damage and destruction to structures within the area of interest in the Gaza City, Gaza Governorate, Gaza Strip, Occupied Palestinian Territory. The analysis is based on satellite imagery collected on 22–23 September 2025, compared with imagery from 8 July 2025. Additional satellite images used for reference and temporal comparison are listed in the copyright section.  \r\n  \r\nAccording to satellite imagery analysis conducted with satellite images collected on 22-23 September, approximately 83% of all structures in Gaza City are damaged. Between the period of 8 July – 23 Sep 23, 2025, UNOSAT identified 17,734 destroyed structures, 4,345 severely damaged structures, 11,201 moderately damaged structures, and 7,941 possibly damaged structures for a total of 41,221 affected structures. Compared to the 8 July 2025 assessment, this corresponds to a 7% increase in total affected structures, and a 36% increase in destroyed structures, indicating worsening damage. An estimated 81,159 housing units are damaged, 16% more than on 8 July 2025, which corresponds to approximately 467,523 displaced persons, according to SMC Partners' assessment (4 October 2025). The neighbourhoods of Az Zaitoun and At Turukman - Ijdeedeh experienced the largest increases in damage compared to July 2025, with approximately 2,568 newly affected structures in Az Zaitoun and 1,440 in At Turukman - Ijdeedeh. This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2025-10-07T00:00:00 TO 2025-10-07T23:59:59]",
+    "last_modified": "2025-10-07T15:20:50",
+    "metadata_created": "2025-10-08T09:35:17.202485",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "OCHA-OPT-030_UNOSAT_A3_Gaza_Governorate_CDA_22-23September2025_GDB_zip.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4205/OCHA-OPT-030_UNOSAT_A3_Gaza_Governorate_CDA_22-23September2025_GDB_zip.zip",
+      "last_modified": "2025-10-07T15:20:50"
+     }
+    ]
+   },
+   {
+    "name": "unosat-gaza-strip-road-network-comprehensive-damage-assessment-july-2025",
+    "title": "UNOSAT Gaza Strip Road Network Comprehensive Damage Assessment - July 2025",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates a satellite-imagery based comprehensive damage assessment to detect damage and affected roads across the Gaza Strip, Occupied Palestinian Territory, based on an image collected on the 08 July 2025.  \n  \nAccording to satellite imagery analysis, UNOSAT identified approximately 1511km of destroyed roads, 484km of severely affected roads and 1484km of moderately affected main roads. From these statistics it has been calculated that approximately 77% of the total road network has been damaged (including destroyed, affected roads and roads restricted by obstacles), across the Gaza Strip.  \n  \nThis is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2025-09-12T00:00:00 TO 2025-09-12T23:59:59]",
+    "last_modified": "2025-09-12T17:45:38",
+    "metadata_created": "2025-09-13T09:35:22.535379",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "CE20231007PSE_UNOSAT_GazaStrip_RoadCDA_20250708_GDB_v1.gdb.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4201/CE20231007PSE_UNOSAT_GazaStrip_RoadCDA_20250708_GDB_v1.gdb.zip",
+      "last_modified": "2025-09-12T17:45:38"
+     }
+    ]
+   },
+   {
+    "name": "unosat-fao-gaza-strip-cropland-damage-assessment-july-2025",
+    "title": "UNOSAT - FAO Gaza Strip Cropland Damage Assessment - July 2025",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates satellite-detected changes in cropland areas of the Gaza Strip resulting from the decline in the health and density of crops due to the ongoing conflict. UNOSAT conducted an analysis utilising satellite imagery collected by the Sentinel-2 satellite between July 2017 and 2025, performing a Normalised Difference Vegetation Index (NDVI) analysis as well as a multi-temporal classification to identify notable changes taking place in cropland areas during that timeframe. The methodology evaluated the damage as a decline in the health and density of crops in July 2025, in comparison to the preceding six seasons spanning from 2017 to 2025. The decline in the health and density of the crops can be observed due to the impact of activities such as razing, heavy vehicle activity, bombing, shelling, and other conflict-related dynamics. The analysis includes damage assessment for orchards and other trees, field crops and vegetables. UNOSAT and FAO analysis shows that the cropland extent in the Gaza Strip is estimated to be 150 sq. km, accounting for approximately 41% of the total area of the Gaza Strip, following an extensive land-cover analysis.  \r\n  \r\nCompared to the average of the previous seven years, approximately 86% of the permanent crop fields in the Gaza Strip exhibited a significant decline in health and density in July 2024. In a comprehensive evaluation, it was found that there has been a 3% increase in the proportion of cropland that has been damaged since the previous analysis conducted in April 2024. Additionally, the analysis indicates a notable rise in the destruction of the orchards and other trees, field crops and vegetables in the Khan Younis Governorate, with a 4-percentage point increase compared to the previous April 2024 analysis. Moreover, there has been a notable escalation in the destruction of cropland within the North Gaza Governorate, with the percentage rising from 91% in April 2024 to 94% in July 2025. This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2025-07-30T00:00:00 TO 2025-07-30T23:59:59]",
+    "last_modified": "2025-07-30T15:01:20",
+    "metadata_created": "2025-07-31T08:35:06.751190",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "FAO-PAL-015_UNOSAT_Cropland_DA_GDB_July2025.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4160/FAO-PAL-015_UNOSAT_Cropland_DA_GDB_July2025.zip",
+      "last_modified": "2025-07-30T15:01:20"
+     }
+    ]
+   },
+   {
+    "name": "unosat-gaza-governorate-damage-assessment-gaza-strip-occupied-palestinian-territory",
+    "title": "UNOSAT Gaza Governorate Damage Assessment - Gaza Strip, Occupied Palestinian Territory",
+    "notes": "**UNOSAT code CE20231007PSE**  This map illustrates a satellite-detected damage and destruction to buildings within the area of interest in the Gaza Governorate, Gaza Strip, based on an image collected on 10 October 2023 (partially clouded) when compared to an image collected on 10 May 2023. According to satellite imagery analysis, UNOSAT identified 228 destroyed structure, 148 severely damaged structures and 365 moderately damaged structures, for a total of 741 buildings. The two most affected areas appear to be between Southern Remal and As Sabra neighborhoods (inset 1), and on the western outskirt of the Old City, north of At Turukman neighborhood. Among the affected structures, UNOSAT identified one school compound, namely the Omar Bin Abd Alaz school, visibly destroyed (see inset 2). This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2023-10-18T00:00:00 TO 2023-10-18T23:59:59]",
+    "last_modified": "2023-10-18T09:51:49",
+    "metadata_created": "2023-10-19T08:36:12.066200",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "UNOSAT_CE20231007PSE_Gaza_Governorate_DA_20231010_GDB.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/3690/UNOSAT_CE20231007PSE_Gaza_Governorate_DA_20231010_GDB.zip",
+      "last_modified": "2023-10-18T09:51:49"
+     }
+    ]
+   },
+   {
+    "name": "unosat-gaza-strip-comprehensive-damage-assessment-september-2024",
+    "title": "UNOSAT Gaza Strip Comprehensive Damage Assessment - September 2024",
+    "notes": "**UNOSAT code: CE20231007PSE**  This map illustrates a satellite imagery-based comprehensive assessment of damage and destruction to structures within the area of interest in the Gaza Strip, Occupied Palestinian Territory, based on images collected on 3 and 6 September 2024 when compared to images collected on 1 May 2023, 10 May 2023, 18 September 2023, 15 October 2023, 7 November 2023, 26 November 2023, 6-7 January 2024, 29 February 2024, 31 March - 1 April 2024, 3 May 2024, and 6 July 2024. According to satellite imagery analysis, UNOSAT identified 52,564 destroyed structures, 18,913 severely damaged structures, 56,710 moderately damaged structures, and 35,591 possibly damaged structures for a total of 163,778 structures. These correspond to around 66% of the total structures in the Gaza Strip and a total of 227,591 estimated damaged housing units. The governorates of Khan Yunis and Rafah have experienced the highest rise in damage compared to the 6 July 2024 analysis, with around 1,470 new structures damaged in Khan Yunis and around 3,770 in Rafah. Within Rafah, Rafah City municipality had the highest number of newly damaged structures, totalling 3,289. This is a preliminary analysis and has not yet been validated in the field.",
+    "dataset_date": "[2024-09-29T00:00:00 TO 2024-09-29T23:59:59]",
+    "last_modified": "2024-09-29T12:33:57",
+    "metadata_created": "2024-09-30T08:38:00.226349",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "OCHA-OPT-017_UNOSAT_A3_Gaza_Strip_OPT_CDA_GDB_06092024.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/3984/OCHA-OPT-017_UNOSAT_A3_Gaza_Strip_OPT_CDA_GDB_06092024.zip",
+      "last_modified": "2024-09-29T12:33:57"
+     }
+    ]
+   },
+   {
+    "name": "unosat-live-web-map",
+    "title": "UNOSAT Live web map",
+    "notes": "**UNOSAT code: FL20260826NPL**  This application provides flood impact assessments for Nepal in August 2026.  \n  \nImportant note:   \nThe boundaries and names shown, and the designations used on this map do not imply official endorsement or acceptance by the United Nations.  \n  \nThe designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or of its authorities, or concerning the delimitation of its frontiers or boundaries.",
+    "dataset_date": "[2026-08-26T00:00:00 TO 2026-08-26T23:59:59]",
+    "last_modified": "2026-09-04T03:07:23",
+    "metadata_created": "2025-09-26T09:35:09.333022",
+    "license_id": "cc-by-sa",
+    "license_title": "Creative Commons Attribution Share-Alike (CC BY-SA)",
+    "license_url": "http://www.opendefinition.org/licenses/cc-by-sa",
+    "dataset_source": "UN Operational Satellite Applications Programme (UNOSAT)",
+    "organization": {
+     "name": "unosat",
+     "title": "United Nations Satellite Centre (UNOSAT)"
+    },
+    "resources": [
+     {
+      "name": "FL20260826NPL.gdb.zip",
+      "format": "Geodatabase",
+      "url": "https://unosat.org/static/unosat_filesystem/4256/FL20260826NPL.gdb.zip",
+      "last_modified": "2026-09-04T03:07:23"
+     },
+     {
+      "name": "UNOSAT_PopulationExposure_20260826_20260827_ Nepal.xlsx",
+      "format": "XLSX",
+      "url": "https://unosat.org/static/unosat_filesystem/4256/UNOSAT_PopulationExposure_20260826_20260827_%20Nepal.xlsx",
+      "last_modified": "2026-08-27T15:15:50"
+     }
+    ]
+   }
+  ]
+ }
+}

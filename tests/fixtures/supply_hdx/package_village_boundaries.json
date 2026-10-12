@@ -1,0 +1,33 @@
+{
+ "success": true,
+ "result": {
+  "name": "state-of-palestine-village-boundary-in-the-west-bank",
+  "title": "State of Palestine - Village boundary in the  West Bank",
+  "notes": "Village boundary in the West Bank. These historical boundaries were created during British Mandate in Palestine.",
+  "dataset_date": "[2019-07-24T00:00:00 TO 2019-07-24T23:59:59]",
+  "last_modified": "2019-07-24T11:02:00.467853",
+  "metadata_created": "2019-07-24T11:01:58.495995",
+  "metadata_modified": "2025-04-08T18:38:53.713692",
+  "license_id": "cc-by",
+  "license_title": "Creative Commons Attribution International (CC BY)",
+  "license_url": "http://www.opendefinition.org/licenses/cc-by",
+  "license_other": null,
+  "dataset_source": "Palestinian Authority, Ministry of Planning",
+  "data_update_frequency": "-1",
+  "organization": {
+   "name": "ocha-opt",
+   "title": "OCHA occupied Palestinian territory (oPt)"
+  },
+  "resources": [
+   {
+    "name": "VillageBoundary.zip",
+    "format": "SHP",
+    "url": "https://data.humdata.org/dataset/8e88b6e5-c8e8-45b3-afa1-268530aadae1/resource/70c36308-91ed-4e21-9a25-e0aefb4e756f/download/villageboundary.zip",
+    "last_modified": "2019-07-24T11:02:00.467853",
+    "created": "2019-07-24T11:02:00.874657",
+    "size": 796653,
+    "description": "Village boundary in the West Bank"
+   }
+  ]
+ }
+}
