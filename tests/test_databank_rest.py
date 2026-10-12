@@ -514,3 +514,18 @@ def test_a_register_that_did_not_change_upstream_is_not_rewritten(tmp_path):
     tonight["data"][0]["school_id"] = 2
     assert not hdx.says_the_same(out, tonight)
     assert not hdx.says_the_same(tmp_path / "absent.json", doc)
+
+
+# ── a one-time transition is made by hand, not written into the spec ─────────
+
+def test_the_health_spec_carries_no_transition_ceiling_and_the_loader_takes_one_per_run():
+    import inspect
+    import yaml
+    from ingest import databank as D
+    health = yaml.safe_load((ROOT / "db" / "mappings" / "health.yaml").read_text())
+    assert health["identity"]["generation"] == "complete"
+    assert "max_absent" not in health["identity"]
+    assert "allow_absent" in inspect.signature(D.run).parameters
+    assert "cap = max(cap, allow_absent)" in inspect.getsource(D.run)
+    # the nightly never passes it
+    assert "allow_absent" not in inspect.getsource(D.run_all)

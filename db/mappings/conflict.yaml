@@ -72,7 +72,12 @@ input:
   glob:
     - frozen/conflict.json.gz
     - raw/ucdp/ged.json
-    - raw/ucdp/candidate.json
+    # raw/ucdp/candidate.json is fetched and NOT loaded (2026-10-12). Candidate
+    # events are provisional and UCDP revises them: of June 2025's 334, the
+    # final release withdrew 9, changed 69 and added 32. The loader takes an
+    # event once and cannot yet revise or withdraw one, so a candidate loaded
+    # today would stay as first written. They wait for the same event rule the
+    # 1989-2024 revisions of GED 26.1 wait for (raw/ucdp/ged_revision.json).
 cadence: monthly                  # a release a year, candidate events each
                                   #   month on the 20th; fetched nightly
 
@@ -413,6 +418,36 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # The West Bank series first, so their warning is said (2026-10-12): 232 of
+    # the 2,319 rows are T4P's own carry-forward between UN updates, marked
+    # flash_source 'fill' in attrs and served until now as reported days.
+    - when: {regex: "^conflict\\.westbank_cumulative_(killed|injured)"}
+      concept: mortality.conflict
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Tech for Palestine's relay of UN OCHA's West Bank figures, a running total. A day whose row says flash_source 'fill' is not a day the UN reported: T4P carried the count forward between UN updates (29 of the 291 days held)."
+      serve_warning_ar: "هاد نقل Tech for Palestine لأرقام أوتشا بالضفة، وهو مجموع تراكمي. اليوم اللي سطره مكتوب عليه flash_source «fill» مش يوم نشرت فيه الأمم المتحدة: T4P نقلت الرقم من آخر تحديث (29 يوم من أصل 291 محفوظين)."
+    - when: {regex: "^conflict\\.westbank_cumulative_settler_attacks"}
+      concept: violence.settler
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Tech for Palestine's relay of UN OCHA's West Bank figures, a running total. A day whose row says flash_source 'fill' is not a day the UN reported: T4P carried the count forward between UN updates (29 of the 291 days held)."
+      serve_warning_ar: "هاد نقل Tech for Palestine لأرقام أوتشا بالضفة، وهو مجموع تراكمي. اليوم اللي سطره مكتوب عليه flash_source «fill» مش يوم نشرت فيه الأمم المتحدة: T4P نقلت الرقم من آخر تحديث (29 يوم من أصل 291 محفوظين)."
+    - when: {regex: "^conflict\\.westbank_cumulative_displaced"}
+      concept: displacement.internal
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: households
+      serve_warning: "Tech for Palestine's relay of UN OCHA's West Bank figures, a running total. A day whose row says flash_source 'fill' is not a day the UN reported: T4P carried the count forward between UN updates (29 of the 291 days held)."
+      serve_warning_ar: "هاد نقل Tech for Palestine لأرقام أوتشا بالضفة، وهو مجموع تراكمي. اليوم اللي سطره مكتوب عليه flash_source «fill» مش يوم نشرت فيه الأمم المتحدة: T4P نقلت الرقم من آخر تحديث (29 يوم من أصل 291 محفوظين)."
     - when: {regex: "cumulative_(killed|injured)"}
       concept: mortality.conflict
       measure_kind: cumulative   # a running toll. v_flow may difference it;

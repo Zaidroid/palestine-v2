@@ -108,7 +108,9 @@ def test_the_held_record_is_served_once(mcp_call, mcp_payload):
         cur.execute("""SELECT count(*) FROM v_tier_commercial_permissive WHERE dataset_key = 'v1_conflict_ucdp'""")
         assert cur.fetchone()[0] == 0                               # G5.11: unread terms, not sold
     assert n["displacement.locality_depopulated"] == 589
-    assert sum(v for k, v in n.items() if k.startswith("conflict.deaths.")) == 7638
+    # 7,638 until 2026-10-12 (GED 25.1, to December 2024); GED 26.1's events of
+    # 2025 are added from UCDP's own files, so the count only grows
+    assert sum(v for k, v in n.items() if k.startswith("conflict.deaths.")) >= 7638
     assert n["conflict.journalists_killed"] == 262
     p = mcp_payload(mcp_call("databank", district="الرملة"))
     assert p["category"] == "displacement" and "الرملة" in p["answer"] and "Ramle" in p["answer_en"]

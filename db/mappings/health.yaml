@@ -194,15 +194,14 @@ identity:
   # row the run no longer emits was withdrawn or re-coded upstream and is
   # closed (never deleted).
   generation: complete
-  # TRANSITION CEILING, FOR THE FIRST RUN ONLY. The 12,502 held rows carry the
-  # old identity (indicator, year, value, bounds); none of them can be emitted
-  # again, and 4,521 of them could not be given the new identity by any
-  # rewrite, because the dimension that would complete it is not in the row.
-  # So the first run closes all 12,502 as absent and writes the 13,014 rows
-  # that name their dimensions, in one transaction. AFTER THAT RUN DELETE THIS
-  # LINE: the default ceiling (5 % of the rows held) then applies, and a night
-  # that would close more fails instead.
-  max_absent: 12502
+  # THE FIRST RUN IS MADE BY HAND, with `--allow-absent 12502`. The 12,502 held
+  # rows carry the old identity (indicator, year, value, bounds); none of them
+  # can be emitted again, and 4,521 of them could not be given the new identity
+  # by any rewrite, because the dimension that would complete it is not in the
+  # row. So that run closes all 12,502 as absent and writes the 13,014 rows
+  # that name their dimensions, in one transaction. No ceiling is written here:
+  # the default (5 % of the rows held) applies to every night after it, and a
+  # night that would close more fails instead.
 
 notes: |
   MEASURED 2026-10-12 on the first fetch (ops/fetch_gho_health.py, 184 codes):

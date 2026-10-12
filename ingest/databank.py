@@ -1423,6 +1423,10 @@ def t_conflict(rec, spec, places, counts):
     # events
     if rec.get("date_precision"):                      # POM villages, verbatim
         precision = rec["date_precision"]
+        if precision == "day" and str(rec.get("date") or "")[8:10] == "01":
+            # "May 1948" written as 1948-05-01: held as the month (migration
+            # 105 did the same to the held events; see t_historical)
+            precision = "month"
     elif etype == "aggregate_fatality":                # B'Tselem period totals
         precision = "unknown"
     else:
@@ -2461,7 +2465,11 @@ CLOSE_NOW = ("tstzrange(lower(sys_period), "
              "greatest(now(), lower(sys_period) + interval '1 microsecond'))")
 
 
-def run(category: str, dry_run: bool = False) -> dict:
+def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -> dict:
+    """`allow_absent` raises the absent-upstream ceiling for THIS run only: the
+    way a one-time transition (health's change of identity, 2026-10-12) is
+    made by hand without writing a ceiling into the spec that every later
+    night would inherit."""
     spec = load_spec(category)
     if category not in TRANSFORMERS:
         raise SpecRefused(f"{category}: spec is reviewed but no transformer "
@@ -2895,6 +2903,8 @@ def run(category: str, dry_run: bool = False) -> dict:
                 cap = complete[ds_key].get("max_absent")
                 if cap is None:
                     cap = max(1, int(held_n[ds_key] * 0.05))
+                if allow_absent is not None:
+                    cap = max(cap, allow_absent)
                 counts[f"absent_upstream:{ds_key}"] = len(rows_gone)
                 if len(rows_gone) > cap:
                     absent_over.append(
@@ -3219,5 +3229,9 @@ if __name__ == "__main__":
         sys.exit(run_all(dry_run="--dry-run" in sys.argv))
     if not args:
         sys.exit("usage: python -m ingest.databank <category>|--all [--dry-run]")
-    out = run(args[0], dry_run="--dry-run" in sys.argv)
+    allow = None
+    if "--allow-absent" in sys.argv:
+        allow = int(sys.argv[sys.argv.index("--allow-absent") + 1])
+        args = [a for a in args if a != str(allow)]
+    out = run(args[0], dry_run="--dry-run" in sys.argv, allow_absent=allow)
     print(json.dumps(out, indent=2, ensure_ascii=False))

@@ -398,11 +398,14 @@ def test_t_conflict_reads_a_candidate_record_as_provisional(release):
 
 # ── the spec ─────────────────────────────────────────────────────────────────
 
-def test_the_conflict_spec_reads_the_frozen_copy_and_ucdps_two_files_never_v1():
+def test_the_conflict_spec_reads_the_frozen_copy_and_ucdps_release_never_v1():
     spec = load_spec("conflict")
+    # the candidate events are fetched and not loaded: the loader cannot yet
+    # revise or withdraw an event, and UCDP revises its candidates (2026-10-12)
     assert spec["input"] == {"root": "data", "glob": [
-        "frozen/conflict.json.gz", "raw/ucdp/ged.json", "raw/ucdp/candidate.json"]}
+        "frozen/conflict.json.gz", "raw/ucdp/ged.json"]}
     assert "ged_revision" not in json.dumps(spec["input"])    # held back on purpose
+    assert "candidate" not in json.dumps(spec["input"])
     assert spec["stable_id"] == "stable_id" and spec["transform"] == "python:t_conflict"
     for key in ("name", "ucdp_id", "ucdp_release", "ucdp_candidate",
                 "ucdp_candidate_version", "ucdp_code_status"):
