@@ -364,6 +364,17 @@ registry:
       canonical_unit: persons
       serve_warning: "Camp figures copied from Wikipedia's table of Palestinian refugee camps, which took them in July 2020 from UNRWA's camp profile pages: UNRWA's undated counts of registered refugees from about 2018 to 2020, not today's populations and not a UNRWA release. UNRWA's own totals by field are in the series refugees.unrwa_registered."
       serve_warning_ar: "أرقام المخيمات منقولة من جدول ويكيبيديا لمخيمات اللاجئين الفلسطينيين، وهو أخذها بتموز 2020 من صفحات الأونروا للمخيمات: أعداد اللاجئين المسجّلين عند الأونروا من نحو 2018 إلى 2020 وبدون تاريخ محدّد، مش عدد السكان اليوم ومش إصدار رسمي من الأونروا. مجاميع الأونروا نفسها حسب الإقليم موجودة بسلسلة refugees.unrwa_registered."
+    - when: {equals: "refugees.cross_border"}
+      name_en: "Palestinian refugees and asylum-seekers abroad, by country of asylum (UNHCR, the old system's copy)"
+      name_ar: "اللاجئون وطالبو اللجوء الفلسطينيون في الخارج حسب بلد اللجوء (مفوضية اللاجئين، نسخة النظام القديم)"
+      concept: displacement.refugee
+      measure_kind: stock
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "The old system's copy of UNHCR's figures, 2010 to 2025: each row is refugees plus asylum-seekers in one country of asylum. The same numbers are held, kept apart and back to 1976, in refugees.stock.refugees and refugees.stock.asylum_seekers, which are the series that are refreshed; the two sets are never added. UNHCR's figures do not include the refugees registered with UNRWA."
+      serve_warning_ar: "هاي نسخة النظام القديم من أرقام مفوضية اللاجئين، من 2010 لـ2025: كل سطر لاجئين وطالبي لجوء مع بعض ببلد لجوء واحد. نفس الأرقام محفوظة مفصولة ومن 1976 بسلسلتي refugees.stock.refugees و refugees.stock.asylum_seekers، وهدول اللي بيتحدّثوا؛ والمجموعتين ما بينجمعوا مع بعض. وأرقام المفوضية ما بتشمل اللاجئين المسجّلين عند الأونروا."
     - when: {prefix: "refugees."}
       concept: displacement.refugee
       measure_kind: stock        # a registered population, a level
