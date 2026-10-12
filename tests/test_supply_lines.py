@@ -599,3 +599,13 @@ def test_the_handover_window_is_still_one_to_three_days_forward():
     assert not gr._hands_over(date(2026, 8, 8), date(2026, 8, 8))      # same day
     assert not gr._hands_over(date(2026, 8, 8), date(2026, 8, 20))     # a gap, not a hand-over
     assert not gr._hands_over(None, date(2026, 8, 9))     # predecessor empty
+
+
+def test_the_radar_does_not_call_a_held_copy_or_a_yearly_survey_dead():
+    from ops import gap_radar as G
+    assert "btselem_fatalities" in G.AWAITING_PERMISSION
+    assert "btselem_fatalities" not in G.DEAD_UPSTREAM and "btselem_fatalities" not in G.CLOSED_CORPUS
+    assert G.ALLOWANCE_OVERRIDE_DAYS["fao_diem_household_surveys"] >= 365
+    gaps = G.rank_gaps([{"dataset": "btselem_fatalities", "status": "awaiting_permission",
+                         "last_information_day": "2023-09-24", "largest_hole": None}], [])
+    assert gaps and gaps[0]["kind"] == "awaiting_permission" and gaps[0]["severity"] < 4

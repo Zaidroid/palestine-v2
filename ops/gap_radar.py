@@ -84,6 +84,23 @@ DEAD_UPSTREAM = {
         "it and this entry should go.",
 }
 
+# Copies we hold of a source that GOES ON publishing, where the next copy is
+# not a fetch but a permission. Not dead upstream (the publisher is alive),
+# not a closed corpus (the series continues there), and not a supply line that
+# can stall, because nothing of ours fetches it. Excused from STALLED and
+# named every night with what it waits for, so the wait stays visible and the
+# job is not failed by a dataset no night's work could refresh.
+AWAITING_PERMISSION = {
+    "btselem_fatalities":
+        "A frozen copy: B'Tselem's fatalities file as v1 held it, ending "
+        "2023-09-24 (loaded 2026-10-11). B'Tselem's own database continues and "
+        "answers automated reads with HTTP 429 (maintenance, 2026-10-12); bulk "
+        "use needs their written consent, and the letter "
+        "(db/scout/letters/btselem_bulk.md, source_permission btselem_bulk) "
+        "has not been sent. Clear this entry the day a newer copy is granted "
+        "and a fetch exists: from then on it is a supply line like any other.",
+}
+
 # Closed corpora: history, not feeds. Age is meaningless; only HOLES and the
 # era grid speak for them.
 CLOSED_CORPUS = {
@@ -114,6 +131,12 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "who_gho_wash": 1200,             # JMP labels are biennial: 2024-label
                                       #   data ages ~1100d before the next
     "v1_martyrs_snapshot_2023_tech4palestine": 90,  # roster update cadence
+    # FAO DIEM is survey ROUNDS, about one a year: the rows hold May 2024,
+    # July 2025 and June-July 2026 and nothing between (measured 2026-10-12).
+    # The learned 2.5-day rhythm is the interview dates inside one round, and
+    # it gave a 7-day allowance that failed the night 101 days after a round.
+    # 450 = a round missed by three months.
+    "fao_diem_household_surveys": 450,
     "v1_conflict_t4p_westbank": 30,   # OCHA flash updates: ~weekly-biweekly;
                                       #   learned 1d rhythm is the kept-run
                                       #   artifact, not the publish cadence
@@ -354,6 +377,8 @@ def measure_datasets(cur, today: date) -> list[dict]:
             allowance = 90
         if key in DEAD_UPSTREAM:
             status = "dead_upstream"
+        elif key in AWAITING_PERMISSION:
+            status = "awaiting_permission"
         elif key in CLOSED_CORPUS:
             status = "closed_corpus"
         elif key in CONTINUED_BY and CONTINUED_BY[key] in continued_ok:
@@ -674,6 +699,14 @@ def rank_gaps(datasets, fetch_health, supply: dict | None = None) -> list[dict]:
                 "fill_path": FILL_PATHS.get(d["dataset"], "successor source "
                              "unscoped"),
             })
+        elif d["status"] == "awaiting_permission":
+            gaps.append({
+                "severity": 2, "kind": "awaiting_permission",
+                "subject": d["dataset"],
+                "measure": f"last information {d['last_information_day']}; "
+                           + AWAITING_PERMISSION[d["dataset"]],
+                "fill_path": "a person's step: send the letter, then build the fetch",
+            })
         if d["largest_hole"]:
             h = d["largest_hole"]
             gaps.append({
@@ -730,7 +763,8 @@ def headline(today, c: dict) -> list[str]:
         f"{c['fresh']} fresh · {c['late']} late · {c['stalled']} stalled · "
         f"{c['supply_dead']} supply-dead · "
         f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed · "
-        f"{c['continued']} continued",
+        f"{c['continued']} continued · "
+        f"{c.get('awaiting_permission', 0)} awaiting permission",
         f"supply lines: {s['dead']} DEAD · v2 fetches {s['v2_live']}/"
         f"{s['v2_lines']} live ({s['v2_failing']} failing, {s['v2_dead']} dead)"
         f" · v1 steps {s['v1_live']}/{s['v1_steps']} live ({s['v1_dead']} dead,"
@@ -772,6 +806,8 @@ def main() -> int:
             "closed_corpus": sum(1 for d in datasets
                                  if d["status"] == "closed_corpus"),
             "continued": sum(1 for d in datasets if d["status"] == "continued"),
+            "awaiting_permission": sum(1 for d in datasets
+                                       if d["status"] == "awaiting_permission"),
             "open_gaps": len(gaps),
             "supply_lines": supply_counts(supply),
         },
