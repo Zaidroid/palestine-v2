@@ -1021,7 +1021,7 @@ injury 330, demolition 281, siege 191, land_levelling 185, death 170. Round 10 i
 still open: none of the 15 incident channels carries an independence group (learn/news_independence.py exists).
 Work stopped here at Zaid's word; the audit page is version 6 with the state and a five-series plan for shorts.
 
-2026-10-12 09:00 UTC · CORRECTION to the entry "why half the map is unknown: the board's photo cards" · my reading
+2026-10-12 08:55 UTC · CORRECTION to the entry "why half the map is unknown: the board's photo cards" · my reading
 was wrong; the fall and its date stand · proof: Zaid turned photo downloads on at 08:45 UTC on my advice
 (`tmp/3-photo-cards-on.sh`); the 08:52 cycle put 14 cards in bronze and every one is a FUEL-station card
 ("حالة محطات الوقود <region>", footer palhub.app/fuel-status; 14 regions, read by eye and by OCR of each title). None
