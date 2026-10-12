@@ -58,6 +58,8 @@ step .venv/bin/python -m ops.fetch_acled_file      # held under `internal`, neve
 # ── cut from v1's tree and from frozen files on 2026-10-12 ──────────────────
 # Each writes the record shape its category's transformer already read, so a
 # failed night leaves yesterday's file and the spec's frozen fallback behind it.
+step .venv/bin/python -m ops.fetch_worldbank          # 125 World Bank series for PSE (re-reads when the Bank's vintage moves)
+step .venv/bin/python -m ops.fetch_imf                # 18 IMF DataMapper series for WBG, with the IMF's own units
 step .venv/bin/python -m ops.fetch_wfp_food           # WFP food prices (HDX)
 step .venv/bin/python -m ops.fetch_hdx_schools        # the school register (HDX, OCHA oPt)
 step .venv/bin/python -m ops.fetch_hdx_infrastructure # barrier, village boundaries, UNOSAT assessments

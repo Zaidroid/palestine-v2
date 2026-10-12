@@ -30,6 +30,8 @@ units:
     aliases:
       persons: {}
       people: {}
+      "Millions of people":
+        factor_num: 1000000
       fatalities:
         note: >-
           A fatality count is a count of persons. The word carries the
@@ -118,6 +120,13 @@ units:
       percentage: {}
       percent: {}
       per_100: {}
+      # The IMF's own unit strings (2026-10-12: its 474 rows had no unit at
+      # all). What the percent is OF is in the string and in the series' name;
+      # the unit says only that it is a percentage.
+      "Percent": {}
+      "Percent of GDP": {}
+      "Percent of World": {}
+      "Annual percent change": {}
     notes: >-
       per_100 is percent by definition. per_1000 and per_100000 are NOT —
       they are their own rates and converting them here would change what
@@ -127,7 +136,11 @@ units:
   per_100000:  {name_en: per 100,000, dimension: rate}
   births_per_woman: {name_en: births per woman, dimension: rate}
   ratio:       {name_en: ratio,       dimension: ratio}
-  index:       {name_en: index,       dimension: index}
+  index:
+    name_en: index
+    dimension: index
+    aliases:
+      "Index": {}
   years:       {name_en: years,       name_ar: سنوات, dimension: time}
   km:          {name_en: kilometres,  name_ar: كيلومتر, dimension: length}
 
@@ -137,6 +150,26 @@ units:
   USD_per_capita:
     name_en: US dollars per person
     dimension: currency_per_capita
+    aliases:
+      "U.S. dollars per capita": {}
+  # The IMF's purchasing-power-parity units: not US dollars, and never
+  # converted to them.
+  intl_dollars:
+    name_en: international dollars (purchasing power parity)
+    dimension: currency_ppp
+    aliases:
+      "Purchasing power parity; billions of international dollars":
+        factor_num: 1000000000
+  intl_dollars_per_capita:
+    name_en: international dollars per person (purchasing power parity)
+    dimension: currency_ppp_per_capita
+    aliases:
+      "Purchasing power parity; international dollars per capita": {}
+  lcu_per_intl_dollar:
+    name_en: national currency per international dollar
+    dimension: exchange_rate
+    aliases:
+      "National currency per international dollar": {}
   dalys:
     name_en: disability-adjusted life years
     dimension: burden
@@ -153,6 +186,8 @@ units:
     aliases:
       USD: {}
       currency_usd: {}
+      "Billions of U.S. dollars":
+        factor_num: 1000000000
       USD_millions:
         factor_num: 1000000
         note: >-
