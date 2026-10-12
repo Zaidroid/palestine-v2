@@ -1044,7 +1044,7 @@ closed 624 over 120 days.
 V2_TELEGRAM_MEDIA_CHANNELS line in .env, poller active with no "Archiving photos" line since its restart, health
 telegram-poller ok. One cycle was downloaded in all: 14 fuel cards, kept in bronze.
 
-2026-10-12 15:55 UTC · before the databank phase: what the 11 October loads left red · fixed, rehearsed, committed;
+2026-10-12 15:43 UTC · before the databank phase: what the 11 October loads left red · fixed, rehearsed, committed;
 one script is Zaid's hand (`tmp/5-before-databank.sh`) · proof: /health read `job:databank failing`,
 `job:supply-lines failing`. The funding fix of 5df776a was not a cause: it ran at 03:44 UTC, closed 70 rows, no
 flow id has two current rows, paid 15.748 B USD.
