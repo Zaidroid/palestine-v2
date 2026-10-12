@@ -43,6 +43,17 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/education/all-data.json",
   "why": "West Bank school register (OCHA oPt via HDX). A register, not a series \u2014 2,359 rows, unchanged."
  },
+ "food": {
+  "bytes_gzipped": 1796154,
+  "bytes_uncompressed": 34242093,
+  "evidence": "ingest.databank food --dry-run on 2026-10-12, reading v1's tree: 27,235 records read, 27,235 identity_already_held, 0 revisions. The same 27,235 rows are what HDX's CSV held that day (ops/fetch_wfp_food.py).",
+  "file": "food.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 27235,
+  "sha256_uncompressed": "481ec3bb87086931ff171f06e7e5db6e3783f015fc5bd20d13a8ff229fdf6fcd",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/food/partitions",
+  "why": "NOT a finished corpus: the fallback for a machine that has never run ops/fetch_wfp_food.py. WFP food prices 2007-01 to 2026-09 as v1's unified tree held them on the night food was cut from v1; the live line is data/raw/wfp_food/food_prices.json."
+ },
  "health": {
   "bytes_gzipped": 1358774,
   "bytes_uncompressed": 21369378,
