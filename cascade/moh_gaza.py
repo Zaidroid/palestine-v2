@@ -140,7 +140,7 @@ def _normalise(text: str) -> str:
 # own terms and never overwrite what the tier machinery already found.
 _D = r"(?:شهداء|شهيد(?:ًا|اً|ا|ة)?)"
 _I = r"(?:[إا]صاب(?:ات|ة|ه)|جرحى|جريح(?:ًا|اً|ا)?)"
-_NUM_D = re.compile(r"(\d+)\s*" + _D + r"(?!\s*(?:[إا]نتشال|جرى|تم|متأثر|جدد|جديد|المساعدات|لقمة))")
+_NUM_D = re.compile(r"(\d+)\s*" + _D + r"(?!\s*(?:[إا]نتشال|جرى|تم|متأثر|جدد|جديد|نتيج[ةه]|المساعدات|لقمة))")
 _NUM_I = re.compile(r"(\d+)\s*" + _I)
 _HOURS = re.compile(r"خلال[\s*]*\(?[\s*]*(?:ال[ـ]?)?[\s*]*\(?\s*(\d+)\s*ساع")  # "خلال 72 ساعة", "خلال الـ24 ساعة", "خلال الـ *(48 ساعة", "خلال *(الـ 24 ساعة"
 _ARRIVED = re.compile(r"وصل(?:ت|وا)?\s+(?:منها\s+)?(?:[إا]لى\s+)?(?:لل|ال)?مستشفيات|وصول\s+(?:[إا]لى\s+)?المستشفيات")
@@ -153,7 +153,11 @@ _COUNT_LINE = re.compile(r"عدد\s+ال(?:شهداء|[إا]صابات)|^[\s\-�
 _MASSACRES = re.compile(r"(\d+)\s*(?:مجزرة|مجازر)")
 _RECOVERED = re.compile(r"(\d+)\s*" + _D + r"\s*(?:[إا]نتشال|جرى\s+انتشالهم|تم\s+انتشالهم)")
 _SUCCUMBED = re.compile(r"(\d+)\s*" + _D + r"\s*مت[أا]ثر")
-_NEW = re.compile(r"(\d+)\s*" + _D + r"\s*(?:جدد|جديد)")
+# "جدد" from 28 October 2025; the eight bulletins of 16-27 October, the first
+# after the ceasefire, write the same thing as "4 شهداء نتيجة استهداف مباشر من
+# الاحتلال" beside the recovered and the died-of-wounds, and were read without
+# their newly killed (found 2026-10-12 through gate G4.8).
+_NEW = re.compile(r"(\d+)\s*" + _D + r"\s*(?:جدد|جديد|نتيج[ةه]\s+استهداف\s+مباشر)")
 _CUM_LINE = re.compile(r"(?:ارتفاع|ارتفعت)\s+حصيل[ةه]\s+العدوان")
 _RESUMPTION_LINE = re.compile(r"منذ\s+18\s+مارس\s+2025")
 _AID_LINE = re.compile(r"شهداء\s+المساعدات|لقم[ةه]\s+العيش")

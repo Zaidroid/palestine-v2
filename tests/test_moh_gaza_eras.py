@@ -107,3 +107,19 @@ def test_every_emitted_measure_has_an_indicator():
         for tier, measures in parse(text).tiers.items():
             for measure in measures:
                 assert (tier, measure) in INDICATORS, (tier, measure)
+
+
+def test_the_first_bulletins_after_the_ceasefire_name_the_newly_killed_as_direct_targeting():
+    """16-27 October 2025: "4 شهداء نتيجة استهداف مباشر من الاحتلال" beside the
+    recovered and the died-of-wounds. From 28 October the same figure is written
+    "شهداء جدد". Eight bulletins were read without their newly killed (74 people)."""
+    r = parse("🔴 التقرير الإحصائي اليومي لعدد الشهداء والجرحى جراء العدوان الإسرائيلي على قطاع غزة\n\n"
+              "⭕ وصل إلى مستشفيات قطاع غزة 29 شهيدًا (منهم 22 شهيد انتشال، و3 شهداء متأثرين بإصابتهم، "
+              "و4 شهداء نتيجة استهداف مباشر من الاحتلال)، و10 إصابات خلال الـ24 ساعة الماضية.\n\n"
+              "⭕ ارتفعت حصيلة العدوان الإسرائيلي إلى 67,967 شهيدًا و170,179 إصابة منذ السابع من أكتوبر للعام 2023م.\n\n"
+              "🔴 منذ وقف إطلاق النار (11 أكتوبر 2025):\n • إجمالي الشهداء: 23\n • إجمالي الإصابات: 122\n"
+              " • إجمالي الانتشال: 381\n")
+    day = r.tiers["daily"]
+    assert (day["deaths"], day["recovered"], day["succumbed"], day["new"]) == (29, 22, 3, 4)
+    # the Ministry's since-ceasefire total leaves the recovered out: 23 < 29, and that is right
+    assert r.tiers["since_ceasefire"]["deaths"] == 23 and r.tiers["since_ceasefire"]["recovered"] == 381
