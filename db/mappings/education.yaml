@@ -92,6 +92,7 @@ input:
     root: data/frozen
     glob: education.json.gz
 cadence: daily
+cut_from_v1: 2026-10-12          # the rows before this day carry v1's two constants; t_education_v1 replays them
 
 notes: |
   NO HONEST DATE EXISTS. Scanned every string and numeric field of all 2,359

@@ -31,7 +31,8 @@ def _write_run(monkeypatch, tmp_path, emitted, identity, *, held=(), refuse=(),
                    identity, r.dataset_key, indicator=r.indicator,
                    occurred_at=r.occurred_at, place_id=r.place_id,
                    value_num=r.value_num, attrs=r.attrs),
-               1000 + i, r.value_num, r.value_text, r.unit, r.place_id, r.attrs)
+               1000 + i, r.value_num, r.value_text, r.unit, r.place_id, r.attrs,
+               r.dataset_key, r.v1_stable_id, str(r.occurred_at)[:10])
               for i, r in enumerate(held)]
     log = {"inserts": [], "supersede": [], "updates": []}
 
@@ -475,3 +476,26 @@ def test_DATABANK_V18_settler_attacks_and_connectivity_access_have_their_own_con
     concepts = yaml.safe_load(open("db/registry/concepts.yaml"))["concepts"]
     assert "NO SERIES YET" not in concepts["energy.supply"]["definition"]
     assert concepts["violence.settler"]["parent"] == "violence"
+
+
+# ── a dry run sees the refusal the real run would meet (2026-10-12) ──────────
+# Migration 101 closed the Gaza-governorate copy of the damage series on the
+# belief that the loader emits the Gaza-Strip copy. It emitted the other one:
+# 2,920 rows with a new identity and the stable id of a held row. Every dry run
+# stayed green, because the refusal happens at the INSERT.
+
+def _damage(place_id):
+    return Row("d", "infrastructure.damage.residential", "2025-10-05", "day", "t4p-damage-1",
+               value_num=416000, unit="units", place_id=place_id, attrs={})
+
+
+def test_a_new_identity_carrying_a_held_stable_id_fails_before_any_write(monkeypatch, tmp_path):
+    ident = {"fields": ["indicator", "occurred_at", "place_id"]}
+    with pytest.raises(_Refused, match="stable id and day of a row already held"):
+        _write_run(monkeypatch, tmp_path, [_damage(15)], ident, held=[_damage(1)])
+
+
+def test_the_same_row_under_its_held_identity_is_simply_held(monkeypatch, tmp_path):
+    ident = {"fields": ["indicator", "occurred_at", "place_id"]}
+    report, log = _write_run(monkeypatch, tmp_path, [_damage(1)], ident, held=[_damage(1)])
+    assert log["inserts"] == [] and report["notes"]["identity_already_held"] == 1

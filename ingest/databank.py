@@ -756,7 +756,7 @@ def t_culture(rec, spec, places, counts):
                 reported_at=fetched, attrs=attrs)]
 
 
-def t_education(rec, spec, places, counts):
+def t_education(rec, spec, places, counts, _as_v1: bool = False):
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
@@ -765,8 +765,9 @@ def t_education(rec, spec, places, counts):
     # "Active" and "Unknown" on all 2,359 rows are v1's constants: the
     # publisher's file has no status and no type column (found 2026-10-12).
     # A 2015 register cannot say a school is active today.
-    attrs.pop("school_status", None)
-    attrs.pop("school_type", None)
+    if not _as_v1:
+        attrs.pop("school_status", None)
+        attrs.pop("school_type", None)
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
     loc = rec.get("location") or {}
     # pcode → latlon → region, as the spec has always said. 'West Bank' is the
@@ -776,9 +777,15 @@ def t_education(rec, spec, places, counts):
     return [Row(ds, "education.school_record", str(rec["date"])[:10],
                 "unknown",                                        # law 1: 100%
                 rec["stable_id"], value_num=1,
-                value_text=None, unit="schools",
+                value_text=rec.get("school_status") if _as_v1 else None, unit="schools",
                 place_id=place_id, located=located,
                 reported_at=fetched, attrs=attrs)]
+
+
+def t_education_v1(rec, spec, places, counts):
+    """The rows as they were written until 2026-10-12, v1's two constants
+    included: what the as-of replay must reproduce for days before that."""
+    return t_education(rec, spec, places, counts, _as_v1=True)
 
 
 def t_connectivity_v2(rec, spec, places, counts):
@@ -2262,6 +2269,7 @@ REPLAY_TRANSFORMERS = {
     "martyrs_snapshot_2023": t_martyrs_v1,
     "connectivity": t_connectivity,
     "health": t_health_v1,                # 2026-10-12: GHO's own rows replace v1's
+    "education": t_education_v1,          # 2026-10-12: v1's "Active"/"Unknown" no longer loaded
 }
 
 
@@ -2542,6 +2550,16 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
     # same identity with DIFFERENT content is a correction, and corrections
     # supersede.
     known_identities: dict[str, tuple[int | None, str]] = {}
+    # (dataset, stable id, day) -> the current row that holds it. A row this
+    # run would write under a NEW identity while its stable id and day are held
+    # is refused by the stable-id index at the insert, and for a keyed dataset
+    # that fails the category. A dry run never reached the insert, so it could
+    # not see it: migration 101 closed one copy of the damage series on the
+    # belief that the loader emits the other, every dry run stayed green, and
+    # the first real night would have failed (found 2026-10-12, hours before
+    # it ran). Counted before any write now, in a dry run too.
+    held_stable: dict[tuple, int] = {}
+    stable_clash: list[tuple[str, int]] = []
     to_supersede: list[int] = []
     revision_samples: list[str] = []
 
@@ -2644,16 +2662,20 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                 # a re-fetch; without it the loader could only skip.
                 cur.execute("""
                     SELECT o.identity_key, o.observation_id, o.value_num,
-                           o.value_text, o.unit, o.place_id, o.attrs
+                           o.value_text, o.unit, o.place_id, o.attrs,
+                           d.key, o.v1_stable_id, o.occurred_at::date::text
                     FROM observation o JOIN dataset d
                       ON d.dataset_id = o.dataset_id
                     WHERE d.key = ANY(%s) AND o.identity_key IS NOT NULL
                       AND upper_inf(o.sys_period)""",
                     (list(identity_by_ds),))
-                for k, oid, vn, vt, un, pid, at in cur.fetchall():
+                for row in cur.fetchall():
+                    k, oid, vn, vt, un, pid, at = row[:7]
                     known_identities[k] = (oid, content_of(
                         value_num=vn, value_text=vt, unit=un, place_id=pid,
                         attrs=at))
+                    if len(row) >= 10 and row[8]:
+                        held_stable[(row[7], row[8], row[9])] = oid
             # every spec, not only event-shaped ones: historical declares
             # `observation` yet emits 27 events, which were reported as new
             # every night and refused one by one at the insert
@@ -2812,6 +2834,10 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                     known_identities[ident] = (None, content_of(
                         value_num=r.value_num, value_text=r.value_text,
                         unit=r.unit, place_id=r.place_id, attrs=r.attrs))
+                    clash = held_stable.get(
+                        (r.dataset_key, r.v1_stable_id, str(r.occurred_at)[:10]))
+                    if clash is not None and not indistinct:
+                        stable_clash.append((r.dataset_key, clash))
             # events are decided after the whole run is read (below): which
             # of two same-key events is "the held one" must not depend on
             # the order the file lists them in
@@ -3071,6 +3097,15 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
         problems.extend(absent_over)
         if rekey_problem:
             problems.append(rekey_problem)
+        # a held row this same run closes frees its stable id for its successor
+        closing = set(to_supersede) | {oid for _, oid in absent} | {oid for _, oid in revised}
+        clashes: Counter = Counter(ds for ds, oid in stable_clash if oid not in closing)
+        for ds_key, n_clash in clashes.items():
+            counts[f"stable_id_held_under_another_identity:{ds_key}"] = n_clash
+            problems.append(
+                f"{ds_key}: {n_clash} row(s) carry a NEW identity and the stable id and day "
+                "of a row already held — the insert would be refused by the stable-id "
+                "index (a key disagreement between the spec and the store, not new data)")
         if problems:
             why = f"{category}: run FAILED — " + "; ".join(problems)
             _record_refusal(category, why, counts, drops, dry_run)
