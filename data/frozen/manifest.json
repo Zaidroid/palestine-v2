@@ -21,6 +21,24 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/casualties/all-data.json",
   "why": "OCHA oPt casualty aggregates. Static since 2026-01."
  },
+ "conflict": {
+  "bytes_gzipped": 794588,
+  "bytes_uncompressed": 18205263,
+  "evidence": "ingest.databank conflict --dry-run on 2026-10-12 before the cut: records_read 10,619, identity_already_held 2,078, event_already_held 8,495, event_new 0. Good Shepherd's 48 rows change nightly in v1 and are dropped by the spec (v1_placeholder_no_payload).",
+  "file": "conflict.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 10619,
+  "records_by_source": {
+   "B'Tselem": 6,
+   "Good Shepherd": 48,
+   "Palestine Open Maps locality registry": 589,
+   "Tech4Palestine": 2338,
+   "UCDP-GED": 7638
+  },
+  "sha256_uncompressed": "94c1a32f8a47d437c1a671cb20499b13db1262270c5e1344506a26447647f91f",
+  "v1_path": "public/data/unified/conflict/all-data.json under V1_ROOT (v1's nightly rebuild of 2026-10-12 03:26 UTC)",
+  "why": "The conflict spec's last read of v1. UCDP now comes from ops/fetch_ucdp.py (data/raw/ucdp/); this copy keeps every other dataset of the spec loading exactly as held (Palestine Open Maps villages, the journalist roster, B'Tselem's six period totals, Tech4Palestine's cumulative series to 2026-08-08), and its 7,638 UCDP records are the crosswalk from UCDP's event id to the stable id the store holds (v1's id was a content hash, so nothing else can reproduce it for a revised event)."
+ },
  "demolitions": {
   "bytes_gzipped": 40538,
   "bytes_uncompressed": 847726,
