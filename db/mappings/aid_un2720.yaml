@@ -1,0 +1,404 @@
+# aid_un2720 — the UN2720 Mechanism's daily count of UN-coordinated aid moving
+# into Gaza, read from its public Monitoring & Tracking Dashboard by
+# ops/fetch_un2720.py: trucks, pallets and tonnes at three stages of the same
+# journey, per day, from 19 May 2025.
+#
+# WHY THIS SPEC EXISTS (2026-10-12). The databank's only series on aid entering
+# Gaza was UNRWA's truck log (aid_access.yaml, 50,059 rows), which stops on
+# 2025-01-16 because UNRWA stopped publishing. aid_access.yaml already says
+# what follows: "the successor series, the UN 2720 mechanism dashboard, gets
+# its OWN spec with its own key". This is it. It is a NEW source: there was no
+# held data to match, and nothing here touches a UNRWA row.
+#
+# WHAT A ROW IS. One stage x one day x one measure:
+#   aid_un2720.offloaded.{trucks|pallets|tonnes}   unloaded at a crossing on
+#       Gaza's perimeter (the page: "Offloaded: In any of the crossings along
+#       Gaza's perimeter")
+#   aid_un2720.collected.{trucks|pallets|tonnes}   picked up from a crossing by
+#       trucks inside Gaza ("Collected: From any of the crossings ...")
+#   aid_un2720.arrived.{trucks|pallets|tonnes}     reached where it was going
+#       ("Arrived: To the intended destination in Gaza")
+# value as published, units truck / pallet / tonne (the spellings the unit
+# registry already resolves for the UNRWA rows), occurred_at = the day, place =
+# the Gaza Strip region row. A day the publisher does not list has no row: no
+# zero is invented. Measured 2026-10-12: 333 + 417 + 395 days = 1,145 stage-days
+# x 3 measures = 3,435 rows, and each stage's days sum to the publisher's own
+# total (trucks and pallets exactly, tonnes to rounding).
+#
+# NEVER ONE SERIES WITH UNRWA'S. Different publisher, different coverage,
+# different unit of count, and 122 days between them with neither (see notes).
+# The indicators carry their own prefix (aid_un2720., not aid_access.) so no
+# prefix query joins the two by accident, and every rule below says so beside
+# the number.
+category: aid_un2720
+transform: engine
+v1_category: aid_access          # joins the aid_access serving views
+shape: observation
+status: reviewed
+records_measured: 3435           # 2026-10-12: 1,145 stage-days x 3 measures
+
+input:
+  root: data/raw/un2720
+  glob: daily.json
+cadence: daily
+
+source_routing:
+  by_name:
+    "UN2720 Monitoring & Tracking Dashboard": un2720   # the name the fetcher writes
+
+datasets:
+  - key: un2720_aid_daily
+    source: un2720               # db/proposed/un2720.sql: no licence stated, `ask`
+
+indicator:
+  template: "aid_un2720.{stage}.{measure}"
+  # stage: offloaded | collected | arrived      measure: trucks | pallets | tonnes
+  # Both are written by the fetcher from a fixed table (ops/fetch_un2720.py,
+  # STAGES and MEASURES), never read from a label the publisher could rename.
+
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # truck | pallet | tonne
+
+occurred_at:
+  from: date
+  precision: day
+  rules: []                      # the date is the publisher's own day label;
+                                 #   neither law 1 nor law 2 applies
+
+place:
+  strategy: region               # every record: location.region = 'Gaza Strip'
+  min_decided_pct: 1.0           # The publisher gives no crossing per day. The
+                                 #   split by crossing exists only as a total
+                                 #   for a date range; see notes, NOT LOADED.
+
+stable_id: stable_id             # un2720-<stage>-<day>-<measure>, deterministic
+
+identity:
+  # One number per stage, measure and day. The value is NOT in the key: the
+  # publisher revises past days ("They remain subject to change"), and a
+  # revised day must supersede the held one, not sit beside it.
+  # MEASURED 2026-10-12: 3,435 rows, 3,435 keys.
+  fields: [indicator, occurred_at]
+  # Every fetch is the publisher's whole series for the page's window, so a day
+  # the publisher withdraws is closed here too. The ceiling is ten days of all
+  # nine series: enough for the publisher pulling its window back a week (a
+  # search engine's copy of the page, seen 2026-10-12, read "to 7 Sep 2026";
+  # the live page is capped at 31 August), never enough for a stage going
+  # missing. It is a judgement, not a measurement: there is no history of
+  # withdrawals to measure yet.
+  generation: complete
+  max_absent: 90
+
+expect:
+  min_records: 3090              # 0.9 x 3,435
+  max_observations: 6500         # 3,435 on 2026-10-12 + about eleven months at
+                                 #   up to 279 rows a month (31 days x 9). Kept
+                                 #   BELOW a doubling (6,870) on purpose; raise
+                                 #   it by hand when the series nears it.
+
+registry:
+  max_unclassified: 0
+  rules:
+    # Nine rules, one per series, because each is a different statement and
+    # carries a different unit. All are a day's count (flow): a period's total
+    # is their sum over its days. None is a running total.
+    #
+    # THE SCOPE, IN THE PUBLISHER'S WORDS (the dashboard's Disclaimers, read
+    # 2026-10-12): "Data presented on this dashboard include only humanitarian
+    # relief consignments processed through the UN2720 Mechanism." / "The
+    # numbers expressed reflect data available through a combination of
+    # on-the-ground UN2720 Monitors and cross-verification with partners. They
+    # remain subject to change" / "Trucks on the Gaza side of the Kerem
+    # Shalom/Karem Abu Salem and Erez West/Zikim crossings are typically
+    # smaller than those arriving from the Israeli side. As a result, the
+    # number of trucks reaching the crossings does not correspond directly to
+    # the number collected on the Gaza side."
+    - when: {equals: "aid_un2720.offloaded.trucks"}
+      name_en: "UN2720: aid trucks offloaded at Gaza's crossings, per day"
+      name_ar: "آلية 2720: شاحنات المساعدات اللي نزّلت حمولتها على معابر غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        Trucks of aid unloaded that day at a crossing on Gaza's edge, counted
+        by the UN2720 Mechanism (UNOPS). It covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it), and
+        cargo unloaded at a crossing has not yet been collected or delivered.
+        These trucks are larger than the ones that collect inside Gaza, so the
+        two truck counts do not compare. It is not UNRWA's truck count, which
+        ended on 16 January 2025: the two are never one series.
+      serve_warning_ar: >-
+        هاد عدد شاحنات المساعدات اللي نزّلت حمولتها بهداك اليوم على معابر غزة،
+        حسب آلية الأمم المتحدة 2720 (يونوبس). بيشمل بس المساعدات اللي مرّت عن
+        طريق هالآلية، لا بضاعة تجارية ولا مساعدات من برّاها، واللي نزل عالمعبر
+        لسا ما انستلم ولا وصل. وشاحنات المعبر أكبر من الشاحنات اللي بتستلم جوّا
+        غزة، فالعددين ما بيتقارنوا. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون
+        الثاني 2025، وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.offloaded.pallets"}
+      name_en: "UN2720: aid pallets offloaded at Gaza's crossings, per day"
+      name_ar: "آلية 2720: مشاطيح المساعدات اللي نزلت على معابر غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: packages
+      serve_warning: >-
+        Pallets of aid unloaded that day at a crossing on Gaza's edge, counted
+        by the UN2720 Mechanism (UNOPS). It covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it), and
+        cargo unloaded at a crossing has not yet been collected or delivered.
+        It is not UNRWA's count, which ended on 16 January 2025: the two are
+        never one series.
+      serve_warning_ar: >-
+        هاد عدد مشاطيح المساعدات اللي نزلت بهداك اليوم على معابر غزة، حسب آلية
+        الأمم المتحدة 2720 (يونوبس). بيشمل بس المساعدات اللي مرّت عن طريق
+        هالآلية، لا بضاعة تجارية ولا مساعدات من برّاها، واللي نزل عالمعبر لسا
+        ما انستلم ولا وصل. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني
+        2025، وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.offloaded.tonnes"}
+      name_en: "UN2720: tonnes of aid offloaded at Gaza's crossings, per day"
+      name_ar: "آلية 2720: وزن المساعدات اللي نزلت على معابر غزة بالطن، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: tonne
+      serve_warning: >-
+        Tonnes of aid unloaded that day at a crossing on Gaza's edge, counted
+        by the UN2720 Mechanism (UNOPS). It covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it), and
+        cargo unloaded at a crossing has not yet been collected or delivered.
+        It is not UNRWA's count, which ended on 16 January 2025: the two are
+        never one series.
+      serve_warning_ar: >-
+        هاد وزن المساعدات بالطن اللي نزل بهداك اليوم على معابر غزة، حسب آلية
+        الأمم المتحدة 2720 (يونوبس). بيشمل بس المساعدات اللي مرّت عن طريق
+        هالآلية، لا بضاعة تجارية ولا مساعدات من برّاها، واللي نزل عالمعبر لسا
+        ما انستلم ولا وصل. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني
+        2025، وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.collected.trucks"}
+      name_en: "UN2720: trucks of aid collected from Gaza's crossings, per day"
+      name_ar: "آلية 2720: الشاحنات اللي استلمت مساعدات من معابر غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        Trucks that picked up aid from a crossing that day and drove it into
+        Gaza, counted by the UN2720 Mechanism (UNOPS). Collected is not
+        delivered: part of it was intercepted on the road before it reached
+        its destination. It covers only cargo sent through that UN mechanism.
+        These trucks are smaller than the ones that unload at the crossing, so
+        the two truck counts do not compare. It is not UNRWA's truck count,
+        which ended on 16 January 2025: the two are never one series.
+      serve_warning_ar: >-
+        هاد عدد الشاحنات اللي استلمت مساعدات من معابر غزة بهداك اليوم ودخّلتها
+        عالقطاع، حسب آلية الأمم المتحدة 2720 (يونوبس). الاستلام مش وصول: جزء
+        من الحمولة انأخذ عالطريق قبل ما يوصل. وبيشمل بس المساعدات اللي مرّت عن
+        طريق هالآلية. وشاحنات الاستلام أصغر من شاحنات المعبر، فالعددين ما
+        بيتقارنوا. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني 2025، وما
+        بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.collected.pallets"}
+      name_en: "UN2720: aid pallets collected from Gaza's crossings, per day"
+      name_ar: "آلية 2720: مشاطيح المساعدات اللي انستلمت من معابر غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: packages
+      serve_warning: >-
+        Pallets of aid picked up from a crossing that day and driven into
+        Gaza, counted by the UN2720 Mechanism (UNOPS). Collected is not
+        delivered: part of it was intercepted on the road before it reached
+        its destination. It covers only cargo sent through that UN mechanism.
+        It is not UNRWA's count, which ended on 16 January 2025: the two are
+        never one series.
+      serve_warning_ar: >-
+        هاد عدد مشاطيح المساعدات اللي انستلمت من معابر غزة بهداك اليوم ودخلت
+        عالقطاع، حسب آلية الأمم المتحدة 2720 (يونوبس). الاستلام مش وصول: جزء
+        من الحمولة انأخذ عالطريق قبل ما يوصل. وبيشمل بس المساعدات اللي مرّت عن
+        طريق هالآلية. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني 2025،
+        وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.collected.tonnes"}
+      name_en: "UN2720: tonnes of aid collected from Gaza's crossings, per day"
+      name_ar: "آلية 2720: وزن المساعدات اللي انستلمت من معابر غزة بالطن، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: tonne
+      serve_warning: >-
+        Tonnes of aid picked up from a crossing that day and driven into Gaza,
+        counted by the UN2720 Mechanism (UNOPS). Collected is not delivered:
+        part of it was intercepted on the road before it reached its
+        destination. It covers only cargo sent through that UN mechanism. It
+        is not UNRWA's count, which ended on 16 January 2025: the two are
+        never one series.
+      serve_warning_ar: >-
+        هاد وزن المساعدات بالطن اللي انستلم من معابر غزة بهداك اليوم ودخل
+        عالقطاع، حسب آلية الأمم المتحدة 2720 (يونوبس). الاستلام مش وصول: جزء
+        من الحمولة انأخذ عالطريق قبل ما يوصل. وبيشمل بس المساعدات اللي مرّت عن
+        طريق هالآلية. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني 2025،
+        وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.arrived.trucks"}
+      name_en: "UN2720: trucks of aid that reached their destination in Gaza, per day"
+      name_ar: "آلية 2720: شاحنات المساعدات اللي وصلت وجهتها جوّا غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        Trucks of aid that reached their intended destination inside Gaza that
+        day, as verified by the UN2720 Mechanism (UNOPS). It says nothing
+        about distribution to families, and it covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it). It is
+        not UNRWA's truck count, which ended on 16 January 2025: the two are
+        never one series.
+      serve_warning_ar: >-
+        هاد عدد شاحنات المساعدات اللي وصلت بهداك اليوم للمكان المقصود جوّا غزة،
+        حسب تحقّق آلية الأمم المتحدة 2720 (يونوبس). الرقم ما بيقول إذا توزّعت
+        عالناس، وبيشمل بس المساعدات اللي مرّت عن طريق هالآلية، لا بضاعة تجارية
+        ولا مساعدات من برّاها. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني
+        2025، وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.arrived.pallets"}
+      name_en: "UN2720: aid pallets that reached their destination in Gaza, per day"
+      name_ar: "آلية 2720: مشاطيح المساعدات اللي وصلت وجهتها جوّا غزة، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: packages
+      serve_warning: >-
+        Pallets of aid that reached their intended destination inside Gaza
+        that day, as verified by the UN2720 Mechanism (UNOPS). It says nothing
+        about distribution to families, and it covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it). It is
+        not UNRWA's count, which ended on 16 January 2025: the two are never
+        one series.
+      serve_warning_ar: >-
+        هاد عدد مشاطيح المساعدات اللي وصلت بهداك اليوم للمكان المقصود جوّا غزة،
+        حسب تحقّق آلية الأمم المتحدة 2720 (يونوبس). الرقم ما بيقول إذا توزّعت
+        عالناس، وبيشمل بس المساعدات اللي مرّت عن طريق هالآلية، لا بضاعة تجارية
+        ولا مساعدات من برّاها. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني
+        2025، وما بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_un2720.arrived.tonnes"}
+      name_en: "UN2720: tonnes of aid that reached their destination in Gaza, per day"
+      name_ar: "آلية 2720: وزن المساعدات اللي وصلت وجهتها جوّا غزة بالطن، باليوم"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: tonne
+      serve_warning: >-
+        Tonnes of aid that reached their intended destination inside Gaza that
+        day, as verified by the UN2720 Mechanism (UNOPS). It says nothing
+        about distribution to families, and it covers only cargo sent through
+        that UN mechanism (no commercial goods, no aid sent outside it). It is
+        not UNRWA's count, which ended on 16 January 2025: the two are never
+        one series.
+      serve_warning_ar: >-
+        هاد وزن المساعدات بالطن اللي وصل بهداك اليوم للمكان المقصود جوّا غزة،
+        حسب تحقّق آلية الأمم المتحدة 2720 (يونوبس). الرقم ما بيقول إذا توزّعت
+        عالناس، وبيشمل بس المساعدات اللي مرّت عن طريق هالآلية، لا بضاعة تجارية
+        ولا مساعدات من برّاها. وهاد مش عدّ الأونروا اللي وقف بـ16 كانون الثاني
+        2025، وما بنحطهم بسلسلة وحدة.
+
+notes: |
+  THE SOURCE (read 2026-10-12). https://tracking.un2720.org/ (the address
+  app.un2720.org/tracking redirects to). The page draws from four JSON
+  addresses on the same host that answer a plain GET with no account, key or
+  cookie; robots.txt there is "User-agent: * / Disallow:" (everything
+  allowed). ops/fetch_un2720.py reads them once a night with the page's own
+  window. The page's HTML carries <meta name="robots" content="noindex,
+  nofollow">, which is an instruction to search engines about listing the
+  page, not a term of use; it is recorded here so nobody has to rediscover it.
+
+  THE WINDOW AND THE VINTAGE. The page declares `floor` 2025-05-19 and `until`
+  2026-08-31 with `capped: true`, and says: "Data presented on this dashboard
+  is accurate and verified up to August 31, 2026. Information for subsequent
+  dates is pending final verification due to an ongoing system migration. Full,
+  up-to-date reporting will resume shortly." So on 2026-10-12 the newest day
+  is six weeks old BY THE PUBLISHER'S DECISION. The fetcher never asks past
+  `until` and writes it as the raw file's vintage. ops/gap_radar.py gives the
+  dataset a 45-day allowance for that reason; bring it down when the cap goes.
+  A request for December 2024 (inside UNRWA's period) returned zero rows: the
+  dashboard holds nothing before its floor.
+
+  HOW IT DIFFERS FROM UNRWA'S TRUCK LOG, and why the two are never one series:
+    who counts      UNRWA's dashboard ("Gaza Supplies and Dispatch Tracking")
+                    logged what UN agencies saw at the crossings they could
+                    watch: in the held rows Kerem Shalom 27,498, Rafah 11,080,
+                    Western Erez 6,304, Gate 96 2,297, Erez 2,170, JLOTS 638,
+                    Kissufim 72. UN2720 counts only consignments registered in
+                    its own mechanism (UN agencies, NGOs, the ICRC, some
+                    states' bodies), at Kerem Shalom, Zikim (Erez West) and
+                    Kissufim. Rafah does not appear on the UN2720 page.
+    what is counted UNRWA: one row per truck or consignment line. UN2720: three
+                    stages of one journey as daily totals, with no line per
+                    truck. Which stage UNRWA's log sat at is an INFERENCE, not
+                    something either publisher states: OCHA's page on incoming
+                    supplies for the same period (ochaopt.org/data/crossings,
+                    which ends 18 January 2025) says "Supplies that are scanned
+                    and offloaded at an entry point but not yet collected are
+                    not shown here". On that reading `collected` is the nearest
+                    in meaning and `offloaded` has no UNRWA counterpart.
+    the truck       not one size: see the publisher's third disclaimer above.
+                    Tonnes compare across stages; trucks do not.
+    when            UNRWA 2023-10-21 to 2025-01-16 (measured in the store).
+                    UN2720 2025-05-19 onward. No day has both, so the
+                    difference in definition cannot be measured on a shared
+                    day, only stated. The 122 days between them (2025-01-17 to
+                    2025-05-18) have no row from either.
+  A chart that draws both must draw two lines with a gap, never one.
+
+  THE THREE STAGES DO NOT ADD UP, and must not be added. They are the same
+  cargo seen three times. To date (2026-08-31): offloaded 38,096 trucks /
+  565,802 t; collected 42,702 trucks / 568,356 t; arrived 34,771 trucks /
+  476,170 t. Collected exceeds offloaded in trucks although the tonnes are
+  within half a percent: the publisher's explanation is the smaller Gaza-side
+  truck. Arrived is 7,931 trucks below collected; the publisher's own total for
+  cargo intercepted in transit is 7,229 trucks (see below), so interception
+  accounts for most of that difference and 702 trucks are neither.
+
+  NOT LOADED, and kept in the raw file under `publisher` so it is not lost:
+  the to-date splits each answer carries (trucks by crossing; trucks, pallets
+  and tonnes by commodity, by route and by organisation; tonnes by route x
+  commodity and organisation x commodity; the number of requests), and the
+  arrived tonnes by month. They are totals for whatever date range is asked,
+  not per day: a per-day split would cost one request per day (333 to 417 per
+  stage), a per-month split sixteen. Loading them is a separate decision.
+
+  INTERCEPTED IS NOT PUBLISHED AS A SERIES. The page's `intercepted` switch is
+  false: its fourth section is hidden and /fetchLootedData answers 404. The
+  landing totals (/fetchSummaryStats) still return a `looted` figure (7,229
+  trucks, 84,521 t to date). It is kept in the raw file as received and NOT
+  loaded: a number the publisher has taken off its page is not ours to serve.
+
+  REVISIONS ARE REAL. The publisher's July 2026 monthly overview (published
+  2026-08-06, "All data as of 31 July 2026") says 35,200 t were offloaded at
+  Kerem Shalom in July 2026; the dashboard on 2026-10-12 sums July 2026 to
+  36,605.27 t, all of it at Kerem Shalom (2,849 trucks). The identity above
+  leaves the value out so such a revision supersedes.
+
+  LICENCE. None is stated on un2720.org, info.un2720.org or the dashboard; the
+  footer reads "(c) UN2720 Mechanism for Gaza". UNOPS's own website terms
+  (unops.org/terms-of-use) allow "personal, non-commercial use, without any
+  right to resell or redistribute", and nothing on the UN2720 sites says those
+  terms apply to this dashboard. The source row is proposed as `ask`,
+  commercial_use false (db/proposed/un2720.sql): held, shown to no partner,
+  until UNOPS is asked.

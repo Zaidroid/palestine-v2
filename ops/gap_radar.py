@@ -140,6 +140,16 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "v1_conflict_t4p_westbank": 30,   # OCHA flash updates: ~weekly-biweekly;
                                       #   learned 1d rhythm is the kept-run
                                       #   artifact, not the publish cadence
+    # UN2720's dashboard is capped BY THE PUBLISHER at its last verified day.
+    # On 2026-10-12 that day was 2026-08-31, 42 days back, and the page said:
+    # "Information for subsequent dates is pending final verification due to
+    # an ongoing system migration." The series is daily, so the learned rhythm
+    # gives a 7-day allowance: the dataset would read STALLED the night it is
+    # first loaded and fail the job on a fetcher that is working. 45 = fresh
+    # while the newest verified day is within a month and a half, late to 90,
+    # stalled (and the night fails) after that. Bring it back down when the
+    # cap goes: data/raw/un2720/daily.json, metadata.capped.
+    "un2720_aid_daily": 45,
 }
 
 # Event-recording series: silence can mean "no events", not "feed died".
@@ -211,6 +221,11 @@ SUPPLY_LINES = {
                          "fetcher": "ops/fetch_unrwa_registered.py", "every_days": 1,
                          "note": "UNRWA's quarterly HDX release; the file holds one "
                                  "quarter, the databank keeps every one it has seen"},
+    "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
+               "fetcher": "ops/fetch_un2720.py", "every_days": 1,
+               "note": "UN2720's aid dashboard, one attempt a night for all "
+                       "three stages; the publisher caps the window at its "
+                       "last verified day (see ALLOWANCE_OVERRIDE_DAYS)"},
 }
 
 # v1 refresh steps that are RETIRED: a successor carries what they did, so
@@ -255,9 +270,12 @@ FILL_PATHS = {
                                        "line ocha-demolitions).",
     "v1_food_wfp": "WFP price data usually lands monthly; check the HDX "
                    "dataset revision if LATE persists.",
-    "v1_aid_access_unrwa_aid_trucks": "dead; a successor series would need "
-                                      "OCHA aid-tracking or COGAT data — "
-                                      "unscoped.",
+    "v1_aid_access_unrwa_aid_trucks": "dead. UN2720's dashboard "
+                                      "(un2720_aid_daily, ops/fetch_un2720.py) "
+                                      "counts UN-coordinated cargo from "
+                                      "2025-05-19 under another definition: a "
+                                      "second series, never a continuation. "
+                                      "2025-01-17 to 2025-05-18 has no source.",
     "v1_economic_pcbs_direct": "v2 fetch ops/fetch_pcbs.py (supply line "
                                "pcbs-direct); poverty has no source.",
     "v1_prisoners_hamoked": "v2 fetch ops/fetch_hamoked.py (supply line "
