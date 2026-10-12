@@ -299,3 +299,20 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS'
                  || ' — no_source disagrees with non_crowd_sources' END AS g2_no_source_honest
 FROM state_kind_coverage
 WHERE no_source <> (non_crowd_sources = 0);
+
+\echo '--- G2.19: the readings of a merged row are on the row the place is now ---'
+-- `place.merged_into` promises that observations are re-pointed at the
+-- canonical row. 082 and 097 moved two days of them and left 30,295 behind
+-- (2026-10-12): الكونتينر read its hourly pattern from 56% of its own history.
+-- Migration 100 moved them. A reading may stay on a merged row only where the
+-- surviving row already holds the same statement (same source, kind, direction
+-- and moment), because moving it would say it twice.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS'
+            ELSE 'FAIL: ' || count(*) || ' readings on merged rows that the surviving row does not hold'
+       END AS g2_merged_rows_readings_follow
+FROM state_observation o
+JOIN place p ON p.place_id = o.place_id AND p.merged_into IS NOT NULL
+WHERE NOT EXISTS (SELECT 1 FROM state_observation t
+                   WHERE t.place_id = p.merged_into
+                     AND t.state_kind = o.state_kind AND t.direction = o.direction
+                     AND t.source_id = o.source_id AND t.observed_at = o.observed_at);

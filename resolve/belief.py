@@ -113,12 +113,21 @@ WITH grp AS (
          kind
   FROM source
 ),
-newest AS (
+newest_filed AS (
   SELECT DISTINCT ON (place_id, state_kind, direction)
          place_id, state_kind, direction, value, observed_at, source_id
   FROM state_observation
   WHERE state_kind = ANY(%(kinds)s) AND modality = 'assertion'
   ORDER BY place_id, state_kind, direction, observed_at DESC
+),
+-- A MERGED ROW HOLDS NO BELIEF. Its readings were moved to the surviving row
+-- (migration 100); what stays on it are statements the surviving row already
+-- holds. Building a belief from those put 65 rows back on merged places after
+-- every rebuild, none of them servable, and `reground` withdrew them again.
+newest AS (
+  SELECT n.* FROM newest_filed n
+   WHERE NOT EXISTS (SELECT 1 FROM place p
+                      WHERE p.place_id = n.place_id AND p.merged_into IS NOT NULL)
 ),
 -- A STRANGER'S CAUTION MAY NOT BLIND A CHANNEL (audit 2026-09-25, F017).
 -- The newest report used to become the belief whoever filed it. An unverified
