@@ -1193,3 +1193,53 @@ assertions on its own row (3,434 before), ام السلمونا 1,194 (276), ا�
 "73,000+ identified people" against a roster of 72,835 since the 242 withdrawals. Floor lowered to 72,000+; the
 open-data export counts the memorial when it runs where it had typed 73,077 into two generated pages (audit V27).
 The licence and export tests, 23, pass after it.
+
+2026-10-12 20:50 UTC · **migration 101 would have failed tonight's load: found and fixed before it ran** (`c9fc90c`, on the working
+branch, spec only). 101 closed the Gaza-governorate copy of Tech for Palestine's damage series "because the loader
+emits the Gaza-Strip copy". It emitted the governorate copy: every record carries one point and the place ladder read
+it as the governorate. After 101 a real run had 2,920 rows with a new identity and the stable id of a held row; the
+insert refuses that and the category fails, and a dry run stops before the insert, so every dry run was green
+(production's own ledger: 3,537 held before 101, 617 after). A supply agent reading the spec found it. Fix:
+`infrastructure_damage` joins `place.latlon_exclude`, so the totals land on the Strip. Dry run on production after
+it: 3,537 of 3,537 held. A read-only scan of all 29 keyed categories for the same clash: none. The loader now counts
+this clash before any write, in a dry run too (`6815c73`).
+
+2026-10-12 20:50 UTC · **the rest of the databank list: built and rehearsed, not applied.** Branch `databank-rest`, 52 commits
+ahead of the working branch, which it contains (a fast-forward). One command for Zaid, HANDS §13g:
+`bash tmp/8-databank-rest.sh`. Rehearsed twice on a fresh copy of the store: first run 210 s, no failure; second
+run writes nothing. What it lands, with what was measured:
+- **partner tier** — 22,140 served rows are licensed for non-commercial use and passed the partner filter, which
+  asked for the grade alone (WHO 12,577, UCDP 7,638, OONI 1,376, IMF 474, UNRWA camps 75). Rows and series carry
+  `commercial_use`; a partner payload withholds them and says why.
+- **dates** — a period total names its period, a register row is not dated by its fetch day (`serve/when.py`);
+  the publisher's vintage is recorded on the dataset by every load (21 datasets after the rehearsal) and a register
+  is judged by its last successful reading. **104**: `v_flow` no longer differences placeholder dates (848
+  invented flows); `dataset_freshness` counts live rows and reads events.
+- **Insecurity Insight** — v1's incident id missed the publisher's event number under three of its four spellings:
+  9,627 incidents dropped as repeats (6,189 of Protection's 7,400), and 4,965 health-care incidents held as 7,903.
+  New id = the publisher's number per category. `ops/rekey_insecurity_insight.py`: 16,526 held events take the new
+  id, 3,645 are superseded as second copies, 3 left as they are. Then 7,771 events load: 24,300 served.
+- **WHO health** — re-fetched from GHO with every dimension (agent, `supply-who`): 12,502 rows close, 13,014 are
+  written; 0 indicator-years hold two rows (1,050 groups, 4,521 rows before); no code mixes units (54 before).
+- **supply** — every spec that read v1's tree or a never-refreshed file has its own input: World Bank and IMF (IMF
+  rows gain their unit: 474 revisions), FTS, IDMC, WFP food, the school register, the barrier and village
+  boundaries, UNOSAT, Good Shepherd, Peace Now, Addameer, UCDP (GED 26.1's 3,179 events of 2025; candidates and the
+  1989-2024 revisions held out), culture frozen as the Wikidata query result it is. New: the UN2720 Mechanism's
+  daily aid series (3,435 rows, **106**, graded `ask`).
+- **what v1 wrote that no publisher said** — "Intact" on 337 heritage sites, "Authorized" on every settlement,
+  five constants on every demolition, "Active" on 2,359 schools, "1 km" on every barrier segment (the file: 711.9
+  km), "1 persons" on 342 village boundaries: no longer loaded (land 692, culture 335, education 2,359,
+  infrastructure 603 revisions). `land.checkpoint` is the Separation Barrier of January 2018, and says so.
+  **108, 109, 110**: provenance and vintage on nine datasets; the camp figures are a Wikipedia table of UNRWA's
+  2018-2020 counts, and eleven mislabelled summary rows close.
+- **cited figures** (**107**) — 105 figures the film typed, one publisher's statement a row, with document, URL,
+  sentence and the day read.
+- **smaller** — the last three Ministry bulletins without a day line parse (840 compared before and after: three
+  changed); HaMoked's fourth figure has a series (1,419 in October); 1948 dates on the first of a month are held as
+  months (**105**: 144 events; 145 rows); the aid log says its own disclaimer; correlate: `detrend=diff` works,
+  time grain and units are checked, one publisher per line, a lag is not a cause; a national series asked at a
+  town answers nationally and says so; names from the publisher on 1,575 of 2,501 definitions (the names file for
+  the rest is being written).
+Full suite from the branch against production before the run: 1,943 passed, 11 failed: 7 need generated files the
+worktree lacks (pass with them), 2 were mine and are fixed (`bf8d8c2`), 2 (`test_identity_invariant` health,
+insecurity_insight) pass only after the command, by design. As-of harness 24/24, 120/120.
