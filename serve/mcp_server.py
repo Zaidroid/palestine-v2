@@ -2152,7 +2152,10 @@ def databank(category: str | None = None, indicator: str | None = None,
                               "rows": row.get("rows_served") or row.get("n")}
     lo = sorted(v["from"] for v in series_span.values() if v.get("from"))
     hi = sorted(v["to"] for v in series_span.values() if v.get("to"))
-    span = f" السلسلة من {lo[0][:4]} إلى {hi[-1][:4]}." if lo and hi else ""
+    # a register or a period total has no dated span: the dates on its rows
+    # are placeholders (the fetch day, the first day of the period)
+    dated = any(it.get("occurred_precision") != "unknown" for it in list(newest.values())[:3])
+    span = f" السلسلة من {lo[0][:4]} إلى {hi[-1][:4]}." if lo and hi and dated else ""
     bits = []
     for k, it in list(newest.items())[:3]:
         val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
@@ -2167,7 +2170,8 @@ def databank(category: str | None = None, indicator: str | None = None,
         if is_cited(it):
             # كل سطر كلام ناشر واحد: بنسمّي كل ناشر جنب رقمه
             rows_ = statements(items, it) or [it]
-            bits.append(f"{label_ar(d, k)}: {cited_ar(rows_)}{unit} {when_}{where}")
+            bits.append(f"{label_ar(d, k)}{f' ({unit.strip()})' if unit else ''}: "
+                        f"{cited_ar(rows_)} {when_}{where}")
             continue
         nm = label_ar(d, k)
         bits.append(f"{nm}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))

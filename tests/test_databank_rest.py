@@ -327,7 +327,7 @@ def test_every_publisher_is_named_beside_its_figure_and_nothing_is_averaged():
              _cite(957000, "PCBS"), _cite(None, "IPS", value_low=714150, value_high=744150)]
     said = mcp_en.databank({"category": "historical", "count": 4, "items": items,
                             "latest_by_indicator": [items[2]]})
-    assert "about 711,000 per UNCCP" in said and "about 750,000 per UNRWA" in said
+    assert "(persons): about 711,000 per UNCCP" in said and "about 750,000 per UNRWA" in said
     assert "957,000 per PCBS" in said and "714,150 to 744,150 per IPS" in said
     assert "in 1948" in said
 
@@ -611,3 +611,15 @@ def test_a_mean_harvest_in_kilograms_is_not_a_percentage():
     rule = next(r for r in conflict["registry"]["rules"]
                 if r["when"] == {"regex": "^conflict\\.westbank_cumulative_displaced_(persons|children)"})
     assert rule["canonical_unit"] == "persons"
+
+
+def test_a_register_or_a_period_total_is_not_given_a_span_of_years():
+    """"Series 2026→2026" for a school register was its fetch day twice."""
+    from serve import mcp_en
+    d = {"category": "education", "count": 1, "latest_by_indicator": [SCHOOL | {"unit": "schools"}],
+         "series_span": {"education.school_record": {"from": "2026-08-05", "to": "2026-08-05"}}}
+    assert "Series" not in mcp_en.databank(d)
+    dated = {"category": "x", "count": 1, "series_span": {"a": {"from": "2008-01-01", "to": "2026-01-01"}},
+             "latest_by_indicator": [{"indicator": "a", "value_num": 5.0, "occurred_at": "2026-01-01T00:00:00Z",
+                                      "occurred_precision": "year", "attrs": {}}]}
+    assert "Series 2008→2026." in mcp_en.databank(dated)

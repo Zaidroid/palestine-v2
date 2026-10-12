@@ -825,7 +825,8 @@ def databank(d: dict) -> str:
         if is_cited(it):
             # one publisher's statement a row: every publisher is named
             rows = statements(d.get("items") or [], it) or [it]
-            bits.append(f"{label_en(d, it.get('indicator'))}: {cited_en(rows)}{unit} {when}{where}")
+            bits.append(f"{label_en(d, it.get('indicator'))}{f' ({unit.strip()})' if unit else ''}: "
+                        f"{cited_en(rows)} {when}{where}")
             continue
         name = label_en(d, it.get("indicator"))
         bits.append((f"{name}: {val:,}{unit} {when}{partial}{where}"
@@ -834,7 +835,9 @@ def databank(d: dict) -> str:
     spans = d.get("series_span") or {}
     lo = sorted(v["from"] for v in spans.values() if v.get("from"))
     hi = sorted(v["to"] for v in spans.values() if v.get("to"))
-    span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi else ""
+    dated = any(it.get("occurred_precision") != "unknown"
+                for it in (d.get("latest_by_indicator") or [])[:3])
+    span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi and dated else ""
     src = "; ".join(d.get("attribution") or [])[:120].rstrip(". ")
     if not bits:
         return (f"No matching rows in {d.get('category')}"
