@@ -38,8 +38,8 @@ def _dataset(cur) -> tuple[int, int]:
         raise SystemExit(f"source {SOURCE_KEY} missing — is it in the poller?")
     sid = row[0]
     cur.execute("""
-        INSERT INTO dataset (key, name, source_id, cadence, active, attrs)
-        VALUES (%s, 'Gaza MoH daily statistical report', %s, 'daily', true, %s)
+        INSERT INTO dataset (key, name, source_id, v1_category, cadence, active, attrs)
+        VALUES (%s, 'Gaza MoH daily statistical report', %s, 'conflict', 'daily', true, %s)
         ON CONFLICT (key) DO NOTHING""",
         (DATASET_KEY, sid, json.dumps({
             "grain": "Gaza Strip x day",

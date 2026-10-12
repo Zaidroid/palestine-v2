@@ -97,6 +97,22 @@ def load_units(cur, apply: bool) -> tuple[int, int]:
     return len(doc), n_alias
 
 
+def load_dataset_rules() -> dict:
+    """name -> {indicator_prefix, rules, max_unclassified} for the datasets no
+    mapping spec describes."""
+    f = REGISTRY / "datasets.yaml"
+    if not f.exists():
+        return {}
+    doc = yaml.safe_load(f.read_text()) or {}
+    out = {}
+    for name, reg in (doc.get("datasets") or {}).items():
+        if not (reg or {}).get("indicator_prefix"):
+            raise SystemExit(f"db/registry/datasets.yaml: {name} declares no "
+                             "indicator_prefix — it would speak for every indicator")
+        out[name] = reg
+    return out
+
+
 # ── the generated rows ───────────────────────────────────────────────────────
 
 def matches(rule: dict, indicator: str, unit: str | None) -> bool:
@@ -122,7 +138,8 @@ def matches(rule: dict, indicator: str, unit: str | None) -> bool:
 
 
 FIELDS = ("concept", "measure_kind", "polarity", "grain", "place_grain",
-          "canonical_unit", "name_en", "name_ar")
+          "canonical_unit", "name_en", "name_ar",
+          "serve_warning", "serve_warning_ar")
 
 
 def classify(pairs: list[tuple[str, str | None, int]],
@@ -158,6 +175,18 @@ def classify(pairs: list[tuple[str, str | None, int]],
     return out, sorted(conflict)
 
 
+def unclassified_by_reader(read: list[tuple]) -> dict[str, list[str]]:
+    """What each reader (a spec, or an entry of datasets.yaml) leaves without a
+    meaning: the indicators it sees that NO reader classified. `read` is
+    [(name, pairs, got)]. Every reader is classified before any is judged, so
+    the answer does not depend on the order they were read in."""
+    anywhere: set[str] = set()
+    for _name, _pairs, got in read:
+        anywhere |= set(got)
+    return {name: sorted({i for i, _u, _n in pairs} - anywhere)
+            for name, pairs, _got in read}
+
+
 def main(argv: list[str]) -> int:
     apply = "--apply" in argv
     report: dict = {"specs": {}, "unclassified": []}
@@ -180,6 +209,8 @@ def main(argv: list[str]) -> int:
             live.setdefault(cat, []).append((ind, unit, n))
 
         total_unclassified = 0
+        warned = 0
+        declared_warnings = 0
         problems = []
         # An indicator classified by ANY spec is classified. Two specs can
         # share one serving category — conflict_westbank declares
@@ -187,7 +218,19 @@ def main(argv: list[str]) -> int:
         # ten indicators as unclassified against the spec that has no rules
         # for them, which is a report about the bookkeeping rather than the
         # data.
+        #
+        # ANY spec, whatever its place in the alphabet. The set used to fill
+        # as the loop went, so it only excused a spec read AFTER the one that
+        # held the rules: acled_hdx, btselem_fatalities and fao_diem, loaded
+        # on 2026-10-11, sort before conflict, casualties and food, and the
+        # loader refused all three for indicators their siblings classify.
+        # Nobody ran it after those loads: on 2026-10-12, 717 of 2,047 served
+        # indicators (105,908 rows) had no indicator_def row, and `series`,
+        # `compare`, `correlate` and the indicator search answer "no series
+        # named ..." for a row that does not exist. Every spec is classified
+        # first; the accounting follows.
         classified_anywhere: set[str] = set()
+        read: list[tuple] = []
         for p in sorted(SPECS.glob("*.yaml")):
             try:
                 spec = load_spec(p.stem)
@@ -198,11 +241,27 @@ def main(argv: list[str]) -> int:
             pairs = live.get(cat, [])
             if not pairs:
                 continue
-            inds = {i for i, _u, _n in pairs}
             rules = (reg or {}).get("rules") or []
             got, conflicts = classify(pairs, rules)
             classified_anywhere |= set(got)
-            missing = sorted(inds - set(got) - classified_anywhere)
+            read.append((p, reg, pairs, got, conflicts))
+        # Datasets written by their own ingest module declare their rules in
+        # db/registry/datasets.yaml (see its header: the Ministry's bulletins
+        # had none and no question could reach them).
+        for name, reg in sorted(load_dataset_rules().items()):
+            pairs = [x for rows in live.values() for x in rows
+                     if x[0].startswith(reg["indicator_prefix"])]
+            if not pairs:
+                continue
+            got, conflicts = classify(pairs, reg.get("rules") or [])
+            classified_anywhere |= set(got)
+            read.append((Path(name), reg, pairs, got, conflicts))
+        left = unclassified_by_reader([(p.stem, pairs, got)
+                                       for p, _reg, pairs, got, _c in read])
+        for p, reg, pairs, got, conflicts in read:
+            inds = {i for i, _u, _n in pairs}
+            declared_warnings += sum(1 for m in got.values() if m.get("serve_warning"))
+            missing = left[p.stem]
             rows_missing = sum(n for i, _u, n in pairs if i in set(missing))
             report["specs"][p.stem] = {
                 "indicators": len(inds), "classified": len(got),
@@ -244,6 +303,19 @@ def main(argv: list[str]) -> int:
                     cur.execute("UPDATE indicator_def SET notes = %s "
                                 "WHERE indicator = %s AND status <> 'reviewed'",
                                 (meta["notes"], ind))
+                # A warning is the spec's statement about the SOURCE, so it is
+                # written whatever the row's review status. A rule that
+                # declares none leaves the column alone.
+                if meta.get("serve_warning"):
+                    cur.execute("""UPDATE indicator_def
+                                      SET serve_warning = %s, serve_warning_ar = %s
+                                    WHERE indicator = %s
+                                      AND (serve_warning, serve_warning_ar)
+                                          IS DISTINCT FROM (%s, %s)""",
+                                (meta["serve_warning"], meta.get("serve_warning_ar"),
+                                 ind, meta["serve_warning"],
+                                 meta.get("serve_warning_ar")))
+                    warned += cur.rowcount
             # Unclassified indicators get a ROW too, marked as such. A
             # missing row and a row saying "nobody has classified this" look
             # identical to a query and are completely different facts.
@@ -257,6 +329,8 @@ def main(argv: list[str]) -> int:
             conn.commit()
         print(f"{len(classified_anywhere)} indicator(s) now carry a concept "
               "and a measure kind")
+        print(f"{declared_warnings} indicator(s) have a serve warning declared"
+              + (f" · {warned} written or changed" if apply else ""))
 
         cur.execute("""SELECT count(*) FROM databank_serving ds
                        LEFT JOIN unit_alias ua ON ua.raw = ds.unit

@@ -2910,7 +2910,7 @@ def databank_compare(indicators: str, place_id: int | None = None,
     series = [_series(k, place_id, frm, to) for k in keys]
     dated = [{p["at"] for p in s["points"]} for s in series if s["points"]]
     overlap = set.intersection(*dated) if len(dated) == len(series) else set()
-    return {
+    out = {
         "series": [{k: v for k, v in s.items() if k != "source_names"}
                    for s in series],
         "overlap": {"from": min(overlap).isoformat() if overlap else None,
@@ -2920,6 +2920,14 @@ def databank_compare(indicators: str, place_id: int | None = None,
                 "its own unit, its own grain and its own attribution — "
                 "plotting two units on one axis is a chart that lies.",
     }
+    # What a number is NOT travels with every answer that serves it. Until
+    # 2026-10-12 only the category route said it: `series`, `compare` and
+    # `correlate` served casualties.annual_total with no word that it leaves
+    # out the Gaza war.
+    warnings = _serve_warnings(sorted(set(keys)))
+    if warnings:
+        out["warnings"] = warnings
+    return out
 
 
 @app.get("/v2/databank/correlate", tags=["databank"])
@@ -2938,6 +2946,17 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
     Every refusal below returns a REASON and no number. A coefficient with a
     warning stapled to it gets quoted without the warning.
     """
+    out = _correlate(a, b, place_id, frm, to, method, max_lag,
+                     allow_same_concept, detrend)
+    warnings = _serve_warnings(sorted({a, b}))
+    if warnings:
+        out["warnings"] = warnings
+    return out
+
+
+def _correlate(a: str, b: str, place_id: int | None, frm: str | None,
+               to: str | None, method: str, max_lag: int,
+               allow_same_concept: bool, detrend: str) -> dict:
     from serve import correlate as C
     sa, sb = _series(a, place_id, frm, to), _series(b, place_id, frm, to)
     # Three different absences, three different answers. Conflating them
@@ -3174,6 +3193,10 @@ def databank_correlate_scan(
                  "attribution and the lag search for one pair. This endpoint "
                  "deliberately returns none of those: finding is not "
                  "concluding."),
+        # ...except what a series is NOT: the subject's warning and those of
+        # the series it is shown beside travel with the list.
+        **({"warnings": w} if (w := _serve_warnings(
+            sorted({a} | {h["indicator"] for h in hits[:15]}))) else {}),
     }
 
 

@@ -27,8 +27,15 @@ datasets:
   - key: v1_infrastructure_tech4palestine
     source: tech4palestine
     overrides:
-      identity:                       # 4 indicators × 730 days × 2 places
-        fields: [indicator, occurred_at, place_id]   # = 5,840 / 5,840 ✓
+      identity:                       # 4 indicators × 730 days
+        fields: [indicator, occurred_at, place_id]   # = 2,920 / 2,920
+        # The "× 2 places = 5,840 ✓" this line carried until 2026-10-12 was
+        # the defect, measured as if it were the design: the June load filed
+        # the series under Gaza governorate (15), the August one under the
+        # Strip (1), and because the place is in the key the first copy was a
+        # different row and stayed. Migration 101 closed it. The key is left
+        # as stored (the loader reads the STORED key; changing its fields
+        # re-inserts every row unless the stored keys are rewritten first).
   - key: v1_infrastructure_hdx
     source: hdx
     overrides:
@@ -251,12 +258,17 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # RUNNING TOTALS OF THE GAZA STRIP, NOT A DAY'S DAMAGE IN A GOVERNORATE.
+    # Measured 2026-10-12 over 730 days: no series ever falls, and each rises
+    # on 91 to 153 of its 729 steps (residential 80 → 416,000). Labelled a
+    # flow, a sum over a month counted the same buildings thirty times, and
+    # the correlate tool's refusal to pair two cumulatives never fired.
     - when: {prefix: "infrastructure.damage."}
       concept: infrastructure.damage
-      measure_kind: flow
+      measure_kind: cumulative
       polarity: -1
       grain: day
-      place_grain: governorate
+      place_grain: region
     - when: {equals: "infrastructure.locality_record"}
       concept: population.count
       measure_kind: stock

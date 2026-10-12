@@ -63,6 +63,21 @@ HEARTBEAT_RESOLVE=0 ./ops/with-heartbeat.sh databank 86400 21600 -- \
   .venv/bin/python -m ingest.databank --all
 rc=$?
 
+# EVERY INDICATOR THE NIGHT LEFT IN THE STORE GETS ITS DEFINITION. The registry
+# (concept, kind of number, unit, serve warning) was loaded by hand, last on
+# 2026-09-26. The datasets loaded on 2026-10-11 therefore had none: 717 of
+# 2,047 served indicators, 105,908 rows, which `series`, `compare`, `correlate`
+# and the indicator search answered with "no series named ...". An indicator no
+# rule classifies fails the night (the spec's `registry.max_unclassified`), and
+# it fails it here, in the journal and through the unit's alarm, because a row
+# served without its meaning is the loader's unfinished work.
+.venv/bin/python -m ops.load_registry --apply
+reg=$?
+if [ "$reg" -ne 0 ]; then
+  echo "registry: an indicator in the store has no rule — see ops/registry-load.json and add one to its spec" >&2
+  [ "$rc" -eq 0 ] && rc=$reg
+fi
+
 # F-12: the Gaza series is served from T4P (conflict_gaza.yaml); organ C reads
 # the same Ministry bulletins directly. A served day the two disagree on
 # alarms once and stays open until they agree. Non-fatal: the check reports,

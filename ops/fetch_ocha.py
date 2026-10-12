@@ -70,7 +70,10 @@ DEMOLITIONS_EMBED = (
 
 # Source names EXACTLY as the specs route them (db/mappings/*.yaml by_name).
 CAS_SOURCE = {"name": "UN OCHA oPt — Data on Casualties",
-              "organization": "UN OCHA (B'Tselem data)",
+              # v1 wrote "UN OCHA (B'Tselem data)". OCHA's page credits its own
+              # field staff and its Protection of Civilians database (read
+              # 2026-10-12; migration 102 corrected the served credit line).
+              "organization": "UN OCHA oPt",
               "url": "https://www.ochaopt.org/data/casualties",
               "license": "verify-required"}
 DEM_SOURCE = {"name": "UN OCHA oPt — Data on Demolitions",
@@ -333,7 +336,8 @@ def run_feed(name: str, dry: bool, staged: Path | None = None) -> bool:
         "via": "Power BI publish-to-web public API (ops/pbi_public.py)",
         "license": "UN OCHA terms of use (UN-ToU-NC), verify-required",
         "attribution": (f"{source['name']} — UN OCHA oPt"
-                        + (", sourced from B'Tselem." if name == "casualties" else ".")),
+                        + (", Protection of Civilians database."
+                           if name == "casualties" else ".")),
         **summary}, "data": recs}
     print(f"  ok   {label:<18} {len(recs):>4} records, data through "
           f"{summary.get('data_through')} (model refreshed {summary.get('model_last_refresh')})")

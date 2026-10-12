@@ -237,6 +237,19 @@ notes: |
 identity:
   fields: [indicator, occurred_at]
   attrs: [t4p_id]
+  # THE LIST ALSO TAKES NAMES BACK. killed_in_gaza.json is the publisher's
+  # whole roster on every fetch, and a person it no longer lists stayed
+  # current here: measured 2026-10-12, 73,077 held against 72,835 published,
+  # 242 held and gone (all from the first load of 2026-06-25); 7 of them are
+  # in the file again under another id with the same name and birth date,
+  # and were counted twice. The daily summary shares this dataset and grows
+  # by a row a day, so the generation is complete for the roster's indicator
+  # only: a summary row of an earlier day is not a withdrawal.
+  generation: complete
+  generation_indicators: [martyrs.identified_killed]
+  # Measured: 242 on the first run, the whole backlog of 109 days. Above 300
+  # the fetch came back short and nothing is closed.
+  max_absent: 300
 
 registry:
   max_unclassified: 0

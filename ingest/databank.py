@@ -2589,10 +2589,22 @@ def run(category: str, dry_run: bool = False) -> dict:
         if complete and not from_fallback:
             held_n: Counter = Counter()
             gone: dict[str, list[tuple[str, int]]] = defaultdict(list)
+            # where the indicator sits in a dataset's stored key, for the
+            # datasets that declare the generation complete for some
+            # indicators only (the names roster beside its daily summary)
+            scope = {ds: (1 + v["fields"].index("indicator"),
+                          set(v["generation_indicators"]))
+                     for ds, v in complete.items()
+                     if v.get("generation_indicators")}
             for k, (oid, _) in known_identities.items():
                 ds_key = k.split("|", 1)[0]
                 if oid is None or ds_key not in complete:
                     continue
+                if ds_key in scope:
+                    at, wanted = scope[ds_key]
+                    parts = k.split("|")
+                    if len(parts) <= at or parts[at] not in wanted:
+                        continue
                 held_n[ds_key] += 1
                 if k not in emitted_identities:
                     gone[ds_key].append((k, oid))

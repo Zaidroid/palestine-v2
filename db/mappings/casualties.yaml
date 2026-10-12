@@ -1,5 +1,6 @@
-# casualties — OCHA oPt's publication of B'Tselem-verified Palestinian
-# fatalities, 2008+. Audit: 49 records, 38.8% dated (all `-12-31`), 61.2%
+# casualties — OCHA oPt's own count of Palestinian fatalities, 2008+ (its
+# Protection of Civilians database; v1 called it "B'Tselem-verified", which
+# OCHA's page does not say: see the registry rules at the foot). Audit: 49 records, 38.8% dated (all `-12-31`), 61.2%
 # undated, 0% lat/lon. This is NOT a fatality register — it is ONE total
 # (7,459 verified fatalities, 2008-01-01 .. 2026-08-05) published five times
 # over: once as a 19-row annual series, and four times as cross-sectional
@@ -23,12 +24,11 @@ source_routing:
 datasets:
   - key: v1_casualties_ocha_casualties
     source: ocha_casualties
-    # One source, one dataset. NOTE the provenance chain: sources[0].organization
-    # is "UN OCHA (B'Tselem data)" — the numbers are B'Tselem's, republished by
-    # OCHA. 042 routes on the publisher (ocha_casualties, verify-required,
-    # commercial_use=false), which is at least as strict as btselem
-    # (CC-BY-NC-4.0, commercial_use=false), so the license filter is safe
-    # either way.
+    # One source, one dataset. v1 wrote sources[0].organization as "UN OCHA
+    # (B'Tselem data)" and this comment once concluded the numbers were
+    # B'Tselem's. They are OCHA's (2026-10-12, migration 102). 042 routes on
+    # the publisher (ocha_casualties, UN terms of use, commercial_use=false),
+    # which is the licence that applies.
 
 indicator:
   template: "casualties.{casualty_dimension}.{casualty_breakdown_label}"
@@ -184,6 +184,15 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # THE SCOPE, IN THE PUBLISHER'S WORDS (ochaopt.org/data/casualties, read
+    # 2026-10-12): "Casualties in the context of the ongoing hostilities in
+    # the Gaza Strip and Israel, which started on 7 October 2023, will only be
+    # added to this page once these incidents have been independently
+    # verified." And on whose count it is: "regularly collected by OCHA field
+    # staff and entered into OCHA's Protection of Civilians database ...
+    # validated by at least two independent and reliable sources." v1 labelled
+    # the organisation "UN OCHA (B'Tselem data)" and migration 086's warning
+    # repeated it ("B'Tselem-verified"); the page names no such source.
     - when: {prefix: "casualties.annual_total"}
       concept: mortality.conflict
       measure_kind: flow         # a year's deaths, not a running total
@@ -191,6 +200,16 @@ registry:
       grain: year
       place_grain: region
       canonical_unit: persons
+      serve_warning: >-
+        Palestinian fatalities verified by UN OCHA since 2008. It EXCLUDES the
+        Gaza war dead: those killed in Gaza and Israel in the hostilities since
+        7 October 2023 are added only once OCHA has verified them (the Gaza
+        Ministry of Health toll is in the conflict category). The newest year
+        is partial.
+      serve_warning_ar: >-
+        هاد عدد الشهداء اللي وثّقهم مكتب أوتشا من 2008. ما بيشمل شهداء حرب غزة:
+        اللي استشهدوا بغزة من 7 أكتوبر 2023 بينضافوا بس بعد ما أوتشا يتحقق منهم
+        (حصيلة وزارة الصحة بغزة بفئة conflict). وآخر سنة ناقصة.
     - when: {prefix: "casualties."}
       concept: mortality.conflict
       measure_kind: cumulative   # the breakdowns are 2008-to-date totals —
@@ -199,3 +218,14 @@ registry:
       grain: period
       place_grain: governorate
       canonical_unit: persons
+      serve_warning: >-
+        One total for 2008 to date, split by region, governorate, sex and age
+        or weapon: not a year's figure. Verified by UN OCHA. It EXCLUDES the
+        Gaza war dead: those killed in Gaza and Israel in the hostilities since
+        7 October 2023 are added only once OCHA has verified them (the Gaza
+        Ministry of Health toll is in the conflict category).
+      serve_warning_ar: >-
+        هاد مجموع واحد من 2008 لليوم، مقسّم حسب المنطقة أو المحافظة أو الجنس
+        والعمر أو السلاح، مش رقم سنة. من توثيق مكتب أوتشا، وما بيشمل شهداء حرب
+        غزة: اللي استشهدوا بغزة من 7 أكتوبر 2023 بينضافوا بس بعد ما أوتشا يتحقق
+        منهم (حصيلة وزارة الصحة بغزة بفئة conflict).

@@ -1522,7 +1522,8 @@ def correlate(a: str | None = None, b: str | None = None,
         return {"answer": (f"الارتباط بين {a} و{b} {strength}{sign}: ρ={rho} على "
                            f"{d['n']} نقطة"
                            + (f"، بتأخير {d['lag_days']} يوم" if d.get("lag_days") else "")
-                           + f"، فاصل الثقة 95%: {d['ci95']}. ارتباط مش سببية."),
+                           + f"، فاصل الثقة 95%: {d['ci95']}. ارتباط مش سببية."
+                           + _warnings_ar(d)),
                 **d}
     if search or concept:
         d = api("/v2/databank/indicators", q_=search, concept=concept, limit=25)
@@ -1576,7 +1577,7 @@ def what_correlates_with(indicator: str, place: str | None = None,
     top = ms[0]
     return {"answer": (f"من {d['tested']} سلسلة مفحوصة، أقواها: "
                        f"{top['indicator']} (ρ={top['rho']}, n={top['n']}). "
-                       f"هاي فرضيات للفحص، مش نتائج."),
+                       f"هاي فرضيات للفحص، مش نتائج." + _warnings_ar(d)),
             **d}
 
 
@@ -1617,8 +1618,18 @@ def compare(indicators: str, place: str | None = None) -> dict:
     return {"answer": ("مقارنة: " + "، ".join(bits) +
                        (f". الفترة المشتركة {ov.get('from')} → {ov.get('to')} "
                         f"({ov.get('n')} نقطة)." if ov.get("n") else
-                        ". ما في فترة مشتركة بين السلاسل.")),
+                        ". ما في فترة مشتركة بين السلاسل.")
+                       + _warnings_ar(d)),
             **d}
+
+
+def _warnings_ar(d: dict) -> str:
+    """What each served number is NOT, once per distinct sentence."""
+    said: list[str] = []
+    for w in (d.get("warnings") or {}).values():
+        if w.get("ar") and w["ar"] not in said:
+            said.append(w["ar"])
+    return "".join(f" تنبيه: {s}" for s in said)
 
 
 def place_profile(place: str, days: int = 30) -> dict:
@@ -1852,8 +1863,9 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
                        + (f" بنسبة {abs(change)}% عن وسيط الفترة"
                           if change is not None else "")
                        + f" ({round(avg, 2)} مقابل {round(med, 2)})" + window_note + at_ar + "."
-                       + freshest + "."),
+                       + freshest + "." + _warnings_ar(d)),
             "indicator": indicator, "n": len(pts), "last_age_days": age_days,
+            **({"warnings": d["warnings"]} if d.get("warnings") else {}),
             "place_used": used,
             "window_days": days, "from": frm,
             "window_widened": bool(window_note),
@@ -2166,6 +2178,8 @@ def data_gaps() -> dict:
     sl = c.get("supply_lines") or {}
     if "supply_dead" in c:
         answer += f"، {c['supply_dead']} خط إمدادها ميت"
+    if c.get("awaiting_permission"):
+        answer += f"، {c['awaiting_permission']} نسخة مجمّدة بانتظار إذن ناشرها"
     answer += ". "
     if sl:
         answer += (f"خطوط الإمداد: {sl.get('dead', 0)} ميتة، "

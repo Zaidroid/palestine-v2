@@ -69,6 +69,13 @@ units:
       piece: {unit: packages}
       pallet: {unit: packages}
       truck: {unit: vehicles}
+      incidents:
+        unit: events
+        note: Insecurity Insight's unit (20,174 rows served without an alias until 2026-10-12).
+      cases:
+        note: >-
+          UNHCR counts some asylum applications and decisions as cases, and a
+          case may hold several people. A count, never persons (231 rows).
 
   structures:  {name_en: structures,  name_ar: مبانٍ,   dimension: count}
   sites:       {name_en: sites,       name_ar: مواقع,   dimension: count}

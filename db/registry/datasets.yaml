@@ -1,0 +1,66 @@
+# Registry rules for datasets written by their own ingest module.
+#
+# ops/load_registry.py generates indicator_def from each mapping spec's
+# `registry:` rules. A dataset with no mapping spec had nowhere to declare
+# them, so its indicators had no definition, and without a definition `series`,
+# `compare`, `correlate` and the indicator search answer "no series named ...".
+# Measured 2026-10-12: the Ministry of Health's own daily bulletins, 30
+# indicators and 5,775 rows read since 11 October, could be reached by no
+# question at all.
+#
+# Same grammar as a spec's `registry:` (ordered, first match wins). An entry
+# speaks for the held indicators that start with its `indicator_prefix`,
+# whatever category their dataset is filed under.
+
+datasets:
+
+  gaza_moh_daily:
+    # ingest/sources/moh_gaza.py, from @MOHMediaGaza's «التقرير الإحصائي».
+    # Three tiers the Ministry itself keeps apart, and so do these rules:
+    #   .daily / .period   what one bulletin adds (24 h, or the 48/72 h of a
+    #                      weekend bulletin; gaza.moh.period.hours says which)
+    #   .since_*           the Ministry's running count since a date it names
+    #   .cumulative        the toll since 7 October 2023
+    indicator_prefix: "gaza.moh."
+    max_unclassified: 0
+    rules:
+      - when: {equals: "gaza.moh.period.hours"}
+        concept: mortality.conflict
+        measure_kind: status       # how many hours the bulletin covers: context
+        grain: day                 #   for the .period rows, never a quantity to sum
+        place_grain: region
+      - when: {regex: "^gaza\\.moh\\.massacres\\.(daily|period)$"}
+        concept: violence
+        measure_kind: flow
+        polarity: -1
+        grain: day
+        place_grain: region
+        canonical_unit: events
+      - when: {regex: "injuries\\.(daily|period)$"}
+        concept: injury.conflict
+        measure_kind: flow
+        polarity: -1
+        grain: day
+        place_grain: region
+        canonical_unit: persons
+      - when: {regex: "injuries\\.(cumulative|since_ceasefire|since_resumption)$"}
+        concept: injury.conflict
+        measure_kind: cumulative   # a running count; nothing may sum it
+        polarity: -1
+        grain: day
+        place_grain: region
+        canonical_unit: persons
+      - when: {regex: "\\.(daily|period)$"}
+        concept: mortality.conflict
+        measure_kind: flow         # deaths, newly killed, bodies recovered, died
+        polarity: -1               #   of wounds, committee additions, famine
+        grain: day
+        place_grain: region
+        canonical_unit: persons
+      - when: {regex: "\\.(cumulative|since_ceasefire|since_resumption)$"}
+        concept: mortality.conflict
+        measure_kind: cumulative
+        polarity: -1
+        grain: day
+        place_grain: region
+        canonical_unit: persons

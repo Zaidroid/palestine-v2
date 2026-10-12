@@ -22,9 +22,9 @@
 # base year is pinned to 2018; a rebase is refused by the fetcher, not
 # absorbed as 120 "revisions".
 #
-# REGISTRY. No rules here: the indicators are economic's (v1_category), and
-# ops/load_registry.py counts an indicator classified by ANY spec of the
-# category as classified — economic.yaml's rules classify pcbs_*.
+# REGISTRY. Until 086 the indicators were economic's and economic.yaml's rules
+# classified them. 086 made these rows the `pcbs` category, which no other
+# spec reads, so the rules are at the foot of this file since 2026-10-12.
 category: economic_pcbs
 transform: python:t_economic
 v1_category: pcbs                # 086: PCBS's own rows ARE the pcbs category (the World
@@ -89,3 +89,25 @@ expect:
 
 identity:
   fields: [indicator, occurred_at, place_id]
+
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "economic.pcbs_cpi"}
+      concept: economy.prices
+      measure_kind: index          # base 2018 = 100, pinned by the fetcher
+      grain: year
+      place_grain: region
+    - when: {equals: "economic.pcbs_population"}
+      concept: population.count
+      measure_kind: stock
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {equals: "economic.pcbs_poverty_rate"}
+      concept: economy.output
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent

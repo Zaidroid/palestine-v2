@@ -601,6 +601,15 @@ def where_is(d: dict) -> str:
     return out
 
 
+def _warnings_en(d: dict) -> str:
+    """What each served number is NOT, once per distinct sentence."""
+    said: list[str] = []
+    for w in (d.get("warnings") or {}).values():
+        if w.get("en") and w["en"] not in said:
+            said.append(w["en"])
+    return "".join(f" Note: {s}" for s in said)
+
+
 def trend(d: dict) -> str:
     if d.get("refused"):
         return d.get("reason", "Refused.")
@@ -628,7 +637,7 @@ def trend(d: dict) -> str:
         out += "."
         if age and age > 45:
             out += " The series has stopped; read the trend with that age in mind."
-    return out + (f" {d.get('caveat')}" if d.get("caveat") else "")
+    return out + (f" {d.get('caveat')}" if d.get("caveat") else "") + _warnings_en(d)
 
 
 def what_correlates_with(d: dict) -> str:
@@ -641,7 +650,7 @@ def what_correlates_with(d: dict) -> str:
     top = ms[0]
     return (f"Of {d.get('tested')} series tested, the strongest is "
             f"{top['indicator']} (rho={top['rho']}, n={top['n']}). "
-            + d.get("multiple_comparisons", ""))
+            + d.get("multiple_comparisons", "") + _warnings_en(d))
 
 
 def compare(d: dict) -> str:
@@ -653,7 +662,7 @@ def compare(d: dict) -> str:
     return ("Comparing " + ", ".join(bits) +
             (f". Shared window {ov.get('from')} to {ov.get('to')} "
              f"({ov.get('n')} dates)." if ov.get("n")
-             else ". These series share no dates."))
+             else ". These series share no dates.") + _warnings_en(d))
 
 
 def correlate(d: dict) -> str:
@@ -661,7 +670,8 @@ def correlate(d: dict) -> str:
         return "Refused: " + " ".join(d.get("reasons", []))[:300]
     if d.get("plain_english"):
         return (f"{d['plain_english']} (n={d.get('n')}, 95% CI {d.get('ci95')})."
-                + (" " + d["caveats"][0] if d.get("caveats") else ""))
+                + (" " + d["caveats"][0] if d.get("caveats") else "")
+                + _warnings_en(d))
     if "indicators" in d:
         inds = d["indicators"]
         if not inds:
@@ -704,6 +714,9 @@ def data_gaps(d: dict) -> str:
     sl = c.get("supply_lines") or {}
     if "supply_dead" in c:
         out += f", {c['supply_dead']} whose supply line is dead"
+    if c.get("awaiting_permission"):
+        out += (f", {c['awaiting_permission']} held as a frozen copy until "
+                "its publisher's permission arrives")
     out += "."
     if sl:
         out += (f" Supply lines: {sl.get('dead', 0)} dead; "

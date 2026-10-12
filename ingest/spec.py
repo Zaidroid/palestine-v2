@@ -414,6 +414,11 @@ _k("identity.generation", "enforced",
    "730 days) and the databank keeps what fell out of it. Measured before it "
    "was switched on: refugees held 15 UNRWA camps and 3 renamed IDMC events "
    "twice", types=(str,), values=("complete", "window"))
+_k("identity.generation_indicators", "enforced",
+   "the indicators `generation: complete` speaks for, when one dataset holds "
+   "a whole publication AND a series that grows by a row a day (the names "
+   "roster beside its daily summary). Held rows of any other indicator are "
+   "left alone. Needs `indicator` in identity.fields", types=(list,))
 _k("identity.revises_by", "enforced",
    "an attrs key that is the SOURCE's own record number (UN FTS flow_id). A "
    "held row the run did not emit, whose number the run emitted under another "
@@ -515,6 +520,15 @@ _k("registry.rules[].grain", "enforced", "the period one row covers",
    types=(str,))
 _k("registry.rules[].place_grain", "enforced", "", types=(str,))
 _k("registry.rules[].canonical_unit", "enforced", "a key in unit_def",
+   types=(str,))
+_k("registry.rules[].serve_warning", "enforced",
+   "what the number is NOT, said beside it in every answer that serves an "
+   "indicator this rule matches (086 typed one by hand for one indicator; the "
+   "30 breakdowns of the same dataset served with none until 2026-10-12). "
+   "Written to indicator_def.serve_warning by ops/load_registry.py",
+   types=(str,))
+_k("registry.rules[].serve_warning_ar", "enforced",
+   "the same sentence in Palestinian Arabic, spoken by `answer`",
    types=(str,))
 _k("registry.rules[].name_en", "rationale", "", types=(str,))
 _k("registry.rules[].name_ar", "rationale", "", types=(str,))
@@ -714,6 +728,19 @@ def _cross_checks(spec: dict, category: str, out: list[Problem]) -> None:
                                "IDMC's 106 → 120 counted 226). Declare "
                                "generation: complete (the old reading is "
                                "closed as absent) or a value_num_reason"))
+        if ident.get("generation_indicators") is not None:
+            if ident.get("generation") != "complete":
+                out.append(Problem("identity.generation_indicators",
+                                   "scopes `generation: complete`, which is "
+                                   "not declared"))
+            if "indicator" not in (ident.get("fields") or []):
+                out.append(Problem("identity.generation_indicators",
+                                   "the scope is read off the stored key, so "
+                                   "`indicator` must be in identity.fields"))
+            if not ident.get("generation_indicators"):
+                out.append(Problem("identity.generation_indicators",
+                                   "an empty scope closes nothing; drop the "
+                                   "key or name the indicators"))
         if ident.get("collision_kind") and not ident.get("allow_collisions"):
             out.append(Problem("identity.collision_kind",
                                "a collision kind without a measured "

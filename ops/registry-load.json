@@ -1,5 +1,12 @@
 {
  "specs": {
+  "acled_hdx": {
+   "classified": 5,
+   "indicators": 26,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "aid_access": {
    "classified": 4,
    "indicators": 4,
@@ -7,30 +14,37 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "btselem_fatalities": {
+   "classified": 1,
+   "indicators": 32,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "casualties": {
    "classified": 31,
-   "indicators": 31,
+   "indicators": 32,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "conflict": {
-   "classified": 10,
-   "indicators": 10,
+   "classified": 21,
+   "indicators": 26,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "conflict_gaza": {
-   "classified": 6,
-   "indicators": 10,
+   "classified": 17,
+   "indicators": 26,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "conflict_westbank": {
    "classified": 0,
-   "indicators": 10,
+   "indicators": 26,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -57,17 +71,17 @@
    "unit_conflicts": []
   },
   "economic": {
-   "classified": 143,
-   "indicators": 143,
+   "classified": 149,
+   "indicators": 161,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "economic_pcbs": {
-   "classified": 0,
-   "indicators": 70,
-   "rows_unclassified": 2212,
-   "unclassified": 70,
+   "classified": 3,
+   "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
    "unit_conflicts": []
   },
   "education": {
@@ -77,9 +91,16 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "fao_diem": {
+   "classified": 623,
+   "indicators": 664,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "food": {
    "classified": 41,
-   "indicators": 41,
+   "indicators": 664,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -87,6 +108,13 @@
   "funding": {
    "classified": 3,
    "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "gaza_moh_daily": {
+   "classified": 30,
+   "indicators": 30,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -167,6 +195,13 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "insecurity_insight": {
+   "classified": 0,
+   "indicators": 26,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "land": {
    "classified": 3,
    "indicators": 3,
@@ -177,6 +212,13 @@
   "martyrs_snapshot_2023": {
    "classified": 2,
    "indicators": 2,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "population_wpp": {
+   "classified": 12,
+   "indicators": 161,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -196,15 +238,15 @@
    "unit_conflicts": []
   },
   "refugees": {
-   "classified": 38,
-   "indicators": 38,
+   "classified": 70,
+   "indicators": 70,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "refugees_unrwa_registered": {
    "classified": 34,
-   "indicators": 38,
+   "indicators": 70,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -212,6 +254,13 @@
   "settlements": {
    "classified": 1,
    "indicators": 1,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "unhcr_population": {
+   "classified": 32,
+   "indicators": 70,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -224,11 +273,5 @@
    "unit_conflicts": []
   }
  },
- "unclassified": [
-  "economic.pcbs_cpi",
-  "economic.pcbs_population",
-  "economic.pcbs_poverty_rate",
-  "pcbs.eg_elc_accs_zs",
-  "pcbs.fp_cpi_totl_zg"
- ]
+ "unclassified": []
 }

@@ -205,6 +205,24 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # THE SIX `pcbs.*` SERIES THAT HAVE NO `economic.*` TWIN. 086 moved v1's
+    # "pcbs" dataset here (it is the World Bank's) and closed the 5,000-odd
+    # rows that duplicated economic.*; these six WDI codes had no duplicate
+    # and stay under their old names: three employment-to-population ratios
+    # and three age-dependency ratios, 204 rows. pcbs.yaml no longer loads,
+    # so nothing classified them and the registry refused (2026-10-12).
+    - when: {regex: "^pcbs\\.sl_"}
+      concept: economy.labour
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+    - when: {regex: "^pcbs\\.sp_pop_dpnd"}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
     - when: {regex: "^economic\\.(sh|sh_sta|sh_dyn)_", unit: [percentage, percent, per_100]}
       concept: health.outcome
       measure_kind: ratio
