@@ -1040,3 +1040,7 @@ at 10 places, open at 14, congestion asserted at 21 place-and-severity pairs); s
 wrote 986 facts on 42 places, the stored-line re-read superseded 9 and wrote 97, the rollup wrote 835 rows and
 closed 624 over 120 days.
 
+2026-10-12 09:09 UTC · photo downloads off again · done by Zaid (`tmp/4-photo-cards-off.sh`) · proof: no
+V2_TELEGRAM_MEDIA_CHANNELS line in .env, poller active with no "Archiving photos" line since its restart, health
+telegram-poller ok. One cycle was downloaded in all: 14 fuel cards, kept in bronze.
+
