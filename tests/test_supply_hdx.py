@@ -206,12 +206,12 @@ def test_a_series_vintage_is_the_day_the_publisher_last_replaced_the_file():
 
 
 def test_the_proposed_sql_carries_the_same_vintage_the_fetchers_write():
-    """db/proposed/hdx.sql is a proposal: it is not a migration, and what it
-    says is what the stamp says."""
-    sql_path = ROOT / "db" / "proposed" / "hdx.sql"
+    """Migration 109 (the proposal, numbered on 2026-10-12): what it says is
+    what the stamp says, and it does not open or close a transaction of its
+    own (db/migrate.sh wraps each file in one)."""
+    sql_path = ROOT / "db" / "migrations" / "109_vintage_of_two_hdx_registers.sql"
     sql = sql_path.read_text()
-    assert not list((ROOT / "db" / "migrations").glob("*hdx_vintage*"))
-    assert "NOT RUN" in sql.splitlines()[0]
+    assert not [ln for ln in sql.splitlines() if ln.strip() in ("BEGIN;", "COMMIT;")]
     for fixture, says in (("package_schools.json", None), ("package_barrier.json", None),
                           ("package_village_boundaries.json", fi.VILLAGE_SAYS)):
         pkg = package(fixture)

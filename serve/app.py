@@ -3378,7 +3378,8 @@ def databank_category(category: str, indicator: str | None = None,
                COALESCE(d.commercial_use, s.commercial_use)     AS commercial_use,
                -- a register row has no date of its own; its dataset records
                -- the day the publisher says the register is as of
-               d.attrs->>'vintage'                              AS dataset_vintage,
+               COALESCE(d.attrs->'vintage_by_indicator'->o.indicator->>'vintage',
+                        d.attrs->>'vintage')                    AS dataset_vintage,
                d.attrs->>'coverage_start'                       AS dataset_coverage_start
           FROM observation o
           JOIN dataset d ON d.dataset_id = o.dataset_id

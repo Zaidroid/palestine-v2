@@ -484,3 +484,33 @@ def test_the_barrier_is_called_the_barrier_and_heritage_sites_are_not_called_int
     assert culture["value"]["text_from"] is None
     assert "site_status" not in culture["attrs_passthrough"]
     assert "Wikidata" in culture["registry"]["rules"][0]["serve_warning"]
+
+
+def test_two_files_with_two_dates_feeding_one_dataset_give_each_indicator_its_own(tmp_path):
+    import json
+    from ingest.databank import read_vintage
+    barrier, villages = tmp_path / "barrier.json", tmp_path / "village_boundaries.json"
+    barrier.write_text(json.dumps({"metadata": {"vintage": "2018-01-01"}, "data": []}))
+    villages.write_text(json.dumps({"metadata": {"vintage": "2019-07-24"}, "data": []}))
+    spec = {"datasets": [{"key": "v1_infrastructure_hdx"}, {"key": "v1_infrastructure_unosat"}]}
+    fed = {barrier: {("v1_infrastructure_hdx", "infrastructure.barrier_segment")},
+           villages: {("v1_infrastructure_hdx", "infrastructure.locality_record")}}
+    assert read_vintage(spec, [barrier, villages], fed) == {"v1_infrastructure_hdx": {
+        "vintage_by_indicator": {"infrastructure.barrier_segment": {"vintage": "2018-01-01"},
+                                 "infrastructure.locality_record": {"vintage": "2019-07-24"}}}}
+    src = (ROOT / "serve" / "app.py").read_text()
+    assert "d.attrs->'vintage_by_indicator'->o.indicator->>'vintage'" in src
+
+
+def test_a_register_that_did_not_change_upstream_is_not_rewritten(tmp_path):
+    import json
+    from ops import hdx
+    out = tmp_path / "schools.json"
+    doc = {"metadata": {"vintage": "2015-06-01", "fetched_at": "t1", "vintage_checked_at": "t1", "rows": 1},
+           "data": [{"school_id": 1, "sources": [{"name": "HDX", "fetched_at": "t1"}]}]}
+    out.write_text(json.dumps(doc))
+    tonight = json.loads(json.dumps(doc).replace("t1", "t2"))
+    assert hdx.says_the_same(out, tonight)
+    tonight["data"][0]["school_id"] = 2
+    assert not hdx.says_the_same(out, tonight)
+    assert not hdx.says_the_same(tmp_path / "absent.json", doc)

@@ -195,7 +195,8 @@ def main(argv: list[str]) -> int:
         return 0
     from ingest import bronze
     doc["metadata"]["bronze"] = bronze.put("hdx_schools", raw, "zip", url=res["url"]).ref
-    fl.write_atomic(OUT, doc)
+    if not hdx.says_the_same(OUT, doc):
+        fl.write_atomic(OUT, doc)
     fl.event(LABEL, "ok", rows=len(recs), vintage=stamp["vintage"])
     return 0
 

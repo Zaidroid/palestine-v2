@@ -27,6 +27,7 @@ Either way the four values travel together into the raw file's metadata:
 """
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 
@@ -141,6 +142,29 @@ def stamp(pkg: dict, res: dict | None, *, kind: str, checked_at: str | None = No
     if kind == "series":
         out["data_from"], out["data_through"] = start, end
     return out
+
+
+_VOLATILE = ("fetched_at", "vintage_checked_at", "bronze")
+_STAMP = re.compile(r'"fetched_at": "[^"]*"')
+
+
+def says_the_same(path, doc: dict) -> bool:
+    """True when the file on disk already says what `doc` says, apart from when
+    it was read. A register that has not changed upstream is then left alone:
+    the loader archives its input by content, and a file rewritten every night
+    only to move its check time is a new archived copy every night (the school
+    register alone is 2,359 records). The day the run looked is recorded on the
+    dataset by the loader (vintage_checked_at), which needs no file write."""
+    try:
+        prev = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+
+    def core(d: dict):
+        md = {k: v for k, v in (d.get("metadata") or {}).items() if k not in _VOLATILE}
+        data = _STAMP.sub('"fetched_at": ""', json.dumps(d.get("data"), sort_keys=True, ensure_ascii=False))
+        return md, data
+    return core(prev) == core(doc)
 
 
 def refuse(label: str, why: str, dry: bool, **extra):

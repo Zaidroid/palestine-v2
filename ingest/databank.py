@@ -2271,16 +2271,22 @@ VINTAGE_KEYS = ("vintage", "vintage_basis", "vintage_url", "coverage_start")
 def read_vintage(spec: dict, files, fed: dict | None = None) -> dict[str, dict]:
     """dataset_key -> what the input says about the publisher's vintage.
 
-    `fed` maps an input file to the datasets its records landed in. A file
-    that fed exactly one dataset speaks for that dataset (land's three files:
-    OCHA's barrier, Peace Now's footprints, Good Shepherd's days); a file
-    that fed several must say which with `vintage_by_dataset`."""
+    `fed` maps an input file to what its records became: (dataset, indicator)
+    pairs. A file that fed exactly one dataset speaks for that dataset (land's
+    three files: OCHA's barrier, Peace Now's footprints, Good Shepherd's days).
+    Two files that fed ONE dataset with two different dates (the barrier of
+    2018 and the village boundaries of 2019, both in v1_infrastructure_hdx)
+    give that dataset no single vintage: each indicator gets its own, under
+    `vintage_by_indicator`. A file that fed several datasets must say which
+    with `vintage_by_dataset`."""
     own = [d["key"] for d in spec.get("datasets", [])]
     out: dict[str, dict] = {}
+    said: dict[str, list[tuple[dict, set]]] = defaultdict(list)
 
-    def take(key: str, src: dict) -> None:
-        if key in own and isinstance(src, dict) and src.get("vintage"):
-            out[key] = {k: str(src[k]) for k in VINTAGE_KEYS if src.get(k)}
+    def pick(src) -> dict | None:
+        if isinstance(src, dict) and src.get("vintage"):
+            return {k: str(src[k]) for k in VINTAGE_KEYS if src.get(k)}
+        return None
 
     for f in files:
         f = Path(f)
@@ -2288,7 +2294,8 @@ def read_vintage(spec: dict, files, fed: dict | None = None) -> dict[str, dict]:
         if side.exists():
             try:
                 for key, src in json.loads(side.read_text(encoding="utf-8")).items():
-                    take(key, src)
+                    if key in own and pick(src):
+                        out[key] = pick(src)
             except (ValueError, OSError, AttributeError):
                 pass
         try:
@@ -2297,15 +2304,26 @@ def read_vintage(spec: dict, files, fed: dict | None = None) -> dict[str, dict]:
             continue
         if not isinstance(payload, dict):
             continue
+        became = (fed or {}).get(f) or (fed or {}).get(str(f)) or ()
+        pairs = {(x, None) if isinstance(x, str) else tuple(x) for x in became}
         for holder in (payload, payload.get("metadata") or {}):
             if not isinstance(holder, dict):
                 continue
             for key, src in (holder.get("vintage_by_dataset") or {}).items():
-                take(key, src)
-            one = (own if len(own) == 1 else
-                   sorted((fed or {}).get(f) or (fed or {}).get(str(f)) or ()))
-            if len(one) == 1 and one[0] not in out:
-                take(one[0], holder)
+                if key in own and pick(src):
+                    out[key] = pick(src)
+            one = own if len(own) == 1 else sorted({ds for ds, _ in pairs})
+            if len(one) == 1 and pick(holder):
+                said[one[0]].append((pick(holder), {i for ds, i in pairs if i}))
+                break
+    for ds, items in said.items():
+        if ds in out:
+            continue
+        if len({v["vintage"] for v, _ in items}) == 1:
+            out[ds] = items[0][0]
+        else:
+            out[ds] = {"vintage_by_indicator": {
+                ind: v for v, inds in items for ind in sorted(inds)}}
     return out
 
 
@@ -2316,8 +2334,10 @@ def apply_vintage(cur, vintage: dict[str, dict]) -> int:
     today = datetime.now(timezone.utc).date().isoformat()
     for key, v in vintage.items():
         new = {**v, "vintage_checked_at": today}
-        cur.execute("""UPDATE dataset SET attrs = attrs || %s::jsonb
-                        WHERE key = %s AND NOT (attrs @> %s::jsonb)""",
+        # a dataset whose indicators have their own dates has no single one
+        drop = "- 'vintage'" if "vintage_by_indicator" in v else ""
+        cur.execute(f"""UPDATE dataset SET attrs = (attrs {drop}) || %s::jsonb
+                         WHERE key = %s AND NOT (attrs @> %s::jsonb)""",
                     (json.dumps(new), key, json.dumps(new)))
         n += cur.rowcount
     return n
@@ -2443,7 +2463,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                                 attrs=r.attrs)
 
     event_rows: list[EventRow] = []
-    fed: dict[Path, set[str]] = defaultdict(set)     # input file -> datasets it fed
+    fed: dict[Path, set] = defaultdict(set)     # input file -> the (dataset, indicator) pairs it fed
     with connect() as conn:
         places = load_places(conn)
         places["_pip"] = PointResolver(conn)
@@ -2521,7 +2541,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                 held_event_ids = {row[0] for row in cur.fetchall()}
                 known_events = Counter(held_keys)
         for f, r in transform_all(category, spec, places, counts, drops):
-            fed[f].add(r.dataset_key)
+            fed[f].add((r.dataset_key, None if isinstance(r, EventRow) else r.indicator))
             if f not in refs:
                 refs[f] = bronze.put(f"v1_{category}", read_payload(f),
                                      url=f"file://{f}").ref
@@ -3027,7 +3047,9 @@ def run(category: str, dry_run: bool = False) -> dict:
     }
     vintage = read_vintage(spec, refs, fed)
     if vintage:
-        report["vintage"] = {k: v.get("vintage") for k, v in vintage.items()}
+        report["vintage"] = {k: v.get("vintage") or {i: x.get("vintage") for i, x in
+                                                     (v.get("vintage_by_indicator") or {}).items()}
+                             for k, v in vintage.items()}
     if revision_samples:
         # a correction is a fact about the SOURCE, not a plumbing detail —
         # it belongs in the run record where a reader can see what moved

@@ -1,3 +1,8 @@
+-- 109 · the publisher's vintage of the school register and of the two infrastructure registers (supply-hdx, 2026-10-12)
+--
+-- Written by the supply agent as a proposal; numbered here. The loader keeps these keys current from the fetchers'
+-- own metadata on every run after this (ingest/databank.py, read_vintage); this migration states them once so the
+-- answers have them before the first fetch.
 -- PROPOSED, NOT RUN. Branch supply-hdx, 2026-10-12.
 --
 -- The publisher's vintage for the two register datasets that come from HDX,
@@ -24,7 +29,6 @@
 --          - 'vintage_checked_at' - 'vintage_by_indicator'
 --    WHERE key IN ('v1_education_hdx', 'v1_infrastructure_hdx');
 
-BEGIN;
 
 -- 1. The West Bank school register: 2,359 rows, one HDX dataset, one date.
 --    HDX `state-of-palestine-west-bank-schools`: dataset_date
@@ -84,4 +88,3 @@ DO $$ DECLARE n int; BEGIN
   END IF;
 END $$;
 
-COMMIT;

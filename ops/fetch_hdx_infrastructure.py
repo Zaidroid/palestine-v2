@@ -481,7 +481,8 @@ def run_feed(feed: str, dry: bool, staged: Path | None) -> bool:
     if archive:
         from ingest import bronze
         m["bronze"] = bronze.put(archive[0], archive[1], "zip", url=archive[2]).ref
-    fl.write_atomic(out, doc)
+    if not hdx.says_the_same(out, doc):
+        fl.write_atomic(out, doc)
     fl.event(label, "ok", rows=len(doc["data"]), vintage=m["vintage"])
     return True
 
