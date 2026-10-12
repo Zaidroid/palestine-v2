@@ -1,0 +1,290 @@
+{"claim_id": 193529, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "al-Far'a camp -> Tubas governorate, correct containment at declared governorate precision"}
+{"claim_id": 198426, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 217195, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "feature: the daughters of an already-detained writer miss her; references a past arrest, reports no new incident"}
+{"claim_id": 212504, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 199102, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 216482, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "same feature as 217195, reposted on another channel"}
+{"claim_id": 217046, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "ORIGIN NOT LOCATION: displaced FROM Nur Shams; arrested at his home in al-Aqsa/Mallasat north of Tulkarm. Resolved Nur Shams at named precision"}
+{"claim_id": 194161, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 206383, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "governorate field null while place resolves to Maythalun at named precision"}
+{"claim_id": 217076, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 223775, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "Fahma -> Jenin governorate, correct containment at declared governorate precision"}
+{"claim_id": 217012, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "event is in al-Tabaqa village; resolved Dura at NAMED precision - a different village, Dura is only the reference town"}
+{"claim_id": 193500, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 217075, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 187325, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 31094, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 196156, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "summoned for interrogation IN ARIEL and arrested there; 'من مدينة قلقيلية' is his origin. Resolved Qalqilya at named precision"}
+{"claim_id": 214025, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 48636, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 104172, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "governorate recorded as 'البيره' (a city) rather than Ramallah"}
+{"claim_id": 186237, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "forced COMMERCIAL shutdown, not a movement closure: 'تجبر محلات تجارية على الإغلاق'. Pattern matched الإغلاق + قرية as a move object; type closure also sets is_closure and can feed road_closure state"}
+{"claim_id": 218230, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 185668, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 186376, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 213641, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "AMBIGUOUS NAME: 'قرية خربثا' resolved to Kharbatha al-Misbah, but the named gate (Deir Ammar - Ein Ayoub, 'villages west of Ramallah') serves the Kharbatha Bani Harith cluster. Two same-named villages, corroborating detail points to the other"}
+{"claim_id": 194227, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207558, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 189503, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198804, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "al-Muhlal checkpoint -> Ramallah governorate, correct containment at declared governorate precision"}
+{"claim_id": 186746, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 195104, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 192404, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211478, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188020, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210265, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188756, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 190128, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188422, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207159, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "correctly disambiguated: Burqa east of Ramallah, not Burqa near Nablus"}
+{"claim_id": 212772, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207682, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 204233, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 196729, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210457, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "DEMOLITION of the Birzeit University martyrs' MONUMENT, not a death: 'يحمل أسماء 40 شهيدًا' is a list of names engraved on a memorial. The count-and-casualty frame fired on a referential name list"}
+{"claim_id": 211551, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 204237, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "ORIGIN NOT LOCATION: died in detention at ANABTA checkpoint; 'من بلدة عتيل' is his home town. Resolved Attil at named precision"}
+{"claim_id": 205511, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "same story as 204237, same origin-not-location error"}
+{"claim_id": 215321, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 215324, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 215321 on another channel"}
+{"claim_id": 207511, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "resolved Sanur (Jenin), which is neither the event location (near Bani Na'im, east Hebron) nor his residence (Yatta). 'من قرية صانور قضاء جنين' reads as a channel-header fragment"}
+{"claim_id": 196728, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 193122, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "feature/testimony: a journalist grieving brothers killed earlier and describing her own work. No new death reported"}
+{"claim_id": 207516, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "publisher says شمال الخليل where 207682 says شرق الخليل - the publisher's own inconsistency"}
+{"claim_id": 196726, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211557, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 204235, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "same story as 204237, same origin-not-location error"}
+{"claim_id": 64496, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 51452, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "al-Masarweh neighbourhood -> Jenin governorate, correct containment at declared governorate precision"}
+{"claim_id": 88157, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "PRISONER STATUS bulletin: administrative-detention renewal; the family's deaths are retrospective background. Not a new incident (and 'death' badly wrong) - same family as 51452"}
+{"claim_id": 64703, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EULOGY for a killed commander. ZAID-9 of 2026-09-23: an obituary or a funeral is not a death report"}
+{"claim_id": 212894, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "PROPAGANDA/commemoration of 7 Oct ('#طوفان_الأقصى'); 'هدم عقيدة الردع' is metaphorical - demolished the DOCTRINE of deterrence. Place taken from the hashtag al-Aqsa -> Jerusalem"}
+{"claim_id": 212693, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "identical repost of 212894"}
+{"claim_id": 211850, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "political STATEMENT on Ben Gvir's presence; 'الحجارة التي هدموها' refers back to an already-reported demolition"}
+{"claim_id": 193812, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "ANALYSIS of settler road 463 isolating 8 villages, future tense ('مقدمة لمزيد من التوسع والهدم'). place_text 'وحيين' ('and two neighbourhoods') read as a place name"}
+{"claim_id": 28984, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "NOTICE, NOT ACT: 'إخطار بهدم ... مهلة أسبوع واحد قبل تنفيذ عملية الهدم'. 1.11.0 claims 'a warning is not a demolition' but the reject covers the VERB form تخطر بهدم, not the NOUN form إخطار بهدم"}
+{"claim_id": 210156, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "Hamas factional STATEMENT condemning Ben Gvir; the demolition itself is really reported by 210289"}
+{"claim_id": 194120, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 39567, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 27579, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "Masafer Yatta/Sha'b al-Butum -> Hebron governorate, correct containment at declared governorate precision"}
+{"claim_id": 40637, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 39533, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 212444, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "same Ben Gvir statement as 211850, reposted"}
+{"claim_id": 39568, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 39567"}
+{"claim_id": 211336, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 82476, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "CUMULATIVE ROUNDUP: 'أكثر من 15 عائلة ... منذ أكتوبر 2023'. An aggregate over two years, not a dated event; filing it as today's incident would misdate and double-count"}
+{"claim_id": 210289, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 72250, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 50507, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 90666, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "LEVELLING NEAR HOMES, promoted to demolition OF homes: 'تجريف قرب منازل الفلسطينيين'. _HOMES_LEVELLED_RE (news.py:736) allows 3 tokens between the verb and منازل and does not exclude the proximity words قرب/بجانب/جوار/محيط, so news.py:1215 overrides land_levelling"}
+{"claim_id": 76322, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211420, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 213679, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "METAPHORICAL أصاب: settlers planted flags that 'أصاب الحركة التجارية بالشلل' - struck COMMERCE with paralysis. Nobody was hurt; this is settler harassment, i.e. settler_attack, not injury"}
+{"claim_id": 213569, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 212249, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "beating during arrest; the classifier's beatings entry feeds injury by design"}
+{"claim_id": 217931, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: civilian traffic accident ('حادث دهس في شارع عمان') injuring schoolgirls. Real injuries, but no occupation actor - counting it among occupation incidents is the harm. Zaid to confirm this class"}
+{"claim_id": 188456, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211597, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211623, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198537, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 190466, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 197115, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "the injured party is a SETTLER; the type is still right, but the feed does not distinguish who was hurt"}
+{"claim_id": 207683, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 209911, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: intra-Palestinian stabbing in Zawiya, no occupation actor. Same class as 217931/193444"}
+{"claim_id": 207195, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 193132, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 216077, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207694, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 193444, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: a driver ran over a policeman, caught on CCTV. Criminal/traffic matter, no occupation actor. Same class as 217931/209911"}
+{"claim_id": 211590, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 108214, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 193481, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210371, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "MULTI-EVENT message: the headline act is the DETENTION of two named journalists; land levelling is the context. The type captures a true fact but the detention goes unrecorded - one type per claim"}
+{"claim_id": 213205, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 185575, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188509, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "STATISTICAL INFOGRAPHIC on vineyards across Palestine with cumulative figures for four separate places (al-Buwaira 310 vines, Beit Einun 300, al-Buq'ah 170, al-Balouta 70). Not a dated event"}
+{"claim_id": 69522, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "REAL DEMOLITION demoted to levelling: 'جرافات الاحتلال تدمر بنايتين وتحولهما إلى ركام'. news.py:1221 demotes demolition->land_levelling when the trigger word is جرافات and no هدم stem appears, but تدمر/تحول الى ركام IS destruction of buildings"}
+{"claim_id": 83726, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 199882, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 186040, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "'قرية حداد' is really the area by Haddad military camp (cf. 123908); resolved to Jenin governorate at declared governorate precision - an honest fallback"}
+{"claim_id": 29711, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 217985, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "Mount Ebal -> Nablus governorate, correct containment at declared governorate precision"}
+{"claim_id": 217908, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 201606, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 123908, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 102709, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 72555, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "SAME DEFECT AS 69522 and the same place as demolition claim 72250: 'تحول منزلاً إلى ركام بعد تشريد ساكنيه' is a home demolition. 72250 says هدم for the same neighbourhood and was typed demolition - the verb alone decides the type"}
+{"claim_id": 86584, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 87143, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "THREAT, NOT ACT: '250 دونما ... تواجه خطر المصادرة والتجريف'. Future risk, no levelling reported as done"}
+{"claim_id": 31479, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 28357, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210777, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "STREET NAME READ AS A VILLAGE: 'شارع تل بنابلس' is Tal Street inside Nablus city; resolved to the village of Till at NAMED precision. Governorate right by luck"}
+{"claim_id": 190371, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "ANNIVERSARY commemoration: '26 عاما على اقتحام شارون'. No dated event of its own"}
+{"claim_id": 209204, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 192551, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 194737, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "named village al-Mazra'a ash-Sharqiya did not resolve; fell to Ramallah governorate at declared governorate precision - honest, but an instance of the governorate-centre coarsening"}
+{"claim_id": 217325, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 193625, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 199390, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "THREE-WEEK ROUNDUP with cumulative figures (11,300 settlers entering). Not a dated event"}
+{"claim_id": 215559, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198753, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "identical three-week roundup, reposted (same text as 199390)"}
+{"claim_id": 196863, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 206360, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 68965, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "troop DEPLOYMENT rather than a storming, but it is the same stadium event as 68980 which was a raid; the taxonomy has no 'presence' type"}
+{"claim_id": 211234, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 51668, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EULOGY for Fathi Khazem ('المجد لا يفارق أهله', 'رحل الأب وبقيت سيرته'). ZAID-9: an obituary is not a report. The same death IS factually reported by 51452"}
+{"claim_id": 68980, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 186605, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "STATEMENT by Khaled Mashal on al-Aqsa, not a report of an event"}
+{"claim_id": 54947, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 63493, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 83554, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 190006, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 194734, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198002, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "place_text carried decorative junk ('عوريف ••┈┈┈') yet still resolved 'Urif correctly"}
+{"claim_id": 196110, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 192364, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210601, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 195371, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 215383, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 206219, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 209899, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 201467, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 196542, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "resolver followed the text's own governorate hint ('شرق جنين') to the Jenin Al Mughayyir rather than the Ramallah al-Mughayyir of 201467/195104. Correct behaviour, but two gazetteer entries share the Arabic name with different English spellings - a collision risk"}
+{"claim_id": 213360, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 200000, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188755, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 212201, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "MULTI-EVENT bulletin: the settler assault in Marda is captured; the Beit Ummar closure, 7 workers detained in Husan and the new checkpoint NE of Bethlehem all go unrecorded"}
+{"claim_id": 191073, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "sourced to the occupation army, the target being its own forces; the type is still right"}
+{"claim_id": 199574, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "OPINION/call to action signed 'ياسين عز الدين' ('لا يوجد مناص من مواجهتهم... لن يتركوكم'). Round 7's calls-to-action class"}
+{"claim_id": 217484, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "A PLACE INVENTED FROM A WORD: place_text 'وسرقه ثمار الزيتون' resolved to Az Zaytun - the word الزيتون (olives) read as the village name. The text names no place, only 'مناطق متفرقة من الضفة الغربية'"}
+{"claim_id": 199031, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 200618, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198707, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "bare 'إطلاق نار في القدس' from a Hebrew translation; the text supports no East/West Jerusalem determination, so west_bank is the system's Jerusalem-governorate default, not a reading"}
+{"claim_id": 186231, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "two places named ('Aslah and Kafr Laqif); the first is kept"}
+{"claim_id": 200655, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 200618"}
+{"claim_id": 216877, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188705, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211874, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "also closes two roads; one type per claim, so the closure goes unrecorded"}
+{"claim_id": 213981, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207525, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 212246, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 188340, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198848, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 198668, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 218403, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 194572, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: criminal shooting at a GOLD SHOP killing Yousef al-Haroub. No occupation actor; same class as 217931/209911/193444. Also carries مقتل, a death, while typed shooting"}
+{"claim_id": 213979, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 213981"}
+{"claim_id": 192542, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 195052, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 112536, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 123766, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211756, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "long-form ESSAY on the decades before 7 Oct ('عقود من الاقتلاع والاحتلال والحصار صنعت الطريق')"}
+{"claim_id": 212330, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "Hamas factional STATEMENT on 7 Oct; الحصار الخانق is rhetorical"}
+{"claim_id": 186636, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 210754, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 218229, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "FEATURE on the olive season across Qusrah, Jalud and Salfit; 'اعتداءات الاحتلال تحاصر موسم الزيتون' besieges a SEASON, metaphorically"}
+{"claim_id": 186747, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 195231, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "ADVOCACY piece ('#رباطك_يحميه'): al-Aqsa 'besieged BY RITUALS', future-oriented"}
+{"claim_id": 210729, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 210754"}
+{"claim_id": 55406, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "a specific, located, ongoing siege at day 15 with named deprivations"}
+{"claim_id": 42365, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "TESTIMONY: a woman recounting her family's suffering to camera ('بيتي أمام عيني لكنني لا أستطيع الوصول إليه')"}
+{"claim_id": 133787, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "two flying checkpoints erected; the publisher's own frame is 'التضييق والحصار'. Note 'نصب حاجزين' does NOT match _INSTALL_BARRIER (which wants بوابة/ساتر/مكعبات), so the closure consequence rests on siege_closes_a_road"}
+{"claim_id": 142624, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": false, "note": "A FIRE, NOT A SIEGE, AND NOT THE WEST BANK: 'حريق كبير يحاصر مستوطنين في حارة اليهود غرب القدس' - a blaze trapping people in WEST Jerusalem. Typed siege off يحاصر; served as a West Bank incident"}
+{"claim_id": 60708, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "a mayor's words, but reporting a concrete new act (a gate on the last road) - unlike the pure statements in this stratum"}
+{"claim_id": 112465, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 50105, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "ANALYSIS bulletin on Burqa entering 'مرحلة جديدة من التضييق'. Also place_text pollution: 'برقه الواقعه' glued الواقعة ('located') to the name, so it coarsened to Ramallah governorate instead of Burqa, which 207159 resolves correctly"}
+{"claim_id": 60105, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "place_text polluted ('استمرار حصار قصره') yet still resolved Qusrah"}
+{"claim_id": 216218, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "TESTIMONY: a named teacher describing the daily journey to school past Tayasir checkpoint"}
+{"claim_id": 97040, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EULOGY for the same commander Qais as 64703 ('إلى رحمة الله يا قائد القسام'). ZAID-9: an obituary is not a report"}
+{"claim_id": 192668, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "PHOTO CAPTION/aftermath of the arson really reported by 192364. place_text 'ام شادي' is a PERSON'S NAME read as a place, saved only by the Nablus governorate fallback"}
+{"claim_id": 102543, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "ANALYSIS of settlement plans around East Jerusalem. place_text 'استيطانيه متكامله هكذا' is not a place at all; fell to Jerusalem governorate"}
+{"claim_id": 210413, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 206930, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207399, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 209373, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 209338, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 190859, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "main verb is تعتقل, raid is the subordinate clause; same shape as 193625 and scored the same way"}
+{"claim_id": 207116, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207243, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "THE NEWS IS THE SELFIE, not a death: soldiers photograph themselves with the body. The death itself is reported by 207399/207116, so typing this 'death' DOUBLE-COUNTS it"}
+{"claim_id": 207235, "is_incident": true, "type_ok": true, "place_ok": false, "west_bank": true, "note": "ORIGIN NOT LOCATION: shot at the entrance of Bani Na'im; 'من مدينة يطا' is his home city. Resolved Yatta at named precision"}
+{"claim_id": 206935, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 211670, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "FAREWELL caption: 'نظرات الوداع الأخير على الشهيد'. This is exactly the class 1.11.0 claims ('the last look is not a death') and it STILL serves as a death"}
+{"claim_id": 210235, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 62430, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "NOTICE, NOT ACT: '36 إخطارا بالهدم سلمها الاحتلال' plus a slogan. Served as a demolition"}
+{"claim_id": 188723, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "COMMENTARY on Ben Gvir threatening prisoner Hassan Salameh; reflective, no dated event"}
+{"claim_id": 40152, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "notices AND demolitions actually being carried out ('تواصل ... تنفيذ عمليات الهدم') - the act is reported"}
+{"claim_id": 48644, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "the earlier notice is background; the reported act is the raid"}
+{"claim_id": 41546, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "'شرعت ... بهدم نحو 40 منشأة' - the demolition began; the notices are background"}
+{"claim_id": 115921, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "FEATURE on residents awaiting their building's fate, and the eviction notice is explicitly 'دون تأكيد مستقل' - unconfirmed"}
+{"claim_id": 223567, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "military orders already IN FORCE restricting vehicles until 2028, not a notice of intent"}
+{"claim_id": 43198, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "NOTICE, NOT ACT: 'تخطر سكان عدة كهوف ... بالهدم'. The 1.7 reject covers 'تخطر بهدم'; this is the بالهدم form and slips through"}
+{"claim_id": 72495, "is_incident": true, "type_ok": false, "place_ok": true, "west_bank": true, "note": "NOTICE, NOT ACT: 'يخطر بوقف بناء وهدم منزل'. Same reject evaded by the 'يخطر ب... وهدم' form"}
+{"claim_id": 93345, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "homes really raided at dawn; the 72-hour eviction orders are the second half"}
+{"claim_id": 217350, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 207034, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 212478, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 213225, "is_incident": true, "type_ok": false, "place_ok": false, "west_bank": true, "note": "A BODY RETURNED, NOT A DEATH TODAY: the body was handed over today but he died in March 2026 in prison. Typed 'death' it dates a March death to today. Place is his camp of origin, not where the handover happened"}
+{"claim_id": 192708, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 53828, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: workplace accident - a stone fell on him at work, with a get-well wish. No occupation actor"}
+{"claim_id": 59756, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "Dheisheh is his camp and no other arrest location is given, so it is the best available; the settler sheep theft in al-Ubeidiya goes unrecorded"}
+{"claim_id": 213214, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "event location Wad al-Sha'er in Salfit district resolved to Salfit governorate; he is from Marda - the resolver took the EVENT place, correctly"}
+{"claim_id": 56568, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "SCOPE CALL, flagged: died of burns from a fire in his own shop. No occupation actor; also a death typed as injury"}
+{"claim_id": 86702, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "text itself subordinates Karma to Dura ('قرية كرمة بمدينة دورا'); the well sabotage and equipment seizure go unrecorded"}
+{"claim_id": 200179, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EXPLAINER: 'كيف يتقدم الاستيطان في قلب الضفة الغربية؟', spanning several governorates"}
+{"claim_id": 189443, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EXPLAINER: 'ما هو مخطط E1؟'"}
+{"claim_id": 94539, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "OPINION rant around a protest at Ramallah hospital; the 'injury' is a stroke in PA custody, no occupation actor"}
+{"claim_id": 42555, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "infographic styling but concrete enumerated acts in Qusrah: two homes forcibly emptied, 16 turned into army posts"}
+{"claim_id": 195474, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "EXPLAINER question on Haredi settlers and al-Aqsa"}
+{"claim_id": 31364, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "framed as an analysis question but reports a concrete ongoing assault with raids and earth-mound road closures"}
+{"claim_id": 213517, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "SAME EVENT AS 213679 (the al-Lubban flag-planting), typed settler_attack here and wrongly 'injury' there - the defect is visible as a disagreement inside one round"}
+{"claim_id": 183983, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "24-HOUR ROUNDUP: a list of separate attacks in different places, collapsed to one type and one place (Al Maniyah)"}
+{"claim_id": 201600, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "same 24-hour roundup format, collapsed to Umm Safa"}
+{"claim_id": 189281, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "duplicate of the E1 explainer 189443"}
+{"claim_id": 195227, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "CALL TO ACTION: a scholars' body calling for a 'day of rage' on 2 Oct 2026"}
+{"claim_id": 198375, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "PHOTO ALBUM (#ألبوم) of farmers preparing for the olive harvest; last year's restrictions are background. No attack reported"}
+{"claim_id": 26246, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "CONTEXT paragraph citing past raids (Huwara in March, Silat adh-Dhahr in May). No present event"}
+{"claim_id": 26207, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "duplicate of 26246"}
+{"claim_id": 148125, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "FORWARD-LOOKING question: 'ماذا ينتظر المسجد الأقصى في عيد العرش لهذا العام؟'"}
+{"claim_id": 190549, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true}
+{"claim_id": 190853, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "same event as 190549/190546"}
+{"claim_id": 190546, "is_incident": true, "type_ok": true, "place_ok": true, "west_bank": true, "note": "duplicate of 190549"}
+{"claim_id": 196900, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: settlers conducting provocative tours among homes in Atara is a settler incursion. Rejected 'no incident verb' - 'ينفذون جولات' carries no lexicon verb"}
+{"claim_id": 198764, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "weekly roundup statistic (45 acts in a week) - correctly rejected"}
+{"claim_id": 198812, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "repair work following an earlier transformer sabotage; the attack is retrospective"}
+{"claim_id": 200302, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "slogan/threat, no event"}
+{"claim_id": 216703, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Riyadh airport)"}
+{"claim_id": 194944, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: 'جرافة إسرائيلية تشرع بشق طرق استيطانية' in Ni'lin is land levelling for a settler road. No تجريف/هدم verb, so the pattern never fires - lexicon gap on شق طرق استيطانية"}
+{"claim_id": 199183, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "bare movement note ('دوريات ... باتجاه مقبرة') - a direction of travel, not an event at a place. Borderline"}
+{"claim_id": 214988, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}
+{"claim_id": 216214, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}
+{"claim_id": 196191, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "analysis of Israeli security doctrine"}
+{"claim_id": 207690, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "call to action"}
+{"claim_id": 183995, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: forces storming BIRZEIT UNIVERSITY and raiding a campus building. Rejected 'no resolvable West Bank place' - 'جامعة بيرزيت' fails to resolve while 'بلدة بيرزيت' resolves fine (cf. 69522)"}
+{"claim_id": 215094, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}
+{"claim_id": 190453, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "traffic accident - a driver lost control into a shop. Correctly rejected, and consistent with the scope calls in the core sample"}
+{"claim_id": 216120, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: 'هجوم واسع ومتصاعد يستهدف قرية المغير' with violent confrontations. Rejected 'no incident verb' - هجوم is a NOUN and the settler_attack pattern wants settlers plus a verb"}
+{"claim_id": 215091, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Tehran GPS)"}
+{"claim_id": 210292, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS, AND A KNOWN ONE: 'قوات الاحتلال تنفذ تفجيرا في مخيم جنين' is a demolition by explosion. تفجير is absent from the lexicon - round 7 already filed 'يفجر' as a gap and it is still open"}
+{"claim_id": 192423, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: arrest of two named youths from Ras Atiya. Rejected 'place did not resolve' - رأس عطية (Qalqilya) is missing from the gazetteer"}
+{"claim_id": 198504, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: settler groups massing beside the Beit El road between Ramallah and Nablus - a road hazard this system exists to see"}
+{"claim_id": 211329, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "bare hashtags"}
+{"claim_id": 209993, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "solidarity vigil - correctly rejected as a gathering"}
+{"claim_id": 209953, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran/US bases)"}
+{"claim_id": 215746, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "Quranic verse and dhikr"}
+{"claim_id": 217793, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (US tankers)"}
+{"claim_id": 188579, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "commentary on Ben Gvir and prisoner Hassan Salameh; same subject as 188723"}
+{"claim_id": 211470, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS, AND THE PAIR PROVES IT: 'قوات الاحتلال تفجر منزل الأسير قدري سمارة في بلدة بدو' is the SAME demolition that 211336 reports with هدم and classifies correctly. Caught via هدم, missed via تفجر plus an 'aftermath' reject triggered by the trailing context"}
+{"claim_id": 188256, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "a DECISION to hand over a body next Thursday - future administrative step, correctly rejected"}
+{"claim_id": 206070, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "funeral procession - correctly rejected under ZAID-9"}
+{"claim_id": 214459, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: 'اندلاع مواجهات بين الشبان ومليشيات المستوطنين' in Beita. 200618/198848 were caught only because they add a gas-bomb clause; 'اندلاع مواجهات' alone falls through"}
+{"claim_id": 216374, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}
+{"claim_id": 197465, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS: 36 buses, 2,000+ settlers at Joseph's Tomb under military protection, homes evacuated, area closed 8+ hours. Rejected 'no resolvable West Bank place' - قبر يوسف resolved in 196110 only because that text added 'شرق نابلس'; alone it fails"}
+{"claim_id": 199229, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "40-day memorial recitation - correctly rejected"}
+{"claim_id": 213480, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "speculation plus clashes with PA security; commentary frame, no occupation actor"}
+{"claim_id": 198538, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}
+{"claim_id": 186245, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "bare movement note, same class as 199183"}
+{"claim_id": 213602, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "reception of released prisoners at a checkpoint - not an incident"}
+{"claim_id": 214537, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international/commentary on the 7 Oct narrative"}
+{"claim_id": 218173, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (US tankers)"}
+{"claim_id": 195086, "is_incident": true, "type_ok": null, "place_ok": null, "west_bank": null, "note": "MISS, BUT A TAXONOMY GAP NOT A LEXICON ONE: a dated six-month al-Aqsa BANISHMENT order served on a named woman. Rejected 'statistical' because of the trailing '800 since the start of the year' - the wrong reason. None of the ten types can hold a banishment order"}
+{"claim_id": 112638, "is_incident": false, "type_ok": null, "place_ok": null, "west_bank": null, "note": "international (Iran)"}

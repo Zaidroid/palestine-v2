@@ -3,3 +3,4 @@
 {"scored_at": "2026-09-21T22:39:01.010287+00:00", "classifier_version": "1.6", "overall": {"n": 180, "precision": 0.717, "ci95": [0.647, 0.777]}, "gate_pass": false, "types_unmeasured": []}
 {"scored_at": "2026-09-24T19:00:22.531965+00:00", "classifier_version": "1.8.0", "overall": {"n": 150, "precision": 0.767, "ci95": [0.693, 0.827]}, "gate_pass": false, "types_unmeasured": []}
 {"scored_at": "2026-09-26T08:17:56.861808+00:00", "classifier_version": "1.10.0", "overall": {"n": 200, "precision": 0.755, "ci95": [0.691, 0.809]}, "gate_pass": false, "types_unmeasured": []}
+{"scored_at": "2026-10-12T05:36:57.647370+00:00", "classifier_version": "1.11.0", "overall": {"n": 200, "precision": 0.74, "ci95": [0.675, 0.796]}, "gate_pass": false, "types_unmeasured": []}
