@@ -19,7 +19,7 @@ transform: engine
 v1_category: historical          # served with the historical category
 shape: observation
 status: reviewed
-records_measured: 46             # 2026-10-12: the first set (research of 2026-10-07)
+records_measured: 105            # 2026-10-12: the research of 2026-10-07 and the readings of 2026-10-12
 
 input:
   root: data/reference
@@ -82,12 +82,47 @@ identity:
   max_absent: 10
 
 expect:
-  min_records: 40
+  min_records: 95
   max_observations: 400
 
 registry:
   max_unclassified: 0
   rules:
+    - when: {regex: "^cited\\..*\\.(took_effect|began|ended|determined)$"}
+      concept: timeline
+      measure_kind: status          # a dated event with its sentence: nothing sums or correlates it
+      grain: event
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "A dated event as one named publisher states it, entered by hand: the row carries the publisher's sentence, the document and the day it was read."
+      serve_warning_ar: "حدث بتاريخه زي ما بيقوله ناشر واحد محدّد، مُدخل باليد: السطر فيه جملة الناشر والوثيقة ويوم قراءتها."
+    - when: {regex: "^cited\\.unosat_gaza\\.share"}
+      concept: infrastructure.damage
+      measure_kind: ratio
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "UNOSAT's own stated share of the Gaza Strip's structures that are damaged, per satellite assessment, entered by hand from UNOSAT's products. From 1 April 2024 UNOSAT's totals add a 'possibly damaged' class, so the series is not like for like across that date."
+      serve_warning_ar: "نسبة مباني قطاع غزة المتضررة زي ما بتقولها يونوسات نفسها بكل تقييم بالأقمار الصناعية، مُدخلة باليد من منتجات يونوسات. ومن 1 نيسان 2024 صارت يونوسات تضيف فئة «ضرر محتمل»، فالسلسلة مش متطابقة قبل هالتاريخ وبعده."
+    - when: {regex: "^cited\\.unosat_gaza\\."}
+      concept: infrastructure.damage
+      measure_kind: cumulative      # a running total of structures: nothing may sum it
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: structures
+      serve_warning: "UNOSAT's count of structures in the Gaza Strip, per satellite assessment, entered by hand from UNOSAT's products: a running total, never added across dates. From 1 April 2024 the total adds a 'possibly damaged' class, so the series is not like for like across that date."
+      serve_warning_ar: "عدد المباني بقطاع غزة حسب يونوسات بكل تقييم بالأقمار الصناعية، مُدخل باليد من منتجات يونوسات: مجموع تراكمي ما بينجمع بين التواريخ. ومن 1 نيسان 2024 صار المجموع يضيف فئة «ضرر محتمل»، فالسلسلة مش متطابقة قبل هالتاريخ وبعده."
+    - when: {regex: "^cited\\.west_bank_injured\\."}
+      concept: injury.conflict
+      measure_kind: stock           # one total per period OCHA prints; OCHA gives no single total
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA's count of Palestinians injured in the West Bank, one row per period OCHA prints, entered by hand. OCHA prints no single total since 7 October 2023, and it counts tear-gas inhalation that needed treatment as an injury."
+      serve_warning_ar: "عدد الجرحى الفلسطينيين بالضفة حسب أوتشا، كل سطر فترة زي ما بتطبعها أوتشا، مُدخل باليد. أوتشا ما بتطبع مجموع واحد من 7 أكتوبر 2023، وبتحسب استنشاق الغاز اللي احتاج علاج إصابة."
     - when: {regex: "^cited\\.land_area\\."}
       concept: land.area
       measure_kind: stock

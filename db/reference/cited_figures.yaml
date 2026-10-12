@@ -230,15 +230,347 @@ figures:
    publisher: "UN OCHA", document: "(document title not recorded by the research note)", verification: read,
    caution: "Including 46 children; over 36,100 injured. B'Tselem and PCHR count 223."}
 - {id: gaza-2021-ohchr, topic: gaza_2021, measure: killed, date: "2021-05-10", precision: day,
-   value: 261, unit: persons, region: "Gaza Strip", from: "2021-05-10", to: "2021-05-21",
-   publisher: "UN OHCHR, via OCHA", document: "(document title not recorded by the research note)", verification: read,
-   caution: "Including 67 children. It includes some deaths from rockets that fell short; about 245 were by Israeli fire. The film's 256 has no source."}
-- {id: settlers-wb-peacenow-2023, topic: settlers, measure: west_bank_population, date: "2023-12-31", precision: day,
-   value: 511100, unit: persons, region: "West Bank",
+   value: 261, unit: persons, region: "Gaza Strip", from: "2021-05-10", to: "2021-05-21", read_on: "2026-10-12",
+   publisher: "UN OCHA, citing OHCHR", document: "Overview, November 2021",
+   url: "https://www.ochaopt.org/content/overview-november-2021",
+   quote: "According to the Office of the High Commissioner for Human Rights (OHCHR), during the escalation in Gaza, 261 Palestinians were killed, including 67 children and 41 women.",
+   verification: read,
+   caution: "OCHA's counts in May 2021 were lower (242, then 256). The figure includes some deaths from rockets that fell short. The film's 256 was an earlier OCHA count."}
+- {id: settlers-wb-peacenow-2024, topic: settlers, measure: west_bank_population, date: "2024-01-01", precision: year,
+   value: 511100, unit: persons, region: "West Bank", read_on: "2026-10-12",
    publisher: "Peace Now (Settlement Watch), from Israel's Central Bureau of Statistics", document: "Settlements data: population",
-   url: "https://peacenow.org.il/en/settlements-watch/settlements-data/population", quote: "end of 2023", verification: read,
-   caution: "The West Bank without East Jerusalem. Peace Now's own 2024 map printed 478,600."}
+   url: "https://peacenow.org.il/en/settlements-watch/settlements-data/population", verification: read,
+   caution: "The West Bank without East Jerusalem. The page's chart files 511,100 under 2024 and 503,732 under 2023; two captions on the same page still say 'end of 2023' beside 511,100, and Israel's CBS gives 501,100 at the end of 2023, so the captions are stale."}
 - {id: settlers-all-pcbs-2024, topic: settlers, measure: west_bank_and_east_jerusalem_population, date: "2024-12-31", precision: day,
    value: 778567, unit: persons, region: "West Bank",
    publisher: "Palestinian Central Bureau of Statistics", document: "(document title not recorded by the research note)", verification: read,
    caution: "At the end of 2024, including 243,716 in East Jerusalem."}
+
+# ── D. The figures typed into stories 2 to 7, read on 2026-10-12 ─────────────
+# A dated event is held as one event with the publisher's sentence: `statement`
+# says what happened, the value is 1 and the unit is events.
+
+- {id: land-day-1976-ips, topic: land_day_1976, measure: killed, date: "1976-03-30", precision: day,
+   value: 6, unit: persons, region: Palestine, read_on: "2026-10-12",
+   publisher: "Institute for Palestine Studies (palquest), entry by Nabih Bashir", document: "Land Day, 30 March 1976",
+   url: "https://www.palquest.org/en/highlight/14509/land-day-30-march-1976",
+   quote: "Six people were killed: Raja Abu Rayya, Khidr Khalayleh, and Khadija Shawahna from Sakhnin and Khayr Yassin from Arrabeh. Muhsin Taha was killed in Kafr Kanna and Ra'fat Zuheiri from the Nur Shams refugee camp was killed in the clashes in al-Taybeh.",
+   verification: read,
+   caution: "An encyclopedia entry, not a 1976 official record. An AP dispatch of 31 March 1976 says five of the six were killed on the Tuesday itself."}
+
+- {id: gaza-ceasefire-2025-01-19, topic: gaza_ceasefire_2025_01, measure: took_effect, date: "2025-01-19", precision: day,
+   statement: "a ceasefire came into effect at 11:15", unit: events, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "Humanitarian Situation Update #257, Gaza Strip (22 January 2025)",
+   url: "https://www.ochaopt.org/content/humanitarian-situation-update-257-gaza-strip",
+   quote: "On 19 January 2025, at 11:15, a ceasefire between Israel and Palestinian armed groups came into effect, through mediation by Egypt, Qatar and the United States.",
+   verification: read, caution: "No mediator's or party's own text was read."}
+- {id: gaza-resumption-2025-03-18-ocha, topic: gaza_war_resumed_2025_03, measure: killed, date: "2025-03-18", precision: day,
+   value: 404, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA, citing the Ministry of Health in Gaza", document: "Humanitarian Situation Update #273, Gaza Strip (18 March 2025)",
+   url: "https://www.ochaopt.org/content/humanitarian-situation-update-273-gaza-strip",
+   quote: "According to the Ministry of Health (MoH) in Gaza, as of 12:00pm, 404 people were killed and 562 were injured since the early morning hours, when Israeli airstrikes and bombardment intensified.",
+   verification: read, caution: "The toll as of noon on the day the war resumed, not the day's total."}
+- {id: gaza-resumption-2025-03-19-letter, topic: gaza_war_resumed_2025_03, measure: killed, date: "2025-03-19", precision: day,
+   value: 436, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "Permanent Observer of the State of Palestine to the UN", document: "Identical letters dated 19 March 2025 (A/ES-10/1027, S/2025/173)",
+   url: "https://www.un.org/unispal/document/israel-continues-to-violate-the-ceasefire-agreement-un-facilities-are-being-attacked-letter-from-the-state-of-palestine-a-es-10-1027-s-2025-173/",
+   quote: "At the time of writing the present letter, 436 Palestinians have been murdered in these Israeli attacks and 678 wounded; the majority of the victims are children and women.",
+   verification: read,
+   caution: "The toll issued on 19 March for 'since dawn Tuesday': it includes the first hours of 19 March and is not a count for 18 March alone. The Ministry of Health's own statement was not read."}
+- {id: gaza-blockade-2025-start, topic: gaza_blockade_2025, measure: began, date: "2025-03-02", precision: day,
+   statement: "Israeli authorities announced a halt to all aid entering Gaza", unit: events, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "Humanitarian Situation Update #269, Gaza Strip (4 March 2025)",
+   url: "https://www.ochaopt.org/content/humanitarian-situation-update-269-gaza-strip",
+   quote: "On 2 March, Israeli authorities announced a halt to humanitarian aid entering Gaza, including fuel.", verification: read}
+- {id: gaza-blockade-2025-first-trucks, topic: gaza_blockade_2025, measure: ended, date: "2025-05-19", precision: day,
+   statement: "the first aid trucks were cleared to enter after 11 weeks of complete blockade", unit: events, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA (the Emergency Relief Coordinator)", document: "UN Relief Chief welcomes renewed aid deliveries to Gaza (19 May 2025)",
+   url: "https://www.unocha.org/publications/report/occupied-palestinian-territory/un-relief-chief-welcomes-renewed-aid-deliveries-gaza-stresses-its-only-drop-ocean-what-needed-enhe",
+   quote: "The Israeli authorities have temporarily allowed us to resume delivery of limited aid into Gaza, following 11 weeks of complete blockade, and amid a spike in the military offensive.",
+   verification: read,
+   caution: "OCHA says '11 weeks'; no UN text read says '78 days', which is the count of days from 2 March to 19 May. Nine trucks were cleared that day and, per UN News, five were allowed in; the first collection for distribution was the night of 21 May."}
+- {id: gaza-famine-2025-08-ipc, topic: gaza_famine_2025, measure: determined, date: "2025-08-22", precision: day,
+   statement: "Famine (IPC Phase 5) determined in Gaza Governorate", unit: events, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "IPC Famine Review Committee", document: "Famine Review Committee: Gaza Strip, August 2025 (published 22 August 2025)",
+   url: "https://www.un.org/unispal/wp-content/uploads/2025/08/IPC_Famine_Review_Committee_Report_Gaza_Aug2025-compressed.pdf",
+   quote: "The Famine Review Committee (FRC) has determined that Famine (IPC Phase 5) is currently occurring in Gaza Governorate.",
+   verification: read,
+   caution: "The analysis covers 1 July to 15 August 2025; North Gaza was not classified for lack of evidence. Read from the UN's copy of the IPC's report."}
+- {id: gaza-ceasefire-2025-10-10, topic: gaza_ceasefire_2025_10, measure: took_effect, date: "2025-10-10", precision: day,
+   statement: "a ceasefire came into effect at noon", unit: events, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "Humanitarian Situation Update #331, Gaza Strip (16 October 2025)",
+   url: "https://www.ochaopt.org/content/humanitarian-situation-update-331-gaza-strip",
+   quote: "A ceasefire came into effect in Gaza at noon on 10 October, and ICRC facilitated the release of Israeli hostages and Palestinian detainees and the transfer of bodies on 13 and 14 October.",
+   verification: read, caution: "OCHA attributes the hour to the Israeli military. No mediator's or party's own text was read."}
+
+- {id: rubble-ocha-2026-09, topic: gaza_under_rubble, measure: bodies, date: "2026-09-18", precision: day,
+   value: 8000, qualifier: more_than, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN OCHA, citing the Palestinian Civil Defence through the UN Human Rights Chief", document: "Humanitarian Situation Report, 18 September 2026",
+   url: "https://www.ochaopt.org/content/humanitarian-situation-report-18-september-2026",
+   quote: "The Civil Defence estimates the total number of missing under the rubble at over 8,000, the statement said.", verification: read,
+   caution: "An estimate by the Gaza Civil Defence, not a count."}
+- {id: rubble-ohchr-2026-09, topic: gaza_under_rubble, measure: bodies, date: "2026-09-15", precision: day,
+   value: 8000, qualifier: at_least, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UN Human Rights Office in the Occupied Palestinian Territory (Ajith Sunghay)", document: "Remarks to the press on missing persons in Gaza (15 September 2026)",
+   url: "https://reliefweb.int/report/occupied-palestinian-territory/remarks-press-missing-persons-gaza-enar",
+   quote: "It is estimated that at least 8,000 bodies remain buried under the rubble across the strip.", verification: read}
+- {id: rubble-civil-defence-2026-10, topic: gaza_under_rubble, measure: bodies, date: "2026-10-08", precision: day,
+   value: 8000, qualifier: about, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "Gaza Civil Defence (spokesman Mahmoud Basal), quoted by Al-Aqsa", document: "الدفاع المدني للأقصى: أمامنا 8 أعوام لانتشال الشهداء من تحت الأنقاض",
+   url: "https://www.alaqsanet.news/post/44882",
+   quote: "منذ وقف إطلاق النار انتشلنا قرابة 1000 شهيد، وهناك تقريبًا 8000 من الشهداء موجودون تحت أنقاض المباني المدمرة في القطاع",
+   verification: secondary,
+   caution: "A news interview; the day comes from the search listing, not the page. On 5 September 2026 the same spokesman said 'more than 8,000'."}
+
+- {id: missing-ichr-report-2025, topic: gaza_missing, measure: persons, date: "2025-01-01", precision: year,
+   value: 10000, qualifier: at_least, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "Independent Commission for Human Rights (ICHR)", document: "The Missing and Forcibly Disappeared Persons in the Gaza Strip since October 7, 2023 (Special Reports Series No. 130, 2025)",
+   url: "https://www.ichr.ps/download/attachments/124995-en.pdf",
+   quote: "The fate of at least 10,000 missing persons, the majority of whom are children and women, remains unknown to date.", verification: read,
+   caution: "The report's footnote credits the figure to the Palestinian Civil Defense."}
+- {id: missing-ichr-announcement-2025, topic: gaza_missing, measure: persons, date: "2025-01-01", precision: year,
+   value: 11200, qualifier: more_than, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "Independent Commission for Human Rights (ICHR), announcing its report", document: "أصدرته الهيئة المستقلة: تقرير خاص حول المفقودين والاختفاء القسري في قطاع غزة",
+   url: "https://www.ichr.ps/public/page/124909",
+   quote: "وحول أعداد المفقودين والمختفين قسراً في قطاع غزة، فيبين التقرير أن العدد تجاوز 11,200 شخص، من بينهم أكثر من 4,700 من النساء والأطفال",
+   verification: read,
+   caution: "The announcement says the number exceeded 11,200; the report it announces says 'at least 10,000'. 11,200 does not appear in the report's English text."}
+- {id: missing-media-office-2024-12, topic: gaza_missing, measure: persons, date: "2024-12-29", precision: day,
+   value: 11200, unit: persons, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "Government Media Office, Gaza", document: "بيان رقم (710): تحديث لأهم إحصائيات حرب الإبادة الجماعية، اليوم 450 (29 December 2024)",
+   url: "https://alray.ps/ar/post/284257/", quote: "(11,200) مفقودٍ لم يصلوا إلى المستشفيات.", verification: read,
+   caution: "The Media Office's later updates give 'more than 11,000' (April 2025) and 9,500 (July and October 2026)."}
+
+- {id: unosat-2026-06-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2026-06-16", precision: day,
+   value: 134422, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 16 June 2026 (map V1, published 29 July 2026)",
+   url: "https://unosat.docs.cern.ch/PS/CE20231007PSE/OCHA/UNOSAT_A3_GazaStrip_CDA_20260616.pdf",
+   quote: "Among the damaged structures, the United Nation Satellite Centre identified 134,422 destroyed structures, 13,848 severely damaged structures, 28,096 moderately damaged structures, and 24,924 possibly damaged structures for a total of 201,290 affected structures.",
+   verification: read}
+- {id: unosat-2026-06-affected, topic: unosat_gaza, measure: structures_affected, date: "2026-06-16", precision: day,
+   value: 201290, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 16 June 2026 (map V1, published 29 July 2026)",
+   url: "https://unosat.docs.cern.ch/PS/CE20231007PSE/OCHA/UNOSAT_A3_GazaStrip_CDA_20260616.pdf",
+   quote: "Among the damaged structures, the United Nation Satellite Centre identified 134,422 destroyed structures, 13,848 severely damaged structures, 28,096 moderately damaged structures, and 24,924 possibly damaged structures for a total of 201,290 affected structures.",
+   verification: read,
+   caution: "OCHA carried the same figures in its report of 7 August 2026. No UNOSAT or HDX product page for this assessment was found."}
+- {id: unosat-2026-06-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2026-06-16", precision: day,
+   value: 82, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 16 June 2026 (map V1, published 29 July 2026)",
+   url: "https://unosat.docs.cern.ch/PS/CE20231007PSE/OCHA/UNOSAT_A3_GazaStrip_CDA_20260616.pdf",
+   quote: "as of 16 June 2026, approximately 82% of all structures in the Gaza Strip are damaged.", verification: read}
+
+# UNOSAT's earlier Gaza-wide assessments, each with UNOSAT's own stated share of structures.
+- {id: unosat-20231015-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2023-10-15", precision: day,
+   value: 2017, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-10-15",
+   url: "https://unosat.org/products/3714", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231015-affected, topic: unosat_gaza, measure: structures_affected, date: "2023-10-15", precision: day,
+   value: 10584, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-10-15",
+   url: "https://unosat.org/products/3714", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231015-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2023-10-15", precision: day,
+   value: 4, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-10-15",
+   url: "https://unosat.org/products/3714", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231107-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2023-11-07", precision: day,
+   value: 6583, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231107-affected, topic: unosat_gaza, measure: structures_affected, date: "2023-11-07", precision: day,
+   value: 25050, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231107-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2023-11-07", precision: day,
+   value: 10, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231126-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2023-11-26", precision: day,
+   value: 10049, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-26",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231126-affected, topic: unosat_gaza, measure: structures_affected, date: "2023-11-26", precision: day,
+   value: 37379, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-26",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20231126-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2023-11-26", precision: day,
+   value: 18, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2023-11-26",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240107-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-01-07", precision: day,
+   value: 22130, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-01-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240107-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-01-07", precision: day,
+   value: 69146, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-01-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240107-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-01-07", precision: day,
+   value: 30, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-01-07",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240229-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-02-29", precision: day,
+   value: 31198, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-02-29",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240229-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-02-29", precision: day,
+   value: 88868, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-02-29",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240229-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-02-29", precision: day,
+   value: 35, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-02-29",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240401-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-04-01", precision: day,
+   value: 34115, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-04-01",
+   url: "https://unosat.org/products/3824", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240401-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-04-01", precision: day,
+   value: 123706, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-04-01",
+   url: "https://unosat.org/products/3824", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240401-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-04-01", precision: day,
+   value: 50, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-04-01",
+   url: "https://unosat.org/products/3824", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240503-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-05-03", precision: day,
+   value: 36591, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-05-03",
+   url: "https://data.humdata.org/dataset/unosat-gaza-strip-7th-comprehensive-damage-assessment-may-2024", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240503-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-05-03", precision: day,
+   value: 137297, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-05-03",
+   url: "https://data.humdata.org/dataset/unosat-gaza-strip-7th-comprehensive-damage-assessment-may-2024", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240503-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-05-03", precision: day,
+   value: 55, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-05-03",
+   url: "https://data.humdata.org/dataset/unosat-gaza-strip-7th-comprehensive-damage-assessment-may-2024", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240706-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-07-06", precision: day,
+   value: 46223, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-07-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240706-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-07-06", precision: day,
+   value: 156409, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-07-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240706-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-07-06", precision: day,
+   value: 63, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-07-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240906-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-09-06", precision: day,
+   value: 52564, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-09-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240906-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-09-06", precision: day,
+   value: 163778, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-09-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20240906-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-09-06", precision: day,
+   value: 66, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-09-06",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20241201-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2024-12-01", precision: day,
+   value: 60368, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-12-01",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20241201-affected, topic: unosat_gaza, measure: structures_affected, date: "2024-12-01", precision: day,
+   value: 170812, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-12-01",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20241201-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2024-12-01", precision: day,
+   value: 69, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2024-12-01",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250404-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2025-04-04", precision: day,
+   value: 70436, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-04-04",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250404-affected, topic: unosat_gaza, measure: structures_affected, date: "2025-04-04", precision: day,
+   value: 174486, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-04-04",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250404-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2025-04-04", precision: day,
+   value: 70, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-04-04",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250708-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2025-07-08", precision: day,
+   value: 102067, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-07-08",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250708-affected, topic: unosat_gaza, measure: structures_affected, date: "2025-07-08", precision: day,
+   value: 192812, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-07-08",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20250708-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2025-07-08", precision: day,
+   value: 78, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-07-08",
+   url: "https://data.humdata.org/organization/unosat?q=Gaza+Strip+Comprehensive+Damage+Assessment", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20251011-destroyed, topic: unosat_gaza, measure: structures_destroyed, date: "2025-10-11", precision: day,
+   value: 123464, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-10-11",
+   url: "https://unosat.org/products/4213", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20251011-affected, topic: unosat_gaza, measure: structures_affected, date: "2025-10-11", precision: day,
+   value: 198273, unit: structures, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-10-11",
+   url: "https://unosat.org/products/4213", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+- {id: unosat-20251011-share, topic: unosat_gaza, measure: share_of_structures_affected, date: "2025-10-11", precision: day,
+   value: 81, qualifier: about, unit: percent, region: "Gaza Strip", read_on: "2026-10-12",
+   publisher: "UNOSAT (United Nations Satellite Centre)", document: "Gaza Strip Comprehensive Damage Assessment, imagery of 2025-10-11",
+   url: "https://unosat.org/products/4213", verification: read,
+   caution: "Through 29 February 2024 the total counts three damage classes; from 1 April 2024 it adds 'possibly damaged', so the series is not like for like across that date."}
+
+# OCHA's injured in the West Bank: three periods, and no single total since 7 October 2023.
+- {id: wb-injured-ocha-2023, topic: west_bank_injured, measure: persons, date: "2023-10-07", precision: day,
+   value: 4003, unit: persons, region: "West Bank", from: "2023-10-07", to: "2023-12-31", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "West Bank Monthly Snapshot: Casualties, Property Damage and Displacement, as of 31 August 2026",
+   url: "https://www.ochaopt.org/sites/default/files/West%20Bank_info-graphic_14_September_2026.pdf", verification: read,
+   caution: "From the snapshot's yearly chart. OCHA counts tear-gas inhalation needing treatment as an injury."}
+- {id: wb-injured-ocha-2024, topic: west_bank_injured, measure: persons, date: "2024-01-01", precision: day,
+   value: 3126, unit: persons, region: "West Bank", from: "2024-01-01", to: "2024-12-31", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "West Bank Monthly Snapshot: Casualties, Property Damage and Displacement, as of 31 August 2026",
+   url: "https://www.ochaopt.org/sites/default/files/West%20Bank_info-graphic_14_September_2026.pdf", verification: read,
+   caution: "From the snapshot's yearly chart. OCHA counts tear-gas inhalation needing treatment as an injury."}
+- {id: wb-injured-ocha-2025-2026, topic: west_bank_injured, measure: persons, date: "2025-01-01", precision: day,
+   value: 5927, unit: persons, region: "West Bank", from: "2025-01-01", to: "2026-08-31", read_on: "2026-10-12",
+   publisher: "UN OCHA", document: "West Bank Monthly Snapshot: Casualties, Property Damage and Displacement, as of 31 August 2026",
+   url: "https://www.ochaopt.org/sites/default/files/West%20Bank_info-graphic_14_September_2026.pdf",
+   quote: "1 JANUARY 2025 - 31 AUGUST 2026 [...] 5,927 Palestinian injuries incl. 946 children", verification: read,
+   caution: "OCHA prints no single total since 7 October 2023. The three periods add to 13,056 through 31 August 2026; that sum is ours, not OCHA's."}

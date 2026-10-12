@@ -89,6 +89,12 @@ concepts:
     name_en: Land confiscation
     name_ar: مصادرة الأراضي
     definition: Land declared state land, seized, or placed beyond reach.
+  timeline:
+    name_en: Dated events
+    definition: >-
+      A dated event as a named publisher states it (a ceasefire taking effect,
+      a blockade beginning, a famine determination), held with the publisher's
+      sentence. Added 2026-10-12 for the cited figures. name_ar is Zaid's to write.
   land.area:
     name_en: Land area
     definition: >-

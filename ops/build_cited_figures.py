@@ -39,6 +39,8 @@ def _n(v) -> str:
 def said(f: dict) -> str:
     """The figure as a reader should hear it: its qualifier and its range are
     part of the statement, not decoration."""
+    if f.get("statement"):
+        return str(f["statement"])
     if "low" in f:
         return f"{_n(f['low'])} to {_n(f['high'])}"
     q = QUALIFIER.get(f.get("qualifier") or "")
@@ -60,8 +62,12 @@ def check(figures: list[dict]) -> list[str]:
         for k in ("topic", "measure"):
             if not re.fullmatch(r"[a-z0-9_]+", str(f.get(k) or "")):
                 problems.append(f"{name}: `{k}` is lower-case letters, digits and underscores")
-        if ("value" in f) == ("low" in f or "high" in f):
-            problems.append(f"{name}: give `value`, or `low` and `high`, not both and not neither")
+        kinds = sum((("value" in f), ("low" in f or "high" in f), bool(f.get("statement"))))
+        if kinds != 1:
+            problems.append(f"{name}: give `value`, or `low` and `high`, or a `statement` "
+                            "(a dated event), not both and not neither")
+        if f.get("statement") and f.get("unit") != "events":
+            problems.append(f"{name}: a dated event is counted in `events`")
         if ("low" in f) != ("high" in f) or ("low" in f and f["low"] > f["high"]):
             problems.append(f"{name}: a range needs `low` and `high`, low first")
         if f.get("verification") not in VERIFICATION:
@@ -88,7 +94,8 @@ def records(figures: list[dict]) -> list[dict]:
             "cite_id": f["id"],
             "topic": f["topic"], "measure": f["measure"],
             "date": f["date"], "date_precision": f["precision"],
-            "value": f.get("value"),
+            # a dated event is one event; what happened is in `said`
+            "value": 1 if f.get("statement") else f.get("value"),
             "said": said(f),
             "unit": f["unit"],
             "location": {"region": f["region"]},
