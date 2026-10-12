@@ -88,7 +88,7 @@ formed.
 .venv/bin/python -m ops.export_open_data      # 18 files + WITHHELD.md
 ```
 
-**Named memorial records are gated.** 73,000+ identified people are held with
+**Named memorial records are gated.** 72,000+ identified people are held with
 name, date of birth, age and sex. The licence permits publishing them, and
 reducing the dead to a number is the erasure this record exists against — but
 reading the names should be a deliberate act, so the API needs

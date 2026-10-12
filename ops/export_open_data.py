@@ -62,7 +62,7 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "open-release"
 
 # THE MEMORIAL GATE, and why an export needs one the API already has.
 #
-# 73,077 rows are named people: name_ar, name_en, date of birth, age, sex.
+# Some 72,800 rows are named people: name_ar, name_en, date of birth, age, sex.
 # The licence permits it — Tech4Palestine publishes the roster as public
 # domain precisely so the names are known, and reducing the dead to a number
 # is the erasure this databank exists against.
@@ -79,6 +79,17 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "open-release"
 # make the same deliberate choice the API asks for.
 MEMORIAL_FILTER = ("NOT (v1_category = 'martyrs_snapshot_2023' "
                    "AND indicator = 'martyrs.identified_killed')")
+
+def memorial_count(cur) -> int:
+    """How many named people the roster holds NOW. The two generated pages
+    said "73,077" as typed text (audit V27); on 2026-10-12 the roster closed
+    the 242 names its publisher had withdrawn and the typed figure became an
+    overcount of a list of the dead."""
+    cur.execute("""SELECT count(*) FROM databank_internal
+                    WHERE v1_category = 'martyrs_snapshot_2023'
+                      AND indicator = 'martyrs.identified_killed'""")
+    return cur.fetchone()[0]
+
 
 # A release licence is compatible with the share-alike rows inside it only if
 # it carries the same copyleft. This is deliberately a short, conservative
@@ -153,6 +164,7 @@ def export_collection(include_memorial: bool = False) -> int:
                               from_date, to_date, reason, permission_status,
                               terms_url FROM v_withheld ORDER BY rows_held DESC""")
         withheld = cur.fetchall()
+        n_memorial = memorial_count(cur)
 
     (OUT / "manifest.json").write_text(json.dumps(
         {"shape": "collection", "generated":
@@ -162,7 +174,7 @@ def export_collection(include_memorial: bool = False) -> int:
                  "incompatible copylefts (ODbL, CC-BY-SA, CC-BY-NC-SA) live "
                  "here and no single aggregate licence can hold them.",
          "files": manifest}, indent=1, ensure_ascii=False))
-    _write_withheld(withheld, total, include_memorial)
+    _write_withheld(withheld, total, include_memorial, n_memorial)
     sa = [m for m in manifest if m["share_alike"]]
     print(f"  by-source/            {len(manifest)} files, {total:,} rows")
     print(f"  manifest.json         each file under its own licence")
@@ -176,7 +188,8 @@ def export_collection(include_memorial: bool = False) -> int:
 
 
 def _write_withheld(withheld, n_released: int,
-                    include_memorial: bool = False) -> None:
+                    include_memorial: bool = False,
+                    n_memorial: int = 0) -> None:
     stamp = f"{datetime.now(timezone.utc):%Y-%m-%d}"
     (OUT / "WITHHELD.md").write_text("\n".join([
         "# What this release does not contain", "",
@@ -198,7 +211,7 @@ def _write_withheld(withheld, n_released: int,
         "automatically.", "",
         *([] if include_memorial else [
             "## The memorial roster", "",
-            "**73,077 named records are also absent** — every identified "
+            f"**{n_memorial:,} named records are also absent** — every identified "
             "person killed, with name, date of birth, age and sex. The "
             "licence permits publishing them: Tech4Palestine releases the "
             "roster as public domain precisely so the names are known, and "
@@ -265,6 +278,7 @@ def main(argv: list[str]) -> int:
                               attribution_text, terms_url
                        FROM databank_bulk ORDER BY 1""")
         credits = cur.fetchall()
+        n_memorial = memorial_count(cur)
 
     OUT.mkdir(parents=True, exist_ok=True)
     buf = io.StringIO()
@@ -306,7 +320,7 @@ def main(argv: list[str]) -> int:
         "`WITHHELD.md` for what is deliberately absent and why — the export "
         "is never quietly short.", "",
         ("" if include_memorial else
-         "The 73,077 named memorial records are NOT in this release; see "
+         f"The {n_memorial:,} named memorial records are NOT in this release; see "
          "`WITHHELD.md`. Their aggregate totals are."), "",
         "## Credit where it is owed", "",
         *[f"- **{n}** — `{l}`  \n  {a}" + (f"  \n  <{u}>" if u else "")
