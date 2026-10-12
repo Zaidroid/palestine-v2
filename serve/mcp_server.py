@@ -38,6 +38,7 @@ from typing import Any
 
 from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
                           product_labels, searching, seen_on_route, share_words)
+from serve.when import when_ar                                        # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -2145,12 +2146,11 @@ def databank(category: str | None = None, indicator: str | None = None,
         elif isinstance(val, float):
             val = round(val, 2) if abs(val) >= 1 else round(val, 4)
         unit = f" {it['unit']}" if it.get("unit") else ""
-        prec = it.get("occurred_precision")
-        when_ = str(it.get("occurred_at") or "")[:4 if prec == "year" else 10]
+        when_ = when_ar(it)
         partial = " (سنة ناقصة)" if (it.get("attrs") or {}).get("partial_year") else ""
         where = f"، {it['place_ar']}" if it.get("place_ar") else ""
-        bits.append(f"{k}: {val:,}{unit} في {when_}{partial}{where}" if isinstance(val, (int, float))
-                    else f"{k}: {val} في {when_}{where}")
+        bits.append(f"{k}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
+                    else f"{k}: {val} {when_}{where}")
     src = "؛ ".join(d.get("attribution") or [])[:120].rstrip(". ")
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span

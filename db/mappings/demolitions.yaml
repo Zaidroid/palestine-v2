@@ -250,6 +250,8 @@ registry:
       grain: period
       place_grain: locality
       canonical_unit: persons
+      serve_warning: "One total per locality for 2009 to date, as OCHA publishes it: not a figure for one year. It counts the same demolitions as the yearly totals for the West Bank, so the two are never added."
+      serve_warning_ar: "هاد مجموع واحد لكل تجمّع من 2009 لليوم زي ما بينشره مكتب أوتشا، مش رقم سنة. وهو نفس الهدم المحسوب بالمجاميع السنوية للضفة، فما بينجمعوا مع بعض."
     - when: {prefix: "demolitions.locality."}
       concept: demolition
       measure_kind: cumulative
@@ -257,6 +259,8 @@ registry:
       grain: period
       place_grain: locality
       canonical_unit: structures
+      serve_warning: "One total per locality for 2009 to date, as OCHA publishes it: not a figure for one year. It counts the same demolitions as the yearly totals for the West Bank, so the two are never added."
+      serve_warning_ar: "هاد مجموع واحد لكل تجمّع من 2009 لليوم زي ما بينشره مكتب أوتشا، مش رقم سنة. وهو نفس الهدم المحسوب بالمجاميع السنوية للضفة، فما بينجمعوا مع بعض."
     - when: {prefix: "demolitions.annual_total.structures"}
       concept: demolition
       measure_kind: flow

@@ -26,6 +26,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from serve.when import when_en
+
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
 PRESENCE = {"idf": "army", "police": "police", "settlers": "settlers",
@@ -807,12 +809,12 @@ def databank(d: dict) -> str:
         elif isinstance(val, float):
             val = round(val, 2) if abs(val) >= 1 else round(val, 4)
         unit = f" {it['unit']}" if it.get("unit") else ""
-        when = str(it.get("occurred_at") or "")[:4 if it.get("occurred_precision") == "year" else 10]
+        when = when_en(it)
         partial = " (partial year)" if (it.get("attrs") or {}).get("partial_year") else ""
         where = f", {it['place_en'] or it['place_ar']}" if it.get("place_en") or it.get("place_ar") else ""
-        bits.append((f"{it.get('indicator')}: {val:,}{unit} in {when}{partial}{where}"
+        bits.append((f"{it.get('indicator')}: {val:,}{unit} {when}{partial}{where}"
                      if isinstance(val, (int, float)) else
-                     f"{it.get('indicator')}: {val} in {when}{where}"))
+                     f"{it.get('indicator')}: {val} {when}{where}"))
     spans = d.get("series_span") or {}
     lo = sorted(v["from"] for v in spans.values() if v.get("from"))
     hi = sorted(v["to"] for v in spans.values() if v.get("to"))

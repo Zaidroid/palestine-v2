@@ -88,3 +88,53 @@ def test_the_routes_hand_the_flag_to_the_licence_layer():
     assert '"license_spdx", "redistribution", "commercial_use")' in src
     assert '"commercial_use": commercial_use}' in src
     assert licence.table(lambda *a, **k: [], set())["partner_requires_commercial_use"] is True
+
+
+# ── when a row is about ──────────────────────────────────────────────────────
+# "5,304 persons in 2008-01-01" was OCHA's count of people killed in Gaza
+# between 2008 and 2023; "1 schools in 2026-08-05" was a register row whose
+# only date is the day v1 downloaded it.
+
+from serve.when import when_ar, when_en                                      # noqa: E402
+
+GAZA_TOTAL = {"indicator": "casualties.region.gaza_strip", "value_num": 5304.0,
+              "occurred_at": "2008-01-01T00:00:00Z", "occurred_precision": "unknown",
+              "attrs": {"coverage_start": "2008-01-01", "coverage_end": "2023-09-19"}}
+SCHOOL = {"indicator": "education.school_record", "value_num": 1.0,
+          "occurred_at": "2026-08-05T00:00:00Z", "occurred_precision": "unknown", "attrs": {}}
+
+
+def test_a_period_total_names_both_ends_of_its_period():
+    assert when_en(GAZA_TOTAL) == "between 2008-01-01 and 2023-09-19 (one total for the period)"
+    assert "من 2008-01-01 لغاية 2023-09-19" in when_ar(GAZA_TOTAL)
+    assert "2008-01-01" not in when_en(GAZA_TOTAL).split("between")[0]
+
+
+def test_a_register_row_is_never_dated_by_the_day_it_was_fetched():
+    assert "2026-08-05" not in when_en(SCHOOL) and "2026-08-05" not in when_ar(SCHOOL)
+    assert when_en(SCHOOL) == "with no date given by the source"
+    dated = SCHOOL | {"dataset_vintage": "2023-07-25"}
+    assert when_en(dated) == "in the publisher's register of 2023-07-25"
+    assert "2023-07-25" in when_ar(dated)
+
+
+def test_a_dated_row_is_said_at_its_own_precision_and_no_finer():
+    row = {"occurred_at": "2024-01-01T00:00:00Z", "attrs": {}}
+    assert when_en(row | {"occurred_precision": "year"}) == "in 2024"
+    assert when_en(row | {"occurred_precision": "month"}) == "in 2024-01"
+    assert when_en(row | {"occurred_precision": "day"}) == "on 2024-01-01"
+    assert when_ar(row | {"occurred_precision": "year"}) == "سنة 2024"
+
+
+def test_the_english_databank_answer_uses_it():
+    from serve import mcp_en
+    said = mcp_en.databank({"category": "casualties", "count": 1,
+                            "latest_by_indicator": [GAZA_TOTAL | {"unit": "persons"}]})
+    assert "between 2008-01-01 and 2023-09-19" in said and "in 2008-01-01" not in said
+
+
+def test_a_period_total_is_never_differenced_into_a_flow():
+    sql = (ROOT / "db" / "migrations" /
+           "104_flows_and_freshness_count_what_is_there.sql").read_text()
+    assert "v.occurred_precision <> 'unknown'" in sql
+    assert "FILTER (WHERE upper_inf(o.sys_period))" in sql and "FROM event e" in sql
