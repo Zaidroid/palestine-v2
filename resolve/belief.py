@@ -284,6 +284,49 @@ def refresh(kinds, conn=None) -> int:
         return n
 
 
+# A BELIEF NOTHING STANDS BEHIND ANY MORE (2026-10-12).
+#
+# `refresh` only moves a belief FORWARD (the `>=` guard above, which exists for
+# a reason: a stale snapshot once overwrote clean rows). So when the reading a
+# belief was built on stops being an assertion — the stored-line re-read marks
+# it `superseded`, a line turns out to be a question — the belief stays where
+# it was, pointing at evidence that is no longer evidence, until a newer report
+# happens to arrive. And when two rows are merged, the beliefs of the row that
+# went away stay on it. Measured after the re-reads and the 19 merges of
+# 2026-10-11: 119 such rows, 114 of them on merged places, none of them served
+# (all past their age ceiling), and gates G2.4 and G2.5 red on them.
+#
+# `reground` withdraws exactly those rows; `refresh` then rebuilds each from
+# the newest assertion that remains. state_current is derived, so nothing is
+# lost: every observation stays where it was. A belief on a surviving row may
+# rest on an assertion filed under a row merged INTO it, and that counts.
+REGROUND_SQL = """
+DELETE FROM state_current sc
+ WHERE sc.state_kind = ANY(%(kinds)s)
+   AND (EXISTS (SELECT 1 FROM place p
+                 WHERE p.place_id = sc.place_id AND p.merged_into IS NOT NULL)
+     OR NOT EXISTS (
+          SELECT 1 FROM state_observation o
+           WHERE o.place_id IN (SELECT sc.place_id
+                                UNION ALL
+                                SELECT m.place_id FROM place m
+                                 WHERE m.merged_into = sc.place_id)
+             AND o.state_kind = sc.state_kind AND o.direction = sc.direction
+             AND o.observed_at = sc.observed_at AND o.modality = 'assertion'))
+RETURNING sc.place_id, sc.state_kind, sc.direction, sc.value, sc.observed_at
+"""
+
+
+def reground(kinds, conn) -> list[tuple]:
+    """Withdraw the beliefs of `kinds` that no assertion stands behind, and
+    the ones left on merged places. Call `refresh` after it. Returns the rows
+    withdrawn, for the caller to report."""
+    with conn.cursor() as cur:
+        cur.execute(BELIEF_LOCK_SQL)
+        cur.execute(REGROUND_SQL, {"kinds": list(kinds)})
+        return cur.fetchall()
+
+
 def blocked_by_gate(kinds=None) -> list[dict]:
     """Rows the P2.4 gate is currently withholding.
 

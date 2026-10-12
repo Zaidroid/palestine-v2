@@ -54,7 +54,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from cascade.checkpoint_text import FLOW_SEVERITY, read
-from resolve.belief import refresh as belief_refresh
+from resolve.belief import refresh as belief_refresh, reground as belief_reground
 from resolve.db import connect
 from resolve.db import v1_path  # noqa: E402
 
@@ -454,11 +454,18 @@ def reread_stored(since: datetime | None = None, dry_run: bool = True) -> dict:
 
 # ── belief ───────────────────────────────────────────────────────────────────
 
-def refresh_state() -> dict:
+def refresh_state(reground: bool = False) -> dict:
     """Recompute checkpoint belief. The model itself is resolve/belief.py —
     shared with fuel and the crowd path so the three cannot drift apart, and so
-    the P2.4 gate covers checkpoints, where a false "open" costs the most."""
+    the P2.4 gate covers checkpoints, where a false "open" costs the most.
+
+    `reground` first withdraws the beliefs nothing stands behind any more (a
+    reading superseded by a re-read, a row merged away): the nightly
+    `--state-only` and every `--reread` ask for it; the two-minute tick does
+    not, because it costs a probe per belief and nothing it writes can leave
+    one ungrounded."""
     with connect() as conn, conn.cursor() as cur:
+        withdrawn = belief_reground(ALL_KINDS, conn) if reground else []
         n = belief_refresh(ALL_KINDS, conn=conn)
         conn.commit()
         cur.execute("""SELECT state_kind, COUNT(*), ROUND(AVG(independent_sources),2),
@@ -466,7 +473,7 @@ def refresh_state() -> dict:
                        FROM state_current WHERE state_kind = ANY(%s)
                        GROUP BY 1 ORDER BY 1""", (list(ALL_KINDS),))
         by_kind = cur.fetchall()
-    return {"rows": n, "by_kind": by_kind}
+    return {"rows": n, "by_kind": by_kind, "withdrawn": len(withdrawn)}
 
 
 def compute_cadence() -> dict:
@@ -530,6 +537,11 @@ def main() -> int:
             print(f"  {s[k]:7}  {k}")
         if not s:
             print("  nothing: every stored line already carries the reader's current reading")
+        if not a.dry_run:
+            # a fact the re-read superseded may be what a belief was built on
+            r = refresh_state(reground=True)
+            print(f"belief: {r['withdrawn']} withdrawn (nothing stood behind them), "
+                  f"{r['rows']} rebuilt")
         return 0
 
     if not (a.cadence or a.state_only):
@@ -546,8 +558,10 @@ def main() -> int:
             from ingest.sources import roads
             roads.main([])
     if not a.cadence:
-        r = refresh_state()
-        print(f"belief refreshed: {r['rows']} rows")
+        r = refresh_state(reground=a.state_only)
+        print(f"belief refreshed: {r['rows']} rows"
+              + (f" · {r['withdrawn']} withdrawn first (nothing stood behind them)"
+                 if a.state_only else ""))
         for kind, n, avg_src, contra in r["by_kind"]:
             print(f"  {kind:<22} {n:>5} states · avg {avg_src} independent sources · "
                   f"{contra} contradicted")

@@ -21,10 +21,13 @@ FROM observation o JOIN dataset d USING (dataset_id) WHERE d.key = 'tier1_daily'
 -- way: 762,609 duplicate rows, found only when sizing a backup.
 SELECT CASE WHEN count(*) = 0 THEN 'PASS'
             ELSE 'FAIL: ' || count(*) || ' duplicated (place, indicator, day) keys' END AS g4_2_idempotent
+-- Among CURRENT rows: since 088 a changed day is superseded (closed, kept for
+-- as_of), so a key legitimately has one current row and any number of closed
+-- ones. Counting those read 31,679 "duplicates" on 2026-10-12 with none current.
 FROM (
   SELECT place_id, indicator, occurred_at
     FROM observation o JOIN dataset d USING (dataset_id)
-   WHERE d.key = 'tier1_daily'
+   WHERE d.key = 'tier1_daily' AND upper_inf(o.sys_period)
    GROUP BY 1,2,3 HAVING count(*) > 1
 ) dup;
 
@@ -120,15 +123,22 @@ WHERE d.key = 'tier1_daily' AND (o.attrs->>'state_kind') IS NULL;
 -- parser matching the words alone reads 73,356 as today's figure — wrong by
 -- four orders of magnitude, in the direction that gets quoted. The tiers must
 -- stay ordered: cumulative >= since_ceasefire >= daily, always.
+--
+-- Counted the way the Ministry counts (2026-10-12): its since-ceasefire total
+-- leaves out bodies recovered (they have their own line), and its daily figure
+-- includes them. 16 October 2025: "29 شهيدًا (منهم 22 شهيد انتشال …)" and
+-- "منذ وقف إطلاق النار: إجمالي الشهداء 23، إجمالي الانتشال 381". So the daily
+-- figure is compared after the day's recovered are taken out of it.
 SELECT CASE WHEN count(*) = 0 THEN 'PASS'
             ELSE 'FAIL: ' || count(*) || ' days where a tier is out of order' END AS g4_8_tiers_distinct
 FROM (
   SELECT o.occurred_at,
-         max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.daily')            AS d,
+         max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.daily')
+           - coalesce(max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.recovered.daily'), 0) AS d,
          max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.since_ceasefire')  AS sc,
          max(o.value_num) FILTER (WHERE o.indicator='gaza.moh.deaths.cumulative')       AS cu
     FROM observation o JOIN dataset ds USING (dataset_id)
-   WHERE ds.key = 'gaza_moh_daily' GROUP BY 1
+   WHERE ds.key = 'gaza_moh_daily' AND upper_inf(o.sys_period) GROUP BY 1
 ) t
 WHERE (sc IS NOT NULL AND d  IS NOT NULL AND sc < d)
    OR (cu IS NOT NULL AND sc IS NOT NULL AND cu < sc);

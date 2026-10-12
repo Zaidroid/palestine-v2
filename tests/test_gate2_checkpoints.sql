@@ -55,6 +55,13 @@ WHERE state_kind LIKE 'checkpoint%'
 --
 -- So the check now follows the row through to state_current, which is the thing
 -- that would actually hurt somebody.
+--
+-- A belief on a surviving row may rest on a reading filed under a row merged
+-- INTO it (097 merged 19), so the reading is looked for there too. And since
+-- 098 a reading can stop being an assertion after the belief was built (the
+-- stored-line re-read marks it `superseded`): resolve.belief.reground
+-- withdraws such beliefs nightly and after every re-read. If this fails, that
+-- step did not run.
 SELECT CASE WHEN COUNT(*) = 0 THEN 'PASS'
             ELSE 'FAIL: ' || COUNT(*) || ' beliefs built on a non-assertion'
        END AS g2_questions_excluded
@@ -63,22 +70,36 @@ WHERE sc.state_kind IN ('checkpoint_flow','checkpoint_idf','checkpoint_police',
                         'checkpoint_settlers','checkpoint_inspection')
   AND NOT EXISTS (
         SELECT 1 FROM state_observation o
-         WHERE o.place_id = sc.place_id AND o.state_kind = sc.state_kind
+         WHERE o.place_id IN (SELECT sc.place_id UNION ALL
+                              SELECT m.place_id FROM place m WHERE m.merged_into = sc.place_id)
+           AND o.state_kind = sc.state_kind
            AND o.direction = sc.direction AND o.observed_at = sc.observed_at
            AND o.source_id = sc.source_id AND o.modality = 'assertion');
 
-\echo '--- G2.4b: quarantined sources are collected but never served ---'
--- The other half of the same property, stated positively: a quarantined source
--- must be accumulating rows AND authoring none of the belief.
+\echo '--- G2.4b: quarantined READINGS are collected but never served ---'
+-- The other half of the same property, stated positively. It used to say the
+-- board authors no belief at all, which stopped being the rule on 2026-09-25
+-- (decision A: its open and closed are asserted) and again on 2026-10-12 (trust
+-- by place, 099). The rule now is per reading: a row held in quarantine is
+-- collected, and none is what a belief was built on.
 SELECT CASE
-         WHEN (SELECT count(*) FROM state_current sc JOIN source s USING (source_id)
-                WHERE s.key = 'tg_palhubapproad') > 0
-           THEN 'FAIL: a quarantined source is authoring served belief'
+         WHEN (SELECT count(*) FROM state_current sc
+                WHERE EXISTS (SELECT 1 FROM state_observation o
+                               WHERE o.place_id = sc.place_id AND o.state_kind = sc.state_kind
+                                 AND o.direction = sc.direction AND o.observed_at = sc.observed_at
+                                 AND o.source_id = sc.source_id AND o.value = sc.value
+                                 AND o.modality = 'quarantined')
+                  AND NOT EXISTS (SELECT 1 FROM state_observation o
+                               WHERE o.place_id = sc.place_id AND o.state_kind = sc.state_kind
+                                 AND o.direction = sc.direction AND o.observed_at = sc.observed_at
+                                 AND o.source_id = sc.source_id AND o.value = sc.value
+                                 AND o.modality = 'assertion')) > 0
+           THEN 'FAIL: a quarantined reading is authoring served belief'
          ELSE 'PASS (' || (SELECT count(*) FROM state_observation o
                             JOIN source s USING (source_id)
                            WHERE s.key = 'tg_palhubapproad'
                              AND o.modality = 'quarantined')
-              || ' rows collected, 0 served)'
+              || ' rows held in quarantine, 0 behind a belief)'
        END AS g2_quarantine_holds;
 
 \echo '--- G2.5: every belief traces to an observation that supports it ---'
@@ -89,7 +110,9 @@ FROM state_current sc
 WHERE sc.state_kind LIKE 'checkpoint%' AND sc.state_kind <> 'checkpoint_status'
   AND NOT EXISTS (
     SELECT 1 FROM state_observation o
-    WHERE o.place_id = sc.place_id AND o.state_kind = sc.state_kind
+    WHERE o.place_id IN (SELECT sc.place_id UNION ALL          -- see G2.4: merged rows
+                         SELECT m.place_id FROM place m WHERE m.merged_into = sc.place_id)
+      AND o.state_kind = sc.state_kind
       AND o.direction = sc.direction AND o.value = sc.value
       AND o.observed_at = sc.observed_at);
 
@@ -146,11 +169,20 @@ WHERE direction = 'both' AND flow <> 'unknown' AND present <> '{}';
 SELECT CASE WHEN COUNT(*) = 0 THEN 'PASS (no absent reading published as present)'
             ELSE 'FAIL: ' || COUNT(*) || ' places report someone as present who was reported ABSENT'
        END AS g2_absence_not_presence
+--
+-- Like with like (2026-10-12): the reader now binds a direction to who is
+-- present, so «عورتا بدون تواجد للجيش» (both ways, 15:07) and «عورتا محسوم هسا
+-- للخارج حطو» (outbound, 15:13) are two true reports of one checkpoint. The
+-- check used to join on the place alone and called that pair a violation. It
+-- compares the served row with the reading for ITS direction, and every name
+-- in `present`, not only the first.
 FROM checkpoint_serving c
+CROSS JOIN LATERAL unnest(c.present) w
 JOIN state_serving s
   ON s.place_id = c.place_id
- AND s.state_kind = 'checkpoint_' || (SELECT w FROM unnest(c.present) w LIMIT 1)
-WHERE cardinality(c.present) > 0 AND s.value = 'absent';
+ AND s.state_kind = 'checkpoint_' || w
+ AND s.direction = c.direction
+WHERE s.value = 'absent';
 
 \echo '--- G2.11: presence is served as a SIGHTING, not a state ---'
 -- An army patrol has a MEASURED 15-minute half-life and is reported for a given
