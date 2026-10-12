@@ -63,5 +63,8 @@ def test_feeds_06_an_unknown_section_never_files_under_the_previous_tier():
 def test_feeds_07_moh_rows_are_read_once_and_revisions_supersede():
     assert "cl.claim_id > %s" in inspect.getsource(moh_gaza.load)
     fn = inspect.getsource(moh_gaza._upsert_day)
-    assert "tstzrange(lower(sys_period), now())" in fn          # a revision closes the old row
+    # a revision closes the old row; with clock_timestamp(), because two
+    # bulletins of one day inside one transaction share now() and the close
+    # came out as an empty range (999718c)
+    assert "tstzrange(lower(sys_period)," in fn and "clock_timestamp()" in fn
     assert "reported_at, reported_at" in fn and "DO UPDATE" not in fn   # the claim's time, never now()

@@ -12,8 +12,8 @@ Over a million state observations across 35,000+ claims and 359 checkpoints,
 and growing every few minutes — which is why those three are rounded here and
 exact only in the API.
 
-**Tier 2 — what has happened.** 340,000+ observations and 10,400+ events from
-**1922 to today**, across 21 categories and 101 sources, each row carrying
+**Tier 2 — what has happened.** 470,000+ observations and 29,000+ events from
+**1922 to today**, across 21 categories and 105 sources, each row carrying
 its origin, its licence and the window it was true in.
 
     GET https://live-api.zaidlab.xyz/v2/databank/categories
@@ -57,7 +57,7 @@ sees fewer records than expected fails; it does not succeed with less.
 
 ## Licensing, honestly
 
-101 sources disagree about what may be done with their data, so the answer is
+105 sources disagree about what may be done with their data, so the answer is
 per source and sometimes per dataset:
 
 Measured 2026-08-08. These are lower bounds, not exact counts: Stage 7 put
@@ -67,10 +67,10 @@ was true once and quietly stopped being true.
 
 | | |
 |---|---:|
-| queryable through the API, credited | 205,000+ |
-| exportable as a file | 201,000+ |
-| held but not exportable — see `WITHHELD.md` | 3,600+ |
-| carrying a share-alike obligation | 20,000+ |
+| queryable through the API, credited | 315,000+ |
+| exportable as a file | 280,000+ |
+| held but not exportable — see `WITHHELD.md` | 44,000+ |
+| carrying a share-alike obligation | 41,000+ |
 
 **Query and bulk are different acts.** A query returning twenty credited
 demolition records is reporting a fact. A CSV of the whole table is

@@ -20,10 +20,20 @@ def _t(day, k, i, source="mohtel", **kw):
 
 def test_the_series_starts_the_day_after_the_frozen_value():
     """2026-08-08 is served by v1_conflict_tech4palestine; serving it again
-    under a second dataset would put the day in the databank twice."""
+    under a second dataset would put the day in the databank twice.
+
+    Since 2026-10-11 the day is no longer dropped whole: the two legacy TOTALS
+    are left out before the cut-over (and counted), and the detail series, which
+    the databank never held, load from the first bulletin."""
     assert GAZA_CUTOVER == "2026-08-09"
-    out = t_conflict_gaza(_t("2026-08-08", 73384, 174242), {}, PLACES, Counter())
-    assert isinstance(out, Drop) and out.reason == "before_cutover"
+    counts = Counter()
+    out = t_conflict_gaza(_t("2026-08-08", 73384, 174242), {}, PLACES, counts)
+    assert isinstance(out, Drop) and out.reason == "no_metrics"       # totals only: nothing to emit
+    assert counts["legacy_totals_before_cutover"] == 1
+    rows = t_conflict_gaza(_t("2026-08-08", 73384, 174242, ext_killed_children_cum=20100),
+                           {}, PLACES, Counter())
+    assert [(r.indicator, r.value_num) for r in rows] == [
+        ("conflict.gaza_cumulative_killed_children", 20100)]          # the detail, not the totals
     rows = t_conflict_gaza(_t("2026-08-09", 73386, 174250), {}, PLACES, Counter())
     assert [(r.indicator, r.value_num) for r in rows] == [
         ("conflict.gaza_cumulative_killed", 73386),
@@ -39,8 +49,12 @@ def test_a_value_t4p_filled_by_arithmetic_is_not_served():
 
 
 def test_a_day_with_no_totals_is_a_gap_not_a_zero():
+    # a day T4P filled itself is dropped for that reason before anything is read from it
     out = t_conflict_gaza(_t("2026-09-18", None, None, source="missing"), {}, PLACES, Counter())
-    assert isinstance(out, Drop) and out.reason == "no_cumulative"
+    assert isinstance(out, Drop) and out.reason == "t4p_inferred"
+    # a bulletin day that states nothing is a gap, never a row of zeros
+    out = t_conflict_gaza(_t("2026-09-18", None, None), {}, PLACES, Counter())
+    assert isinstance(out, Drop) and out.reason == "no_metrics"
 
 
 def _m(k, i, cid=1):
