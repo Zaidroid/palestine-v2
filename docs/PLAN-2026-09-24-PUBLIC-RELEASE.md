@@ -1153,3 +1153,20 @@ Commits 9271f42 (migration 100, belief, G2.19) and 07d3528 (the rest). Tests at 
 failed (776 s) on the tree before three late edits (the scan's warning, the registry's accounting as a tested
 function, the fetcher's labels); the 570 tests of every file touching those re-run after: 570 passed. Also in this
 block: correlate's scan mode carries the warnings too.
+
+2026-10-12 17:15 UTC · INCIDENT, mine: migration 100 held the road importers for 12 minutes (17:02–17:14 UTC) · over, data as
+rehearsed · proof: Zaid ran `tmp/6-merged-rows-history.sh` at 17:01:58. The file took the belief advisory lock and
+then ran its twin search, one statement joining the hypertable to itself. Rehearsed on a scratch copy: 7 s. On
+production: 11 min 25 s, with sync-checkpoints, crowd-refresh and the palhub ingest queued on the lock; /health read
+`job:crowd-refresh failing`, `job:sync-checkpoints failing` at 17:12. Cause, checked afterwards on a FULL-SIZE
+compressed copy (2,112,238 rows) where the same statement takes 3.7 s: the plan. Fresh statistics give a Hash Semi
+Join; production's planner expected rows=1 from the surviving side (actual about 300,000) and chose a Nested Loop
+that probes every chunk per row. My attempt to cancel the statement by its pid was refused by the permission layer
+(a running workload of his); I left a cancel script, a herald and a terminal notification. The statement finished
+on its own; the rest of the file took one minute. RESULT ON PRODUCTION = the rehearsal: 24,541 readings moved onto
+26 rows (17,542 assertions), 5,754 stay, applied 17:14:13; 101, 102, 103 applied 17:14:15–16.
+What I should have done, and did too late: EXPLAIN the statement on production and time its read part there
+(read-only, 2.5 s in the form that reads each side once), bound it with `SET LOCAL statement_timeout`, and say in
+the hand-over what waits behind the lock. The bounded form is commit 2407e53; because 100 was applied in its first
+form, the file is restored to the text that ran (02efbbb, checksum ac18b4b7), as an applied migration is not edited.
+No reading was lost: the importers read from cursors and caught up at 17:14.
