@@ -10,6 +10,25 @@ shape: observation
 status: reviewed
 records_measured: 9986
 
+# CUT FROM v1, 2026-10-12. ops/fetch_fts.py asks FTS's public API the question
+# v1 asked (countryISO3=PSE, one request series per usage year from 2015 to
+# the current year) and writes the record t_funding reads. Measured that day
+# against v1's file of the same night: the same 10,341 flow ids, 10,340
+# identical on every field the loader reads, 1 revised by FTS twelve hours
+# after v1 fetched it. The window is v1's and is not the whole of FTS: a flow
+# FTS removes from that answer stays held (see `identity.revises_by` below).
+# Rows are matched on the identity, not the stable id: a fetched record's id is
+# `fts-flow-<FTS flow id>`, a held row keeps v1's hash until FTS revises it.
+# The fallback is v1's file of 2026-10-12, read only where the fetcher has
+# never run; a fallback run adds, it never supersedes or closes.
+input:
+  root: data/raw/fts
+  glob: flows.json
+  fallback:
+    root: data/frozen
+    glob: funding.json.gz
+cadence: daily
+
 source_routing:
   by_name:
     "UN OCHA Financial Tracking Service": unfts   # exact licenses.json alias
