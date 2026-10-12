@@ -29,7 +29,7 @@ transform: python:t_prisoners
 v1_category: prisoners           # joins the prisoners serving views
 shape: observation
 status: reviewed
-records_measured: 876            # 2026-09-25: 219 months × 4 series
+records_measured: 1100           # 2026-10-12: 220 months × 5 series (the fourth part has its own series now)
 
 input:
   root: data/raw/hamoked
@@ -76,7 +76,7 @@ attrs_passthrough:
 
 expect:
   min_records: 780               # ≈ 0.9 × 864, the held panel
-  max_observations: 1010         # 876 at spec time + ~2.5 years of months
+  max_observations: 1300         # 1,100 at spec time + ~3 years of months × 5 series
 
 identity:
   fields: [indicator, occurred_at]

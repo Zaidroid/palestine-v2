@@ -7,7 +7,7 @@ the Israel Prison Service figures: data-judgment (sentenced), data-arrest
 (remand / awaiting trial), data-administrative-arrest (held without charge)
 and data-unnlawful-combatants (the "unlawful combatants" law, Gaza detainees).
 The databank's series (v1_prisoners_hamoked) is total / sentenced / remand /
-administrative, with total = the sum of all four — measured against the page:
+administrative / unlawful_combatants, with total = the sum of the four parts — measured against the page:
 June 2026 = 1,335 + 3,386 + 3,324 + 1,316 = 9,361, exactly the stored row.
 
 WHY v1's STEP DIED, AND WHY THIS ONE HAS TWO DOORS. v1 rendered the page in a
@@ -116,8 +116,13 @@ def month_records(months: list[dict], via: str, fetched_at: str) -> list[dict]:
         seen.add(day)                      # if it ever does, the first wins
         parts = (m["sentenced"], m["remand"], m["administrative"],
                  m["unlawful_combatants"])
+        # The fourth figure was read, added into the total and never given a
+        # series of its own: October 2026 holds 1,419 people under the
+        # "unlawful combatants" law (Gaza detainees, held without charge or
+        # trial) whom no named series accounted for (2026-10-12).
         series = {"sentenced": m["sentenced"], "remand": m["remand"],
                   "administrative": m["administrative"],
+                  "unlawful_combatants": m["unlawful_combatants"],
                   "total": sum(parts) if None not in parts else None}
         for metric, count in series.items():
             if count is None:

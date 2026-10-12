@@ -297,3 +297,17 @@ def test_a_village_dated_the_first_of_a_month_is_held_as_that_month():
     mig = (ROOT / "db" / "migrations" / "105_a_month_is_held_as_a_month.sql").read_text()
     assert "occurred_precision_before" in mig and "extract(day FROM occurred_at" in mig
     assert D is not None
+
+
+# ── HaMoked's fourth figure ──────────────────────────────────────────────────
+
+def test_the_people_held_as_unlawful_combatants_have_a_series_of_their_own():
+    """October 2026: 9,265 held, of whom the three named series accounted for
+    7,846. The other 1,419 were in the total and in no series."""
+    from ops.fetch_hamoked import month_records
+    recs = month_records([{"year": 2026, "month": 10, "sentenced": 1509, "remand": 3236,
+                           "administrative": 3101, "unlawful_combatants": 1419}], "direct", "t")
+    by = {r["prisoner_metric_type"]: r["metrics"]["count"] for r in recs}
+    assert by == {"sentenced": 1509, "remand": 3236, "administrative": 3101,
+                  "unlawful_combatants": 1419, "total": 9265}
+    assert sum(v for k, v in by.items() if k != "total") == by["total"]
