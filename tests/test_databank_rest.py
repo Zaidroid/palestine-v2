@@ -407,3 +407,19 @@ def test_a_series_is_named_by_its_publisher_and_its_cut():
     assert name_for("food.price.rice", None, None, doc) == ("Retail price of rice", "سعر الأرز")
     assert name_for("food.price.rice", {"name_en": "Rule name"}, None, doc)[0] == "Rule name"
     assert name_for("x.unknown", None, None, doc) == (None, None)
+
+
+def test_an_answer_calls_a_series_by_its_name_and_falls_back_to_the_key():
+    from serve import mcp_en
+    from serve.when import label_ar, label_en
+    d = {"names": {"prisoners.total": {"en": "People held by Israel (HaMoked)", "ar": "المحتجزون لدى إسرائيل"},
+                   "x.en_only": {"en": "English only", "ar": None}}}
+    assert label_en(d, "prisoners.total") == "People held by Israel (HaMoked)"
+    assert label_ar(d, "prisoners.total") == "المحتجزون لدى إسرائيل"
+    assert label_ar(d, "x.en_only") == "English only" and label_en(d, "no.name") == "no.name"
+    said = mcp_en.compare({**d, "series": [{"indicator": "prisoners.total", "n": 220,
+                                            "canonical_unit": "persons", "source_used": "hamoked"}],
+                           "overlap": {}})
+    assert "People held by Israel (HaMoked) (220 points, persons, hamoked's series only)" in said
+    src = (ROOT / "serve" / "app.py").read_text()
+    assert "i.name_ar ILIKE %(q)s" in src and src.count('out["names"] = names') == 3

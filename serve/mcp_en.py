@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from serve.when import cited_en, is_cited, statements, when_en
+from serve.when import cited_en, is_cited, label_en, statements, when_en
 
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
@@ -657,8 +657,9 @@ def what_correlates_with(d: dict) -> str:
 
 def compare(d: dict) -> str:
     ss = d.get("series") or []
-    bits = [f"{s['indicator']} ({s['n']} points, {s.get('canonical_unit') or 'no unit'}"
-            + (f", read at {_nm(s['place_used'])}" if s.get("place_used") else "") + ")"
+    bits = [f"{label_en(d, s['indicator'])} ({s['n']} points, {s.get('canonical_unit') or 'no unit'}"
+            + (f", read at {_nm(s['place_used'])}" if s.get("place_used") else "")
+            + (f", {s['source_used']}'s series only" if s.get("source_used") else "") + ")"
             for s in ss]
     ov = d.get("overlap") or {}
     return ("Comparing " + ", ".join(bits) +
@@ -687,7 +688,8 @@ def correlate(d: dict) -> str:
         if not inds:
             return f"No series matched “{d.get('query')}” — try another word or a concept."
         return (f"{len(inds)} series matched “{d.get('query')}”: "
-                + ", ".join(i["indicator"] for i in inds[:6]) + ".")
+                + ", ".join((f"{i['name_en']} ({i['indicator']})" if i.get("name_en")
+                             else i["indicator"]) for i in inds[:6]) + ".")
     return "Concepts held in the databank; pass search or concept to narrow."
 
 
@@ -823,11 +825,12 @@ def databank(d: dict) -> str:
         if is_cited(it):
             # one publisher's statement a row: every publisher is named
             rows = statements(d.get("items") or [], it) or [it]
-            bits.append(f"{it.get('indicator')}: {cited_en(rows)}{unit} {when}{where}")
+            bits.append(f"{label_en(d, it.get('indicator'))}: {cited_en(rows)}{unit} {when}{where}")
             continue
-        bits.append((f"{it.get('indicator')}: {val:,}{unit} {when}{partial}{where}"
+        name = label_en(d, it.get("indicator"))
+        bits.append((f"{name}: {val:,}{unit} {when}{partial}{where}"
                      if isinstance(val, (int, float)) else
-                     f"{it.get('indicator')}: {val} {when}{where}"))
+                     f"{name}: {val} {when}{where}"))
     spans = d.get("series_span") or {}
     lo = sorted(v["from"] for v in spans.values() if v.get("from"))
     hi = sorted(v["to"] for v in spans.values() if v.get("to"))

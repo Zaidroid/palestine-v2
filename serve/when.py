@@ -121,3 +121,17 @@ def cited_ar(rows: list[dict]) -> str:
         f"{_figure(r, _Q_AR, 'من {} لـ {}')} حسب {r['attrs']['publisher']}"
         + (" (منقول عن ويكيبيديا بس)" if r["attrs"].get("verification") == "via_wikipedia" else "")
         for r in rows)
+
+
+# ── what a series is called ──────────────────────────────────────────────────
+
+def label_en(d: dict, indicator: str) -> str:
+    """The series' English name where the registry has one, its key otherwise."""
+    return ((d.get("names") or {}).get(indicator) or {}).get("en") or indicator
+
+
+def label_ar(d: dict, indicator: str) -> str:
+    """Arabic first, then English, then the key: a name in the other language
+    still says more than `health.m_est_cig_curr_std.sex_fmle`."""
+    n = (d.get("names") or {}).get(indicator) or {}
+    return n.get("ar") or n.get("en") or indicator

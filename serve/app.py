@@ -2718,15 +2718,15 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
         params["c"] = concept
     q_ = q_ or search
     if q_:
-        where.append("(i.indicator ILIKE %(q)s OR i.name_en ILIKE %(q)s)")
+        where.append("(i.indicator ILIKE %(q)s OR i.name_en ILIKE %(q)s OR i.name_ar ILIKE %(q)s)")
         params["q"] = f"%{q_}%"
     if measure_kind:
         where.append("i.measure_kind = %(k)s")
         params["k"] = measure_kind
     params["lim"] = min(limit, 500)
     rows = q(f"""
-        SELECT i.indicator, i.concept_key, i.measure_kind, i.polarity,
-               i.canonical_unit, i.grain, i.place_grain, i.notes,
+        SELECT i.indicator, i.name_en, i.name_ar, i.concept_key, i.measure_kind,
+               i.polarity, i.canonical_unit, i.grain, i.place_grain, i.notes,
                x.n AS rows_served, x.from_date, x.to_date
         FROM indicator_def i
         LEFT JOIN concept c ON c.key = i.concept_key
@@ -2973,6 +2973,9 @@ def databank_compare(indicators: str, place_id: int | None = None,
     warnings = _serve_warnings(sorted(set(keys)))
     if warnings:
         out["warnings"] = warnings
+    names = _indicator_names(sorted(set(keys)))
+    if names:
+        out["names"] = names
     return out
 
 
@@ -2999,6 +3002,9 @@ def databank_correlate(a: str, b: str, place_id: int | None = None,
     warnings = _serve_warnings(sorted({a, b}))
     if warnings:
         out["warnings"] = warnings
+    names = _indicator_names(sorted({a, b}))
+    if names:
+        out["names"] = names
     return out
 
 
@@ -3266,6 +3272,8 @@ def databank_correlate_scan(
         # the series it is shown beside travel with the list.
         **({"warnings": w} if (w := _serve_warnings(
             sorted({a} | {h["indicator"] for h in hits[:15]}))) else {}),
+        **({"names": n} if (n := _indicator_names(
+            sorted({a} | {h["indicator"] for h in hits[:15]}))) else {}),
     }
 
 
@@ -3403,6 +3411,9 @@ def databank_category(category: str, indicator: str | None = None,
     warnings = _serve_warnings(sorted({r["indicator"] for r in rows if r["indicator"]}))
     if warnings:
         out["warnings"] = warnings
+    names = _indicator_names(sorted({r["indicator"] for r in rows if r["indicator"]}))
+    if names:
+        out["names"] = names
     if events:
         # A register of single events is summarised, not sampled: "the newest
         # ten rows" of 589 localities says nothing about the 589 (P1-B.1).
@@ -3465,6 +3476,19 @@ def _serve_warnings(indicators: list[str]) -> dict:
     except Exception:                                            # noqa: BLE001 — before 086
         return {}
     return {r["indicator"]: {"en": r["serve_warning"], "ar": r["serve_warning_ar"]} for r in rows}
+
+
+def _indicator_names(indicators: list[str]) -> dict:
+    """indicator -> {en, ar}: what a series is called, beside its key."""
+    if not indicators:
+        return {}
+    try:
+        rows = q_cached("""SELECT indicator, name_en, name_ar FROM indicator_def
+                            WHERE indicator = ANY(%s) AND name_en IS NOT NULL""",
+                        (indicators,))
+    except Exception:                                            # noqa: BLE001
+        return {}
+    return {r["indicator"]: {"en": r["name_en"], "ar": r["name_ar"]} for r in rows}
 
 
 def _event_rows_served() -> bool:

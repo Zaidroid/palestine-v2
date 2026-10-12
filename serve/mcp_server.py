@@ -38,7 +38,8 @@ from typing import Any
 
 from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
                           product_labels, searching, seen_on_route, share_words)
-from serve.when import cited_ar, is_cited, statements, when_ar   # noqa: E402
+from serve.when import (cited_ar, is_cited, label_ar, statements,  # noqa: E402
+                        when_ar)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -1522,7 +1523,7 @@ def correlate(a: str | None = None, b: str | None = None,
                     "متوسط" if rho is not None and abs(rho) >= 0.4 else "ضعيف")
         sign = "" if rho is None else (" بنفس الاتجاه" if rho > 0 else " بعكس الاتجاه")
         used = d.get("sources_used") or {}
-        return {"answer": (f"الارتباط بين {a} و{b} {strength}{sign}: ρ={rho} على "
+        return {"answer": (f"الارتباط بين {label_ar(d, a)} و{label_ar(d, b)} {strength}{sign}: ρ={rho} على "
                            f"{d['n']} نقطة"
                            + (" (على التغيّر بين كل قراءة واللي قبلها)"
                               if d.get("detrend") == "diff" else "")
@@ -1546,7 +1547,9 @@ def correlate(a: str | None = None, b: str | None = None,
             return {"answer": f"ما في ولا سلسلة مطابقة لـ«{what}» — جرّب كلمة ثانية أو `concept`.",
                     "indicators": [], "query": what}
         return {"answer": (f"{len(inds)} سلسلة مطابقة لـ«{what}»: "
-                           + "، ".join(i["indicator"] for i in inds[:6]) + "."),
+                           + "، ".join((f"{i.get('name_ar') or i.get('name_en')} ({i['indicator']})"
+                                        if i.get("name_ar") or i.get("name_en") else i["indicator"])
+                                       for i in inds[:6]) + "."),
                 "indicators": inds, "query": what}
     d = api("/v2/databank/concepts")
     top = [c for c in d["concepts"] if c["rows_served"]][:8]
@@ -1623,7 +1626,7 @@ def compare(indicators: str, place: str | None = None) -> dict:
         if len(pts) > SERIES_POINTS:
             s_["points_omitted"] = len(pts) - SERIES_POINTS
             s_["points"] = pts[-SERIES_POINTS:]
-    bits = [f"{s['indicator']} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'}"
+    bits = [f"{label_ar(d, s['indicator'])} ({s['n']} نقطة، {s.get('canonical_unit') or 'بدون وحدة'}"
             + (f"، آخرها {str(s.get('last'))[:10]}" if s.get("last") else "")
             + (f"، على مستوى {s['place_used']['name']}" if s.get("place_used") else "") + ")"
             for s in ss]
@@ -2164,10 +2167,11 @@ def databank(category: str | None = None, indicator: str | None = None,
         if is_cited(it):
             # كل سطر كلام ناشر واحد: بنسمّي كل ناشر جنب رقمه
             rows_ = statements(items, it) or [it]
-            bits.append(f"{k}: {cited_ar(rows_)}{unit} {when_}{where}")
+            bits.append(f"{label_ar(d, k)}: {cited_ar(rows_)}{unit} {when_}{where}")
             continue
-        bits.append(f"{k}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
-                    else f"{k}: {val} {when_}{where}")
+        nm = label_ar(d, k)
+        bits.append(f"{nm}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
+                    else f"{nm}: {val} {when_}{where}")
     src = "؛ ".join(d.get("attribution") or [])[:120].rstrip(". ")
     answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
