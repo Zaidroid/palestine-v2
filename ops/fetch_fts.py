@@ -45,6 +45,19 @@ not a record: v1's rule, 40 of 10,381 flows on 2026-10-12 (6 with no amount,
 A flow with no date at all is skipped and counted: v1 stamped it with the fetch
 day, which is the ingest-date masquerade (mapping law 1). Measured 0.
 
+KNOWN AND KEPT, BECAUSE THE CUT CHANGES NOTHING: A PARKED PARENT AND ITS
+CHILDREN ARE BOTH RECORDS. FTS "parks" a contribution on a parent flow and
+files its allocations as child flows; the parent's amountUSD is what is left
+unallocated and fullParkedAmountUSD is the whole. v1's `amountUSD || parked`
+therefore gives a fully allocated parent (amountUSD 0) its whole parked amount
+again. Measured 2026-10-12: 520 such parents, USD 1,925,916,430, and 519 of
+them have their children in the same answer (USD 1,869,165,529) — flow 152896
+is USD 38,000,000 and its 16 children sum to USD 38,000,000. The same rule
+drops the 34 parents whose remainder is negative. The record keeps flow_type
+and, under `fts`, parent_flow_id and child_flow_ids, so the rule can be changed
+in one place (`flow_record`) the day it is decided; that change would close
+about 520 held rows and is not this commit's to make.
+
 STABLE ID: `fts-flow-<id>`, FTS's own flow number. v1's stable_id was a hash of
 its whole unified record, so it changed whenever a description did. Rows are
 matched on the spec's identity (indicator, date, place, flow_id), never on this
