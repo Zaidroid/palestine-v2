@@ -291,6 +291,18 @@ def test_the_food_summary_names_every_commodity_for_the_registry():
     assert ff.FLOOR < 25814          # under the smallest file in 64 archived nights
 
 
+def test_an_unchanged_file_is_not_written_again_every_night():
+    """The loader archives its input by content; a raw file that differed only
+    in its fetch time would be stored anew each night."""
+    ref = "bronze://wfp_food_prices/b1ee0b"
+    assert ff.already_written({"bronze": ref, "record_shape": ff.RECORD_SHAPE}, ref)
+    assert not ff.already_written({"bronze": ref, "record_shape": ff.RECORD_SHAPE},
+                                  "bronze://wfp_food_prices/another")
+    assert not ff.already_written({"bronze": ref, "record_shape": ff.RECORD_SHAPE - 1}, ref)
+    assert not ff.already_written({"bronze": ref}, ref)          # a file from older code
+    assert not ff.already_written(None, ref)                     # never fetched
+
+
 # ── education: the school register ───────────────────────────────────────────
 
 def school_records():

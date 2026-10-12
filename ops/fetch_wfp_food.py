@@ -37,7 +37,11 @@ the floor below sits under the smallest file ever seen and only refuses a
 download that is plainly broken.
 
 POSTURE (ops/fetchlib.py): atomic, floored, ledgered under `wfp:food_prices`.
-The CSV as downloaded is archived in bronze before it is parsed.
+The CSV as downloaded is archived in bronze before it is parsed. On a night
+WFP's file is byte for byte the one already read (six nights in seven), the
+18 MB raw file is left alone: the loader archives its input by content, and a
+file that differed only in its fetch time would be stored again every night.
+The ledger line is written either way.
 
 LICENCE, as HDX states it (read 2026-10-12): "Creative Commons Attribution for
 Intergovernmental Organisations (CC BY-IGO)", license_id cc-by-igo,
@@ -49,6 +53,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 import sys
 import urllib.error
@@ -71,6 +76,7 @@ FLOOR = 24500                 # under the smallest file in 64 archived nights
 SOURCE = {"name": "WFP Food Prices",                 # routed by this exact name
           "organization": "World Food Programme",
           "url": PAGE, "license": "CC-BY-IGO"}
+RECORD_SHAPE = 1              # bump when record() changes, so the file is rewritten
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _SLUG = re.compile(r"[^a-z0-9]+")
 
@@ -159,6 +165,20 @@ def summarise(recs: list[dict]) -> dict:
     }
 
 
+def already_written(previous: dict | None, bronze_ref: str) -> bool:
+    """True when the file on disk was made from these same bytes by this same
+    record(): nothing in it would change but the time of the fetch."""
+    return bool(previous) and previous.get("bronze") == bronze_ref \
+        and previous.get("record_shape") == RECORD_SHAPE
+
+
+def _previous() -> dict | None:
+    try:
+        return json.loads(OUT.read_text()).get("metadata")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
 def main(argv: list[str]) -> int:
     dry = "--dry-run" in argv
     staged = fl.stage_dir(argv) if dry else None
@@ -189,6 +209,7 @@ def main(argv: list[str]) -> int:
         "organization": "World Food Programme",
         "source_url": PAGE,
         "attribution": "Food prices: World Food Programme (WFP) via HDX, CC BY-IGO.",
+        "record_shape": RECORD_SHAPE,
         **stamp, **summary}, "data": recs}
     print(f"  ok   {LABEL}: {len(recs)} rows, {summary['months']} months "
           f"{summary['first_month']} to {summary['last_month']}, "
@@ -199,10 +220,16 @@ def main(argv: list[str]) -> int:
         fl.stage(staged, OUT.name, doc)
         return 0
     from ingest import bronze
-    doc["metadata"]["bronze"] = bronze.put("wfp_food_prices", raw, "csv", url=res["url"]).ref
-    fl.write_atomic(OUT, doc)
+    ref = bronze.put("wfp_food_prices", raw, "csv", url=res["url"]).ref
+    doc["metadata"]["bronze"] = ref
+    unchanged = already_written(_previous(), ref)
+    if unchanged:
+        print(f"         WFP's file has not changed since it was last read; "
+              f"{OUT.relative_to(ROOT)} left as it is")
+    else:
+        fl.write_atomic(OUT, doc)
     fl.event(LABEL, "ok", rows=len(recs), data_through=summary["last_month"],
-             vintage=stamp["vintage"])
+             vintage=stamp["vintage"], unchanged=unchanged)
     return 0
 
 
