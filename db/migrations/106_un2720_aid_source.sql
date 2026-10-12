@@ -1,7 +1,6 @@
--- PROPOSED, not applied (2026-10-12). Give it the next free migration number
--- and run it with db/migrate.sh BEFORE the first night that loads
--- db/mappings/aid_un2720.yaml: the loader refuses a dataset whose source row
--- is missing ("run migrations first"), and that refusal fails the night.
+-- 106 · the UN2720 Mechanism as a source, and its daily aid dataset
+-- 2026-10-12 (written by the supply agent, numbered and reviewed 20:05 UTC)
+--
 --
 -- A source row and a dataset row for the UN2720 Mechanism's Monitoring &
 -- Tracking Dashboard (ops/fetch_un2720.py, db/mappings/aid_un2720.yaml): trucks,

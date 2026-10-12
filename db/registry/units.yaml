@@ -85,6 +85,7 @@ units:
   tents:       {name_en: tents,       name_ar: خيام,    dimension: count}
   packages:
     name_en: packages
+    name_ar: طرود
     dimension: count
     notes: >-
       Pallets, boxes and pieces are all "one consignment item" and the
