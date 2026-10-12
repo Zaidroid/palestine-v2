@@ -1,0 +1,102 @@
+{
+ "captured": "2026-10-12",
+ "from": "observation, dataset v1_refugees_idmc, current rows (written from v1's file); place.admin2_pcode → place_id",
+ "pcode_place": {
+  "PS0101": 3,
+  "PS0105": 4,
+  "PS0110": 5,
+  "PS0115": 6,
+  "PS0120": 7,
+  "PS0125": 8,
+  "PS0130": 9,
+  "PS0135": 10,
+  "PS0140": 11,
+  "PS0145": 12,
+  "PS0150": 13,
+  "PS0255": 14,
+  "PS0260": 15,
+  "PS0265": 16,
+  "PS0270": 17,
+  "PS0275": 18
+ },
+ "rows": [
+  {
+   "attrs": {
+    "admin2": "Ramallah",
+    "event_name": "Palestine: Unclear/Unknown - West Bank - 01/07/2026"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2026-07-31|9|445.0|Palestine: Unclear/Unknown - West Bank - 01/07/2026|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2026-07-31",
+   "place_id": 9,
+   "precision": "day",
+   "unit": "persons",
+   "value_num": 445.0
+  },
+  {
+   "attrs": {
+    "event_name": "Palestine: International armed conflict (IAC) (Hostilities Gaza/Israel) - Gaza Strip - 2026"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2026-07-10||20.0|Palestine: International armed conflict (IAC) (Hostilities Gaza/Israel) - Gaza Strip - 2026|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2026-07-10",
+   "place_id": null,
+   "precision": "day",
+   "unit": "persons",
+   "value_num": 20.0
+  },
+  {
+   "attrs": {
+    "admin2": "Deir Al-Balah",
+    "event_name": "Palestine: International armed conflict (IAC) (Hostilities Gaza/Israel) - Gaza Strip - 2026"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2026-06-27|16|101.0|Palestine: International armed conflict (IAC) (Hostilities Gaza/Israel) - Gaza Strip - 2026|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2026-06-27",
+   "place_id": 16,
+   "precision": "day",
+   "unit": "persons",
+   "value_num": 101.0
+  },
+  {
+   "attrs": {
+    "admin2": "Deir Al-Balah",
+    "displacement_category": "Mixed disasters",
+    "event_name": "Palestine: Mixed disasters - Gaza - 14/03/2026"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2026-03-14|16|147.0|Palestine: Mixed disasters - Gaza - 14/03/2026|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2026-03-14",
+   "place_id": 16,
+   "precision": "day",
+   "unit": "persons",
+   "value_num": 147.0
+  },
+  {
+   "attrs": {
+    "admin2": "Tulkarm",
+    "event_name": "Palestine: International armed conflict (IAC) - West Bank - 2025"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2025-09-01|5|106.0|Palestine: International armed conflict (IAC) - West Bank - 2025|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2025-09-01",
+   "place_id": 5,
+   "precision": "day",
+   "unit": "persons",
+   "value_num": 106.0
+  },
+  {
+   "attrs": {
+    "admin2": "Jenin",
+    "event_name": "Palestine: International armed conflict (IAC) - West Bank - 2025"
+   },
+   "identity_key": "v1_refugees_idmc|refugees.displacement_event|2025-01-01|3|10.0|Palestine: International armed conflict (IAC) - West Bank - 2025|||",
+   "indicator": "refugees.displacement_event",
+   "occurred_at": "2025-01-01",
+   "place_id": 3,
+   "precision": "year",
+   "unit": "persons",
+   "value_num": 10.0
+  }
+ ]
+}

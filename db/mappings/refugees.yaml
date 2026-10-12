@@ -10,6 +10,32 @@ shape: observation
 status: reviewed
 records_measured: 1566
 
+# CUT FROM v1, 2026-10-12. Two files, both written by ops/fetch_idmc.py:
+#   idmc.json     IDMC's whole current list from its HDX release
+#                 (pse-idmc-idu-events), in the record t_refugees reads, with
+#                 the admin2 name v1 used to add derived the same way
+#   carried.json  the UNHCR (1,157) and UNRWA-camp (75) records, copied
+#                 unchanged from data/frozen/refugees.json.gz. Nothing fetches
+#                 them: the UNHCR rows are a subset of unhcr_population_hdx
+#                 (same figures on 1,157 of 1,157 country-years, measured
+#                 2026-10-12) and the camp rows are a 2026-06-10 scrape of a
+#                 Wikipedia table. They are carried so `generation: complete`
+#                 keeps seeing them; whether they stay is not decided here.
+# The fetcher writes carried.json only after idmc.json, so a machine that has
+# never fetched finds neither and reads the fallback whole (v1's file of
+# 2026-10-12, all three datasets; a fallback run adds, it never closes).
+# Measured that day against v1's file of the same night: the same 339 IDMC
+# event ids, identical on every field the loader reads.
+input:
+  root: data/raw/refugees
+  glob:
+    - idmc.json
+    - carried.json
+  fallback:
+    root: data/frozen
+    glob: refugees.json.gz
+cadence: daily
+
 source_routing:
   by_name:
     "UNHCR Operational Data Portal": unhcr        # licenses.json alias exact match

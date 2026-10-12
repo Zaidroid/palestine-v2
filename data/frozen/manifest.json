@@ -43,6 +43,17 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/education/all-data.json",
   "why": "West Bank school register (OCHA oPt via HDX). A register, not a series \u2014 2,359 rows, unchanged."
  },
+ "funding": {
+  "bytes_gzipped": 980925,
+  "bytes_uncompressed": 18829606,
+  "evidence": "Taken 2026-10-12 from v1's file of the same night (v1 fetched FTS at 02:36 UTC): 10341 records, one per flow. ops/fetch_fts.py run the same day produced the same 10341 flow ids, 10,340 identical on every field the loader reads and 1 revised by FTS at 14:51 UTC (flow 359611).",
+  "file": "funding.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 10341,
+  "sha256_uncompressed": "bffa9fa72189468e3fafe4bf8de1c30e8fe87b73fc771b0655d455ca4e653a54",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/funding/partitions/*.json (53 quarterly files; v1 keeps no all-data.json for funding)",
+  "why": "NOT a finished corpus: the fallback for db/mappings/funding.yaml, read only on a machine that has never run ops/fetch_fts.py. FTS adds and revises flows daily; the live input is data/raw/fts/flows.json."
+ },
  "health": {
   "bytes_gzipped": 1358774,
   "bytes_uncompressed": 21369378,
@@ -75,6 +86,17 @@
   "sha256_uncompressed": "9bdc253b69dd3a15fddfa1caa64c086edc0505378aa29e23e1d74ae4648dfec2",
   "v1_path": "/opt/stacks/palestine/public/data/unified/infrastructure/all-data.json",
   "why": "Barrier segments, locality records and UNOSAT damage assessments. Static."
+ },
+ "refugees": {
+  "bytes_gzipped": 112541,
+  "bytes_uncompressed": 2812398,
+  "evidence": "Taken 2026-10-12 from v1's file of the same night: 1571 records (UNHCR Operational Data Portal 1,157, IDMC 339, UNRWA camp registry 75). The loader's dry run on v1's file that day read 1,571 and found 1,571 identities already held.",
+  "file": "refugees.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 1571,
+  "sha256_uncompressed": "f0d81c34d2ca28d3d487a985f9f17d511a4e4f178660593d24bd7930ef659b2c",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/refugees/all-data.json",
+  "why": "Three datasets in one v1 file. IDMC (339 records) is fetched live by ops/fetch_idmc.py and this copy is its fallback. UNHCR's 1,157 rows and the 75 camp rows scraped from Wikipedia on 2026-06-10 are fetched by nothing in v2: ops/fetch_idmc.py carries them from this file into data/raw/refugees/carried.json so the datasets keep loading unchanged until they are decided."
  },
  "westbank": {
   "bytes_gzipped": 272778,

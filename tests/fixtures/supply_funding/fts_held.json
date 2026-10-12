@@ -1,0 +1,271 @@
+{
+ "captured": "2026-10-12",
+ "from": "observation, dataset v1_funding_unfts, current rows (written from v1's file)",
+ "rows": {
+  "124783": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Unknown donor",
+     "type": null
+    },
+    "flow_id": "124783",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "USD",
+    "plan": "Occupied Palestinian Territory Strategic Response Plan 2015",
+    "recipient": {
+     "name": "World Food Programme",
+     "type": "Multilateral Organizations"
+    },
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2015"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2015-02-19||124783",
+   "indicator": "funding.paid",
+   "occurred_at": "2015-02-19",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 7312785.0
+  },
+  "125236": {
+   "attrs": {
+    "cluster": "Coordination and support services",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Switzerland, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "125236",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 100000,
+    "original_currency": "CHF",
+    "recipient": {
+     "name": "Unknown recipient",
+     "type": null
+    },
+    "ref_code": "7F-04397.04",
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2015"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2015-02-01||125236",
+   "indicator": "funding.commitment",
+   "occurred_at": "2015-02-01",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 108696.0
+  },
+  "152896": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United States of America, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "152896",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "USD",
+    "plan": "Occupied Palestinian Territory Strategic Response Plan 2015",
+    "recipient": {
+     "name": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+     "type": "Multilateral Organizations"
+    },
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2015"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2015-01-09||152896",
+   "indicator": "funding.paid",
+   "occurred_at": "2015-01-09",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 38000000.0
+  },
+  "160700": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Türkiye, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "160700",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "West Bank",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "USD",
+    "plan": "Occupied Palestinian Territory Humanitarian Response Plan 2017",
+    "recipient": {
+     "name": "Occupied Palestinian Territory Humanitarian Fund",
+     "type": "Pooled Funds"
+    },
+    "ref_code": "OCT 5694|Refcode.recip:ERF/3482/5694/9642/2017",
+    "status": "paid",
+    "usage_years": [
+     "2017"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2017-06-21|2|160700",
+   "indicator": "funding.paid",
+   "occurred_at": "2017-06-21",
+   "place_id": 2,
+   "unit": "USD",
+   "value_num": 500000.0
+  },
+  "359611": {
+   "attrs": {
+    "cluster": "Food Security",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+     "type": "Multilateral Organizations"
+    },
+    "emergency": "oPt Complex Emergency 2023-24",
+    "flow_id": "359611",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 20000002,
+    "original_currency": "EUR",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2025",
+    "recipient": {
+     "name": "World Food Programme",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "ECHO/PSE/BUD/2023/91011",
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2025"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2025-08-27||359611",
+   "indicator": "funding.commitment",
+   "occurred_at": "2025-08-27",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 22727275.0
+  },
+  "390239": {
+   "attrs": {
+    "cluster": "Water Sanitation Hygiene",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Sweden, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "390239",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 60000000,
+    "original_currency": "SEK",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2026",
+    "recipient": {
+     "name": "United Nations Children's Fund",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "UD2025/04040-92420A0101-2   SM260149",
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2026"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2026-05-25||390239",
+   "indicator": "funding.commitment",
+   "occurred_at": "2026-05-25",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 6448146.0
+  },
+  "401966": {
+   "attrs": {
+    "cluster": "Food Security",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+     "type": "Multilateral Organizations"
+    },
+    "flow_id": "401966",
+    "flow_type": "Standard",
+    "method": "Cash transfer programming (CTP)",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 2300000,
+    "original_currency": "EUR",
+    "plan": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+    "recipient": {
+     "name": "Oxfam Novib Netherlands",
+     "type": "NGOs"
+    },
+    "ref_code": "ECHO/PSE/BUD/2022/91001",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2022"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2026-10-07||401966",
+   "indicator": "funding.paid",
+   "occurred_at": "2026-10-07",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 2328060.0
+  },
+  "402264": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Occupied Palestinian Territory Humanitarian Fund",
+     "type": "Pooled Funds"
+    },
+    "flow_id": "402264",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": false,
+    "original_amount": 0,
+    "original_currency": "USD",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2026",
+    "recipient": {
+     "name": "International Organization for Migration",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "CBPF-OPT-26-R-UN-40890",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2026"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2026-10-10||402264",
+   "indicator": "funding.paid",
+   "occurred_at": "2026-10-10",
+   "place_id": null,
+   "unit": "USD",
+   "value_num": 7330000.0
+  }
+ }
+}

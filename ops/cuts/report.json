@@ -29,6 +29,27 @@
   ],
   "same": 0
  },
+ "funding": {
+  "arrived": 1,
+  "changed": 0,
+  "changed_samples": [],
+  "departed": 1,
+  "emitted": [
+   10341,
+   10341
+  ],
+  "identity_collisions": [
+   0,
+   0
+  ],
+  "matched": 10340,
+  "provenance_only": 10340,
+  "records_read": [
+   10341,
+   10341
+  ],
+  "same": 0
+ },
  "martyrs_snapshot_2023": {
   "arrived": 1,
   "changed": 0,
@@ -49,5 +70,26 @@
    72836
   ],
   "same": 0
+ },
+ "refugees": {
+  "arrived": 0,
+  "changed": 0,
+  "changed_samples": [],
+  "departed": 0,
+  "emitted": [
+   1571,
+   1571
+  ],
+  "identity_collisions": [
+   1,
+   1
+  ],
+  "matched": 1571,
+  "provenance_only": 339,
+  "records_read": [
+   1571,
+   1571
+  ],
+  "same": 1232
  }
 }

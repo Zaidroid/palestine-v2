@@ -1,0 +1,1065 @@
+{
+ "captured": "2026-10-12",
+ "from": "https://api.hpc.tools/v1/public/fts/flow?countryISO3=PSE&year=<key>&limit=200",
+ "note": "ten real flows, unedited, under the usage year FTS returned each for; 359611 comes back under two years",
+ "flows_by_year": {
+  "2015": [
+   {
+    "id": "152896",
+    "amountUSD": 0,
+    "fullParkedAmountUSD": 38000000,
+    "budgetYear": "2015",
+    "childFlowIds": [
+     127017,
+     127021,
+     127015,
+     127008,
+     127011,
+     127010,
+     127012,
+     127016,
+     127020,
+     127013,
+     127019,
+     127023,
+     127014,
+     137762,
+     135922,
+     135923
+    ],
+    "contributionType": "financial",
+    "createdAt": "2015-03-03T18:04:00Z",
+    "date": "2015-01-09T00:00:00Z",
+    "decisionDate": "2015-01-09T00:00:00Z",
+    "description": "to be allocated to specific projects (total funding of $38 million - fully allocated)",
+    "grandBargainEarmarkingType": null,
+    "exchangeRate": null,
+    "firstReportedDate": "2015-03-03T18:04:00Z",
+    "flowType": "Parked",
+    "keywords": null,
+    "newMoney": true,
+    "originalCurrency": "USD",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "paid",
+    "updatedAt": "2015-06-22T15:51:00Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "2933",
+      "name": "United States of America, Government of",
+      "behavior": "single",
+      "organizationTypes": [
+       "Governments"
+      ],
+      "organizationSubTypes": [
+       "National Governments"
+      ],
+      "organizationLevels": [
+       "National and Sub-National State Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "237",
+      "name": "United States",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "459",
+      "name": "Occupied Palestinian Territory Strategic Response Plan 2015",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "3035",
+      "name": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "Project",
+      "id": "41057",
+      "name": "to be allocated to specific projects",
+      "behavior": "single",
+      "code": "OPT-15/SNYS/78517/R/5593"
+     },
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "United States of America, Government of",
+      "reportChannel": "Other",
+      "date": "2015-03-03T18:04:00.000Z"
+     },
+     {
+      "sourceType": "Primary",
+      "organization": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+      "reportChannel": "Other",
+      "date": "2015-03-03T18:04:00.000Z"
+     }
+    ]
+   },
+   {
+    "id": "124783",
+    "amountUSD": 7312785,
+    "budgetYear": "2015",
+    "childFlowIds": null,
+    "contributionType": "financial",
+    "createdAt": "2015-02-23T17:40:00Z",
+    "date": "2015-02-19T00:00:00Z",
+    "decisionDate": "2015-02-19T00:00:00Z",
+    "description": "to be allocated to specific projects (Stock transfer)",
+    "grandBargainEarmarkingType": null,
+    "exchangeRate": null,
+    "firstReportedDate": "2015-02-23T17:40:00Z",
+    "flowType": "Standard",
+    "keywords": null,
+    "newMoney": true,
+    "originalCurrency": "USD",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "paid",
+    "updatedAt": "2016-02-18T11:40:00Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "459",
+      "name": "Occupied Palestinian Territory Strategic Response Plan 2015",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "3049",
+      "name": "World Food Programme",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "World Food Programme",
+      "reportChannel": "Other",
+      "date": "2015-02-23T17:40:00.000Z"
+     }
+    ]
+   },
+   {
+    "id": "125236",
+    "amountUSD": 108696,
+    "budgetYear": "2015",
+    "childFlowIds": null,
+    "contributionType": "financial",
+    "createdAt": "2015-03-03T16:38:00Z",
+    "date": "2015-02-01T00:00:00Z",
+    "decisionDate": "2015-02-01T00:00:00Z",
+    "description": "Additional credit program contribution to Human Rights & Humanitarian Law Secretariat in oPt (7F-04397.04)",
+    "grandBargainEarmarkingType": null,
+    "exchangeRate": 0.92,
+    "firstReportedDate": "2015-03-03T16:38:00Z",
+    "flowType": "Standard",
+    "keywords": null,
+    "newMoney": true,
+    "originalAmount": 100000,
+    "originalCurrency": "CHF",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "commitment",
+    "updatedAt": "2015-03-03T16:38:00Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "2924",
+      "name": "Switzerland, Government of",
+      "behavior": "single",
+      "organizationTypes": [
+       "Governments"
+      ],
+      "organizationSubTypes": [
+       "National Governments"
+      ],
+      "organizationLevels": [
+       "National and Sub-National State Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "217",
+      "name": "Switzerland",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "GlobalCluster",
+      "id": "26480",
+      "name": "Coordination and support services",
+      "behavior": "single"
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "37",
+      "name": "2015",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Switzerland, Government of",
+      "reportChannel": "Other",
+      "date": "2015-03-03T16:38:00.000Z"
+     }
+    ],
+    "refCode": "7F-04397.04"
+   }
+  ],
+  "2017": [
+   {
+    "id": "160700",
+    "amountUSD": 500000,
+    "budgetYear": null,
+    "childFlowIds": null,
+    "contributionType": "financial",
+    "createdAt": "2017-06-24T02:25:26.748Z",
+    "date": "2017-06-21T00:00:00Z",
+    "decisionDate": "2017-06-16T00:00:00Z",
+    "description": "OPT - CBPF [OCT 5694] Financial aid to mitigate the effects of electricity and water shortages..",
+    "grandBargainEarmarkingType": [
+     "softly earmarked"
+    ],
+    "exchangeRate": null,
+    "firstReportedDate": "2017-06-24T00:00:00Z",
+    "flowType": "Standard",
+    "keywords": null,
+    "newMoney": true,
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "paid",
+    "updatedAt": "2026-04-16T13:36:21.248Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "4819",
+      "name": "Türkiye, Government of",
+      "behavior": "single",
+      "organizationTypes": [
+       "Governments"
+      ],
+      "organizationSubTypes": [
+       "National Governments"
+      ],
+      "organizationLevels": [
+       "National and Sub-National State Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "229",
+      "name": "Türkiye",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "38",
+      "name": "2017",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "529",
+      "name": "Occupied Palestinian Territory Humanitarian Response Plan 2017",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "8020",
+      "name": "Occupied Palestinian Territory Humanitarian Fund",
+      "behavior": "single",
+      "organizationTypes": [
+       "Pooled Funds"
+      ],
+      "organizationSubTypes": [
+       "Country-based UN Pooled Funds"
+      ],
+      "organizationLevels": [
+       "Pooled Funds"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "4107",
+      "name": "West Bank",
+      "behavior": "shared"
+     },
+     {
+      "type": "Location",
+      "id": "4108",
+      "name": "Gaza Strip",
+      "behavior": "shared"
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "shared"
+     },
+     {
+      "type": "UsageYear",
+      "id": "38",
+      "name": "2017",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "shared",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Office for the Coordination of Humanitarian Affairs",
+      "reportChannel": "From OCT",
+      "date": "2017-06-24T00:00:00.000Z"
+     },
+     {
+      "sourceType": "Primary",
+      "organization": "Türkiye, Government of",
+      "reportChannel": "Email",
+      "date": "2017-07-12T00:00:00.000Z"
+     }
+    ],
+    "refCode": "OCT 5694|Refcode.recip:ERF/3482/5694/9642/2017"
+   }
+  ],
+  "2022": [
+   {
+    "id": "401966",
+    "amountUSD": 2328060,
+    "budgetYear": "2022",
+    "childFlowIds": null,
+    "contributionType": "financial",
+    "createdAt": "2026-10-07T09:51:22.728Z",
+    "date": "2026-10-07T00:00:00Z",
+    "decisionDate": "2022-05-17T00:00:00Z",
+    "description": "MPCA and critical protection services",
+    "grandBargainEarmarkingType": [
+     "softly earmarked"
+    ],
+    "exchangeRate": 0.987947,
+    "firstReportedDate": "2026-09-17T00:00:00Z",
+    "flowType": "Standard",
+    "keywords": null,
+    "newMoney": true,
+    "originalAmount": 2300000,
+    "originalCurrency": "EUR",
+    "method": "Cash transfer programming (CTP)",
+    "parentFlowId": 307572,
+    "status": "paid",
+    "updatedAt": "2026-10-07T10:09:07.893Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "8523",
+      "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "Other Multilateral Organizations"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "UsageYear",
+      "id": "43",
+      "name": "2022",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "1059",
+      "name": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "4323",
+      "name": "Oxfam Novib Netherlands",
+      "behavior": "single",
+      "organizationTypes": [
+       "NGOs"
+      ],
+      "organizationSubTypes": [
+       "Internationally Affiliated Organizations"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Cluster",
+      "id": "6305",
+      "name": "Food Security",
+      "behavior": "single"
+     },
+     {
+      "type": "GlobalCluster",
+      "id": "6",
+      "name": "Food Security",
+      "behavior": "single"
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "Project",
+      "id": "183503",
+      "name": "Supporting food security and basic livelihoods of Vulnerable HH affected by the protracted crisis in the Gaza Strip",
+      "behavior": "single",
+      "code": "HPSE22-FSC-183503-1"
+     },
+     {
+      "type": "UsageYear",
+      "id": "43",
+      "name": "2022",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Oxfam Novib Netherlands",
+      "reportChannel": "From Excel",
+      "date": "2026-10-07T00:00:00.000Z"
+     }
+    ],
+    "refCode": "ECHO/PSE/BUD/2022/91001"
+   },
+   {
+    "id": "234685",
+    "amountUSD": 0,
+    "budgetYear": "2022",
+    "childFlowIds": null,
+    "contributionType": "financial",
+    "createdAt": "2021-07-04T02:25:16.742Z",
+    "date": "2021-07-03T00:00:00Z",
+    "decisionDate": "2021-07-03T00:00:00Z",
+    "description": "Cash assistance for temporary emergency accommodation and repairs to make damaged houses and apartments habitable again (2022 portion)",
+    "grandBargainEarmarkingType": null,
+    "exchangeRate": 0.838,
+    "firstReportedDate": "2021-07-03T00:00:00Z",
+    "flowType": "Standard",
+    "keywords": [
+     "Multiyear"
+    ],
+    "newMoney": true,
+    "originalAmount": 0,
+    "originalCurrency": "EUR",
+    "method": "Traditional aid",
+    "parentFlowId": 234683,
+    "status": "commitment",
+    "updatedAt": "2021-07-05T14:40:24.163Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "4306",
+      "name": "Germany, Government of",
+      "behavior": "single",
+      "organizationTypes": [
+       "Governments"
+      ],
+      "organizationSubTypes": [
+       "National Governments"
+      ],
+      "organizationLevels": [
+       "National and Sub-National State Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "83",
+      "name": "Germany",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "43",
+      "name": "2022",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Organization",
+      "id": "3035",
+      "name": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "GlobalCluster",
+      "id": "4",
+      "name": "Emergency Shelter and NFI",
+      "behavior": "single"
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "43",
+      "name": "2022",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Germany, Government of",
+      "reportChannel": "From EDRIS",
+      "date": "2021-07-03T00:00:00.000Z"
+     }
+    ],
+    "refCode": "AA-S09 321.50 PSE 05/21"
+   }
+  ],
+  "2025": [
+   {
+    "id": "359611",
+    "amountUSD": 11363637,
+    "fullParkedAmountUSD": 34090909,
+    "budgetYear": "2025",
+    "childFlowIds": [
+     347810,
+     347812,
+     347811
+    ],
+    "contributionType": "financial",
+    "createdAt": "2026-10-07T09:57:06.610Z",
+    "date": "2026-10-07T00:00:00Z",
+    "decisionDate": "2025-04-30T00:00:00Z",
+    "description": "Emergency Assistance to People Affected by the Armed Hostilities in the Gaza Strip",
+    "grandBargainEarmarkingType": [
+     "earmarked"
+    ],
+    "exchangeRate": 0.88,
+    "firstReportedDate": "2025-07-02T00:00:00Z",
+    "flowType": "Parked",
+    "keywords": [
+     "Multiyear"
+    ],
+    "newMoney": true,
+    "originalAmount": 10000000,
+    "originalCurrency": "EUR",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "commitment",
+    "updatedAt": "2026-10-12T14:51:14.139Z",
+    "versionId": 3,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "8523",
+      "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "Other Multilateral Organizations"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "UsageYear",
+      "id": "46",
+      "name": "2025",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Organization",
+      "id": "3049",
+      "name": "World Food Programme",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "46",
+      "name": "2025",
+      "behavior": "shared"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "shared"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "shared",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "reportChannel": "From Excel",
+      "date": "2026-10-07T00:00:00.000Z"
+     }
+    ],
+    "refCode": "ECHO/PSE/BUD/2023/91011"
+   }
+  ],
+  "2026": [
+   {
+    "id": "359611",
+    "amountUSD": 11363637,
+    "fullParkedAmountUSD": 34090909,
+    "budgetYear": "2025",
+    "childFlowIds": [
+     347810,
+     347812,
+     347811
+    ],
+    "contributionType": "financial",
+    "createdAt": "2026-10-07T09:57:06.610Z",
+    "date": "2026-10-07T00:00:00Z",
+    "decisionDate": "2025-04-30T00:00:00Z",
+    "description": "Emergency Assistance to People Affected by the Armed Hostilities in the Gaza Strip",
+    "grandBargainEarmarkingType": [
+     "earmarked"
+    ],
+    "exchangeRate": 0.88,
+    "firstReportedDate": "2025-07-02T00:00:00Z",
+    "flowType": "Parked",
+    "keywords": [
+     "Multiyear"
+    ],
+    "newMoney": true,
+    "originalAmount": 10000000,
+    "originalCurrency": "EUR",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "commitment",
+    "updatedAt": "2026-10-12T14:51:14.139Z",
+    "versionId": 3,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "8523",
+      "name": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "Other Multilateral Organizations"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "UsageYear",
+      "id": "46",
+      "name": "2025",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Organization",
+      "id": "3049",
+      "name": "World Food Programme",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "46",
+      "name": "2025",
+      "behavior": "shared"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "shared"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "shared",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "European Commission's Humanitarian Aid and Civil Protection Department",
+      "reportChannel": "From Excel",
+      "date": "2026-10-07T00:00:00.000Z"
+     }
+    ],
+    "refCode": "ECHO/PSE/BUD/2023/91011"
+   },
+   {
+    "id": "402264",
+    "amountUSD": 0,
+    "fullParkedAmountUSD": 7330000,
+    "budgetYear": "2026",
+    "childFlowIds": [
+     402265
+    ],
+    "contributionType": "financial",
+    "createdAt": "2026-10-09T02:35:55.904Z",
+    "date": "2026-10-10T00:00:00Z",
+    "decisionDate": "2026-10-08T00:00:00Z",
+    "description": "Allocation Type: Reserve - Second Allocation 2026 [Common Pipeline and Last-Mile Delivery]\nImproving Living Conditions for Displacement-Affected Populations in Gaza\nProject Start Date: 2026-10-01 - Project End Date: 2027-09-30\nProject Code: CBPF-OPT-26-R-UN-40890\nEmergency Type: Conflict - Displacement",
+    "grandBargainEarmarkingType": [
+     "earmarked"
+    ],
+    "exchangeRate": null,
+    "firstReportedDate": "2026-10-01T00:00:00Z",
+    "flowType": "Parked",
+    "keywords": null,
+    "newMoney": false,
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "paid",
+    "updatedAt": "2026-10-09T21:03:50.525Z",
+    "versionId": 1,
+    "sourceObjects": [
+     {
+      "type": "Plan",
+      "id": "1510",
+      "name": "Escalation of Hostilities in the OPT Flash Appeal 2026",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "8020",
+      "name": "Occupied Palestinian Territory Humanitarian Fund",
+      "behavior": "single",
+      "organizationTypes": [
+       "Pooled Funds"
+      ],
+      "organizationSubTypes": [
+       "Country-based UN Pooled Funds"
+      ],
+      "organizationLevels": [
+       "Pooled Funds"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "1510",
+      "name": "Escalation of Hostilities in the OPT Flash Appeal 2026",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "2986",
+      "name": "International Organization for Migration",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "internal",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Occupied Palestinian Territory Humanitarian Fund",
+      "reportChannel": "From OneGMS-CBPF",
+      "date": "2026-10-01T00:00:00.000Z"
+     }
+    ],
+    "refCode": "CBPF-OPT-26-R-UN-40890"
+   },
+   {
+    "id": "390239",
+    "amountUSD": -14520,
+    "fullParkedAmountUSD": 6433626,
+    "budgetYear": "2026",
+    "childFlowIds": [
+     401657
+    ],
+    "contributionType": "financial",
+    "createdAt": "2026-10-02T12:46:15.081Z",
+    "date": "2026-10-02T00:00:00Z",
+    "decisionDate": "2026-05-21T00:00:00Z",
+    "description": "Earmarked Gaza",
+    "grandBargainEarmarkingType": [
+     "softly earmarked"
+    ],
+    "exchangeRate": 9.326,
+    "firstReportedDate": "2026-05-25T00:00:00Z",
+    "flowType": "Parked",
+    "keywords": null,
+    "newMoney": true,
+    "originalAmount": -1631379,
+    "originalCurrency": "SEK",
+    "method": "Traditional aid",
+    "parentFlowId": null,
+    "status": "paid",
+    "updatedAt": "2026-10-02T16:25:31.438Z",
+    "versionId": 2,
+    "sourceObjects": [
+     {
+      "type": "Organization",
+      "id": "2921",
+      "name": "Sweden, Government of",
+      "behavior": "single",
+      "organizationTypes": [
+       "Governments"
+      ],
+      "organizationSubTypes": [
+       "National Governments"
+      ],
+      "organizationLevels": [
+       "National and Sub-National State Actors"
+      ]
+     },
+     {
+      "type": "Location",
+      "id": "216",
+      "name": "Sweden",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "single"
+     }
+    ],
+    "destinationObjects": [
+     {
+      "type": "Plan",
+      "id": "1510",
+      "name": "Escalation of Hostilities in the OPT Flash Appeal 2026",
+      "behavior": "single"
+     },
+     {
+      "type": "Organization",
+      "id": "2915",
+      "name": "United Nations Children's Fund",
+      "behavior": "single",
+      "organizationTypes": [
+       "Multilateral Organizations"
+      ],
+      "organizationSubTypes": [
+       "UN Agencies"
+      ],
+      "organizationLevels": [
+       "International Actors"
+      ]
+     },
+     {
+      "type": "Cluster",
+      "id": "8683",
+      "name": "Water, Sanitation and Hygiene",
+      "behavior": "single"
+     },
+     {
+      "type": "GlobalCluster",
+      "id": "11",
+      "name": "Water Sanitation Hygiene",
+      "behavior": "single"
+     },
+     {
+      "type": "Location",
+      "id": "171",
+      "name": "Occupied Palestinian Territory",
+      "behavior": "single"
+     },
+     {
+      "type": "UsageYear",
+      "id": "47",
+      "name": "2026",
+      "behavior": "single"
+     }
+    ],
+    "boundary": "incoming",
+    "onBoundary": "single",
+    "reportDetails": [
+     {
+      "sourceType": "Primary",
+      "organization": "Sweden, Government of",
+      "reportChannel": "From Excel",
+      "date": "2026-10-02T00:00:00.000Z"
+     }
+    ],
+    "refCode": "UD2025/04040-92420A0101-2"
+   }
+  ]
+ }
+}
