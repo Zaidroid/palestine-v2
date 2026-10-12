@@ -42,6 +42,10 @@
 
 SET timescaledb.max_tuples_decompressed_per_dml_transaction = 0;
 
+-- No statement of this file may hold production for long: past five minutes
+-- it is cancelled, the transaction rolls back and nothing is changed.
+SET LOCAL statement_timeout = '300s';
+
 -- the importers and the belief rebuild wait while readings change rows
 SELECT pg_advisory_xact_lock(hashtext('palestine-v2-belief'));
 
@@ -51,41 +55,86 @@ DO $$ BEGIN
   THEN RAISE EXCEPTION '100: a merged row points at a merged row'; END IF;
 END $$;
 
--- The readings that have a twin on the surviving row, found once (the UPDATE
--- below would otherwise see its own moved rows as twins of each other).
+-- HOW IT IS WRITTEN, AND WHY (the first form of this file stalled production).
+-- The twin search was one statement joining the hypertable to itself. On two
+-- throwaway copies, one of them the full 2.1 M rows, it took 4 to 7 seconds:
+-- their freshly gathered statistics gave a hash join. Production's planner
+-- expected ONE row from the surviving side, got about 300,000, and probed
+-- every chunk once for each. It ran for more than ten minutes holding the
+-- belief lock, with the road importers waiting behind it (2026-10-12, from
+-- 17:02 UTC). Nothing was changed: the file is one transaction. A rehearsal
+-- copy proves the rows; it does not prove the plan. So:
+--   * each side is read ONCE into a temporary table and the tables are joined,
+--     which leaves the planner nothing to choose. This form was timed
+--     read-only ON PRODUCTION: 2.5 s (30,295 readings on merged rows, 201,991
+--     statements on surviving rows, 5,705 twins, 49 repeats between two
+--     merged rows of one place);
+--   * each merged row is updated by its own statement with its place_id as a
+--     constant (production's plan for one: an anti join over one place's
+--     segments);
+--   * no statement may run past five minutes (statement_timeout above).
+-- At full size on a compressed copy the whole file takes 5 s and its
+-- rollback 2 s.
+CREATE TEMP TABLE lo100 ON COMMIT DROP AS
+SELECT o.state_obs_id, o.observed_at, o.place_id AS loser, p.merged_into AS survivor,
+       o.state_kind, o.direction, o.source_id
+  FROM place p JOIN state_observation o ON o.place_id = p.place_id
+ WHERE p.merged_into IS NOT NULL;
+ANALYZE lo100;
+
+CREATE TEMP TABLE su100 ON COMMIT DROP AS
+SELECT DISTINCT t.place_id, t.state_kind, t.direction, t.source_id, t.observed_at
+  FROM state_observation t
+ WHERE t.place_id = ANY (ARRAY(SELECT DISTINCT survivor FROM lo100));
+ANALYZE su100;
+
+-- the readings the surviving row already holds
 CREATE TEMP TABLE twin100 ON COMMIT DROP AS
-SELECT o.state_obs_id, o.observed_at
-  FROM state_observation o
-  JOIN place p ON p.place_id = o.place_id AND p.merged_into IS NOT NULL
- WHERE EXISTS (SELECT 1 FROM state_observation t
-                WHERE t.place_id = p.merged_into
-                  AND t.state_kind = o.state_kind AND t.direction = o.direction
-                  AND t.source_id = o.source_id AND t.observed_at = o.observed_at);
+SELECT l.state_obs_id, l.observed_at
+  FROM lo100 l JOIN su100 s
+    ON s.place_id = l.survivor AND s.state_kind = l.state_kind
+   AND s.direction = l.direction AND s.source_id = l.source_id
+   AND s.observed_at = l.observed_at;
 
 -- Two merged rows of one surviving row can also hold the same statement
 -- (الكونتينر was held seven times). The first by id moves, the rest stay.
 INSERT INTO twin100
 SELECT state_obs_id, observed_at FROM (
-  SELECT o.state_obs_id, o.observed_at,
-         row_number() OVER (PARTITION BY p.merged_into, o.state_kind, o.direction,
-                                         o.source_id, o.observed_at
-                            ORDER BY o.state_obs_id) AS k
-    FROM state_observation o
-    JOIN place p ON p.place_id = o.place_id AND p.merged_into IS NOT NULL
+  SELECT l.state_obs_id, l.observed_at,
+         row_number() OVER (PARTITION BY l.survivor, l.state_kind, l.direction,
+                                         l.source_id, l.observed_at
+                            ORDER BY l.state_obs_id) AS k
+    FROM lo100 l
    WHERE NOT EXISTS (SELECT 1 FROM twin100 w
-                      WHERE w.state_obs_id = o.state_obs_id
-                        AND w.observed_at = o.observed_at)) x
+                      WHERE w.state_obs_id = l.state_obs_id
+                        AND w.observed_at = l.observed_at)) x
  WHERE k > 1;
+ANALYZE twin100;
 
-UPDATE state_observation o
-   SET place_id = p.merged_into,
-       attrs = COALESCE(o.attrs, '{}'::jsonb)
-             || jsonb_build_object('place_before_100', o.place_id)
-  FROM place p
- WHERE p.place_id = o.place_id AND p.merged_into IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM twin100 w
-                    WHERE w.state_obs_id = o.state_obs_id
-                      AND w.observed_at = o.observed_at);
+-- One UPDATE per merged row, with its place_id written as a constant: the
+-- compressed chunks are segmented by place_id, and a constant is what lets
+-- TimescaleDB open only that row's segments instead of every chunk whole.
+DO $$
+DECLARE r record; n bigint; moved bigint := 0;
+BEGIN
+  FOR r IN SELECT loser, survivor, count(*) AS readings FROM lo100 GROUP BY 1, 2 ORDER BY 1 LOOP
+    EXECUTE format($f$
+      UPDATE state_observation o
+         SET place_id = %s,
+             attrs = COALESCE(o.attrs, '{}'::jsonb) || jsonb_build_object('place_before_100', o.place_id)
+       WHERE o.place_id = %s
+         AND NOT EXISTS (SELECT 1 FROM twin100 w
+                          WHERE w.state_obs_id = o.state_obs_id
+                            AND w.observed_at = o.observed_at)$f$, r.survivor, r.loser);
+    GET DIAGNOSTICS n = ROW_COUNT;
+    moved := moved + n;
+  END LOOP;
+  RAISE NOTICE '100: % readings moved to their surviving row', moved;
+  IF moved <> (SELECT count(*) FROM lo100) - (SELECT count(*) FROM twin100) THEN
+    RAISE EXCEPTION '100: moved % readings, expected % — nothing is changed',
+      moved, (SELECT count(*) FROM lo100) - (SELECT count(*) FROM twin100);
+  END IF;
+END $$;
 
 DELETE FROM state_current sc USING place p
  WHERE p.place_id = sc.place_id AND p.merged_into IS NOT NULL;
