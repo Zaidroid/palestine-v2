@@ -2859,7 +2859,8 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
                        -- labelled litre prices ILS_per_kg (audit F030).
                        CASE WHEN v.value_canonical IS NOT NULL THEN v.resolved_unit
                             ELSE v.unit END AS unit,
-                       v.source_name, v.attribution_text, v.redistribution
+                       v.source_name, v.attribution_text, v.redistribution,
+                       v.commercial_use
                 FROM v_observation_canonical v
                 WHERE {' AND '.join(where)} ORDER BY 1""", params)
     meta = q("""SELECT concept_key, measure_kind, polarity, grain, place_grain,
@@ -2881,10 +2882,17 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
     grades = {p.get("redistribution") for p in pts if p.get("redistribution")}
     redistribution = (max(grades, key=lambda g: GRADE_ORDER.index(g) if g in GRADE_ORDER else len(GRADE_ORDER))
                       if grades else None)
+    # A series is sellable only if every row in it is (2026-10-12): the grade
+    # says who may REPUBLISH a row, not whether it may be sold. WHO's and
+    # OONI's rows are share-alike AND non-commercial, and the partner tier is a
+    # commercial one.
+    commercial_use = (all(p.get("commercial_use") is True for p in pts)
+                      if pts else None)
     for p in pts:
         p.pop("source_name", None)
         p.pop("attribution_text", None)
         p.pop("redistribution", None)
+        p.pop("commercial_use", None)
     units = sorted({str(p["unit"]) for p in pts if p.get("unit")})
     return {**m, "known": bool(meta), "indicator": indicator,
             "points": pts, "n": len(pts),
@@ -2892,7 +2900,8 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
             # milk points under one label, F030) is said, not blended.
             "units": units, "unit_mixed": len(units) > 1,
             "sources": sources, "source_names": set(sources),
-            "attribution": attribution, "redistribution": redistribution}
+            "attribution": attribution, "redistribution": redistribution,
+            "commercial_use": commercial_use}
 
 
 @app.get("/v2/databank/compare", tags=["databank"])
@@ -3285,7 +3294,7 @@ def databank_category(category: str, indicator: str | None = None,
         SELECT e.indicator, e.occurred_at, e.occurred_precision::text, e.value_num,
                e.value_text, e.unit, e.attrs, e.place_id, e.sys_period, e.v1_category,
                e.source_key, e.dataset_key, e.attribution_text, e.license_spdx,
-               e.redistribution
+               e.redistribution, e.commercial_use
           FROM databank_event_rows e""" if events else ""
     base = f"""
         SELECT o.indicator, o.occurred_at, o.occurred_precision::text AS occurred_precision,
@@ -3295,7 +3304,8 @@ def databank_category(category: str, indicator: str | None = None,
                -- OCHA/UNICEF CC-BY data to the HDX portal (audit F143)
                COALESCE(d.attribution_text, s.attribution_text) AS attribution_text,
                COALESCE(d.license_spdx, s.license_spdx)         AS license_spdx,
-               COALESCE(d.redistribution, s.redistribution)     AS redistribution
+               COALESCE(d.redistribution, s.redistribution)     AS redistribution,
+               COALESCE(d.commercial_use, s.commercial_use)     AS commercial_use
           FROM observation o
           JOIN dataset d ON d.dataset_id = o.dataset_id
           JOIN source s ON s.source_id = d.source_id
@@ -3317,7 +3327,7 @@ def databank_category(category: str, indicator: str | None = None,
                       ("indicator", "occurred_at", "occurred_precision",
                        "value_num", "value_text", "unit", "place_en",
                        "place_ar", "attrs", "source_key", "dataset_key",
-                       "license_spdx", "redistribution")}
+                       "license_spdx", "redistribution", "commercial_use")}
                      | {"attribution": r["attribution_text"]} for r in rows],
            "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}
     warnings = _serve_warnings(sorted({r["indicator"] for r in rows if r["indicator"]}))

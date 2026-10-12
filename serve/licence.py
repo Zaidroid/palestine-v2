@@ -61,6 +61,24 @@ GRADE_ORDER = ("open", "attribution", "share-alike", "ask", "no-redistribution",
 # out which it was.
 PARTNER_ALLOWED = ("open", "attribution", "share-alike")
 
+
+def partner_may_carry(grade, commercial_use) -> str | None:
+    """Why a row stays out of a partner payload, or None when it may travel.
+
+    Two questions, and until 2026-10-12 only the first was asked. The GRADE
+    says who may republish a row; `commercial_use` says whether it may be sold.
+    WHO's health series and OONI's measurements are CC-BY-NC-SA: graded
+    share-alike, so they passed, into a tier whose callers are commercial.
+    Measured that day, 22,140 rows were in that position (WHO 12,577, UCDP
+    7,638, OONI 1,376, IMF 474, the UNRWA camp rows 75). A row that does not
+    carry the flag at all is judged on its grade alone, as before; a flag that
+    is present and not True is a publisher who has not said yes."""
+    if grade not in PARTNER_ALLOWED:
+        return "grade"
+    if commercial_use is not None and commercial_use is not True:
+        return "non-commercial"
+    return None
+
 # How much of somebody else's wording is a citation rather than a reproduction.
 # 250 characters sits below the 25th percentile of the corpus (142) for a short
 # message and well under the median (376) for a long one, so a partner sees
@@ -399,6 +417,7 @@ def table(q, public_tools: set[str]) -> dict:
                             "/v2/databank/licenses reports, read per call, so a "
                             "re-graded source changes this table without a deploy.",
         "partner_allowed_grades": list(PARTNER_ALLOWED),
+        "partner_requires_commercial_use": True,
         "policy": {
             "query_vs_bulk": "A credited FACT answering a question is reporting, "
                              "not redistribution (migration 066). That is why "
@@ -520,7 +539,7 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
         # question is reporting — so the spoken answer keeps its figure and its
         # source; what leaves is the ROWS, and the cut is named, never silent.
         dropped: dict[str, int] = {}
-        total = 0
+        total = non_commercial = 0
         for key in ("items", "latest_by_indicator"):
             rows = out.get(key)
             if not isinstance(rows, list):
@@ -528,11 +547,15 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             keep = []
             for it in rows:
                 g = it.get("redistribution") if isinstance(it, dict) else None
-                if isinstance(it, dict) and "redistribution" in it and g not in PARTNER_ALLOWED:
+                why = (partner_may_carry(g, it.get("commercial_use"))
+                       if isinstance(it, dict) and "redistribution" in it else None)
+                if why:
                     if key == "items":
-                        k = f"{it.get('source_key') or '?'} ({g or 'ungraded'})"
+                        label = (g or "ungraded") if why == "grade" else f"{g}, non-commercial"
+                        k = f"{it.get('source_key') or '?'} ({label})"
                         dropped[k] = dropped.get(k, 0) + 1
                         total += 1
+                        non_commercial += why == "non-commercial"
                     continue
                 keep.append(it)
             out[key] = keep
@@ -543,31 +566,45 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             if not isinstance(s_, dict) or "redistribution" not in s_:
                 continue
             g = s_.get("redistribution")
-            if g not in PARTNER_ALLOWED and s_.get("points"):
+            why = partner_may_carry(g, s_.get("commercial_use"))
+            if why and s_.get("points"):
                 n = len(s_["points"])
                 s_["points"] = []
                 s_["points_withheld"] = n
                 src = ", ".join(s_.get("sources") or []) or "?"
-                k = f"{src} ({g or 'ungraded'})"
+                label = (g or "ungraded") if why == "grade" else f"{g}, non-commercial"
+                k = f"{src} ({label})"
                 dropped[k] = dropped.get(k, 0) + n
                 total += n
+                non_commercial += n if why == "non-commercial" else 0
         if total:
             out["count"] = len(out.get("items") or [])
             block["withheld"] = {
                 "rows": total, "by_source": dropped,
                 "reason": ("these publishers do not grant redistribution (or their terms "
-                           "are unread): the rows stay out of a partner payload (ZAID-10). "
+                           "are unread), or license their data for non-commercial use "
+                           "only: the rows stay out of a partner payload (ZAID-10). "
                            "The answer's figure is a cited fact with its source; read the "
                            "rows at the publisher."),
             }
+            if non_commercial:
+                block["withheld"]["non_commercial_rows"] = non_commercial
             # Said where it is read: "newest 10 rows shown" over an empty list
             # would be the quietly-short payload this module exists to prevent.
             if isinstance(out.get("answer"), str):
-                out["answer"] += (f" ({total} من السجلات محجوبة عن هاد الرد: ناشرها ما بيسمح "
-                                  "بإعادة النشر — الرقم مقتبس مع مصدره.)")
+                out["answer"] += (
+                    f" ({total} من السجلات محجوبة عن هاد الرد: ناشرها ما بيسمح "
+                    + ("بالاستخدام التجاري" if non_commercial == total else
+                       "بإعادة النشر أو بالاستخدام التجاري" if non_commercial else
+                       "بإعادة النشر")
+                    + " — الرقم مقتبس مع مصدره.)")
             if isinstance(out.get("answer_en"), str):
-                out["answer_en"] += (f" ({total} rows withheld from this payload: their publisher "
-                                     "does not grant redistribution — the figure is cited with its source.)")
+                out["answer_en"] += (
+                    f" ({total} rows withheld from this payload: their publisher "
+                    + ("licenses them for non-commercial use only" if non_commercial == total else
+                       "does not grant redistribution or commercial use" if non_commercial else
+                       "does not grant redistribution")
+                    + " — the figure is cited with its source.)")
     if tier == "partner" and entry and entry.get("partner_tier") == "cited_fact_only":
         # ZAID-10 for a MEASURED tool whose publisher grades `ask` (IODA): a
         # partner gets the credited FACT — the answer, who measured it, how old
