@@ -1,5 +1,5 @@
 -- 104 · v_flow and dataset_freshness count what is there
--- 2026-10-12 19:40 UTC
+-- 2026-10-12
 --
 -- Two views that answered a different question from the one asked of them.
 --

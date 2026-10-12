@@ -1,5 +1,5 @@
 -- 107 · a source and a dataset for figures cited from named publications
--- 2026-10-12 20:20 UTC
+-- 2026-10-12
 --
 -- «العدّ / The Count» typed its historical figures into the film. The audit of
 -- 2026-10-11 asked that each be held "as a dated, sourced row" so the next
@@ -28,7 +28,7 @@ SELECT 'cited_reference', 'Cited figures (hand-entered, each with its publisher)
        'Figures cited from named publications; each row names its publisher, its document and the day it was read.',
        'attribution',
        NULL,
-       '2026-10-12T20:20:00Z',
+       '2026-10-12T20:00:00Z',
        'Not one publisher''s data: single figures quoted with their citation from many publications (UN documents, PCBS, B''Tselem, the Institute for Palestine Studies, named authors). Each row carries publisher, document, url, quote and a verification tag (read, via_wikipedia, secondary). Graded attribution and not sellable on 2026-10-12; no publisher was asked.',
        true
  WHERE NOT EXISTS (SELECT 1 FROM source WHERE key = 'cited_reference');

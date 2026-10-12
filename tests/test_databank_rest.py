@@ -361,3 +361,29 @@ def test_an_entry_nobody_could_stand_behind_is_refused():
     assert any("verification" in p for p in B.check([{**ok, "verification": "heard"}]))
     assert any("not both" in p for p in B.check([{**ok, "low": 1, "high": 2}]))
     assert any("used twice" in p for p in B.check([ok, ok]))
+
+
+# ── a national series asked at a town ────────────────────────────────────────
+
+def test_a_national_series_asked_at_a_place_answers_with_the_national_figure_and_says_so(monkeypatch):
+    """WHO, the World Bank, the IMF, UN funding, prisoners: 30,000 rows held at
+    no place, their attrs saying region 'Palestine'. Asked at Ramallah they
+    answered "no points"."""
+    from serve import app as A
+    calls = []
+
+    def fake_at(indicator, place_id, frm, to, source=None, national=False):
+        calls.append((place_id, national))
+        pts = [{"at": 1, "value": 5.0}] if national else []
+        return {"known": True, "points": pts, "n": len(pts), "indicator": indicator}
+
+    monkeypatch.setattr(A, "_series_at", fake_at)
+    monkeypatch.setattr(A, "_wider_places", lambda p: [{"place_id": 2, "name_ar": "الضفة", "name_en": "West Bank",
+                                                        "kind": "region"}])
+    s = A._series("economic.sp_pop_totl", 5, None, None)
+    assert calls == [(5, False), (2, False), (None, True)]
+    assert s["place_used"] == {"place_id": None, "name": "فلسطين كلها",
+                               "name_en": "Palestine (the national figure)",
+                               "kind": "country", "widened_from": 5}
+    src = (ROOT / "serve" / "app.py").read_text()
+    assert "v.place_id IS NULL AND v.attrs->>'region' = 'Palestine'" in src

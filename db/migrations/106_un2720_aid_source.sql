@@ -1,5 +1,5 @@
 -- 106 · the UN2720 Mechanism as a source, and its daily aid dataset
--- 2026-10-12 (written by the supply agent, numbered and reviewed 20:05 UTC)
+-- 2026-10-12 (written by the supply agent; numbered and reviewed the same evening)
 --
 --
 -- A source row and a dataset row for the UN2720 Mechanism's Monitoring &

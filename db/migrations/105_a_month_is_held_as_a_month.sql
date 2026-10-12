@@ -1,5 +1,5 @@
 -- 105 · a month the source gave as a month is held as a month
--- 2026-10-12 19:58 UTC
+-- 2026-10-12
 --
 -- The 1948 depopulation record (Palestine Open Maps) writes "May 1948" as
 -- 1948-05-01 and marks no precision. Measured 2026-10-12 on the believed

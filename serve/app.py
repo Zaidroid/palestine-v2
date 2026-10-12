@@ -2835,6 +2835,16 @@ def _series(indicator: str, place_id: int | None, frm: str | None,
             return {**s2, "place_used": {"place_id": alt["place_id"], "name": alt["name_ar"],
                                          "name_en": alt["name_en"], "kind": alt["kind"],
                                          "widened_from": place_id}}
+    # ...and last, the country. A national series (WHO, the World Bank, the
+    # IMF, UN funding, prisoners: 30,000 rows) is held at no place at all, its
+    # rows saying region 'Palestine'. Asked "at Ramallah" it answered "no
+    # points", which reads as "nobody measures this" (audit 2026-10-11). The
+    # national figure is offered and NAMED as national, never as Ramallah's.
+    s3 = _series_at(indicator, None, frm, to, source, national=True)
+    if s3["points"]:
+        return {**s3, "place_used": {"place_id": None, "name": "فلسطين كلها",
+                                     "name_en": "Palestine (the national figure)",
+                                     "kind": "country", "widened_from": place_id}}
     return {**s, "place_used": None}
 
 
@@ -2856,10 +2866,12 @@ def _one_source(pts: list[dict], source: str | None) -> tuple[list[dict], str | 
 
 
 def _series_at(indicator: str, place_id: int | None, frm: str | None,
-               to: str | None, source: str | None = None) -> dict:
+               to: str | None, source: str | None = None, national: bool = False) -> dict:
     where = ["v.indicator = %(i)s"]
     params: dict = {"i": indicator}
-    if place_id is not None:
+    if national:
+        where.append("v.place_id IS NULL AND v.attrs->>'region' = 'Palestine'")
+    elif place_id is not None:
         where.append("v.place_id = %(p)s")
         params["p"] = place_id
     if frm:
