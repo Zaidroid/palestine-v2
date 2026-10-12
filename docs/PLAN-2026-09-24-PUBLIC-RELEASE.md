@@ -1170,3 +1170,22 @@ What I should have done, and did too late: EXPLAIN the statement on production a
 the hand-over what waits behind the lock. The bounded form is commit 2407e53; because 100 was applied in its first
 form, the file is restored to the text that ran (02efbbb, checksum ac18b4b7), as an applied migration is not edited.
 No reading was lost: the importers read from cursors and caught up at 17:14.
+
+2026-10-12 17:22 UTC · `tmp/6-merged-rows-history.sh` RUN by Zaid (17:02–17:17 UTC), verified against the running API · done,
+one follow-up tonight · proof: its eight closing counts: 24,541 readings moved · 5,754 left on merged rows ·
+0 beliefs on merged rows · 0 damage rows open at place 15 · 8 served indicators with no definition (expected 0) ·
+31 indicators with a serve warning · 72,835 names in the roster · 5,775 Ministry rows under `conflict`. Registry:
+2,039 definitions, 31 warnings written, 0 unclassified, 0 unit rows without an alias; roster: read 72,836, written
+0, closed as withdrawn 242; place_trust 521 rows; belief refreshed 1,716 rows, 0 withdrawn first.
+THE EIGHTH COUNT: Insecurity Insight's attack.* series are EVENTS (20,174 rows in databank_event_rows); the registry's
+census read `observation` only, and my scratch copy's serving view held no events, so the rehearsal read 0. Commit
+55c0a06: the census reads events; insecurity_insight.yaml declares attack.*; conflict.yaml names the UCDP and
+journalist series before its catch-all (checked: all four come out as 083 wrote them). Read-only on production:
+2,051 classified, 0 unclassified, exit 0. Written by tonight's sync; to be confirmed on 13 October.
+ASKED OF THE LIVE API after the restart: compare casualties.annual_total × gaza.moh.deaths_new.daily → both
+`known`, the warning attached; /v2/databank/conflict?indicator=gaza.moh.deaths.since_ceasefire → 1,493 (12 Oct);
+correlate residential damage × cumulative killed → refused, two running totals; search `moh` → 30;
+/v2/databank/casualties (Gaza Strip breakdown) → attribution "UN OCHA oPt, Protection of Civilians database" and
+the breakdown warning; damage asked at place 15 → 730 points, answered from the Gaza Strip. Stored: الكونتينر 7,274
+assertions on its own row (3,434 before), ام السلمونا 1,194 (276), النبي صالح 7,792 (5,849). G2.19 PASS, G2.4 PASS.
+/health: 24 of 24 jobs, one fault (PalHub narrowed). Database 2,269 MB, 76 of 79 chunks compressed.
