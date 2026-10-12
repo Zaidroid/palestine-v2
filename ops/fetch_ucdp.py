@@ -80,9 +80,10 @@ and 19. This file always holds UCDP's current reading; the loader takes the
 additions and ignores the rest. Each record says `ucdp_candidate: true`, the
 file it came from and UCDP's own code status, and carries no quality score.
 
-Posture as fetchlib's: ATOMIC, FLOORED, LEDGERED. One more habit for a 39 MB
-yearly file: the release is downloaded only when its HTTP Last-Modified or ETag
-moved (a HEAD request each night), otherwise the files on disk stand.
+Posture as fetchlib's: ATOMIC, FLOORED, LEDGERED. One more habit, for a 39 MB
+yearly file and monthly ones: each is downloaded only when its HTTP
+Last-Modified moved (a HEAD request each night), otherwise the files on disk
+stand and the ledger line says `unchanged`.
 
 LICENCE, as the publisher states it (read 2026-10-12): "All datasets are free
 of charge and licensed under CC BY 4.0 — you are free to use and redistribute
@@ -193,10 +194,6 @@ def parse_downloads_page(html: str) -> dict:
     (major, minor), url = max(releases)
     return {"release": {"version": f"{major}.{minor}", "url": url},
             "candidates": candidates}
-
-
-def _version(v: str) -> tuple[int, ...]:
-    return tuple(int(p) for p in v.split("."))
 
 
 # ── scope: v1's two rules, ported ────────────────────────────────────────────
@@ -728,22 +725,12 @@ def _refuse(label: str, n: int, floor: int, dry: bool) -> None:
     fl.check_floor(label, n, floor)
 
 
-def run(dry: bool, staged: Path | None, force: bool, any_release: bool) -> bool:
-    fetched_at = datetime.now(timezone.utc).isoformat()
-    listing = parse_downloads_page(fl.get(DOWNLOADS).decode("utf-8", "replace"))
-    rel = listing["release"]
-    if rel["version"] != LOADS_RELEASE and not any_release:
-        raise NewRelease(
-            f"the page lists GED {rel['version']}; this fetcher loads {LOADS_RELEASE}. "
-            "A release re-reads years the store already holds, so it is applied by a "
-            "person: `--dry-run --stage DIR --any-release` shows what it contains")
-    held = load_held()
-    if not held:
-        print(f"  note: {FROZEN.relative_to(fl.ROOT)} is absent or holds no UCDP record; "
-              "every event gets a new id and nothing is held back")
-
-    # the release: downloaded only when it moved
+def fetch_release(listing: dict, held: dict, *, dry: bool, staged: Path | None,
+                  force: bool, fetched_at: str) -> dict:
+    """Write ged.json and ged_revision.json when the release moved; return
+    {"version", "last_year", "ids"}, which decides the candidates."""
     label = "ucdp:ged"
+    rel = listing["release"]
     head = _head(rel["url"])
     old = _on_disk("ged.json").get("metadata") or {}
     unchanged = (not dry and not force and old.get("release") == rel["version"]
@@ -754,51 +741,64 @@ def run(dry: bool, staged: Path | None, force: bool, any_release: bool) -> bool:
                  and (RAW / "ged_revision.json").exists())
     if unchanged:
         on_disk = _on_disk("ged.json")
-        release = {"version": rel["version"],
-                   "last_year": old["release_counts"]["release_last_year"],
-                   "ids": {r["ucdp_id"] for r in on_disk["data"]}
-                   | {r["ucdp_id"] for r in _on_disk("ged_revision.json")["data"]}}
         print(f"  ok   {label:<16} GED {rel['version']} unchanged since "
               f"{head['last_modified']}; {len(on_disk['data'])} events on disk stand")
         fl.event(label, "ok", rows=len(on_disk["data"]), release=rel["version"],
                  unchanged=True)
+        return {"version": rel["version"],
+                "last_year": old["release_counts"]["release_last_year"],
+                "ids": {r["ucdp_id"] for r in on_disk["data"]}
+                | {r["ucdp_id"] for r in _on_disk("ged_revision.json")["data"]}}
+    blob, head = _get(rel["url"])
+    member, member_name = release_csv(blob)
+    rows, seen = read_events(member)
+    load, revision = build_release(rows, seen, version=rel["version"], url=rel["url"],
+                                   head=head, held=held, fetched_at=fetched_at)
+    m, h = load["metadata"], revision["metadata"]["held"]
+    _refuse(label, m["release_counts"]["in_scope"], RELEASE_FLOOR, dry)
+    print(f"  ok   {label:<16} GED {rel['version']} (vintage {m['vintage']}): "
+          f"{m['release_counts']['in_scope']} events in scope")
+    print(f"         to load: {len(load['data'])} events, "
+          f"{m['coverage']['first']} to {m['coverage']['last']}")
+    print(f"         held period (to {h['held_through']}), not loaded: of "
+          f"{h['frozen_corpus_events']} held events {h['identical']} identical, "
+          f"{h['revised']} revised ({h['revised_fields'].get('any_stored_field', 0)} "
+          f"in a stored field), {h['absent_from_release']} absent; "
+          f"{h['not_held']} in the release and not held")
+    if dry:
+        print(f"         would write {(RAW / 'ged.json').relative_to(fl.ROOT)} and "
+              "ged_revision.json")
+        fl.stage(staged, "ged.json", load)
+        fl.stage(staged, "ged_revision.json", revision)
     else:
-        blob, head = _get(rel["url"])
-        member, member_name = release_csv(blob)
-        rows, seen = read_events(member)
-        load, revision = build_release(rows, seen, version=rel["version"], url=rel["url"],
-                                       head=head, held=held, fetched_at=fetched_at)
-        m, h = load["metadata"], revision["metadata"]["held"]
-        release = {"version": rel["version"], "last_year": seen["last_year"],
-                   "ids": {_uid(r) for r in rows}}
-        _refuse(label, m["release_counts"]["in_scope"], RELEASE_FLOOR, dry)
-        print(f"  ok   {label:<16} GED {rel['version']} (vintage {m['vintage']}): "
-              f"{m['release_counts']['in_scope']} events in scope")
-        print(f"         to load: {len(load['data'])} events, "
-              f"{m['coverage']['first']} to {m['coverage']['last']}")
-        print(f"         held period (to {h['held_through']}), not loaded: of "
-              f"{h['frozen_corpus_events']} held events {h['identical']} identical, "
-              f"{h['revised']} revised ({h['revised_fields'].get('any_stored_field', 0)} "
-              f"in a stored field), {h['absent_from_release']} absent; "
-              f"{h['not_held']} in the release and not held")
-        if dry:
-            print(f"         would write {(RAW / 'ged.json').relative_to(fl.ROOT)} and "
-                  "ged_revision.json")
-            fl.stage(staged, "ged.json", load)
-            fl.stage(staged, "ged_revision.json", revision)
-        else:
-            from ingest import bronze
-            ref = bronze.put("ucdp", blob, "zip", url=rel["url"], etag=head.get("etag")).ref
-            for doc, name in ((revision, "ged_revision.json"), (load, "ged.json")):
-                doc["metadata"]["csv_member"] = member_name
-                doc["metadata"]["bronze"] = [ref]
-                fl.write_atomic(RAW / name, doc)
-            fl.event(label, "ok", rows=len(load["data"]), release=rel["version"],
-                     data_through=m["coverage"]["last"], revised=h["revised"],
-                     absent=h["absent_from_release"], not_held=h["not_held"])
+        from ingest import bronze
+        ref = bronze.put("ucdp", blob, "zip", url=rel["url"], etag=head.get("etag")).ref
+        for doc, name in ((revision, "ged_revision.json"), (load, "ged.json")):
+            doc["metadata"]["csv_member"] = member_name
+            doc["metadata"]["bronze"] = [ref]
+            fl.write_atomic(RAW / name, doc)
+        fl.event(label, "ok", rows=len(load["data"]), release=rel["version"],
+                 data_through=m["coverage"]["last"], revised=h["revised"],
+                 absent=h["absent_from_release"], not_held=h["not_held"])
+    return {"version": rel["version"], "last_year": seen["last_year"],
+            "ids": {_uid(r) for r in rows}}
 
-    # the candidates: small files, read every night
+
+def fetch_candidates(listing: dict, release: dict, *, dry: bool, staged: Path | None,
+                     force: bool, fetched_at: str) -> None:
+    """Write candidate.json when any listed candidate file moved."""
     label = "ucdp:candidate"
+    prior = _on_disk("candidate.json").get("metadata") or {}
+    same_release = prior.get("after_release") == release["version"]
+    heads = {c["url"]: _head(c["url"])["last_modified"] for c in listing["candidates"]}
+    on_disk = {f["url"]: f.get("http_last_modified") for f in prior.get("files") or []}
+    if (not dry and not force and same_release and prior.get("parser") == PARSER
+            and heads and heads == on_disk):
+        n = (prior.get("counts") or {}).get("events", 0)
+        print(f"  ok   {label:<16} {len(heads)} candidate files unchanged since "
+              f"{prior.get('vintage')}; {n} events on disk stand")
+        fl.event(label, "ok", rows=n, unchanged=True)
+        return
     files = []
     for c in listing["candidates"]:
         blob, h = _get(c["url"])
@@ -807,56 +807,80 @@ def run(dry: bool, staged: Path | None, force: bool, any_release: bool) -> bool:
     doc = build_candidates(files, fetched_at=fetched_at, release=release)
     m = doc["metadata"]
     n = len(doc["data"])
-    prior = _on_disk("candidate.json").get("metadata") or {}
     floor = 1
-    if prior.get("after_release") == rel["version"]:
+    if same_release:
         floor = max(1, int(CANDIDATE_KEEP * (prior.get("counts") or {}).get("events", 0)))
     _refuse(label, n, floor, dry)
-    print(f"  ok   {label:<16} {n} events after GED {rel['version']}, "
+    print(f"  ok   {label:<16} {n} events after GED {release['version']}, "
           f"{m['coverage']['first']} to {m['coverage']['last']}, from "
           f"{len(files)} files (newest {m['vintage']})")
     print(f"         skipped: {m['counts']['skipped']}; code status: {m['counts']['by_code_status']}")
     if dry:
         print(f"         would write {(RAW / 'candidate.json').relative_to(fl.ROOT)}")
         fl.stage(staged, "candidate.json", doc)
-        return True
+        return
     from ingest import bronze
     m["bronze"] = [bronze.put("ucdp", f["blob"], "csv", url=f["url"]).ref for f in files]
     fl.write_atomic(RAW / "candidate.json", doc)
     fl.event(label, "ok", rows=n, data_through=m["coverage"]["last"])
-    return True
+
+
+def _attempt(label: str, dry: bool, step):
+    """Run one half of the fetch; a failure is printed, ledgered under ITS
+    label, and returned as None so the caller knows the half did not happen."""
+    try:
+        return step() or True
+    except NewRelease as e:
+        print(f"  PENDING {label}: {e}")
+        outcome, extra = "pending", {"loads": LOADS_RELEASE}
+    except fl.FetchRefused as e:
+        print(f"  REFUSED {label}: {e}")
+        return None                           # check_floor already ledgered it
+    except urllib.error.HTTPError as e:
+        # 401/403 here would mean the bulk files now want an account. That is
+        # a decision for a person, not something to route around.
+        print(f"  FAIL {label}: HTTP {e.code} from {e.url}"
+              + ("  (the publisher is asking for credentials; stop and tell Zaid)"
+                 if e.code in (401, 403) else ""))
+        outcome, extra = "error", {"error": f"HTTP {e.code}"}
+    except (urllib.error.URLError, OSError, ValueError, KeyError, zipfile.BadZipFile) as e:
+        print(f"  FAIL {label}: {type(e).__name__}: {str(e)[:200]}")
+        outcome, extra = "error", {"error": type(e).__name__}
+    if not dry:
+        fl.event(label, outcome, **extra)
+    return None
 
 
 def main(argv: list[str]) -> int:
     dry = "--dry-run" in argv
     staged = fl.stage_dir(argv) if dry else None
-    if "--any-release" in argv and not dry:
+    force, any_release = "--force" in argv, "--any-release" in argv
+    if any_release and not dry:
         raise SystemExit("--any-release only with --dry-run: a new release is looked at, "
                          "then LOADS_RELEASE is changed by hand")
-    try:
-        ok = run(dry, staged, "--force" in argv, "--any-release" in argv)
-    except NewRelease as e:
-        print(f"  PENDING ucdp: {e}")
-        if not dry:
-            fl.event("ucdp:ged", "pending", loads=LOADS_RELEASE)
-        ok = False
-    except fl.FetchRefused as e:
-        print(f"  REFUSED ucdp: {e}")
-        ok = False
-    except urllib.error.HTTPError as e:
-        # 401/403 here would mean the bulk files now want an account. That is
-        # a decision for a person, not something to route around.
-        print(f"  FAIL ucdp: HTTP {e.code} from {e.url}"
-              + ("  (the publisher is asking for credentials; stop and tell Zaid)"
-                 if e.code in (401, 403) else ""))
-        if not dry:
-            fl.event("ucdp:ged", "error", error=f"HTTP {e.code}")
-        ok = False
-    except (urllib.error.URLError, OSError, ValueError, KeyError, zipfile.BadZipFile) as e:
-        print(f"  FAIL ucdp: {type(e).__name__}: {str(e)[:200]}")
-        if not dry:
-            fl.event("ucdp:ged", "error", error=type(e).__name__)
-        ok = False
+    fetched_at = datetime.now(timezone.utc).isoformat()
+
+    def release_half():
+        listing = parse_downloads_page(fl.get(DOWNLOADS).decode("utf-8", "replace"))
+        version = listing["release"]["version"]
+        if version != LOADS_RELEASE and not any_release:
+            raise NewRelease(
+                f"the page lists GED {version}; this fetcher loads {LOADS_RELEASE}. A "
+                "release re-reads years the store already holds, so it is applied by a "
+                "person: `--dry-run --stage DIR --any-release` shows what it contains")
+        held = load_held()
+        if not held:
+            print(f"  note: {FROZEN.relative_to(fl.ROOT)} is absent or holds no UCDP "
+                  "record; every event gets a new id and nothing is held back")
+        return listing, fetch_release(listing, held, dry=dry, staged=staged, force=force,
+                                      fetched_at=fetched_at)
+
+    got = _attempt("ucdp:ged", dry, release_half)
+    ok = False
+    if got:                                   # the candidates are defined by the release
+        listing, release = got
+        ok = bool(_attempt("ucdp:candidate", dry, lambda: fetch_candidates(
+            listing, release, dry=dry, staged=staged, force=force, fetched_at=fetched_at)))
     print("\n  UCDP " + ("fetched" if ok else "NOT fetched")
           + ("  (dry run, nothing written)" if dry else ""))
     return 0 if ok else 1

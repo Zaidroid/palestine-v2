@@ -298,6 +298,63 @@ def test_a_newer_release_on_the_page_stops_the_fetch_and_is_ledgered(monkeypatch
     assert fu.LOADS_RELEASE == "26.1"
 
 
+# ── the nightly posture: unchanged files stand, a shrunken answer is refused ──
+
+def _night(monkeypatch, tmp_path, *, on_disk_events, moved=False):
+    """One night's candidate half, against a candidate.json already on disk."""
+    listing = fu.parse_downloads_page((FX / "downloads_page.html").read_text(encoding="utf-8"))
+    names = {f"https://ucdp.uu.se/downloads/candidateged/GEDEvent_v{v.replace('.', '_')}.csv": (n, lm)
+             for v, n, lm in CANDIDATES}
+    monkeypatch.setattr(fu, "RAW", tmp_path / "raw")
+    monkeypatch.setattr(fl, "EVENTS", tmp_path / "fetch-events.ndjson")
+    fl.write_atomic(tmp_path / "raw" / "candidate.json", {"metadata": {
+        "after_release": "26.1", "parser": fu.PARSER, "vintage": "2026-09-20",
+        "counts": {"events": on_disk_events},
+        "files": [{"url": u, "http_last_modified": "Sat, 01 Aug 2026 00:00:00 GMT" if moved else lm}
+                  for u, (_, lm) in names.items()]}, "data": []})
+    downloads = []
+    monkeypatch.setattr(fu, "_head", lambda url: {"last_modified": names[url][1], "etag": None})
+
+    def get(url):
+        downloads.append(url)
+        return (FX / names[url][0]).read_bytes(), {"last_modified": names[url][1], "etag": None}
+    monkeypatch.setattr(fu, "_get", get)
+    from ingest import bronze
+    monkeypatch.setattr(bronze, "put", lambda key, blob, ext, **kw: type("R", (), {"ref": "bronze://test"})())
+    ok = fu._attempt("ucdp:candidate", False, lambda: fu.fetch_candidates(
+        listing, {"version": "26.1", "last_year": 2025, "ids": set()},
+        dry=False, staged=None, force=False, fetched_at="t"))
+    ledger = [json.loads(x) for x in (tmp_path / "fetch-events.ndjson").read_text().splitlines()]
+    return ok, downloads, ledger, json.loads((tmp_path / "raw" / "candidate.json").read_text())
+
+
+def test_candidate_files_that_did_not_move_are_not_downloaded_again(monkeypatch, tmp_path):
+    ok, downloads, ledger, doc = _night(monkeypatch, tmp_path, on_disk_events=6)
+    assert ok and downloads == []
+    assert ledger == [{"label": "ucdp:candidate", "at": ledger[0]["at"], "outcome": "ok",
+                       "rows": 6, "unchanged": True}]
+    assert doc["data"] == []                                  # the file on disk stands
+
+
+def test_a_candidate_file_that_moved_is_read_again_and_written(monkeypatch, tmp_path):
+    ok, downloads, ledger, doc = _night(monkeypatch, tmp_path, on_disk_events=6, moved=True)
+    assert ok and len(downloads) == 3
+    assert [r["ucdp_id"] for r in doc["data"]] == ["613219", "610884", "636688", "635139",
+                                                   "636063", "639483"]
+    assert doc["metadata"]["bronze"] == ["bronze://test"] * 3
+    assert ledger[-1]["outcome"] == "ok" and ledger[-1]["rows"] == 6
+    assert ledger[-1]["data_through"] == "2026-08-31"
+
+
+def test_a_candidate_answer_far_smaller_than_the_file_on_disk_is_refused(monkeypatch, tmp_path):
+    """100 events on disk for this release, 6 in tonight's answer: yesterday's
+    file is the better one, and the ledger says a fetch was refused."""
+    ok, downloads, ledger, doc = _night(monkeypatch, tmp_path, on_disk_events=100, moved=True)
+    assert ok is None and len(downloads) == 3
+    assert doc["data"] == [] and doc["metadata"]["counts"]["events"] == 100
+    assert ledger[-1]["outcome"] == "refused" and ledger[-1]["floor"] == 80
+
+
 # ── what the loader makes of a record ────────────────────────────────────────
 
 class _Pip:
