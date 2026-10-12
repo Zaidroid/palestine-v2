@@ -308,9 +308,13 @@ def test_nothing_ungranted_can_reach_a_bulk_export(conn):
 
 def test_what_bulk_withholds_is_enumerated_not_absent(conn):
     """An export that is quietly short reads as 'this is everything'. Every
-    withheld row must appear in v_withheld with a reason."""
+    withheld row must appear in v_withheld with a reason.
+
+    Measured against everything HELD, not everything served: since 096 the
+    `internal` grade (ACLED, 10,400 rows) is in no served view at all, and
+    v_withheld lists it with its own reason, as 096 says it must."""
     with conn.cursor() as cur:
-        cur.execute("""SELECT (SELECT count(*) FROM databank_serving)
+        cur.execute("""SELECT (SELECT count(*) FROM databank_internal)
                             - (SELECT count(*) FROM databank_bulk),
                               (SELECT COALESCE(sum(rows_held), 0)
                                FROM v_withheld)""")

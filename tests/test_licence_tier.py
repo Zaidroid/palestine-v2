@@ -86,7 +86,7 @@ def test_grades_come_from_the_database_not_from_this_module():
             return [{"g": "no-redistribution"}]
         if "claim c" in sql:
             return [{"g": "no-redistribution"}]
-        if "databank_internal" in sql:
+        if "databank_serving" in sql:
             return [{"g": "attribution"}]
         if "located" in sql:
             return [{"g": "open"}]
@@ -116,7 +116,7 @@ def test_a_copied_coordinate_keeps_its_grade_but_a_reduction_does_not():
             return [{"g": "share-alike"}]        # every servable place is ODbL
         if "state_observation" in sql or "claim c" in sql:
             return [{"g": "no-redistribution"}]
-        if "databank_internal" in sql:
+        if "databank_serving" in sql:
             return [{"g": "attribution"}]
         return []
 

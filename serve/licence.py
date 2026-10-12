@@ -243,7 +243,10 @@ def _group_grades(q, group: str) -> list[str]:
         rows = q("""SELECT DISTINCT s.redistribution AS g
                       FROM claim c JOIN source s ON s.source_id = c.source_id""")
     elif group == GROUP_DATABANK:
-        rows = q("SELECT DISTINCT redistribution AS g FROM databank_internal")
+        # Only what a tool can return, the same rule as the gazetteer below.
+        # Read from databank_internal this graded the databank tool `internal`
+        # the day ACLED's rows were loaded (096), for rows no view serves.
+        rows = q("SELECT DISTINCT redistribution AS g FROM databank_serving")
     elif group in (GROUP_GEO_ANY, GROUP_GEO_CHECKPOINT):
         # The gazetteer's provenance lives in `place.source_refs->>'source'`
         # (falling back to `attrs`), which is a source KEY, so the grade is the
