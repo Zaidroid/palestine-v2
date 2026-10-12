@@ -278,3 +278,22 @@ def test_the_roster_says_what_its_dates_are_worth():
     rule = next(r for r in spec["registry"]["rules"] if r["when"] == {"prefix": "martyrs."})
     assert "no date of death" in rule["serve_warning"] and "1 January" in rule["serve_warning"]
     assert "شهداء" in rule["serve_warning_ar"] and "غرزة" not in rule["serve_warning_ar"]
+
+
+# ── the aid log's own disclaimer, and a month held as a month ────────────────
+
+def test_the_aid_log_says_it_is_partial_after_5_may_2024_and_ends():
+    import yaml
+    rule = yaml.safe_load((ROOT / "db" / "mappings" / "aid_access.yaml").read_text())["registry"]["rules"][0]
+    assert "after 5 May 2024 are partial" in rule["serve_warning"]
+    assert "16 January 2025" in rule["serve_warning"] and "floor" in rule["serve_warning"]
+    assert "5 أيار 2024" in rule["serve_warning_ar"]
+
+
+def test_a_village_dated_the_first_of_a_month_is_held_as_that_month():
+    from ingest import databank as D
+    src = (ROOT / "ingest" / "databank.py").read_text()
+    assert 'occurred, precision = day, "month"' in src
+    mig = (ROOT / "db" / "migrations" / "105_a_month_is_held_as_a_month.sql").read_text()
+    assert "occurred_precision_before" in mig and "extract(day FROM occurred_at" in mig
+    assert D is not None

@@ -1379,6 +1379,15 @@ def t_historical(rec, spec, places, counts):
     day = str(rec["date"])[:10]
     if day == "1945-04-01":                # Village Statistics reference date
         occurred, precision = "1945-01-01", "year"
+    elif day.endswith("-01"):
+        # The source writes "May 1948" as 1948-05-01 and marks no precision:
+        # 143 of the 478 dated villages sit on the first of a month (74 on
+        # 1 May 1948 alone, against two or three on an ordinary day). Which of
+        # them are a real first of the month cannot be told, so all are held
+        # as the month: said at month precision the statement is true of every
+        # one of them, and at day precision it was false for most (2026-10-12).
+        occurred, precision = day, "month"
+        attrs = {**attrs, "date_basis": "the first of a month in the source; held as the month"}
     else:
         occurred, precision = day, "day"   # real 1948 depopulation dates
     rows.append(Row(ds, "historical.locality_status", occurred, precision,
