@@ -55,6 +55,26 @@ step .venv/bin/python -m ops.fetch_unhcr_hdx
 step .venv/bin/python -m ops.fetch_fao_diem
 step .venv/bin/python -m ops.fetch_acled_file      # held under `internal`, never served (096)
 
+# ── cut from v1's tree and from frozen files on 2026-10-12 ──────────────────
+# Each writes the record shape its category's transformer already read, so a
+# failed night leaves yesterday's file and the spec's frozen fallback behind it.
+step .venv/bin/python -m ops.fetch_wfp_food           # WFP food prices (HDX)
+step .venv/bin/python -m ops.fetch_hdx_schools        # the school register (HDX, OCHA oPt)
+step .venv/bin/python -m ops.fetch_hdx_infrastructure # barrier, village boundaries, UNOSAT assessments
+step .venv/bin/python -m ops.fetch_hdx_land           # barrier + settlement footprints (HDX; downloads only when changed)
+step .venv/bin/python -m ops.fetch_goodshepherd       # demolitions per day
+step .venv/bin/python -m ops.fetch_peacenow           # settler population by year
+step .venv/bin/python -m ops.fetch_addameer           # prisoner statistics, monthly
+step .venv/bin/python -m ops.fetch_gho_health         # WHO GHO health, every dimension kept (re-reads weekly)
+# UCDP's own bulk files: GED 26.1's events of 2025 (the candidate events are
+# fetched and not loaded). Exit 1 with a `pending` ledger line = a newer release.
+step .venv/bin/python -m ops.fetch_ucdp
+# The UN2720 Mechanism's aid dashboard: trucks, pallets and tonnes offloaded,
+# collected and arrived in Gaza, per day. Five GETs, no key.
+step .venv/bin/python -m ops.fetch_un2720
+# Hand-entered cited figures: checked and written from db/reference/ (no network).
+step .venv/bin/python -m ops.build_cited_figures
+
 export HEARTBEAT_DETAIL="{\"fetch_failures\": $fails}"
 # The unit's OnFailure alarm is resolved once, at the END, when the whole
 # night passed — not by this step alone, or a dead supply line found below

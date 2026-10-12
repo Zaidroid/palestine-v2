@@ -373,7 +373,7 @@ def test_supply_lines_are_judged_and_retired_steps_are_excused_only_by_a_success
     v1 = {"ocha-casualties": fail, "validate": fail, "docker-restart-api": fail,
           "a-known-artifact": fail, "some-new-step": fail,
           "gaza-daily": [{"at": NOW.isoformat(), "outcome": "OK", "ok": True}]}
-    ds = _datasets(v1_demolitions_ocha_demolitions="fresh", v1_food_wfp="stalled",
+    ds = _datasets(v1_demolitions_ocha_demolitions="fresh", a_dataset_no_line_feeds="stalled",
                    v1_prisoners_hamoked="fresh")
     s = gr.judge_supply_lines(v2, v1, ds, NOW)
     status = {x["line"]: x["status"] for x in s["v2"] + s["v1_steps"] + s["data"]}
@@ -383,9 +383,9 @@ def test_supply_lines_are_judged_and_retired_steps_are_excused_only_by_a_success
     assert status["v1 step docker-restart-api"] == "retired_pending"
     assert status["v1 step a-known-artifact"] == "benign"
     assert status["v1 step some-new-step"] == "dead"                  # nobody excused it
-    assert status["data v1_food_wfp"] == "dead"                       # stalled, no line
+    assert status["data a_dataset_no_line_feeds"] == "dead"           # stalled, no line
     assert {x["line"] for x in s["dead"]} == {"ocha-demolitions", "v1 step some-new-step",
-                                              "data v1_food_wfp"}
+                                              "data a_dataset_no_line_feeds"}
     gr.apply_supply(ds, s)
     by = {d["dataset"]: d for d in ds}
     assert by["v1_demolitions_ocha_demolitions"]["status"] == "supply_dead"

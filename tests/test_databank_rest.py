@@ -529,3 +529,27 @@ def test_the_health_spec_carries_no_transition_ceiling_and_the_loader_takes_one_
     assert "cap = max(cap, allow_absent)" in inspect.getsource(D.run)
     # the nightly never passes it
     assert "allow_absent" not in inspect.getsource(D.run_all)
+
+
+# ── the radar and the nightly know the new lines ─────────────────────────────
+
+def test_every_declared_supply_line_has_its_fetcher_and_its_step_in_the_nightly():
+    """A declared line that is never run reads dead and fails the night; a
+    fetcher that is never run leaves its spec on the frozen fallback."""
+    from ops import gap_radar as G
+    sync = (ROOT / "ops" / "databank-sync.sh").read_text()
+    for name, line in G.SUPPLY_LINES.items():
+        fetcher = line["fetcher"]
+        assert (ROOT / fetcher).exists(), name
+        module = fetcher[:-3].replace("/", ".")
+        assert f"-m {module}" in sync, f"{name}: {module} is not in the nightly"
+    assert "-m ops.build_cited_figures" in sync
+    assert "v1_settlements_peace_now" in G.ALLOWANCE_OVERRIDE_DAYS
+
+
+def test_a_register_is_as_old_as_its_last_successful_reading():
+    import inspect
+    from ops import gap_radar as G
+    src = inspect.getsource(G.measure_datasets)
+    assert 'ds_attrs.get("vintage_checked_at")' in src and "CHECKED_BASIS" in src
+    assert "{vintage}" in G.CHECKED_BASIS

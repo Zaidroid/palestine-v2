@@ -140,7 +140,7 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "v1_conflict_ucdp": 730,
     "v1_health_who": 730,
     "v1_pcbs_pcbs": 730,
-    "v1_settlements_peacenow": 730,
+    "v1_settlements_peace_now": 730,   # the key was misspelt until 2026-10-12, so it never applied
     "v1_casualties_ocha_casualties": 730,
     "who_gho_wash": 1200,             # JMP labels are biennial: 2024-label
                                       #   data ages ~1100d before the next
@@ -235,6 +235,31 @@ SUPPLY_LINES = {
                          "fetcher": "ops/fetch_unrwa_registered.py", "every_days": 1,
                          "note": "UNRWA's quarterly HDX release; the file holds one "
                                  "quarter, the databank keeps every one it has seen"},
+    # ── the lines cut from v1's tree and from frozen files on 2026-10-12 ──
+    "hdx-land": {"labels": ["hdx:west_bank_barrier", "hdx:peacenow_settlements"],
+                 "feeds": ["v1_land_ocha", "v1_land_peace_now"],
+                 "fetcher": "ops/fetch_hdx_land.py", "every_days": 1, "replaces": "land"},
+    "goodshepherd-demolitions": {"labels": ["goodshepherd:demolitions"],
+                                 "feeds": ["v1_land_goodshepherd"],
+                                 "fetcher": "ops/fetch_goodshepherd.py", "every_days": 1},
+    "peacenow-settlers": {"labels": ["peacenow:settlers"],
+                          "feeds": ["v1_settlements_peace_now"],
+                          "fetcher": "ops/fetch_peacenow.py", "every_days": 1,
+                          "replaces": "peacenow-settlers"},
+    "addameer": {"labels": ["addameer:statistics"], "feeds": ["v1_prisoners_addameer"],
+                 "fetcher": "ops/fetch_addameer.py", "every_days": 1, "replaces": "prisoners"},
+    "wfp-food": {"labels": ["wfp:food_prices"], "feeds": ["v1_food_wfp"],
+                 "fetcher": "ops/fetch_wfp_food.py", "every_days": 1},
+    "hdx-schools": {"labels": ["hdx:schools"], "feeds": ["v1_education_hdx"],
+                    "fetcher": "ops/fetch_hdx_schools.py", "every_days": 1},
+    "hdx-infrastructure": {"labels": ["hdx:barrier", "hdx:village_boundaries",
+                                      "unosat:gaza_damage"],
+                           "feeds": ["v1_infrastructure_hdx", "v1_infrastructure_unosat"],
+                           "fetcher": "ops/fetch_hdx_infrastructure.py", "every_days": 1},
+    "gho-health": {"labels": ["gho:health"], "feeds": ["v1_health_who"],
+                   "fetcher": "ops/fetch_gho_health.py", "every_days": 7},
+    "ucdp": {"labels": ["ucdp:ged", "ucdp:candidate"], "feeds": ["v1_conflict_ucdp"],
+             "fetcher": "ops/fetch_ucdp.py", "every_days": 1, "replaces": "ucdp-conflict"},
     "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
                "fetcher": "ops/fetch_un2720.py", "every_days": 1,
                "note": "UN2720's aid dashboard, one attempt a night for all "
@@ -265,6 +290,11 @@ RETIRED_V1_STEPS = {
                 "loader refuses what validate-data.js only reported",
     "docker-restart-api": "palestine-refresh.service's ExecStartPost (the "
                           "in-container docker call never worked)",
+    "prisoners": "v2 supply line addameer (ops/fetch_addameer.py)",
+    "peacenow-settlers": "v2 supply line peacenow-settlers (ops/fetch_peacenow.py)",
+    "land": "v2 supply line hdx-land (ops/fetch_hdx_land.py)",
+    "culture": "frozen corpus data/frozen/culture.json.gz",
+    "ucdp-conflict": "v2 supply line ucdp (ops/fetch_ucdp.py)",
 }
 
 # Exit code for "found at least one dead supply line": the job must fail.
@@ -273,6 +303,14 @@ DEAD_EXIT = 5
 # Datasets whose occurred_at is disclaimed (precision=unknown registers):
 # freshness runs on ingest recency instead, and says so.
 REGISTER_BASIS = "register (occurred_at disclaimed; age = last ingest)"
+# ...unless the loader records when the publisher's file was last read
+# (dataset.attrs.vintage_checked_at, written by every run that read a fetched
+# file: ingest/databank.py). A register is then as old as its last successful
+# reading: a school list re-read last night is fresh however old the list, and
+# one whose fetch has failed for a quarter is stalled, which is the question.
+# Judged on the last ingest alone, five static registers were going to read
+# STALLED in February 2027 for the crime of not having changed.
+CHECKED_BASIS = "register (publisher's vintage {vintage}; age = days since its file was last read)"
 
 # Fill paths for gaps the project has already scoped. Everything else gets
 # honest "unscoped".
@@ -364,13 +402,14 @@ def continued_successors(cur) -> set[str]:
 def measure_datasets(cur, today: date) -> list[dict]:
     cur.execute("""
         SELECT d.dataset_id, d.key, d.v1_category, s.key, s.license_spdx,
-               s.commercial_use
+               s.commercial_use, d.attrs
         FROM dataset d JOIN source s ON s.source_id = d.source_id
         WHERE d.v1_category IS NOT NULL ORDER BY d.key""")
     metas = cur.fetchall()
     out = []
     continued_ok = continued_successors(cur)
-    for ds_id, key, cat, src, lic, comm in metas:
+    for ds_id, key, cat, src, lic, comm, ds_attrs in metas:
+        ds_attrs = ds_attrs or {}
         cur.execute("""
             SELECT count(*), min(occurred_at)::date, max(occurred_at)::date,
                    count(DISTINCT occurred_at::date),
@@ -397,6 +436,14 @@ def measure_datasets(cur, today: date) -> list[dict]:
         basis, last_info = "data dates", hi
         if prec == "unknown":
             basis, last_info = REGISTER_BASIS, last_touch
+            checked = str(ds_attrs.get("vintage_checked_at") or "")[:10]
+            if checked:
+                try:
+                    last_info = date.fromisoformat(checked)
+                    basis = CHECKED_BASIS.format(
+                        vintage=ds_attrs.get("vintage") or "per indicator")
+                except ValueError:
+                    pass
         age = (today - last_info).days if last_info else None
 
         if key in ALLOWANCE_OVERRIDE_DAYS:
