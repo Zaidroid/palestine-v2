@@ -103,14 +103,15 @@ RECONNECT_ATTEMPTS = 6
 # every @palhubappfuel photo — hundreds of GetFile requests a day on the
 # scarcest account for empty claims. Add a channel here only with a reader.
 #
-# The list is now read from `.env` (`V2_TELEGRAM_MEDIA_CHANNELS`, comma
-# separated) so that turning a channel's photos on or off is one line and one
-# restart, both Zaid's hand, and never a code change. It exists again because
-# of 2026-10-03: @palhubapproad moved six of its twelve areas (Hebron,
-# Bethlehem, Salfit, Jericho, Tubas, "other") out of its text bulletins and
-# into photo cards, 14 a cycle, and 66 checkpoints lost their only regular
-# reader. The cards have to be on disk before a reader can be written against
-# them; the cost is about 670 photo downloads a day on this account.
+# The list is read from `.env` (`V2_TELEGRAM_MEDIA_CHANNELS`, comma separated)
+# so that turning a channel's photos on or off is one line and one restart,
+# both Zaid's hand, and never a code change. It was added on 2026-10-11 to
+# look at the 14 photos @palhubapproad has posted every cycle since
+# 2026-10-03. They turned out to be PalHub's FUEL-station cards (one per
+# region), moved into the road channel; they carry no road status, and the
+# fuel vertical that could read them (cascade/fuel_image.py) was retired on
+# 2026-09-23. So the rule above stands: a channel goes on this list only with
+# a reader that is in use.
 MEDIA_CHANNELS: set[str] = set()
 
 

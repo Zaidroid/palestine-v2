@@ -1021,3 +1021,22 @@ injury 330, demolition 281, siege 191, land_levelling 185, death 170. Round 10 i
 still open: none of the 15 incident channels carries an independence group (learn/news_independence.py exists).
 Work stopped here at Zaid's word; the audit page is version 6 with the state and a five-series plan for shorts.
 
+2026-10-12 09:00 UTC · CORRECTION to the entry "why half the map is unknown: the board's photo cards" · my reading
+was wrong; the fall and its date stand · proof: Zaid turned photo downloads on at 08:45 UTC on my advice
+(`tmp/3-photo-cards-on.sh`); the 08:52 cycle put 14 cards in bronze and every one is a FUEL-station card
+("حالة محطات الوقود <region>", footer palhub.app/fuel-status; 14 regions, read by eye and by OCR of each title). None
+carries road status. What happened on 2026-10-03 19:00 UTC: PalHub's robot began posting its fuel cards into the
+road channel ahead of the road bulletins, and a bot may send about 20 messages a minute to one chat. Since then 385
+of 398 cycles are exactly 14 photos + 6 road bulletins = 20 messages; the six areas last in its order (سلفيت، أريحا،
+الخليل، بيت لحم، طوباس، أخرى) are dropped. They arrive whole only when the photos take over a minute to post
+(2026-10-12 01:24:31 → 01:25:32, then all twelve; also 2026-10-09 01:00). So no reader of ours can bring the 66
+checkpoints back: the bulletins are not sent. I told Zaid the cards were "the largest gain on the map"; that was a
+guess I presented as a finding, made before a single card was on disk, and it cost about an hour of photo downloads
+on agent2. Undo is `tmp/4-photo-cards-off.sh` (his hand). What can fix it: PalHub posting the road bulletins first
+or pacing its sends (a message to them is drafted for Zaid), or other eyes on those six areas. Comments in
+ops/watchdog.py, ingest/telegram_poller.py and three tests corrected.
+Same morning, Zaid's three runs: 099 applied and `learn.place_trust --write` recorded 518 rows, 45 moved (closed held
+at 10 places, open at 14, congestion asserted at 21 place-and-severity pairs); seven aliases registered, the re-read
+wrote 986 facts on 42 places, the stored-line re-read superseded 9 and wrote 97, the rollup wrote 835 rows and
+closed 624 over 120 days.
+

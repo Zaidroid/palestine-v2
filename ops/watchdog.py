@@ -1064,12 +1064,18 @@ def summarise_sources(verdicts: list[dict]) -> dict:
 
 # ── a source that still speaks, about fewer places ───────────────────────────
 # Silence is not the only way to lose a source. On 2026-10-03 at 19:00 UTC
-# PalHub's board moved six of its twelve areas out of its text bulletins and
-# into photo cards. The channel never went quiet (it posted MORE messages), so
-# the silence rule above stayed green; 66 checkpoints lost their only regular
-# reader and the map's known share fell from 0.66 to 0.50 overnight. The
-# collapse rule did not fire either, because it waits for a fall by half.
-# Nobody was told for eight days.
+# PalHub's robot began posting its 14 fuel-station cards into the ROAD channel,
+# ahead of the road bulletins. Telegram lets a bot send about 20 messages a
+# minute to one chat, so each half-hourly cycle became 14 photos and the first
+# 6 of the 12 road bulletins; the last six areas in its order (Salfit, Jericho,
+# Hebron, Bethlehem, Tubas, "other") are dropped, and arrive only on the rare
+# cycle where the photos take over a minute (385 of 398 cycles since are
+# exactly 14 + 6 = 20 messages). The channel never went quiet (it posted MORE
+# messages), so the silence rule above stayed green; 66 checkpoints lost
+# their only regular reader and the map's known share fell from 0.66 to 0.49
+# overnight. The collapse rule did not fire either, because it waits for a
+# fall by half. Nobody was told for eight days. (My first reading, that the
+# six areas had moved INTO the photos, was wrong: the photos are fuel cards.)
 #
 # So each source is also judged on its REACH: place-hours covered in the last
 # 24 hours (distinct place x hour, every modality — a quarantined reading is

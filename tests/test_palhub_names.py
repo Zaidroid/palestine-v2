@@ -103,8 +103,9 @@ def test_most_of_the_bulletin_resolves_after_081():
             pytest.skip(f"{MIGRATION} not applied")
         resolved = _resolve_all(conn, cur)
     unresolved = sorted(n for n, r in resolved.items() if r is None)
-    # ~190 names until 2026-10-03 19:00 UTC, when the board moved six of its
-    # twelve areas into photo cards; the six still sent as text carry ~115.
+    # ~190 names until 2026-10-03 19:00 UTC; since then only six of the board's
+    # twelve areas arrive on most cycles (its robot posts 14 fuel cards first
+    # and runs out of its message allowance), and those six carry ~115.
     assert len(resolved) >= 100
     assert len(unresolved) <= 22, unresolved
 

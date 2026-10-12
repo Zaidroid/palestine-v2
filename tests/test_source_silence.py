@@ -97,8 +97,9 @@ def _reach(key, today, base):
 
 
 def test_palhub_as_measured_on_2026_10_04_has_narrowed():
-    # 164 places x 24 h as text until 3 October; 98 places after six areas moved
-    # into photo cards. The channel posted more messages, not fewer.
+    # 164 places x 24 h as text until 3 October; 98 after the board's robot put
+    # 14 fuel cards ahead of its road bulletins and only 6 of 12 still fitted
+    # its message allowance. The channel posted more messages, not fewer.
     base = [3936, 3790, 3782, 3810, 3936, 3700, 3782] * 4
     v = W.classify_reach(_reach("tg_palhubapproad", 2352, base))[0]
     assert v["status"] == "narrowed" and v["fault"]
