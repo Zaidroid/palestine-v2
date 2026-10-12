@@ -883,7 +883,14 @@ def t_economic(rec, spec, places, counts):
     attrs = passthrough(rec, spec.get("attrs_passthrough"))
     year = str(rec["date"])[:4]              # -01-01 kept, -12-31 truncated:
     place_id, located = region_place(places, rec["location"]["region"], attrs)
-    unit = None if ds == "v1_economic_imf" else rec["metrics"].get("unit")
+    unit = rec["metrics"].get("unit")
+    if ds == "v1_economic_imf" and unit == "number":
+        # v1 stamped the literal 'number' on every IMF row (474 of 474: GDP in
+        # billions of dollars, inflation in percent, an index alike), so the
+        # unit was nulled here. ops/fetch_imf.py writes the IMF's own unit
+        # (2026-10-12) and that one is carried; v1's placeholder, which only
+        # the frozen fallback still holds, stays null.
+        unit = None
     return [Row(ds, f"economic.{slug(rec['indicator_code'])}", f"{year}-01-01",
                 "year", rec["stable_id"], value_num=rec["metrics"]["value"],
                 unit=unit, place_id=place_id, located=located, attrs=attrs)]
