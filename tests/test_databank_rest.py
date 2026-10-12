@@ -598,3 +598,16 @@ def test_a_record_carries_the_banks_own_name_for_its_code_and_a_unit_the_name_su
     assert W.publisher_unit("Pupil-teacher ratio, primary", "number") == "ratio"
     assert W.publisher_unit("Cereal yield (kg per hectare)", "number") == "number"
     assert W.publisher_unit("anything (% of GDP)", "per_1000") == "per_1000"       # only v1's `number`
+
+
+def test_a_mean_harvest_in_kilograms_is_not_a_percentage():
+    from ingest import databank as D
+    assert D._FAO_STATISTIC == ("_wmean", "_median", "_stddev")
+    spec = D.load_spec("fao_diem")
+    first = spec["registry"]["rules"][1]
+    assert first["when"] == {"regex": "^fao_diem\\..*_(wmean|median|stddev)$"}
+    assert first["measure_kind"] == "stock" and "canonical_unit" not in first
+    conflict = D.load_spec("conflict")
+    rule = next(r for r in conflict["registry"]["rules"]
+                if r["when"] == {"regex": "^conflict\\.westbank_cumulative_displaced_(persons|children)"})
+    assert rule["canonical_unit"] == "persons"

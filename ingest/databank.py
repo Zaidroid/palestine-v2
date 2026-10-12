@@ -2165,6 +2165,9 @@ def _fao_date(s) -> str | None:
         return None
 
 
+_FAO_STATISTIC = ("_wmean", "_median", "_stddev")
+
+
 def t_fao_diem(rec, spec, places, counts):
     ds = "fao_diem_household_surveys"
     theme = rec.get("theme") or "unknown"
@@ -2189,6 +2192,13 @@ def t_fao_diem(rec, spec, places, counts):
         if v is None:
             continue
         unit = "count" if col.startswith(("tot_", "surveys")) else "percent"
+        if col.endswith(_FAO_STATISTIC):
+            # A mean, median or spread of a QUANTITY (kg harvested, hectares,
+            # household size, a score) is not a share of households: 70 such
+            # series were stored as "percent" (22,965.6 "percent" of harvest).
+            # The quantity's own unit is in FAO's column description, which is
+            # the series' name; the row carries no unit rather than a wrong one.
+            unit = None
         sid = "fao-" + hashlib.sha1("|".join([theme, str(rec.get("round") or ""), str(rec.get("adm_pcode") or ""),
                                               day, col]).encode("utf-8")).hexdigest()[:20]
         rows.append(Row(ds, f"fao_diem.{theme}.{col}", day, "day", sid, value_num=v, unit=unit,

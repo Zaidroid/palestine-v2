@@ -251,7 +251,9 @@ def _era_lines(lines: list[str], r: MohReport) -> None:
             put("since_resumption", "injuries", i and i.group(1))
             window = None
             continue
-        if "اللجنة" in line and _COMMITTEE.search(line):
+        # "اللجنة القضائية" until December 2025; "لجنة اعتماد الشهداء" since
+        # (10 October 2026: 106 added). The definite article is not the rule.
+        if "لجنة" in line and _COMMITTEE.search(line):
             put("daily" if r.tiers.get("daily") else "period" if r.tiers.get("period") else "daily",
                 "committee", _COMMITTEE.search(line).group(1))
             continue

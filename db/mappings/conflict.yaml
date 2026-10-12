@@ -439,6 +439,15 @@ registry:
       canonical_unit: events
       serve_warning: "Tech for Palestine's relay of UN OCHA's West Bank figures, a running total. A day whose row says flash_source 'fill' is not a day the UN reported: T4P carried the count forward between UN updates (29 of the 291 days held)."
       serve_warning_ar: "هاد نقل Tech for Palestine لأرقام أوتشا بالضفة، وهو مجموع تراكمي. اليوم اللي سطره مكتوب عليه flash_source «fill» مش يوم نشرت فيه الأمم المتحدة: T4P نقلت الرقم من آخر تحديث (29 يوم من أصل 291 محفوظين)."
+    - when: {regex: "^conflict\\.westbank_cumulative_displaced_(persons|children)"}
+      concept: displacement.internal
+      measure_kind: cumulative
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: persons        # the rows are persons; the next rule said households for all three
+      serve_warning: "Tech for Palestine's relay of UN OCHA's West Bank figures, a running total. A day whose row says flash_source 'fill' is not a day the UN reported: T4P carried the count forward between UN updates (29 of the 291 days held)."
+      serve_warning_ar: "هاد نقل Tech for Palestine لأرقام أوتشا بالضفة، وهو مجموع تراكمي. اليوم اللي سطره مكتوب عليه flash_source «fill» مش يوم نشرت فيه الأمم المتحدة: T4P نقلت الرقم من آخر تحديث (29 يوم من أصل 291 محفوظين)."
     - when: {regex: "^conflict\\.westbank_cumulative_displaced"}
       concept: displacement.internal
       measure_kind: cumulative

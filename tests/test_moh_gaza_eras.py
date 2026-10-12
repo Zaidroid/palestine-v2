@@ -170,3 +170,17 @@ def test_a_bulletin_that_names_no_window_is_not_given_one():
     assert "daily" not in r.tiers and "hours" not in r.tiers["period"]
     assert r.tiers["period"] == {"new": 11, "deaths": 11, "injuries": 32}
     assert r.tiers["since_ceasefire"]["deaths"] == 947 and r.tiers["cumulative"]["deaths"] == 72956
+
+
+def test_the_committees_additions_are_read_under_its_new_name_too():
+    """Until December 2025 the bulletins said "اللجنة القضائية"; since then
+    "لجنة اعتماد الشهداء". Seventeen bulletins (2,412 people) were read without
+    their committee figure because the rule asked for the definite article."""
+    r = parse("🔴 التقرير الإحصائي اليومي لعدد الشهداء والجرحى جرّاء العدوان الإسرائيلي على قطاع غزة\n\n"
+              "⭕ وصل إلى مستشفيات قطاع غزة خلال الـ 24 ساعة الماضية: 2 شهداء و 5 إصابات.\n\n"
+              "⭕ تم اضافة عدد 92 شهيد للإحصائية التراكمية للشهداء، ممن تم اكتمال بياناتهم واعتمادهم من "
+              "لجنة اعتماد الشهداء من تاريخ 02/01/2026 الى 16/01/2026\n\n"
+              "🔴 الإحصائية التراكمية منذ بداية العدوان في 7 أكتوبر 2023:\n"
+              "• العدد التراكمي للشهداء: 71,548\n• العدد التراكمي للإصابات: 171,353\n")
+    assert r.tiers["daily"]["committee"] == 92
+    assert r.tiers["daily"]["deaths"] == 2 and r.tiers["cumulative"]["deaths"] == 71548

@@ -84,6 +84,12 @@ registry:
       grain: period
       place_grain: governorate
       canonical_unit: count
+    - when: {regex: "^fao_diem\\..*_(wmean|median|stddev)$"}
+      concept: food.security
+      measure_kind: stock          # a statistic of a quantity (kg, hectares, persons, a
+      polarity: null               #   score), not a share: no unit is asserted for it
+      grain: period
+      place_grain: governorate
     - when: {prefix: "fao_diem."}
       concept: food.security
       measure_kind: ratio
