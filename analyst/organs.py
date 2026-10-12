@@ -328,14 +328,21 @@ class MoHBulletinOrgan:
 
     def series(self, cur, reported_at) -> tuple[dict[str, float], list[int]]:
         """What the series holds for the bulletin's posting day, and which
-        claims wrote it. Keyed exactly as the ingest keys it."""
+        claims wrote it. Keyed exactly as the ingest keys it.
+
+        The ingest's rows had no stable id until migration 095 (2026-10-11)
+        gave every one `moh-<indicator>-<day>`. This query asked for rows
+        WITHOUT one, so from that afternoon it found nothing and the next
+        bulletin (12 October) was judged "not-in-series" against an empty
+        hand. Both spellings are the ingest's."""
         if self._dataset_id is None or reported_at is None:
             return {}, []
         cur.execute("""
             SELECT indicator, value_num, attrs->>'claim_id'
               FROM observation
              WHERE dataset_id = %s AND occurred_at = %s::date
-               AND upper_inf(sys_period) AND v1_stable_id IS NULL
+               AND upper_inf(sys_period)
+               AND (v1_stable_id IS NULL OR v1_stable_id LIKE 'moh-%%')
              ORDER BY observation_id""", (self._dataset_id, reported_at))
         held: dict[str, float] = {}
         claims: set[int] = set()
