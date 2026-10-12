@@ -4,6 +4,15 @@
 # along source lines. Good Shepherd Collective's 237 demolitions carry a real
 # event date; OCHA's 261 checkpoints and Peace Now's 199 settlements are
 # registers with no date at all. Routing is three-way and exhaustive (law 5).
+#
+# v2 READS THE PUBLISHERS ITSELF since 2026-10-12 (branch supply-scrapes): see
+# `input:` below. Reading the publishers' own records that day corrected three
+# things this header says, and the corrections are in `notes:` (PROVENANCE,
+# MEASURED 2026-10-12): the 261 "checkpoints" are the 261 segments of OCHA's
+# West Bank Separation Barrier file of January 2018; the 199 settlements are
+# OCHA oPt's HDX file of Peace Now's built-up areas, end of 2018; and Good
+# Shepherd's daily counts are UN OCHA's demolition record, republished, for
+# the West Bank and East Jerusalem.
 category: land
 transform: python:t_land
 shape: observation
@@ -102,7 +111,62 @@ expect:
   min_records: 627                 # 0.9 × 697
   max_observations: 810            # 1.15 × 697 measured
 
+# Format v2 `input:` — v2's own fetch (2026-10-12). Three raw files, written
+# by two fetchers in the record shape t_land already reads:
+#   barrier.json      ops/fetch_hdx_land.py   HDX west-bank-barrier (OCHA oPt)
+#   settlements.json  ops/fetch_hdx_land.py   HDX state-of-palestine-settlements
+#   demolitions.json  ops/fetch_goodshepherd.py   the collective's own JSON
+# The frozen corpus is v1's unified file of 2026-10-12 and is read only by a
+# machine that has never fetched (additive only). If one of the three files is
+# missing the run reads fewer than expect.min_records and is refused, loudly,
+# rather than loading two thirds of a category.
+input:
+  root: data/raw/land
+  glob: [barrier.json, settlements.json, demolitions.json]
+  fallback:
+    root: data/frozen
+    glob: land.json.gz
+cadence: daily                     # demolitions move daily; the two registers
+                                   #   are 2018 files the fetcher re-reads only
+                                   #   when HDX says they changed
+
 notes: |
+  PROVENANCE, MEASURED 2026-10-12 (the publishers' records, v1's scripts and
+  v1's own intermediate files; nothing below changes what a row holds):
+
+    v1_land_ocha — NOT checkpoints. v1's fetch-land-data.js searches HDX for
+      "west bank closure" inside OCHA oPt and takes the first result with a
+      shapefile; that result is "West Bank Separation Barrier" (HDX
+      `west-bank-barrier`, Barrier_Jan2018, dataset_date 2018-01-01, file
+      last modified 2019-07-16, licence `cc-by`). The 261 rows are its 261
+      line segments: 181 Constructed, 28 Under Construction, 52 Projected
+      (712 km in all, 464 km constructed). `land_name` is `<Type> -
+      <OBJECTID>`; `checkpoint_type` is "Barrier" on all; `permits_required:
+      true` is a default in v1's code, not in the file. The indicator name
+      `land.checkpoint`, the concept `movement.checkpoint` and the unit
+      `sites` are therefore all wrong for these rows, and the same 261
+      segments are held again as `infrastructure.barrier_segment`
+      (v1_infrastructure_hdx). Renaming or retiring them is a migration and
+      Zaid's decision; the fetcher keeps the held shape so nothing is
+      rewritten meanwhile, and keeps status, type and length in metres in the
+      raw record (`upstream`).
+    v1_land_peace_now — HDX `state-of-palestine-settlements`, published by
+      OCHA oPt ("Settlements data provided by Peace Now"), dataset_date
+      2018-12-30/31, file last modified 2021-06-03, licence `cc-by-igo` as HDX
+      states it. 201 built-up-area polygons with a name and an area only:
+      `Authorized` (land_status, legal_status) and `Settlement`
+      (settlement_type) are v1 defaults, on every row. Two unnamed polygons
+      share name and rounded area with another and collapse (199 rows).
+    v1_land_goodshepherd — goodshepherdcollective.org/api/home_demolitions.json,
+      a rolling window of about thirteen months, one entry per day with an
+      incident. The collective's page: "This data only represents information
+      from UN OCHA, which focuses on the West Bank and East Jerusalem". So the
+      region is the West Bank including East Jerusalem, not "Palestine" (v1's
+      default, kept: place stays NULL until Zaid's decision), and the five
+      demolition.* attributes are v1 defaults (residential / 1 / Administrative
+      demolition / notification given / Private). v1 also stored a day of 0
+      structures as 1 (`0 || 1`); the fetcher writes the publisher's 0.
+
   THE THREE DATASETS ARE DISJOINT AND SOURCE == EVENT_TYPE, 1:1, measured:
     OCHA oPt              × checkpoint   261   CC-BY-IGO-3.0    all date==fetch_day
     Good Shepherd Collective × demolition 237  CC-BY-NC-SA-4.0  0 date==fetch_day

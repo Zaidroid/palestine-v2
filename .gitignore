@@ -64,6 +64,11 @@ data/raw/pcbs/
 data/raw/hamoked/
 data/raw/wpp/
 data/raw/unrwa_registered/
+# supply-scrapes (2026-10-12): regenerate with ops/fetch_hdx_land.py,
+# ops/fetch_goodshepherd.py, ops/fetch_peacenow.py, ops/fetch_addameer.py
+data/raw/land/
+data/raw/peacenow/
+data/raw/addameer/
 .keys/
 
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)

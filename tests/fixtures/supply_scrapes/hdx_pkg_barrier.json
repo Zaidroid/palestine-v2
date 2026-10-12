@@ -1,0 +1,24 @@
+{
+ "success": true,
+ "result": {
+  "name": "west-bank-barrier",
+  "title": "West Bank Separation Barrier",
+  "dataset_date": "[2018-01-01T00:00:00 TO 2018-01-01T23:59:59]",
+  "dataset_source": "OCHA oPt",
+  "license_id": "cc-by",
+  "license_title": "Creative Commons Attribution International (CC BY)",
+  "methodology": "Other",
+  "methodology_other": "updated using aerial imagery (2018) and based on field observation",
+  "caveats": null,
+  "notes": "West Bank Separation Barrier, January 2018",
+  "resources": [
+   {
+    "id": "95470fef-0d9d-4967-bbd6-cf247b80d578",
+    "name": "Barrier.zip",
+    "format": "SHP",
+    "url": "https://data.humdata.org/dataset/e782d4c9-d0ce-412c-ad1e-6771be2969b0/resource/95470fef-0d9d-4967-bbd6-cf247b80d578/download/barrier_jan2018.zip",
+    "last_modified": "2019-07-16T12:28:04.712202"
+   }
+  ]
+ }
+}

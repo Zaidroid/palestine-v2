@@ -21,6 +21,28 @@
   "v1_path": "/opt/stacks/palestine/public/data/unified/casualties/all-data.json",
   "why": "OCHA oPt casualty aggregates. Static since 2026-01."
  },
+ "culture": {
+  "bytes_gzipped": 23981,
+  "bytes_uncompressed": 671832,
+  "evidence": "taken from v1's unified file on 2026-10-12 (v1's refresh of 03:26 UTC) at the hand-over to v2's own fetchers; `ingest.databank culture --dry-run` on this file, same day: 335 records read, 335 emitted rows all matched to a held identity, 0 revisions",
+  "file": "culture.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 335,
+  "sha256_uncompressed": "387440690e1d9667b50ab8c6227bb2e31a213f6e00e69a7df030b41d2e57ddec",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/culture/all-data.json",
+  "why": "THE corpus, not a fallback: a register v1 built nightly from one Wikidata query (LIMIT 500, no order) and labelled 'UNESCO, Ministry of Tourism, NGO Reports'. Type, region, status and protection level are v1's keyword rules and defaults, not statements of any publisher. Frozen as held; see db/mappings/culture.yaml."
+ },
+ "culture_wikidata_items": {
+  "bytes_gzipped": 22986,
+  "bytes_uncompressed": 237810,
+  "evidence": "v1's public/data/culture/heritage-sites.json of 2026-10-12 02:42 UTC, wrapped with the query text from v1's scripts/fetch-culture-data.js; its 335 names equal the 335 site_name values of culture.json.gz (compared 2026-10-12).",
+  "file": "culture_wikidata_items.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 335,
+  "sha256_uncompressed": "1694a4228acf0a6c64ae1e54e63428889dff3bfe0c3f2ef1be95811d321e6297",
+  "v1_path": "/opt/stacks/palestine/public/data/culture/heritage-sites.json",
+  "why": "Provenance sidecar of the culture corpus, not a loader input: the Wikidata item id (Q-id), coordinate and description of each of the 335 heritage rows, and the query that produced them. v1's unified file drops all three; without this file no row could be traced to its Wikidata item once v1 stops."
+ },
  "demolitions": {
   "bytes_gzipped": 40538,
   "bytes_uncompressed": 847726,
@@ -75,6 +97,39 @@
   "sha256_uncompressed": "9bdc253b69dd3a15fddfa1caa64c086edc0505378aa29e23e1d74ae4648dfec2",
   "v1_path": "/opt/stacks/palestine/public/data/unified/infrastructure/all-data.json",
   "why": "Barrier segments, locality records and UNOSAT damage assessments. Static."
+ },
+ "land": {
+  "bytes_gzipped": 35199,
+  "bytes_uncompressed": 1263426,
+  "evidence": "taken from v1's unified file on 2026-10-12 (v1's refresh of 03:26 UTC) at the hand-over to v2's own fetchers; `ingest.databank land --dry-run` on this file, same day: 692 records read, 692 emitted rows all matched to a held identity, 0 revisions",
+  "file": "land.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 692,
+  "sha256_uncompressed": "c58cebcd2b3188ca4eb537e662465a221e41785751ddd9909d8d6ee5bfacbe7a",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/land/all-data.json",
+  "why": "Fallback for a machine that has never fetched (v2 reads the publishers itself: ops/fetch_hdx_land.py, ops/fetch_goodshepherd.py). West Bank barrier segments (HDX, OCHA oPt, January 2018), Peace Now settlement footprints (HDX, end of 2018) and Good Shepherd's daily demolition counts."
+ },
+ "prisoners": {
+  "bytes_gzipped": 41611,
+  "bytes_uncompressed": 1456268,
+  "evidence": "taken from v1's unified file on 2026-10-12 (v1's refresh of 03:26 UTC) at the hand-over to v2's own fetchers; `ingest.databank prisoners --dry-run` on this file, same day: 894 records read, 30 emitted rows all matched to a held identity, 0 revisions",
+  "file": "prisoners.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 894,
+  "sha256_uncompressed": "2ab5a36c54d5919a0077ece21984742776c115b9971c5760226342a6d1be623d",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/prisoners/all-data.json",
+  "why": "Fallback for a machine that has never fetched (v2 reads Addameer itself: ops/fetch_addameer.py). v1's whole unified file: 30 Addameer records, and 864 HaMoked records the spec drops as moved (prisoners_hamoked.yaml reads HaMoked)."
+ },
+ "settlements": {
+  "bytes_gzipped": 3867,
+  "bytes_uncompressed": 82258,
+  "evidence": "taken from v1's unified file on 2026-10-12 (v1's refresh of 03:26 UTC) at the hand-over to v2's own fetchers; `ingest.databank settlements --dry-run` on this file, same day: 51 records read, 51 emitted rows all matched to a held identity, 0 revisions",
+  "file": "settlements.json.gz",
+  "frozen_at": "2026-10-12",
+  "records": 51,
+  "sha256_uncompressed": "981dc4f161d3a92f92b2e65ead124c4b48c06fff8395d9d57003e1074ddd5eca",
+  "v1_path": "/opt/stacks/palestine/public/data/unified/settlements/all-data.json",
+  "why": "Fallback for a machine that has never fetched (v2 reads Peace Now itself: ops/fetch_peacenow.py). West Bank settler population by year, 1967 to 2024, 51 points."
  },
  "westbank": {
   "bytes_gzipped": 272778,

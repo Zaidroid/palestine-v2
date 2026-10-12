@@ -1,3 +1,6 @@
+# culture — heritage site register. NOT what its label says: every row came
+# from one Wikidata query (see PROVENANCE in `notes:`, measured 2026-10-12).
+# The first line below is the 2026-08 audit's reading, kept as written:
 # culture — heritage site register (UNESCO / Ministry of Tourism / NGO reports)
 # Audit: 329 records, 100% dated, 100% ingest masquerade, 0% year-bucket,
 # 0% latlon / 0% pcode / 0% gazetteer_key. This is a REGISTER, not a series:
@@ -68,7 +71,50 @@ expect:
   min_records: 296                 # 0.9 × 329
   max_observations: 390    # 1.15 x measured emission
 
+# FROZEN 2026-10-12 (branch supply-scrapes) — the corpus is v1's unified file
+# of that day (335 sites), carried in this repository, and v1 is not read for
+# this category again. There is an upstream (Wikidata's query service) and no
+# fetcher on purpose; `notes:` PROVENANCE says why. To unfreeze: a fetcher
+# that keeps Wikidata's own item ids, then this block and `cadence` go.
+input:
+  root: data/frozen
+  glob: culture.json.gz
+cadence: frozen
+
 notes: |
+  PROVENANCE, MEASURED 2026-10-12 from v1's scripts/fetch-culture-data.js and
+  its output. No row comes from UNESCO's list, a ministry or an NGO report:
+
+    ORIGIN. One SPARQL query against query.wikidata.org, every night: items
+      located in the State of Palestine, the West Bank or the Gaza Strip that
+      are an archaeological site, historic site, World Heritage Site, mosque
+      or church (or carry the World Heritage designation) AND have a
+      coordinate, `LIMIT 500` with no ORDER BY. v1 de-duplicates by label and
+      keeps 335 (2026-10-12). With no order the 500 are whichever the service
+      returns, so sites come and go between nights: the store holds 337, two
+      of them no longer in v1's file.
+    WHAT IS WIKIDATA'S: the label (site_name), the description, the
+      coordinate (dropped by v1's unified transform, so not held), and the
+      World Heritage designation (unesco_status / protection_level "UNESCO
+      Protected", 18 rows held).
+    WHAT IS v1's, on every row: site_type (keywords in the label and
+      description: mosque/church/monastery → Religious, "archaeolog"/ruin/
+      tell → Archaeological, else Cultural); region (the words "gaza" or
+      "jerusalem", else a bounding box, else West Bank); site_status "Intact"
+      (a constant in the code — the 50 Gaza Strip sites are held as "Intact"
+      and nobody observed that); protection_level "National Heritage" (the
+      default for anything Wikidata does not mark World Heritage; no register
+      was consulted).
+    LICENCE. Wikidata's structured data is CC0 1.0. The dataset's source row
+      (heritage_composite, 'varies', ask) describes a compilation that does
+      not exist; correcting it is a migration (db/proposed/scrapes.sql).
+    VINTAGE. Wikidata as it stood at v1's last fetch, 2026-10-12 03:22 UTC.
+    WHY NO FETCHER. query.wikidata.org/robots.txt disallows /sparql to every
+      agent; the supply-scrapes brief stops at a robots rule. Wikimedia does
+      document programmatic use of the endpoint (a named User-Agent), so this
+      is one decision for Zaid. A fetcher worth having would also order the
+      query, keep the Q-id as the identity, and stop writing "Intact".
+
   NO HONEST DATE EXISTS. Searched every string and numeric field of all 329
   records for a 4-digit year (1000-2029). Only three fields ever carry one:
   `date` (329/329, the masquerade), `sources[].fetched_at` (329/329, the fetch
