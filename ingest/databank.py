@@ -879,25 +879,130 @@ t_economic.prepass = _economic_prepass
 t_economic.dup_keys = set()
 
 
-def t_health(rec, spec, places, counts):
-    ds = route(rec, spec, counts)
-    if ds is None:
-        return Drop("unroutable")
+def t_health_v1(rec, spec, places, counts):
+    """v1's health record (WHO's HDX export through v1's unified tree), as it
+    was loaded until 2026-10-12. Kept for REPLAY only: it is the transformer
+    that produced the 12,502 rows the first GHO run closes. It reads ONE
+    dimension per record (HDX's export kept one), which is the defect."""
     if not rec.get("indicator_code"):
-        # measured 2026-08-07: v1's rebuild began emitting 184 Gaza-MoH and
-        # 26 HDX rows into health with no indicator_code. An observation is
-        # (indicator, value, unit, time, place); these have no indicator, so
-        # they are dropped and counted — never guessed into WHO's namespace.
         return Drop("no_indicator_identity")
     dim = (rec.get("dimension") or {}).get("code")
     indicator = f"health.{slug(rec['indicator_code'])}" + \
                 (f".{slug(dim)}" if dim else "")                  # null-brace
-    attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    attrs = passthrough(rec, ["indicator_code", "indicator_name",
+                              "dimension.type", "dimension.code",
+                              "dimension.name", "value_low", "value_high"])
     year = str(rec["date"])[:4]                                   # 100% -01-01
     attrs["region"] = "Palestine"
-    return [Row(ds, indicator, f"{year}-01-01", "year", rec["stable_id"],
-                value_num=rec["metrics"]["value"],
+    return [Row("v1_health_who", indicator, f"{year}-01-01", "year",
+                rec["stable_id"], value_num=rec["metrics"]["value"],
                 unit=rec["metrics"].get("unit"), attrs=attrs)]
+
+
+# ── health — WHO GHO's own rows, every dimension kept (2026-10-12) ───────────
+# Input: data/raw/gho/health_pse.json (ops/fetch_gho_health.py), one record per
+# GHO OData row for SpatialDim PSE, the publisher's fields verbatim.
+
+# What a GHO indicator NAME states about its unit. Ordered, first match wins.
+# The unit is decided once per indicator and never from a value: v1 looked at
+# each number ("between 0 and 100 and not whole → a percentage") and so wrote
+# 'percentage' on the deaths from lung cancer and 'number' on the total beside
+# them. A name that states nothing gets NO unit here; health.yaml's
+# `value.unit_by_code` then decides from WHO's own indicator metadata, or
+# declares that nothing can be said.
+_GHO_UNIT_RULES = (
+    (r"per 100 ?000\b", "per_100000"),
+    (r"per 10 ?000\b", "per_10000"),
+    (r"per 1 ?000\b", "per_1000"),
+    (r"per 100 live births", "per_100"),
+    (r"US\$ millions", "USD_millions"),
+    (r"per capita in US\$", "USD_per_capita"),
+    (r"\((in )?thousands\)", "thousand_persons"),   # every such name counts people
+    (r"\(g/100 ?ml\)", "g_per_100ml"),
+    (r"\(years\)", "years"),
+    (r"%|\bpercentage\b", "percent"),
+    (r"\b(sub-)?index\b", "index"),
+    (r"\bnumber of\b.*\bdeaths\b", "persons"),
+    (r"\bnumber of\b.*\bcases\b", "cases"),
+    (r"\(number\)", "count"),
+)
+
+
+def gho_unit_from_name(name) -> str | None:
+    """The unit WHO's indicator name states, or None when it states none."""
+    if not name:
+        return None
+    n = re.sub(r"\s+", " ", str(name))     # \s covers the no-break spaces too
+    for pattern, unit in _GHO_UNIT_RULES:
+        if re.search(pattern, n, re.I):
+            return unit
+    return None
+
+
+def gho_dims(rec: dict) -> list[tuple[str, str, str | None]]:
+    """A GHO row's dimensions as [(type, code, label)], in the publisher's own
+    slot order (Dim1, Dim2, Dim3). A row with none is the indicator's total."""
+    out = []
+    for i in (1, 2, 3):
+        kind, code = rec.get(f"Dim{i}Type"), rec.get(f"Dim{i}")
+        if kind and code:
+            out.append((str(kind), str(code), rec.get(f"Dim{i}Label")))
+    return out
+
+
+def gho_dim_key(rec: dict) -> str:
+    """The dimensions as ONE string, for the identity and the stable id:
+    'SEX=SEX_FMLE;AGEGROUP=AGEGROUP_YEARS15-19', '' for a row with none. A
+    string, not the dict: a dict's rendering depends on its key order, and
+    jsonb does not keep ours."""
+    return ";".join(f"{t}={c}" for t, c, _ in gho_dims(rec))
+
+
+def gho_stable_id(rec: dict) -> str:
+    """gho:<code>:<year>:<dimensions> — the publisher's own key for a row
+    (measured 2026-10-12: unique on all 13,975 PSE rows of the 184 codes)."""
+    return f"gho:{rec.get('IndicatorCode')}:{rec.get('TimeDim')}:{gho_dim_key(rec)}"
+
+
+def t_health(rec, spec, places, counts):
+    code, year = rec.get("IndicatorCode"), rec.get("TimeDim")
+    if not code or not isinstance(year, int):
+        return Drop("missing_identity")
+    value = rec.get("NumericValue")
+    if value is None:
+        # WHO gave no number: a tobacco-control answer in words ("Yes", "No",
+        # "ILS"), a placeholder ("—", ". . ."), or nothing at all. Not parsed
+        # into one — "2006" under NumericValue null is a year of adoption, not
+        # a measurement. The row stays in the raw file and in bronze.
+        return Drop("no_numeric_value")
+    updated = rec.get("Date")
+    if updated and year > int(str(updated)[:4]):
+        # dated after the day WHO last wrote it: a projection (the tobacco
+        # trend estimates' 2030 point), not a measurement. Judged on the row's
+        # own date, never on today's, so the same file always loads the same.
+        return Drop("projection_after_publication")
+    dims = gho_dims(rec)
+    indicator = "health." + ".".join(slug(x) for x in [code] + [c for _, c, _ in dims])
+    name = rec.get("indicator_name")
+    by_code = (spec.get("value") or {}).get("unit_by_code") or {}
+    unit = by_code[code] if code in by_code else gho_unit_from_name(name)
+    attrs = {"region": "Palestine", "indicator_code": code,
+             "dim": {t: c for t, c, _ in dims},
+             "dim_label": {t: lab for t, _, lab in dims if lab},
+             "dim_key": gho_dim_key(rec)}
+    if name:
+        attrs["indicator_name"] = name
+    for ours, theirs in (("value_low", "Low"), ("value_high", "High")):
+        if rec.get(theirs) is not None:
+            attrs[ours] = rec[theirs]
+    period = rec.get("TimeDimensionValue")
+    if period and str(period) != str(year):
+        attrs["period"] = str(period)          # '2017-2019': WHO files it under 2019
+    if rec.get("DataSourceDim"):
+        attrs["data_source"] = rec["DataSourceDim"]
+    return [Row("v1_health_who", indicator, f"{year}-01-01", "year",
+                gho_stable_id(rec), value_num=value, unit=unit, place_id=None,
+                reported_at=updated, attrs=attrs)]
 
 
 _FOOD_GOV = {"Ramallah and Albireh": "Ramallah", "Kan Younis": "Khan Younis"}
@@ -2084,6 +2189,7 @@ TRANSFORMERS = {
 REPLAY_TRANSFORMERS = {
     "martyrs_snapshot_2023": t_martyrs_v1,
     "connectivity": t_connectivity,
+    "health": t_health_v1,                # 2026-10-12: GHO's own rows replace v1's
 }
 
 

@@ -35,6 +35,12 @@ units:
           A fatality count is a count of persons. The word carries the
           concept, not the unit; the concept lives in indicator_def.
       settlers: {note: persons, specifically settler population}
+      thousand_persons:
+        factor_num: 1000
+        note: >-
+          WHO GHO states some counts of people in thousands ("Number of
+          children aged 6-59 months with anaemia (thousands)"). The row keeps
+          WHO's number and this unit; the canonical value is persons.
       households:
         note: >-
           NOT persons. A household is a distinct unit and converting one to
@@ -122,6 +128,21 @@ units:
   years:       {name_en: years,       name_ar: سنوات, dimension: time}
   km:          {name_en: kilometres,  name_ar: كيلومتر, dimension: length}
 
+  # WHO GHO's own units (health.yaml, 2026-10-12). Each is what the indicator's
+  # name or WHO's indicator metadata states; none is converted to another.
+  per_10000:   {name_en: "per 10,000", dimension: rate}
+  USD_per_capita:
+    name_en: US dollars per person
+    dimension: currency_per_capita
+  dalys:
+    name_en: disability-adjusted life years
+    dimension: burden
+    notes: >-
+      DALYs: years of healthy life lost to death and to disability. A burden,
+      not a count of people and not a span of time anyone lived.
+  ug_per_m3:   {name_en: micrograms per cubic metre, dimension: concentration}
+  g_per_100ml: {name_en: grams per 100 millilitres,  dimension: concentration}
+
   USD:
     name_en: US dollars
     name_ar: دولار أمريكي
@@ -129,6 +150,11 @@ units:
     aliases:
       USD: {}
       currency_usd: {}
+      USD_millions:
+        factor_num: 1000000
+        note: >-
+          WHO GHO SDG 6.a.1, "constant 2024 US$ millions". The price basis
+          (constant 2024) is in the indicator's name, not in the unit.
 
   ILS_per_kg:
     name_en: shekels per kilogram
