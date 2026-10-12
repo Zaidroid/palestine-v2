@@ -762,6 +762,11 @@ def t_education(rec, spec, places, counts):
         return Drop("unroutable")
     attrs = {k: demojibake(v, counts)
              for k, v in passthrough(rec, spec.get("attrs_passthrough")).items()}
+    # "Active" and "Unknown" on all 2,359 rows are v1's constants: the
+    # publisher's file has no status and no type column (found 2026-10-12).
+    # A 2015 register cannot say a school is active today.
+    attrs.pop("school_status", None)
+    attrs.pop("school_type", None)
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
     loc = rec.get("location") or {}
     # pcode → latlon → region, as the spec has always said. 'West Bank' is the
@@ -771,7 +776,7 @@ def t_education(rec, spec, places, counts):
     return [Row(ds, "education.school_record", str(rec["date"])[:10],
                 "unknown",                                        # law 1: 100%
                 rec["stable_id"], value_num=1,
-                value_text=rec.get("school_status"), unit="schools",
+                value_text=None, unit="schools",
                 place_id=place_id, located=located,
                 reported_at=fetched, attrs=attrs)]
 
@@ -1264,6 +1269,18 @@ def t_infrastructure(rec, spec, places, counts):
         indicator = f"infrastructure.{slug(etype)}"
         value = m.get("count")
         occurred, precision = str(rec["date"])[:10], "unknown"    # law 1: 100%
+        # What v1 wrote and no publisher said (found 2026-10-12): every barrier
+        # segment is "1 km" (the file's own lengths sum to 711.9 km over 261
+        # segments) and every village boundary is "1 persons" named "Unknown
+        # Locality" (the file names all 342). The fetcher carries the
+        # publisher's length and name beside v1's shape; they are used here.
+        if etype == "barrier_segment" and rec.get("shape_length_m") is not None:
+            value = round(float(rec["shape_length_m"]) / 1000, 3)
+        if etype == "locality_record":
+            m = {**m, "unit": "localities"}
+            if rec.get("village_name"):
+                attrs["locality_name"] = rec["village_name"]
+            attrs.pop("locality_type", None)        # "Village" on every row: v1's constant
         # The 603 HDX registers name every row "Unknown Locality" or
         # "Separation Barrier Segment": the source carries NO usable name, so
         # the only thing that makes a row THIS row is where it is. Measured

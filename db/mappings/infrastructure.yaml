@@ -318,11 +318,39 @@ registry:
       grain: day
       place_grain: region
     - when: {equals: "infrastructure.locality_record"}
-      concept: population.count
+      # NOT a population (found 2026-10-12): v1 stored 342 boundary polygons
+      # as "1 persons" each under population.count. The key stays.
+      name_en: "Village boundaries as drawn under the British Mandate (PA Ministry of Planning via OCHA)"
+      name_ar: "حدود القرى كما رُسمت في عهد الانتداب البريطاني (وزارة التخطيط الفلسطينية عبر أوتشا)"
+      concept: reference.locality
       measure_kind: stock
       grain: register
       place_grain: locality
-      canonical_unit: persons
+      canonical_unit: localities
+      serve_warning: "One row per village boundary polygon as drawn under the British Mandate (342 of them, from the Palestinian Authority's Ministry of Planning, published by OCHA): a historical map layer, not a count of people and not today's localities. Some of the villages lie outside the West Bank."
+      serve_warning_ar: "كل سطر مضلّع حدود قرية كما رُسمت أيام الانتداب البريطاني (342 مضلّع، من وزارة التخطيط الفلسطينية ونشرتها أوتشا): طبقة خرائط تاريخية، مش عدد سكان ومش تجمّعات اليوم. وبعض القرى واقعة خارج الضفة."
+    - when: {equals: "infrastructure.barrier_segment"}
+      name_en: "West Bank Separation Barrier segments, length in km (OCHA, January 2018)"
+      name_ar: "مقاطع جدار الفصل في الضفة الغربية، الطول بالكيلومتر (أوتشا، كانون الثاني 2018)"
+      concept: movement.closure
+      measure_kind: stock
+      polarity: -1
+      grain: register
+      place_grain: region
+      canonical_unit: km
+      serve_warning: "The 261 segments of the West Bank Separation Barrier as OCHA mapped it in January 2018, each with its length: 464 km constructed, 51 km under construction and 196 km projected, so the total includes what was only planned. A 2018 map, not today's. The same segments are also held as land.checkpoint; the two are never added."
+      serve_warning_ar: "هاي 261 مقطع من جدار الفصل بالضفة زي ما رسمته أوتشا بكانون الثاني 2018، كل مقطع بطوله: 464 كم مبني، 51 كم قيد البناء، و196 كم مخطّط، يعني المجموع فيه اللي كان بس مخطّط. خريطة 2018 مش اليوم. ونفس المقاطع محفوظة كمان باسم land.checkpoint، وما بينجمعوا مع بعض."
+    - when: {equals: "infrastructure.satellite_damage_assessment"}
+      name_en: "Structures affected in Gaza per UNOSAT satellite assessment"
+      name_ar: "المباني المتضررة في غزة حسب تقييمات يونوسات بالأقمار الصناعية"
+      concept: infrastructure.damage
+      measure_kind: cumulative
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: structures
+      serve_warning: "UNOSAT's satellite damage assessments, as its datasets on HDX give them. Three of the fourteen (10 and 15 October 2023, 22 September 2025) cover Gaza governorate only and the rest the whole Strip (attrs.assessment_scope says which), so the series is not one line: 41,221 on 22 September 2025 sits between 192,812 and 198,273. UNOSAT's assessment of 16 June 2026 is not on HDX; it is held in the cited figures."
+      serve_warning_ar: "تقييمات يونوسات للأضرار بالأقمار الصناعية زي ما هي بملفاتها على HDX. ثلاثة من الأربعطعش (10 و15 أكتوبر 2023، و22 أيلول 2025) بتغطي محافظة غزة بس والباقي القطاع كله (attrs.assessment_scope بتحدد)، فالسلسلة مش خط واحد: 41,221 يوم 22 أيلول 2025 واقعة بين 192,812 و198,273. وتقييم 16 حزيران 2026 مش موجود على HDX، ومحفوظ بالأرقام المقتبسة."
     - when: {prefix: "infrastructure."}
       concept: infrastructure.stock
       measure_kind: stock

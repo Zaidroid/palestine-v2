@@ -195,3 +195,7 @@ registry:
       grain: register
       place_grain: governorate
       canonical_unit: facilities
+      name_en: "West Bank school register (PA Ministry of Education and UNICEF via OCHA, June 2015)"
+      name_ar: "سجلّ مدارس الضفة الغربية (وزارة التربية والتعليم واليونيسف عبر أوتشا، حزيران 2015)"
+      serve_warning: "One row per school in the West Bank as the register stood in June 2015 (the file was last replaced on HDX in June 2021): it says where a school is and what it is called, not whether it is open today, and it holds no school in the Gaza Strip."
+      serve_warning_ar: "كل سطر مدرسة بالضفة زي ما كان السجلّ بحزيران 2015 (الملف انتبدل آخر مرة على HDX بحزيران 2021): بيقول وين المدرسة وشو اسمها، مش إذا كانت شغّالة اليوم، وما فيه ولا مدرسة بقطاع غزة."

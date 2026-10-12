@@ -370,14 +370,15 @@ def test_a_name_v1_could_not_repair_is_corrected_not_reproduced():
     assert row.attrs["school_name_ar"] == held_row.attrs["school_name_ar"].strip()
 
 
-def test_a_school_row_carries_exactly_the_attrs_held_today():
-    """A vintage or a locality stamped into attrs would revise all 2,359 rows.
-    The record holds more than the row takes."""
+def test_a_school_row_carries_the_publishers_columns_and_none_of_v1s_constants():
+    """The record holds more than the row takes. "Active" and "Unknown" were
+    v1's constants on every row (the file has no status or type column) and
+    are no longer loaded (2026-10-12): a 2015 register cannot say a school is
+    active today."""
     rec = school_records()[0]
     _, _, row = held_form("education", rec, places(west_bank_pip()))
-    assert set(row.attrs) == {"school_id", "school_name", "school_name_ar",
-                              "school_type", "school_status"}
-    assert (row.value_num, row.value_text, row.unit) == (1, "Active", "schools")
+    assert set(row.attrs) == {"school_id", "school_name", "school_name_ar"}
+    assert (row.value_num, row.value_text, row.unit) == (1, None, "schools")
     assert rec["location"]["locality"] == "جنين" and rec["locality_code"] == "10180"
     assert "locality" not in rec and "admin2" not in rec and "vintage" not in rec
 
@@ -402,16 +403,20 @@ def test_a_village_boundary_is_matched_on_the_point_v1_computed():
     for mine, twin in zip(recs, TWINS["village_boundaries"]):
         k1, c1, row = held_form("infrastructure", mine, places(pip))
         k2, c2, _ = held_form("infrastructure", twin, places(pip))
-        assert k1 == k2 and c1 == c2, (k1, k2)
+        # the same row (identity), saying what the publisher says: its name and
+        # that it is one locality, where v1 wrote "Unknown Locality" and "persons"
+        assert k1 == k2, (k1, k2)
+        assert row.attrs["locality_name"] == mine["village_name"] and row.unit == "localities"
+        assert "locality_type" not in row.attrs
         assert row.precision == "unknown" and row.occurred_at == fi.HELD_DAY == "2026-08-07"
         assert row.attrs["geo_key"] == f"{twin['location']['lat']:.6f},{twin['location']['lon']:.6f}"
         assert mine["stable_id"] == f"hdx-village:{row.attrs['geo_key']}"
     assert held_form("infrastructure", recs[0], places(pip))[0] == \
         "v1_infrastructure_hdx|infrastructure.locality_record|32.516870,35.178413"
-    # the publisher names the village; the held row does not, and is not revised for it
+    # the publisher names the village, and since 2026-10-12 the row does too
     assert recs[0]["village_name"] == recs[0]["location"]["name"] == "UM EL FAHM"
-    assert recs[0]["locality_name"] == "Unknown Locality"
-    assert "village_name" not in held_form("infrastructure", recs[0], places(pip))[2].attrs
+    assert recs[0]["locality_name"] == "Unknown Locality"          # v1's shape, still in the record
+    assert held_form("infrastructure", recs[0], places(pip))[2].attrs["locality_name"] == "UM EL FAHM"
 
 
 def test_a_barrier_segment_is_matched_on_its_middle_vertex_in_metres():
@@ -422,7 +427,9 @@ def test_a_barrier_segment_is_matched_on_its_middle_vertex_in_metres():
     for mine, twin in zip(recs, TWINS["barrier"]):
         k1, c1, row = held_form("infrastructure", mine, places(pip))
         k2, c2, _ = held_form("infrastructure", twin, places(pip))
-        assert k1 == k2 and c1 == c2, (k1, k2)
+        # the same row (identity), with the file's own length where v1 wrote "1 km"
+        assert k1 == k2, (k1, k2)
+        assert row.value_num == round(mine["shape_length_m"] / 1000, 3) and row.unit == "km"
         assert row.place_id == 2 and not row.located        # region: never a point
     assert pip.asked == []           # metres were never offered as degrees
     assert held_form("infrastructure", recs[0], places())[0] == \
