@@ -3343,7 +3343,8 @@ def databank_category(category: str, indicator: str | None = None,
         SELECT e.indicator, e.occurred_at, e.occurred_precision::text, e.value_num,
                e.value_text, e.unit, e.attrs, e.place_id, e.sys_period, e.v1_category,
                e.source_key, e.dataset_key, e.attribution_text, e.license_spdx,
-               e.redistribution, e.commercial_use, NULL::text AS dataset_vintage
+               e.redistribution, e.commercial_use, NULL::text AS dataset_vintage,
+               NULL::text AS dataset_coverage_start
           FROM databank_event_rows e""" if events else ""
     base = f"""
         SELECT o.indicator, o.occurred_at, o.occurred_precision::text AS occurred_precision,
@@ -3357,7 +3358,8 @@ def databank_category(category: str, indicator: str | None = None,
                COALESCE(d.commercial_use, s.commercial_use)     AS commercial_use,
                -- a register row has no date of its own; its dataset records
                -- the day the publisher says the register is as of
-               d.attrs->>'vintage'                              AS dataset_vintage
+               d.attrs->>'vintage'                              AS dataset_vintage,
+               d.attrs->>'coverage_start'                       AS dataset_coverage_start
           FROM observation o
           JOIN dataset d ON d.dataset_id = o.dataset_id
           JOIN source s ON s.source_id = d.source_id
@@ -3382,7 +3384,9 @@ def databank_category(category: str, indicator: str | None = None,
                        "license_spdx", "redistribution", "commercial_use")}
                      | {"attribution": r["attribution_text"]}
                      | ({"dataset_vintage": r["dataset_vintage"]}
-                        if r.get("dataset_vintage") else {}) for r in rows],
+                        if r.get("dataset_vintage") else {})
+                     | ({"dataset_coverage_start": r["dataset_coverage_start"]}
+                        if r.get("dataset_coverage_start") else {}) for r in rows],
            "attribution": sorted({r["attribution_text"] for r in rows if r["attribution_text"]})}
     warnings = _serve_warnings(sorted({r["indicator"] for r in rows if r["indicator"]}))
     if warnings:

@@ -12,7 +12,9 @@ Three kinds of row, three kinds of sentence:
                    one total for that period, and the sentence names both ends
   a register row   precision `unknown`, no period: the row has no date of its
                    own. If the dataset records the publisher's vintage the
-                   sentence gives it; if not, it says the source gives none
+                   sentence gives it (and the start of what it covers, for a
+                   list like the names of the dead); if not, it says the
+                   source gives none
   a dated row      year, month or day, said at that precision and no finer
 """
 from __future__ import annotations
@@ -37,7 +39,9 @@ def when_en(it: dict) -> str:
     prec = it.get("occurred_precision")
     at = _day(it.get("occurred_at"))
     if prec == "unknown":
-        v = it.get("dataset_vintage")
+        v, start = it.get("dataset_vintage"), it.get("dataset_coverage_start")
+        if v and start:
+            return f"between {_day(start)} and {_day(v)} (the source gives no day)"
         return (f"in the publisher's register of {_day(v)}" if v
                 else "with no date given by the source")
     if prec == "year":
@@ -55,7 +59,9 @@ def when_ar(it: dict) -> str:
     prec = it.get("occurred_precision")
     at = _day(it.get("occurred_at"))
     if prec == "unknown":
-        v = it.get("dataset_vintage")
+        v, start = it.get("dataset_vintage"), it.get("dataset_coverage_start")
+        if v and start:
+            return f"بين {_day(start)} و{_day(v)} (والمصدر ما بيعطي اليوم)"
         return (f"حسب سجلّ الناشر بتاريخ {_day(v)}" if v
                 else "والمصدر ما بيعطي تاريخ")
     if prec == "year":

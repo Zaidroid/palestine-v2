@@ -231,3 +231,50 @@ def test_no_ingest_path_closes_a_row_into_an_empty_range():
                 "ingest/sources/moh_gaza.py"):
         assert not bare.search((ROOT / rel).read_text()), rel
     assert (ROOT / "ingest" / "databank.py").read_text().count("SET sys_period = {CLOSE_NOW}") == 3
+
+
+# ── the publisher's vintage belongs to the dataset ───────────────────────────
+
+def test_a_fetchers_vintage_reaches_the_dataset_it_names(tmp_path):
+    import json
+    from ingest.databank import read_vintage
+    raw = tmp_path / "schools.json"
+    raw.write_text(json.dumps({"metadata": {"vintage": "2023-07-25", "vintage_basis": "HDX dataset_date",
+                                            "vintage_url": "https://data.humdata.org/x"}, "data": []}))
+    one = {"datasets": [{"key": "v1_education_hdx"}]}
+    assert read_vintage(one, [raw]) == {"v1_education_hdx": {
+        "vintage": "2023-07-25", "vintage_basis": "HDX dataset_date",
+        "vintage_url": "https://data.humdata.org/x"}}
+    # a file feeding several datasets must say which one it speaks for
+    three = {"datasets": [{"key": "a"}, {"key": "b"}]}
+    assert read_vintage(three, [raw]) == {}
+    raw.write_text(json.dumps({"vintage_by_dataset": {"b": {"vintage": "2025-10-11"}, "zz": {"vintage": "x"}}}))
+    assert read_vintage(three, [raw]) == {"b": {"vintage": "2025-10-11"}}
+
+
+def test_the_names_list_gets_its_own_cut_off_from_a_sidecar(tmp_path):
+    import json
+    from ingest.databank import read_vintage
+    (tmp_path / "killed_in_gaza.json").write_text("[]")
+    (tmp_path / "_vintage.json").write_text(json.dumps({
+        "v1_martyrs_snapshot_2023_tech4palestine": {"vintage": "2026-05-07", "coverage_start": "2023-10-07"},
+        "t4p_gaza_daily": {"vintage": "2026-10-12"}}))
+    spec = {"datasets": [{"key": "v1_martyrs_snapshot_2023_tech4palestine"}]}
+    got = read_vintage(spec, [tmp_path / "killed_in_gaza.json"])
+    assert got == {"v1_martyrs_snapshot_2023_tech4palestine": {
+        "vintage": "2026-05-07", "coverage_start": "2023-10-07"}}
+
+
+def test_a_name_on_the_list_is_said_to_be_killed_within_the_lists_span_not_on_its_first_day():
+    person = {"occurred_at": "2023-10-07T00:00:00Z", "occurred_precision": "unknown", "attrs": {},
+              "dataset_vintage": "2026-05-07", "dataset_coverage_start": "2023-10-07"}
+    assert when_en(person) == "between 2023-10-07 and 2026-05-07 (the source gives no day)"
+    assert "بين 2023-10-07 و2026-05-07" in when_ar(person)
+
+
+def test_the_roster_says_what_its_dates_are_worth():
+    import yaml
+    spec = yaml.safe_load((ROOT / "db" / "mappings" / "martyrs_snapshot_2023.yaml").read_text())
+    rule = next(r for r in spec["registry"]["rules"] if r["when"] == {"prefix": "martyrs."})
+    assert "no date of death" in rule["serve_warning"] and "1 January" in rule["serve_warning"]
+    assert "شهداء" in rule["serve_warning_ar"] and "غرزة" not in rule["serve_warning_ar"]

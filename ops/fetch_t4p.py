@@ -131,6 +131,23 @@ def main(argv: list[str]) -> int:
             failed.append(name)
             continue
         got[name] = n
+        if name == "summary" and isinstance(payload, dict):
+            roster = payload.get("known_killed_in_gaza") or {}
+            if roster.get("includes_until"):
+                # The names list gives no date of death per person. Its own
+                # two dates are the honest answer to "how current is it":
+                # `includes_until` is how far the Ministry's identification
+                # had reached. The loader copies this to the dataset.
+                vintage = {"v1_martyrs_snapshot_2023_tech4palestine": {
+                    "vintage": str(roster["includes_until"])[:10],
+                    "vintage_basis": "the list's own includes_until: how far the Ministry's "
+                                     "identification of the dead had reached"
+                                     + (f" (list last updated {str(roster['last_update'])[:10]})"
+                                        if roster.get("last_update") else ""),
+                    "vintage_url": "https://data.techforpalestine.org/docs/killed-in-gaza/",
+                    "coverage_start": "2023-10-07"}}
+                if not dry:
+                    _write_atomic(RAW / "_vintage.json", vintage)
         if not dry:
             _write_atomic(RAW / f"{name}.json", payload)
         _event(f"t4p:{name}", "ok", rows=n)

@@ -268,3 +268,5 @@ registry:
       grain: snapshot
       place_grain: region
       canonical_unit: persons
+      serve_warning: "A list of names, not the whole toll: the people the Gaza Ministry of Health has identified by name. The list gives no date of death, so each person carries 7 October 2023 as a placeholder and the list covers deaths up to its own cut-off date. Nearly 2 in 100 birth dates are 1 January, about seven times what chance would give: for most of those the list knows only the year of birth."
+      serve_warning_ar: "هاي قائمة أسماء، مش الحصيلة كلها: الشهداء اللي وزارة الصحة بغزة عرّفت عليهم بالاسم. القائمة ما بتذكر تاريخ الاستشهاد، فكل اسم مسجّل على 7 أكتوبر 2023 كتاريخ شكلي، وهي بتغطي لغاية تاريخ القطع تبعها. وتقريباً 2 من كل 100 تاريخ ميلاد هو 1 يناير، سبع مرات أكثر من المتوقع بالصدفة: أغلب هدول معروف إلهم سنة الميلاد بس."

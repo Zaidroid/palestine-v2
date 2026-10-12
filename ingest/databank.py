@@ -2212,6 +2212,71 @@ def _record_refusal(category: str, reason: str, counts: Counter,
         pass          # never let the audit trail break the refusal it records
 
 
+# ── the publisher's own vintage (2026-10-12) ─────────────────────────────────
+# A register row (one school, one obstacle, one name on a list) has no date of
+# its own: 3,834 of them were dated by the day v1 downloaded them, and the
+# names roster by the first day of the war. The date that matters for such a
+# dataset is the one the PUBLISHER gives it, and it belongs to the dataset, not
+# to 72,835 rows that would all have to be rewritten each time it moves. A
+# fetcher records it in what it writes, and every run copies it to
+# dataset.attrs, with the day the run last looked:
+#
+#   in the raw file      "vintage", "vintage_basis", "vintage_url" at the top
+#                        level or under "metadata" (a spec with one dataset),
+#                        or "vintage_by_dataset": {dataset_key: {...}}
+#   beside the raw file  _vintage.json: {dataset_key: {...}}, for a fetcher
+#                        that stores the publisher's file untouched (T4P)
+VINTAGE_KEYS = ("vintage", "vintage_basis", "vintage_url", "coverage_start")
+
+
+def read_vintage(spec: dict, files) -> dict[str, dict]:
+    """dataset_key -> what the input says about the publisher's vintage."""
+    own = [d["key"] for d in spec.get("datasets", [])]
+    out: dict[str, dict] = {}
+
+    def take(key: str, src: dict) -> None:
+        if key in own and isinstance(src, dict) and src.get("vintage"):
+            out[key] = {k: str(src[k]) for k in VINTAGE_KEYS if src.get(k)}
+
+    for f in files:
+        f = Path(f)
+        side = f.parent / "_vintage.json"
+        if side.exists():
+            try:
+                for key, src in json.loads(side.read_text(encoding="utf-8")).items():
+                    take(key, src)
+            except (ValueError, OSError, AttributeError):
+                pass
+        try:
+            payload = json.loads(read_payload(f))
+        except (ValueError, OSError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        for holder in (payload, payload.get("metadata") or {}):
+            if not isinstance(holder, dict):
+                continue
+            for key, src in (holder.get("vintage_by_dataset") or {}).items():
+                take(key, src)
+            if len(own) == 1 and own[0] not in out:
+                take(own[0], holder)
+    return out
+
+
+def apply_vintage(cur, vintage: dict[str, dict]) -> int:
+    """Copy it to dataset.attrs, with today as the day we last looked. One
+    statement per dataset, and it writes only when something differs."""
+    n = 0
+    today = datetime.now(timezone.utc).date().isoformat()
+    for key, v in vintage.items():
+        new = {**v, "vintage_checked_at": today}
+        cur.execute("""UPDATE dataset SET attrs = attrs || %s::jsonb
+                        WHERE key = %s AND NOT (attrs @> %s::jsonb)""",
+                    (json.dumps(new), key, json.dumps(new)))
+        n += cur.rowcount
+    return n
+
+
 # How a row stops being current. `tstzrange(lower(sys_period), now())` is an
 # EMPTY range for a row born in this same transaction (its lower bound IS
 # now()), and an empty range has no upper bound: the row stays "current" and
@@ -2892,6 +2957,11 @@ def run(category: str, dry_run: bool = False) -> dict:
                 refused_events = len(event_rows) - events_written
                 if refused_events > 0:
                     counts["events_refused_by_stable_id"] = refused_events
+                # the publisher's vintage, and the day this run looked: written
+                # even on a night that brought no new row, because "we read it
+                # again and it had not changed" is what a register's age is
+                if not from_fallback:
+                    apply_vintage(cur, read_vintage(spec, refs))
             conn.commit()
 
     report = {
@@ -2907,6 +2977,9 @@ def run(category: str, dry_run: bool = False) -> dict:
         "notes": {k: v for k, v in counts.items()
                   if k not in ("records_read", "deduped")},
     }
+    vintage = read_vintage(spec, refs)
+    if vintage:
+        report["vintage"] = {k: v.get("vintage") for k, v in vintage.items()}
     if revision_samples:
         # a correction is a fact about the SOURCE, not a plumbing detail —
         # it belongs in the run record where a reader can see what moved
