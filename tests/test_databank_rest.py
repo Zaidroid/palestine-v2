@@ -402,6 +402,12 @@ def test_a_series_is_named_by_its_publisher_and_its_cut():
     assert derive_name(("GDP (current US$)", 2, "x"), doc) == ("GDP (current US$)", None)
     # half an Arabic name is not a name
     assert derive_name(("Adolescent birth rate (per 1000 women)", 1, "Urban"), doc)[1] is None
+    # a cut of several dimensions: every label, or no Arabic at all
+    doc["dimension_names"]["Both sexes"] = "الجنسان"
+    two = ("Adolescent birth rate (per 1000 women)", 1, "Both sexes; Female")
+    assert derive_name(two, doc) == ("Adolescent birth rate (per 1000 women) — Both sexes; Female",
+                                     "معدل ولادات المراهقات — الجنسان؛ إناث")
+    assert derive_name(("Adolescent birth rate (per 1000 women)", 1, "Both sexes; Rural"), doc)[1] is None
     # a rule's name wins, then the names file, then the publisher's
     doc["names"]["food.price.rice"] = {"en": "Retail price of rice", "ar": "سعر الأرز"}
     assert name_for("food.price.rice", None, None, doc) == ("Retail price of rice", "سعر الأرز")

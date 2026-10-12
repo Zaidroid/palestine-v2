@@ -225,8 +225,9 @@ def derive_name(carried: tuple | None, doc: dict) -> tuple[str | None, str | Non
     en = f"{base} — {dim}" if one_cut else base
     ar = doc["publisher_names"].get(base)
     if ar and one_cut:
-        dim_ar = doc["dimension_names"].get(dim)
-        ar = f"{ar} — {dim_ar}" if dim_ar else None     # half a name is not a name
+        # a cut may name several dimensions ("Both sexes; 15-19 years")
+        parts = [doc["dimension_names"].get(_clean(x)) for x in dim.split("; ")]
+        ar = f"{ar} — {'؛ '.join(parts)}" if all(parts) else None   # half a name is not a name
     return en, ar
 
 
@@ -393,13 +394,24 @@ def main(argv: list[str]) -> int:
                     ON CONFLICT (indicator) DO NOTHING""", (ind, p.stem))
         # ── names, for every definition whatever spec classified it ──
         doc = load_names()
-        cur.execute("""SELECT indicator,
-                              mode() WITHIN GROUP (ORDER BY attrs->>'indicator_name'),
-                              count(DISTINCT COALESCE(attrs->>'name', '')),
-                              max(attrs->>'name')
-                         FROM databank_serving
-                        WHERE attrs ? 'indicator_name'
-                        GROUP BY 1""")
+        # The cut a row is: GHO's dimension labels ("Both sexes; Trachea,
+        # bronchus, lung cancers") on rows fetched since 2026-10-12, or the one
+        # label v1 kept beside a `type` before that. `attrs.name` alone is NOT
+        # a cut: on IMF and World Bank rows it is the country, typed by v1.
+        cur.execute("""
+            SELECT indicator,
+                   mode() WITHIN GROUP (ORDER BY attrs->>'indicator_name'),
+                   count(DISTINCT COALESCE(lbl, '')), max(lbl)
+              FROM (SELECT indicator, attrs,
+                           CASE WHEN attrs ? 'dim_label'
+                                THEN (SELECT string_agg(t.value, '; ' ORDER BY t.ord)
+                                        FROM jsonb_each_text(attrs->'dim_label')
+                                             WITH ORDINALITY AS t(key, value, ord))
+                                WHEN attrs ? 'type' THEN attrs->>'name'
+                           END AS lbl
+                      FROM databank_serving
+                     WHERE attrs ? 'indicator_name') x
+             GROUP BY 1""")
         carried = {r[0]: (r[1], r[2], r[3]) for r in cur.fetchall()}
         rule_meta: dict[str, dict] = {}
         for _p, _reg, _pairs, got, _c in read:
