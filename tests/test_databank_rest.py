@@ -387,3 +387,23 @@ def test_a_national_series_asked_at_a_place_answers_with_the_national_figure_and
                                "kind": "country", "widened_from": 5}
     src = (ROOT / "serve" / "app.py").read_text()
     assert "v.place_id IS NULL AND v.attrs->>'region' = 'Palestine'" in src
+
+
+# ── names ────────────────────────────────────────────────────────────────────
+
+def test_a_series_is_named_by_its_publisher_and_its_cut():
+    from ops.load_registry import derive_name, name_for
+    doc = {"names": {}, "publisher_names": {"Adolescent birth rate (per 1000 women)": "معدل ولادات المراهقات"},
+           "dimension_names": {"Female": "إناث"}}
+    one_cut = ("Adolescent birth rate\n(per 1000 women)", 1, "Female")
+    assert derive_name(one_cut, doc) == ("Adolescent birth rate (per 1000 women) — Female",
+                                         "معدل ولادات المراهقات — إناث")
+    # several cuts under one key, or none: the series' own name, no label
+    assert derive_name(("GDP (current US$)", 2, "x"), doc) == ("GDP (current US$)", None)
+    # half an Arabic name is not a name
+    assert derive_name(("Adolescent birth rate (per 1000 women)", 1, "Urban"), doc)[1] is None
+    # a rule's name wins, then the names file, then the publisher's
+    doc["names"]["food.price.rice"] = {"en": "Retail price of rice", "ar": "سعر الأرز"}
+    assert name_for("food.price.rice", None, None, doc) == ("Retail price of rice", "سعر الأرز")
+    assert name_for("food.price.rice", {"name_en": "Rule name"}, None, doc)[0] == "Rule name"
+    assert name_for("x.unknown", None, None, doc) == (None, None)

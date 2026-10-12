@@ -187,6 +187,58 @@ def unclassified_by_reader(read: list[tuple]) -> dict[str, list[str]]:
             for name, pairs, _got in read}
 
 
+# ── names ────────────────────────────────────────────────────────────────────
+# Measured 2026-10-12: 8 of 2,105 indicator definitions had a name. An answer
+# said "health.m_est_cig_curr_std.sex_fmle: 4.9" and the search matched only
+# on the key. A name comes, in this order, from:
+#   1. the spec rule that classifies the indicator (name_en / name_ar);
+#   2. db/registry/names.yaml `names:` (written and reviewed by hand);
+#   3. the PUBLISHER's own name, already carried on the rows as
+#      attrs.indicator_name (WHO, the World Bank, the IMF: 1,160 indicators),
+#      with the row's dimension label after it when the indicator is one cut
+#      of a series ("… — Female"). Its Arabic is looked up by that English
+#      name in names.yaml (`publisher_names`, `dimension_names`), so a new
+#      indicator of a known series is named without anyone typing it.
+# A definition marked `reviewed` is never renamed here.
+NAMES = Path(__file__).resolve().parent.parent / "db" / "registry" / "names.yaml"
+
+
+def _clean(s) -> str | None:
+    s = " ".join(str(s or "").split())
+    return s or None
+
+
+def load_names() -> dict:
+    doc = (yaml.safe_load(NAMES.read_text(encoding="utf-8")) if NAMES.exists() else None) or {}
+    return {"names": doc.get("names") or {},
+            "publisher_names": {_clean(k): v for k, v in (doc.get("publisher_names") or {}).items()},
+            "dimension_names": {_clean(k): v for k, v in (doc.get("dimension_names") or {}).items()}}
+
+
+def derive_name(carried: tuple | None, doc: dict) -> tuple[str | None, str | None]:
+    """(name_en, name_ar) from what the rows carry. `carried` is
+    (publisher's indicator name, distinct dimension labels on the rows, one of them)."""
+    if not carried or not _clean(carried[0]):
+        return None, None
+    base, n_dims, dim = _clean(carried[0]), carried[1], _clean(carried[2])
+    one_cut = n_dims == 1 and dim
+    en = f"{base} — {dim}" if one_cut else base
+    ar = doc["publisher_names"].get(base)
+    if ar and one_cut:
+        dim_ar = doc["dimension_names"].get(dim)
+        ar = f"{ar} — {dim_ar}" if dim_ar else None     # half a name is not a name
+    return en, ar
+
+
+def name_for(indicator: str, rule_meta: dict | None, carried: tuple | None,
+             doc: dict) -> tuple[str | None, str | None]:
+    exact = doc["names"].get(indicator) or {}
+    d_en, d_ar = derive_name(carried, doc)
+    rule = rule_meta or {}
+    return (_clean(rule.get("name_en")) or _clean(exact.get("en")) or d_en,
+            _clean(rule.get("name_ar")) or _clean(exact.get("ar")) or d_ar)
+
+
 def main(argv: list[str]) -> int:
     apply = "--apply" in argv
     report: dict = {"specs": {}, "unclassified": []}
@@ -339,10 +391,47 @@ def main(argv: list[str]) -> int:
                                                status, source_spec)
                     VALUES (%s,'unclassified','generated',%s)
                     ON CONFLICT (indicator) DO NOTHING""", (ind, p.stem))
+        # ── names, for every definition whatever spec classified it ──
+        doc = load_names()
+        cur.execute("""SELECT indicator,
+                              mode() WITHIN GROUP (ORDER BY attrs->>'indicator_name'),
+                              count(DISTINCT COALESCE(attrs->>'name', '')),
+                              max(attrs->>'name')
+                         FROM databank_serving
+                        WHERE attrs ? 'indicator_name'
+                        GROUP BY 1""")
+        carried = {r[0]: (r[1], r[2], r[3]) for r in cur.fetchall()}
+        rule_meta: dict[str, dict] = {}
+        for _p, _reg, _pairs, got, _c in read:
+            rule_meta.update(got)
+        named_en = named_ar = renamed = 0
+        unnamed: list[str] = []
+        for ind in sorted(classified_anywhere):
+            en, ar = name_for(ind, rule_meta.get(ind), carried.get(ind), doc)
+            named_en += bool(en)
+            named_ar += bool(ar)
+            if not en:
+                unnamed.append(ind)
+                continue
+            if apply:
+                # a name already there is replaced only by a name; an Arabic
+                # name is never blanked because this run found none
+                cur.execute("""UPDATE indicator_def
+                                  SET name_en = %s, name_ar = COALESCE(%s, name_ar)
+                                WHERE indicator = %s AND status <> 'reviewed'
+                                  AND (name_en, name_ar)
+                                      IS DISTINCT FROM (%s, COALESCE(%s, name_ar))""",
+                            (en, ar, ind, en, ar))
+                renamed += cur.rowcount
+        report["names"] = {"named_en": named_en, "named_ar": named_ar,
+                           "unnamed": len(unnamed), "unnamed_sample": unnamed[:12]}
         if apply:
             conn.commit()
         print(f"{len(classified_anywhere)} indicator(s) now carry a concept "
               "and a measure kind")
+        print(f"{named_en} indicator(s) have an English name, {named_ar} an Arabic one"
+              + (f" · {renamed} written or changed" if apply else "")
+              + (f" · {len(unnamed)} still unnamed, e.g. {unnamed[:3]}" if unnamed else ""))
         print(f"{declared_warnings} indicator(s) have a serve warning declared"
               + (f" · {warned} written or changed" if apply else ""))
 

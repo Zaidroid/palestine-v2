@@ -1,0 +1,22 @@
+# Names for the databank's indicators.
+#
+# ops/load_registry.py names an indicator from, in this order: the spec rule
+# that classifies it; `names:` below; the publisher's own name carried on the
+# rows (attrs.indicator_name), with the dimension label after it. The Arabic
+# for a publisher's name is looked up here by that English name.
+#
+#   names:            indicator key -> {en, ar}. For our own series and for
+#                     publishers that give no name on the row.
+#   publisher_names:  the publisher's English name, exactly as carried -> Arabic.
+#   dimension_names:  a dimension label as carried ("Female") -> Arabic.
+#
+# Arabic here is the formal register of a label (the way a ministry or a UN
+# table names a series), not the spoken register of an answer.
+# A person killed by the occupation is شهيد; the roster's people are never
+# counted with any other word.
+
+names: {}
+
+publisher_names: {}
+
+dimension_names: {}
