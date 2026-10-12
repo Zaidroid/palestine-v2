@@ -1082,3 +1082,74 @@ NOT TOUCHED: the classifier. Round 10 (maintenance, 4a942d3) measures 1.11.0 at 
 الوداع» plural) come from my 1.11.0 rules. A fix makes the round tuning data, so it waits for Zaid's word on a
 round 11.
 
+
+2026-10-12 16:21 UTC · `tmp/5-before-databank.sh` RUN by Zaid (15:44–16:00 UTC), verified; one leftover found on the live side and
+prepared as migration 100 (Zaid's hand: `tmp/6-merged-rows-history.sh`) · done / migration pending · proof:
+/health 24 of 24 jobs ok, one fault (`source:tg_palhubapproad narrowed`, the true one). Databank sync:
+unhcr_population +380 (380 closed, 380 written, 45,197 current; Canada 2020 demographics total 1,777 with
+rows_summed 2), radar 38 datasets — 31 fresh · 1 late · 0 stalled · 0 supply-dead · 3 dead-upstream · 1 closed ·
+1 continued · 1 awaiting permission. Ministry re-read: 8 rows, 66 + 8 = 74 newly killed, 2,236 unchanged. G2.4 PASS.
+CORRECTION to (3) above: reground withdrew 119, and the rebuild put 111 of them back at once, because 082 and 097
+moved only two days of readings: 30,295 readings (23,292 assertions, 2026-06-09 → 10-09) still sat on 30 of their 39
+merged rows, and the rebuild read them there. None is served. What it does cost: the hourly pattern of a checkpoint
+(PATTERN_SQL), the area window behind `insights` and the learners (place_trust, state_persistence, reliability)
+read state_observation by the row the place is now. الكونتينر read 3,434 assertions of 7,272; ام السلمونا 276 of
+1,194; النبي صالح 5,849 of 7,787. (The daily rollup has followed merges since 10-11.)
+Migration 100 moves a reading to the surviving row unless that row already holds a reading from the same source at
+the same moment for the same kind and direction (5,754 such: the place named twice in one message). The row a
+reading was filed under is kept as attrs.place_before_100. Rehearsed on a throwaway copy with the real shape
+(TimescaleDB 2.29.0, 118 of 121 chunks compressed, segment by place_id): 24,541 moved (17,542 assertions) onto 26
+rows, 5,754 stay, 240,745 rows before and after, no statement twice on a row; the header's rollback restores 30,295;
+the rebuild afterwards changes two beliefs from June and adds one, none recent. resolve/belief.py: a merged row
+holds no belief (the rebuild had put 65 back from the statements that stay; second run withdraws 0). Gate G2.19
+added (FAILS in production until 100 runs). Also: the radar's new status was missing from one test's list and from
+the spoken answer; both tools now say it (API restart, in the same script).
+
+2026-10-12 16:47 UTC · databank phase, first block: the registry, items 1, 2 and 4, the Ministry's rows · built, rehearsed on a
+copy of the store, NOT LIVE (Zaid's hand: `tmp/6-merged-rows-history.sh` = migrations 100–103, registry, roster,
+API restart; tonight's sync does the registry and the roster on its own) · proof below. Baseline after his
+afternoon command: full suite 1,633 passed / 0 failed (849 s).
+(0) FOUND BY ASKING THE LIVE API: `compare?indicators=gaza.moh.deaths_new.daily,…` → `known: false`;
+`correlate` → "no series named"; search `q=moh` → 0. indicator_def was last loaded 2026-09-26 (1,391 rows). 717 of
+2,047 served indicators, 105,908 rows, had no row: unhcr_population_hdx 32 / 45,197, insecurity_insight 8 / 20,174,
+fao_diem 623 / 13,696, btselem 1 / 11,124, t4p_gaza_daily 11 / 9,054, gaza_moh_daily 30 / 5,775, un_wpp 12 / 888.
+ops.load_registry also REFUSED when run (exit 1 on five specs): `classified_anywhere` filled as the loop went, so a
+spec was excused only for indicators classified by a spec read BEFORE it; acled_hdx, btselem_fatalities and
+fao_diem sort before their category's rule-holders. Now every reader is classified before any is judged
+(`unclassified_by_reader`, tested both orders). Rules added where none existed: db/registry/datasets.yaml (new: a
+dataset written by its own ingest module; gaza.moh.* in three tiers), economic.yaml (six pcbs.* WDI codes 086 left
+without a twin, 204 rows), economic_pcbs.yaml (three series, category `pcbs` since 086); unit aliases `incidents`
+→ events (20,174 rows) and `cases` (231). Read-only run on production: 2,039 classified, 0 unclassified, exit 0.
+ops/databank-sync.sh runs `ops.load_registry --apply` after the loader; a refusal fails the night.
+(0b) gaza_moh_daily had v1_category NULL: listed by /v2/databank/categories with no category, refused by the
+category route ("no category named 'gaza_moh_daily'"). CORRECTION: the page's finding 06 said "served beside T4P's
+series" on 10-11. Migration 103 files it under `conflict`; the ingest creates it there.
+(1) casualties: `registry.rules[].serve_warning(_ar)` (spec key, written to indicator_def by the registry);
+casualties.yaml declares one for the yearly figure and one for the 30 breakdowns. /v2/databank/compare and
+/correlate attach `warnings`; trend, compare and correlate say them in both languages (the category route already
+did). The publisher's own scope sentence is quoted in the spec (ochaopt.org/data/casualties, read 2026-10-12).
+(1b) FOUND WHILE READING THAT PAGE: every row is credited "UN OCHA oPt, sourced from B'Tselem" (v1's organisation
+label, carried by 042, repeated by 086's warning and by the audit). The page says the figures are "collected by
+OCHA field staff and entered into OCHA's Protection of Civilians database" and names no B'Tselem. Migration 102
+changes the credit line only (licence and grade unchanged); ops/fetch_ocha.py's labels follow. Zaid's to refuse.
+(2) infrastructure: 2,920 of 2,920 rows at place 15 (first load, 2026-06-25) have a current twin at place 1; it is
+the only dataset holding one fact at two places (checked over every current row). Migration 101 closes them
+(attrs.duplicate_of_101). Registry rule → cumulative / region: 0 falls in 729 steps, a rise on 91 (educational),
+153 (religious), 93 (residential). CORRECTION: the audit said "rises on every step". The identity keeps place_id
+(the loader reads the stored key; changing its fields without rewriting stored keys re-inserts every row).
+(4) roster: 73,077 held, 72,835 in killed_in_gaza.json, 242 held and gone (all first written 2026-06-25; 7 are in
+the file again under another id with the same name and birth date). The dataset also holds 46 daily summary rows,
+so `generation: complete` alone would have closed 45 of them: new key `identity.generation_indicators` scopes it
+to martyrs.identified_killed; max_absent 300.
+REHEARSAL on a scratch copy holding all 539,240 observation rows (475,008 current): 101 closes 2,920, rollback
+reopens 2,920, re-apply closes 2,920; registry --apply writes 2,039 definitions and 31 warnings, 0 served indicators
+left without one, 0 served rows without a unit alias, a second apply writes 0; roster dry run would close 242, real
+run closes 242 and leaves the 46 summary rows, 72,835 current, a second run closes nothing; `--all --dry-run`:
+{"grew": {}, "failed": []}. A dev API on the copy: compare returns both series `known` with the warning; correlate
+of residential damage × cumulative killed is refused as two running totals; /v2/databank/conflict?indicator=
+gaza.moh.deaths.since_ceasefire returns 1,493 for 12 October; search `moh` finds 30; damage asked at Gaza
+governorate is answered from the Strip with `place_used.widened_from`.
+Commits 9271f42 (migration 100, belief, G2.19) and 07d3528 (the rest). Tests at 2026-10-12 16:58 UTC: full suite 1,644 passed / 0
+failed (776 s) on the tree before three late edits (the scan's warning, the registry's accounting as a tested
+function, the fetcher's labels); the 570 tests of every file touching those re-run after: 570 passed. Also in this
+block: correlate's scan mode carries the warnings too.
