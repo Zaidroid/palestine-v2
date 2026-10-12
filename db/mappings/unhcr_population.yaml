@@ -50,6 +50,12 @@ drop:
   - reason: duplicate_of_originating
     if: "a demographics_residing row whose year, origin, asylum and dimensions also appear in demographics_originating"
     measured: 8                  # people both from and in Palestine: one fact in two files
+  - reason: summed_into_cell
+    if: "a demographics, applications or decisions row whose year, origin, asylum and dimensions repeat an earlier row of the same table"
+    measured: 91                 # 39 demographics cells (one as three rows), 45 applications, 6 decisions.
+                                 #   HDX drops a column UNHCR keys on (dec_level); the rows are parts
+                                 #   and ADD: stocks = their sum on 29 of 29 country-years, and UNHCR's
+                                 #   API totals the same pairs (2026-10-12). Emitted once, summed.
   - reason: missing_year
     measured: 0
   - reason: no_values

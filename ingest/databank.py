@@ -1814,6 +1814,26 @@ _UNHCR_SOLUTIONS = (("Resettlement arrivals", "resettlement_arrivals"), ("Natura
                     ("Refugee returns", "refugee_returns"), ("IDP returns", "idp_returns"))
 
 
+# table → (the columns that make a cell, the columns that are summed in it)
+_UNHCR_APP_DIMS = ("Year", "Country of Origin Code", "Country of Asylum Code", "Procedure Type",
+                   "Application Type Code", "Application Data Type")
+_UNHCR_DEC_DIMS = ("Year", "Country of Origin Code", "Country of Asylum Code", "Procedure Type",
+                   "Decision Type Code", "Decision Data Type")
+_UNHCR_DEMO_DIMS = ("Year", "Country of Origin Code", "Country of Asylum Code", "Population Type",
+                    "location", "urbanRural", "accommodationType")
+_UNHCR_CELL = {
+    "demographics_originating": (_UNHCR_DEMO_DIMS, tuple(c for c, _ in _UNHCR_DEMO)),
+    "demographics_residing": (_UNHCR_DEMO_DIMS, tuple(c for c, _ in _UNHCR_DEMO)),
+    "applications": (_UNHCR_APP_DIMS, ("Number of Applications",)),
+    "decisions": (_UNHCR_DEC_DIMS, tuple(c for c, _ in _UNHCR_DECISIONS)),
+}
+
+
+def _unhcr_cell(rec) -> tuple:
+    table = rec.get("table") or ""
+    return (table,) + tuple(str(rec.get(k) or "") for k in _UNHCR_CELL[table][0])
+
+
 def _unhcr_demo_key(rec) -> str:
     return "|".join(str(rec.get(k) or "") for k in (
         "Year", "Country of Origin Code", "Country of Asylum Code", "Population Type",
@@ -1823,10 +1843,40 @@ def _unhcr_demo_key(rec) -> str:
 def _unhcr_prepass(all_recs, spec, counts):
     """The residing-in-Palestine table repeats the originating table's rows for
     people who are both from and in Palestine (8 measured): one fact, two
-    files. The originating copy is kept; the residing copy is dropped, counted."""
+    files. The originating copy is kept; the residing copy is dropped, counted.
+
+    A CELL MAY BE PUBLISHED AS TWO ROWS, AND THEY ADD (2026-10-12). HDX's
+    export of UNHCR's tables drops a column the publisher keys on, so some
+    cells arrive as two rows nothing tells apart: 39 demographics cells (one
+    row with the sex and age breakdown, one with a bare Total), 45 applications
+    cells and 6 decisions cells. They are parts, not revisions, measured two
+    ways. Demographics: on every one of the 29 country-years that hold such a
+    cell, UNHCR's own stocks table equals the SUM of the rows and never the
+    first or the larger alone (Canada 2020: 357 + 1,420 = 1,777). Applications
+    and decisions: UNHCR's API returns the same two rows with the column HDX
+    drops, `dec_level` (first instance and administrative review), and totals
+    them: PSE → Australia 2000, 134 + 15 = "applied": 149; even the one pair
+    that is identical, Poland 2002, 5 + 5 = 10.
+    The first load kept the first row and dropped the second as a repeat of
+    its id, so 90 cells were understated; from the second night the second
+    row met an identity already held and the run refused. A cell is now
+    emitted once, summed, and says how many rows went into it."""
     t_unhcr_population.originating = {_unhcr_demo_key(r) for r in all_recs
                                       if isinstance(r, dict)
                                       and r.get("table") == "demographics_originating"}
+    cells: dict[tuple, list] = defaultdict(list)
+    for r in all_recs:
+        if isinstance(r, dict) and r.get("table") in _UNHCR_CELL:
+            cells[_unhcr_cell(r)].append(r)
+    t_unhcr_population.summed = {}
+    for k, recs in cells.items():
+        if len(recs) > 1:
+            cols = _UNHCR_CELL[k[0]][1]
+            t_unhcr_population.summed[k] = (
+                {col: sum(v for v in (_num(r.get(col)) for r in recs) if v is not None)
+                 for col in cols if any(_num(r.get(col)) is not None for r in recs)},
+                len(recs))
+    t_unhcr_population.emitted_cells = set()
 
 
 def t_unhcr_population(rec, spec, places, counts):
@@ -1845,6 +1895,18 @@ def t_unhcr_population(rec, spec, places, counts):
     if code == "PSE":
         attrs["region"] = "Palestine"           # people residing in Palestine: honest NULL place
     rows = []
+    summed = None
+    if table in _UNHCR_CELL:
+        cell = _unhcr_cell(rec)
+        summed = t_unhcr_population.summed.get(cell)
+        if summed:
+            if cell in t_unhcr_population.emitted_cells:
+                return Drop("summed_into_cell")      # its figures are in the cell's first row
+            t_unhcr_population.emitted_cells.add(cell)
+
+    def val(col):
+        """The column's figure: the cell's sum where the cell came as several rows."""
+        return summed[0].get(col) if summed else _num(rec.get(col))
 
     def emit(ind, value, dims=None, key="", unit="persons"):
         a = dict(attrs)
@@ -1861,8 +1923,10 @@ def t_unhcr_population(rec, spec, places, counts):
         dims = {"population_type": rec.get("Population Type"), "location": rec.get("location"),
                 "urban_rural": rec.get("urbanRural"), "accommodation": rec.get("accommodationType")}
         key = "|".join(str(dims[k] or "") for k in ("population_type", "location", "urban_rural", "accommodation"))
+        if summed:
+            dims["rows_summed"] = summed[1]
         for col, s in _UNHCR_DEMO:
-            v = _num(rec.get(col))
+            v = val(col)
             if v is None or (v == 0 and not s.endswith("total")):
                 continue                        # zero cells are not written, totals always are
             emit(f"refugees.demographics.{s}", v, dims, key)
@@ -1871,7 +1935,9 @@ def t_unhcr_population(rec, spec, places, counts):
                 "application_type": rec.get("Application Type Code"),
                 "application_data": rec.get("Application Data Type")}
         key = "|".join(str(dims[k] or "") for k in ("procedure_type", "application_type", "application_data"))
-        v = _num(rec.get("Number of Applications"))
+        if summed:
+            dims["rows_summed"] = summed[1]
+        v = val("Number of Applications")
         if v is not None:
             emit("refugees.asylum_applications", v, dims, key,
                  unit="cases" if dims["application_data"] == "C" else "persons")
@@ -1880,8 +1946,10 @@ def t_unhcr_population(rec, spec, places, counts):
                 "decision_type": rec.get("Decision Type Code"), "decision_data": rec.get("Decision Data Type")}
         key = "|".join(str(dims[k] or "") for k in ("procedure_type", "decision_type", "decision_data"))
         unit = "cases" if dims["decision_data"] == "C" else "persons"
+        if summed:
+            dims["rows_summed"] = summed[1]
         for col, s in _UNHCR_DECISIONS:
-            v = _num(rec.get(col))
+            v = val(col)
             if v is not None:
                 emit(f"refugees.asylum_decisions.{s}", v, dims, key, unit=unit)
     elif table == "solutions":
@@ -1896,6 +1964,8 @@ def t_unhcr_population(rec, spec, places, counts):
 
 t_unhcr_population.prepass = _unhcr_prepass
 t_unhcr_population.originating = set()
+t_unhcr_population.summed = {}
+t_unhcr_population.emitted_cells = set()
 
 
 # ── fao_diem — FAO DIEM household-survey aggregates, one row per figure ───────
@@ -2164,6 +2234,13 @@ def run(category: str, dry_run: bool = False) -> dict:
     rows: list[Row] = []
     refs: dict[Path, str] = {}
     seen_stable: set[str] = set()
+    seen_said: dict[str, tuple | None] = {}
+
+    def _says(r):
+        """What an observation row states, for telling a repeat from a twin."""
+        if isinstance(r, EventRow):
+            return None
+        return (None if r.value_num is None else float(r.value_num), r.value_text, r.unit)
     from_fallback = reads_fallback(spec)
     if from_fallback:
         counts["input_fallback"] = 1
@@ -2323,7 +2400,29 @@ def run(category: str, dry_run: bool = False) -> dict:
                                      url=f"file://{f}").ref
             if r.v1_stable_id in seen_stable:
                 counts["deduped"] += 1
+                # THE SAME ID SAYING TWO THINGS IS NOT A DUPLICATE (2026-10-12).
+                # A repeat of an id is dropped as a re-statement, and until now
+                # nothing looked at whether it said the same thing: UNHCR's
+                # doubled demographics cells (65 and 60 under one id) lost their
+                # second row silently on the first load. It is counted, and for
+                # a dataset that declares an identity it is the injectivity
+                # failure it always was, on the first load and in a dry run too.
+                first = seen_said.get(r.v1_stable_id)
+                if first is not None and first != _says(r):
+                    counts["deduped_but_said_otherwise"] += 1
+                    if identity_by_ds.get(r.dataset_key):
+                        identity_collisions[r.dataset_key] += 1
+                        if len(collision_samples[r.dataset_key]) < 3:
+                            collision_samples[r.dataset_key].append(
+                                f"{r.v1_stable_id}: {first} vs {_says(r)}")
                 continue
+            # Marked HERE, not after the already-held skip below: a real run
+            # skipped a held row before marking it, so its in-file twin was not
+            # a "duplicate" on later nights and met the identity check instead
+            # (192 collisions for UNHCR from its second night), while a dry run
+            # and a first load deduped it. One rule for every mode.
+            seen_stable.add(r.v1_stable_id)
+            seen_said[r.v1_stable_id] = _says(r)
             # resolution floors judge what the TRANSFORM produced, not
             # what happened to be new this run — otherwise a healthy
             # no-op sync fails on a handful of unresolved stragglers
