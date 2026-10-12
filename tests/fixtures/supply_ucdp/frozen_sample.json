@@ -1,0 +1,416 @@
+{
+ "data": [
+  {
+   "id": "ucdp-178019",
+   "date": "1989-07-10",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Ramallah town",
+    "governorate": "Ramallah and al-Bireh governorate",
+    "region": "West Bank",
+    "lat": 31.902561,
+    "lon": 35.195547,
+    "precision": "point",
+    "gazetteer_key": "ramallah",
+    "admin1": "West Bank",
+    "admin2": "Ramallah",
+    "admin2_pcode": "PS0130"
+   },
+   "metrics": {
+    "killed": 1,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 1,
+    "unit": "persons"
+   },
+   "description": "Government of Israel vs PFLP — Ramallah town (1989)",
+   "actors": [
+    "Government of Israel",
+    "PFLP"
+   ],
+   "severity_index": 1,
+   "deaths_a": 0,
+   "deaths_b": 1,
+   "deaths_civilians": 0,
+   "deaths_unknown": 0,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - PFLP",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "c0fb2dff8f228167310d959a0000f5b1"
+  },
+  {
+   "id": "ucdp-176952",
+   "date": "2001-10-17",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Jerusalem city",
+    "governorate": "jerusalem",
+    "region": "East Jerusalem",
+    "lat": 31.783333,
+    "lon": 35.216667,
+    "precision": "point",
+    "gazetteer_key": "jerusalem"
+   },
+   "metrics": {
+    "killed": 1,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 1,
+    "unit": "persons"
+   },
+   "description": "Government of Israel vs PFLP — Jerusalem city (2001)",
+   "actors": [
+    "Government of Israel",
+    "PFLP"
+   ],
+   "severity_index": 1,
+   "deaths_a": 1,
+   "deaths_b": 0,
+   "deaths_civilians": 0,
+   "deaths_unknown": 0,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - PFLP",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "6fb8d98e966334946e98288523af1faa"
+  },
+  {
+   "id": "ucdp-238985",
+   "date": "2017-06-16",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Jerusalem city",
+    "governorate": "jerusalem",
+    "region": "East Jerusalem",
+    "lat": 31.783333,
+    "lon": 35.216667,
+    "precision": "point",
+    "gazetteer_key": "jerusalem"
+   },
+   "metrics": {
+    "killed": 3,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 3,
+    "value": 3,
+    "unit": "persons"
+   },
+   "description": "Three Palestinians killed after attacking Israeli officers;Israeli officer killed, three Palestinian attackers shot dead: police;IS claims first operation in Israel, one policewoman killed;Hamas rejects IS claim of fatal stabbing of Israeli policewoman;UPDATE 1-No evidence of Islamic State link to Jerusalem attack -Israeli police;Palestinians killed by Israeli security forces in the Occupied Territories, since Operation Cast Lead;Israeli security force personnel killed by Palestinians in the Occupied Territories, since Operation Cast Lead",
+   "actors": [
+    "Government of Israel",
+    "PFLP"
+   ],
+   "severity_index": 1,
+   "deaths_a": 1,
+   "deaths_b": 2,
+   "deaths_civilians": 0,
+   "deaths_unknown": 0,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - PFLP",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "7664ced5b2f6d46f37ae5efaa305a2c0"
+  },
+  {
+   "id": "ucdp-348278",
+   "date": "2012-11-18",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza town",
+    "governorate": "Gaza governorate",
+    "region": "Gaza Strip",
+    "lat": 31.516667,
+    "lon": 34.45,
+    "precision": "point",
+    "gazetteer_key": "gaza",
+    "admin1": "Gaza Strip",
+    "admin2": "Gaza",
+    "admin2_pcode": "PS0260"
+   },
+   "metrics": {
+    "killed": 1,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 1,
+    "unit": "persons"
+   },
+   "description": "Palestinians killed by Israeli security forces in the Occupied Territories, since Operation Cast Lead",
+   "actors": [
+    "Government of Israel",
+    "Hamas"
+   ],
+   "severity_index": 1,
+   "deaths_a": 0,
+   "deaths_b": 1,
+   "deaths_civilians": 0,
+   "deaths_unknown": 0,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - Hamas",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "cad9f296c494a527e705871ecc51bae8"
+  },
+  {
+   "id": "ucdp-498841",
+   "date": "2023-10-07",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Gaza Strip",
+    "governorate": null,
+    "region": "Gaza Strip",
+    "lat": 31.425074,
+    "lon": 34.373398,
+    "precision": "point",
+    "admin1": "Gaza Strip",
+    "admin2": "Deir Al-Balah",
+    "admin2_pcode": "PS0265"
+   },
+   "metrics": {
+    "killed": 4731,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 4731,
+    "value": 4731,
+    "unit": "persons"
+   },
+   "description": "8,796 PALESTINIANS KILLED INCLUDING 3,648 CHILDREN IN ISRAELI STRIKES ON GAZA SINCE OCT. 7 - HEALTH MINISTRY IN GAZA;Hundreds more foreign nationals flee Gaza as bombing toll mounts;Martyrs of Palestine - year 2023;Martyrs of Palestine - year 2023",
+   "actors": [
+    "Government of Israel",
+    "Hamas"
+   ],
+   "severity_index": 10,
+   "deaths_a": 0,
+   "deaths_b": 0,
+   "deaths_civilians": 4131,
+   "deaths_unknown": 600,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - Hamas",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 0.85,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "bd94f895a06fdd6186ad554f60b19be0"
+  },
+  {
+   "id": "ucdp-496209",
+   "date": "2023-10-20",
+   "category": "conflict",
+   "event_type": "state_based",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "Rafah town",
+    "governorate": "Rafah governorate",
+    "region": "Gaza Strip",
+    "lat": 31.296999,
+    "lon": 34.243439,
+    "precision": "point",
+    "gazetteer_key": "rafah",
+    "admin1": "Gaza Strip",
+    "admin2": "Rafah",
+    "admin2_pcode": "PS0275"
+   },
+   "metrics": {
+    "killed": 18,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 18,
+    "value": 18,
+    "unit": "persons"
+   },
+   "description": "Martyrs and wounded in Israeli raids on citizens’ homes in the Gaza Strip",
+   "actors": [
+    "Government of Israel",
+    "Hamas"
+   ],
+   "severity_index": 4,
+   "deaths_a": 0,
+   "deaths_b": 0,
+   "deaths_civilians": 0,
+   "deaths_unknown": 18,
+   "conflict_name": "Israel: Palestine",
+   "dyad_name": "Government of Israel - Hamas",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "281fee979e0b137a2d493f4ece6d92ff"
+  },
+  {
+   "id": "ucdp-180353",
+   "date": "1989-01-16",
+   "category": "conflict",
+   "event_type": "one_sided",
+   "schema_version": "3.0.0",
+   "location": {
+    "name": "West Bank",
+    "governorate": null,
+    "region": "West Bank",
+    "lat": 32,
+    "lon": 35.25,
+    "precision": "point",
+    "admin1": "West Bank",
+    "admin2": "Ramallah",
+    "admin2_pcode": "PS0130"
+   },
+   "metrics": {
+    "killed": 1,
+    "injured": 0,
+    "displaced": 0,
+    "affected": 0,
+    "demolished": 0,
+    "detained": 0,
+    "count": 1,
+    "value": 1,
+    "unit": "persons"
+   },
+   "description": "Government of Israel vs Civilians — West Bank (1989)",
+   "actors": [
+    "Government of Israel",
+    "Civilians"
+   ],
+   "severity_index": 1,
+   "deaths_a": 0,
+   "deaths_b": 0,
+   "deaths_civilians": 1,
+   "deaths_unknown": 0,
+   "conflict_name": "Government of Israel - Civilians",
+   "dyad_name": "Government of Israel - Civilians",
+   "quality": {
+    "score": 0.95,
+    "completeness": 1,
+    "consistency": 1,
+    "accuracy": 1,
+    "confidence": "high",
+    "verified": true
+   },
+   "sources": [
+    {
+     "name": "UCDP-GED",
+     "organization": "Uppsala Conflict Data Program",
+     "url": "https://ucdp.uu.se/",
+     "license": "CC-BY-IGO",
+     "fetched_at": "2026-10-12T02:37:44.109Z"
+    }
+   ],
+   "stable_id": "3219a9b7eeff43a3b38faae168be5d40"
+  }
+ ]
+}

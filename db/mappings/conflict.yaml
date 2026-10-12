@@ -28,6 +28,54 @@ shape_overrides:
 status: reviewed
 records_measured: 10495
 
+# THE CUT FROM v1 (2026-10-12). This spec read v1's unified conflict file until
+# today. It now reads three files, none of them v1's:
+#
+#   frozen/conflict.json.gz   v1's last file, 10,619 records: every dataset of
+#     this spec exactly as held. Palestine Open Maps' villages and B'Tselem's
+#     six totals are static; Tech4Palestine's cumulative rows ended 2026-08-08
+#     when conflict_gaza.yaml took the series over; Good Shepherd's rows are
+#     dropped below; and its 7,638 UCDP records are GED 25.1, 1989 to
+#     2024-12-31, which is what the store holds and serves.
+#   raw/ucdp/ged.json         ops/fetch_ucdp.py: the events of UCDP's current
+#     release (GED 26.1) dated AFTER 2024-12-31, i.e. 2025. No held event
+#     overlaps them.
+#   raw/ucdp/candidate.json   ops/fetch_ucdp.py: UCDP's candidate events for
+#     the months after the release (2026), each marked `ucdp_candidate`.
+#     Provisional: UCDP re-extracts them, and this loader takes later
+#     additions but cannot apply later corrections or withdrawals (measured
+#     on June 2025: of 334 candidate events, 9 withdrawn, 69 changed and 32
+#     added by the time of the release). Remove this one line to stop loading
+#     them; nothing else depends on it.
+#
+# NOT READ, ON PURPOSE: raw/ucdp/ged_revision.json, GED 26.1's reading of 1989
+# to 2024. It revises 1,115 of the 7,638 held events, withdraws 18 and adds
+# 493 the store never held (310 new in 26.1; 183 that v1 dropped because its
+# content hash could not tell them from another event). The loader skips an
+# event whose id is held whatever it now says and closes none, so it could
+# take the additions and nothing else, and the additions are only right
+# beside the revisions: UCDP's month-long row for Gaza in October 2023 fell
+# from 4,731 deaths to 2,911 because 143 added events and upward revisions
+# now carry them (the month: 10,582 before, 10,553 after). Adding that file
+# here before the loader can supersede and close events would leave 1989 to
+# 2024 at 58,858 deaths against the release's own 56,925: 1,933 too many
+# (1,753 that left revised events, 180 in the withdrawn ones). Measured with
+# it added, for the record: frozen copy
+# first, event_already_held 8,495 and event_new 4,256; release first, 8,514
+# and 4,237, because a revised event leaves its old type|day|place|point|
+# deaths key unclaimed and 19 real events were swallowed by the re-hash guard.
+#
+# A machine that has never fetched reads the frozen copy alone and holds
+# exactly what the store held on 2026-10-12.
+input:
+  root: data
+  glob:
+    - frozen/conflict.json.gz
+    - raw/ucdp/ged.json
+    - raw/ucdp/candidate.json
+cadence: monthly                  # a release a year, candidate events each
+                                  #   month on the 20th; fetched nightly
+
 # Sources that appear ONLY as secondary provenance credits — a cross-reference
 # to where a village page or atlas entry can be read, never a data contributor.
 # 050 recorded this for Palestine Open Maps ("Zochrot/PalestineRemembered
@@ -232,6 +280,23 @@ attrs_passthrough:               # all source-sparse; nothing is on every row
                                  #   for the 570 multi-sourced village rows,
                                  #   so Zochrot / Atlas / Palestine Remembered
                                  #   / Wikidata attribution survives routing
+  # UCDP's own fields, from ops/fetch_ucdp.py (2026-10-12). No other source's
+  # record carries any of these keys (measured on the frozen copy), so no held
+  # observation changes its content. They reach NEW events only: the loader
+  # never rewrites a held event.
+  - name                         # UCDP's place name; until now only a one-off
+                                 #   backfill gave the held events theirs
+  - ucdp_id                      # UCDP's persistent event id
+  - ucdp_release                 # "26.1" on an event of a yearly release
+  - ucdp_candidate               # true on a candidate event: provisional,
+  - ucdp_candidate_version       #   with the monthly file it came from
+  - ucdp_code_status             #   and UCDP's own doubt ("Check deaths", ...)
+  - ucdp_date_prec               # UCDP's own: 1 the exact day, 2 within 2-6
+                                 #   days, 3 the week, 4 the month, 5 longer
+  - ucdp_where_prec              # 1 the exact place, 2 within 25 km, 3 the
+                                 #   governorate's point, 4 the region's,
+                                 #   5 a line or loose area, 6 the country
+  - ucdp_date_end                # only when the event spans more than a day
   # NOT description (law 6) — including the 262 journalist obituaries, which
   # are the longest text in the category. raw_ref points at bronze.
 
