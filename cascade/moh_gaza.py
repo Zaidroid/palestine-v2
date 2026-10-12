@@ -144,6 +144,13 @@ _NUM_D = re.compile(r"(\d+)\s*" + _D + r"(?!\s*(?:[إا]نتشال|جرى|تم|�
 _NUM_I = re.compile(r"(\d+)\s*" + _I)
 _HOURS = re.compile(r"خلال[\s*]*\(?[\s*]*(?:ال[ـ]?)?[\s*]*\(?\s*(\d+)\s*ساع")  # "خلال 72 ساعة", "خلال الـ24 ساعة", "خلال الـ *(48 ساعة", "خلال *(الـ 24 ساعة"
 _ARRIVED = re.compile(r"وصل(?:ت|وا)?\s+(?:منها\s+)?(?:[إا]لى\s+)?(?:لل|ال)?مستشفيات|وصول\s+(?:[إا]لى\s+)?المستشفيات")
+# A block whose LENGTH the bulletin does not state (2026-10-12, the last three
+# bulletins of the archive with no readable day line): "خلال ايام عيد الفطر
+# وحتى الساعة:" (23 March 2026, the days of Eid) and "بلغ إجمالي ما وصل إلى
+# مستشفيات قطاع غزة حتى هذه اللحظة." (4 June 2026, no window at all). Neither
+# says 24 hours, so neither is a day: both are read as the `period` tier with
+# no `hours` beside them, which is exactly what the bulletin says.
+_UNSTATED_WINDOW = re.compile(r"خلال\s+[أا]يام|حتى\s+(?:هذه\s+اللحظ[ةه]|الساع[ةه])")
 _COMMITTEE = re.compile(r"(?:[إا]ضاف[ةه])\s+(?:عدد\s+)?(\d+)\s*" + _D)      # "تم اضافة عدد 499 شهيد … اللجنة القضائية"
 # Counts written as WORDS (March 2026: "شهيدان، أحدهما شهيد انتشال، وإصابتان.")
 _WORDS = (("deaths", re.compile(r"شهيدان|شهيدين"), 2), ("deaths", re.compile(r"شهيد(?:ًا|اً|ا)?\s+واحد"), 1),
@@ -262,6 +269,10 @@ def _era_lines(lines: list[str], r: MohReport) -> None:
             else:
                 window = tier                           # heading; the counts follow
             continue
+        if (not h and _ARRIVED.search(line) and "إجمالي ما وصل" in line
+                and _UNSTATED_WINDOW.search(line) and not re.search(r"\d", line)):
+            window = window or "period"                 # the counts follow; no hours are given
+            continue
         if window:
             if (line.lstrip().startswith(("🔴", "⬅")) or ("منذ" in line and line.rstrip().endswith(":"))
                     or "حصيلة" in line or ("إجمالي" in line and "وصل" not in line)):
@@ -284,6 +295,11 @@ def parse(text: str) -> MohReport:
     for raw in _normalise(text).splitlines():
         s = raw.strip()
         if lines and lines[-1].rstrip().endswith(":") and re.fullmatch(r"[\d]+", s):
+            lines[-1] = lines[-1].rstrip() + " " + s
+        # ...and a sentence can be cut after its number: "61 شهيد و 231" /
+        # "اصابة خلال الـ 24 ساعة الماضية." (11 October 2024). The first half
+        # had the dead and no window, the second the window and no count.
+        elif lines and re.search(r"\d\s*$", lines[-1]) and re.match(_I + r"|" + _D, s):
             lines[-1] = lines[-1].rstrip() + " " + s
         else:
             lines.append(s)

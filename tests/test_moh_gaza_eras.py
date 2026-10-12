@@ -123,3 +123,50 @@ def test_the_first_bulletins_after_the_ceasefire_name_the_newly_killed_as_direct
     assert (day["deaths"], day["recovered"], day["succumbed"], day["new"]) == (29, 22, 3, 4)
     # the Ministry's since-ceasefire total leaves the recovered out: 23 < 29, and that is right
     assert r.tiers["since_ceasefire"]["deaths"] == 23 and r.tiers["since_ceasefire"]["recovered"] == 381
+
+
+# ── the last three bulletins of the archive with no readable day line (2026-10-12) ──
+
+def test_a_day_line_cut_after_its_number_is_read_whole():
+    """11 October 2024: the sentence breaks between "231" and "اصابة خلال الـ 24
+    ساعة", so the first half had no window and the second no count."""
+    r = parse("🇵🇸وزارة الصحة بغزة||\n\nالتقرير الاحصائي اليومي لعدد الشهداء والجرحى جراء العدوان "
+              "الاسرائيلي المستمر لليوم ال 371  على قطاع غزة.\n\n"
+              "▪️ الاحتلال الاسرائيلي يرتكب 4  مجازر ضد العائلات في قطاع غزة  وصل منها للمستشفيات 61 شهيد و 231\n"
+              " اصابة خلال الـ 24 ساعة الماضية.\n \n"
+              "▪ارتفاع حصيلة العدوان الاسرائيلي الى 42,126  شهيد و 98,117  اصابة منذ السابع من اكتوبر الماضي.\n")
+    assert r.tiers["daily"] == {"deaths": 61, "injuries": 231, "massacres": 4}
+    assert r.tiers["cumulative"] == {"deaths": 42126, "injuries": 98117}
+
+
+def test_the_days_of_eid_are_a_block_of_unstated_length_never_a_day():
+    """23 March 2026: "خلال ايام عيد الفطر وحتى الساعة". No hours are given, so
+    none are stored; the figures are a period's, not a day's."""
+    r = parse("🔴 التقرير الإحصائي اليومي لعدد الشهداء والجرحى جرّاء العدوان الإسرائيلي على قطاع غزة\n\n"
+              "⭕ إجمالي ما وصل إلى مستشفيات قطاع غزة خلال ايام عيد الفطر وحتى الساعة:\n"
+              "9 شهداء(منهم 1شهيد متأثر بإصابته) و 30 إصابة.\n\n"
+              "🔴 منذ وقف إطلاق النار (11 أكتوبر):\n• إجمالي عدد الشهداء: 687\n• إجمالي عدد الإصابات: 1,845\n"
+              "• إجمالي حالات الانتشال: 756\n\n"
+              "🔴 الإحصائية التراكمية منذ بداية العدوان في 7 أكتوبر 2023:\n"
+              "• العدد التراكمي للشهداء: 72,263\n• العدد التراكمي للإصابات: 171,944\n")
+    assert "daily" not in r.tiers
+    assert r.tiers["period"] == {"deaths": 9, "injuries": 30, "succumbed": 1}
+    assert r.tiers["since_ceasefire"] == {"deaths": 687, "injuries": 1845, "recovered": 756}
+    assert r.tiers["cumulative"] == {"deaths": 72263, "injuries": 171944}
+
+
+def test_a_bulletin_that_names_no_window_is_not_given_one():
+    """4 June 2026: "بلغ إجمالي ما وصل … حتى هذه اللحظة." with the counts below
+    and no "24 ساعة" anywhere. Read as a period with no hours, not as a day."""
+    r = parse("🔴 التقرير الإحصائي اليومي لعدد الشهداء والجرحى جرّاء العدوان الإسرائيلي على قطاع غزة\n\n"
+              "⭕ بلغ إجمالي ما وصل إلى مستشفيات قطاع غزة حتى هذه اللحظة.\n\n"
+              "• عدد الشهداء: 11 شهداء جدد . \n• ⁠عدد الإصابات: 32 إصابة. \n\n\n"
+              "⭕ لا يزال عدد من الضحايا تحت الركام وفي الطرقات، في ظل عجز طواقم الإسعاف والدفاع المدني "
+              "عن الوصول إليهم حتى هذه اللحظة.\n\n"
+              "🔴 منذ وقف إطلاق النار (11 أكتوبر):\n• إجمالي عدد الشهداء: 947\n• إجمالي عدد الإصابات: 2,935\n"
+              "• إجمالي حالات الانتشال: 781\n\n"
+              "🔴 الإحصائية التراكمية منذ بداية العدوان في 7 أكتوبر 2023:\n"
+              "• العدد التراكمي للشهداء:72,956\n• العدد التراكمي للإصابات: 173,043\n")
+    assert "daily" not in r.tiers and "hours" not in r.tiers["period"]
+    assert r.tiers["period"] == {"new": 11, "deaths": 11, "injuries": 32}
+    assert r.tiers["since_ceasefire"]["deaths"] == 947 and r.tiers["cumulative"]["deaths"] == 72956
