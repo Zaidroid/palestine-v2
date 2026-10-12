@@ -1189,3 +1189,7 @@ correlate residential damage × cumulative killed → refused, two running total
 the breakdown warning; damage asked at place 15 → 730 points, answered from the Gaza Strip. Stored: الكونتينر 7,274
 assertions on its own row (3,434 before), ام السلمونا 1,194 (276), النبي صالح 7,792 (5,849). G2.19 PASS, G2.4 PASS.
 /health: 24 of 24 jobs, one fault (PalHub narrowed). Database 2,269 MB, 76 of 79 chunks compressed.
+2026-10-12 17:37 UTC · full suite on the store after the second batch: 1,650 passed, 1 failed (802 s). The one: the README's
+"73,000+ identified people" against a roster of 72,835 since the 242 withdrawals. Floor lowered to 72,000+; the
+open-data export counts the memorial when it runs where it had typed 73,077 into two generated pages (audit V27).
+The licence and export tests, 23, pass after it.
