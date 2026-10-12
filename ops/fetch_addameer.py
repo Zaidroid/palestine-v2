@@ -117,9 +117,10 @@ def charts(page: str) -> list[dict]:
 
 
 def chart_points(page: str) -> tuple[dict, dict]:
-    """({(month, metric): count}, {series name: points} for the series this
-    line does not load). The first reading of a month wins."""
-    loaded: dict[tuple[str, str], int] = {}
+    """({(month, metric): (count, the publisher's name for the series)},
+    {series name: points} for the series this line does not load). The first
+    reading of a month wins."""
+    loaded: dict[tuple[str, str], tuple[int, str]] = {}
     other: dict[str, dict] = {}
     for c in charts(page):
         x = c.get("xAxis")
@@ -140,7 +141,7 @@ def chart_points(page: str) -> tuple[dict, dict]:
                 if metric is None:
                     other.setdefault(str(s.get("name")), {}).setdefault(day, n)
                 else:
-                    loaded.setdefault((day, metric), int(n))
+                    loaded.setdefault((day, metric), (int(n), str(s.get("name"))))
     return loaded, other
 
 
@@ -165,14 +166,14 @@ def month_records(page: str, via: str, fetched_at: str) -> tuple[list[dict], dic
         for label, n in block.items():
             metric = classify(label)
             if metric in ("child", "female"):
-                points.setdefault((month, metric), n)
+                points.setdefault((month, metric), (n, label))
         # the block and the chart state the same month's total; say so if not
         total = next((n for label, n in block.items()
                       if classify(label) == "total"), None)
-        if total is not None and points.get((month, "total"), total) != total:
+        charted = points.get((month, "total"))
+        if total is not None and charted and charted[0] != total:
             notes["block_total_differs_from_chart"] = {
-                "month": month, "block": total,
-                "chart": points[(month, "total")]}
+                "month": month, "block": total, "chart": charted[0]}
     else:
         notes["no_block_date"] = "child and female not filed: no date to file them under"
     src = {"name": SOURCE_NAME, "organization": SOURCE_NAME, "url": PAGE,
@@ -184,12 +185,12 @@ def month_records(page: str, via: str, fetched_at: str) -> tuple[list[dict], dic
         "date": day,
         "event_type": "prisoners_count",
         "prisoner_metric_type": metric,
+        "indicator_name": name,                # Addameer's own wording
         "location": {"name": "West Bank & Gaza", "region": "Palestine"},
         "metrics": {"count": n, "unit": "persons"},
         "sources": [src]}
-        for (day, metric), n in sorted(points.items(),
-                                       key=lambda kv: (kv[0][0], kv[0][1]),
-                                       reverse=True)]
+        for (day, metric), (n, name) in sorted(
+            points.items(), key=lambda kv: (kv[0][0], kv[0][1]), reverse=True)]
     return recs, notes
 
 

@@ -118,6 +118,8 @@ def day_records(day_rows: list[dict], fetched_at: str) -> list[dict]:
             "stable_id": f"gsc-demolitions:{d['date']}",
             "date": d["date"],
             "event_type": "demolition",
+            # the page's title and the row of its table this number is
+            "indicator_name": "Home Demolitions — Structures",
             "location": {"name": "Multiple locations", "region": "Palestine"},
             "metrics": {"count": d["structures"], "demolished": d["structures"],
                         "unit": "structures"},

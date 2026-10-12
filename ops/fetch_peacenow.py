@@ -105,6 +105,7 @@ def year_records(points: list[tuple[int, int]], fetched_at: str) -> list[dict]:
         "date": f"{year}-12-31",               # the year's end-of-year count
         "year": year,
         "event_type": "settler_population",
+        "indicator_name": "Population",        # the chart's own series name
         "location": {"name": "West Bank", "region": "West Bank"},
         "metrics": {"count": n, "value": n, "unit": "settlers"},
         "sources": [src]} for year, n in points]

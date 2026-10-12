@@ -302,6 +302,10 @@ def test_addameer_charts_and_block_give_the_four_series():
     assert len(notes["series_not_loaded"]["East Jerusalem prisoners"]) == 12
     assert "block_total_differs_from_chart" not in notes
     assert recs[0]["date"] == "2026-10-01"            # newest first
+    names = {r["prisoner_metric_type"]: r["indicator_name"] for r in recs}
+    assert names == {"total": "Total Number of Political Prisoners",
+                     "administrative": "Administrative Detainees",
+                     "child": "Child prisoners", "female": "Female prisoners"}
 
 
 def test_child_and_female_are_filed_under_the_blocks_own_month():
