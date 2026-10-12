@@ -38,7 +38,7 @@ from typing import Any
 
 from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
                           product_labels, searching, seen_on_route, share_words)
-from serve.when import when_ar                                        # noqa: E402
+from serve.when import cited_ar, is_cited, statements, when_ar   # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -2161,6 +2161,11 @@ def databank(category: str | None = None, indicator: str | None = None,
         when_ = when_ar(it)
         partial = " (سنة ناقصة)" if (it.get("attrs") or {}).get("partial_year") else ""
         where = f"، {it['place_ar']}" if it.get("place_ar") else ""
+        if is_cited(it):
+            # كل سطر كلام ناشر واحد: بنسمّي كل ناشر جنب رقمه
+            rows_ = statements(items, it) or [it]
+            bits.append(f"{k}: {cited_ar(rows_)}{unit} {when_}{where}")
+            continue
         bits.append(f"{k}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
                     else f"{k}: {val} {when_}{where}")
     src = "؛ ".join(d.get("attribution") or [])[:120].rstrip(". ")

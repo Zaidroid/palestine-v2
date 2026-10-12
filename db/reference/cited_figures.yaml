@@ -1,0 +1,244 @@
+# Figures cited from named publications, entered by hand.
+#
+# WHY (2026-10-12). «العدّ / The Count» shows figures that no row in the
+# databank stood behind: they were typed into the film. A typed number has no
+# source a reader can open, no date, and no way to be corrected in one place.
+# Each figure here is ONE publisher's statement: who says it, in which
+# document, where to read it, and the sentence itself where it was copied.
+# Several publishers on one question are several rows, never an average.
+#
+# verification:
+#   read            the sentence was seen in the publisher's own text
+#   via_wikipedia   seen on Wikipedia only; the source it names was not opened
+#   secondary       seen in a report about the publisher's statement
+# A row with no `quote` records what the research note says the source says;
+# the wording is the note's, not the publisher's.
+#
+# read_on is the day the source was read (default below).
+# Fields: id (never reused), topic, measure, date, precision, value (or low/
+# high for a range), qualifier (about | at_least | more_than | up_to), unit,
+# region, publisher, document, url, quote, verification, caution.
+# `from`/`to` name a period; the row is then one total for it.
+#
+# ops/build_cited_figures.py checks this file and writes the loader's input.
+# Sources of the first set: the research file of 2026-10-07 for stories 8 and 9
+# (a research agent's reading through `reach`, filed with each figure's tag),
+# and the readings of 2026-10-12 for the figures typed into stories 2 to 7.
+
+# Applied to an entry that does not say otherwise.
+defaults:
+  read_on: "2026-10-07"      # the research for «العدّ» stories 8 and 9
+
+figures:
+
+# ── A. The Nakba, 1947 to 1949 ───────────────────────────────────────────────
+- {id: nakba-refugees-unccp, topic: nakba_1948, measure: refugees, date: "1948-01-01", precision: year,
+   value: 711000, qualifier: about, unit: persons, region: Palestine,
+   publisher: "UN Conciliation Commission for Palestine", document: "General Progress Report A/1367/Rev.1, 23 October 1950 (Technical Committee estimate of August 1949)",
+   url: "https://www.un.org/unispal/document/auto-insert-180810/", quote: "approximately 711,000", verification: read}
+- {id: nakba-refugees-unrwa, topic: nakba_1948, measure: refugees, date: "1948-01-01", precision: year,
+   value: 750000, qualifier: about, unit: persons, region: Palestine,
+   publisher: UNRWA, document: "Who we are", url: "https://www.unrwa.org/who-we-are",
+   quote: "When the Agency began operations in 1950, it was responding to the needs of about 750,000 Palestine refugees.", verification: read}
+- {id: nakba-refugees-pcbs, topic: nakba_1948, measure: refugees, date: "1948-01-01", precision: year,
+   value: 957000, unit: persons, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "77th anniversary of the Nakba, 12 May 2025",
+   url: "https://www.pcbs.gov.ps/en/post-details/?postId=22661", verification: read,
+   caution: "A 1950 relief-rolls figure, which the UN Conciliation Commission considered inflated; PCBS's 2018 release said 800,000."}
+- {id: nakba-refugees-ips, topic: nakba_1948, measure: refugees, date: "1948-01-01", precision: year,
+   low: 714150, high: 744150, unit: persons, region: Palestine,
+   publisher: "Institute for Palestine Studies", document: "All That Remains, appendix (palquest)",
+   url: "https://www.palquest.org/en/appendixtabs", verification: read,
+   caution: "The same appendix gives 727,700 to 758,300 to the end of 1948."}
+- {id: nakba-killed-pcbs, topic: nakba_1948, measure: killed, date: "1948-01-01", precision: year,
+   value: 15000, qualifier: more_than, unit: persons, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "77th anniversary of the Nakba, 12 May 2025",
+   url: "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   quote: "more than 70 massacres in which more than 15 thousand Palestinians were martyred", verification: read,
+   caution: "The sentence puts all 15,000 inside the massacres; it is a whole-war total."}
+- {id: nakba-killed-aref, topic: nakba_1948, measure: killed, date: "1948-01-01", precision: year,
+   value: 13000, qualifier: about, unit: persons, region: Palestine,
+   publisher: "Aref al-Aref (1959), cited by the Institute for Palestine Studies", document: "All That Remains, appendix (palquest), citing al-Aref V:1047-53",
+   url: "https://www.palquest.org/en/appendixtabs",
+   quote: "some 13,000 (mainly civilian) Palestinians were killed", verification: read}
+- {id: nakba-villages-khalidi, topic: nakba_1948, measure: villages_destroyed, date: "1948-01-01", precision: year,
+   value: 418, unit: localities, region: Palestine,
+   publisher: "Walid Khalidi, All That Remains (Institute for Palestine Studies)", document: "palquest, methodology",
+   url: "https://palquest.org/en/places/Methodology", verification: read,
+   caution: "Villages only: 292 totally destroyed, 90 largely."}
+- {id: nakba-villages-morris, topic: nakba_1948, measure: villages_destroyed, date: "1948-01-01", precision: year,
+   value: 369, unit: localities, region: Palestine,
+   publisher: "Benny Morris", document: "as given by palquest", url: "https://palquest.org/en/places/Methodology",
+   quote: "Arab settlements abandoned", verification: read}
+- {id: nakba-villages-abusitta, topic: nakba_1948, measure: villages_destroyed, date: "1948-01-01", precision: year,
+   value: 531, unit: localities, region: Palestine,
+   publisher: "Salman Abu Sitta", document: "as given by palquest", url: "https://palquest.org/en/places/Methodology",
+   verification: read, caution: "Localities including towns and the Beersheba tribal lands, not villages alone."}
+- {id: nakba-villages-pcbs, topic: nakba_1948, measure: villages_destroyed, date: "1948-01-01", precision: year,
+   value: 531, unit: localities, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "77th anniversary of the Nakba, 12 May 2025",
+   url: "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   quote: "controlled 774 towns and villages and destroyed 531", verification: read}
+- {id: nakba-massacres-pcbs, topic: nakba_1948, measure: massacres, date: "1948-01-01", precision: year,
+   value: 70, qualifier: more_than, unit: events, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "77th anniversary of the Nakba, 12 May 2025",
+   url: "https://www.pcbs.gov.ps/en/post-details/?postId=22661", verification: read}
+- {id: nakba-massacres-abdeljawad, topic: nakba_1948, measure: massacres, date: "1948-01-01", precision: year,
+   value: 68, unit: events, region: Palestine,
+   publisher: "Saleh Abdel Jawad", document: "as cited on Wikipedia", verification: via_wikipedia,
+   caution: "Morris counts 24 and Abu Sitta 33, also seen on Wikipedia only."}
+
+- {id: deir-yassin-palquest, topic: deir_yassin_1948, measure: killed, date: "1948-04-09", precision: day,
+   value: 100, qualifier: more_than, unit: persons, region: Palestine,
+   publisher: "Institute for Palestine Studies (palquest)", document: "Deir Yasin massacre, 9 April 1948",
+   url: "https://www.palquest.org/en/highlight/21194/deir-yasin-massacre-9-april-1948", quote: "more than 100", verification: read}
+- {id: deir-yassin-hogan, topic: deir_yassin_1948, measure: killed, date: "1948-04-09", precision: day,
+   low: 110, high: 140, unit: persons, region: Palestine,
+   publisher: "Matthew Hogan (2001)", document: "The 1948 Massacre at Deir Yassin Revisited",
+   url: "https://www.deiryassin.org/mh2001.html", verification: read,
+   caution: "254 was the Irgun's own inflated figure."}
+- {id: deir-yassin-kanaana, topic: deir_yassin_1948, measure: killed, date: "1948-04-09", precision: day,
+   value: 107, unit: persons, region: Palestine,
+   publisher: "Kan'ana and Zaytawi, Birzeit University (1987)", document: "as cited on Wikipedia", verification: via_wikipedia}
+- {id: tantura-forensic, topic: tantura_1948, measure: killed, date: "1948-05-22", precision: day,
+   low: 20, high: 280, unit: persons, region: Palestine,
+   publisher: "Forensic Architecture for Adalah (2023)", document: "Executions and Mass Graves in Tantura, 23 May 1948",
+   url: "https://content.forensic-architecture.org/wp-content/uploads/2023/05/Tantura-report_v7.0.pdf",
+   quote: "vary between 20 and 280", verification: read,
+   caution: "There is no agreed toll. The report estimates 70 to 140 and 40 to 80 bodies in two mass graves."}
+- {id: lydda-aref, topic: lydda_1948, measure: killed, date: "1948-07-12", precision: day,
+   value: 426, unit: persons, region: Palestine,
+   publisher: "Aref al-Aref, as given by the Institute for Palestine Studies (palquest)", document: "Lydda, 9-13 July 1948",
+   url: "http://www.palquest.org/en/highlight/24073/lydda-9-13-july-1948", verification: read,
+   caution: "176 of them in the Dahmash Mosque."}
+- {id: lydda-morris, topic: lydda_1948, measure: killed, date: "1948-07-12", precision: day,
+   value: 250, qualifier: about, unit: persons, region: Palestine,
+   publisher: "Benny Morris, citing Sefer ha-Palmach", document: "as cited on Wikipedia", quote: "some 250", verification: via_wikipedia}
+- {id: lydda-ramle-expelled-palquest, topic: lydda_1948, measure: expelled, date: "1948-07-12", precision: day,
+   value: 70000, qualifier: about, unit: persons, region: Palestine,
+   publisher: "Institute for Palestine Studies (palquest)", document: "Lydda, 9-13 July 1948",
+   url: "http://www.palquest.org/en/highlight/24073/lydda-9-13-july-1948", quote: "approximately 70,000", verification: read,
+   caution: "From Lydda and Ramle together."}
+- {id: dawayima-kaplan, topic: dawayima_1948, measure: killed, date: "1948-10-29", precision: day,
+   low: 80, high: 100, unit: persons, region: Palestine,
+   publisher: "An Israeli soldier's testimony (the Kaplan letter), via Benny Morris, as given by palquest", document: "Al-Dawayima, 29 October 1948",
+   url: "https://palquest.palestine-studies.org/en/highlight/22274/al-dawayima-29-october-1948", quote: "the first wave", verification: read,
+   caution: "The dead of the first wave only. Ben-Gurion's diary says 70 to 80."}
+- {id: dawayima-missing-mukhtar, topic: dawayima_1948, measure: missing, date: "1948-10-29", precision: day,
+   value: 455, unit: persons, region: Palestine,
+   publisher: "The mukhtar's sworn statement, UN document A/AC.25/Com.Tech/W.3 (June 1949)", document: "UNCCP Technical Committee working paper",
+   url: "https://www.un.org/unispal/document/auto-insert-211083/", verification: read,
+   caution: "Missing people (280 of them men), not confirmed dead."}
+- {id: safsaf-galili, topic: safsaf_1948, measure: killed, date: "1948-10-29", precision: day,
+   value: 52, unit: persons, region: Palestine,
+   publisher: "The Galili/Erem report, as given by palquest", document: "Safsaf",
+   url: "https://www.palquest.org/en/place/17131/safsaf", quote: "52 men tied with a rope and dropped into a well and shot", verification: read,
+   caution: "Villagers told Nafez Nazzal about 70."}
+- {id: balad-al-shaykh-palquest, topic: balad_al_shaykh_1947, measure: killed, date: "1947-12-31", precision: day,
+   value: 60, qualifier: more_than, unit: persons, region: Palestine,
+   publisher: "Institute for Palestine Studies (palquest)", document: "Balad al-Shaykh", quote: "more than 60", verification: read,
+   caution: "One Haganah report says 21."}
+- {id: saliha-galili, topic: saliha_1948, measure: killed, date: "1948-10-30", precision: day,
+   value: 94, unit: persons, region: Palestine,
+   publisher: "Yisrael Galili to Mapam, as given by palquest", document: "Saliha",
+   url: "https://www.palquest.org/en/place/17135/saliha", quote: "blown up with a house", verification: read}
+- {id: land-area-wb-gaza-pcbs, topic: land_area, measure: west_bank_and_gaza_km2, date: "2021-01-01", precision: year,
+   value: 6025, unit: km2, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "Land use statistics table, 2021",
+   url: "https://www.pcbs.gov.ps/Portals/_Rainbow/Documents/LUS3E.html", verification: read,
+   caution: "West Bank 5,660 km2 plus Gaza Strip 365 km2. Against historic Palestine's 27,000 km2 this is 22.3%."}
+- {id: land-area-historic-pcbs, topic: land_area, measure: historic_palestine_km2, date: "2021-01-01", precision: year,
+   value: 27000, qualifier: about, unit: km2, region: Palestine,
+   publisher: "Palestinian Central Bureau of Statistics", document: "Land use statistics table, 2021",
+   url: "https://www.pcbs.gov.ps/Portals/_Rainbow/Documents/LUS3E.html", quote: "about 27,000 km²", verification: read}
+
+# ── B. 1949 to 1967 ──────────────────────────────────────────────────────────
+- {id: qibya-un-mac, topic: qibya_1953, measure: killed, date: "1953-10-14", precision: day,
+   value: 42, unit: persons, region: "West Bank",
+   publisher: "UN Mixed Armistice Commission, in the Security Council's records", document: "UNISPAL document",
+   url: "https://www.un.org/unispal/document/auto-insert-178969/", verification: read,
+   caution: "The Security Council debate then says 'more than fifty'. The widely cited 69 was seen on Wikipedia only."}
+- {id: kafr-qasim-wp, topic: kafr_qasim_1956, measure: killed, date: "1956-10-29", precision: day,
+   value: 48, unit: persons, region: Palestine,
+   publisher: "as cited on Wikipedia", document: "Kafr Qasim massacre", verification: via_wikipedia,
+   caution: "19 men, 6 women, 23 children; 49 counts an unborn child."}
+- {id: khan-yunis-1956-unrwa, topic: khan_yunis_1956, measure: killed, date: "1956-11-03", precision: day,
+   value: 275, unit: persons, region: "Gaza Strip",
+   publisher: "UNRWA Director's Special Report A/3212/Add.1", document: "paragraph 23",
+   url: "https://www.un.org/unispal/document/auto-insert-188371/", quote: "allegedly killed", verification: read,
+   caution: "From lists the Director considered trustworthy."}
+- {id: rafah-1956-unrwa, topic: rafah_1956, measure: killed, date: "1956-11-12", precision: day,
+   value: 111, unit: persons, region: "Gaza Strip",
+   publisher: "UNRWA Director's Special Report A/3212/Add.1", document: "paragraph 27",
+   url: "https://www.un.org/unispal/document/auto-insert-188371/", quote: "allegedly killed", verification: read}
+- {id: samu-1966-un, topic: samu_1966, measure: killed, date: "1966-11-13", precision: day,
+   value: 18, unit: persons, region: "West Bank",
+   publisher: "UN Security Council document S/7593", document: "report on the As-Samu raid", verification: read,
+   caution: "15 Jordanian soldiers and 3 civilians; 125 houses demolished."}
+- {id: displaced-1967-gussing, topic: naksa_1967, measure: displaced, date: "1967-06-05", precision: month,
+   value: 200000, qualifier: about, unit: persons, region: "West Bank",
+   publisher: "UN Gussing report A/6797 (September 1967)", document: "Report of the Secretary-General's Special Representative",
+   url: "https://www.un.org/unispal/document/auto-insert-179249/", quote: "an estimated 200,000", verification: read,
+   caution: "To the East Bank. UNRWA says about 145,000 were 1948 refugees uprooted again. 280,000 to 325,000 (Bowker 2003) was seen on Wikipedia only."}
+
+# ── C. 1967 to October 2023 ──────────────────────────────────────────────────
+- {id: tel-al-zaatar-palquest, topic: tel_al_zaatar_1976, measure: killed, date: "1976-08-12", precision: day,
+   value: 1500, qualifier: about, unit: persons, region: Lebanon,
+   publisher: "Institute for Palestine Studies (palquest)", document: "Tel al-Zaatar",
+   quote: "Some 1,500 residents were killed in the final massacre", verification: read,
+   caution: "The same publisher's chronology says 'more than 2,000'; up to 4,280 (Sayigh) was seen on Wikipedia only."}
+- {id: sabra-shatila-kahan-idf, topic: sabra_shatila_1982, measure: killed, date: "1982-09-16", precision: day,
+   low: 700, high: 800, unit: persons, region: Lebanon, from: "1982-09-16", to: "1982-09-18",
+   publisher: "Kahan Commission (Israel), citing IDF intelligence", document: "Report of the Commission of Inquiry, 1983",
+   quote: "between 700 and 800", verification: read,
+   caution: "The Commission called this probably closest. It also records 328 bodies counted by the Red Cross and 460 in a Lebanese document."}
+- {id: sabra-shatila-hout, topic: sabra_shatila_1982, measure: killed, date: "1982-09-16", precision: day,
+   value: 1300, qualifier: at_least, unit: persons, region: Lebanon, from: "1982-09-16", to: "1982-09-18",
+   publisher: "Bayan Nuwayhed al-Hout", document: "as cited on Wikipedia", verification: via_wikipedia,
+   caution: "Named victims; her estimate is 3,500."}
+- {id: first-intifada-btselem, topic: first_intifada, measure: killed, date: "1987-12-09", precision: day,
+   value: 1124, unit: persons, region: Palestine, from: "1987-12-09", to: "1993-09-13",
+   publisher: "B'Tselem", document: "First Intifada tables", url: "https://www.btselem.org/statistics/first_intifada_tables",
+   verification: read,
+   caution: "In the occupied territories: 1,070 by security forces and 54 by Israeli civilians. With 38 inside the Green Line the total is 1,162. Minors: 250."}
+- {id: al-aqsa-1990-btselem, topic: al_aqsa_1990, measure: killed, date: "1990-10-08", precision: day,
+   value: 17, qualifier: at_least, unit: persons, region: "West Bank",
+   publisher: "B'Tselem (corrected figure); Al-Haq", document: "(document title not recorded by the research note)", verification: read,
+   caution: "UN Security Council resolution 672 says 'over twenty'."}
+- {id: ibrahimi-1994-btselem, topic: ibrahimi_mosque_1994, measure: killed, date: "1994-02-25", precision: day,
+   value: 29, unit: persons, region: "West Bank",
+   publisher: "B'Tselem", document: "Impossible Coexistence", verification: read}
+- {id: second-intifada-btselem, topic: second_intifada, measure: killed, date: "2000-09-29", precision: day,
+   value: 4790, unit: persons, region: Palestine, from: "2000-09-29", to: "2008-12-26",
+   publisher: "B'Tselem", document: "Fatalities before Operation Cast Lead",
+   url: "https://www.btselem.org/statistics/fatalities/before-cast-lead/by-date-of-event", verification: read,
+   caution: "Killed by Israeli forces in the territories: Gaza 2,997, West Bank including East Jerusalem 1,793. With 71 inside Israel, 4,861; Israeli civilians killed 46 more."}
+- {id: gaza-2008-btselem, topic: gaza_2008_2009, measure: killed, date: "2008-12-27", precision: day,
+   value: 1391, unit: persons, region: "Gaza Strip", from: "2008-12-27", to: "2009-01-18",
+   publisher: "B'Tselem", document: "(document title not recorded by the research note)", verification: read,
+   caution: "PCHR counts 1,417; the Goldstone report says NGOs give 'between 1,387 and 1,417'."}
+- {id: gaza-2012-ohchr, topic: gaza_2012, measure: killed, date: "2012-11-14", precision: day,
+   value: 174, unit: persons, region: "Gaza Strip", from: "2012-11-14", to: "2012-11-21",
+   publisher: "UN OHCHR", document: "(document title not recorded by the research note)", verification: read,
+   caution: "At least 168 of them by Israeli military action. B'Tselem counts 167."}
+- {id: gaza-2014-coi, topic: gaza_2014, measure: killed, date: "2014-07-08", precision: month,
+   value: 2251, unit: persons, region: "Gaza Strip", from: "2014-07-08", to: "2014-08-26",
+   publisher: "UN Commission of Inquiry, A/HRC/29/52", document: "Report of the independent commission of inquiry on the 2014 Gaza conflict",
+   verification: read, caution: "Including 1,462 civilians and 551 children. B'Tselem counts 2,202."}
+- {id: great-march-ocha, topic: great_march_of_return, measure: killed, date: "2018-03-30", precision: day,
+   value: 214, unit: persons, region: "Gaza Strip", from: "2018-03-30", to: "2019-12-31",
+   publisher: "UN OCHA", document: "(document title not recorded by the research note)", verification: read,
+   caution: "Including 46 children; over 36,100 injured. B'Tselem and PCHR count 223."}
+- {id: gaza-2021-ohchr, topic: gaza_2021, measure: killed, date: "2021-05-10", precision: day,
+   value: 261, unit: persons, region: "Gaza Strip", from: "2021-05-10", to: "2021-05-21",
+   publisher: "UN OHCHR, via OCHA", document: "(document title not recorded by the research note)", verification: read,
+   caution: "Including 67 children. It includes some deaths from rockets that fell short; about 245 were by Israeli fire. The film's 256 has no source."}
+- {id: settlers-wb-peacenow-2023, topic: settlers, measure: west_bank_population, date: "2023-12-31", precision: day,
+   value: 511100, unit: persons, region: "West Bank",
+   publisher: "Peace Now (Settlement Watch), from Israel's Central Bureau of Statistics", document: "Settlements data: population",
+   url: "https://peacenow.org.il/en/settlements-watch/settlements-data/population", quote: "end of 2023", verification: read,
+   caution: "The West Bank without East Jerusalem. Peace Now's own 2024 map printed 478,600."}
+- {id: settlers-all-pcbs-2024, topic: settlers, measure: west_bank_and_east_jerusalem_population, date: "2024-12-31", precision: day,
+   value: 778567, unit: persons, region: "West Bank",
+   publisher: "Palestinian Central Bureau of Statistics", document: "(document title not recorded by the research note)", verification: read,
+   caution: "At the end of 2024, including 243,716 in East Jerusalem."}

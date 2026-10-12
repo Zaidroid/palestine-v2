@@ -105,6 +105,9 @@ AWAITING_PERMISSION = {
 # era grid speak for them.
 CLOSED_CORPUS = {
     "v1_historical_palopenmaps",
+    # Hand-entered statements about dated events (2026-10-12): a figure for
+    # 1948 does not go stale, and the file grows only when a person adds one.
+    "cited_figures",
 }
 
 # Datasets whose series another dataset CONTINUES. Their age stops mattering

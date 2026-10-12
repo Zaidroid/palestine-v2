@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from serve.when import when_en
+from serve.when import cited_en, is_cited, statements, when_en
 
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
@@ -820,6 +820,11 @@ def databank(d: dict) -> str:
         when = when_en(it)
         partial = " (partial year)" if (it.get("attrs") or {}).get("partial_year") else ""
         where = f", {it['place_en'] or it['place_ar']}" if it.get("place_en") or it.get("place_ar") else ""
+        if is_cited(it):
+            # one publisher's statement a row: every publisher is named
+            rows = statements(d.get("items") or [], it) or [it]
+            bits.append(f"{it.get('indicator')}: {cited_en(rows)}{unit} {when}{where}")
+            continue
         bits.append((f"{it.get('indicator')}: {val:,}{unit} {when}{partial}{where}"
                      if isinstance(val, (int, float)) else
                      f"{it.get('indicator')}: {val} {when}{where}"))

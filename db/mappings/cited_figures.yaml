@@ -1,0 +1,148 @@
+# Figures cited from named publications, entered by hand (2026-10-12).
+#
+# «العدّ / The Count» typed its historical figures and several dates straight
+# into the film. The audit of 2026-10-11 listed them as "hand-entered, no
+# source in the databank": the Nakba's refugees and dead, Deir Yassin, Lydda,
+# al-Dawayima, the wars on Gaza before 2023, the settler count, and more. A
+# typed number cannot be opened, dated or corrected in one place.
+#
+# Each row here is ONE publisher's statement. Several publishers on one
+# question are several rows under one indicator, each naming its publisher in
+# attrs: UNCCP's 711,000 refugees, UNRWA's 750,000 and PCBS's 957,000 are three
+# rows of cited.nakba_1948.refugees, and nothing averages them.
+#
+# The file a person edits is db/reference/cited_figures.yaml; ops/build_cited_figures.py
+# checks it and writes this spec's input. No network is involved.
+
+category: cited_figures
+transform: engine
+v1_category: historical          # served with the historical category
+shape: observation
+status: reviewed
+records_measured: 46             # 2026-10-12: the first set (research of 2026-10-07)
+
+input:
+  root: data/reference
+  glob: cited_figures.json
+cadence: irregular               # grows when a person adds a figure
+
+source_routing:
+  by_name:
+    "Cited figures (hand-entered, each with its publisher)": cited_reference
+
+datasets:
+  - key: cited_figures
+    source: cited_reference      # migration 107
+
+indicator:
+  template: "cited.{topic}.{measure}"
+
+value:
+  num_from: value                # null for a range: a range is not a number
+  text_from: said                # "about 711,000", "110 to 140": the statement as made
+  unit_from: unit
+
+occurred_at:
+  from: date
+  precision: day
+  rules:
+    - when: {op: always}
+      then: {precision_from: date_precision}
+      rationale: >-
+        Each entry states its own precision: the Nakba's totals are a year, a
+        massacre is a day. A period (an intifada, a war) carries coverage_start
+        and coverage_end in attrs and is dated at its first day.
+
+place:
+  strategy: region               # 'Gaza Strip' and 'West Bank' land on their region;
+  min_decided_pct: 1.0           #   'Palestine' and 'Lebanon' are an honest NULL with
+                                 #   the string kept in attrs.region
+
+stable_id: stable_id             # cited:<id>, the entry's own id, never reused
+
+attrs_passthrough:
+  - cite_id
+  - publisher
+  - document
+  - url
+  - quote
+  - verification                 # read | via_wikipedia | secondary
+  - read_on
+  - qualifier                    # about | at_least | more_than | up_to
+  - value_low
+  - value_high
+  - caution
+  - coverage_start
+  - coverage_end
+
+identity:
+  fields: [indicator, occurred_at]
+  attrs: [cite_id]               # several publishers share an indicator and a date
+  generation: complete           # an entry removed from the file is closed, not kept
+  max_absent: 10
+
+expect:
+  min_records: 40
+  max_observations: 400
+
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {regex: "^cited\\.land_area\\."}
+      concept: land.area
+      measure_kind: stock
+      grain: snapshot
+      place_grain: region
+      canonical_unit: km2
+      serve_warning: "A figure cited from one named publication, entered by hand: the row names the publisher, the document and the day it was read."
+      serve_warning_ar: "رقم مقتبس من منشور واحد محدّد ومُدخل باليد: السطر بيذكر الناشر والوثيقة ويوم قراءتها."
+    - when: {regex: "^cited\\.settlers\\."}
+      concept: settlement
+      measure_kind: stock
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "A figure cited from one named publication, entered by hand: the row names the publisher, the document and the day it was read."
+      serve_warning_ar: "رقم مقتبس من منشور واحد محدّد ومُدخل باليد: السطر بيذكر الناشر والوثيقة ويوم قراءتها."
+    - when: {regex: "^cited\\..*\\.(refugees|expelled|displaced)$"}
+      concept: displacement
+      measure_kind: stock          # one total for an event or a period, per publisher
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "One publisher's figure per row, entered by hand with its document and the day it was read. Publishers disagree, and their figures are never added or averaged: read the publisher on each row."
+      serve_warning_ar: "كل سطر رقم ناشر واحد، مُدخل باليد مع وثيقته ويوم قراءتها. الناشرين بيختلفوا، وأرقامهم ما بتنجمع ولا بينحسب معدّلها: اقرأ اسم الناشر بكل سطر."
+    - when: {regex: "^cited\\..*\\.(villages_destroyed|massacres)$"}
+      concept: violence
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      serve_warning: "One publisher's figure per row, entered by hand with its document and the day it was read. Publishers count different things (villages, localities, towns) and their figures are never added or averaged."
+      serve_warning_ar: "كل سطر رقم ناشر واحد، مُدخل باليد مع وثيقته ويوم قراءتها. كل ناشر بيعدّ شي مختلف (قرى، تجمّعات، مدن)، وأرقامهم ما بتنجمع ولا بينحسب معدّلها."
+    - when: {prefix: "cited."}
+      concept: mortality.conflict
+      measure_kind: stock          # one total for an event or a period, per publisher
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "One publisher's figure per row, entered by hand with its document and the day it was read. Publishers disagree, and their figures are never added or averaged: read the publisher on each row."
+      serve_warning_ar: "كل سطر رقم ناشر واحد، مُدخل باليد مع وثيقته ويوم قراءتها. الناشرين بيختلفوا، وأرقامهم ما بتنجمع ولا بينحسب معدّلها: اقرأ اسم الناشر بكل سطر."
+
+notes: |
+  WHAT THIS IS NOT. Not a measurement series and not a database export: a
+  handful of dated statements, each a short quotation with its citation. It
+  exists so that a film, a chart or an answer reads a sourced row instead of a
+  typed number, and so that a correction happens in one place.
+
+  A RANGE HAS NO NUMBER. "110 to 140" is stored as text with its two ends in
+  attrs (value_low, value_high); value_num stays null, so no tool sums or
+  plots a midpoint nobody stated.
+
+  VERIFICATION IS PART OF THE ROW. `via_wikipedia` means the figure was seen
+  on Wikipedia and the source it names was not opened. Such a row says so in
+  every answer that carries its attrs; it is held because the film shows it,
+  and marked so the next reader opens the source.

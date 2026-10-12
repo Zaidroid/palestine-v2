@@ -311,3 +311,53 @@ def test_the_people_held_as_unlawful_combatants_have_a_series_of_their_own():
     assert by == {"sentenced": 1509, "remand": 3236, "administrative": 3101,
                   "unlawful_combatants": 1419, "total": 9265}
     assert sum(v for k, v in by.items() if k != "total") == by["total"]
+
+
+# ── cited figures: one publisher's statement a row ───────────────────────────
+
+def _cite(value, publisher, **attrs):
+    return {"indicator": "cited.nakba_1948.refugees", "occurred_at": "1948-01-01T00:00:00Z",
+            "occurred_precision": "year", "value_num": value, "unit": "persons", "place_en": None,
+            "place_ar": None, "attrs": {"publisher": publisher, "verification": "read", **attrs}}
+
+
+def test_every_publisher_is_named_beside_its_figure_and_nothing_is_averaged():
+    from serve import mcp_en
+    items = [_cite(711000, "UNCCP", qualifier="about"), _cite(750000, "UNRWA", qualifier="about"),
+             _cite(957000, "PCBS"), _cite(None, "IPS", value_low=714150, value_high=744150)]
+    said = mcp_en.databank({"category": "historical", "count": 4, "items": items,
+                            "latest_by_indicator": [items[2]]})
+    assert "about 711,000 per UNCCP" in said and "about 750,000 per UNRWA" in said
+    assert "957,000 per PCBS" in said and "714,150 to 744,150 per IPS" in said
+    assert "in 1948" in said
+
+
+def test_a_figure_seen_on_wikipedia_only_says_so():
+    from serve.when import cited_ar, cited_en
+    row = _cite(107, "Kan'ana and Zaytawi", verification="via_wikipedia")
+    assert cited_en([row]).endswith("(seen on Wikipedia only)")
+    assert "ويكيبيديا" in cited_ar([row]) and "حسب Kan'ana and Zaytawi" in cited_ar([row])
+
+
+def test_the_cited_figures_file_is_well_formed_and_its_built_copy_is_current():
+    import yaml
+    from ops import build_cited_figures as B
+    doc = yaml.safe_load(B.SRC.read_text(encoding="utf-8"))
+    figures = [{**(doc.get("defaults") or {}), **f} for f in doc["figures"]]
+    assert B.check(figures) == []
+    built = __import__("json").loads(B.OUT.read_text(encoding="utf-8"))["data"]
+    assert [r["cite_id"] for r in built] == [f["id"] for f in figures]
+    assert B.said({"value": 15000, "qualifier": "more_than"}) == "more than 15,000"
+    assert B.said({"low": 20, "high": 280}) == "20 to 280"
+
+
+def test_an_entry_nobody_could_stand_behind_is_refused():
+    from ops import build_cited_figures as B
+    ok = {"id": "x-1", "topic": "t", "measure": "killed", "date": "1948-04-09", "precision": "day",
+          "value": 100, "unit": "persons", "region": "Palestine", "publisher": "P", "document": "D",
+          "verification": "read", "read_on": "2026-10-07"}
+    assert B.check([ok]) == []
+    assert any("publisher" in p for p in B.check([{**ok, "publisher": ""}]))
+    assert any("verification" in p for p in B.check([{**ok, "verification": "heard"}]))
+    assert any("not both" in p for p in B.check([{**ok, "low": 1, "high": 2}]))
+    assert any("used twice" in p for p in B.check([ok, ok]))

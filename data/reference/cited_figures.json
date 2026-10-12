@@ -1,0 +1,1191 @@
+{
+ "data": [
+  {
+   "cite_id": "nakba-refugees-unccp",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "General Progress Report A/1367/Rev.1, 23 October 1950 (Technical Committee estimate of August 1949)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "refugees",
+   "publisher": "UN Conciliation Commission for Palestine",
+   "qualifier": "about",
+   "quote": "approximately 711,000",
+   "read_on": "2026-10-07",
+   "said": "about 711,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-refugees-unccp",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-180810/",
+   "value": 711000,
+   "verification": "read"
+  },
+  {
+   "cite_id": "nakba-refugees-unrwa",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "Who we are",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "refugees",
+   "publisher": "UNRWA",
+   "qualifier": "about",
+   "quote": "When the Agency began operations in 1950, it was responding to the needs of about 750,000 Palestine refugees.",
+   "read_on": "2026-10-07",
+   "said": "about 750,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-refugees-unrwa",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.unrwa.org/who-we-are",
+   "value": 750000,
+   "verification": "read"
+  },
+  {
+   "caution": "A 1950 relief-rolls figure, which the UN Conciliation Commission considered inflated; PCBS's 2018 release said 800,000.",
+   "cite_id": "nakba-refugees-pcbs",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "77th anniversary of the Nakba, 12 May 2025",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "refugees",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "read_on": "2026-10-07",
+   "said": "957,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-refugees-pcbs",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   "value": 957000,
+   "verification": "read"
+  },
+  {
+   "caution": "The same appendix gives 727,700 to 758,300 to the end of 1948.",
+   "cite_id": "nakba-refugees-ips",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "All That Remains, appendix (palquest)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "refugees",
+   "publisher": "Institute for Palestine Studies",
+   "read_on": "2026-10-07",
+   "said": "714,150 to 744,150",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-refugees-ips",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.palquest.org/en/appendixtabs",
+   "value": null,
+   "value_high": 744150,
+   "value_low": 714150,
+   "verification": "read"
+  },
+  {
+   "caution": "The sentence puts all 15,000 inside the massacres; it is a whole-war total.",
+   "cite_id": "nakba-killed-pcbs",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "77th anniversary of the Nakba, 12 May 2025",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "qualifier": "more_than",
+   "quote": "more than 70 massacres in which more than 15 thousand Palestinians were martyred",
+   "read_on": "2026-10-07",
+   "said": "more than 15,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-killed-pcbs",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   "value": 15000,
+   "verification": "read"
+  },
+  {
+   "cite_id": "nakba-killed-aref",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "All That Remains, appendix (palquest), citing al-Aref V:1047-53",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Aref al-Aref (1959), cited by the Institute for Palestine Studies",
+   "qualifier": "about",
+   "quote": "some 13,000 (mainly civilian) Palestinians were killed",
+   "read_on": "2026-10-07",
+   "said": "about 13,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-killed-aref",
+   "topic": "nakba_1948",
+   "unit": "persons",
+   "url": "https://www.palquest.org/en/appendixtabs",
+   "value": 13000,
+   "verification": "read"
+  },
+  {
+   "caution": "Villages only: 292 totally destroyed, 90 largely.",
+   "cite_id": "nakba-villages-khalidi",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "palquest, methodology",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "villages_destroyed",
+   "publisher": "Walid Khalidi, All That Remains (Institute for Palestine Studies)",
+   "read_on": "2026-10-07",
+   "said": "418",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-villages-khalidi",
+   "topic": "nakba_1948",
+   "unit": "localities",
+   "url": "https://palquest.org/en/places/Methodology",
+   "value": 418,
+   "verification": "read"
+  },
+  {
+   "cite_id": "nakba-villages-morris",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "as given by palquest",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "villages_destroyed",
+   "publisher": "Benny Morris",
+   "quote": "Arab settlements abandoned",
+   "read_on": "2026-10-07",
+   "said": "369",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-villages-morris",
+   "topic": "nakba_1948",
+   "unit": "localities",
+   "url": "https://palquest.org/en/places/Methodology",
+   "value": 369,
+   "verification": "read"
+  },
+  {
+   "caution": "Localities including towns and the Beersheba tribal lands, not villages alone.",
+   "cite_id": "nakba-villages-abusitta",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "as given by palquest",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "villages_destroyed",
+   "publisher": "Salman Abu Sitta",
+   "read_on": "2026-10-07",
+   "said": "531",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-villages-abusitta",
+   "topic": "nakba_1948",
+   "unit": "localities",
+   "url": "https://palquest.org/en/places/Methodology",
+   "value": 531,
+   "verification": "read"
+  },
+  {
+   "cite_id": "nakba-villages-pcbs",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "77th anniversary of the Nakba, 12 May 2025",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "villages_destroyed",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "quote": "controlled 774 towns and villages and destroyed 531",
+   "read_on": "2026-10-07",
+   "said": "531",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-villages-pcbs",
+   "topic": "nakba_1948",
+   "unit": "localities",
+   "url": "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   "value": 531,
+   "verification": "read"
+  },
+  {
+   "cite_id": "nakba-massacres-pcbs",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "77th anniversary of the Nakba, 12 May 2025",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "massacres",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "qualifier": "more_than",
+   "read_on": "2026-10-07",
+   "said": "more than 70",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-massacres-pcbs",
+   "topic": "nakba_1948",
+   "unit": "events",
+   "url": "https://www.pcbs.gov.ps/en/post-details/?postId=22661",
+   "value": 70,
+   "verification": "read"
+  },
+  {
+   "caution": "Morris counts 24 and Abu Sitta 33, also seen on Wikipedia only.",
+   "cite_id": "nakba-massacres-abdeljawad",
+   "date": "1948-01-01",
+   "date_precision": "year",
+   "document": "as cited on Wikipedia",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "massacres",
+   "publisher": "Saleh Abdel Jawad",
+   "read_on": "2026-10-07",
+   "said": "68",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:nakba-massacres-abdeljawad",
+   "topic": "nakba_1948",
+   "unit": "events",
+   "value": 68,
+   "verification": "via_wikipedia"
+  },
+  {
+   "cite_id": "deir-yassin-palquest",
+   "date": "1948-04-09",
+   "date_precision": "day",
+   "document": "Deir Yasin massacre, 9 April 1948",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Institute for Palestine Studies (palquest)",
+   "qualifier": "more_than",
+   "quote": "more than 100",
+   "read_on": "2026-10-07",
+   "said": "more than 100",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:deir-yassin-palquest",
+   "topic": "deir_yassin_1948",
+   "unit": "persons",
+   "url": "https://www.palquest.org/en/highlight/21194/deir-yasin-massacre-9-april-1948",
+   "value": 100,
+   "verification": "read"
+  },
+  {
+   "caution": "254 was the Irgun's own inflated figure.",
+   "cite_id": "deir-yassin-hogan",
+   "date": "1948-04-09",
+   "date_precision": "day",
+   "document": "The 1948 Massacre at Deir Yassin Revisited",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Matthew Hogan (2001)",
+   "read_on": "2026-10-07",
+   "said": "110 to 140",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:deir-yassin-hogan",
+   "topic": "deir_yassin_1948",
+   "unit": "persons",
+   "url": "https://www.deiryassin.org/mh2001.html",
+   "value": null,
+   "value_high": 140,
+   "value_low": 110,
+   "verification": "read"
+  },
+  {
+   "cite_id": "deir-yassin-kanaana",
+   "date": "1948-04-09",
+   "date_precision": "day",
+   "document": "as cited on Wikipedia",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Kan'ana and Zaytawi, Birzeit University (1987)",
+   "read_on": "2026-10-07",
+   "said": "107",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:deir-yassin-kanaana",
+   "topic": "deir_yassin_1948",
+   "unit": "persons",
+   "value": 107,
+   "verification": "via_wikipedia"
+  },
+  {
+   "caution": "There is no agreed toll. The report estimates 70 to 140 and 40 to 80 bodies in two mass graves.",
+   "cite_id": "tantura-forensic",
+   "date": "1948-05-22",
+   "date_precision": "day",
+   "document": "Executions and Mass Graves in Tantura, 23 May 1948",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Forensic Architecture for Adalah (2023)",
+   "quote": "vary between 20 and 280",
+   "read_on": "2026-10-07",
+   "said": "20 to 280",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:tantura-forensic",
+   "topic": "tantura_1948",
+   "unit": "persons",
+   "url": "https://content.forensic-architecture.org/wp-content/uploads/2023/05/Tantura-report_v7.0.pdf",
+   "value": null,
+   "value_high": 280,
+   "value_low": 20,
+   "verification": "read"
+  },
+  {
+   "caution": "176 of them in the Dahmash Mosque.",
+   "cite_id": "lydda-aref",
+   "date": "1948-07-12",
+   "date_precision": "day",
+   "document": "Lydda, 9-13 July 1948",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Aref al-Aref, as given by the Institute for Palestine Studies (palquest)",
+   "read_on": "2026-10-07",
+   "said": "426",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:lydda-aref",
+   "topic": "lydda_1948",
+   "unit": "persons",
+   "url": "http://www.palquest.org/en/highlight/24073/lydda-9-13-july-1948",
+   "value": 426,
+   "verification": "read"
+  },
+  {
+   "cite_id": "lydda-morris",
+   "date": "1948-07-12",
+   "date_precision": "day",
+   "document": "as cited on Wikipedia",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Benny Morris, citing Sefer ha-Palmach",
+   "qualifier": "about",
+   "quote": "some 250",
+   "read_on": "2026-10-07",
+   "said": "about 250",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:lydda-morris",
+   "topic": "lydda_1948",
+   "unit": "persons",
+   "value": 250,
+   "verification": "via_wikipedia"
+  },
+  {
+   "caution": "From Lydda and Ramle together.",
+   "cite_id": "lydda-ramle-expelled-palquest",
+   "date": "1948-07-12",
+   "date_precision": "day",
+   "document": "Lydda, 9-13 July 1948",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "expelled",
+   "publisher": "Institute for Palestine Studies (palquest)",
+   "qualifier": "about",
+   "quote": "approximately 70,000",
+   "read_on": "2026-10-07",
+   "said": "about 70,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:lydda-ramle-expelled-palquest",
+   "topic": "lydda_1948",
+   "unit": "persons",
+   "url": "http://www.palquest.org/en/highlight/24073/lydda-9-13-july-1948",
+   "value": 70000,
+   "verification": "read"
+  },
+  {
+   "caution": "The dead of the first wave only. Ben-Gurion's diary says 70 to 80.",
+   "cite_id": "dawayima-kaplan",
+   "date": "1948-10-29",
+   "date_precision": "day",
+   "document": "Al-Dawayima, 29 October 1948",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "An Israeli soldier's testimony (the Kaplan letter), via Benny Morris, as given by palquest",
+   "quote": "the first wave",
+   "read_on": "2026-10-07",
+   "said": "80 to 100",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:dawayima-kaplan",
+   "topic": "dawayima_1948",
+   "unit": "persons",
+   "url": "https://palquest.palestine-studies.org/en/highlight/22274/al-dawayima-29-october-1948",
+   "value": null,
+   "value_high": 100,
+   "value_low": 80,
+   "verification": "read"
+  },
+  {
+   "caution": "Missing people (280 of them men), not confirmed dead.",
+   "cite_id": "dawayima-missing-mukhtar",
+   "date": "1948-10-29",
+   "date_precision": "day",
+   "document": "UNCCP Technical Committee working paper",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "missing",
+   "publisher": "The mukhtar's sworn statement, UN document A/AC.25/Com.Tech/W.3 (June 1949)",
+   "read_on": "2026-10-07",
+   "said": "455",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:dawayima-missing-mukhtar",
+   "topic": "dawayima_1948",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-211083/",
+   "value": 455,
+   "verification": "read"
+  },
+  {
+   "caution": "Villagers told Nafez Nazzal about 70.",
+   "cite_id": "safsaf-galili",
+   "date": "1948-10-29",
+   "date_precision": "day",
+   "document": "Safsaf",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "The Galili/Erem report, as given by palquest",
+   "quote": "52 men tied with a rope and dropped into a well and shot",
+   "read_on": "2026-10-07",
+   "said": "52",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:safsaf-galili",
+   "topic": "safsaf_1948",
+   "unit": "persons",
+   "url": "https://www.palquest.org/en/place/17131/safsaf",
+   "value": 52,
+   "verification": "read"
+  },
+  {
+   "caution": "One Haganah report says 21.",
+   "cite_id": "balad-al-shaykh-palquest",
+   "date": "1947-12-31",
+   "date_precision": "day",
+   "document": "Balad al-Shaykh",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Institute for Palestine Studies (palquest)",
+   "qualifier": "more_than",
+   "quote": "more than 60",
+   "read_on": "2026-10-07",
+   "said": "more than 60",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:balad-al-shaykh-palquest",
+   "topic": "balad_al_shaykh_1947",
+   "unit": "persons",
+   "value": 60,
+   "verification": "read"
+  },
+  {
+   "cite_id": "saliha-galili",
+   "date": "1948-10-30",
+   "date_precision": "day",
+   "document": "Saliha",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "Yisrael Galili to Mapam, as given by palquest",
+   "quote": "blown up with a house",
+   "read_on": "2026-10-07",
+   "said": "94",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:saliha-galili",
+   "topic": "saliha_1948",
+   "unit": "persons",
+   "url": "https://www.palquest.org/en/place/17135/saliha",
+   "value": 94,
+   "verification": "read"
+  },
+  {
+   "caution": "West Bank 5,660 km2 plus Gaza Strip 365 km2. Against historic Palestine's 27,000 km2 this is 22.3%.",
+   "cite_id": "land-area-wb-gaza-pcbs",
+   "date": "2021-01-01",
+   "date_precision": "year",
+   "document": "Land use statistics table, 2021",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "west_bank_and_gaza_km2",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "read_on": "2026-10-07",
+   "said": "6,025",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:land-area-wb-gaza-pcbs",
+   "topic": "land_area",
+   "unit": "km2",
+   "url": "https://www.pcbs.gov.ps/Portals/_Rainbow/Documents/LUS3E.html",
+   "value": 6025,
+   "verification": "read"
+  },
+  {
+   "cite_id": "land-area-historic-pcbs",
+   "date": "2021-01-01",
+   "date_precision": "year",
+   "document": "Land use statistics table, 2021",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "historic_palestine_km2",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "qualifier": "about",
+   "quote": "about 27,000 km²",
+   "read_on": "2026-10-07",
+   "said": "about 27,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:land-area-historic-pcbs",
+   "topic": "land_area",
+   "unit": "km2",
+   "url": "https://www.pcbs.gov.ps/Portals/_Rainbow/Documents/LUS3E.html",
+   "value": 27000,
+   "verification": "read"
+  },
+  {
+   "caution": "The Security Council debate then says 'more than fifty'. The widely cited 69 was seen on Wikipedia only.",
+   "cite_id": "qibya-un-mac",
+   "date": "1953-10-14",
+   "date_precision": "day",
+   "document": "UNISPAL document",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "killed",
+   "publisher": "UN Mixed Armistice Commission, in the Security Council's records",
+   "read_on": "2026-10-07",
+   "said": "42",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:qibya-un-mac",
+   "topic": "qibya_1953",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-178969/",
+   "value": 42,
+   "verification": "read"
+  },
+  {
+   "caution": "19 men, 6 women, 23 children; 49 counts an unborn child.",
+   "cite_id": "kafr-qasim-wp",
+   "date": "1956-10-29",
+   "date_precision": "day",
+   "document": "Kafr Qasim massacre",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "as cited on Wikipedia",
+   "read_on": "2026-10-07",
+   "said": "48",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:kafr-qasim-wp",
+   "topic": "kafr_qasim_1956",
+   "unit": "persons",
+   "value": 48,
+   "verification": "via_wikipedia"
+  },
+  {
+   "caution": "From lists the Director considered trustworthy.",
+   "cite_id": "khan-yunis-1956-unrwa",
+   "date": "1956-11-03",
+   "date_precision": "day",
+   "document": "paragraph 23",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UNRWA Director's Special Report A/3212/Add.1",
+   "quote": "allegedly killed",
+   "read_on": "2026-10-07",
+   "said": "275",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:khan-yunis-1956-unrwa",
+   "topic": "khan_yunis_1956",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-188371/",
+   "value": 275,
+   "verification": "read"
+  },
+  {
+   "cite_id": "rafah-1956-unrwa",
+   "date": "1956-11-12",
+   "date_precision": "day",
+   "document": "paragraph 27",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UNRWA Director's Special Report A/3212/Add.1",
+   "quote": "allegedly killed",
+   "read_on": "2026-10-07",
+   "said": "111",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:rafah-1956-unrwa",
+   "topic": "rafah_1956",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-188371/",
+   "value": 111,
+   "verification": "read"
+  },
+  {
+   "caution": "15 Jordanian soldiers and 3 civilians; 125 houses demolished.",
+   "cite_id": "samu-1966-un",
+   "date": "1966-11-13",
+   "date_precision": "day",
+   "document": "report on the As-Samu raid",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "killed",
+   "publisher": "UN Security Council document S/7593",
+   "read_on": "2026-10-07",
+   "said": "18",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:samu-1966-un",
+   "topic": "samu_1966",
+   "unit": "persons",
+   "value": 18,
+   "verification": "read"
+  },
+  {
+   "caution": "To the East Bank. UNRWA says about 145,000 were 1948 refugees uprooted again. 280,000 to 325,000 (Bowker 2003) was seen on Wikipedia only.",
+   "cite_id": "displaced-1967-gussing",
+   "date": "1967-06-05",
+   "date_precision": "month",
+   "document": "Report of the Secretary-General's Special Representative",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "displaced",
+   "publisher": "UN Gussing report A/6797 (September 1967)",
+   "qualifier": "about",
+   "quote": "an estimated 200,000",
+   "read_on": "2026-10-07",
+   "said": "about 200,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:displaced-1967-gussing",
+   "topic": "naksa_1967",
+   "unit": "persons",
+   "url": "https://www.un.org/unispal/document/auto-insert-179249/",
+   "value": 200000,
+   "verification": "read"
+  },
+  {
+   "caution": "The same publisher's chronology says 'more than 2,000'; up to 4,280 (Sayigh) was seen on Wikipedia only.",
+   "cite_id": "tel-al-zaatar-palquest",
+   "date": "1976-08-12",
+   "date_precision": "day",
+   "document": "Tel al-Zaatar",
+   "location": {
+    "region": "Lebanon"
+   },
+   "measure": "killed",
+   "publisher": "Institute for Palestine Studies (palquest)",
+   "qualifier": "about",
+   "quote": "Some 1,500 residents were killed in the final massacre",
+   "read_on": "2026-10-07",
+   "said": "about 1,500",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:tel-al-zaatar-palquest",
+   "topic": "tel_al_zaatar_1976",
+   "unit": "persons",
+   "value": 1500,
+   "verification": "read"
+  },
+  {
+   "caution": "The Commission called this probably closest. It also records 328 bodies counted by the Red Cross and 460 in a Lebanese document.",
+   "cite_id": "sabra-shatila-kahan-idf",
+   "coverage_end": "1982-09-18",
+   "coverage_start": "1982-09-16",
+   "date": "1982-09-16",
+   "date_precision": "day",
+   "document": "Report of the Commission of Inquiry, 1983",
+   "location": {
+    "region": "Lebanon"
+   },
+   "measure": "killed",
+   "publisher": "Kahan Commission (Israel), citing IDF intelligence",
+   "quote": "between 700 and 800",
+   "read_on": "2026-10-07",
+   "said": "700 to 800",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:sabra-shatila-kahan-idf",
+   "topic": "sabra_shatila_1982",
+   "unit": "persons",
+   "value": null,
+   "value_high": 800,
+   "value_low": 700,
+   "verification": "read"
+  },
+  {
+   "caution": "Named victims; her estimate is 3,500.",
+   "cite_id": "sabra-shatila-hout",
+   "coverage_end": "1982-09-18",
+   "coverage_start": "1982-09-16",
+   "date": "1982-09-16",
+   "date_precision": "day",
+   "document": "as cited on Wikipedia",
+   "location": {
+    "region": "Lebanon"
+   },
+   "measure": "killed",
+   "publisher": "Bayan Nuwayhed al-Hout",
+   "qualifier": "at_least",
+   "read_on": "2026-10-07",
+   "said": "at least 1,300",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:sabra-shatila-hout",
+   "topic": "sabra_shatila_1982",
+   "unit": "persons",
+   "value": 1300,
+   "verification": "via_wikipedia"
+  },
+  {
+   "caution": "In the occupied territories: 1,070 by security forces and 54 by Israeli civilians. With 38 inside the Green Line the total is 1,162. Minors: 250.",
+   "cite_id": "first-intifada-btselem",
+   "coverage_end": "1993-09-13",
+   "coverage_start": "1987-12-09",
+   "date": "1987-12-09",
+   "date_precision": "day",
+   "document": "First Intifada tables",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "B'Tselem",
+   "read_on": "2026-10-07",
+   "said": "1,124",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:first-intifada-btselem",
+   "topic": "first_intifada",
+   "unit": "persons",
+   "url": "https://www.btselem.org/statistics/first_intifada_tables",
+   "value": 1124,
+   "verification": "read"
+  },
+  {
+   "caution": "UN Security Council resolution 672 says 'over twenty'.",
+   "cite_id": "al-aqsa-1990-btselem",
+   "date": "1990-10-08",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "killed",
+   "publisher": "B'Tselem (corrected figure); Al-Haq",
+   "qualifier": "at_least",
+   "read_on": "2026-10-07",
+   "said": "at least 17",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:al-aqsa-1990-btselem",
+   "topic": "al_aqsa_1990",
+   "unit": "persons",
+   "value": 17,
+   "verification": "read"
+  },
+  {
+   "cite_id": "ibrahimi-1994-btselem",
+   "date": "1994-02-25",
+   "date_precision": "day",
+   "document": "Impossible Coexistence",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "killed",
+   "publisher": "B'Tselem",
+   "read_on": "2026-10-07",
+   "said": "29",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:ibrahimi-1994-btselem",
+   "topic": "ibrahimi_mosque_1994",
+   "unit": "persons",
+   "value": 29,
+   "verification": "read"
+  },
+  {
+   "caution": "Killed by Israeli forces in the territories: Gaza 2,997, West Bank including East Jerusalem 1,793. With 71 inside Israel, 4,861; Israeli civilians killed 46 more.",
+   "cite_id": "second-intifada-btselem",
+   "coverage_end": "2008-12-26",
+   "coverage_start": "2000-09-29",
+   "date": "2000-09-29",
+   "date_precision": "day",
+   "document": "Fatalities before Operation Cast Lead",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "killed",
+   "publisher": "B'Tselem",
+   "read_on": "2026-10-07",
+   "said": "4,790",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:second-intifada-btselem",
+   "topic": "second_intifada",
+   "unit": "persons",
+   "url": "https://www.btselem.org/statistics/fatalities/before-cast-lead/by-date-of-event",
+   "value": 4790,
+   "verification": "read"
+  },
+  {
+   "caution": "PCHR counts 1,417; the Goldstone report says NGOs give 'between 1,387 and 1,417'.",
+   "cite_id": "gaza-2008-btselem",
+   "coverage_end": "2009-01-18",
+   "coverage_start": "2008-12-27",
+   "date": "2008-12-27",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "B'Tselem",
+   "read_on": "2026-10-07",
+   "said": "1,391",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gaza-2008-btselem",
+   "topic": "gaza_2008_2009",
+   "unit": "persons",
+   "value": 1391,
+   "verification": "read"
+  },
+  {
+   "caution": "At least 168 of them by Israeli military action. B'Tselem counts 167.",
+   "cite_id": "gaza-2012-ohchr",
+   "coverage_end": "2012-11-21",
+   "coverage_start": "2012-11-14",
+   "date": "2012-11-14",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UN OHCHR",
+   "read_on": "2026-10-07",
+   "said": "174",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gaza-2012-ohchr",
+   "topic": "gaza_2012",
+   "unit": "persons",
+   "value": 174,
+   "verification": "read"
+  },
+  {
+   "caution": "Including 1,462 civilians and 551 children. B'Tselem counts 2,202.",
+   "cite_id": "gaza-2014-coi",
+   "coverage_end": "2014-08-26",
+   "coverage_start": "2014-07-08",
+   "date": "2014-07-08",
+   "date_precision": "month",
+   "document": "Report of the independent commission of inquiry on the 2014 Gaza conflict",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UN Commission of Inquiry, A/HRC/29/52",
+   "read_on": "2026-10-07",
+   "said": "2,251",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gaza-2014-coi",
+   "topic": "gaza_2014",
+   "unit": "persons",
+   "value": 2251,
+   "verification": "read"
+  },
+  {
+   "caution": "Including 46 children; over 36,100 injured. B'Tselem and PCHR count 223.",
+   "cite_id": "great-march-ocha",
+   "coverage_end": "2019-12-31",
+   "coverage_start": "2018-03-30",
+   "date": "2018-03-30",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UN OCHA",
+   "read_on": "2026-10-07",
+   "said": "214",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:great-march-ocha",
+   "topic": "great_march_of_return",
+   "unit": "persons",
+   "value": 214,
+   "verification": "read"
+  },
+  {
+   "caution": "Including 67 children. It includes some deaths from rockets that fell short; about 245 were by Israeli fire. The film's 256 has no source.",
+   "cite_id": "gaza-2021-ohchr",
+   "coverage_end": "2021-05-21",
+   "coverage_start": "2021-05-10",
+   "date": "2021-05-10",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "killed",
+   "publisher": "UN OHCHR, via OCHA",
+   "read_on": "2026-10-07",
+   "said": "261",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gaza-2021-ohchr",
+   "topic": "gaza_2021",
+   "unit": "persons",
+   "value": 261,
+   "verification": "read"
+  },
+  {
+   "caution": "The West Bank without East Jerusalem. Peace Now's own 2024 map printed 478,600.",
+   "cite_id": "settlers-wb-peacenow-2023",
+   "date": "2023-12-31",
+   "date_precision": "day",
+   "document": "Settlements data: population",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "west_bank_population",
+   "publisher": "Peace Now (Settlement Watch), from Israel's Central Bureau of Statistics",
+   "quote": "end of 2023",
+   "read_on": "2026-10-07",
+   "said": "511,100",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settlers-wb-peacenow-2023",
+   "topic": "settlers",
+   "unit": "persons",
+   "url": "https://peacenow.org.il/en/settlements-watch/settlements-data/population",
+   "value": 511100,
+   "verification": "read"
+  },
+  {
+   "caution": "At the end of 2024, including 243,716 in East Jerusalem.",
+   "cite_id": "settlers-all-pcbs-2024",
+   "date": "2024-12-31",
+   "date_precision": "day",
+   "document": "(document title not recorded by the research note)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "west_bank_and_east_jerusalem_population",
+   "publisher": "Palestinian Central Bureau of Statistics",
+   "read_on": "2026-10-07",
+   "said": "778,567",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settlers-all-pcbs-2024",
+   "topic": "settlers",
+   "unit": "persons",
+   "value": 778567,
+   "verification": "read"
+  }
+ ],
+ "metadata": {
+  "source": "Cited figures (hand-entered, each with its publisher)",
+  "what": "one publisher's statement per row; see db/reference/cited_figures.yaml"
+ }
+}

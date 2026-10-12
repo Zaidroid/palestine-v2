@@ -89,6 +89,12 @@ concepts:
     name_en: Land confiscation
     name_ar: مصادرة الأراضي
     definition: Land declared state land, seized, or placed beyond reach.
+  land.area:
+    name_en: Land area
+    definition: >-
+      The surface area of a territory, as a publisher states it. Added
+      2026-10-12 for the cited figures (the West Bank and Gaza Strip against
+      historic Palestine). name_ar is Zaid's to write.
   settlement:
     name_en: Settlements
     name_ar: المستوطنات

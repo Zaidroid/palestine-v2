@@ -69,3 +69,55 @@ def when_ar(it: dict) -> str:
     if prec == "month":
         return f"شهر {at[:7]}"
     return f"يوم {at}" if at else "بدون تاريخ"
+
+
+# ── a figure that is one publisher's statement ───────────────────────────────
+# The cited figures (db/reference/cited_figures.yaml) hold several publishers'
+# statements under one indicator and one date: 711,000, 750,000 and 957,000
+# refugees. "The latest value" of such a series is whichever row sorted first.
+# An answer names every publisher beside its figure, and says when a figure
+# was seen on Wikipedia only.
+
+_Q_AR = {"about": "حوالي", "at_least": "على الأقل", "more_than": "أكثر من", "up_to": "لغاية"}
+_Q_EN = {"about": "about", "at_least": "at least", "more_than": "more than", "up_to": "up to"}
+
+
+def _num(v) -> str:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return str(v)
+    return f"{int(f):,}" if f.is_integer() else f"{f:,}"
+
+
+def is_cited(it: dict) -> bool:
+    return bool((it.get("attrs") or {}).get("publisher"))
+
+
+def statements(items: list[dict], it: dict) -> list[dict]:
+    """Every publisher's row for the indicator and date of `it`."""
+    return [x for x in items
+            if x.get("indicator") == it.get("indicator")
+            and x.get("occurred_at") == it.get("occurred_at") and is_cited(x)]
+
+
+def _figure(it: dict, words: dict, rng: str) -> str:
+    a = it.get("attrs") or {}
+    if a.get("value_low") is not None and a.get("value_high") is not None:
+        return rng.format(_num(a["value_low"]), _num(a["value_high"]))
+    q = words.get(a.get("qualifier") or "")
+    return (q + " " if q else "") + _num(it.get("value_num"))
+
+
+def cited_en(rows: list[dict]) -> str:
+    return "; ".join(
+        f"{_figure(r, _Q_EN, '{} to {}')} per {r['attrs']['publisher']}"
+        + (" (seen on Wikipedia only)" if r["attrs"].get("verification") == "via_wikipedia" else "")
+        for r in rows)
+
+
+def cited_ar(rows: list[dict]) -> str:
+    return "؛ ".join(
+        f"{_figure(r, _Q_AR, 'من {} لـ {}')} حسب {r['attrs']['publisher']}"
+        + (" (منقول عن ويكيبيديا بس)" if r["attrs"].get("verification") == "via_wikipedia" else "")
+        for r in rows)

@@ -81,6 +81,8 @@ units:
   sites:       {name_en: sites,       name_ar: مواقع,   dimension: count}
   facilities:  {name_en: facilities,  name_ar: منشآت,   dimension: count}
   events:      {name_en: events,      name_ar: حوادث,   dimension: count}
+  localities:  {name_en: localities,  name_ar: تجمّعات, dimension: count}
+  km2:         {name_en: square kilometres, name_ar: كيلومتر مربع, dimension: area}
   vehicles:    {name_en: vehicles,    name_ar: مركبات,  dimension: count}
   tents:       {name_en: tents,       name_ar: خيام,    dimension: count}
   packages:
