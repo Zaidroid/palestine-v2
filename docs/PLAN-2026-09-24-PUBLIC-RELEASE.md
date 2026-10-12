@@ -1243,3 +1243,25 @@ run writes nothing. What it lands, with what was measured:
 Full suite from the branch against production before the run: 1,943 passed, 11 failed: 7 need generated files the
 worktree lacks (pass with them), 2 were mine and are fixed (`bf8d8c2`), 2 (`test_identity_invariant` health,
 insecurity_insight) pass only after the command, by design. As-of harness 24/24, 120/120.
+
+2026-10-12 21:21 UTC · **databank-rest, the last pieces before the hand-over** (61 commits ahead; still a fast-forward).
+- **names** (agent, `supply-names`; `db/registry/names.yaml`: 917 indicator names, 322 publisher names, 135
+  dimension labels). On the rehearsed store 2,480 of 2,497 served series have an English name and 2,165 an Arabic
+  one (8 and 8 before). 17 FAO survey codes are left unnamed on purpose: their meaning changes between rounds.
+- **World Bank** — eleven series were served under another series' name (v1 typed its labels; 171 rows), and 20 of
+  the 27 it marked `number` are rates, shares or indices. Records carry the Bank's own name for their code and a
+  unit that name states: 1,218 revisions (economic 1,692 with the IMF's 474).
+- **the Ministry's committee additions** — the bulletins say «لجنة اعتماد الشهداء» since December 2025 and the parser
+  asked for «اللجنة»: seventeen bulletins, 2,412 people, read without that figure. All 840 compared: only those
+  seventeen change, only by that figure.
+- **FAO DIEM** — 70 series that are a mean, median or spread of a quantity were stored as "percent"; they carry no
+  unit now (2,089 revisions). Its licence is stated on HDX's own record (CC BY 4.0 with FAO's database terms):
+  `db/proposed/fao_diem.sql`, not applied.
+- the script on the scratch copy with everything merged: exit 0, 0 failed categories, 0 unclassified, 0 units
+  without an alias; a repeat writes nothing. SQL gates on the rehearsed copy: gate 6 (identity) all PASS; gate 5's
+  one FAIL is UCDP's unread terms, as before.
+- **full suite from the finished branch against production: 1,964 passed, 2 failed, 8 skipped (545 s).** The two
+  are `test_identity_invariant` for health and insecurity_insight, which refuse until the command's hand steps
+  have run (the transition ceiling and the re-key guard) and pass after.
+- the eight agent worktrees are removed (branches `supply-*` kept, all merged); the scratch container and the two
+  dev APIs are stopped.
