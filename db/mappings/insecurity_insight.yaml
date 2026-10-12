@@ -43,10 +43,10 @@ v1_category: conflict            # joins the conflict serving views; the event
                                  #   view's type list is widened in 093
 shape: event
 status: reviewed
-records_measured: 20836          # 2026-10-11
+records_measured: 24305        # 2026-10-12, under the publisher's own event ids (20,836 under v1's rule)
 
 input:                           # v2's own raw tree, written nightly by
-  root: /home/zaid/palestine-v2/data/raw/insecurity_insight
+  root: data/raw/insecurity_insight
   glob: "incidents.json"         #   ops/fetch_insecurity_insight.py — straight
                                  #   from HDX's eighteen xlsx files since the
                                  #   evening of 2026-10-11, reproducing v1's
@@ -87,7 +87,8 @@ attrs_passthrough:
 drop:
   - reason: superseded_by_later_file
     if: "source_dataset == '2023 PSE SHCC Health Care Data.xlsx' and the same incident is in the 2023-2024 file"
-    measured: 666                # dry run 2026-10-11 (416 distinct content keys span the two files)
+    measured: 8                  # 2026-10-12: the publisher's own ids now remove most of the overlap
+                                 #   before this rule sees it (666 under v1's id rule on 2026-10-11)
   - reason: missing_date
     measured: 0                  # defensive; every row carries a 10-character date
   - reason: missing_category
@@ -109,8 +110,14 @@ identity:
                                      #   (type | day | place | lat | lon | metrics);
                                      #   declared because load_spec requires it
 
+# The stable id is the publisher's event number within a category (or the
+# whole row where a file has no number): ops/fetch_insecurity_insight.py. An
+# event is held if its id is held, and nothing else decides.
+event_identity:
+  match: stable_id
+
 expect:
-  min_records: 18000             # 20,836 at spec time; the file only grows
+  min_records: 21000             # 24,305 on 2026-10-12 under the publisher's own ids (20,836 under v1's)
   max_observations: 10           # this spec emits events, not observations
 
 registry:

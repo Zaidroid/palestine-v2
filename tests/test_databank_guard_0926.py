@@ -304,11 +304,11 @@ import json as _json
 from ingest.databank import EventRow
 
 
-def _event_run(monkeypatch, tmp_path, emitted, held=()):
+def _event_run(monkeypatch, tmp_path, emitted, held=(), spec_extra=None):
     """held: (EventRow, stable id as stored) pairs already in `event`."""
     spec = {"category": "phantom", "status": "reviewed", "shape": "event",
             "place": {}, "expect": {"min_records": 1, "max_observations": 100000},
-            "datasets": [{"key": "d", "source": "s"}]}
+            "datasets": [{"key": "d", "source": "s"}], **(spec_extra or {})}
     key_rows = [(e.event_type, str(e.occurred_at)[:10],
                  None if e.place_id is None else str(e.place_id),
                  None if e.lat is None else str(e.lat),

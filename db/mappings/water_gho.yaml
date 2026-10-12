@@ -24,7 +24,7 @@ status: reviewed
 records_measured: 75             # 2026-08-06: 25 years × 3 residence dims
 
 input:                           # v2-native: our own fetcher's output
-  root: /home/zaid/palestine-v2/data/gho
+  root: data/gho
   glob: "wash_pse.json"
 
 datasets:

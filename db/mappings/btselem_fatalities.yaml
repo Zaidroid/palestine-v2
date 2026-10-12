@@ -35,7 +35,7 @@ status: reviewed
 records_measured: 11124          # 2026-10-11; frozen upstream
 
 input:
-  root: /home/zaid/palestine-v2/data/raw/btselem
+  root: data/raw/btselem
   glob: "fatalities.json"        # ops/fetch_btselem_file.py, from v1's CSV
                                  #   through V1_ROOT
 

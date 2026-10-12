@@ -419,6 +419,15 @@ _k("identity.generation_indicators", "enforced",
    "a whole publication AND a series that grows by a row a day (the names "
    "roster beside its daily summary). Held rows of any other indicator are "
    "left alone. Needs `indicator` in identity.fields", types=(list,))
+_k("event_identity", "enforced",
+   "how an EVENT-shaped spec recognises an event it already holds", types=(dict,))
+_k("event_identity.match", "enforced",
+   "`stable_id`: the stable id is the publisher's own event number, so an "
+   "emitted event is held if and only if its id is. Default (absent): the id, "
+   "then the count of held events sharing type|day|place|lat|lon|metrics, "
+   "which survives a v1 re-hash and cannot tell two coordinate-less incidents "
+   "of one day apart (Insecurity Insight's Protection file, 2026-10-12)",
+   types=(str,), values=("stable_id",))
 _k("identity.revises_by", "enforced",
    "an attrs key that is the SOURCE's own record number (UN FTS flow_id). A "
    "held row the run did not emit, whose number the run emitted under another "

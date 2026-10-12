@@ -30,7 +30,7 @@ status: reviewed
 records_measured: 124            # 2026-10-11: 31 rows × 4 themes
 
 input:
-  root: /home/zaid/palestine-v2/data/raw/fao_diem
+  root: data/raw/fao_diem
   glob: ["food_security.json", "income_shocks.json", "crop_production.json",
          "livestock_production.json"]
 

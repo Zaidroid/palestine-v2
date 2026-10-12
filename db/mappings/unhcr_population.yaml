@@ -36,7 +36,7 @@ status: reviewed
 records_measured: 9214           # 2026-10-11: 1,862 + 4,482 + 8 + 1,402 + 1,289 + 171
 
 input:
-  root: /home/zaid/palestine-v2/data/raw/unhcr
+  root: data/raw/unhcr
   glob: ["stocks.json", "demographics_originating.json", "demographics_residing.json",
          "applications.json", "decisions.json", "solutions.json"]
 

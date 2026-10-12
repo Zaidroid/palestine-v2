@@ -21,7 +21,7 @@ status: reviewed
 records_measured: 6240
 
 input:
-  root: /home/zaid/palestine-v2/data/raw/acled
+  root: data/raw/acled
   glob: ["political_violence.json", "civilian_targeting.json", "demonstrations.json"]
   # ops/fetch_acled_file.py, reading v1's normalised HDX workbooks through V1_ROOT
 

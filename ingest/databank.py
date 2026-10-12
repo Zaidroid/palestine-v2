@@ -1740,7 +1740,9 @@ def t_insecurity_insight(rec, spec, places, counts):
     v = rec.get("victims") or {}
     metrics = {k: v.get(k) for k in ("killed", "injured", "kidnapped", "arrested")
                if v.get(k) not in (None, 0)}
-    return [EventRow(ds, f"attack.{cat}", day, "day", f"ii-{rec['incident_id']}",
+    # a month the publisher gave as a month stays one (the 2019/2020 SHCC files)
+    precision = "month" if rec.get("date_precision") == "month" else "day"
+    return [EventRow(ds, f"attack.{cat}", day, precision, f"ii-{rec['incident_id']}",
                      place_id=pid, lat=lat, lon=lon, located=located,
                      confidence=0.7, independent_sources=1, metrics=metrics,
                      attrs=attrs)]
@@ -2561,7 +2563,37 @@ def run(category: str, dry_run: bool = False) -> dict:
         # including every distinct event of a same-key pair: records with
         # distinct stable ids are distinct records (identical records were
         # already deduped by stable id above), so nothing collapses in-run.
-        if event_rows:
+        # `event_identity.match: stable_id` (2026-10-12): the ids ARE the
+        # publisher's event numbers, so nothing but the id decides. The count
+        # fallback protects against a re-hash that cannot happen here, and it
+        # would do harm: 7,400 Protection incidents carry no coordinates and
+        # mostly no victims, so hundreds share one key with each other and with
+        # the retired copies of an incident (status superseded, still listed).
+        by_id_only = (spec.get("event_identity") or {}).get("match") == "stable_id"
+        rekey_problem = None
+        if event_rows and by_id_only and held_event_ids:
+            # A night in which most of the held ids are not emitted is not a
+            # night: the ids were re-keyed on one side only (the new fetch ran
+            # and ops/rekey_insecurity_insight.py did not), and writing it
+            # would hold every incident a second time under its new id.
+            matched = sum(1 for e in event_rows if e.v1_stable_id in held_event_ids)
+            if matched < 0.5 * len(held_event_ids):
+                rekey_problem = (
+                    f"only {matched} of {len(held_event_ids)} held event ids are in this "
+                    "run's input — the held events carry other ids. Re-key them first "
+                    "(ops/rekey_insecurity_insight.py); nothing is written")
+        if event_rows and by_id_only:
+            keep = []
+            for e in event_rows:
+                if e.v1_stable_id in held_event_ids:
+                    counts["event_already_held"] += 1
+                    if dry_run:
+                        keep.append(e)
+                else:
+                    counts["event_new"] += 1
+                    keep.append(e)
+            event_rows = keep
+        elif event_rows:
             keys = [_event_identity(e) for e in event_rows]
             by_id = [e.v1_stable_id in held_event_ids for e in event_rows]
             for ek, held_id in zip(keys, by_id):
@@ -2761,6 +2793,8 @@ def run(category: str, dry_run: bool = False) -> dict:
                     f"{ds['key']}: located {loc_ds}/{n_ds} = "
                     f"{loc_ds / n_ds:.3f} < min_located_pct {floor}")
         problems.extend(absent_over)
+        if rekey_problem:
+            problems.append(rekey_problem)
         if problems:
             why = f"{category}: run FAILED — " + "; ".join(problems)
             _record_refusal(category, why, counts, drops, dry_run)

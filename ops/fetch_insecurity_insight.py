@@ -11,16 +11,23 @@ The fragments decision brought these incidents into the databank in the
 morning (db/mappings/insecurity_insight.yaml) by reading the file v1's parser
 writes nightly. This is the direct supply line, so the dataset no longer
 depends on v1 staying alive. It reproduces v1's normalisation exactly — the
-same canonical fields, the same victim roll-up, and the same incident_id (an
-md5 over category, date, coordinates, perpetrator, location, description and
-SiND id) — so every event the databank already holds keeps its stable id and
-a re-fetch re-matches instead of re-loading.
+same canonical fields and the same victim roll-up.
+
+THE ID (2026-10-12)
+It no longer reproduces v1's incident_id. That id was meant to end in the
+publisher's event number and missed it under three of its four spellings, so
+it merged different incidents and split identical ones (the measurement is on
+legacy_incident_id below). An incident is now identified by the publisher's
+own event number within its category, and by its whole row where a file gives
+no number. The events held under the old ids are moved to the new ones by
+ops/rekey_insecurity_insight.py, which reads the id map written beside the
+data; it runs once, before the first load from this file.
 
 WHAT IS KEPT
 Every row with a readable date, from every xlsx resource in the package, in
 the package's own resource order; a row whose incident_id was already seen in
-an earlier resource is dropped (v1's rule: one incident can appear in two
-sub-datasets). Category comes from the file name. Everything the sheet says
+an earlier resource is dropped (one incident appears in the thematic file and
+again in the yearly ones). Category comes from the file name. Everything the sheet says
 rides in `details`, as before. The HDX package's licence is stamped beside the
 data. Floored at 15,000 rows; a short download leaves yesterday's file.
 
@@ -42,15 +49,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from ops.fetchlib import FetchRefused, check_floor, event, get, get_json, write_atomic  # noqa: E402
+from ops.fetchlib import (FetchRefused, check_floor, event, get, get_json,  # noqa: E402
+                          stage, stage_dir, write_atomic)
 from resolve.db import v1_path  # noqa: E402
 
 PACKAGE_SLUG = "opt-violent-and-threatening-incidents-against-healthcare"
 PACKAGE = f"https://data.humdata.org/api/3/action/package_show?id={PACKAGE_SLUG}"
 PAGE = f"https://data.humdata.org/dataset/{PACKAGE_SLUG}"
 OUT = ROOT / "data" / "raw" / "insecurity_insight" / "incidents.json"
+# legacy id -> [new id, file rank], for ops/rekey_insecurity_insight.py
+ID_MAP = OUT.with_name("id_map.json")
 LABEL = "insecurity_insight:incidents"
-FLOOR = 15000                 # 20,836 on 2026-10-11; the file only grows
+FLOOR = 20000                 # 24,305 on 2026-10-12; the file only grows
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 
 # v1's file-name → category table, first match wins (scripts/sources/insecurity-insight.js)
@@ -198,7 +208,19 @@ def rollup_victims(row: dict) -> dict:
     return out
 
 
-def incident_id(category: str, row: dict, date_iso: str | None) -> str:
+def legacy_incident_id(category: str, row: dict, date_iso: str | None) -> str:
+    """v1's id, kept only to find the events already held under it.
+
+    It was meant to end in the publisher's event number and read the column
+    "SiND Event ID". Seven of the files spell it "Sind Event ID", "SIND Event
+    ID" or "Event ID", and the Protection file has no such column, so for those
+    the id was built from date, coordinates, perpetrator, place type and 80
+    characters of description: fields that are EMPTY on most Protection rows.
+    Measured 2026-10-12 on the publisher's files: 9,627 incidents with their
+    own content were dropped as repeats of another (6,189 of Protection's 7,400),
+    while the same health-care incident, present in the thematic file and in
+    the yearly SHCC files with a differently worded description, was kept under
+    each (4,965 distinct health-care incidents held as 7,903)."""
     desc = row.get("Event Description")
     key = "|".join([category, date_iso or "", js_str(row.get("Latitude")), js_str(row.get("Longitude")),
                     js_str(row.get("Reported Perpetrator Name")), js_str(row.get("Location of Incident")),
@@ -206,14 +228,59 @@ def incident_id(category: str, row: dict, date_iso: str | None) -> str:
     return hashlib.md5(key.encode("utf-8")).hexdigest()[:16]
 
 
+# The publisher's own event number, under every spelling its files use. One
+# numbering runs through all the files (measured: wherever two files share a
+# number, the dates agree on 99.6% of them), and no file repeats one.
+ID_COLUMNS = ("SiND Event ID", "Sind Event ID", "SIND Event ID", "Event ID")
+
+
+def publisher_id(row: dict) -> str | None:
+    for k in ID_COLUMNS:
+        v = row.get(k)
+        if v not in (None, ""):
+            return js_str(v)
+    return None
+
+
+def incident_id(category: str, row: dict, date_iso: str | None = None) -> str:
+    """One id per incident per category: the publisher's event number where the
+    file gives one, and otherwise everything the row says (no file repeats a
+    whole row). The category stays in it because one incident is deliberately
+    held under each theme it is filed in."""
+    pid = publisher_id(row)
+    if pid:
+        key = f"{category}|sind|{pid}"
+    else:
+        key = category + "|row|" + json.dumps(
+            {k: js_str(v) for k, v in sorted(row.items()) if k and v not in (None, "")},
+            ensure_ascii=False, sort_keys=True)
+    return hashlib.md5(key.encode("utf-8")).hexdigest()[:16]
+
+
+_MONTH_ONLY = re.compile(r"^(\d{4})-(\d{2})$")
+
+
+def date_of(v) -> tuple[str | None, str]:
+    """(date, precision). The 2019 and 2020 SHCC files give a month ("2019-01");
+    it was stored as the 15th and called a day."""
+    if isinstance(v, str) and _MONTH_ONLY.match(v):
+        return v + "-01", "month"
+    return to_iso(v), "day"
+
+
 def normalise(row: dict, category: str, source_url: str, source_dataset: str) -> dict | None:
-    date_iso = to_iso(pick(row, "Date", "Incident date", "incident date", "Event Date"))
+    stated = pick(row, "Date", "Incident date", "incident date", "Event Date")
+    date_iso, precision = date_of(stated)
     if not date_iso:
         return None
     lat, lon = num(pick(row, "Latitude", "latitude")), num(pick(row, "Longitude", "longitude"))
     return {
         "incident_id": incident_id(category, row, date_iso),
+        # the id (and the mid-month date) the events held before 2026-10-12 carry
+        "incident_id_legacy": legacy_incident_id(category, row, to_iso(stated)),
+        "publisher_event_id": publisher_id(row),
         "date": date_iso,
+        "date_precision": precision,
         "category": category,
         "country_iso": pick(row, "Country ISO", "Country") or "PSE",
         "admin1": pick(row, "Admin 1", "admin 1", "Province"),
@@ -251,15 +318,24 @@ def _sheetjs_headers(cells: list) -> list[str]:
     return out
 
 
-def from_hdx() -> tuple[list[dict], dict]:
+def from_hdx() -> tuple[list[dict], dict, dict]:
     pkg = get_json(PACKAGE, timeout=60).get("result", {})
     resources = [r for r in pkg.get("resources") or [] if "xlsx" in (r.get("format") or "").lower()]
     if not resources:
         raise FetchRefused(f"{LABEL}: the HDX package lists no xlsx resource")
-    seen: set[str] = set()
-    incidents: list[dict] = []
+    # One incident can sit in the thematic file and again in the yearly ones,
+    # and the copies are not equally informative: the thematic health-care file
+    # censors its coordinates while the SHCC files give them at 25 km. The copy
+    # WITH coordinates is kept, and among equals the earliest file's (measured
+    # 2026-10-12: "first file wins" kept 114 located incidents of 24,305).
+    best: dict[str, tuple] = {}
     files = []
-    for res in resources:
+    # legacy id -> [the new id of the FIRST row that carried it, its file's
+    # rank, whether that row has coordinates]: the row a held event was built
+    # from (v1 kept the first).
+    id_map: dict[str, list] = {}
+    order = 0
+    for rank, res in enumerate(resources):
         name = res.get("name") or res["url"].rsplit("/", 1)[-1]
         category = category_for(name)
         rows = sheet_rows(get(res["url"], timeout=180))
@@ -273,20 +349,31 @@ def from_hdx() -> tuple[list[dict], dict]:
             inc = normalise(row, category, res["url"], name)
             if inc is None:
                 continue
-            if inc["incident_id"] in seen:
+            located = inc["latitude"] is not None and inc["longitude"] is not None
+            id_map.setdefault(inc["incident_id_legacy"], [inc["incident_id"], rank, located])
+            order += 1
+            cand = (not located, rank, order, inc)
+            held = best.get(inc["incident_id"])
+            if held is None:
+                kept += 1
+            else:
                 dup += 1
-                continue
-            seen.add(inc["incident_id"])
-            incidents.append(inc)
-            kept += 1
+            if held is None or cand[:3] < held[:3]:
+                best[inc["incident_id"]] = cand
+
         files.append({"file": name, "category": category, "rows": len(rows) - 1, "kept": kept, "duplicates": dup})
+    incidents = [c[3] for c in sorted(best.values(), key=lambda c: c[2])]
     incidents.sort(key=lambda i: i["date"], reverse=True)
     stamp = {"source": "Insecurity Insight — State of Palestine incident data (HDX, direct)", "url": PAGE,
              "licence": {"license_id": pkg.get("license_id"), "license_title": pkg.get("license_title"),
                          "hdx_updated": pkg.get("last_modified") or pkg.get("metadata_modified"),
                          "caveats": pkg.get("caveats")},
-             "files": files}
-    return incidents, stamp
+             "files": files,
+             "vintage": (pkg.get("last_modified") or "")[:10] or None,
+             "vintage_basis": "HDX package last_modified",
+             "vintage_url": PAGE,
+             "id_rule": "publisher event number per category; whole row where the file has none"}
+    return incidents, stamp, id_map
 
 
 def from_v1() -> tuple[list[dict], dict]:
@@ -301,16 +388,23 @@ def from_v1() -> tuple[list[dict], dict]:
 
 
 def main(argv: list[str]) -> int:
+    # v1's own normalised file carries v1's ids. Since the events are held under
+    # the publisher's numbers (2026-10-12) a night fed from it would write every
+    # incident a second time, so it is no longer a fallback: a failed HDX read
+    # leaves yesterday's file, like every other fetcher. `--from-v1 --stage DIR`
+    # still reads it, into DIR only, for comparison.
     only_v1 = "--from-v1" in argv
+    staged = stage_dir(argv)
+    if only_v1 and staged is None:
+        print(f"{LABEL}: --from-v1 writes v1's ids; pass --stage DIR to read it for comparison",
+              file=sys.stderr)
+        return 2
     try:
-        try:
-            rows, stamp = from_v1() if only_v1 else from_hdx()
-        except Exception as e:                              # noqa: BLE001
-            if only_v1:
-                raise
-            event(LABEL, "error", error=f"hdx: {str(e)[:200]}; falling back to v1's file")
-            print(f"{LABEL}: HDX read failed ({str(e)[:120]}); reading v1's file instead", file=sys.stderr)
+        id_map: dict = {}
+        if only_v1:
             rows, stamp = from_v1()
+        else:
+            rows, stamp, id_map = from_hdx()
         bad = sum(1 for r in rows if not isinstance(r, dict)
                   or any(not r.get(k) for k in ("incident_id", "date", "category")))
         if bad:
@@ -323,7 +417,14 @@ def main(argv: list[str]) -> int:
         event(LABEL, "error", error=str(e)[:300])
         print(f"{LABEL}: {e}", file=sys.stderr)
         return 1
-    write_atomic(OUT, {"fetched_at": datetime.now(timezone.utc).isoformat(), **stamp, "data": rows})
+    payload = {"fetched_at": datetime.now(timezone.utc).isoformat(), **stamp, "data": rows}
+    if staged is not None:
+        stage(staged, OUT.name, payload)
+        stage(staged, ID_MAP.name, id_map)
+        print(f"{LABEL}: {len(rows)} incidents staged, nothing written to the raw tree")
+        return 0
+    write_atomic(OUT, payload)
+    write_atomic(ID_MAP, id_map)
     event(LABEL, "ok", rows=len(rows), via="v1" if "read_from" in stamp else "hdx")
     print(f"{LABEL}: {len(rows)} incidents → {OUT.relative_to(ROOT)}"
           + (" (from v1's file)" if "read_from" in stamp else " (HDX, direct)"))
