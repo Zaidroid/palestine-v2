@@ -423,3 +423,64 @@ def test_an_answer_calls_a_series_by_its_name_and_falls_back_to_the_key():
     assert "People held by Israel (HaMoked) (220 points, persons, hamoked's series only)" in said
     src = (ROOT / "serve" / "app.py").read_text()
     assert "i.name_ar ILIKE %(q)s" in src and src.count('out["names"] = names') == 3
+
+
+def test_a_file_that_fed_one_dataset_of_three_speaks_for_that_one(tmp_path):
+    import json
+    from ingest.databank import read_vintage
+    barrier, days = tmp_path / "barrier.json", tmp_path / "days.json"
+    barrier.write_text(json.dumps({"metadata": {"vintage": "2018-01-01"}, "data": []}))
+    days.write_text(json.dumps({"metadata": {"vintage": "2026-10-08"}, "data": []}))
+    land = {"datasets": [{"key": "v1_land_ocha"}, {"key": "v1_land_goodshepherd"}, {"key": "v1_land_peace_now"}]}
+    fed = {barrier: {"v1_land_ocha"}, days: {"v1_land_goodshepherd"}}
+    assert read_vintage(land, [barrier, days], fed) == {
+        "v1_land_ocha": {"vintage": "2018-01-01"}, "v1_land_goodshepherd": {"vintage": "2026-10-08"}}
+    # a file that fed two datasets and does not say which is not guessed at
+    assert read_vintage(land, [barrier], {barrier: {"v1_land_ocha", "v1_land_peace_now"}}) == {}
+
+
+# ── constants the old system wrote as if a publisher had said them ───────────
+
+def _land(etype, **extra):
+    return {"event_type": etype, "stable_id": "x", "date": "2026-08-05", "land_name": "n",
+            "land_type": etype, "land_status": "Authorized", "location": {"region": "Palestine"},
+            "metrics": {"count": 1, "unit": "sites"},
+            "sources": [{"name": extra.pop("source"), "fetched_at": "2026-10-12T00:00:00Z"}], **extra}
+
+
+def test_a_settlement_row_no_longer_says_authorized_and_a_demolition_row_no_longer_invents_its_details():
+    import yaml
+    from ingest import databank as D
+    spec = yaml.safe_load((ROOT / "db" / "mappings" / "land.yaml").read_text())
+    places = {"region": {"West Bank": 2, "Gaza Strip": 1}}
+    s = D.t_land(_land("settlement", source="Peace Now",
+                       settlement={"settlement_type": "Settlement", "legal_status": "Authorized",
+                                   "area_dunums": 2566}), spec, places, D.Counter())[0]
+    assert s.value_text is None and s.attrs.get("area_dunums") == 2566
+    assert not {"land_status", "legal_status", "settlement_type"} & set(s.attrs)
+    d = D.t_land(_land("demolition", source="Good Shepherd Collective",
+                       demolition={"demolition_date": "2026-01-04", "structure_type": "residential",
+                                   "structures_demolished": 1, "reason": "Administrative demolition",
+                                   "notification_given": True, "owner_type": "Private"}),
+                 spec, places, D.Counter())[0]
+    assert not {"structure_type", "structures_demolished", "reason", "notification_given",
+                "owner_type"} & set(d.attrs)
+    # the publisher says West Bank and East Jerusalem; "Palestine" was the old default
+    assert d.place_id == 2 and d.attrs["coverage_area"] == "West Bank and East Jerusalem"
+    b = D.t_land(_land("checkpoint", source="OCHA oPt", land_status="Projected",
+                       checkpoint={"checkpoint_type": "Barrier", "permits_required": True,
+                                   "operational_status": "Projected"}), spec, places, D.Counter())[0]
+    assert b.value_text == "Projected" and "permits_required" not in b.attrs
+    assert b.attrs.get("checkpoint_type") == "Barrier"          # part of the stored identity
+
+
+def test_the_barrier_is_called_the_barrier_and_heritage_sites_are_not_called_intact():
+    import yaml
+    land = yaml.safe_load((ROOT / "db" / "mappings" / "land.yaml").read_text())
+    rule = next(r for r in land["registry"]["rules"] if r["when"] == {"equals": "land.checkpoint"})
+    assert "Separation Barrier" in rule["name_en"] and "not checkpoints" in rule["serve_warning"]
+    assert rule["concept"] == "movement.closure"
+    culture = yaml.safe_load((ROOT / "db" / "mappings" / "culture.yaml").read_text())
+    assert culture["value"]["text_from"] is None
+    assert "site_status" not in culture["attrs_passthrough"]
+    assert "Wikidata" in culture["registry"]["rules"][0]["serve_warning"]

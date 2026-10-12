@@ -690,12 +690,30 @@ def t_settlements(rec, spec, places, counts):
                 attrs=attrs)]
 
 
+# What v1's code wrote on every row of a kind without any publisher saying it
+# (found by reading v1's fetchers against the publishers' files, 2026-10-12).
+# A barrier segment "requires permits", every settlement is "Authorized", every
+# demolition is a residential, privately owned, administratively demolished
+# single structure with notice given: constants, served as facts. They are no
+# longer carried. A record still arrives with them (the fetchers reproduce v1's
+# record shape so held rows match); the next load supersedes each held row with
+# one that says only what the publisher says.
+_LAND_V1_DEFAULTS = {
+    "checkpoint": ("permits_required", "operational_status"),
+    "settlement": ("land_status", "legal_status", "settlement_type"),
+    "demolition": ("land_status", "structure_type", "structures_demolished", "reason",
+                   "notification_given", "owner_type"),
+}
+
+
 def t_land(rec, spec, places, counts):
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
     etype = rec.get("event_type")
     attrs = passthrough(rec, spec.get("attrs_passthrough"))
+    for k in _LAND_V1_DEFAULTS.get(etype, ()):
+        attrs.pop(k, None)
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
     if etype == "demolition":
         # the one honest date in the category: demolition.demolition_date
@@ -704,11 +722,21 @@ def t_land(rec, spec, places, counts):
         precision = "day"
     else:
         occurred, precision = str(rec["date"])[:10], "unknown"    # law 1
-    place_id, located = region_place(places, rec["location"]["region"], attrs)
+    region = rec["location"]["region"]
+    if ds == "v1_land_goodshepherd" and region == "Palestine":
+        # v1's default. The collective's own page: "This data only represents
+        # information from UN OCHA, which focuses on the West Bank and East
+        # Jerusalem".
+        region = "West Bank"
+        attrs["coverage_area"] = "West Bank and East Jerusalem"
+    place_id, located = region_place(places, region, attrs)
     m = rec.get("metrics") or {}
+    # the barrier's status is the file's own (Constructed / Under Construction /
+    # Projected); a settlement's "Authorized" was v1's constant
+    status = rec.get("land_status") if etype == "checkpoint" else None
     return [Row(ds, f"land.{slug(etype)}", occurred, precision,
                 rec["stable_id"], value_num=m.get("count"),
-                value_text=rec.get("land_status"), unit=m.get("unit"),
+                value_text=status, unit=m.get("unit"),
                 place_id=place_id, located=located,
                 reported_at=fetched, attrs=attrs)]
 
@@ -2240,8 +2268,13 @@ def _record_refusal(category: str, reason: str, counts: Counter,
 VINTAGE_KEYS = ("vintage", "vintage_basis", "vintage_url", "coverage_start")
 
 
-def read_vintage(spec: dict, files) -> dict[str, dict]:
-    """dataset_key -> what the input says about the publisher's vintage."""
+def read_vintage(spec: dict, files, fed: dict | None = None) -> dict[str, dict]:
+    """dataset_key -> what the input says about the publisher's vintage.
+
+    `fed` maps an input file to the datasets its records landed in. A file
+    that fed exactly one dataset speaks for that dataset (land's three files:
+    OCHA's barrier, Peace Now's footprints, Good Shepherd's days); a file
+    that fed several must say which with `vintage_by_dataset`."""
     own = [d["key"] for d in spec.get("datasets", [])]
     out: dict[str, dict] = {}
 
@@ -2269,8 +2302,10 @@ def read_vintage(spec: dict, files) -> dict[str, dict]:
                 continue
             for key, src in (holder.get("vintage_by_dataset") or {}).items():
                 take(key, src)
-            if len(own) == 1 and own[0] not in out:
-                take(own[0], holder)
+            one = (own if len(own) == 1 else
+                   sorted((fed or {}).get(f) or (fed or {}).get(str(f)) or ()))
+            if len(one) == 1 and one[0] not in out:
+                take(one[0], holder)
     return out
 
 
@@ -2408,6 +2443,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                                 attrs=r.attrs)
 
     event_rows: list[EventRow] = []
+    fed: dict[Path, set[str]] = defaultdict(set)     # input file -> datasets it fed
     with connect() as conn:
         places = load_places(conn)
         places["_pip"] = PointResolver(conn)
@@ -2485,6 +2521,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                 held_event_ids = {row[0] for row in cur.fetchall()}
                 known_events = Counter(held_keys)
         for f, r in transform_all(category, spec, places, counts, drops):
+            fed[f].add(r.dataset_key)
             if f not in refs:
                 refs[f] = bronze.put(f"v1_{category}", read_payload(f),
                                      url=f"file://{f}").ref
@@ -2972,7 +3009,7 @@ def run(category: str, dry_run: bool = False) -> dict:
                 # even on a night that brought no new row, because "we read it
                 # again and it had not changed" is what a register's age is
                 if not from_fallback:
-                    apply_vintage(cur, read_vintage(spec, refs))
+                    apply_vintage(cur, read_vintage(spec, refs, fed))
             conn.commit()
 
     report = {
@@ -2988,7 +3025,7 @@ def run(category: str, dry_run: bool = False) -> dict:
         "notes": {k: v for k, v in counts.items()
                   if k not in ("records_read", "deduped")},
     }
-    vintage = read_vintage(spec, refs)
+    vintage = read_vintage(spec, refs, fed)
     if vintage:
         report["vintage"] = {k: v.get("vintage") for k, v in vintage.items()}
     if revision_samples:

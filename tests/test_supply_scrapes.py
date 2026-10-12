@@ -98,12 +98,12 @@ def test_gsc_records_land_on_the_held_rows():
     assert (row.dataset_key, row.indicator, row.occurred_at, row.precision) == \
         ("v1_land_goodshepherd", "land.demolition", "2025-09-08", "day")
     assert identity("land", row) == "v1_land_goodshepherd|land.demolition|2025-09-08"
-    assert says(row) == (31, "Unknown", "structures", None, {
-        "reason": "Administrative demolition", "region": "Palestine",
+    # v1's five constants (residential, one structure, administrative, notice
+    # given, private) and its region "Palestine" are no longer carried: the
+    # publisher says West Bank and East Jerusalem and gives a count
+    assert says(row) == (31, None, "structures", PLACES["region"]["West Bank"], {
         "land_name": "Multiple locations", "land_type": "demolition",
-        "owner_type": "Private", "land_status": "Unknown",
-        "structure_type": "residential", "notification_given": True,
-        "structures_demolished": 1})
+        "coverage_area": "West Bank and East Jerusalem"})
     assert row.reported_at == AT and row.v1_stable_id == "gsc-demolitions:2025-09-08"
     # the correction: the same identity, the publisher's number
     assert identity("land", rows["2026-01-04"]) == \
@@ -143,10 +143,10 @@ def test_barrier_segments_keep_the_names_and_content_the_store_holds():
     assert (row.dataset_key, row.indicator, row.precision) == \
         ("v1_land_ocha", "land.checkpoint", "unknown")
     assert identity("land", row) == "v1_land_ocha|land.checkpoint|Concrete - 1|Barrier"
+    # the status is the file's own; "permits required" was v1's constant
     assert says(row) == (1, "Constructed", "sites", 2, {
         "land_name": "Concrete - 1", "land_type": "checkpoint",
-        "land_status": "Constructed", "checkpoint_type": "Barrier",
-        "permits_required": True, "operational_status": "Constructed"})
+        "land_status": "Constructed", "checkpoint_type": "Barrier"})
     [na] = databank.t_land(recs[3], spec, PLACES, Counter())
     assert identity("land", na) == "v1_land_ocha|land.checkpoint|NA - 15|Barrier"
     # what the file says is kept beside v1's naming
@@ -169,10 +169,9 @@ def test_settlement_footprints_collapse_only_the_indistinguishable_twins():
     spec = load_spec("land")
     [row] = databank.t_land(recs[0], spec, PLACES, Counter())
     assert identity("land", row) == "v1_land_peace_now|land.settlement|Ariel|2566"
-    assert says(row) == (1, "Authorized", "sites", 2, {
-        "land_name": "Ariel", "land_type": "settlement", "area_dunums": 2566,
-        "land_status": "Authorized", "legal_status": "Authorized",
-        "settlement_type": "Settlement"})
+    # the file has a name and an area; "Authorized" and "Settlement" were v1's constants
+    assert says(row) == (1, None, "sites", 2, {
+        "land_name": "Ariel", "land_type": "settlement", "area_dunums": 2566})
     [unknown] = databank.t_land(recs[3], spec, PLACES, Counter())
     assert identity("land", unknown) == "v1_land_peace_now|land.settlement|Unknown|1005"
     assert hl._js_round(2.5) == 3 and hl._js_round(0.5) == 1 and hl._js_round(2.4) == 2
@@ -459,10 +458,11 @@ def test_culture_is_a_frozen_corpus_with_its_wikidata_items_beside_it():
     assert len({identity("culture", r) for r in rows}) == 335
     held = "v1_culture_heritage_composite|culture.heritage_site.religious|Al-Yaqoubi Mosque"
     [row] = [r for r in rows if identity("culture", r) == held]
-    assert says(row) == (1, "Intact", "sites", 11, {
+    # ...and it is no longer loaded: the corpus keeps v1's record, the row
+    # says only where the site is and what kind it is
+    assert says(row) == (1, None, "sites", 11, {
         "region": "East Jerusalem", "site_name": "Al-Yaqoubi Mosque",
-        "site_type": "Religious", "site_status": "Intact",
-        "protection_level": "National Heritage"})
+        "site_type": "Religious"})
 
 
 def test_no_spec_of_the_family_reaches_for_v1(monkeypatch):

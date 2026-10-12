@@ -1,10 +1,10 @@
--- PROPOSED, NOT APPLIED — supply-scrapes (2026-10-12): land, settlements, prisoners, culture.
+-- 108 · what six datasets really are: provenance and vintage, on the dataset (supply-scrapes, 2026-10-12)
 --
 -- What this file is: the provenance and vintage of six datasets, as measured on 2026-10-12 from the publishers'
 -- own records and from v1's fetch scripts, written where a served dataset can say them: dataset.attrs. Nothing here
 -- touches an observation, a licence grade, a source row or a spec's routing. Each statement only adds keys to
 -- dataset.attrs and is guarded by the dataset key. The jsonb expressions were evaluated read-only against
--- production on 2026-10-12 (as SELECTs); the UPDATEs themselves were not run.
+-- production on 2026-10-12 (as SELECTs); the file was applied whole on a scratch copy before it was numbered.
 --
 -- Keys, the same on every dataset:
 --   provenance        what the rows really are and where they came from, in one paragraph

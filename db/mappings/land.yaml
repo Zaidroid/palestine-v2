@@ -248,23 +248,39 @@ registry:
   max_unclassified: 0
   rules:
     - when: {equals: "land.checkpoint"}
-      concept: movement.checkpoint
+      # NOT checkpoints (found 2026-10-12): v1 took the first shapefile an HDX
+      # search returned and named its rows land.checkpoint. The key stays so
+      # nothing that reads it breaks; the concept, the name and the warning say
+      # what the rows are.
+      name_en: "West Bank Separation Barrier segments (OCHA, January 2018)"
+      name_ar: "مقاطع جدار الفصل في الضفة الغربية (أوتشا، كانون الثاني 2018)"
+      concept: movement.closure
       measure_kind: stock
       polarity: -1
       grain: register
       place_grain: region
       canonical_unit: sites
+      serve_warning: "These rows are the 261 segments of the West Bank Separation Barrier as OCHA mapped it in January 2018 (constructed, under construction or projected), not checkpoints: the series' key is a misnomer kept for compatibility. It is a 2018 map, not today's. The same segments are also held as infrastructure.barrier_segment, so the two are never added."
+      serve_warning_ar: "هاي السطور هي 261 مقطع من جدار الفصل بالضفة زي ما رسمته أوتشا بكانون الثاني 2018 (مبني، قيد البناء، أو مخطّط)، مش حواجز: اسم السلسلة غلط وباقي بس عشان اللي بيقرأها ما ينكسر. وهي خريطة 2018 مش اليوم. ونفس المقاطع محفوظة كمان باسم infrastructure.barrier_segment، فما بينجمعوا مع بعض."
     - when: {equals: "land.settlement"}
+      name_en: "Israeli settlement built-up areas in the West Bank (Peace Now via OCHA, end of 2018)"
+      name_ar: "المناطق المبنية للمستوطنات الإسرائيلية في الضفة الغربية (السلام الآن عبر أوتشا، نهاية 2018)"
       concept: settlement
       measure_kind: stock
       polarity: -1
       grain: register
       place_grain: region
       canonical_unit: sites
+      serve_warning: "One row per settlement built-up area, with its name and its area in dunums, as Peace Now's data stood at the end of 2018 (published by OCHA). The file says nothing about a settlement's legal status or type, and it is not today's list."
+      serve_warning_ar: "كل سطر منطقة مبنية لمستوطنة، باسمها ومساحتها بالدونم، حسب بيانات السلام الآن لنهاية 2018 (نشرتها أوتشا). الملف ما بيذكر الوضع القانوني للمستوطنة ولا نوعها، وهو مش قائمة اليوم."
     - when: {equals: "land.demolition"}
+      name_en: "Structures demolished per day, West Bank and East Jerusalem (Good Shepherd Collective, from OCHA)"
+      name_ar: "المباني المهدومة باليوم في الضفة الغربية والقدس الشرقية (غود شيبرد، عن أوتشا)"
       concept: demolition
       measure_kind: flow
       polarity: -1
       grain: event
       place_grain: region
       canonical_unit: structures
+      serve_warning: "The Good Shepherd Collective's republication of UN OCHA's demolition record for the West Bank and East Jerusalem: the same demolitions as OCHA's own series in the demolitions category, so the two are never added. Days before 8 September 2025 were stored by the old system with a minimum of 1 structure and can no longer be checked."
+      serve_warning_ar: "هاد إعادة نشر من غود شيبرد لسجلّ أوتشا للهدم بالضفة والقدس الشرقية: نفس الهدم الموجود بسلسلة أوتشا بفئة demolitions، فما بينجمعوا مع بعض. والأيام قبل 8 أيلول 2025 سجّلها النظام القديم بحد أدنى مبنى واحد وما عاد ممكن نتحقق منها."

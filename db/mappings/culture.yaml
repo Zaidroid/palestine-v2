@@ -33,7 +33,9 @@ indicator:
 
 value:
   num_from: metrics.count          # 1 on 329/329 — one site per row
-  text_from: site_status           # 'Intact' on 329/329 — constant, see notes
+  text_from: null                  # was site_status: "Intact" on every row, the 50 in
+                                   #   the Gaza Strip included. It is a constant in v1's
+                                   #   code; nobody observed it (found 2026-10-12)
   unit_from: {literal: "sites"}    # metrics.unit is 'sites' on 329/329 (honest)
 
 occurred_at:
@@ -61,8 +63,9 @@ stable_id: stable_id               # 329 distinct; `id` also 329 distinct
 attrs_passthrough:
   - site_name
   - site_type
-  - site_status
-  - protection_level
+  # site_status and protection_level are no longer carried: "Intact" and
+  # "National Heritage" were v1's defaults, not anything a source says.
+  # unesco_status (Wikidata's World Heritage mark) stays.
   - unesco_status
   - region                         # keeps 'East Jerusalem' after the
                                    #   governorate mapping
@@ -198,3 +201,5 @@ registry:
       grain: register
       place_grain: region
       canonical_unit: sites
+      serve_warning: "A list of heritage sites taken from Wikidata (one query, at most 500 items, as it stood on 12 October 2026), not a register kept by UNESCO or a ministry. It says where a site is and what kind it is by keywords in its name; it says nothing about a site's condition, and many sites in the Gaza Strip have been damaged or destroyed since 2023."
+      serve_warning_ar: "هاي قائمة مواقع تراثية مأخوذة من ويكي بيانات (استعلام واحد، 500 عنصر بالأكثر، زي ما كانت يوم 12 تشرين الأول 2026)، مش سجلّ لليونسكو ولا لوزارة. بتقول وين الموقع وشو نوعه حسب كلمات باسمه، وما بتقول شي عن حالته، وكثير مواقع بقطاع غزة تضررت أو تدمّرت من 2023."
