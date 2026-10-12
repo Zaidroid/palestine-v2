@@ -64,6 +64,7 @@ data/raw/pcbs/
 data/raw/hamoked/
 data/raw/wpp/
 data/raw/unrwa_registered/
+data/raw/un2720/
 .keys/
 
 # scratch probes and the nightly audit output (regenerated 04:40, ops/mcp-audit.sh)

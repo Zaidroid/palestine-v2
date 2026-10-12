@@ -2055,6 +2055,7 @@ def t_acled_hdx(rec, spec, places, counts):
 
 
 TRANSFORMERS = {
+    "aid_un2720": t_engine,               # 2026-10-12: UN2720's daily aid series, spec-driven
     "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal
     "insecurity_insight": t_insecurity_insight,                 # 2026-10-11
     "btselem_fatalities": t_btselem_fatalities,                 # 2026-10-11
