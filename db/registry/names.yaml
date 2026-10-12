@@ -1000,6 +1000,48 @@ names:
   cited.settlers.west_bank_and_east_jerusalem_population:
     en: "Israeli settlers in the West Bank, including East Jerusalem (cited figures)"
     ar: "عدد المستوطنين في الضفة الغربية بما فيها القدس الشرقية (أرقام مقتبسة)"
+  cited.gaza_ceasefire_2025_01.took_effect:
+    en: "Gaza ceasefire of 19 January 2025: the day it took effect (cited figures)"
+    ar: "وقف إطلاق النار في غزة، 19 يناير 2025: يوم دخوله حيّز التنفيذ (أرقام مقتبسة)"
+  cited.gaza_ceasefire_2025_10.took_effect:
+    en: "Gaza ceasefire of 10 October 2025: the day it took effect (cited figures)"
+    ar: "وقف إطلاق النار في غزة، 10 أكتوبر 2025: يوم دخوله حيّز التنفيذ (أرقام مقتبسة)"
+  cited.gaza_war_resumed_2025_03.killed:
+    en: "Killed in Gaza when the war resumed on 18 March 2025, by publisher (cited figures)"
+    ar: "الشهداء في قطاع غزة عند استئناف الحرب في 18 مارس 2025، حسب الناشر (أرقام مقتبسة)"
+  cited.gaza_blockade_2025.began:
+    en: "Total blockade of Gaza, 2025: the day it began (cited figures)"
+    ar: "الحصار الكامل على قطاع غزة 2025: يوم بدايته (أرقام مقتبسة)"
+  cited.gaza_blockade_2025.ended:
+    en: "Total blockade of Gaza, 2025: the day the first aid trucks were let in again (cited figures)"
+    ar: "الحصار الكامل على قطاع غزة 2025: يوم السماح بدخول أولى شاحنات المساعدات (أرقام مقتبسة)"
+  cited.gaza_famine_2025.determined:
+    en: "Famine in Gaza Governorate: the day the IPC Famine Review Committee determined it (cited figures)"
+    ar: "المجاعة في محافظة غزة: يوم إعلانها من لجنة مراجعة المجاعة (IPC) (أرقام مقتبسة)"
+  cited.gaza_under_rubble.bodies:
+    en: "Bodies estimated to be under the rubble in Gaza, by publisher (cited figures)"
+    ar: "الشهداء المقدَّر وجودهم تحت الأنقاض في قطاع غزة، حسب الناشر (أرقام مقتبسة)"
+  cited.gaza_missing.persons:
+    en: "People missing in Gaza since 7 October 2023, by publisher (cited figures)"
+    ar: "المفقودون في قطاع غزة منذ 7 أكتوبر 2023، حسب الناشر (أرقام مقتبسة)"
+  cited.unosat_gaza.structures_destroyed:
+    en: "Structures destroyed in the Gaza Strip, per UNOSAT assessment (cited figures)"
+    ar: "المباني المدمَّرة في قطاع غزة حسب تقييمات يونوسات (أرقام مقتبسة)"
+  cited.unosat_gaza.structures_affected:
+    en: "Structures damaged or destroyed in the Gaza Strip, per UNOSAT assessment (cited figures)"
+    ar: "المباني المتضررة أو المدمَّرة في قطاع غزة حسب تقييمات يونوسات (أرقام مقتبسة)"
+  cited.unosat_gaza.share_of_structures_affected:
+    en: "Share of the Gaza Strip's structures damaged, as UNOSAT states it (cited figures)"
+    ar: "نسبة المباني المتضررة في قطاع غزة كما تذكرها يونوسات (أرقام مقتبسة)"
+  cited.west_bank_injured.persons:
+    en: "Palestinians injured in the West Bank, by period, per OCHA (cited figures)"
+    ar: "الجرحى الفلسطينيون في الضفة الغربية حسب الفترة، وفق أوتشا (أرقام مقتبسة)"
+  cited.land_day_1976.killed:
+    en: "Killed on Land Day, 30 March 1976 (cited figures)"
+    ar: "شهداء يوم الأرض، 30 مارس 1976 (أرقام مقتبسة)"
+  prisoners.unlawful_combatants:
+    en: "Palestinians held by Israel under the 'unlawful combatants' law, mostly from Gaza (HaMoked)"
+    ar: "الفلسطينيون المحتجزون بموجب قانون «المقاتل غير الشرعي»، وأغلبهم من قطاع غزة (هموكيد)"
 
   # fao_diem.*: FAO's Data in Emergencies (DIEM) household surveys, one column of FAO's aggregated files per
   # indicator. Every name is FAO's own description of the column, shortened: "DIEM_2023_-_Fields_descriptions.xlsx",
