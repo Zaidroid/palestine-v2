@@ -207,6 +207,20 @@ def main(argv: list[str]) -> int:
         live: dict[str, list] = {}
         for cat, ind, unit, n in cur.fetchall():
             live.setdefault(cat, []).append((ind, unit, n))
+        # ...and the EVENT-shaped indicators, which live in `event`, not in
+        # `observation`. The census read only observations, so an event
+        # indicator had a definition only if a migration typed one (083 did,
+        # for UCDP and the 1948 localities). Insecurity Insight's eight
+        # `attack.*` series, 20,174 served events loaded on 2026-10-11, had
+        # none, and the first nightly-style run of this loader left them out
+        # (2026-10-12: "8 served indicators with no definition").
+        cur.execute("SELECT to_regclass('databank_event_rows') IS NOT NULL")
+        if cur.fetchone()[0]:
+            cur.execute("""SELECT COALESCE(v1_category, dataset_key), indicator,
+                                  unit, count(*)
+                           FROM databank_event_rows GROUP BY 1, 2, 3""")
+            for cat, ind, unit, n in cur.fetchall():
+                live.setdefault(cat, []).append((ind, unit, n))
 
         total_unclassified = 0
         warned = 0

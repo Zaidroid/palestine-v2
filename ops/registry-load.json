@@ -2,7 +2,7 @@
  "specs": {
   "acled_hdx": {
    "classified": 5,
-   "indicators": 26,
+   "indicators": 68,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -29,22 +29,22 @@
    "unit_conflicts": []
   },
   "conflict": {
-   "classified": 21,
-   "indicators": 26,
+   "classified": 25,
+   "indicators": 68,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "conflict_gaza": {
    "classified": 17,
-   "indicators": 26,
+   "indicators": 68,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "conflict_westbank": {
    "classified": 0,
-   "indicators": 26,
+   "indicators": 68,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -196,8 +196,8 @@
    "unit_conflicts": []
   },
   "insecurity_insight": {
-   "classified": 0,
-   "indicators": 26,
+   "classified": 8,
+   "indicators": 68,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []

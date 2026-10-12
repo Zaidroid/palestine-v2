@@ -286,3 +286,27 @@ def test_the_ministry_dataset_is_born_with_its_category():
     assert "'conflict', 'daily'" in src
     mig = (ROOT / "db" / "migrations" / "103_moh_bulletins_answerable.sql").read_text()
     assert "SET v1_category = 'conflict'" in mig and "gaza_moh_daily" in mig
+
+
+def test_event_shaped_series_are_in_the_census_and_keep_their_meaning():
+    """The registry counted observations only: Insecurity Insight's eight
+    attack series (20,174 served events) had no definition after the first
+    run. With events counted, conflict's catch-all must not re-label the
+    one-row-per-event series 083 defined by hand."""
+    from ops.load_registry import classify
+    src = (ROOT / "ops" / "load_registry.py").read_text()
+    assert "FROM databank_event_rows GROUP BY 1, 2, 3" in src
+    got, _ = classify([("attack.healthcare", "incidents", 7903),
+                       ("attack.sexual_violence", "incidents", 49)],
+                      _spec("insecurity_insight")["registry"]["rules"])
+    assert {(m["concept"], m["measure_kind"], m["grain"], m["place_grain"], m["canonical_unit"])
+            for m in got.values()} == {("violence", "flow", "event", "point", "events")}
+    got, _ = classify([("conflict.deaths.state_based", "persons", 7071),
+                       ("conflict.journalists_killed", "persons", 262),
+                       ("conflict.westbank_cumulative_killed", "persons", 900)],
+                      _spec("conflict")["registry"]["rules"])
+    assert (got["conflict.deaths.state_based"]["grain"],
+            got["conflict.deaths.state_based"]["place_grain"]) == ("event", "point")
+    assert (got["conflict.journalists_killed"]["grain"],
+            got["conflict.journalists_killed"]["place_grain"]) == ("event", "region")
+    assert got["conflict.westbank_cumulative_killed"]["measure_kind"] == "cumulative"

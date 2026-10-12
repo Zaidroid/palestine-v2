@@ -113,6 +113,20 @@ expect:
   min_records: 18000             # 20,836 at spec time; the file only grows
   max_observations: 10           # this spec emits events, not observations
 
+registry:
+  max_unclassified: 0
+  rules:
+    # One row is one recorded incident (value 1, unit `incidents`): attacks
+    # on health care, aid workers, education, food and water systems, the
+    # use of explosive weapons, protection incidents, sexual violence.
+    - when: {prefix: "attack."}
+      concept: violence
+      measure_kind: flow           # countable per period; never a toll
+      polarity: -1
+      grain: event
+      place_grain: point
+      canonical_unit: events
+
 notes: |
   The stable id is ii-<incident_id>, an md5 over category, date, coordinates,
   perpetrator, location, description and SiND id — v1's rule, kept verbatim in

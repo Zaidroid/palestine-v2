@@ -370,6 +370,23 @@ registry:
       grain: day
       place_grain: region
       canonical_unit: households
+    # THE EVENT-SHAPED SERIES KEEP WHAT 083 WROTE FOR THEM. The registry reads
+    # events too since 2026-10-12; without these two rules the catch-all below
+    # would have re-labelled one-row-per-event series as daily regional counts.
+    - when: {regex: "^conflict\\.deaths\\.(state_based|one_sided|non_state)$"}
+      concept: mortality.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: event               # one row per UCDP GED event, at its point
+      place_grain: point
+      canonical_unit: persons
+    - when: {equals: "conflict.journalists_killed"}
+      concept: mortality.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: event               # one row per journalist; the source gives no date
+      place_grain: region
+      canonical_unit: persons
     - when: {prefix: "conflict."}
       concept: mortality.conflict
       measure_kind: flow
