@@ -108,6 +108,10 @@ CLOSED_CORPUS = {
     # Hand-entered statements about dated events (2026-10-12): a figure for
     # 1948 does not go stale, and the file grows only when a person adds one.
     "cited_figures",
+    # A Wikipedia table scraped once in June 2026 (migration 110): UNRWA's camp
+    # counts of about 2018 to 2020. Nothing can refresh it, and its age is not
+    # the question; its vintage is on the dataset and in its warning.
+    "v1_refugees_unrwa",
     # Frozen 2026-10-12 (db/mappings/culture.yaml): v1's nightly Wikidata
     # query result, carried in data/frozen/ and no longer fetched. As a
     # register its age is "days since the last ingest" against a learned
@@ -273,6 +277,10 @@ SUPPLY_LINES = {
                            "fetcher": "ops/fetch_hdx_infrastructure.py", "every_days": 1},
     "gho-health": {"labels": ["gho:health"], "feeds": ["v1_health_who"],
                    "fetcher": "ops/fetch_gho_health.py", "every_days": 7},
+    "fts": {"labels": ["fts:flows"], "feeds": ["v1_funding_unfts"],
+            "fetcher": "ops/fetch_fts.py", "every_days": 1, "replaces": "unfts-funding"},
+    "idmc": {"labels": ["idmc:events"], "feeds": ["v1_refugees_idmc"],
+             "fetcher": "ops/fetch_idmc.py", "every_days": 1, "replaces": "idmc-displacement"},
     "ucdp": {"labels": ["ucdp:ged", "ucdp:candidate"], "feeds": ["v1_conflict_ucdp"],
              "fetcher": "ops/fetch_ucdp.py", "every_days": 1, "replaces": "ucdp-conflict"},
     "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
@@ -312,6 +320,8 @@ RETIRED_V1_STEPS = {
     "land": "v2 supply line hdx-land (ops/fetch_hdx_land.py)",
     "culture": "frozen corpus data/frozen/culture.json.gz",
     "ucdp-conflict": "v2 supply line ucdp (ops/fetch_ucdp.py)",
+    "unfts-funding": "v2 supply line fts (ops/fetch_fts.py)",
+    "idmc-displacement": "v2 supply line idmc (ops/fetch_idmc.py)",
 }
 
 # Exit code for "found at least one dead supply line": the job must fail.

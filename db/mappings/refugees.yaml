@@ -337,6 +337,12 @@ identity:
   # from carrying a stored identity at all. An allowance is a statement
   # about ONE source's data, never a category-wide relaxation.
 
+drop:
+  - reason: mislabelled_summary_row
+    if: "an UNRWA 'summary' row of v1's Wikipedia scrape (country totals, 'Registered refugees', '% living within camp borders')"
+    measured: 11                 # 2026-10-12: six are the table's 1990 column, five a Gaza-only
+                                 #   column under whole-agency labels; see t_refugees
+
 registry:
   max_unclassified: 0
   rules:
@@ -347,6 +353,17 @@ registry:
       grain: event
       place_grain: governorate
       canonical_unit: persons
+    - when: {equals: "refugees.camp_population"}
+      name_en: "Registered refugees per camp, as UNRWA's camp pages gave them about 2018 to 2020 (via Wikipedia)"
+      name_ar: "اللاجئون المسجّلون في كل مخيم حسب صفحات الأونروا للمخيمات نحو 2018 إلى 2020 (عن ويكيبيديا)"
+      concept: displacement.refugee
+      measure_kind: stock
+      polarity: -1
+      grain: snapshot
+      place_grain: point
+      canonical_unit: persons
+      serve_warning: "Camp figures copied from Wikipedia's table of Palestinian refugee camps, which took them in July 2020 from UNRWA's camp profile pages: UNRWA's undated counts of registered refugees from about 2018 to 2020, not today's populations and not a UNRWA release. UNRWA's own totals by field are in the series refugees.unrwa_registered."
+      serve_warning_ar: "أرقام المخيمات منقولة من جدول ويكيبيديا لمخيمات اللاجئين الفلسطينيين، وهو أخذها بتموز 2020 من صفحات الأونروا للمخيمات: أعداد اللاجئين المسجّلين عند الأونروا من نحو 2018 إلى 2020 وبدون تاريخ محدّد، مش عدد السكان اليوم ومش إصدار رسمي من الأونروا. مجاميع الأونروا نفسها حسب الإقليم موجودة بسلسلة refugees.unrwa_registered."
     - when: {prefix: "refugees."}
       concept: displacement.refugee
       measure_kind: stock        # a registered population, a level

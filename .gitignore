@@ -87,3 +87,7 @@ ops/mcp-accuracy.json
 ops/databank-runs.ndjson
 ops/coverage.ndjson
 .claude/worktrees/
+# supply-funding (2026-10-12): regenerate with ops/fetch_fts.py and ops/fetch_idmc.py
+data/raw/fts/
+data/raw/refugees/
+data/raw/cod_ab/

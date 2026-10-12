@@ -1575,12 +1575,15 @@ def t_refugees(rec, spec, places, counts):
     # UNRWA camp registry: build-stamp date → unknown (law 1 by analogy)
     name = loc.get("name")
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
-    if name in _UNRWA_AGG:                             # REVIEW.md 9
-        attrs["aggregate_label"] = name
-        unit = "percent" if str(name).startswith("%") else "people"
-        return [Row(ds, "refugees.registered_total", str(rec["date"])[:10],
-                    "unknown", rec["stable_id"], value_num=m.get("count"),
-                    unit=unit, reported_at=fetched, attrs=attrs)]
+    if name in _UNRWA_AGG:
+        # NOT LOADED since 2026-10-12. The eleven "summary" rows of v1's
+        # Wikipedia scrape are mislabelled: six are the table's 1990 column
+        # (West Bank 414,298, total 2,422,514), five are the Gaza Strip column
+        # of a 2018 table under whole-agency labels ("Registered refugees
+        # 1,421,282" is Gaza alone; the table's total is 5,545,540; "41" is
+        # Gaza's 41.8% cut short). The real totals are in unrwa_registered_hdx.
+        # The dataset's generation is complete, so the held eleven close.
+        return Drop("mislabelled_summary_row")
     pid = places["_pip"].resolve(loc.get("lat"), loc.get("lon"))
     return [Row(ds, "refugees.camp_population", str(rec["date"])[:10],
                 "unknown", rec["stable_id"], value_num=m.get("count"),

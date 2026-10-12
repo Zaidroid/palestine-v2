@@ -21,7 +21,10 @@ from __future__ import annotations
 
 
 def _day(v) -> str:
-    return str(v or "")[:10]
+    """A date cut to its day; anything else (a vintage like "about 2018 to
+    2020") as it is written."""
+    s = str(v or "")
+    return s[:10] if len(s) >= 10 and s[4:5] == "-" and s[7:8] == "-" else s
 
 
 def period_of(it: dict) -> tuple[str, str] | None:
