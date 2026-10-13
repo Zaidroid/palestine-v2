@@ -1338,3 +1338,11 @@ proof: read-only checks on the live store and API, the two units' journals
   re-derives them from their old readings); `checkpoint_serving` holds none of them and the readers filter on
   `servable`, so nothing of them is served.
 
+2026-10-13 07:20 UTC · the wedged backup · done · proof: set `2026-10-13T06-46-37Z`, its manifest, `/health`
+- Zaid ran HANDS §13h at 06:46 UTC: `backup ok · 799.8 MB · 3,613,901 rows · 2012.4s`, uploaded and
+  checksum-verified on Hetzner. Manifest: `sanity ["ok"]`, `accepted_shrink` holds the reason and the one waived
+  finding (`state_current: 2951 -> 2793`). `/health`: job backup ok, backup-remote ok; the two faults left are
+  upstream sources (`tg_bzunewss` silent, `tg_palhubapproad` narrowed). Tonight's 02:30 run compares against
+  this set. **My "about nine minutes" was wrong: it took 33.5** (the evidence archive compressed for most of it,
+  on a busy machine; the nightly does the whole run in nine).
+
