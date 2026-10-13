@@ -1730,3 +1730,11 @@ and rehearsed, WAITING FOR ZAID'S COMMAND 14 · proof: branch `news-archive-4` (
   0 failed, 3 skipped (626 s).**
 - Next in this line: PASSIA's chronology (one file per period, 1400 to 2022, entries with more words than a title)
   and Wikipedia's year pages, then the outlets' dated headlines.
+
+2026-10-13 20:09 UTC · command 14 RUN by Zaid (20:08:59 to 20:09:02 UTC) · done · proof: the script's own output and
+`ops.ask_archive` on the live store on a read-only connection.
+- Fast-forward to `2ada961`; the chronology file and its fetch record put in place; 2,541 events written, none
+  changed. The live archive holds 284,476 texts and its earliest date is now 23 August 1516.
+- On the live store the chronology answers by kind and by year (1953, oldest first, returns its dated events), and
+  "Colonization" between June 1967 and 1977 returns the 13 events the rehearsal did.
+- Nothing is owed from Zaid for the archive. Both readers go on by themselves; the nightly step is capped.
