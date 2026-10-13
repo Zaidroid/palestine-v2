@@ -1760,3 +1760,33 @@ rehearsed, WAITING FOR ZAID'S COMMAND 15 · proof: branch `news-archive-5` (`66b
   changed. The live archive holds 289,377 texts. Its two questions answered as in the rehearsal (Deir Yassin: four
   entries from 9 April 1948; demolitions in 2002: seven).
 - Nothing is owed from Zaid for the archive.
+
+2026-10-13 21:02 UTC · Addameer month by month since January 2011, and sixteen held figures found filed under the wrong
+months · built and rehearsed, WAITING FOR ZAID'S COMMAND 16 · proof: branch `databank-addameer-months` (`2c3793e`,
+this commit), `tmp/16-addameer-months.sh`, HANDS §13p.
+- Zaid's example of 13 October was "how many kids got detained in the westbank". The databank held Addameer's count
+  of children in prison for three months. Addameer keeps one page a month (`statistics/YYYY/MM`), each with that
+  month's dated block; a scout named them and I checked two before building. Read once, two seconds apart: 190 pages,
+  170 with a block, January 2011 to October 2026, no refusal. Children in prison: 209 in January 2011, a low of 104
+  that year, 470 at the peak of 2015, 140 to 185 through 2020, 320 to 450 in 2025, 350 now.
+- `ops/fetch_addameer.py --history` files the four series the databank already names (total, administrative, child,
+  female) under each block's own month, in the shape the dataset already reads. `db/mappings/prisoners.yaml` reads
+  the nightly file and this one; the history file carries no month the nightly file carries, and it states no
+  vintage (the first cut did, and the dry run showed the dataset's vintage going back from 5 October to 17
+  September; caught there).
+- **Found on the way: the databank serves sixteen Addameer figures under the wrong months.** They are the total and
+  administrative figures for eight months (October and November 2022, September 2023, August to October 2024,
+  February and April 2025), loaded from v1's reading of the page's chart before v2 took the fetch over. Each sits
+  one or more entries away from its true month: November 2022 is served as 9,900 prisoners and 3,432
+  administrative detainees; Addameer's own page for that month says 4,760 and 820. The 9,900 and 3,432 are its
+  figures for August 2024. v2's own nightly reading agrees with the monthly pages on all 14 months it carries.
+  The load supersedes the sixteen; the old rows are closed and kept.
+- Dry run on the live store, read-only: 680 read, 34 identities already held, 16 revisions, vintage unchanged.
+  Rehearsed on a scratch copy of the databank, from the live state: 646 written, 16 of them corrections, closed rows
+  8 to 24, a second run writes none; 170 months in each of the four series. The command ran twice in SCRATCH mode.
+  It runs the dry run first and stops if it sees more than 20 corrections.
+- Tests: three added to `tests/test_supply_scrapes.py`, one changed (the spec's input is two files). **Suite on the
+  branch against the live store: 2,197 passed, 0 failed, 3 skipped (623 s).**
+- Left on the pages and not loaded: Jerusalemites, prisoners from the 1948 territories, Gaza, life sentences,
+  Legislative Council members (about 168 months each) and, on nine pages, the count of arrests since 7 October
+  2023. They need names in both languages before they are series.
