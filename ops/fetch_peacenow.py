@@ -25,8 +25,8 @@ pies showed 503,732 under "end of 2023" until 2026-08-02 and 511,100 under
 the same caption from 2026-08-08, the week the chart gained "2024".
 
 WHEN A YEAR ARRIVES. Not on a calendar. By the same captures the chart gained
-2022 between April and October 2024, 2023 in late November 2024 and 2024 in
-the first days of August 2026; the dates are in settlements.yaml's notes. A
+2022 between April and October 2024, 2023 in November 2024 and 2024 in the
+first days of August 2026; the dates are in settlements.yaml's notes. A
 night that finds no new year is the usual night, not a failed one.
 
 WHAT IT WRITES. data/raw/peacenow/settlers.json in the record shape
