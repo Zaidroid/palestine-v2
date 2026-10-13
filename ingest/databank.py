@@ -2405,6 +2405,7 @@ TRANSFORMERS = {
     "casualties": t_casualties,
     "demolitions": t_demolitions,
     "settlements": t_engine,
+    "settlements_by_settlement": t_engine,   # 2026-10-13: Peace Now's population per settlement and year, spec-driven
     "land": t_land,
     "culture": t_engine,
     "education": t_education,

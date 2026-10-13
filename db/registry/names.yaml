@@ -1012,6 +1012,11 @@ names:
   settlements.settler_population:
     en: "Israeli settlers in the West Bank, excluding East Jerusalem, year-end (Peace Now)"
     ar: "عدد المستوطنين في الضفة الغربية دون القدس الشرقية، نهاية السنة (السلام الآن)"
+  # ...and its figure for each settlement, from the list of settlements it publishes beside the chart
+  # (db/mappings/settlements_by_settlement.yaml). One row a settlement and year; never summed into the total.
+  settlements.population_by_settlement:
+    en: "Population of each Israeli settlement in the West Bank, excluding East Jerusalem, by year (Peace Now)"
+    ar: "عدد سكان كل مستوطنة إسرائيلية في الضفة الغربية دون القدس الشرقية، حسب السنة (السلام الآن)"
 
   # water.*: WHO GHO code WSH_SANITATION_OD, whose rows carry the code but not WHO's name. The English is
   # WHO's own (ghoapi.azureedge.net/api/Indicator), cut by residence the way the derived names are.
