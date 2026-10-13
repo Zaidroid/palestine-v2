@@ -574,6 +574,12 @@ _k("registry.rules[].serve_warning", "enforced",
    "30 breakdowns of the same dataset served with none until 2026-10-12). "
    "Written to indicator_def.serve_warning by ops/load_registry.py",
    types=(str,))
+_k("registry.rules[].ask_by_name", "enforced",
+   "true = each series this rule classifies is one member of a family of "
+   "per-entity series (one settlement, not the West Bank). Written to "
+   "indicator_def.ask_by_name by ops/load_registry.py (migration 114); the "
+   "category route leaves such a series out of a category's rows unless it is "
+   "asked for by name, and says how many are held that way", types=(bool,))
 _k("registry.rules[].serve_warning_ar", "enforced",
    "the same sentence in Palestinian Arabic, spoken by `answer`",
    types=(str,))

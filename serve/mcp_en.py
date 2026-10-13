@@ -845,9 +845,19 @@ def databank(d: dict) -> str:
     return (f"{d.get('category')}" + (f" as of {d['as_of']}" if d.get("as_of") else "")
             + " — latest: " + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
             + f" (newest {d.get('count', 0)} rows shown.)" + _event_note_en(d)
+            + _by_name_note_en(d)
             + "".join(f" Note: {w['en']}" for ind, w in (d.get("warnings") or {}).items()
                       if w.get("en") and any(it.get("indicator") == ind
                                              for it in d.get("latest_by_indicator") or [])))
+
+
+def _by_name_note_en(d: dict) -> str:
+    """The per-entity series a category holds beside what it showed."""
+    bn = d.get("by_name_only") or {}
+    if not bn.get("series"):
+        return ""
+    return (f" Also held, each served when asked for by name: {bn['series']:,} series"
+            + (f" (for example: {bn['example_en']})" if bn.get("example_en") else "") + ".")
 
 
 def insights(d: dict) -> str:

@@ -139,7 +139,7 @@ def matches(rule: dict, indicator: str, unit: str | None) -> bool:
 
 FIELDS = ("concept", "measure_kind", "polarity", "grain", "place_grain",
           "canonical_unit", "name_en", "name_ar",
-          "serve_warning", "serve_warning_ar")
+          "serve_warning", "serve_warning_ar", "ask_by_name")
 
 
 def classify(pairs: list[tuple[str, str | None, int]],
@@ -275,6 +275,11 @@ def main(argv: list[str]) -> int:
             for cat, ind, unit, n in cur.fetchall():
                 live.setdefault(cat, []).append((ind, unit, n))
 
+        # indicator_def.ask_by_name (migration 114): absent, the flag is not written
+        cur.execute("""SELECT count(*) FROM information_schema.columns
+                        WHERE table_name = 'indicator_def' AND column_name = 'ask_by_name'""")
+        has_by_name = bool(cur.fetchone()[0])
+        by_name_written = 0
         total_unclassified = 0
         warned = 0
         declared_warnings = 0
@@ -383,6 +388,15 @@ def main(argv: list[str]) -> int:
                                  ind, meta["serve_warning"],
                                  meta.get("serve_warning_ar")))
                     warned += cur.rowcount
+                # Like the warning, the spec's statement about the SERIES, so it
+                # is written whatever the row's review status, and it follows
+                # the rule both ways: a rule that stops saying it clears it.
+                if has_by_name:
+                    want = meta.get("ask_by_name") is True
+                    cur.execute("UPDATE indicator_def SET ask_by_name = %s "
+                                "WHERE indicator = %s AND ask_by_name IS DISTINCT FROM %s",
+                                (want, ind, want))
+                    by_name_written += cur.rowcount
             # Unclassified indicators get a ROW too, marked as such. A
             # missing row and a row saying "nobody has classified this" look
             # identical to a query and are completely different facts.
@@ -446,6 +460,10 @@ def main(argv: list[str]) -> int:
               + (f" · {len(unnamed)} still unnamed, e.g. {unnamed[:3]}" if unnamed else ""))
         print(f"{declared_warnings} indicator(s) have a serve warning declared"
               + (f" · {warned} written or changed" if apply else ""))
+        n_by_name = sum(1 for m in rule_meta.values() if m.get("ask_by_name"))
+        print(f"{n_by_name} indicator(s) are served when asked for by name"
+              + (f" · {by_name_written} written or changed" if apply and has_by_name else "")
+              + ("" if has_by_name else " · indicator_def.ask_by_name is absent (migration 114): not written"))
 
         cur.execute("""SELECT count(*) FROM databank_serving ds
                        LEFT JOIN unit_alias ua ON ua.raw = ds.unit

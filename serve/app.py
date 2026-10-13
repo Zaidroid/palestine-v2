@@ -3350,6 +3350,17 @@ def databank_category(category: str, indicator: str | None = None,
         # districts, and subdistricts (qada') where the gazetteer knows them.
         conds.append("(r.attrs->>'district_1945' ILIKE %s OR r.attrs->>'subdistrict_1945' ILIKE %s)")
         params += [dist, dist]
+    # A series the registry declares `ask_by_name` (migration 114) is one member
+    # of a family of per-entity series: one settlement of 141. It stays out of
+    # the category's rows unless the `indicator` filter names only series of
+    # that kind, so "settlements" still answers with the West Bank total and
+    # "…population_by_settlement.pn0016" answers with Ariel. (Appended before
+    # the `as_of` condition: its parameter is the last one.)
+    by_name = sorted(k for k, c in _ask_by_name().items() if c == category)
+    if by_name:
+        conds.append("(r.indicator <> ALL(%s) OR NOT EXISTS (SELECT 1 FROM indicator_def y"
+                     " WHERE y.indicator LIKE %s AND NOT y.ask_by_name))")
+        params += [by_name, (indicator or "") + "%"]
     if as_of:
         conds.append("r.sys_period @> %s::date::timestamptz")
     else:
@@ -3419,6 +3430,18 @@ def databank_category(category: str, indicator: str | None = None,
     names = _indicator_names(sorted({r["indicator"] for r in rows if r["indicator"]}))
     if names:
         out["names"] = names
+    if by_name and not {r["indicator"] for r in rows} & set(by_name):
+        # They were left out, so the answer says they are there: a category
+        # that silently holds 141 more series is a quietly short answer.
+        held = [k for k in by_name if k.startswith(indicator or "")]
+        if held:
+            one = _indicator_names(held[:1]).get(held[0]) or {}
+            pre = os.path.commonprefix(held)
+            out["by_name_only"] = {
+                "series": len(held), "indicator_prefix": pre[:pre.rfind(".") + 1] or pre,
+                "example": held[0], "example_en": one.get("en"), "example_ar": one.get("ar"),
+                "note": "series held one per entity; each is served when asked for by name "
+                        "(the indicator filter, or /v2/databank/indicators?q_=<a name>)"}
     if events:
         # A register of single events is summarised, not sampled: "the newest
         # ten rows" of 589 localities says nothing about the 589 (P1-B.1).
@@ -3494,6 +3517,23 @@ def _indicator_names(indicators: list[str]) -> dict:
     except Exception:                                            # noqa: BLE001
         return {}
     return {r["indicator"]: {"en": r["name_en"], "ar": r["name_ar"]} for r in rows}
+
+
+def _ask_by_name() -> dict:
+    """indicator -> its category, for the series the registry declares
+    `ask_by_name` (indicator_def.ask_by_name, migration 114): one member of a
+    family of per-entity series, served when it is asked for by name. One
+    declared fact, read here and nowhere else, once per cache period: a
+    category that holds none pays nothing for the rule. Before the migration
+    there is no such column and no such series."""
+    try:
+        return {r["indicator"]: r["category"] for r in q_cached(
+            """SELECT i.indicator,
+                      (SELECT ds.v1_category FROM databank_serving ds
+                        WHERE ds.indicator = i.indicator LIMIT 1) AS category
+                 FROM indicator_def i WHERE i.ask_by_name""")}
+    except psycopg.errors.UndefinedColumn:
+        return {}
 
 
 def _event_versions_served() -> bool:

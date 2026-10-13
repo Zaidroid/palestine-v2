@@ -2181,6 +2181,10 @@ def databank(category: str | None = None, indicator: str | None = None,
               + (f" المصدر: {src}." if src else "") + span
               + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
     answer += _event_note_ar(d)
+    bn = d.get("by_name_only") or {}
+    if bn.get("series"):
+        answer += (f" وفي كمان {bn['series']:,} سلسلة، كل وحدة لحالها وبتنطلب بالاسم"
+                   + (f" (مثلاً: {bn['example_ar']})" if bn.get("example_ar") else "") + ".")
     for ind, w in (d.get("warnings") or {}).items():
         if ind in newest and w.get("ar"):
             answer += f" تنبيه: {w['ar']}"

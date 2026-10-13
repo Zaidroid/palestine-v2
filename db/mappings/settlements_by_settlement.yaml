@@ -244,6 +244,11 @@ registry:
     # db/registry/names.yaml, one per series, written by one rule from
     # db/reference/peacenow_settlement_names.yaml.
     - when: {prefix: "settlements.population_by_settlement."}
+      # One settlement of 141: served when it is asked for by name, and left
+      # out of the category's newest rows, where the West Bank total belongs
+      # (migration 114; loaded as ordinary series, three single settlements'
+      # May 2024 counts became the answer to "settlements").
+      ask_by_name: true
       concept: settlement
       measure_kind: stock        # residents at the period's end (a year) or
                                  #   in the month named
