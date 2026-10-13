@@ -1708,3 +1708,25 @@ scripts' own output, `ops.ask_archive --held` on the live store on a read-only c
   narrowed). The backup and sync units still show last night's failed state until tonight's runs.
 - `db/migrate.sh` printed an old warning beside 116: migration 022's file changed after it was applied (its last
   commit is of 2 August). Not from this work; not looked into.
+
+2026-10-13 20:06 UTC · the archive's chronology reader: the dated backbone for the decades before any channel · built
+and rehearsed, WAITING FOR ZAID'S COMMAND 14 · proof: branch `news-archive-4` (`1e6d8bc`, this commit),
+`tmp/14-chronology.sh`, HANDS §13n.
+- Before it, the same evening: Zaid merged `news-archive-3` (`3a08bcc`) at my asking. It gives the nightly archive
+  step fifteen minutes at most (`timeout 900`). I had not bounded that step, and by 03:41 the two readers would
+  have left it about 650,000 texts, some forty minutes, inside a unit that systemd kills at sixty.
+- `ops/fetch_chronology.py` reads the overall chronology of the Interactive Encyclopedia of the Palestine Question
+  (Institute for Palestine Studies with the Palestinian Museum) in one request: 2,541 events from 23 August 1516 to
+  31 December 2022, each with a date or a date range, a title and one or more of twelve kinds. All 2,541 date texts
+  were understood (2,427 to the day, 77 to the month, 37 to the year; 1,214 are ranges). The descriptions load by
+  script and are not taken. The page was read once at 16:21 UTC and parsed at 19:54; floored at 2,000 events.
+- `ingest/archive.py` takes it as a sixth reader (`chronology`): one row per event, kind `entry`, dated with the
+  precision it was published with. The loader's date rule now accepts years from 1000 on (it was 1900, which would
+  have dropped the Ottoman entries); a mistyped year (0001, 0201) is still no date.
+- Rehearsed on the scratch copy: 2,541 written in 3 s, a second run wrote none. "Colonization" between June 1967
+  and 1977 returns 13 events, the first Military Order No. 58 of 23 July 1967; "massacre" in 1948 returns two (Deir
+  Yasin, al-Dawayima), which is what the titles say, not a count of massacres.
+- Tests: `tests/test_archive.py` now 64 offline tests. **Suite on the branch against the live store: 2,191 passed,
+  0 failed, 3 skipped (626 s).**
+- Next in this line: PASSIA's chronology (one file per period, 1400 to 2022, entries with more words than a title)
+  and Wikipedia's year pages, then the outlets' dated headlines.
