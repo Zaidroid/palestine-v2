@@ -1346,3 +1346,70 @@ proof: read-only checks on the live store and API, the two units' journals
   this set. **My "about nine minutes" was wrong: it took 33.5** (the evidence archive compressed for most of it,
   on a busy machine; the nightly does the whole run in nine).
 
+2026-10-13 08:36 UTC · databank, more: UCDP's corrections and 2026, funding's parent flows, 39 UN population series, `as_of` for
+events · built and rehearsed, NOT yet run (HANDS §13i, his hand) · proof: branch `databank-more`, a fresh copy of
+the store on which the hand-over script ran whole, the suites below
+Zaid, 13 October: "for the first two fix them (its a yes) and do whatever you can do from the rest to enrich the
+databank if it does not take much work". Read as: the two open pieces of building, and (ambiguously) the two
+licence decisions. The building is done; **the licences are not written** (see the last item).
+- **Events follow their publisher (`event_reading`, `ingest/databank.py`).** An event was taken once and never
+  touched. A dataset now declares the files that are its publisher's whole current reading: a held event that
+  states something else is revised in place (the version before goes to `event_history` through the versioning
+  trigger; its place row stays unless its point moved), a held event the reading no longer contains is marked
+  `retracted` and kept, and the same dataset's records in any other input file are an older reading and are not
+  emitted. Ceilings 5% revised and 1% withdrawn of the believed events; `--allow-absent` lifts both for one run;
+  half a reading is refused. `conflict.yaml` declares UCDP's three files. On the live store, read-only dry run,
+  and on the rehearsal copy, written: **9,987 unchanged, 812 revised (the fetcher's own `any_stored_field`
+  count), 18 withdrawn (180 deaths), 1,077 new (493 of 1989 to 2024, 584 candidate events of 2026).** After it,
+  1989 to 2024 holds 8,113 events and 56,925 deaths, UCDP's own total for GED 26.1 (56,346 before); October 2023
+  reads 10,553. The three death series gain a warning that events after 2025 are provisional (114 → 118
+  warnings: these three and funding's one). The dataset keeps a vintage (the newest of its files, 2026-09-20) where two file
+  dates would have left it with none.
+- **`as_of` reads an event as it stood (migration 111, `databank_event_versions`, `serve/app.py`).** The route
+  applied `as_of` to current event rows only, and an event changed in place has a current row that begins the day
+  it changed: `event_history` already held 30,776 earlier versions of databank events nothing could reach (the
+  Insecurity Insight re-key of 12 October alone: 20,171). The view is `databank_event_rows` word for word over
+  `event` and `event_history`; read only under `as_of`. Timed on the live store, read-only: 0.04 to 0.33 s. On the
+  copy after the UCDP run: `as_of=2026-10-12` answers 7,071 state-based events and 55,490 deaths, the store as it
+  stood. Needs the API restart.
+- **UN funding (agent, branch `more-funding`).** A parked parent with nothing left on it (FTS `amountUSD` zero or
+  below, a parked amount, at least one child) is no longer a row under paid, commitment or pledge, where its
+  children already carry the money; it is kept under `funding.parked_parent`, named and warned in both languages,
+  with its child count and how many of the children are in the answer. 554 parents, USD 2,523,295,318 (520 fully
+  allocated, USD 1,926,516,664; 34 over-allocated, 3 of which were held under a status from an earlier night and
+  could never have been closed). On the copy: 535 held rows closed, 566 written; after it paid 7,331 rows /
+  USD 14,626,965,570 (was 7,729 / 15,748,008,812), commitment 2,540 / 4,967,089,638, pledge 37 / 332,580,929.
+  `--allow-absent` now also lifts the ceiling on rows revised under a new identity (535 against 521), for one
+  run. The engine's template reads `{a|b}` as the first path that is filled (v1's frozen fallback has no
+  `series`).
+- **39 more World Population Prospects series (agent, branch `more-editions`).** The file already fetched fills 42
+  more columns for 1950 to 2023; 39 are taken (population by sex, life expectancy by sex and at 15, 65 and 80,
+  infant and under-five deaths, mortality by age band, sex ratios, natural change, net migration rate), 3 skipped
+  as blank in some years or a restatement of a held series. 2,886 rows, the 888 held unchanged; every one named
+  in English and Arabic; the dataset gains its vintage (2024-07-11). Estimates only: the projections to 2100 stay
+  out. Choices taken, each one line to change: four columns that are the UN's own arithmetic of two others are
+  kept; values keep three decimals as the held twelve do; death counts are classified beside `deaths`.
+- **Also:** `units.yaml` named `per_1000` "per 1" and `per_100000` "per 100" (an unquoted comma); quoted. The IMF
+  letter said 474 observations and the store holds 485 since last night; its test failed on the unchanged tree.
+  The two "late" datasets have nothing newer at their publishers (WPP's next revision is announced for 11 July
+  2027; Peace Now's chart ends at 2024): evidence in the two specs and fetchers; the radar's allowances are not
+  changed (HANDS §13i, his call).
+- **Rehearsal of the hand-over itself:** `tmp/9-databank-more.sh` in its rehearsal mode on a freshly built copy:
+  41 s, the numbers above, 0 unclassified, 0 units without an alias. A second run writes nothing. Its five
+  questions answered by a test API on the copy. No table loses a row, so the nightly backup's shrink guard is
+  not touched (checked: events 48,022 → 49,099; closed observations stay in `observation`).
+- **Not done, and why.** (1) **The two licence migrations.** The permission layer refused my writing them on a
+  yes that can be read two ways; they wait for Zaid's explicit word. And my table of the morning was wrong about
+  FAO DIEM: recording its terms as read (the proposal's cautious grade, not sellable) does NOT release its
+  13,696 rows to partners, because a partner payload carries only sellable rows; releasing them is the other
+  reading of FAO's clause, his to choose. (2) The REST licence cut: read-only finding, no page in `serve/`,
+  roads-viz, the two film apps or v1's public folders reads `/v2/databank`; the API's own MCP server does, from
+  localhost. His word still. (3) `refugees.cross_border`: left; retiring is his call and adds nothing.
+- **Seen and left, said on the page.** The funding status series still add FTS's second-level money to incoming
+  money (1,018 "internal" flows, USD 722,712,070; 84 "outgoing", USD 71,243,790) and 13 Standard flows are rows
+  beside their own children (USD 14,795,853); 87 held funding rows whose flows FTS no longer returns stay current
+  (USD 297,484,288; the input is a window and nothing closes them). The spoken funding headline can lead with a
+  parent row (it is named and warned). An `as_of` answer's "Series A→B" is today's span, not the day's. Peace
+  Now publishes population per settlement (152 settlements, 1969 to May 2024) in a sheet that would need its own
+  dataset; not built.
+
