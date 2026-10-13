@@ -1656,3 +1656,30 @@ proof: branch `news-archive` (`4619038`, `dd37833`, this commit), `tmp/12-news-a
   movement-of-goods report (weeks 1 to 111), the Detainees' Commission's daily lists of administrative detention
   orders, UNRWA's 236 situation reports, WHO's 72. DCIP's domain now serves gambling pages; no child-detention
   figure came from it.
+
+2026-10-13 16:34 UTC · the archive's second reader: a publisher's whole archive through its own open listing · built
+and rehearsed, WAITING FOR ZAID'S COMMAND 13 (after 12) · proof: branch `news-archive-2` (`1bece35`, this commit),
+`tmp/13-archive-listings.sh`, HANDS §13m.
+- `ops/fetch_wp_json.py` reads a WordPress listing a hundred items a page in id order (a page cannot shift under the
+  reader), at each publisher's own crawl-delay, resumable, one reader at a time, and ends a publisher's run at its
+  first refusal. I checked three listings myself with one request each before building on the scout's word: UNISPAL
+  46,967 documents (the oldest dated 21 January 1915), PCHR 11,872, POICA 17,019.
+- `ingest/archive.py` takes the files as a fifth reader (`wp_json`). A UN document keeps its own day and day
+  precision: the listing's hour is the hour of filing, and in UTC it moved the Qibya debate of 9 November 1953 to
+  the 10th. An outlet read this way uses v1's key for the same outlet, so the full text replaces v1's summary of
+  the same article and does not sit beside it.
+- Rehearsed on the scratch copy with the first 1,000 UN documents: 1,000 written, a second run wrote none, day
+  precision on all, and "Gaza crossings" finds 97 of them. 636 of the 1,000 carry their text; the rest are a title
+  and a date that point to a PDF.
+- Running since 16:16 UTC as a process of its own: UNISPAL, PCHR, POICA, Mondoweiss, PIC English, Middle East
+  Monitor, PIC Arabic, IMEMC, about ten hours in all. The channel reader goes on beside it (Quds News was back to
+  22 August 2026 after its first 600 pages).
+- Tests: `tests/test_archive.py` now 51 offline tests. **Suite on this branch against the live store: 2,179 passed, 0 failed, 2 skipped (633 s).** The hand-over
+  command ran in SCRATCH mode with five thousand UN documents in hand (125 s): the rehearsal archive then held
+  112,520 texts from 30 April 1945 to today; "Qibya" returned the Security Council's records of October and
+  November 1953, and "curfew" 208 UN documents from September 1967 on.
+- Seen and not built yet: the Palestine Question encyclopedia's whole chronology is one page of 4,142 dated event
+  blocks, and PASSIA's index links one chronology file per period from 1400 to 2022. Both are small and are the
+  dated backbone for the years before any channel existed. The big Arabic outlets (Sama, Palestine Today, Arab48,
+  Safa: about 1.9 million articles between them) list every article in sitemaps: reading the lists first gives a
+  dated headline for each within hours, and the texts can follow where a question needs them.
