@@ -1412,4 +1412,10 @@ licence decisions. The building is done; **the licences are not written** (see t
   parent row (it is named and warned). An `as_of` answer's "Series A→B" is today's span, not the day's. Peace
   Now publishes population per settlement (152 settlements, 1969 to May 2024) in a sheet that would need its own
   dataset; not built.
+- **Suites.** The whole suite from the merged build copy against the live store as it stands before the command
+  (the documented way): **2,027 passed, 0 failed, 9 skipped (570 s)**; of the skips, one waits for migration 111
+  and five need the evidence vault, which the build copy does not hold. The databank test files against the
+  rehearsal copy AFTER the command: 470 passed, 1 failed (`connectivity_now`, a live measurement the copy has no
+  data for). A first run of mine exported a read-only session to pytest itself and showed 58 false failures
+  (tests that write inside a rollback); not a result.
 
