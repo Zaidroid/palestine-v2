@@ -422,4 +422,7 @@ def test_the_default_ceiling_refuses_the_first_night_and_one_run_may_lift_it(mon
         _run(monkeypatch, tmp_path / "again", allow_absent=2)
     assert "max_absent" not in load_spec("funding")["identity"]
     assert "allow_absent" not in inspect.getsource(databank.run_all)
-    assert inspect.getsource(databank.run).count("cap = max(cap, allow_absent)") == 2
+    # the three ceilings one hand-given run may lift: rows absent upstream, rows
+    # revised under a new identity, and events revised or withdrawn by their
+    # publisher's reading (`event_reading`, the same day)
+    assert inspect.getsource(databank.run).count("cap = max(cap, allow_absent)") == 3
