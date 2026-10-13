@@ -9,7 +9,7 @@
 
 Dear IMF Permissions team,
 
-I maintain a public, non-commercial databank of Palestine data. We hold 474
+I maintain a public, non-commercial databank of Palestine data. We hold 485
 World Economic Outlook observations for the State of Palestine (LP, NGDPD,
 PPPGDP, PPPPC, BCA and related series).
 
