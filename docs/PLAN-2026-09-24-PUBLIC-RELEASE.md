@@ -1600,4 +1600,7 @@ live store, the live API and the public partner door
 - Seen and left, for another day: the newest IMF rows are dated 2025 and include "Inflation rate, end of period
   consumer prices: -42.9". The IMF's World Economic Outlook mixes estimates and its own projections in one
   series, and the store does not say which years are which. Not checked further.
+- **Suite on the merged tree against the live store, after command 11: 2,128 passed, 0 failed, 3 skipped (912 s).**
+  The build copies and the rehearsal container are removed. Next: the backup and sync of 14 October, the first
+  night with all of it.
 
