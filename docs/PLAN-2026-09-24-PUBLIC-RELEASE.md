@@ -1754,3 +1754,9 @@ rehearsed, WAITING FOR ZAID'S COMMAND 15 · proof: branch `news-archive-5` (`66b
   branch against the live store: 2,194 passed, 0 failed, 3 skipped (627 s).**
 - Not there: the years 2000 and 2011 (the dead links), and anything before 1851 (the first file opens with prose
   about four centuries under one heading).
+
+2026-10-13 20:34 UTC · command 15 RUN by Zaid (20:34:19 to 20:34:24 UTC) · done · proof: the script's own output.
+- Fast-forward to `e1423fb`; PASSIA's chronology put in place with its fetch record; 4,901 entries written, none
+  changed. The live archive holds 289,377 texts. Its two questions answered as in the rehearsal (Deir Yassin: four
+  entries from 9 April 1948; demolitions in 2002: seven).
+- Nothing is owed from Zaid for the archive.
