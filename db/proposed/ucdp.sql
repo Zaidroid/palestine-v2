@@ -1,3 +1,6 @@
+-- DECIDED AND MOVED 2026-10-13: this is now db/migrations/112_ucdp_licence_read_and_released.sql, with its second
+-- switch on (Zaid: "yes release its rows to partners"). Kept here as the proposal that was put to him.
+--
 -- PROPOSED, NOT APPLIED. A licence grade is Zaid's decision; this file is not under db/migrations/
 -- and db/migrate.sh does not see it. To apply it, copy it to the next migration number.
 --

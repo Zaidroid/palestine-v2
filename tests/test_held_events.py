@@ -105,8 +105,17 @@ def test_the_held_record_is_served_once(mcp_call, mcp_payload):
         n = dict(cur.fetchall())
         cur.execute("""SELECT count(*) FROM event WHERE attrs ? 'superseded_083' AND status = 'believed'""")
         assert cur.fetchone()[0] == 0
-        cur.execute("""SELECT count(*) FROM v_tier_commercial_permissive WHERE dataset_key = 'v1_conflict_ucdp'""")
-        assert cur.fetchone()[0] == 0                               # G5.11: unread terms, not sold
+        # G5.11: unread terms, not sold. Migration 112 (2026-10-13) records the
+        # terms as UCDP states them (CC BY 4.0) and Zaid's decision to release
+        # the rows; until it is applied the dataset's own grade holds them back.
+        # Read from the rows themselves: either state is whole, never half.
+        cur.execute("""SELECT d.commercial_use, d.attrs ? 'commercial_withheld_083',
+                              d.attrs ? 'commercial_released',
+                              s.terms_verified_at IS NOT NULL, s.license_spdx
+                         FROM dataset d JOIN source s USING (source_id)
+                        WHERE d.key = 'v1_conflict_ucdp'""")
+        assert cur.fetchone() in ((False, True, False, False, "CC-BY-IGO"),     # before 112
+                                  (None, False, True, True, "CC-BY-4.0"))       # after
     assert n["displacement.locality_depopulated"] == 589
     # 7,638 until 2026-10-12 (GED 25.1, to December 2024); GED 26.1's events of
     # 2025 are added from UCDP's own files, so the count only grows

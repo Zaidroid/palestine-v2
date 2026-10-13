@@ -1419,3 +1419,23 @@ licence decisions. The building is done; **the licences are not written** (see t
   data for). A first run of mine exported a read-only session to pytest itself and showed 58 false failures
   (tests that write inside a rollback); not a result.
 
+2026-10-13 09:06 UTC · the two licences, decided · built into the same command, NOT yet run · proof: migrations 112 and 113,
+the command rehearsed again on a fresh copy
+Zaid, asked plainly: "1. yes release its rows to partners. 2. this is still for testing and personal use so far, so
+add it too."
+- **112, UCDP:** the source is CC BY 4.0 as UCDP's download page states it, terms recorded as read on 2026-10-12;
+  the dataset's own withholding from migration 083 is lifted. On the copy: 11,876 UCDP events in the commercial
+  tier (0 before), and a partner answer carries them.
+- **113, FAO DIEM:** CC BY 4.0 with FAO's database terms, graded attribution, **commercial use allowed by his
+  decision** on the reading that FAO's sentence bans promotional use and endorsement, not the licence's own
+  permission. The migration says in its header that this is to be revisited before a partner who is a commercial
+  enterprise is served, and gives the one statement that returns to the cautious reading. On the copy: 13,696
+  rows in the commercial tier, and a partner answer carries them. WHO's rows (non-commercial) and UN2720's (ask)
+  are still withheld, checked in the same run.
+- README: "held but not exportable" 48,000+ → 34,000+ (34,748 on the copy after the command; FAO DIEM's rows
+  left it). **That one README test fails on the live store until the command has run** (48,442 held there
+  today, and a floor may not undersell by more than a tenth); it passes on the copy after it.
+- The command with the licences in it, rehearsed on a freshly built copy: 42 s; a second run writes nothing; its
+  six questions answered. Licence and databank test files on the copy after it: 272 passed, and the one that
+  needs a live network measurement.
+

@@ -1,3 +1,7 @@
+-- DECIDED AND MOVED 2026-10-13: db/migrations/113_fao_diem_licence_read_and_released.sql. Zaid chose the OTHER
+-- reading than the one proposed below (commercial_use true, while the databank is for testing and personal
+-- use). Kept here as the proposal that was put to him.
+--
 -- PROPOSED, NOT APPLIED (2026-10-12). FAO DIEM's licence, read at the publisher.
 --
 -- The store grades source `fao_diem` as `ask` (migration 094): HDX lists the licence as "Other" and the terms had
