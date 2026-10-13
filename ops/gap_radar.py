@@ -125,6 +125,23 @@ CLOSED_CORPUS = {
     "v1_culture_heritage_composite",
 }
 
+# A model's PROJECTION: rows dated after the day they were published. Its
+# newest date is its farthest projected year (2101), so judged on its data
+# dates it would read "fresh", at a negative age, until the year 2100; and its
+# first years (2024 to 2026) are not after today at all, so no date test tells
+# it from a record. It is neither fresh nor late nor stalled: it is one
+# edition, replaced whole when the publisher issues the next. Listed every
+# night as what it is, with no age, never counted among the fresh, and left
+# out of the era grid (a projected year is not coverage of that era).
+PROJECTION = {
+    "un_wpp_2024_projection":
+        "The UN's medium-variant projection of July 2024 (World Population "
+        "Prospects 2024) for 2024 to 2101: a model's output, not a feed. It "
+        "does not age and nothing fetches a newer one. The next revision is "
+        "announced for 11 July 2027 and will be another dataset "
+        "(ops/fetch_wpp.py, THE NEXT EDITION).",
+}
+
 # Datasets whose series another dataset CONTINUES. Their age stops mattering
 # on the day the successor takes over; the successor is judged instead, and
 # if the successor stalls the radar reports that. Measured, not asserted:
@@ -490,6 +507,9 @@ def measure_datasets(cur, today: date) -> list[dict]:
                 except ValueError:
                     pass
         age = (today - last_info).days if last_info else None
+        if key in PROJECTION:
+            # its dates are projected years, not information: it has no age
+            basis, last_info, age = "projection (its dates are projected years; no age)", None, None
 
         if key in ALLOWANCE_OVERRIDE_DAYS:
             allowance = ALLOWANCE_OVERRIDE_DAYS[key]
@@ -505,6 +525,8 @@ def measure_datasets(cur, today: date) -> list[dict]:
             status = "awaiting_permission"
         elif key in CLOSED_CORPUS:
             status = "closed_corpus"
+        elif key in PROJECTION:
+            status = "projection"
         elif key in CONTINUED_BY and CONTINUED_BY[key] in continued_ok:
             status = "continued"
         elif age is None:
@@ -518,7 +540,7 @@ def measure_datasets(cur, today: date) -> list[dict]:
 
         hole = None
         if med and maxgap and days and days > 30 and maxgap >= 6 * max(med, 1) \
-                and maxgap >= 14 and status not in ("closed_corpus",):
+                and maxgap >= 14 and status not in ("closed_corpus", "projection"):
             hole = {"days": int(maxgap),
                     "ended": str(hole_end),
                     "rhythm_days": float(med)}
@@ -535,6 +557,7 @@ def measure_datasets(cur, today: date) -> list[dict]:
             "status": status,
             "event_driven": key in EVENT_DRIVEN,
             "dead_reason": DEAD_UPSTREAM.get(key),
+            "projection_reason": PROJECTION.get(key),
             "largest_hole": hole,
         })
     return out
@@ -548,7 +571,8 @@ def measure_eras(cur) -> dict:
             FROM observation o JOIN dataset d ON d.dataset_id = o.dataset_id
             WHERE d.v1_category IS NOT NULL AND upper_inf(o.sys_period)
               AND o.occurred_at >= %s AND o.occurred_at <= %s
-            GROUP BY 1""", (lo, hi + " 23:59:59"))
+              AND d.key <> ALL(%s)          -- a projected year is not coverage
+            GROUP BY 1""", (lo, hi + " 23:59:59", list(PROJECTION)))
         for cat, n in cur.fetchall():
             grid[cat][label] = n
         cur.execute("""
@@ -888,7 +912,8 @@ def headline(today, c: dict) -> list[str]:
         f"{c['supply_dead']} supply-dead · "
         f"{c['dead_upstream']} dead-upstream · {c['closed_corpus']} closed · "
         f"{c['continued']} continued · "
-        f"{c.get('awaiting_permission', 0)} awaiting permission",
+        f"{c.get('awaiting_permission', 0)} awaiting permission · "
+        f"{c.get('projection', 0)} projection",
         f"supply lines: {s['dead']} DEAD · v2 fetches {s['v2_live']}/"
         f"{s['v2_lines']} live ({s['v2_failing']} failing, {s['v2_dead']} dead)"
         f" · v1 steps {s['v1_live']}/{s['v1_steps']} live ({s['v1_dead']} dead,"
@@ -932,6 +957,7 @@ def main() -> int:
             "continued": sum(1 for d in datasets if d["status"] == "continued"),
             "awaiting_permission": sum(1 for d in datasets
                                        if d["status"] == "awaiting_permission"),
+            "projection": sum(1 for d in datasets if d["status"] == "projection"),
             "open_gaps": len(gaps),
             "supply_lines": supply_counts(supply),
         },

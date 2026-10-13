@@ -57,6 +57,46 @@ SECTIONS = [
 ]
 
 
+# WHAT THE OPENING SENTENCE MAY CALL AN OBSERVATION. A projection
+# (indicator_def.projection, migration 115) is a model's output dated up to
+# 2101: counted with the rest, the file opened "spanning 1922 to 2101" the
+# night the UN's projection was loaded. Its values are counted and dated apart,
+# and said to be what they are. Before the migration the column does not exist
+# and nothing is a projection.
+SPAN_SQL = """
+SELECT count(*) FILTER (WHERE NOT p),
+       (min(occurred_at) FILTER (WHERE NOT p))::date,
+       (max(occurred_at) FILTER (WHERE NOT p))::date,
+       count(*) FILTER (WHERE p),
+       count(DISTINCT indicator) FILTER (WHERE p),
+       (min(occurred_at) FILTER (WHERE p))::date,
+       (max(occurred_at) FILTER (WHERE p))::date
+  FROM (SELECT occurred_at, indicator, {projection} AS p FROM databank_serving) s"""
+DECLARED = "indicator IN (SELECT indicator FROM indicator_def WHERE projection)"
+
+
+def span(cur) -> tuple:
+    """(observations, first day, last day, projected values, projection series,
+    their first day, their last day)."""
+    cur.execute("""SELECT count(*) FROM information_schema.columns
+                    WHERE table_name = 'indicator_def' AND column_name = 'projection'""")
+    cur.execute(SPAN_SQL.format(projection=DECLARED if cur.fetchone()[0] else "false"))
+    return tuple(cur.fetchone())
+
+
+def opening(total, lo, hi, projected=0, series=0, lo_p=None, hi_p=None) -> str:
+    said = (f"The Palestine databank serves **{total:,} observations** spanning "
+            f"**{lo} to {hi}** from the sources below. Every row carries its "
+            "source and licence in the API response; this file is the same "
+            "information in one place.")
+    if projected:
+        said += (f" It also holds **{projected:,} projected values** in {series:,} series "
+                 f"for {lo_p:%Y} to {hi_p:%Y}: a model's output, not observations, "
+                 "served only when asked for by name. They are not in the count or "
+                 "the span above; the rows counted beside each source below include them.")
+    return said
+
+
 def build() -> str:
     with connect() as conn, conn.cursor() as cur:
         cur.execute("""
@@ -71,9 +111,7 @@ def build() -> str:
             FROM databank_serving
             GROUP BY 1,2,3,4,5,6 ORDER BY 1, 7 DESC""")
         served = cur.fetchall()
-        cur.execute("SELECT count(*), min(occurred_at)::date, "
-                    "max(occurred_at)::date FROM databank_serving")
-        total, lo, hi = cur.fetchone()
+        total, lo, hi, projected, series, lo_p, hi_p = span(cur)
         cur.execute("""SELECT source_key, status, scope FROM source_permission
                        WHERE status <> 'granted' ORDER BY source_key""")
         pending = cur.fetchall()
@@ -85,10 +123,7 @@ def build() -> str:
     L = [
         "# Attribution",
         "",
-        f"The Palestine databank serves **{total:,} observations** spanning "
-        f"**{lo} to {hi}** from the sources below. Every row carries its "
-        "source and licence in the API response; this file is the same "
-        "information in one place.",
+        opening(total, lo, hi, projected, series, lo_p, hi_p),
         "",
         "> Generated from the database by `ops/gen_attribution.py`. Do not "
         "edit by hand — a hand-maintained credits file breaks silently the "
