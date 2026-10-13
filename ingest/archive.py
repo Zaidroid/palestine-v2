@@ -13,6 +13,9 @@ THE READERS, each a function that yields texts as the publisher wrote them:
   tg_public   data/raw/tg_public/<channel>/posts-*.ndjson.gz, written by
               ops/fetch_telegram_public.py. A file already loaded (same size
               and time) is not opened again.
+  wp_json     data/raw/wp/<publisher>/items-*.ndjson.gz, written by
+              ops/fetch_wp_json.py: a publisher's own listing, full text
+              (the UN's Palestine documents, PCHR, POICA, several outlets).
   v1_news     v1's news.db: 15 outlets' articles, the full text where v1 has it.
   v1_alerts   v1's alerts.db: the channel posts and feed items v1 keeps.
   v2_claim    this store's own channel and feed messages, WITHOUT the two road
@@ -52,6 +55,7 @@ from ingest import archive_text as T                           # noqa: E402
 from resolve.db import connect, v1_path                         # noqa: E402
 
 TG_PUBLIC = ROOT / "data" / "raw" / "tg_public"
+WP = ROOT / "data" / "raw" / "wp"
 ROBOTS = ("tg_palhubappfuel", "tg_palhubapproad")    # tables every 15 minutes, not news
 SERVICE = {"channel photo updated", "channel created", "channel name was changed", "channel photo removed"}
 BATCH = 2000
@@ -95,6 +99,7 @@ class Doc:
     extra: str | None = None
     lang: str | None = None
     published_at: str | None = None
+    precision: str = "second"
     attrs: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -204,6 +209,57 @@ def read_tg_public(root: Path = TG_PUBLIC, loaded: dict | None = None,
             with gzip.open(f, "rt", encoding="utf-8") as fh:
                 for line in fh:
                     doc = tg_post(d.name, json.loads(line))
+                    if doc is None:
+                        empty += 1
+                    else:
+                        docs.append(doc)
+            yield src, label, mark, docs, empty
+
+
+def wp_item(site: dict, item: dict, terms: dict) -> Doc | None:
+    """One line of a publisher's listing file → a document."""
+    title = (item.get("title") or "").strip() or None
+    body = (item.get("text") or "").strip() or (item.get("excerpt") or "").strip()
+    if not (title or body):
+        return None
+    link = item.get("link")
+    day_only = bool(site.get("day_only"))
+    # a filing system's hour is the hour of filing: keep the document's day
+    when = (item.get("date") or "")[:10] + "T00:00:00+00:00" if day_only and item.get("date") else (
+        item.get("date_gmt") or item.get("date"))
+    attrs: dict = {"wp_id": item["id"]}
+    named = {tax: [terms.get(tax, {}).get(str(i), str(i)) for i in ids]
+             for tax, ids in (item.get("terms") or {}).items()}
+    if named:
+        attrs["terms"] = named
+    return Doc(source=site["source"], external_id=clean_url(link) or f"{site['key']}:{item['id']}",
+               kind=site["doc_kind"], title=title, body=body, url=tidy_url(link),
+               lang=guess_lang(body or title or ""), published_at=when,
+               precision="day" if day_only else "second", via="wp_json", via_rank=3, attrs=attrs)
+
+
+def read_wp(root: Path = WP, loaded: dict | None = None,
+            only: set[str] | None = None) -> Iterator[tuple[Source, str, str, list[Doc], int]]:
+    """Yields (source, file label, file mark, documents, items without words)
+    for every listing file not already loaded."""
+    loaded = loaded or {}
+    if not root.exists():
+        return
+    for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "site.json").exists()):
+        if only and d.name.lower() not in only:
+            continue
+        site = json.loads((d / "site.json").read_text())
+        terms = json.loads((d / "terms.json").read_text()) if (d / "terms.json").exists() else {}
+        src = Source(site["source"], site["name"], site["kind"], site.get("home_url"))
+        for f in sorted(d.glob("items-*.ndjson.gz")):
+            st = f.stat()
+            label, mark = f"{d.name}/{f.name}", f"{st.st_size}:{int(st.st_mtime)}"
+            if loaded.get(label) == mark:
+                continue
+            docs, empty = [], 0
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                for line in fh:
+                    doc = wp_item(site, json.loads(line), terms)
                     if doc is None:
                         empty += 1
                     else:
@@ -351,15 +407,15 @@ def decide(held: dict[str, tuple[str, int]], docs: Iterable[Doc]) -> dict[str, l
 
 
 INSERT = """
-INSERT INTO document (source, external_id, kind, url, title, body, extra, lang, published_at, via, via_rank,
-                      content_hash, attrs, terms, terms_version)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb,
+INSERT INTO document (source, external_id, kind, url, title, body, extra, lang, published_at,
+                      published_precision, via, via_rank, content_hash, attrs, terms, terms_version)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb,
         %s::tsvector || setweight(to_tsvector('english', %s), 'A') || to_tsvector('english', %s), %s)
 ON CONFLICT (source, external_id) DO NOTHING"""
 
 UPDATE = """
 UPDATE document SET kind = %s, url = %s, title = %s, body = %s, extra = %s, lang = %s, published_at = %s,
-       via = %s, via_rank = %s, content_hash = %s, attrs = %s::jsonb,
+       published_precision = %s, via = %s, via_rank = %s, content_hash = %s, attrs = %s::jsonb,
        terms = %s::tsvector || setweight(to_tsvector('english', %s), 'A') || to_tsvector('english', %s),
        terms_version = %s
  WHERE source = %s AND external_id = %s"""
@@ -372,13 +428,14 @@ def _terms(d: Doc) -> tuple[str, str, str]:
 
 def _insert_row(d: Doc) -> tuple:
     v, la, lb = _terms(d)
-    return (d.source, d.external_id, d.kind, d.url, d.title, d.body, d.extra, d.lang, d.published_at, d.via,
-            d.via_rank, d.content_hash(), json.dumps(d.attrs, ensure_ascii=False), v, la, lb, T.VERSION)
+    return (d.source, d.external_id, d.kind, d.url, d.title, d.body, d.extra, d.lang, d.published_at,
+            d.precision, d.via, d.via_rank, d.content_hash(), json.dumps(d.attrs, ensure_ascii=False),
+            v, la, lb, T.VERSION)
 
 
 def _update_row(d: Doc) -> tuple:
     v, la, lb = _terms(d)
-    return (d.kind, d.url, d.title, d.body, d.extra, d.lang, d.published_at, d.via, d.via_rank,
+    return (d.kind, d.url, d.title, d.body, d.extra, d.lang, d.published_at, d.precision, d.via, d.via_rank,
             d.content_hash(), json.dumps(d.attrs, ensure_ascii=False), v, la, lb, T.VERSION,
             d.source, d.external_id)
 
@@ -448,6 +505,13 @@ def run(readers: list[str], apply: bool, only: set[str] | None = None) -> dict:
                 mark("tg_public", label, value, len(docs))
                 files += 1
             report["readers"].setdefault("tg_public", {"sources": {}, "no_text": 0})["files"] = files
+        if "wp_json" in readers:
+            files = 0
+            for src, label, value, docs, empty in read_wp(loaded=loaded.get("wp_json"), only=only):
+                take("wp_json", src, docs, empty)
+                mark("wp_json", label, value, len(docs))
+                files += 1
+            report["readers"].setdefault("wp_json", {"sources": {}, "no_text": 0})["files"] = files
         if "v1_news" in readers:
             for src, docs, empty in read_v1_news():
                 take("v1_news", src, docs, empty)
@@ -500,15 +564,15 @@ def reindex(apply: bool) -> dict:
     return {"apply": apply, "terms_version": T.VERSION, "rows_of_an_older_rule": todo, "rewritten": done}
 
 
-READERS = ("tg_public", "v1_news", "v1_alerts", "v2_claim")
+READERS = ("tg_public", "wp_json", "v1_news", "v1_alerts", "v2_claim")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Fill the archive from what the house holds. Dry unless --apply.")
-    ap.add_argument("readers", nargs="*", choices=[*READERS, []], help="default: all four")
+    ap.add_argument("readers", nargs="*", choices=[*READERS, []], help="default: all of them")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--reindex", action="store_true")
-    ap.add_argument("--channels", help="tg_public only: these channels (comma-separated)")
+    ap.add_argument("--channels", help="tg_public and wp_json only: these folders (comma-separated)")
     a = ap.parse_args()
     if a.reindex:
         out = reindex(a.apply)

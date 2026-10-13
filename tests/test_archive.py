@@ -279,3 +279,79 @@ def test_the_nightly_archive_step_cannot_change_the_nights_result():
     i, j = sh.index("ingest.archive --apply"), sh.rindex("exit $final")
     assert sh.index("final=") < i < j
     assert "|| echo" in sh[i:j] and "final=" not in sh[i:j] and "fails=" not in sh[i:j]
+
+
+# ── a publisher's own listing (ops/fetch_wp_json.py) ────────────────────────
+from ops import fetch_wp_json as W  # noqa: E402
+
+UN_RECORD = {   # the shape of one UNISPAL record, read 2026-10-13 (the body shortened)
+    "id": 180578, "date": "1953-11-09T19:00:00", "date_gmt": "1953-11-10T00:00:00",
+    "modified_gmt": "2019-03-12T15:04:11",
+    "link": "https://www.un.org/unispal/document/auto-insert-180578/",
+    "title": {"rendered": "Attack on West Bank village Qibya &#8211; SecCo debate &#8211; Verbatim record"},
+    "content": {"rendered": "<p>The PRESIDENT: The agenda is adopted.</p>\n<p>Mr. <b>EBAN</b> (Israel)<br/>second line</p>"
+                            "<script>x()</script><ul><li>one</li><li>two</li></ul>"},
+    "excerpt": {"rendered": "<p>The PRESIDENT&hellip;</p>"},
+    "document-category": [12, 99], "document-source": [7], "type": "document"}
+
+
+def test_a_listing_record_keeps_its_words_and_loses_its_markup():
+    i = W.item_of(UN_RECORD, W.SITES["unispal"])
+    assert i["title"] == "Attack on West Bank village Qibya – SecCo debate – Verbatim record"
+    assert i["text"] == "The PRESIDENT: The agenda is adopted.\nMr. EBAN (Israel)\nsecond line\none\ntwo"
+    assert i["terms"] == {"document-category": [12, 99], "document-source": [7]} and "x()" not in i["text"]
+    assert W.text_of(None) == "" and W.text_of("<p>a&nbsp;&amp;&nbsp;b</p>") == "a & b"
+
+
+def test_a_un_document_keeps_its_own_day_not_the_hour_it_was_filed():
+    site = {"key": "unispal", "source": "un:unispal", "doc_kind": "report", "day_only": True}
+    d = A.wp_item(site, W.item_of(UN_RECORD, W.SITES["unispal"]), {"document-category": {"12": "Meeting record"}})
+    assert d.published_at == "1953-11-09T00:00:00+00:00" and d.precision == "day"      # not 10 November UTC
+    assert (d.source, d.kind, d.via, d.via_rank) == ("un:unispal", "report", "wp_json", 3)
+    assert d.external_id == "https://un.org/unispal/document/auto-insert-180578/"
+    assert d.url == "https://www.un.org/unispal/document/auto-insert-180578/"
+    assert d.attrs["terms"]["document-category"] == ["Meeting record", "99"]            # an unnamed id stays an id
+
+
+def test_a_mistyped_year_is_no_date_and_an_empty_item_is_no_document():
+    site = {"key": "pchr", "source": "org:pchr", "doc_kind": "report", "day_only": False}
+    d = A.wp_item(site, {"id": 5, "date": "0001-06-02T09:26:00", "date_gmt": "0001-06-02T07:26:00",
+                         "title": "وفاة مريض", "text": "نص", "link": "https://pchrgaza.org/ar/x/"}, {})
+    assert d.published_at is None and d.precision == "second" and d.lang is None
+    assert A.wp_item(site, {"id": 6, "date": "2012-01-01T00:00:00"}, {}) is None
+    stub = A.wp_item(site, {"id": 7, "date": "2012-01-01T00:00:00", "title": "A title only"}, {})
+    assert stub.body == "" and stub.title == "A title only" and stub.external_id == "pchr:7"
+
+
+def test_an_outlets_listing_meets_v1s_copy_of_the_same_article():
+    site = {"key": "memo", "source": W.SITES["memo"]["source"], "doc_kind": "article", "day_only": False}
+    d = A.wp_item(site, {"id": 1, "date_gmt": "2026-10-13T12:55:06", "title": "t", "text": "full text",
+                         "link": "https://www.middleeastmonitor.com/20261013-israeli-army-arrests-30/"}, {})
+    assert d.source == "web:middle_east_monitor"                    # v1's key for the same outlet
+    assert d.external_id == A.clean_url("https://www.middleeastmonitor.com/20261013-israeli-army-arrests-30/?utm_source=rss")
+    assert d.via_rank == 3                                          # the full text outranks a feed summary
+
+
+def test_listing_files_are_read_once_and_only_from_folders_that_say_what_they_are(tmp_path):
+    d = tmp_path / "pchr"
+    d.mkdir()
+    W.write_chunk(d, "pchr", [{"id": 2, "date_gmt": "2001-01-03T00:00:00", "title": "Weekly Report", "text": "words",
+                               "link": "https://pchrgaza.org/weekly-1/", "terms": {"categories": [47]}},
+                              {"id": 1, "date_gmt": "2001-01-01T00:00:00"}], None)
+    assert list(A.read_wp(tmp_path)) == []                          # no site.json: not a folder this reader knows
+    W.write_site(d, "pchr")
+    (d / "terms.json").write_text(json.dumps({"categories": {"47": "Weekly Reports"}}))
+    got = list(A.read_wp(tmp_path))
+    src, label, mark, docs, empty = got[0]
+    assert (src.key, src.kind) == ("org:pchr", "reports") and label == "pchr/items-0000000001-0000000002.ndjson.gz"
+    assert len(docs) == 1 and empty == 1 and docs[0].attrs["terms"] == {"categories": ["Weekly Reports"]}
+    assert list(A.read_wp(tmp_path, loaded={label: mark})) == []
+
+
+def test_every_listed_publisher_states_its_pace_and_one_refusal_does_not_end_the_list():
+    for key, s in W.SITES.items():
+        assert s["pause"] >= 2 and s["source"].split(":")[0] in ("un", "org", "web") and s["doc_kind"] in ("report", "article")
+        assert s["kind"] in ("reports", "outlet")
+    assert W.SITES["unispal"]["pause"] == 10 and W.SITES["imemc"]["pause"] == 20 and W.SITES["pchr"]["pause"] == 3
+    src = (ROOT / "ops" / "fetch_wp_json.py").read_text()
+    assert "worst = max(worst, run(" in src and 'return 3 if outcome == "refused" else 0' in src

@@ -97,3 +97,5 @@ data/raw/tg_public/
 data/cache/
 ops/archive-last-run.json
 ops/archive-last-run.err
+# publishers' open listings (2026-10-13): regenerate with ops/fetch_wp_json.py
+data/raw/wp/
