@@ -216,17 +216,23 @@ def test_the_identity_is_injective_and_apart_from_the_estimates():
 
 # ── the spec ─────────────────────────────────────────────────────────────────
 
-def test_the_spec_validates_switched_on_or_off_and_is_off():
+def test_the_spec_validates_switched_on_or_off():
     assert spec_mod.validate(SPEC, "population_wpp_projection") == []
     on = {k: v for k, v in SPEC.items() if k not in ("migrate", "skip_reason")}
     assert spec_mod.validate(on, "population_wpp_projection") == []
-    # switched off, with the reason on the switch: the loader refuses it by
-    # name and the nightly run passes over it (ingest/databank.py run_all)
+    assert spec_mod.validate(ESTIMATES, "population_wpp") == []
+    assert ESTIMATES.get("migrate", True) is True          # the estimates load whatever the switch says
+
+
+def test_the_spec_is_switched_off_until_the_serving_rule_is_live():
+    """THE SWITCH. Loaded as they are, these rows would be the newest of the
+    `economic` category, dated 2101 and 2100. The loader refuses the spec by
+    name and the nightly run passes over it (ingest/databank.py run_all).
+    This test goes the day the two lines (`migrate`, `skip_reason`) come out
+    of the spec, and not before the serving rule answers on the live API."""
     assert SPEC["migrate"] is False and "serving rule" in SPEC["skip_reason"]
     with pytest.raises(spec_mod.SpecRefused, match="migrate=false"):
         databank.load_spec("population_wpp_projection")
-    assert spec_mod.validate(ESTIMATES, "population_wpp") == []
-    assert ESTIMATES.get("migrate", True) is True          # the estimates still load
 
 
 def test_the_spec_s_floor_and_ceiling_are_the_measured_file_s():
