@@ -1575,3 +1575,29 @@ Zaid, 13 October: "1. yes" (serve the projections), "3. go for it" (the funding 
   documented way): **2,123 passed, 0 failed, 8 skipped (610 s)**; five of the skips need the evidence vault the
   build copy does not hold.
 
+2026-10-13 11:50 UTC · command 11 RUN by Zaid, 11:47 to 11:49 UTC · done · proof: the script's own output, read-only SQL on the
+live store, the live API and the public partner door
+- **It ran whole** (98 s; 54 s on the copy): migration 115 applied 11:48:11 UTC, the funding mark written by the
+  first registry pass, 3,928 projection rows written, the API restarted 11:48:58 UTC straight after the load, the
+  second registry pass changed nothing, and its five questions answered as rehearsed.
+- **The live store:** `un_wpp_2024_projection` 3,928 rows in 51 series, 2024 to 2101, vintage 2024-07-11; the
+  estimates 3,774 rows to 2023, untouched. 51 series declared a projection, each also by-name, named in both
+  languages and warned; 193 series by-name in all (141 settlements, 51 projections, the funding parent). The only
+  served rows dated after today are the projections' (3,775 rows, 51 series). `observation` has 158 chunks.
+- **Asked of the running API (house door, `/mcp` and REST):** economic's newest rows are of 2025 and none is a
+  projection; `population.wpp` returns the estimates alone; a projection by name is served under
+  `projected_by_indicator`, marked and warned, and spoken as "a projection, not a measurement; its farthest
+  year"; `series` on one gives "77 projected years, from 5,495,443 in 2024 to 11,482,186 in 2100"; `compare` and
+  `correlate` refuse it beside the estimate with the reason; the listing flags all 51 and lists them last;
+  funding leads with the paid figure and says one series is held by name. Uncached through the `as_of` path on
+  the live API: economic 0.54 to 0.57 s, settlements 0.45 to 0.51 s.
+- **Asked through the public partner door (claude.ai connector):** the same three answers: the projection by
+  name with its warning in Palestinian Arabic and an empty `latest_by_indicator`; estimate beside projection
+  refused; funding leading with `funding.paid`.
+- **Tonight:** no table is smaller than in the backup of 06:46 UTC (3,613,901 → 3,633,039 rows). The radar's own
+  functions, read-only, with the live ledger: 43 datasets, the projection dataset under its own status, 0 dead
+  supply lines, exit 0. `/health`: one upstream source fault (`tg_bzunewss` silent).
+- Seen and left, for another day: the newest IMF rows are dated 2025 and include "Inflation rate, end of period
+  consumer prices: -42.9". The IMF's World Economic Outlook mixes estimates and its own projections in one
+  series, and the store does not say which years are which. Not checked further.
+

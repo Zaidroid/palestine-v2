@@ -1,7 +1,7 @@
 {
  "names": {
-  "named_ar": 2350,
-  "named_en": 2665,
+  "named_ar": 2401,
+  "named_en": 2716,
   "unnamed": 17,
   "unnamed_sample": [
    "fao_diem.income_shocks.hh_education_4",
@@ -105,7 +105,7 @@
   },
   "economic": {
    "classified": 149,
-   "indicators": 200,
+   "indicators": 251,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -196,7 +196,14 @@
   },
   "population_wpp": {
    "classified": 51,
-   "indicators": 200,
+   "indicators": 251,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "population_wpp_projection": {
+   "classified": 51,
+   "indicators": 251,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
