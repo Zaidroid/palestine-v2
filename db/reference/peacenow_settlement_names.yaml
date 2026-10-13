@@ -72,6 +72,9 @@ rule:
   en: "Population of the Israeli settlement of {name}, West Bank (Peace Now)"
   ar: "عدد سكان مستوطنة {ar} في الضفة الغربية (السلام الآن)"
 
+# `whole` on an entry replaces the rule's sentence for that one series. One
+# entry has it: Hebron, where the rule would call the city itself a settlement
+# («مستوطنة الخليل»). The row is the settlers inside the city.
 settlements:
   - {id: 1, name: "Avnei Hefetz", he: "אבני חפץ", ar: "أفني حيفتس", from: arij, printed: "افني حيفتس"}
   - {id: 2, name: "Ovnat", he: "אבנת", ar: "أفينات", from: arij, printed: "افينات"}
@@ -111,7 +114,7 @@ settlements:
   - {id: 36, name: "Har Gilo", he: "הר גילה", ar: "هار جيلو", from: arij}
   - {id: 37, name: "Har Shmuel", he: "הר שמואל", ar: "هار صموئيل", from: arij}
   - {id: 38, name: "Vered Yericho", he: "ורד יריחו", ar: "فيرد يريحو", from: arij}
-  - {id: 39, name: "Hebron", he: "חברון", ar: "الخليل", from: city, note: "the sheet's row is the settlers inside Hebron city; ARIJ lists their sites one by one (تل الرميدة، بيت رومانو، ابراهام افينو، بيت هداسا), not as one settlement"}
+  - {id: 39, name: "Hebron", he: "חברון", ar: "الخليل", from: city, note: "the sheet's row is the settlers inside Hebron city; ARIJ lists their sites one by one (تل الرميدة، بيت رومانو، ابراهام افينو، بيت هداسا), not as one settlement", whole: {en: "Population of the Israeli settlement sites inside Hebron city, West Bank (Peace Now)", ar: "عدد المستوطنين داخل مدينة الخليل في الضفة الغربية (السلام الآن)"}}
   - {id: 40, name: "Haggai", he: "חגי", ar: "بيت هجاي", from: arij}
   - {id: 41, name: "Hinanit", he: "חיננית", ar: "حنانيت", from: arij}
   - {id: 42, name: "Halamish", he: "חלמיש", ar: "حلاميش", from: arij, note: "ARIJ prints «حلاميش (نيفيه تسوف)»; the PDF's text layer reverses the lam-alef (حالميش), the page image shows حلاميش"}

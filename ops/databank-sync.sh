@@ -68,6 +68,7 @@ step .venv/bin/python -m ops.fetch_hdx_infrastructure # barrier, village boundar
 step .venv/bin/python -m ops.fetch_hdx_land           # barrier + settlement footprints (HDX; downloads only when changed)
 step .venv/bin/python -m ops.fetch_goodshepherd       # demolitions per day
 step .venv/bin/python -m ops.fetch_peacenow           # settler population by year
+step .venv/bin/python -m ops.fetch_peacenow_settlements   # Peace Now's population per settlement (its linked spreadsheet; re-reads weekly)
 step .venv/bin/python -m ops.fetch_addameer           # prisoner statistics, monthly
 step .venv/bin/python -m ops.fetch_gho_health         # WHO GHO health, every dimension kept (re-reads weekly)
 # UCDP's own bulk files: GED 26.1's events of 2025 (the candidate events are

@@ -94,6 +94,10 @@ def check(table: dict) -> list[str]:
             out.append(f"{where}: ar must be Arabic letters, spaces and brackets only, got {ar!r}")
         if e.get("from") not in FROM:
             out.append(f"{where}: from {e.get('from')!r} is not one of {sorted(FROM)}")
+        whole = e.get("whole")
+        if whole is not None and not (isinstance(whole, dict) and set(whole) == {"en", "ar"}
+                                      and all(isinstance(v, str) and v.strip() for v in whole.values())):
+            out.append(f"{where}: `whole` must be {{en: ..., ar: ...}}, the series' whole name")
         printed = e.get("printed")
         if printed is not None:
             if e.get("from") != "arij":
@@ -106,8 +110,9 @@ def check(table: dict) -> list[str]:
 def series_names(table: dict) -> dict[str, dict]:
     """indicator -> {en, ar}, by the table's rule, in DB_ID order."""
     rule = table["rule"]
-    return {indicator_of(e["id"]): {"en": rule["en"].format(name=e["name"]),
-                                    "ar": rule["ar"].format(ar=e["ar"])}
+    return {indicator_of(e["id"]): (dict(e["whole"]) if e.get("whole") else
+                                    {"en": rule["en"].format(name=e["name"]),
+                                     "ar": rule["ar"].format(ar=e["ar"])})
             for e in sorted(table["settlements"], key=lambda e: e["id"])}
 
 

@@ -776,8 +776,13 @@ def test_all_141_series_are_named_by_the_one_rule_where_the_registry_loader_read
     assert len(in_registry) == 141 and PREFIX.rstrip(".") not in doc
     for e in t["settlements"]:
         key = PREFIX + f"pn{e['id']:04d}"
-        assert in_registry[key] == {"en": EN_RULE.format(name=e["name"]),
-                                    "ar": AR_RULE.format(ar=e["ar"])}, e["name"]
+        want = e.get("whole") or {"en": EN_RULE.format(name=e["name"]),
+                                  "ar": AR_RULE.format(ar=e["ar"])}
+        assert in_registry[key] == want, e["name"]
+    # one series is named outside the rule: Hebron, where the rule would call
+    # the city itself a settlement
+    assert [e["id"] for e in t["settlements"] if e.get("whole")] == [39]
+    assert "مستوطنة الخليل" not in json.dumps(in_registry, ensure_ascii=False)
     assert in_registry == bn.series_names(t)
     # names.yaml is exactly what the builder would write from the table
     text = (ROOT / "db/registry/names.yaml").read_text(encoding="utf-8")

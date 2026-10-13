@@ -145,6 +145,16 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "v1_health_who": 730,
     "v1_pcbs_pcbs": 730,
     "v1_settlements_peace_now": 730,   # the key was misspelt until 2026-10-12, so it never applied
+    # Peace Now's per-settlement sheet (2026-10-13). Its newest label is old BY
+    # DESIGN: a year's figure is stored at the start of its year and reaches
+    # the sheet one to two years after the year ends. On 2026-10-13 the newest
+    # column is "Population May 2024" (895 days old) and the newest year column
+    # is 2023 (1,381 days old), in a file Peace Now named 07.2026. The same
+    # publisher's chart was 1,309 days old the day before it gained 2024
+    # (db/mappings/settlements.yaml). The learned rhythm would give 3 x 365 =
+    # 1,095 and call a living sheet late. 1,460 = four years: late after one
+    # whole missed year, stalled (and the night fails) at 2,920.
+    "peacenow_settlement_population": 1460,
     "v1_casualties_ocha_casualties": 730,
     "who_gho_wash": 1200,             # JMP labels are biennial: 2024-label
                                       #   data ages ~1100d before the next
@@ -265,6 +275,14 @@ SUPPLY_LINES = {
                           "feeds": ["v1_settlements_peace_now"],
                           "fetcher": "ops/fetch_peacenow.py", "every_days": 1,
                           "replaces": "peacenow-settlers"},
+    "peacenow-settlement-population": {
+        "labels": ["peacenow:settlement_population"],
+        "feeds": ["peacenow_settlement_population"],
+        "fetcher": "ops/fetch_peacenow_settlements.py", "every_days": 7,
+        "note": "Peace Now's list of settlements (a Google spreadsheet linked "
+                "from its Population page); re-read weekly, no ledger line on "
+                "the nights between. A year's column arrives about once a year "
+                "(see ALLOWANCE_OVERRIDE_DAYS)"},
     "addameer": {"labels": ["addameer:statistics"], "feeds": ["v1_prisoners_addameer"],
                  "fetcher": "ops/fetch_addameer.py", "every_days": 1, "replaces": "prisoners"},
     "wfp-food": {"labels": ["wfp:food_prices"], "feeds": ["v1_food_wfp"],
