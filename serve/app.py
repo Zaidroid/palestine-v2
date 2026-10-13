@@ -3370,13 +3370,15 @@ def databank_category(category: str, indicator: str | None = None,
     # of a family of per-entity series: one settlement of 141. It stays out of
     # the category's rows unless the `indicator` filter names only series of
     # that kind, so "settlements" still answers with the West Bank total and
-    # "…population_by_settlement.pn0016" answers with Ariel. (Appended before
-    # the `as_of` condition: its parameter is the last one.)
+    # "…population_by_settlement.pn0016" answers with Ariel.
+    # Written as an anti-join on the registry, with no parameter: the first
+    # form, `r.indicator <> ALL(<the names>)`, was pushed down to every row of
+    # every chunk and cost 0.3 to 0.4 s a query (timed on the rehearsal copy,
+    # 2026-10-13, 51 names); this one costs nothing measurable.
     by_name = sorted(k for k, c in _ask_by_name().items() if c == category)
-    if by_name:
-        conds.append("(r.indicator <> ALL(%s) OR NOT EXISTS (SELECT 1 FROM indicator_def y"
-                     " WHERE y.indicator LIKE %s AND NOT y.ask_by_name))")
-        params += [by_name, (indicator or "") + "%"]
+    if by_name and _an_ordinary_series_matches(indicator):
+        conds.append("NOT EXISTS (SELECT 1 FROM indicator_def n"
+                     " WHERE n.indicator = r.indicator AND n.ask_by_name)")
     if as_of:
         conds.append("r.sys_period @> %s::date::timestamptz")
     else:
@@ -3557,6 +3559,15 @@ def _indicator_names(indicators: list[str]) -> dict:
     except Exception:                                            # noqa: BLE001
         return {}
     return {r["indicator"]: {"en": r["name_en"], "ar": r["name_ar"]} for r in rows}
+
+
+def _an_ordinary_series_matches(prefix: str | None) -> bool:
+    """Does the `indicator` filter name at least one series that is NOT asked
+    for by name? Then the by-name ones stay out of the rows; if it names only
+    such series (or one of them), they are what was asked for."""
+    return bool(q_cached("SELECT 1 AS yes FROM indicator_def y"
+                         " WHERE y.indicator LIKE %s AND NOT y.ask_by_name LIMIT 1",
+                         ((prefix or "") + "%",)))
 
 
 def _ask_by_name() -> dict:

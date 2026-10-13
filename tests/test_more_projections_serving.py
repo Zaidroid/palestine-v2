@@ -35,6 +35,7 @@ P_DEATHS = "population.wpp_projection.deaths"
 P_BIRTHS = "population.wpp_projection.births"
 E_DEATHS = "population.wpp.deaths"
 PROJ = frozenset({P_DEATHS, P_BIRTHS})
+ORDINARY = (E_DEATHS, "economic.sp_pop_totl", "settlements.settler_population", "prisoners.total")
 WARN = {"en": "A PROJECTION, not a measurement: …", "ar": "هاد إسقاط مش قياس: …"}
 
 
@@ -54,6 +55,8 @@ class Store:
             return [{"indicator": i} for i in sorted(self.proj)]
         if "FROM indicator_def i WHERE i.ask_by_name" in sql:
             return [{"indicator": i, "category": c} for i, c in sorted(self.by_name.items())]
+        if "NOT y.ask_by_name" in sql:           # does the filter name an ordinary series?
+            return [{"yes": 1}] if any(o.startswith(params[0][:-1]) for o in ORDINARY) else []
         if "FROM category WHERE active" in sql:
             return [{"key": k} for k in ("economic", "prisoners", "settlements")]
         if "to_regclass" in sql:
@@ -114,8 +117,8 @@ def test_before_the_migration_there_are_none_and_any_other_failure_is_raised(sto
 
 # ── the category route: one condition, `ask_by_name`, and the mark ───────────
 
-BY_NAME_SQL = ("(r.indicator <> ALL(%s) OR NOT EXISTS (SELECT 1 FROM indicator_def y"
-               " WHERE y.indicator LIKE %s AND NOT y.ask_by_name))")
+BY_NAME_SQL = ("NOT EXISTS (SELECT 1 FROM indicator_def n"
+               " WHERE n.indicator = r.indicator AND n.ask_by_name)")
 
 
 def test_a_category_s_rows_leave_projections_out_and_say_they_are_held(store):
@@ -123,8 +126,9 @@ def test_a_category_s_rows_leave_projections_out_and_say_they_are_held(store):
     out = A.databank_category("economic", None, None, False, 10, None)
     sql, params = s.main()
     assert sql.count(BY_NAME_SQL) == 1 and "y.projection" not in sql
-    # no filter: the pattern matches every observed series, so no projection row passes
-    assert params == ("economic", sorted(PROJ), "%", 10)
+    # no filter: it matches every observed series, so the condition is there and no
+    # projection row passes; it takes no parameter of its own
+    assert params == ("economic", 10)
     assert sql.count("%s") == len(params)                     # every placeholder has its value, in order
     assert "projections" not in out and out["count"] == 1
     held = out["by_name_only"]
@@ -140,7 +144,7 @@ def test_the_estimates_prefix_gets_the_estimates_alone(store):
     _sql, params = s.main()
     # `population.wpp` is also a prefix of the projection's name: the store is
     # asked whether a series that is NOT asked for by name matches it, and one does
-    assert params == ("economic", "population.wpp%", sorted(PROJ), "population.wpp%", 10)
+    assert params == ("economic", "population.wpp%", 10) and BY_NAME_SQL in _sql
     assert "projections" not in out and out["by_name_only"]["series"] == 2
 
 
@@ -149,7 +153,8 @@ def test_a_named_projection_is_served_and_says_so(store):
                     _row(P_DEATHS, 2099, 102800.0, projection=True)])
     out = A.databank_category("economic", P_DEATHS, None, False, 10, None)
     _sql, params = s.main()
-    assert params == ("economic", P_DEATHS + "%", sorted(PROJ), P_DEATHS + "%", 10)
+    assert params == ("economic", P_DEATHS + "%", 10)
+    assert BY_NAME_SQL not in _sql, "it names only series asked for by name: they are what was asked for"
     assert out["projections"] == [P_DEATHS] and "by_name_only" not in out
     assert out["warnings"] == {P_DEATHS: WARN} and out["names"][P_DEATHS]["en"].startswith("Projection: ")
 
@@ -158,8 +163,8 @@ def test_the_condition_keeps_its_place_among_the_other_filters(store):
     s = store(rows=[])
     A.databank_category("economic", "economic.sp", "2026-01-01", False, 5, "Ramle")
     sql, params = s.main()
-    assert params == ("economic", "economic.sp%", "Ramle", "Ramle", sorted(PROJ), "economic.sp%", "2026-01-01", 5)
-    assert sql.count("%s") == len(params)
+    assert params == ("economic", "economic.sp%", "Ramle", "Ramle", "2026-01-01", 5)
+    assert sql.count("%s") == len(params) and BY_NAME_SQL in sql
     # a category that holds no series asked for by name runs the query it always ran
     s = store(rows=[])
     A.databank_category("prisoners", None, None, False, 5, None)
@@ -175,7 +180,7 @@ def test_a_family_held_one_per_entity_keeps_its_own_note_and_is_no_projection(st
               by_name={fam + "pn0016": "settlements", fam + "pn0017": "settlements", P_DEATHS: "economic"})
     out = A.databank_category("settlements", None, None, False, 10, None)
     _sql, params = s.main()
-    assert params == ("settlements", [fam + "pn0016", fam + "pn0017"], "%", 10)   # this category's alone
+    assert params == ("settlements", 10) and BY_NAME_SQL in _sql
     assert out["by_name_only"]["series"] == 2 and "projections" not in out
     assert out["by_name_only"]["note"].startswith("series held one per entity; each is served when asked")
     s = store(rows=[_row(fam + "pn0016", 2024, 20000.0)],
