@@ -1738,3 +1738,19 @@ and rehearsed, WAITING FOR ZAID'S COMMAND 14 · proof: branch `news-archive-4` (
 - On the live store the chronology answers by kind and by year (1953, oldest first, returns its dated events), and
   "Colonization" between June 1967 and 1977 returns the 13 events the rehearsal did.
 - Nothing is owed from Zaid for the archive. Both readers go on by themselves; the nightly step is capped.
+
+2026-10-13 20:25 UTC · the archive's second chronology: PASSIA's, 4,901 dated entries in full sentences · built and
+rehearsed, WAITING FOR ZAID'S COMMAND 15 · proof: branch `news-archive-5` (`66b5d56`, this commit),
+`tmp/15-chronology-passia.sh`, HANDS §13o.
+- PASSIA's index links 32 chronology files; 30 were read once each, two seconds apart (the links for 2000 and 2011
+  answer 404, a dead link and not a refusal). `ops/fetch_chronology.py passia` turns each into text (`pdftotext`)
+  and reads the entries: 4,901 from 1851 to 30 November 2022, 4,803 dated to the day, 80 to the month, 18 to the
+  year, 72 with a range of days. Two lines stood under no year and were not taken. One printed date is a day the
+  calendar does not have; it keeps its month and the text as printed.
+- These entries are sentences, where the first chronology gives titles: 9 April 1948 reads "Irgun and Stern Gangs
+  lead by Menahem Begin and Yitzhaq Shamir massacre 245 Palestinians in the village of Deir Yassin". The two
+  chronologies answer together (Deir Yassin: both, with the anniversaries PASSIA records in 1998 and 2015).
+- Rehearsed on the scratch copy: 4,901 written in 7 s, a second run wrote none. 67 offline tests. **Suite on the
+  branch against the live store: 2,194 passed, 0 failed, 3 skipped (627 s).**
+- Not there: the years 2000 and 2011 (the dead links), and anything before 1851 (the first file opens with prose
+  about four centuries under one heading).
