@@ -21,6 +21,15 @@ def test_the_settlement_rule_declares_it_and_the_total_s_rule_does_not():
         assert not r.get("ask_by_name")
 
 
+def test_the_parked_parent_rule_declares_it_and_the_status_series_rule_does_not():
+    """Zaid, 2026-10-13: the spoken funding answer led with a parked parent,
+    a contribution whose money is already counted under its child flows."""
+    from ingest.databank import load_spec
+    parked, status = load_spec("funding")["registry"]["rules"]
+    assert parked["when"] == {"equals": "funding.parked_parent"} and parked["ask_by_name"] is True
+    assert status["when"] == {"prefix": "funding."} and not status.get("ask_by_name")
+
+
 def test_the_registry_loader_carries_the_flag_from_a_rule():
     from ops import load_registry as L
     assert "ask_by_name" in L.FIELDS
@@ -49,8 +58,11 @@ def _flagged():
                         WHERE table_name = 'indicator_def' AND column_name = 'ask_by_name'""")
         if not cur.fetchone()[0]:
             pytest.skip("migration 114 not applied")
+        # the settlements family alone: other categories hold series by name too
+        # (a parked funding parent)
         cur.execute("""SELECT count(*) FROM indicator_def i WHERE i.ask_by_name AND EXISTS
-                        (SELECT 1 FROM databank_serving ds WHERE ds.indicator = i.indicator)""")
+                        (SELECT 1 FROM databank_serving ds WHERE ds.indicator = i.indicator
+                            AND ds.v1_category = 'settlements')""")
         n = cur.fetchone()[0]
     if not n:
         pytest.skip("no series is served under the flag yet")

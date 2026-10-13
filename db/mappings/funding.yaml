@@ -238,6 +238,12 @@ registry:
       grain: event
       place_grain: region
       canonical_unit: USD
+      # Served when it is asked for by name (migration 114; Zaid, 2026-10-13):
+      # a parked parent is dated like any flow, so the newest rows of `funding`
+      # could be parents, and the spoken answer then led with a contribution
+      # whose money is already counted under its children. The category
+      # answers with paid, commitment and pledge and says this series is held.
+      ask_by_name: true
       serve_warning: "A contribution that UN OCHA's Financial Tracking Service parked on a parent flow and has since allocated in full. The row shows the whole contribution, and the same money is already counted in its child flows under paid, commitment or pledge: never add this series to those. Some child flows are outside this databank (another country, no country, or a usage year not reached yet); child_flows_fetched beside child_flow_count says how many are here."
       serve_warning_ar: "هاي مساهمة سجّلتها خدمة التتبّع المالي (أوتشا) كتحويل أصلي ووزّعتها كلها على تحويلات فرعية. السطر بيعرض المساهمة كاملة، ونفس المبلغ محسوب أصلاً في تحويلاتها الفرعية تحت المدفوع أو الالتزام أو التعهّد: ما بتنجمع مع هاي السلاسل أبداً. وبعض التحويلات الفرعية خارج هاي القاعدة (لبلد ثاني، أو بدون بلد، أو لسنة استخدام ما وصلناها بعد)، والرقم child_flows_fetched جنب child_flow_count بيقول كم واحد منها موجود هون."
     - when: {prefix: "funding."}

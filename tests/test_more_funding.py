@@ -354,6 +354,11 @@ def test_the_parked_parent_has_its_own_rule_a_warning_and_a_name_in_both_languag
     assert "ما بتنجمع" in parent["serve_warning_ar"]
     for status in STATUS:
         assert got[status]["serve_warning"] is None and got[status]["polarity"] == 1
+    # ...and it is served when asked for by name (2026-10-13): the category's
+    # newest rows, and the figure the spoken answer leads with, are the status
+    # series'. The status series themselves are not marked.
+    assert parent["ask_by_name"] is True
+    assert not any(got[status]["ask_by_name"] for status in STATUS)
     en, ar = lr.name_for(PARENT, parent, None, lr.load_names())
     assert "already counted in its child flows" in en
     assert ar and "أوتشا" in ar
