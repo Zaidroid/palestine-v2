@@ -7,17 +7,34 @@
 # carries attrs.estimate and attrs.revision so no answer can read one as a
 # count. The databank held 5 rows for the whole 1950s before this.
 #
+# 2026-10-13: 39 more indicators from the same file and the same 74 years
+# (population by sex and on 1 January, natural change, deaths and life
+# expectancy by sex, life expectancy at 15, 65 and 80, infant and under-five
+# deaths, the risk of dying before 40 and 60 and between 15 and 50 or 60, net
+# reproduction, mean age at childbearing, the two sex ratios, the net migration
+# rate). 51 indicators, 3,774 rows measured that day. What each column is, and
+# the three the file fills that are not taken (DoublingTime, PopDensity,
+# PopChange), is in ops/fetch_wpp.py. The first 888 rows are untouched.
+#
 # Terms: "Figures and tables in this publication can be reproduced without
 # prior permission under a Creative Commons license (CC BY 3.0 IGO)" — the WPP
 # 2024 Summary of Results. The portal's own terms page renders client-side and
 # was not readable; migration 089's source row says so.
+#
+# How old the newest row can honestly be (read 2026-10-13): the 2024 edition's
+# estimates end at 2023 ("The 2024 revision provides population estimates for
+# the period 1950-2023", population.un.org/wpp/faqs), so the newest row was
+# 557 days old on release day. The 2026 edition was postponed: "The next one is
+# due on 11 July 2027" (same page; release note rev. 1 of 19 January 2026). On
+# that day the 2023 row will be 1,652 days old with nothing newer ever
+# published. What to repoint then is in ops/fetch_wpp.py.
 category: population_wpp
 transform: python:t_population_wpp
 v1_category: economic            # beside the World Bank population series
 shape: observation
 status: reviewed
 # migrate: 089 (the un_wpp source row) applied 2026-09-26 — loads nightly
-records_measured: 888
+records_measured: 3774          # 74 years × 51 indicators, 2026-10-13 (888 until then)
 
 input:
   root: data/raw/wpp
@@ -53,8 +70,9 @@ place:
 stable_id: stable_id             # wpp-2024:<year>:<indicator>
 
 expect:
-  min_records: 843               # 95 % of 888 (74 years × 12 indicators)
-  max_observations: 1000
+  min_records: 3585              # 95 % of 3,774 (74 years × 51 indicators) —
+                                 #   ops/fetch_wpp.py FLOOR, the same number
+  max_observations: 4340         # 1.15 × 3,774
 
 identity:
   fields: [indicator, occurred_at]
@@ -119,3 +137,58 @@ registry:
       grain: year
       place_grain: region
       canonical_unit: percent
+    # ── the 39 indicators taken on 2026-10-13 (ops/fetch_wpp.py) ──
+    # Each is classified the way its sibling of 2026-09-26 is: a count of
+    # people or of demographic events is population.count (as population_total,
+    # births and deaths are), a risk of dying is mortality.general with a rise
+    # read as worse (as the infant and under-five rates are), fertility and
+    # composition are population.structure (as the crude birth rate, total
+    # fertility and the median age are).
+    # Twelve of the 39 need no rule of their own: population_total_1jan is
+    # read by the first rule above and the eleven life_expectancy_* cuts (by
+    # sex; at 15, 65 and 80) by the life_expectancy rule. The regexes below
+    # are anchored, so each names exactly the indicators it lists;
+    # tests/test_more_editions.py holds all 51 to one rule each.
+    - when: {regex: "^population\\.wpp\\.population_(male|female)$"}
+      concept: population.count
+      measure_kind: stock
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "^population\\.wpp\\.(natural_change|births_women_15_19|births_surviving_to_age_1|deaths_male|deaths_female|infant_deaths|under5_deaths)$"}
+      concept: population.count
+      measure_kind: flow
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+    - when: {regex: "^population\\.wpp\\.mortality_(before_40|before_60|15_to_50|15_to_60)(_male|_female)?$"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+    - when: {regex: "^population\\.wpp\\.(natural_change_rate|net_migration_rate)$"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+    - when: {equals: "population.wpp.net_reproduction_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: daughters_per_woman
+    - when: {equals: "population.wpp.mean_age_childbearing"}
+      concept: population.structure
+      measure_kind: index
+      grain: year
+      place_grain: region
+      canonical_unit: years
+    - when: {regex: "^population\\.wpp\\.sex_ratio(_at_birth)?$"}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: males_per_100_females

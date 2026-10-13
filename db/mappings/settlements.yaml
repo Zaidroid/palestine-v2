@@ -79,7 +79,9 @@ input:
     root: data/frozen
     glob: settlements.json.gz
 cadence: annual            # Peace Now adds a year when the Israeli CBS
-                           #   publishes one; fetched nightly
+                           #   publishes one; fetched nightly. The years
+                           #   are annual, their arrival is not: see WHEN A
+                           #   YEAR ARRIVES in the notes
 
 notes: |
   WHICH YEAR A FIGURE BELONGS TO — MEASURED 2026-10-12, because Peace Now's
@@ -98,10 +100,32 @@ notes: |
   the held row for label N (occurred_at N-01-01, precision year, attrs.year
   N, reference "period-end stock") carries year N's figure under year N. No
   held row is a year off; "the 2023 figure stored at 2024-01-01" is the stale
-  caption read as truth. (Not re-read from an archive copy of the page: the
-  Internet Archive's index answered 503 on 2026-10-12.) What remains is the
-  databank-wide convention in the OPEN QUESTION below (a year-end stock
-  anchored at the start of its year), unchanged here.
+  caption read as truth. RE-READ FROM THE INTERNET ARCHIVE ON 2026-10-13 (its
+  index answered 503 the day before), with this fetcher's own parser on the
+  raw captures: on 2025-01-07 and still on 2026-08-02 the chart ended at 2023
+  and both pies showed 503,732 under "end of 2023"; on 2026-08-08 the chart
+  ended at 2024 and both pies showed 511,100 under the same, unedited "end of
+  2023". The Hebrew page's captions read «סוף 2024». The caption is stale;
+  the chart label is the year. What remains is the databank-wide convention
+  in the OPEN QUESTION below (a year-end stock anchored at the start of its
+  year), unchanged here.
+
+  WHEN A YEAR ARRIVES — MEASURED 2026-10-13 from the same captures (capture
+  date: last year on the chart). 2024-01-01 and 2024-04-03: 2021. 2024-10-02
+  and 2024-11-04: 2022. 2024-12-01: 2023 (page caption "Peace Now's count,
+  26/11/24"). Every capture read from 2025-01-07 to 2026-08-02: 2023.
+  2026-08-08: 2024, and the held 2024 row has stood since 2026-08-04. So 2022
+  and 2023 both arrived between April and December 2024, and 2024 came twenty
+  months after that. A year's count is stored at the START of that year, so the
+  newest row was 673 to 700 days old the day 2023 arrived, 1,309 days old on
+  2026-08-02 just before 2024 arrived and 946 on 2026-08-04 just after. A
+  730-day freshness rule would have called this living series late on every
+  day from January 2024 to today except four to eight weeks at the end of
+  2024 (from the day 2023 arrived to 2024-12-31).
+  Nothing newer than 2024 was published on 2026-10-13: both language pages end
+  at 2024, and Peace Now's spreadsheet of settlements ("Settlements and
+  Outposts Peace Now 07.2026", linked from the page) carries one population
+  column per year from 1969 to 2023 and a last one, "Population May 2024".
 
   Measured from ops/t2-category-audit.json and the v1 file itself:
 

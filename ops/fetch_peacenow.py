@@ -19,7 +19,15 @@ at the end of 2023 (Statistical Abstract 2023 table 2.17, 2024 tables 2.15 and
 465,400 / 478,600 under those years. No end-of-2023 count reaches 511,100. So
 a label is the figure's own year, the figure is that year's end-of-year
 count, and `date` is written `<year>-12-31` as v1 wrote it. The spec then
-stores it as that year, precision year (settlements.yaml).
+stores it as that year, precision year (settlements.yaml). The Internet
+Archive's captures say the same (read 2026-10-13 with parse_population): the
+pies showed 503,732 under "end of 2023" until 2026-08-02 and 511,100 under
+the same caption from 2026-08-08, the week the chart gained "2024".
+
+WHEN A YEAR ARRIVES. Not on a calendar. By the same captures the chart gained
+2022 between April and October 2024, 2023 in November 2024 and 2024 in the
+first days of August 2026; the dates are in settlements.yaml's notes. A
+night that finds no new year is the usual night, not a failed one.
 
 WHAT IT WRITES. data/raw/peacenow/settlers.json in the record shape
 db/mappings/settlements.yaml already transforms, so all 51 held rows are
