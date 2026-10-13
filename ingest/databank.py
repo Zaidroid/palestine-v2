@@ -1971,10 +1971,15 @@ def t_population_wpp(rec, spec, places, counts):
     """P1-B.4 — UN WPP 2024 for the State of Palestine, 1950-2023: modelled
     estimates, one row per (year, indicator), the whole territory (place NULL,
     attrs.region 'Palestine' — the funding convention). Every row says it is
-    an estimate; projections never reach here (ops/fetch_wpp.py keeps none)."""
+    an estimate. Projections never reach here: ops/fetch_wpp.py writes them to
+    another file for t_population_wpp_projection, and a record that says it is
+    one is dropped under a reason the spec does not declare, which fails the
+    run rather than date a projection among the estimates."""
     year, ind = rec.get("year"), rec.get("indicator")
     if not isinstance(year, int) or not ind:
         return Drop("malformed")
+    if rec.get("projection"):
+        return Drop("projection_among_estimates")
     value = rec.get("value")
     if value is None:
         return Drop("no_value")
@@ -1984,6 +1989,33 @@ def t_population_wpp(rec, spec, places, counts):
     return [Row("un_wpp_2024", f"population.wpp.{ind}", f"{year}-01-01", "year",
                 rec["stable_id"], value_num=value, unit=rec.get("unit"),
                 place_id=None, attrs=attrs)]
+
+
+def t_population_wpp_projection(rec, spec, places, counts):
+    """UN WPP 2024, the MEDIUM-VARIANT PROJECTION for the State of Palestine:
+    the years after the last estimate (2024 to 2100, and 2101 for the 1 January
+    population). A model's output released on 11 July 2024, not a measurement,
+    so it is its own dataset and its own indicator family: no question about
+    `population.wpp.*` can end in a projected year, and every row says what it
+    is (attrs.projection, the variant as the UN names it, the edition, the
+    release day, the UN's unit word as the estimate rows carry it). A record
+    that does not say it is a projection (the estimates file, read by mistake)
+    is dropped under a reason the spec does not declare, which fails the run."""
+    year, ind = rec.get("year"), rec.get("indicator")
+    if not isinstance(year, int) or not ind:
+        return Drop("malformed")
+    if rec.get("projection") is not True or not rec.get("variant") \
+            or not rec.get("edition") or not rec.get("released"):
+        return Drop("not_a_projection")
+    value = rec.get("value")
+    if value is None:
+        return Drop("no_value")
+    attrs = {"region": "Palestine", "projection": True, "variant": rec["variant"],
+             "edition": rec["edition"], "released": rec["released"],
+             "wpp_column": rec.get("wpp_column"), "wpp_unit": rec.get("wpp_unit")}
+    return [Row("un_wpp_2024_projection", f"population.wpp_projection.{ind}",
+                f"{year}-01-01", "year", rec["stable_id"], value_num=value,
+                unit=rec.get("unit"), place_id=None, attrs=attrs)]
 
 
 _QUARTER_MONTH = {"Q1": "03", "Q2": "06", "Q3": "09", "Q4": "12"}
@@ -2394,6 +2426,7 @@ TRANSFORMERS = {
     "fao_diem": t_fao_diem,                                     # 2026-10-11
     "refugees_unrwa_registered": t_refugees_unrwa_registered,   # P1-B.4
     "population_wpp": t_population_wpp,   # P1-B.4: the 1950s, from the UN
+    "population_wpp_projection": t_population_wpp_projection,   # the UN's projection, kept apart
     "conflict": t_conflict,
     "conflict_westbank": t_conflict_westbank,
     "conflict_gaza": t_conflict_gaza,
