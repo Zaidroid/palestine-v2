@@ -91,3 +91,9 @@ ops/coverage.ndjson
 data/raw/fts/
 data/raw/refugees/
 data/raw/cod_ab/
+# news archive (2026-10-13): public channel history, regenerate with ops/fetch_telegram_public.py;
+# the page cache is a convenience and can be deleted
+data/raw/tg_public/
+data/cache/
+ops/archive-last-run.json
+ops/archive-last-run.err

@@ -162,4 +162,11 @@ if [ "$final" -eq 0 ]; then
   # The whole night passed: close the unit's alarm if one is open.
   .venv/bin/python -m ops.alert --resolve palestine-v2-databank.service >/dev/null 2>&1 || true
 fi
+# The archive (2026-10-13, migration 116): bring what v1 and this store took in
+# since last night, and any channel history ops/fetch_telegram_public.py has
+# written, into `document`. It decides nothing about the night: a failure here
+# is printed, the exit code above stands, and nothing pages.
+.venv/bin/python -m ingest.archive --apply > ops/archive-last-run.json 2> ops/archive-last-run.err \
+  || echo "archive load failed (exit $?) - see ops/archive-last-run.err; the night's result is unchanged" >&2
+
 exit $final
