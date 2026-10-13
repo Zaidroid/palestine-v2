@@ -275,10 +275,10 @@ def read_wp(root: Path = WP, loaded: dict | None = None,
 def chron_entry(site: dict, e: dict) -> Doc:
     """One event of a published chronology → a document of kind `entry`. Its
     title is the event; the kinds the publisher gave it are searchable beside it."""
-    attrs = {k: e[k] for k in ("date_text", "tags", "end", "end_precision") if e.get(k)}
-    return Doc(source=site["source"], external_id=str(e["id"]), kind="entry", title=e["title"],
+    attrs = {k: e[k] for k in ("date_text", "tags", "end", "end_precision", "file") if e.get(k)}
+    return Doc(source=site["source"], external_id=str(e["id"]), kind="entry", title=e.get("title") or None,
                body=e.get("text") or "", extra=", ".join(e.get("tags") or []) or None, url=e.get("url"),
-               lang=guess_lang(e["title"]), published_at=e["date"] + "T00:00:00+00:00",
+               lang=guess_lang(e.get("title") or e.get("text") or ""), published_at=e["date"] + "T00:00:00+00:00",
                precision=e["precision"], via="chronology", via_rank=3, attrs=attrs)
 
 

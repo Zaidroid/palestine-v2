@@ -441,3 +441,58 @@ def test_a_short_chronology_is_refused_and_the_file_on_disk_is_kept(tmp_path, mo
     assert C.run("palquest", out, page, use_bronze=False) == 2      # three events, the floor is 2,000
     assert (out / "palquest" / "entries.ndjson.gz").read_bytes() == b"yesterday"
     assert '"outcome": "refused"' in (tmp_path / "ledger.ndjson").read_text()
+
+
+PASSIA_TEXT = """
+                                     Palestine Chronology
+
+                                             1963 – 1988
+
+1851
+
+The area of northwest Trans-Jordan organised as the qada' of Ajlun
+with its capital at Irbid.
+
+1948
+
+APRIL
+April 9: Irgun and Stern Gangs massacre 245 Palestinians in the village of Deir Yassin,
+western suburb of Jerusalem.
+- Haganah attack on Qastel continues.
+June 16-24: First truce holds.
+March: A month with no day.
+Feb. 30: A day the calendar does not have.
+                                                  12
+Mid-May: British Mandate ends.
+"""
+
+
+def test_the_second_chronology_reads_its_years_months_days_and_dashes():
+    entries, undated = C.parse_passia(PASSIA_TEXT, "https://passia.org/x.pdf")
+    got = [(e["date"], e["precision"], e["date_text"], e["text"]) for e in entries]
+    assert got == [
+        ("1851-01-01", "year", "1851", "The area of northwest Trans-Jordan organised as the qada' of Ajlun with its capital at Irbid."),
+        ("1948-04-09", "day", "April 9 1948", "Irgun and Stern Gangs massacre 245 Palestinians in the village of Deir Yassin, western suburb of Jerusalem."),
+        ("1948-04-09", "day", "April 9 1948", "Haganah attack on Qastel continues."),
+        ("1948-06-16", "day", "June 16-24 1948", "First truce holds."),
+        ("1948-03-01", "month", "March 1948", "A month with no day."),
+        ("1948-02-01", "month", "Feb. 30 1948", "A day the calendar does not have."),
+        ("1948-05-01", "month", "Mid-May 1948", "British Mandate ends."),
+    ]
+    assert undated == 0 and entries[3]["end"] == "1948-06-24" and "end" not in entries[1]
+    assert len({e["id"] for e in entries}) == 7 and all(e["url"].endswith("x.pdf") for e in entries)
+
+
+def test_a_single_years_file_needs_no_year_line_and_reads_its_heading():
+    entries, undated = C.parse_passia("CHRONOLOGY 2019\nJanuary:\nJan. 1: The US and Israel quit UNESCO.\n", "u")
+    assert [(e["date"], e["text"]) for e in entries] == [("2019-01-01", "The US and Israel quit UNESCO.")] and undated == 0
+    entries, undated = C.parse_passia("Jan. 4: A line with no year anywhere.\n", "u", default_year=2022)
+    assert entries[0]["date"] == "2022-01-04"
+    assert C.parse_passia("Jan. 4: A line with no year anywhere.\n", "u") == ([], 1)
+
+
+def test_an_entry_without_a_title_is_its_own_words():
+    e = C.parse_passia(PASSIA_TEXT, "https://passia.org/x.pdf")[0][1]
+    d = A.chron_entry({"source": "chron:passia"}, {**e, "file": "1400-1962"})
+    assert d.title is None and d.body.startswith("Irgun and Stern Gangs") and d.lang == "en"
+    assert (d.kind, d.precision, d.published_at, d.attrs["file"]) == ("entry", "day", "1948-04-09T00:00:00+00:00", "1400-1962")
