@@ -1604,3 +1604,55 @@ live store, the live API and the public partner door
   The build copies and the rehearsal container are removed. Next: the backup and sync of 14 October, the first
   night with all of it.
 
+2026-10-13 16:11 UTC · the news archive (Zaid's word of 13 October: the news should "cover everything ... as much as
+possible from 1948", for "a long series" of infographics) · built and rehearsed, WAITING FOR ZAID'S COMMAND 12 ·
+proof: branch `news-archive` (`4619038`, `dd37833`, this commit), `tmp/12-news-archive.sh`, HANDS §13l.
+- Measured first, read-only (the same day): `claim` holds 143,472 messages, 90,555 of them the two PalHub robots; the
+  news channels begin in the summer of 2026 and before June 2026 only the Ministry of Health's channel reaches back.
+  v1 keeps 19,185 articles from 15 outlets (full text of 3,862) and 36,832 channel posts, none of it searchable from
+  v2. `/v2/news/latest` matches exact letters, newest first, with no date range. His lighter question returned
+  nothing; eleven dated reports existed on the open web, five of them in v1.
+- Built: migration 116 (`archive_source`, `document`, `document_history` with a trigger that keeps an edited text's
+  prior words, `archive_load`), kept apart from `claim` (the classifier must never be offered a million posts from
+  2023) and from `source` (the poller and the silence alarms never see the archive's publishers).
+  `ingest/archive_text.py` is the one words rule for storing and for asking: PostgreSQL 16's `arabic` stemmer was
+  measured sending «ولاعة», «الولاعات» and «ولاعات» to three stems. `ingest/archive.py` has four readers (the public
+  channel pages, v1's articles, v1's channel posts, this store's messages without the robots), writes one row per
+  publisher id, lets the fuller reader win, and is dry unless `--apply`. `ops/ask_archive.py` is the question door
+  (read-only). The nightly sync ends with a non-fatal archive step.
+- `ops/fetch_telegram_public.py` reads a public channel's history from t.me/s pages with no account: slow (one page
+  every two seconds), resumable, one reader at a time, and it ends at the first refusal. A channel with its preview
+  switched off is skipped (`no_preview`), which is not a refusal. Started 13:05 UTC for 22 channels, newest first
+  in slices (`ops/tg-public-backfill.sh`). That first run was a background task of the session and died with it at
+  about 13:30 (my error: a job of days must not hang on a session); restarted at 15:59 UTC as a process of its own
+  (`setsid nohup`, log `data/raw/tg_public/backfill.log`), resuming from its cursor.
+- Rehearsed on a scratch copy of the schema with production's `source` and 52,939 news claims: the first load wrote
+  99,432 texts in 2 min 6 s; a second run changed none; an edited text left one row in `document_history`. The
+  hand-over command ran twice in SCRATCH mode (130 s, then 18 s). The loader's dry run on production, on a read-only
+  connection: 102,336 texts read in 10 s, nothing written.
+- The first answer from the rehearsal copy: the lighter question finds 21 texts from 8 publishers, and five dated
+  prices nobody had (20 shekels on 7 March 2025, 25 "down from 60" on 23 June, 25 on 25 July, 15 on 11 September,
+  10 to 15 on 10 January 2026). They are in «أسعار السوق - غزة» (`asarsook`), a Gaza market-price channel read whole
+  the same hour: 2,542 posts from 19 November 2024, 262 of them price lists, 85 daily truck-count bulletins since
+  7 August 2025. A first strict pattern reads 2,248 priced lines on 104 days from 127 of those posts (698 goods'
+  labels, 51 with ten or more days); that is a count of what is there, not yet a series.
+- Tests: `tests/test_archive.py`, 45 offline tests. **Suite on the branch against the live store: 2,173 passed, 0 failed, 2 skipped (621 s)**, the 2,128 of the
+  morning plus these 45.
+- Not built, on purpose: any API route or MCP tool over the archive. These are other people's words; a partner door
+  needs the licence tier applied per publisher first.
+- Open: ReliefWeb's API needs an approved application name (the form wants an address on his own domain; his step).
+  Two scouts are mapping the sources for 1948 to 2015 and the outlets' own archives; their reports decide the next
+  readers. The price lists, the truck counts and the repeating tallies inside the channels are time series nobody
+  has charted: reading them out into the databank, each figure with its post as the source, is the step after.
+- Two scouts mapped what can be read next (their reports, as returned, are in `docs/scout-2026-10-13/`; they are a
+  scout's findings, each line to be checked again before a reader is built on it). For 1948 to 2015: UNISPAL offers
+  46,967 UN documents with full text through an open listing (34,174 dated 1948 to 2015, with a monthly "Chronological
+  Review of Events" from September 1993); PASSIA's chronology (32 files, 1400 to 2022); the Palestine Question
+  encyclopedia's 2,541 dated events; PCHR's weekly reports from January 2001; POICA's 17,019 case studies from 1997;
+  the JTA wire from 1923 (personal use only). For 2000 to today: 20 of 27 outlets can be read whole (Sama about
+  560,000 articles from 2009, Palestine Today about 500,000 from 2008, Arab48 about 430,000 from 2002, Safa about
+  411,000 from 2009), and about a dozen bulletins repeat in one shape with changing numbers: Addameer's monthly page
+  since January 2011 (prisoners, administrative detainees, children, women), the Gaza Chamber of Commerce's weekly
+  movement-of-goods report (weeks 1 to 111), the Detainees' Commission's daily lists of administrative detention
+  orders, UNRWA's 236 situation reports, WHO's 72. DCIP's domain now serves gambling pages; no child-detention
+  figure came from it.
