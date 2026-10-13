@@ -1,0 +1,425 @@
+# settlements_by_settlement — Peace Now's population of each West Bank
+# settlement, year by year, read from the `Settlements` sheet of the
+# spreadsheet Settlement Watch links from its Population page
+# (ops/fetch_peacenow_settlements.py).
+#
+# WHY THIS SPEC EXISTS (2026-10-13). The store held Peace Now's yearly West
+# Bank total (settlements.yaml, 51 rows) and the 199 settlement footprints of
+# 2018 (land.yaml), and nothing per settlement and year. This is a NEW dataset:
+# there was no held row to match, and nothing here touches a held row.
+#
+# WHY ITS OWN FILE and not a second dataset inside settlements.yaml. The loader
+# routes a record by its source to the FIRST dataset of that source
+# (ingest/databank.py route()), so two Peace Now datasets in one spec cannot be
+# told apart; and a spec's `expect` floors and `drop` rules speak for the whole
+# file, while these rows need their own (six declared drops, a floor of
+# thousands beside a series of 51). `v1_category: settlements` files the
+# dataset beside the total in the serving views.
+#
+# A SERIES PER SETTLEMENT (2026-10-13, the same day, second pass). The first
+# pass filed every settlement under ONE indicator with the settlement in
+# attrs. `series` answers by indicator and place and returns points without
+# attrs, so at a governorate it returned every settlement's figure for each
+# year, unlabelled, and no question could reach one settlement: loaded and
+# unanswerable. The store's pattern for "a series per entity" is the one
+# WHO's rows follow (health.<code>.sex_fmle): the entity is in the indicator
+# key and the registry names each key in both languages, which is what the
+# indicator search matches on. So:
+#
+# WHAT A ROW IS. One settlement x one period the sheet states a figure for:
+#   indicator   settlements.population_by_settlement.pn<DB_ID>, the DB_ID in
+#               four digits (pn0016 is Ariel). Peace Now's own number is the
+#               stable part; a name can change its spelling. Four digits and
+#               not three because the ids reach 1397 and the keys should sort.
+#               141 series today, one per settlement with a figure, each named
+#               in English and Arabic (db/reference/peacenow_settlement_
+#               names.yaml -> db/registry/names.yaml).
+#   value       persons, as the sheet states them
+#   date        a "Population <year>" column is that year, precision year,
+#               stored at the year's start with reference "period-end stock":
+#               the convention settlements.settler_population already follows.
+#               "Population May 2024" is 2024-05-01, precision month, and its
+#               reference says it is not 2024's year-end figure.
+#   attrs       settlement_id (Peace Now's DB_ID), settlement_name and
+#               settlement_name_he as the sheet writes them, the sheet's other
+#               columns about the settlement (year_established, municipality,
+#               urban_pattern, distance_from_green_line_km, elevation_m,
+#               comments), its point (lat, lon, itm_x, itm_y), the column the
+#               value came from (sheet_column), period, and year on a year's
+#               figure (a month's figure carries none).
+# Nothing is interpolated or filled. A blank cell is no row. A cell holding 0
+# is no row either, for the reason measured in `drop:` below.
+#
+# NEVER ADDED UP INTO THE WEST BANK TOTAL. The total (settlements.
+# settler_population) is the page's chart; these series are the sheet's
+# cells. Their yearly sums are not the chart's numbers (the comparison, year
+# by year, is in the notes), and the registry rule says so beside every
+# answer.
+category: settlements_by_settlement
+transform: engine
+v1_category: settlements         # joins the settlements serving views
+shape: observation
+status: reviewed
+records_measured: 6884           # 2026-10-13: every non-blank population cell
+                                 #   of 152 settlements x 55 columns (8,360
+                                 #   cells, 1,476 of them blank)
+
+input:
+  root: data/raw/peacenow
+  glob: settlement_population.json
+cadence: annual                  # a year's column arrives when Peace Now adds
+                                 #   it; the sheet is fetched weekly
+
+source_routing:
+  by_name:
+    "Peace Now — Settlements and Outposts list": peace_now   # the name the fetcher writes
+  default: null                  # every record carries its source
+
+datasets:
+  - key: peacenow_settlement_population
+    source: peace_now            # the store's existing Peace Now row:
+                                 #   no-license-found, no-redistribution
+
+indicator:
+  template: "settlements.population_by_settlement.{series_key}"
+  # series_key is written by the fetcher from Peace Now's DB_ID: pn0016. A row
+  # of the sheet with no DB_ID never becomes a record (the fetcher drops it by
+  # rule and counts it), and a record with no series_key is the declared drop
+  # `no_settlement_id` below: the bare prefix is never an indicator.
+
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # 'persons' on every record
+
+occurred_at:
+  from: date
+  precision: year
+  rules:
+    - if: "a 'Population <year>' column: the fetcher writes <year>-12-31"
+      when: {field: period_kind, op: eq, value: year_end}
+      then:
+        truncate_to: year        # law 2: a year's figure is a year, not a day
+        precision: year
+        attrs:
+          reference: "period-end stock"
+    - if: "a 'Population <Month> <year>' column: the fetcher writes the month's first day"
+      when: {field: period_kind, op: eq, value: month}
+      then:
+        truncate_to: month
+        precision: month
+        attrs:
+          reference: "a count as of the month the sheet's column names; not that year's year-end figure"
+
+place:
+  strategy: latlon               # the sheet's own point -> the governorate
+                                 #   that contains it (the loader's resolver).
+                                 #   The store has no place row per settlement
+                                 #   (see notes, PLACE).
+  fallback: [none]               # a settlement with no point, or a point in no
+                                 #   governorate, has place NULL; its name is
+                                 #   in attrs either way
+  min_decided_pct: 1.0
+  min_located_pct: 0.95          # measured 2026-10-13: 4,369 of 4,370 rows
+                                 #   land in a governorate (140 of the 141
+                                 #   settlements that have a figure; see
+                                 #   notes, PLACE, for the one that does not)
+
+stable_id: stable_id             # peacenow-settlement-pop:<DB_ID>:<period>
+
+attrs_passthrough:
+  - settlement_id                # Peace Now's DB_ID: its page for Adora is
+                                 #   /en/settlements/settlement3-en, DB_ID 3
+  - settlement_name              # "Name", exactly as the sheet writes it
+  - settlement_name_he           # "Name Hebrew"
+  - year_established             # a year, or the sheet's text ("January 2002")
+  - municipality                 # the regional or local council, as written
+                                 #   ("GUsh Etzion" and "SHOmron" included)
+  - urban_pattern                # Community / Urban / Moshav / Kibbutz / ...
+  - distance_from_green_line_km
+  - elevation_m
+  - comments
+  - location.lat                 # the sheet's "x (UTM)": degrees of latitude
+  - location.lon                 # the sheet's "y (UTM)": degrees of longitude
+  - location.itm_x
+  - location.itm_y
+  - location.coord_basis         # only where the degrees were computed from
+                                 #   the sheet's grid point (Tel Zion)
+  - sheet_column                 # "Population 2023", "Population May 2024"
+  - period                       # "2023", "2024-05"
+  - year                         # on a year's figure only: the May 2024 rows
+                                 #   carry none, so nothing can group them
+                                 #   under 2024
+  - value_note                   # "estimated" on the 15 cells the sheet marks
+  - cell_text                    # the cell as written, when it is not a plain
+                                 #   number ("100 (estimated)")
+
+attrs_literal:
+  coverage: "West Bank settlements; East Jerusalem settlements are not in the list"
+
+drop:
+  - reason: no_settlement_id
+    if: "the record carries no series_key (no DB_ID in the sheet): refused, never filed under the bare prefix"
+    when: {field: series_key, op: absent}
+    measured: 0
+  # THE SHEET'S ZERO IS A FILLER, NOT A COUNT (measured 2026-10-13). Up to its
+  # "Population 2007" column the sheet writes 0 where it has no figure; from
+  # "Population 2008" on it leaves the cell blank (not one 0 in the 17 columns
+  # from 2008, 2,248 in the 38 before). Where the zeros stand:
+  #   1,433  in years before the sheet's own "Year established"
+  #     513  from that year to the settlement's first stated cell (Ovnat,
+  #          established 1983: 0 in every column to 2007, then
+  #          "100 (estimated)" in 2008)
+  #     302  between two stated cells (Almog: 57 in 1983, 0 for 1985 to 1992,
+  #          103 in 1993)
+  #       0  after a settlement's last figure
+  # So no zero is the sheet clearly stating that a settlement that existed had
+  # no residents, and none is loaded.
+  - reason: zero_before_established
+    if: "the cell holds 0 for a year before the sheet's own Year established"
+    when: {field: cell_kind, op: eq, value: zero_before_established}
+    measured: 1433
+  - reason: zero_no_figure
+    if: "the cell holds 0 for a year the settlement existed: the sheet's filler for 'no figure'"
+    when: {field: cell_kind, op: eq, value: zero_no_figure}
+    measured: 815
+  # «כ-50», "about 50": the same text in 261 cells of the columns 1969 to
+  # 1979, for 48 settlements (Ma'ale Adumim carries it to 1979 and has 1,700
+  # in 1982; Kiryat Arba to 1974, then "?", then 3,340), in 10 cells for years
+  # before the sheet's own year of establishment (Almog, established 1977,
+  # carries it from 1969). The 47 of them in "Population 1979" come to 2,350
+  # where the chart holds 10,000. A placeholder, not a count: kept in the raw
+  # file (kind `approximate`, value 50, the cell's text), not loaded. Loading
+  # them is this one rule removed, and Zaid's call.
+  - reason: approximate_placeholder
+    if: "the cell reads «כ-50» (about 50), the sheet's placeholder for the 1970s"
+    when: {field: cell_kind, op: eq, value: approximate}
+    measured: 261
+  - reason: unknown_marker
+    if: "the cell reads '?' (Kiryat Arba, 1975 to 1979)"
+    when: {field: cell_kind, op: eq, value: unknown_marker}
+    measured: 5
+  - reason: unreadable_cell
+    if: "text the fetcher could not read as a figure; none today, declared so a new spelling is counted instead of failing the night"
+    when: {field: cell_kind, op: eq, value: unreadable}
+    measured: 0
+
+identity:
+  # One figure per settlement and period. The settlement is in the indicator,
+  # as Peace Now's own number and not its name (names change spelling between
+  # Peace Now's own sources: "Modi'in Ilit" here, "Modi'in Illit" in its 2018
+  # footprints). The period is in the key beside the date so that a month's
+  # figure and a year's can never meet: "Population May 2024" is 2024-05-01
+  # and a later "Population 2024" will be 2024-01-01, but a "Population
+  # January 2025" would share 2025-01-01 with "Population 2025". The value is
+  # NOT in the key: a figure Peace Now revises supersedes the held one.
+  # MEASURED 2026-10-13: 4,370 rows, 4,370 keys, 141 indicators, and no
+  # indicator with two rows on one date.
+  fields: [indicator, occurred_at]
+  attrs: [period]
+  # Every fetch is the whole sheet, so a figure Peace Now takes out of it is
+  # closed here too (kept, no longer current). The ceiling is a judgement, not
+  # a measurement, because there is no history of withdrawals to measure: one
+  # whole column (127 rows on 2026-10-13, e.g. "Population May 2024" giving way
+  # to "Population 2024") or three settlements' whole histories fit under it;
+  # a sheet that lost more than that is a different sheet and fails the run.
+  generation: complete
+  max_absent: 150
+
+expect:
+  min_records: 3933              # 0.9 x 4,370, the cells that are loaded, and
+                                 #   the fetcher's own floor. NOT 0.9 x the
+                                 #   6,884 read: 2,248 of those are the filler
+                                 #   zeros, and the day Peace Now blanks them
+                                 #   the sheet has lost nothing
+  max_observations: 5025         # 1.15 x 4,370: five more yearly columns of
+                                 #   about 127 figures each
+
+registry:
+  max_unclassified: 0
+  rules:
+    # One rule for every settlement's series, by the prefix WITH its closing
+    # dot: it cannot reach settlements.settler_population, and settlements.
+    # yaml's rule (`equals`) cannot reach these. Their names are in
+    # db/registry/names.yaml, one per series, written by one rule from
+    # db/reference/peacenow_settlement_names.yaml.
+    - when: {prefix: "settlements.population_by_settlement."}
+      concept: settlement
+      measure_kind: stock        # residents at the period's end (a year) or
+                                 #   in the month named
+      polarity: -1
+      grain: year                # 43 of the 44 periods are years; the 44th is
+                                 #   May 2024, precision month on its rows
+      place_grain: point         # one settlement at its own point; the row
+                                 #   sits at the governorate that contains it
+                                 #   (as refugees.camp_population does)
+      canonical_unit: persons
+      serve_warning: >-
+        Peace Now's figure for this one settlement, from the list of
+        settlements on its site. The list names no source; Peace Now's page
+        cites the Israeli CBS for its chart of settlers. East Jerusalem
+        settlements are not in the list. A figure dated May 2024 is a count
+        for that month, not year-end 2024. Do not sum these series for the
+        West Bank total (settlements.settler_population): their yearly sums
+        equal it only for 2023 and differ by 18 to 14,881 in the other 42
+        years (2022: 484,340 against 478,600).
+      serve_warning_ar: >-
+        هاد رقم «السلام الآن» لعدد سكان هالمستوطنة لحالها، من قائمة المستوطنات
+        اللي على موقعها. القائمة ما بتذكر مصدر، وصفحة السلام الآن بتنسب رسمة
+        أعداد المستوطنين لدائرة الإحصاء الإسرائيلية. مستوطنات القدس الشرقية مش
+        بالقائمة. والرقم المؤرّخ بأيار 2024 عدّ لهداك الشهر، مش لنهاية 2024. وما
+        تجمع هالسلاسل عشان تطلّع مجموع الضفة (settlements.settler_population):
+        مجاميعها السنوية ما بتساويه إلا بسنة 2023، وبتفرق عنه من 18 لـ14,881
+        بالـ42 سنة الباقية (سنة 2022: 484,340 مقابل 478,600).
+
+notes: |
+  THE SOURCE (read 2026-10-13). Peace Now's Population page
+  (https://peacenow.org.il/en/settlements-watch/settlements-data/population)
+  says "Download the list of settlements and outposts here" and links
+  https://docs.google.com/spreadsheets/d/1Hs_JdYPEs4oXs09zG3Hd4tWBpYo0ImkJ6WuXAEgMi0U.
+  Its xlsx export answers a plain GET with no account, key or cookie, under the
+  name "Settlements and Outposts Peace Now 07.2026.xlsx". The fetcher finds the
+  link on the page each run and keeps that document id only as a fallback; the
+  raw file says which was used (`sheet_link`). On 2026-10-13 one read of the
+  page timed out after 60 s and the fallback carried that fetch.
+
+  THE VINTAGE. "07.2026" in the export's name is what the raw file records
+  (`vintage` 2026-07), with the page's own lines beside it ("Updated: August
+  1, 2026", "Peace Now's count, 1/8/2026"). The document is edited more often
+  than its name says: its Outposts sheet lists outposts established «ספט-26»
+  (September 2026). The population columns end at "Population 2023" and
+  "Population May 2024" although the page's chart shows 2024 since August
+  2026.
+
+  WHAT THE SHEET SAYS ITS SOURCE IS. Nothing: none of the workbook's 1,605
+  strings names a source (searched for CBS, source, statistics and the Hebrew
+  for them) and it carries no comments. The page it is linked from captions its
+  chart of settlers by year "Source: ICBS" and "Source: Israeli CBS", and the
+  settlement's own page on the site gives a "Number of Residents" (Adora: 515,
+  which is this sheet's "Population 2022"). The serve warning says both
+  halves.
+
+  EAST JERUSALEM IS NOT IN IT. The page counts "Settlements in the West Bank
+  that were officially established by the government and went through full
+  planning process (East Jerusalem excluded)" and keeps East Jerusalem on a
+  page of its own (/en/settlements-watch/settlements-data/jerusalem). None of
+  the sheet's 152 names is one of the Israeli neighbourhoods of East Jerusalem
+  (searched for Gilo, Pisgat Ze'ev, Ramot, Har Homa, Neve Ya'akov, Talpiot,
+  Ramat Shlomo, French Hill, Ramat Eshkol, Ma'alot Dafna, Atarot, Giv'at
+  Hamatos, Nof Zion; the one hit is Har Gilo, another place, which the point
+  resolver puts in the Bethlehem governorate). The 15 settlements it puts in
+  the Jerusalem governorate are Almon, Alon, Geva Binyamin, Giv'on, Giv'on
+  Ha'hadasha, Givat Ze'ev, Har Adar, Har Shmuel, Kalia, Keidar, Kfar Adumim,
+  Kochav Ya'akov, Ma'ale Adumim, Nofei Prat and Tel Zion. The sheet's 2023
+  column sums to exactly the chart's 2023 figure, and the chart is the West
+  Bank without East Jerusalem. The page says 146 settlements and the sheet
+  lists 152; which six it leaves out of its count it does not say.
+
+  THE SHEET'S YEARLY SUMS AGAINST THE CHART (measured 2026-10-13 from the two
+  raw files; sheet = the loaded cells of that column, i.e. the sum of the 141
+  series for that year; chart = settlements.settler_population; n =
+  settlements with a figure that year):
+    year   n    sheet     chart     sheet - chart
+    1980     3     4,000    12,500     -8,500
+    1981     1     3,100    16,200    -13,100
+    1982    20    14,536    21,700     -7,164
+    1983    68    21,002    23,700     -2,698
+    1984     -         -    36,900          -     the sheet has no 1984 column
+    1985    38    37,695    46,100     -8,405
+    1986    41    44,627    53,400     -8,773
+    1987    42    50,474    60,300     -9,826
+    1988    43    55,772    66,500    -10,728
+    1989    46    61,985    73,000    -11,015
+    1990    53    70,844    81,900    -11,056
+    1991    64    82,865    94,100    -11,235
+    1992    75    94,834   105,400    -10,566
+    1993   105   110,066   116,300     -6,234
+    1994   110   124,005   127,800     -3,795
+    1995   110   137,466   134,300     +3,166
+    1996   116   139,453   146,900     -7,447
+    1997   116   152,277   160,200     -7,923
+    1998   118   165,540   172,200     -6,660
+    1999   118   174,405   183,900     -9,495
+    2000   118   191,125   198,300     -7,175
+    2001   118   201,674   208,300     -6,626
+    2002   118   212,218   220,000     -7,782
+    2003   119   221,898   231,800     -9,902
+    2004   118   233,471   243,900    -10,429
+    2005   119   247,230   247,300        -70
+    2006   119   261,537   261,600        -63
+    2007   119   276,045   276,100        -55
+    2008   134   295,981   281,100    +14,881     290,311 without the 15 estimates
+    2009   121   297,386   296,700       +686
+    2010   120   310,990   311,100       -110
+    2011   121   325,452   325,500        -48
+    2012   123   341,418   341,400        +18
+    2013   125   355,983   356,500       -517
+    2014   125   369,977   370,700       -723
+    2015   126   385,264   385,900       -636
+    2016   126   398,534   399,300       -766
+    2017   126   412,668   413,400       -732
+    2018   127   427,072   427,800       -728
+    2019   127   440,820   441,600       -780
+    2020   126   450,711   451,700       -989
+    2021   127   464,458   465,400       -942
+    2022   127   484,340   478,600     +5,740
+    2023   127   503,732   503,732          0
+    2024     -         -   511,100          -     the sheet has May 2024 only: 127
+                                                   figures, 496,852
+  43 years can be compared (1980 to 2023 without 1984). The two are equal in
+  one (2023), within 1,000 in 16 more (2005 to 2007, 2009 to 2021; the
+  narrowest is 18, in 2012, the widest 989, and none is over 0.23 %), and
+  2,698 to 14,881 apart in the other 26. So across the 42 years in which they
+  differ the difference runs from 18 to 14,881, which is what the serve
+  warning says. The chart also holds 1967, 1972, 1976 to 1979, 1984 and 2024,
+  for which the sheet has no loaded figure. Why the two differ where they do is not stated by Peace Now
+  and is not guessed here.
+
+  WHICH YEAR A COLUMN IS. The sheet says "Population 2023", not "end of
+  2023". The year-end reading rests on the chart (settlements.yaml: a chart
+  label is the Israeli CBS count at the END of that year) and on the table
+  above: the columns track the chart's end-of-year totals to within 0.23 % for
+  2005 to 2007 and 2009 to 2021, and 2023 to the person. A row is stored at
+  the START of its year with reference "period-end stock", as the total is;
+  the open question in settlements.yaml (start of the same year, or of the
+  next) covers these rows too and is answered for both together.
+
+  THREE FIGURES THAT LOOK WRONG AND ARE LOADED AS WRITTEN. Modi'in Ilit has
+  "Year established" 1996 and figures for 1994 (2,400) and 1995 (5,500). Tel
+  Zion has 6,692 in both 2022 and 2023, the years around its split from
+  Kochav Ya'akov ("In 2023 splited from the settlement of Kochav Yaacov").
+  The May 2024 column sums to 496,852, which is 6,880 below the 2023 column.
+
+  PLACE (measured 2026-10-13). The store has no place row for a settlement:
+  the 199 held `land.settlement` footprints all sit at the West Bank region
+  row (place 2) with the name in attrs.land_name and no id, so matching the
+  sheet to them yields a name, not a place (124 of the sheet's 152 names are
+  among the footprints' 175: 100 letter for letter, 24 under another
+  spelling). The sheet's own point is what places a row: the governorate that
+  contains it, by the loader's point resolver. 140 of the 141 settlements
+  with a figure land in one (Ramallah 25, Hebron 19, Jericho 18, Bethlehem
+  15, Jerusalem 15, Salfit 15, Nablus 11, Tubas 7, Qalqilya 6, Jenin 6,
+  Tulkarm 3). The one that does not is Shani (DB_ID 131, one figure, "400
+  (estimated)" for 2008): the sheet's degrees lie outside every governorate
+  polygon and its own comment is "a town in Israel expanded into the West
+  Bank". Its row has place NULL. The sheet's degrees are its Israeli grid
+  point projected without the datum shift, 31 to 78 m (median 78 m) from the
+  same point shifted to WGS84; for the other 146 points that changes no
+  governorate, and for Shani the shifted point falls just inside Hebron's.
+  The degrees are loaded as the sheet writes them, with the grid point beside
+  them (attrs.itm_x, attrs.itm_y), so Shani can be placed by hand or by a
+  shifted point if Zaid wants it. The settlement itself is the indicator
+  (and attrs.settlement_id, attrs.settlement_name on every row), so a
+  governorate holds many series and each series one row a date: no place row
+  per settlement is needed for a question to reach one settlement. The place
+  table has no settlement kind.
+  Among its 4,028 localities are rows that carry a settlement's name, from
+  Palestine Open Maps (group "Jewish", not servable) and from the road tier's
+  known locations (servable), often both for one settlement and in other
+  spellings (Kfar Adumim is "Kefar Adummim"), and a match by name would file
+  the settlers of "Hebron" under the Palestinian city.
+
+  LICENCE. peacenow.org.il states no licence and no terms of reuse; the footer
+  of every page read is "© 2026 Peace Now | Sitemap | Accessibility Notice".
+  The source row `peace_now` (no-license-found, commercial_use false,
+  no-redistribution, attribution required) governs, unchanged.

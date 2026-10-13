@@ -168,7 +168,14 @@ identity:
 registry:
   max_unclassified: 0
   rules:
-    - when: {prefix: "settlements."}
+    # `equals`, not the prefix "settlements." it was until 2026-10-13: the
+    # category now also holds settlements.population_by_settlement.pn<DB_ID>
+    # (settlements_by_settlement.yaml), one series per settlement placed by
+    # its own point, with their own rule and warning. A prefix here would
+    # match those 141 indicators too, and which of the two rules' place grain
+    # reached indicator_def would depend on the order the files are read in.
+    # tests/test_more_settlements.py holds both rules apart.
+    - when: {equals: "settlements.settler_population"}
       concept: settlement
       measure_kind: stock        # period-end population, anchored at the
                                  #   START of the year it labels (REVIEW.md 2)

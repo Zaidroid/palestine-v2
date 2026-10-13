@@ -1012,6 +1012,436 @@ names:
   settlements.settler_population:
     en: "Israeli settlers in the West Bank, excluding East Jerusalem, year-end (Peace Now)"
     ar: "عدد المستوطنين في الضفة الغربية دون القدس الشرقية، نهاية السنة (السلام الآن)"
+  # ...and its figure for each settlement, from the list of settlements it publishes beside the chart
+  # (db/mappings/settlements_by_settlement.yaml): one series a settlement, keyed on Peace Now's own id,
+  # never summed into the total. One rule names them all; the Arabic spellings and where each was printed
+  # are in db/reference/peacenow_settlement_names.yaml.
+  # >>> settlements.population_by_settlement.pn<DB_ID>: written by ops/build_settlement_names.py from
+  #     db/reference/peacenow_settlement_names.yaml. Edit that table, not this block.
+  settlements.population_by_settlement.pn0001:
+    en: "Population of the Israeli settlement of Avnei Hefetz, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أفني حيفتس في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0002:
+    en: "Population of the Israeli settlement of Ovnat, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أفينات في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0003:
+    en: "Population of the Israeli settlement of Adora, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أدورا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0004:
+    en: "Population of the Israeli settlement of Oranit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أورانيت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0005:
+    en: "Population of the Israeli settlement of Itamar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إيتمار في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0006:
+    en: "Population of the Israeli settlement of Alon, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0007:
+    en: "Population of the Israeli settlement of Elon More, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إلون موريه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0008:
+    en: "Population of the Israeli settlement of Alon Shvut, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألون شيفوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0009:
+    en: "Population of the Israeli settlement of Almog, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألموج في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0010:
+    en: "Population of the Israeli settlement of El'azar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إليعيزر في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0011:
+    en: "Population of the Israeli settlement of Alfei Menashe, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألفي منشيه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0012:
+    en: "Population of the Israeli settlement of Elkana, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إلكانا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0013:
+    en: "Population of the Israeli settlement of Asfar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أسفر في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0014:
+    en: "Population of the Israeli settlement of Efrat, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إفرات في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0015:
+    en: "Population of the Israeli settlement of Argaman, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أرجمان في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0016:
+    en: "Population of the Israeli settlement of Ariel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أريئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0017:
+    en: "Population of the Israeli settlement of Eshkolot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إشكولوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0018:
+    en: "Population of the Israeli settlement of Beit El, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت إيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0019:
+    en: "Population of the Israeli settlement of Beit Arye, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت أرييه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0020:
+    en: "Population of the Israeli settlement of Beit Ha'arava, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت هعرافاه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0021:
+    en: "Population of the Israeli settlement of Beit Horon, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت هورون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0022:
+    en: "Population of the Israeli settlement of Beitar Illit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيتار عيليت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0023:
+    en: "Population of the Israeli settlement of Bqa'ot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيقاعوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0024:
+    en: "Population of the Israeli settlement of Bracha, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة براخا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0025:
+    en: "Population of the Israeli settlement of Barqan, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة برقان في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0026:
+    en: "Population of the Israeli settlement of Bat Ayin, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت عين في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0027:
+    en: "Population of the Israeli settlement of Geva Binyamin (aka Adam), West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة آدم (جفعات بنيامين) في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0028:
+    en: "Population of the Israeli settlement of Giv'on, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جفعون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0029:
+    en: "Population of the Israeli settlement of Giv'on Ha'hadasha, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جفعون حداشاه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0030:
+    en: "Population of the Israeli settlement of Gva'ot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جفاعوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0031:
+    en: "Population of the Israeli settlement of Givat Ze'ev, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جفعات زئيف في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0032:
+    en: "Population of the Israeli settlement of Gitit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جتيت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0033:
+    en: "Population of the Israeli settlement of Gilgal, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جلجال في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0034:
+    en: "Population of the Israeli settlement of Dolev, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة دوليف في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0035:
+    en: "Population of the Israeli settlement of Har Adar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة هار أدار في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0036:
+    en: "Population of the Israeli settlement of Har Gilo, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة هار جيلو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0037:
+    en: "Population of the Israeli settlement of Har Shmuel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة هار صموئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0038:
+    en: "Population of the Israeli settlement of Vered Yericho, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة فيرد يريحو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0039:
+    en: "Population of the Israeli settlement of Hebron, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة الخليل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0040:
+    en: "Population of the Israeli settlement of Haggai, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيت هجاي في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0041:
+    en: "Population of the Israeli settlement of Hinanit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة حنانيت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0042:
+    en: "Population of the Israeli settlement of Halamish, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة حلاميش في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0043:
+    en: "Population of the Israeli settlement of Chemdat, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة حمدات في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0044:
+    en: "Population of the Israeli settlement of Hamra, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة حمرا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0045:
+    en: "Population of the Israeli settlement of Hermesh, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة حرميش في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0046:
+    en: "Population of the Israeli settlement of Hashmonaim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة هشمونائيم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0047:
+    en: "Population of the Israeli settlement of Tal Menashe, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تل مناشيه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0048:
+    en: "Population of the Israeli settlement of Talmon, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تلمون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0049:
+    en: "Population of the Israeli settlement of Tene, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تينه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0050:
+    en: "Population of the Israeli settlement of Yitav, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة يتاف في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0051:
+    en: "Population of the Israeli settlement of Yafit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة يافيت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0052:
+    en: "Population of the Israeli settlement of Yitzhar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة يتسهار في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0053:
+    en: "Population of the Israeli settlement of Yakir, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ياكير في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0054:
+    en: "Population of the Israeli settlement of Kochav Ha'shachar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كوخاف هشاحر في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0055:
+    en: "Population of the Israeli settlement of Kochav Ya'akov, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كوخاف يعقوف في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0056:
+    en: "Population of the Israeli settlement of Kfar Adumim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كفار أدوميم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0057:
+    en: "Population of the Israeli settlement of Kfar Ha'oranim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كفار هأورانيم (مينورا) في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0058:
+    en: "Population of the Israeli settlement of Kfar Etzion, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كفار عتصيون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0059:
+    en: "Population of the Israeli settlement of Kfar Tapuah, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كفار تبواح في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0060:
+    en: "Population of the Israeli settlement of Karmei Tzur, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كرمي تسور في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0061:
+    en: "Population of the Israeli settlement of Carmel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كرمئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0062:
+    en: "Population of the Israeli settlement of Mevo Dotan, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميفو دوتان في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0063:
+    en: "Population of the Israeli settlement of Mevo Horon, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميفو هورون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0064:
+    en: "Population of the Israeli settlement of Migdal Oz, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة مجدال عوز في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0065:
+    en: "Population of the Israeli settlement of Migdalim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميجداليم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0066:
+    en: "Population of the Israeli settlement of Modi'in Ilit, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة موديعين عيليت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0067:
+    en: "Population of the Israeli settlement of Mechola, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميهولا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0068:
+    en: "Population of the Israeli settlement of Mechora, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميخورا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0069:
+    en: "Population of the Israeli settlement of Ma'on, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ماعون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0070:
+    en: "Population of the Israeli settlement of Ma'ale Adumim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه أدوميم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0071:
+    en: "Population of the Israeli settlement of Ma'ale Efraim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه إفرايم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0072:
+    en: "Population of the Israeli settlement of Ma'ale Levona, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه ليفونا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0073:
+    en: "Population of the Israeli settlement of Ma'ale Michmash, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه مخماس في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0074:
+    en: "Population of the Israeli settlement of Ma'ale Amos, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه عاموس في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0075:
+    en: "Population of the Israeli settlement of Ma'ale Shomron, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة معاليه شمرون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0076:
+    en: "Population of the Israeli settlement of Yatir (aka Metzadot Yehuda), West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميزادوت يهودا (بيت ياتير) في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0077:
+    en: "Population of the Israeli settlement of Mitzpe Yericho, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة متسبيه يريحو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0078:
+    en: "Population of the Israeli settlement of Mitzpe Shalem, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة متسبيه شالم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0079:
+    en: "Population of the Israeli settlement of Masu'a, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة مسوع في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0080:
+    en: "Population of the Israeli settlement of Maskiyot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة مسكيوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0082:
+    en: "Population of the Israeli settlement of Negohot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نيجوهوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0083:
+    en: "Population of the Israeli settlement of Neve Daniel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نفيه دانييل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0084:
+    en: "Population of the Israeli settlement of Nofei Prat, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نوفي برات في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0085:
+    en: "Population of the Israeli settlement of Nofim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نوفيم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0086:
+    en: "Population of the Israeli settlement of Nokdim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نوكديم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0087:
+    en: "Population of the Israeli settlement of Nahliel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نحلئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0090:
+    en: "Population of the Israeli settlement of Niran, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نيران في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0091:
+    en: "Population of the Israeli settlement of Na'ale, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نعاليه في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0092:
+    en: "Population of the Israeli settlement of Na'ama, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نعمة في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0094:
+    en: "Population of the Israeli settlement of Netiv Ha'gdud, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نيتف هجدود في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0095:
+    en: "Population of the Israeli settlement of Susiya, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة سوسية في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0096:
+    en: "Population of the Israeli settlement of Sal'it, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة سلعيت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0098:
+    en: "Population of the Israeli settlement of Ofarim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عوفاريم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0099:
+    en: "Population of the Israeli settlement of Ateret, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عتيريت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0100:
+    en: "Population of the Israeli settlement of Eli, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة إيلي في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0101:
+    en: "Population of the Israeli settlement of Alei Zahav, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألي زهاف في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0102:
+    en: "Population of the Israeli settlement of Almon, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ألمون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0103:
+    en: "Population of the Israeli settlement of Immanuel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عمانوئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0104:
+    en: "Population of the Israeli settlement of Enav, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عناب في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0105:
+    en: "Population of the Israeli settlement of Ofra, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عوفرا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0106:
+    en: "Population of the Israeli settlement of Etz Efraim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عيتس إفرايم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0107:
+    en: "Population of the Israeli settlement of Otniel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة عوتنيئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0108:
+    en: "Population of the Israeli settlement of Pedu'el, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيدوئيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0109:
+    en: "Population of the Israeli settlement of Pnei Hever, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بني حيفر في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0110:
+    en: "Population of the Israeli settlement of Psagot, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بساجوت في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0111:
+    en: "Population of the Israeli settlement of Petzael, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بيتسائيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0112:
+    en: "Population of the Israeli settlement of Tzofim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تسوفيم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0113:
+    en: "Population of the Israeli settlement of Kedumim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كدوميم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0114:
+    en: "Population of the Israeli settlement of Keidar, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كيدار في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0115:
+    en: "Population of the Israeli settlement of Kalia, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كاليا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0116:
+    en: "Population of the Israeli settlement of Kiryat Arba, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كريات أربع في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0117:
+    en: "Population of the Israeli settlement of Kiryat Netafim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كريات نيتافيم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0118:
+    en: "Population of the Israeli settlement of Karnei Shomron, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة كارني شمرون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0119:
+    en: "Population of the Israeli settlement of Rosh Tzurim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة روش تسوريم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0120:
+    en: "Population of the Israeli settlement of Revava, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ريفافا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0121:
+    en: "Population of the Israeli settlement of Ro'i, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة روعي في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0122:
+    en: "Population of the Israeli settlement of Rotem, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة روتم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0123:
+    en: "Population of the Israeli settlement of Rechelim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ريخاليم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0124:
+    en: "Population of the Israeli settlement of Reihan, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ريحان في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0125:
+    en: "Population of the Israeli settlement of Rimonim, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة رمونيم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0126:
+    en: "Population of the Israeli settlement of Shvut Rachel, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شيفوت راحيل في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0127:
+    en: "Population of the Israeli settlement of Shavei Shomron, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شفي شومرون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0128:
+    en: "Population of the Israeli settlement of Shadmot Mehola, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شدموت ميهولا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0129:
+    en: "Population of the Israeli settlement of Shilo, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شيلو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0130:
+    en: "Population of the Israeli settlement of Shim'a, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شمعة في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0131:
+    en: "Population of the Israeli settlement of Shani, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شاني في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0132:
+    en: "Population of the Israeli settlement of Sha'arei Tikva, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شعار تكفا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0133:
+    en: "Population of the Israeli settlement of Shaked, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شاكيد في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0134:
+    en: "Population of the Israeli settlement of Tomer, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تومر في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0135:
+    en: "Population of the Israeli settlement of Telem, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تيليم في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0136:
+    en: "Population of the Israeli settlement of Tko'a, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تكواع في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0233:
+    en: "Population of the Israeli settlement of Bruchin, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة بروخين في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0275:
+    en: "Population of the Israeli settlement of Mevo'ot Jericho, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة ميفوت يريحو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0302:
+    en: "Population of the Israeli settlement of Nerya, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نيريا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0305:
+    en: "Population of the Israeli settlement of Sansana, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة سنسانا في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0337:
+    en: "Population of the Israeli settlement of Matityahu, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة متتياهو في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn0341:
+    en: "Population of the Israeli settlement of Nili, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة نيلي في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn1062:
+    en: "Population of the Israeli settlement of Amihai, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة أميحاي في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn1078:
+    en: "Population of the Israeli settlement of Ganei Modiin, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة جاني موديعين في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn1169:
+    en: "Population of the Israeli settlement of Shaar Shomron, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة شعار شمرون في الضفة الغربية (السلام الآن)"
+  settlements.population_by_settlement.pn1231:
+    en: "Population of the Israeli settlement of Tel Zion, West Bank (Peace Now)"
+    ar: "عدد سكان مستوطنة تل تسيون في الضفة الغربية (السلام الآن)"
+  # <<< settlements.population_by_settlement.pn<DB_ID>
 
   # water.*: WHO GHO code WSH_SANITATION_OD, whose rows carry the code but not WHO's name. The English is
   # WHO's own (ghoapi.azureedge.net/api/Indicator), cut by residence the way the derived names are.
