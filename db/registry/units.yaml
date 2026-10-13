@@ -135,6 +135,18 @@ units:
   per_1000:    {name_en: per 1,000,   dimension: rate}
   per_100000:  {name_en: per 100,000, dimension: rate}
   births_per_woman: {name_en: births per woman, dimension: rate}
+  # World Population Prospects' own units for three indicators taken on
+  # 2026-10-13 (db/mappings/population_wpp.yaml), as its indicator reference
+  # words them. A sex ratio is males per 100 females, among the living or
+  # among the born; it is not a percentage of anything and is never read as one.
+  males_per_100_females:
+    name_en: males per 100 females
+    name_ar: ذكور لكل 100 أنثى
+    dimension: ratio
+  daughters_per_woman:
+    name_en: surviving daughters per woman
+    name_ar: بنات باقيات على قيد الحياة لكل امرأة
+    dimension: rate
   ratio:       {name_en: ratio,       dimension: ratio}
   index:
     name_en: index
