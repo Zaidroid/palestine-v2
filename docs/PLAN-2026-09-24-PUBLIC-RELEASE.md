@@ -1311,3 +1311,30 @@ insecurity_insight) pass only after the command, by design. As-of harness 24/24,
 - Owed: `sudo systemctl restart palestine-v2-api` (his hand). Next check: the 03:40 UTC sync of 13 October, the
   first with the new fetchers.
 
+2026-10-13 06:43 UTC · databank rest: the restart, the first night's sync, and a backup my road migrations wedged · partial ·
+proof: read-only checks on the live store and API, the two units' journals
+- **Restart done by Zaid 2026-10-13 06:37:41 UTC.** Both fixes of `b566abb` checked on the running API through
+  `/mcp`: `databank(category=food, limit=2000)` leaves at 31,305 bytes (budget 48,000; 31 of 2,000 rows, 23 of 537
+  names, every name on a series still shown); the UN2720 source credit ends "(tracking.un2720.org)", whole.
+- **The 03:46 UTC sync, the first with the new fetchers: every category loaded** (`"failed": []`; grew
+  aid_un2720 94, casualties 5, connectivity 4, economic 21; vault 22 archived, 0 failed; radar 0 stalled).
+  **It still exited 5, and that was mine:** the radar read the WHO health line as dead, "never fetched — no
+  attempt on record". The file in `data/raw/gho` was fetched on 10-12 20:00 UTC in the build worktree, whose
+  copy of `ops/fetch-events.ndjson` went with the worktree; the hand-over script copied the file and not its
+  record, and the fetcher rightly skips a copy younger than six days without writing one. Repaired: one line
+  appended to the ledger from the file's own metadata (`at` = its `fetched_at`, 13,975 rows, 184 codes), marked
+  `recorded_from`. The radar's own functions, run read-only: `gho:health` live, dead supply lines `[]`, exit 0.
+  Not yet observed on a real night.
+- **The 02:31 UTC backup refused, and that is mine too:** `state_current: 2951 -> 2790 rows (<95% of previous)`.
+  Migrations 097 and 100 (the road register, applied 10-12 afternoon) delete the derived current-state rows of
+  merged and hidden places by design; I did not carry the consequence for the backup's shrink guard into the
+  hand-over. Checked against the 10-12 manifest, all 36 tables: only `state_current` (2,951 → 2,793) and
+  `place_state_cadence` (1,450 → 1,418) are smaller, the two tables those migrations delete from; the other 34
+  are equal or larger (3,524,563 → 3,613,359 rows in all); `state_observation` re-pointed, not deleted. **The
+  newest off-site copy is 2026-10-12T02-31-43Z, older than migrations 093 to 110 and every load of the evening,
+  and every nightly backup will refuse until one run is accepted** (a refused run never becomes the baseline).
+  The one command is HANDS §13h, his hand.
+- Not changed, seen on the way: the four places 097 hid hold 13 current-state rows again (the belief pass
+  re-derives them from their old readings); `checkpoint_serving` holds none of them and the readers filter on
+  `servable`, so nothing of them is served.
+
