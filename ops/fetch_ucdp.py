@@ -71,7 +71,14 @@ The same reasoning pins the release. `LOADS_RELEASE` names the one whose events
 the loader has been given; when the page lists a newer one the fetch stops and
 says so (ledger outcome `pending`, exit 1), because by then the store holds
 the older reading of the years it covers. Applying a release is a decision:
-`--dry-run --stage DIR --any-release` shows what the new one contains.
+`--dry-run --stage DIR --any-release` shows what the new one contains. Since
+2026-10-13 it is also a short one. Set `LOADS_RELEASE` (and the year in the
+death series' serve warning, which tests/test_event_reading.py holds to it),
+fetch, read `python -m ingest.databank conflict --dry-run` (it refuses and
+says how many held events the release revises and withdraws), then run the
+load once by hand with `--allow-absent N` just above that number. The nightly
+ceilings (5% revised, 1% withdrawn) are sized for a month of candidate events
+and refuse a release on purpose.
 
 CANDIDATE EVENTS DRIFT, AND NOTHING HERE CAN STOP THAT. UCDP re-extracts them
 ("Not all events in UCDP Candidate will make it into the final UCDP GED and
