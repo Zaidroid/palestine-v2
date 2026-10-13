@@ -1683,3 +1683,28 @@ and rehearsed, WAITING FOR ZAID'S COMMAND 13 (after 12) · proof: branch `news-a
   dated backbone for the years before any channel existed. The big Arabic outlets (Sama, Palestine Today, Arab48,
   Safa: about 1.9 million articles between them) list every article in sitemaps: reading the lists first gives a
   dated headline for each within hours, and the texts can follow where a question needs them.
+
+2026-10-13 19:39 UTC · commands 12 and 13 RUN by Zaid (19:11 to 19:38 UTC, one after the other) · done · proof: the
+scripts' own output, `ops.ask_archive --held` on the live store on a read-only connection, `/health`.
+- Command 12 (200 s): fast-forward to `65bad49`, migration 116 applied, first load wrote 149,688 texts (176,661
+  read; 79,888 of them channel posts the reader had already brought, which is why it is more than the 100,000 I
+  wrote in the script). Command 13 (1,450 s): fast-forward to `8e4b685`, 132,247 more written (133,933 listing texts
+  read from six publishers). **My estimate for 13 was wrong: I wrote "about two minutes" and it took 24**, because
+  by then the listing reader had brought all 46,967 UN documents and they are long (about 20 s per thousand, against
+  about 750 short posts a second). Nothing was held meanwhile: the archive's tables are its own.
+- The live archive: **281,935 texts from 21 January 1915 to today**, 58 publishers, 1550 MB with its
+  search index. UNISPAL 46,967 (33,836 long texts), Middle East Monitor 33,294 so far, the Quds News channel 27,543,
+  Safa 24,892, PIC English 20,020, POICA 17,019 from 1997, PCHR 11,872 from 1995.
+- Questions on the live store: «Qibya OR قبية» returns 152 texts from seven publishers, the first a letter from
+  Jordan of 16 October 1953; "curfew" returns 2,114 texts, the first from the Mandate's annual report for 1936;
+  «ولاعة OR قداحة» returns the Gaza price channel's dated lines from 7 March 2025.
+- Seen: the English word "lighter" also matches a boat and a comparison, so the three-word question returns 109
+  texts back to 1927. The Arabic words alone are clean. A question in one language is not yet widened to the other.
+- The listing reader was refused once: Mondoweiss answered HTTP 429 at page 72 (7,100 of 35,535 held). It stopped
+  that publisher as built and went on; PIC English, PCHR, POICA and UNISPAL are complete, Middle East Monitor is at
+  about 40,000 of 149,223. The channel reader is in its first slice (back to 1 June 2026) on the fourth of 22
+  channels, with no refusal.
+- `/health` is degraded by two source faults that are not this work (`tg_peopleofhebron` silent, `tg_palhubapproad`
+  narrowed). The backup and sync units still show last night's failed state until tonight's runs.
+- `db/migrate.sh` printed an old warning beside 116: migration 022's file changed after it was applied (its last
+  commit is of 2 August). Not from this work; not looked into.
