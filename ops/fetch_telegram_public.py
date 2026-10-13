@@ -32,6 +32,7 @@ THE POSTURE (ops/fetchlib.py), and one rule of its own:
              `tg_public:<channel>`.
   STOP FILE  `touch data/raw/tg_public/STOP` (or `<channel>/STOP`) ends the
              run cleanly after the page in hand. Remove it to run again.
+  ONE AT A TIME. A second reader on the same folder exits at once (exit 4).
 
 WHAT IT WRITES, under --out (default data/raw/tg_public):
 
@@ -53,6 +54,7 @@ preview {url, site, title, description}, author, edited.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import gzip
 import json
 import random
@@ -385,6 +387,15 @@ def main() -> int:
                     help="where post files are archived (default: this tree's data/bronze)")
     ap.add_argument("--no-bronze", action="store_true")
     a = ap.parse_args()
+    # One reader at a time on a folder: two would double the pace Telegram sees
+    # and write the same cursor.
+    a.out.mkdir(parents=True, exist_ok=True)
+    lock = open(a.out / ".reader.lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("another reader is already running on this folder; not starting a second")
+        return 4
     for ch in a.channels:
         rc = run(ch, a.out, a.cache, a.pause, a.pages, a.new, None if a.no_bronze else a.bronze_root, a.until)
         if rc:                      # a refusal ends the whole run, not just this channel
