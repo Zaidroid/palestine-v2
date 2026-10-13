@@ -19,18 +19,22 @@ made. No network, no database.
 """
 from __future__ import annotations
 
+import inspect
 import json
 from collections import Counter
 from pathlib import Path
 
+import pytest
+
 from ingest import databank, engine
-from ingest.databank import content_of, identity_key_for, load_spec, slug
+from ingest.databank import SpecRefused, content_of, identity_key_for, load_spec, slug
 from ops import fetch_fts as ff
 from ops import load_registry as lr
 
 ROOT = Path(__file__).resolve().parent.parent
 FX = Path(__file__).resolve().parent / "fixtures" / "more_funding"
 AT = "2026-10-13T08:02:05+00:00"
+DS = "v1_funding_unfts"
 STATUS = ("funding.paid", "funding.commitment", "funding.pledge")
 PARENT = "funding.parked_parent"
 
@@ -354,3 +358,68 @@ def test_the_parked_parent_has_its_own_rule_a_warning_and_a_name_in_both_languag
     assert "already counted in its child flows" in en
     assert ar and "أوتشا" in ar
     assert spec["registry"]["max_unclassified"] == 0
+
+
+# ── the held rows close by themselves, and the first night needs a hand ──────
+
+def _run(monkeypatch, tmp_path, allow_absent=None):
+    """`databank.run("funding", dry_run=True)` on the fixture: the real spec,
+    the real engine and the real file reader; a connection that answers the
+    one question that matters, which rows are held."""
+    recs, _ = ff.build({2026: FLOWS}, AT)
+    raw = tmp_path / "raw" / "fts"
+    raw.mkdir(parents=True)
+    (raw / "flows.json").write_text(json.dumps({"metadata": {}, "data": recs}))
+    real = load_spec("funding")
+    spec = dict(real, input=dict(real["input"], root=str(raw)), expect={"min_records": 1})
+    stored = [(h["identity_key"], 1000 + i, h["value_num"], None, h["unit"], h["place_id"],
+               h["attrs"], DS, h["v1_stable_id"], h["occurred_at"])
+              for i, h in enumerate(HELD.values())]
+
+    class Cur:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def execute(self, sql, params=None): self.sql = sql
+        def fetchall(self): return stored if "o.identity_key" in self.sql else []
+
+    class Conn:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def cursor(self): return Cur()
+
+    monkeypatch.setattr(databank, "load_spec", lambda c: spec)
+    monkeypatch.setattr(databank, "connect", lambda: Conn())
+    monkeypatch.setattr(databank, "load_places", lambda conn: dict(PLACES))
+    monkeypatch.setattr(databank, "PointResolver", lambda conn: _NoPoint())
+    monkeypatch.setattr(databank.bronze, "put", lambda *a, **k: type("R", (), {"ref": "bronze:x"}))
+    monkeypatch.setattr(databank, "RUNS", tmp_path / "runs.ndjson")
+    return databank.run("funding", dry_run=True, allow_absent=allow_absent)
+
+
+def test_the_held_status_rows_of_the_parents_close_through_revises_by(monkeypatch, tmp_path):
+    out = _run(monkeypatch, tmp_path, allow_absent=3)
+    assert out["records_read"] == out["observations_emitted"] == 12
+    assert out["drops"] == {}
+    assert out["notes"]["identity_already_held"] == 8            # the eight that are not parents
+    assert "revisions" not in out["notes"]                       # none rewritten in place
+    assert out["notes"][f"revised_upstream:{DS}"] == 3
+    closing = out["revised_upstream"]
+    assert closing["would_close"] == 3 and closing["closed"] == 0   # a dry run closes nothing
+    assert sorted(closing["samples"]) == sorted(HELD[f]["identity_key"]
+                                                for f in ("162034", "277446", "292049"))
+    assert all(k.split("|")[1] in STATUS for k in closing["samples"])
+
+
+def test_the_default_ceiling_refuses_the_first_night_and_one_run_may_lift_it(monkeypatch, tmp_path):
+    """Three of eleven held rows is over the default ceiling (5% of the rows
+    held, at least one), as 535 of 10,431 was over 521 on 2026-10-13. The lift
+    is one run's, given by hand; the spec carries no ceiling and the nightly
+    passes none."""
+    with pytest.raises(SpecRefused, match=r"3 held rows revised under a new identity > "
+                                          r"ceiling 1 of 11 .* nothing is closed"):
+        _run(monkeypatch, tmp_path)
+    with pytest.raises(SpecRefused, match=r"> ceiling 2 of 11"):
+        _run(monkeypatch, tmp_path / "again", allow_absent=2)
+    assert "max_absent" not in load_spec("funding")["identity"]
+    assert "allow_absent" not in inspect.getsource(databank.run_all)
+    assert inspect.getsource(databank.run).count("cap = max(cap, allow_absent)") == 2

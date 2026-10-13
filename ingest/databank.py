@@ -2515,10 +2515,11 @@ CLOSE_NOW = ("tstzrange(lower(sys_period), "
 
 
 def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -> dict:
-    """`allow_absent` raises the absent-upstream ceiling for THIS run only: the
-    way a one-time transition (health's change of identity, 2026-10-12) is
-    made by hand without writing a ceiling into the spec that every later
-    night would inherit."""
+    """`allow_absent` raises the absent-upstream ceiling, and the ceiling on
+    rows revised under a new identity, for THIS run only: the way a one-time
+    transition (health's change of identity, 2026-10-12; funding's parked
+    parents, 2026-10-13) is made by hand without writing a ceiling into the
+    spec that every later night would inherit."""
     spec = load_spec(category)
     if category not in TRANSFORMERS:
         raise SpecRefused(f"{category}: spec is reviewed but no transformer "
@@ -3017,6 +3018,13 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                 cap = identity_by_ds[ds_key].get("max_absent")
                 if cap is None:
                     cap = max(1, int(held_r[ds_key] * 0.05))
+                if allow_absent is not None:
+                    # the same one-run lift as the absent ceiling above. Until
+                    # 2026-10-13 `--allow-absent` did not reach this ceiling,
+                    # so a decided re-filing (funding's 554 parked parents
+                    # leaving the status series, 535 held rows against a
+                    # ceiling of 521) could not be made by hand at all.
+                    cap = max(cap, allow_absent)
                 counts[f"revised_upstream:{ds_key}"] = len(rows_old)
                 if len(rows_old) > cap:
                     absent_over.append(
