@@ -132,8 +132,8 @@ units:
       they are their own rates and converting them here would change what
       the publisher said.
 
-  per_1000:    {name_en: per 1,000,   dimension: rate}
-  per_100000:  {name_en: per 100,000, dimension: rate}
+  per_1000:    {name_en: "per 1,000",   dimension: rate}
+  per_100000:  {name_en: "per 100,000", dimension: rate}
   births_per_woman: {name_en: births per woman, dimension: rate}
   # World Population Prospects' own units for three indicators taken on
   # 2026-10-13 (db/mappings/population_wpp.yaml), as its indicator reference
