@@ -10,6 +10,12 @@ the 81 legalization rows, every kept row cell for cell as Peace Now wrote it
 The page is three pieces of the real Population page of the same day. Where a
 test needs a row the sheet does not have (a total, a footnote), it adds it in
 memory and says so. No network, no database.
+
+Second pass, the same day: every settlement is its own series,
+settlements.population_by_settlement.pn<DB_ID>, named in English and Arabic
+from db/reference/peacenow_settlement_names.yaml by one rule
+(ops/build_settlement_names.py). The tests at the end hold all 141 names to
+that rule and to their keys.
 """
 from __future__ import annotations
 
@@ -30,6 +36,7 @@ import yaml
 from ingest import bronze, databank
 from ingest import spec as spec_mod
 from ingest.databank import load_spec
+from ops import build_settlement_names as bn
 from ops import fetch_peacenow_settlements as ps
 from ops import fetchlib as fl
 from ops import load_registry
@@ -40,7 +47,8 @@ AT = "2026-10-13T09:35:07+00:00"
 NAME = "Settlements and Outposts Peace Now 07.2026.xlsx"
 CATEGORY = "settlements_by_settlement"
 DATASET = "peacenow_settlement_population"
-INDICATOR = "settlements.population_by_settlement"
+PREFIX = "settlements.population_by_settlement."
+TOTAL = "settlements.settler_population"
 
 
 def xlsx() -> bytes:
@@ -316,7 +324,7 @@ def test_a_year_is_a_year_and_may_2024_is_a_month_never_2024s_year_end():
 def test_a_row_carries_the_settlement_as_the_sheet_writes_it():
     _, records, _ = parsed()
     [row] = engine(of(records, "Avnei Hefetz", "2023")[0])
-    assert (row.dataset_key, row.indicator, row.unit) == (DATASET, INDICATOR, "persons")
+    assert (row.dataset_key, row.indicator, row.unit) == (DATASET, PREFIX + "pn0001", "persons")
     assert row.v1_stable_id == "peacenow-settlement-pop:1:2023"
     assert (row.value_num, row.value_text, row.place_id, row.located) == (2454, None, 14, True)
     assert row.attrs == {
@@ -344,6 +352,39 @@ def test_a_row_carries_the_settlement_as_the_sheet_writes_it():
     assert (mi["year_established"], mi["cell_kind"], mi["value"]) == (1996, "figure", 2400)
 
 
+def test_each_settlement_is_its_own_series_keyed_on_peace_nows_id():
+    assert ps.series_key(16) == "pn0016" and ps.series_key(3) == "pn0003"
+    assert ps.series_key(1397) == "pn1397"                    # the ids reach four digits...
+    assert sorted(map(ps.series_key, (136, 1062, 16, 3))) == [   # ...and the keys sort as the ids do
+        "pn0003", "pn0016", "pn0136", "pn1062"]
+    assert ps.indicator_of(16) == PREFIX + "pn0016" and ps.INDICATOR_PREFIX == PREFIX
+    settlements, records, _ = parsed()
+    assert all(r["series_key"] == ps.series_key(r["settlement_id"]) for r in records)
+    rows = [row for r in records if not isinstance(engine(r), databank.Drop) for row in engine(r)]
+    # 9 of the cut's 12 settlements have a figure: 9 indicators, each one settlement
+    by_ind: dict = {}
+    for r in rows:
+        by_ind.setdefault(r.indicator, set()).add((r.attrs["settlement_id"], r.attrs["settlement_name"]))
+    assert sorted(by_ind) == [PREFIX + k for k in (
+        "pn0001", "pn0002", "pn0003", "pn0009", "pn0057", "pn0066", "pn0116", "pn0131", "pn1231")]
+    assert all(len(v) == 1 for v in by_ind.values())
+    assert by_ind[PREFIX + "pn0116"] == {(116, "Kiryat Arba")}
+    # a question about one settlement meets one row a date: `series` reads by
+    # indicator (and place), and its points carry no attrs to tell rows apart
+    per_date = Counter((r.indicator, r.occurred_at) for r in rows)
+    assert max(per_date.values()) == 1
+    # ...and all of one settlement's rows sit at one place
+    assert all(len({r.place_id for r in rows if r.indicator == k}) == 1 for k in by_ind)
+    # the name can change its spelling; the series does not move
+    respelt = dict(of(records, "Modi'in Ilit", "2023")[0], settlement_name="Modi'in Illit")
+    assert engine(respelt)[0].indicator == PREFIX + "pn0066"
+    # a record with no id is refused by a declared rule, never filed under the bare prefix
+    no_id = {k: v for k, v in of(records, "Adora", "2023")[0].items() if k != "series_key"}
+    out = engine(no_id)
+    assert isinstance(out, databank.Drop) and out.reason == "no_settlement_id"
+    assert {d["reason"]: d["measured"] for d in spec_of(CATEGORY)["drop"]}["no_settlement_id"] == 0
+
+
 def test_the_identity_is_the_settlement_and_the_period_and_is_injective():
     _, records, _ = parsed()
     rows = [row for r in records if not isinstance(engine(r), databank.Drop) for row in engine(r)]
@@ -351,9 +392,9 @@ def test_the_identity_is_the_settlement_and_the_period_and_is_injective():
     keys = [identity(r) for r in rows]
     assert len(set(keys)) == 218
     [row] = engine(of(records, "Adora", "2023")[0])
-    assert identity(row) == f"{DATASET}|{INDICATOR}|2023-01-01|3|2023"
+    assert identity(row) == f"{DATASET}|{PREFIX}pn0003|2023-01-01|2023"
     [may] = engine(of(records, "Adora", "2024-05")[0])
-    assert identity(may) == f"{DATASET}|{INDICATOR}|2024-05-01|3|2024-05"
+    assert identity(may) == f"{DATASET}|{PREFIX}pn0003|2024-05-01|2024-05"
     # the value is not in the key: a revised figure is the same row
     revised = dict(of(records, "Adora", "2023")[0], value=540)
     assert identity(engine(revised)[0]) == identity(row)
@@ -523,8 +564,11 @@ def test_the_fetch_is_atomic_floored_and_ledgered(tmp_path, monkeypatch):
     doc = json.loads(out.read_text(encoding="utf-8"))
     assert doc["metadata"]["sheet_link"] == "page" and doc["metadata"]["bronze"].startswith("bronze://peace_now/")
     assert lines()[-1] == {**lines()[-1], "label": ps.LABEL, "outcome": "ok", "rows": 400,
-                           "figures": 218, "settlements": 12, "data_through": "2024-05",
+                           "figures": 218, "settlements": 12, "series": 9,
+                           "data_through": "2024-05",
                            "vintage": "2026-07", "sheet_link": "page"}
+    assert "unnamed" not in lines()[-1] and "renamed" not in lines()[-1]   # the table names all nine
+    assert doc["metadata"]["series_without_a_name"] == [] and doc["metadata"]["series_renamed"] == []
     assert asked == [ps.KNOWN_SHEET_ID] * 3
     assert not list(out.parent.glob("*.tmp"))
     # a held file younger than a week is not fetched again: no request, no line
@@ -582,13 +626,13 @@ def test_the_spec_is_engine_driven_and_declares_what_it_measured():
     assert spec["datasets"] == [{"key": DATASET, "source": "peace_now"}]
     assert spec["input"] == {"root": "data/raw/peacenow", "glob": ps.OUT.name}
     assert ps.OUT == fl.ROOT / "data" / "raw" / "peacenow" / "settlement_population.json"
-    assert spec["indicator"]["template"] == INDICATOR        # the settlement is never in the key
-    assert spec["identity"] == {"fields": ["indicator", "occurred_at"],
-                                "attrs": ["settlement_id", "period"],
+    assert spec["indicator"]["template"] == PREFIX + "{series_key}"   # Peace Now's id, never the name
+    assert spec["identity"] == {"fields": ["indicator", "occurred_at"], "attrs": ["period"],
                                 "generation": "complete", "max_absent": 150}
     # the floors are the fetcher's own, set from the cells that are LOADED
     drops = {d["reason"]: d["measured"] for d in spec["drop"]}
-    assert drops == {"zero_before_established": 1433, "zero_no_figure": 815,
+    assert drops == {"no_settlement_id": 0,
+                     "zero_before_established": 1433, "zero_no_figure": 815,
                      "approximate_placeholder": 261, "unknown_marker": 5, "unreadable_cell": 0}
     loaded = spec["records_measured"] - sum(drops.values())
     assert loaded == 4370
@@ -596,7 +640,7 @@ def test_the_spec_is_engine_driven_and_declares_what_it_measured():
     assert ps.MIN_SETTLEMENTS == math.ceil(0.9 * 152)
     assert loaded < spec["expect"]["max_observations"] < 2 * loaded
     # every kind of cell the fetcher can write is either loaded or a declared drop
-    dropped_kinds = {d["when"]["value"] for d in spec["drop"]}
+    dropped_kinds = {d["when"]["value"] for d in spec["drop"] if d["when"]["field"] == "cell_kind"}
     assert dropped_kinds == {"zero_before_established", "zero_no_figure", "approximate",
                              "unknown_marker", "unreadable"}
     assert not dropped_kinds & set(ps.LOADABLE)
@@ -610,52 +654,204 @@ def test_the_spec_is_engine_driven_and_declares_what_it_measured():
     assert CATEGORY in sorted(databank.TRANSFORMERS)
 
 
-def test_each_of_the_two_settlement_indicators_meets_exactly_one_rule():
+def table() -> dict:
+    return bn.load()
+
+
+def test_neither_specs_rule_can_catch_the_others_indicators():
     mine = load_spec(CATEGORY)["registry"]
     total = load_spec("settlements")["registry"]
-    pairs = [(INDICATOR, "persons", 4370), ("settlements.settler_population", "settlers", 51)]
+    series = [ps.indicator_of(e["id"]) for e in table()["settlements"]]
+    assert len(series) == 141
+    pairs = [(k, "persons", 30) for k in series] + [(TOTAL, "settlers", 51)]
     for ind, unit, _n in pairs:
-        hits = [(name, r["when"]) for name, reg in (("mine", mine), ("total", total))
+        hits = [name for name, reg in (("mine", mine), ("total", total))
                 for r in reg["rules"] if load_registry.matches(r, ind, unit)]
-        assert len(hits) == 1, (ind, hits)
+        assert hits == (["total"] if ind == TOTAL else ["mine"]), (ind, hits)
     got_mine, c1 = load_registry.classify(pairs, mine["rules"])
     got_total, c2 = load_registry.classify(pairs, total["rules"])
-    assert set(got_mine) == {INDICATOR} and set(got_total) == {"settlements.settler_population"}
+    assert set(got_mine) == set(series) and set(got_total) == {TOTAL}
     assert c1 == c2 == []
     # both files are handed the whole `settlements` category: nothing is left over
     assert load_registry.unclassified_by_reader(
         [("settlements", pairs, got_total), (CATEGORY, pairs, got_mine)]) == {
             "settlements": [], CATEGORY: []}
     assert mine["max_unclassified"] == total["max_unclassified"] == 0
-    m = got_mine[INDICATOR]
+    assert [r["when"] for r in mine["rules"]] == [{"prefix": PREFIX}]
+    assert [r["when"] for r in total["rules"]] == [{"equals": TOTAL}]
+    # the prefix carries its closing dot: neither the bare key nor a neighbour is caught
+    for other in ("settlements.population_by_settlement", "settlements.population_by_settlements.pn0016",
+                  "settlements.settler_population.pn0016", TOTAL, "land.settlement"):
+        assert not any(load_registry.matches(r, other, "persons") for r in mine["rules"]), other
+    for other in (PREFIX + "pn0016", "settlements.settler_population_by_year", "settlements."):
+        assert not any(load_registry.matches(r, other, "persons") for r in total["rules"]), other
+    m = got_mine[PREFIX + "pn0016"]
     assert (m["concept"], m["measure_kind"], m["polarity"], m["grain"], m["place_grain"],
             m["canonical_unit"]) == ("settlement", "stock", -1, "year", "point", "persons")
+    assert len({json.dumps(v, sort_keys=True, ensure_ascii=False) for v in got_mine.values()}) == 1
     concepts = yaml.safe_load((ROOT / "db/registry/concepts.yaml").read_text(encoding="utf-8"))["concepts"]
     units = yaml.safe_load((ROOT / "db/registry/units.yaml").read_text(encoding="utf-8"))["units"]
     assert m["concept"] in concepts and m["canonical_unit"] in units
     # the total keeps the meaning it had
-    t = got_total["settlements.settler_population"]
+    t = got_total[TOTAL]
     assert (t["concept"], t["measure_kind"], t["grain"], t["place_grain"], t["canonical_unit"]) == (
         "settlement", "stock", "year", "region", "persons")
 
 
-def test_the_series_has_a_name_and_a_warning_in_both_languages():
-    names = load_registry.load_names()
-    rule = load_spec(CATEGORY)["registry"]["rules"][0]
-    en, ar = load_registry.name_for(INDICATOR, {f: rule.get(f) for f in load_registry.FIELDS}, None, names)
-    assert en == ("Population of each Israeli settlement in the West Bank, excluding East "
-                  "Jerusalem, by year (Peace Now)")
-    assert ar == "عدد سكان كل مستوطنة إسرائيلية في الضفة الغربية دون القدس الشرقية، حسب السنة (السلام الآن)"
+def test_the_one_warning_is_short_and_says_what_a_reader_must_know():
+    [rule] = load_spec(CATEGORY)["registry"]["rules"]
     w, w_ar = rule["serve_warning"], rule["serve_warning_ar"]
-    # what a reader must know, in both: whose figures, the source Peace Now names,
-    # East Jerusalem, May 2024, and that the sums are not the total series
-    for must in ("Peace Now", "Israeli CBS (Central Bureau of Statistics)", "names no source",
-                 "East Jerusalem settlements are not in it", "May 2024", "not the end of 2024",
-                 "settlements.settler_population", "only for 2023", "484,340 against 478,600",
-                 "2,698 to 14,881", "not a year with no residents", "governorate"):
+    assert len(w) <= 500 and len(w_ar) <= 500
+    # whose figures and where the sheet says they come from, East Jerusalem,
+    # May 2024, and that the sums are not the total series, by how much
+    for must in ("Peace Now's figure for this one settlement", "names no source", "Israeli CBS",
+                 "East Jerusalem settlements are not in the list", "May 2024", "not year-end 2024",
+                 TOTAL, "only for 2023", "18 to 14,881", "42 years", "484,340 against 478,600"):
         assert must in w, must
-    for must in ("السلام الآن", "دائرة الإحصاء المركزية الإسرائيلية", "القدس الشرقية", "أيار 2024",
-                 "settlements.settler_population", "2023", "484,340", "478,600", "2,698", "14,881",
-                 "المحافظة"):
+    for must in ("السلام الآن", "ما بتذكر مصدر", "دائرة الإحصاء الإسرائيلية", "القدس الشرقية",
+                 "أيار 2024", "مش لنهاية 2024", TOTAL, "2023", "18", "14,881", "42", "484,340", "478,600"):
         assert must in w_ar, must
     assert "\n" not in w and "\n" not in w_ar
+
+
+# ── the names: 141 series, one rule ──────────────────────────────────────────
+
+EN_RULE = "Population of the Israeli settlement of {name}, West Bank (Peace Now)"
+AR_RULE = "عدد سكان مستوطنة {ar} في الضفة الغربية (السلام الآن)"
+
+
+def test_the_table_of_names_is_sound_and_no_two_settlements_share_a_key():
+    t = table()
+    assert bn.check(t) == []
+    assert t["rule"] == {"en": EN_RULE, "ar": AR_RULE}
+    rows = t["settlements"]
+    assert len(rows) == 141
+    ids = [e["id"] for e in rows]
+    assert ids == sorted(ids) and len(set(ids)) == 141
+    keys = [ps.indicator_of(i) for i in ids]
+    assert len(set(keys)) == 141 and keys == sorted(keys)      # one key a settlement, in id order
+    assert len({e["name"] for e in rows}) == 141 and len({e["ar"] for e in rows}) == 141
+    # where each Arabic spelling comes from: printed wherever a source prints it
+    assert Counter(e["from"] for e in rows) == {
+        "arij": 133, "arwiki": 3, "arwiki_list": 1, "ips": 1, "watan": 1, "city": 1,
+        "transliterated": 1}
+    assert [e["name"] for e in rows if e["from"] == "transliterated"] == ["Shaar Shomron"]
+    assert sum(1 for e in rows if e.get("printed")) == 25      # ARIJ's bare alef given its hamza
+    assert Counter(bn.basis(e).split(":")[0] for e in rows) == {"printed": 140, "transliterated": 1}
+    for e in rows:
+        assert e["he"] and not any("\u0590" <= c <= "\u05ff" for c in e["ar"]), e["name"]   # no Hebrew letter
+        assert not any("a" <= c.lower() <= "z" or c.isdigit() for c in e["ar"]), e["name"]
+        # the sheet's capitals: no name has a typing slip in them, so none was changed
+        assert not any(w[1:] != w[1:].lower() for w in
+                       e["name"].replace("(", " ").replace("'", " ").replace("-", " ").split()), e["name"]
+    # the ten spellings the convention was shown with
+    by = {e["name"]: e["ar"] for e in rows}
+    assert [by[n] for n in ("Ariel", "Ma'ale Adumim", "Modi'in Ilit", "Beitar Illit", "Kiryat Arba",
+                            "Ofra", "Beit El", "Kedumim", "Efrat", "Alfei Menashe")] == [
+        "أريئيل", "معاليه أدوميم", "موديعين عيليت", "بيتار عيليت", "كريات أربع",
+        "عوفرا", "بيت إيل", "كدوميم", "إفرات", "ألفي منشيه"]
+    # the cut of the sheet agrees with the table on every settlement it holds with a figure
+    settlements, _, _ = parsed()
+    named = {e["id"]: e["name"] for e in rows}
+    for st in settlements:
+        if st["figures"]:
+            assert named[st["settlement_id"]] == st["settlement_name"], st["settlement_name"]
+        else:
+            assert st["settlement_id"] not in named                # no figure, no series, no name
+    # the checker refuses what could not be stood behind
+    bad = copy.deepcopy(t)
+    bad["settlements"][1]["id"] = bad["settlements"][0]["id"]
+    bad["settlements"][2]["ar"] = "Adora"
+    bad["settlements"][3]["from"] = "somewhere"
+    bad["settlements"][4]["printed"] = "ايتامار"
+    problems = "\n".join(bn.check(bad))
+    for must in ("id 1 is also on", "Arabic letters", "is not one of", "by more than a hamza"):
+        assert must in problems, must
+
+
+def test_all_141_series_are_named_by_the_one_rule_where_the_registry_loader_reads():
+    t = table()
+    doc = yaml.safe_load((ROOT / "db/registry/names.yaml").read_text(encoding="utf-8"))["names"]
+    in_registry = {k: v for k, v in doc.items() if k.startswith(PREFIX)}
+    assert len(in_registry) == 141 and PREFIX.rstrip(".") not in doc
+    for e in t["settlements"]:
+        key = PREFIX + f"pn{e['id']:04d}"
+        assert in_registry[key] == {"en": EN_RULE.format(name=e["name"]),
+                                    "ar": AR_RULE.format(ar=e["ar"])}, e["name"]
+    assert in_registry == bn.series_names(t)
+    # names.yaml is exactly what the builder would write from the table
+    text = (ROOT / "db/registry/names.yaml").read_text(encoding="utf-8")
+    assert bn.placed(text, bn.block(t)) == text
+    # ...and it is what ops/load_registry.py names the series by
+    names = load_registry.load_names()
+    [rule] = load_spec(CATEGORY)["registry"]["rules"]
+    meta = {f: rule.get(f) for f in load_registry.FIELDS}
+    assert load_registry.name_for(PREFIX + "pn0016", meta, None, names) == (
+        "Population of the Israeli settlement of Ariel, West Bank (Peace Now)",
+        "عدد سكان مستوطنة أريئيل في الضفة الغربية (السلام الآن)")
+    assert load_registry.name_for(PREFIX + "pn0070", meta, None, names) == (
+        "Population of the Israeli settlement of Ma'ale Adumim, West Bank (Peace Now)",
+        "عدد سكان مستوطنة معاليه أدوميم في الضفة الغربية (السلام الآن)")
+    assert all(all(load_registry.name_for(k, meta, None, names)) for k in in_registry)
+    # the report's four columns come from the same table
+    listing = bn.listing(t)
+    assert len(listing) == 141 and listing[0] == (
+        1, "Population of the Israeli settlement of Avnei Hefetz, West Bank (Peace Now)",
+        "عدد سكان مستوطنة أفني حيفتس في الضفة الغربية (السلام الآن)", "printed: ARIJ 2023, hamza added")
+    assert [r[3] for r in listing if r[0] in (16, 1169, 1231)] == [
+        "printed: ARIJ 2023", "transliterated", "printed: Dunia Al-Watan 2018"]
+
+
+def test_what_the_indicator_search_matches_on_would_find_a_settlement_by_its_name():
+    """serve/app.py databank_indicators (not edited here) matches the query as a
+    substring, case-blind, of the indicator, name_en or name_ar. The same test
+    on the names the registry will hold."""
+    names = bn.series_names(table())
+
+    def search(q):
+        ql = q.lower()
+        return sorted(k for k, n in names.items()
+                      if ql in k.lower() or ql in n["en"].lower() or ql in n["ar"].lower())
+    assert search("Ariel") == [PREFIX + "pn0016"]
+    assert search("أريئيل") == [PREFIX + "pn0016"]
+    assert search("pn0016") == [PREFIX + "pn0016"]
+    assert search("Kiryat Arba") == search("كريات أربع") == [PREFIX + "pn0116"]
+    assert len(search("معاليه")) == 6 and len(search("Ma'ale")) == 6
+    assert len(search("population_by_settlement")) == 141
+    # a substring is all it is: another spelling of the same name finds nothing
+    assert search("أرئيل") == [] and search("كريات اربع") == [] and search("Maale Adumim") == []
+
+
+def test_a_settlement_the_table_does_not_name_is_said_out_loud(tmp_path, monkeypatch):
+    settlements, _, _ = parsed()
+    named = ps.named_series()
+    assert len(named) == 141 and named[116] == "Kiryat Arba"
+    assert ps.unnamed_and_renamed(settlements, named) == ([], [])
+    short = {k: v for k, v in named.items() if k != 116}
+    short[66] = "Modi'in Illit"                                # the table's spelling; the sheet has Ilit
+    unnamed, renamed = ps.unnamed_and_renamed(settlements, short)
+    assert unnamed == [{"id": 116, "name": "Kiryat Arba", "indicator": PREFIX + "pn0116"}]
+    assert renamed == [{"id": 66, "sheet": "Modi'in Ilit", "table": "Modi'in Illit"}]
+    # a settlement with no figure has no series and needs no name
+    assert 228 not in named and not [u for u in unnamed if u["id"] == 228]
+    # no table to read never stops a fetch
+    assert ps.named_series(tmp_path / "absent.yaml") is None
+    assert ps.unnamed_and_renamed(settlements, None) == ([], [])
+    # ...and the fetch writes it into the raw file and its ledger line
+    t = copy.deepcopy(table())
+    t["settlements"] = [e for e in t["settlements"] if e["id"] != 116]
+    (tmp_path / "names.yaml").write_text(yaml.safe_dump(t, allow_unicode=True), encoding="utf-8")
+    monkeypatch.setattr(ps, "NAMES_TABLE", tmp_path / "names.yaml")
+    monkeypatch.setattr(ps, "OUT", tmp_path / "out.json")
+    monkeypatch.setattr(fl, "EVENTS", tmp_path / "events.ndjson")
+    monkeypatch.setattr(bronze, "BRONZE", tmp_path / "bronze")
+    monkeypatch.setattr(ps, "MIN_SETTLEMENTS", 10)
+    monkeypatch.setattr(ps, "MIN_FIGURES", 200)
+    monkeypatch.setattr(fl, "get", lambda url, timeout=120: page().encode("utf-8"))
+    monkeypatch.setattr(ps, "download", lambda sheet_id: (xlsx(), NAME))
+    assert ps.main([]) == 0                                    # it loads all the same
+    line = json.loads((tmp_path / "events.ndjson").read_text().splitlines()[-1])
+    assert (line["outcome"], line["series"], line["unnamed"]) == ("ok", 9, 1)
+    meta = json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))["metadata"]
+    assert meta["series_without_a_name"] == [
+        {"id": 116, "name": "Kiryat Arba", "indicator": PREFIX + "pn0116"}]

@@ -31,6 +31,17 @@ The other two are described in the raw file's metadata (`sheets_not_taken`)
 and not read further. DB_ID is Peace Now's own number for a place: the site's
 page for Adora is /en/settlements/settlement3-en and its DB_ID is 3.
 
+A SERIES PER SETTLEMENT. Every record carries `series_key`, "pn" and the DB_ID
+in four digits (pn0003; the ids reach 1397, and three digits would not sort),
+and the spec makes it the last part of the indicator:
+settlements.population_by_settlement.pn0003. The id is the stable part: a name
+can change its spelling and the series stays the same series. Each series is
+named, in English and Arabic, from db/reference/peacenow_settlement_names.yaml
+(ops/build_settlement_names.py). A settlement with a figure and no entry in
+that table still loads; it is listed in the raw file (`series_without_a_name`)
+and counted in the ledger line (`unnamed`), and so is a settlement whose name
+the sheet now spells differently from the table (`series_renamed`).
+
 THE DOOR. The spreadsheet's address is read from the page on every run, and
 the document id known on 2026-10-13 is only the fallback for a night the page
 shows no link; the raw file and the ledger line say which was used
@@ -151,7 +162,10 @@ OUT = fl.ROOT / "data" / "raw" / "peacenow" / "settlement_population.json"
 LABEL = "peacenow:settlement_population"
 SOURCE_NAME = "Peace Now — Settlements and Outposts list"   # as the spec routes it
 SHEET = "Settlements"
-PARSER = 1                    # raise it when a held file must be read again
+INDICATOR_PREFIX = "settlements.population_by_settlement."
+NAMES_TABLE = fl.ROOT / "db" / "reference" / "peacenow_settlement_names.yaml"
+PARSER = 2                    # raise it when a held file must be read again
+                              #   (2: every record carries its series_key)
 MAX_AGE_DAYS = 6              # fetched weekly from a nightly job
 
 MAX_EXPORT_BYTES = 20_000_000    # the export is 319,282 bytes on 2026-10-13
@@ -417,6 +431,16 @@ def _in_range(lat, lon) -> bool:
 
 # ── the Settlements sheet ────────────────────────────────────────────────────
 
+def series_key(settlement_id: int) -> str:
+    """The last part of a settlement's indicator: Peace Now's DB_ID in four
+    digits, so the keys sort (the ids reach 1397)."""
+    return f"pn{int(settlement_id):04d}"
+
+
+def indicator_of(settlement_id: int) -> str:
+    return INDICATOR_PREFIX + series_key(settlement_id)
+
+
 def _num(v):
     """A cell's number as the sheet states it: 1990.0 is 1990, 4.2 stays 4.2."""
     if isinstance(v, float) and v == v and v.is_integer():
@@ -576,6 +600,7 @@ def parse_settlements(sheet: dict, fetched_at: str, sheet_url: str = VIEW.format
             counts[f"cell:{kind}"] += 1
             kinds[kind] += 1
             rec = {"stable_id": f"peacenow-settlement-pop:{sid}:{p['period']}",
+                   "series_key": series_key(sid),
                    "date": p["date"], "period": p["period"],
                    "period_kind": p["period_kind"],
                    "sheet_column": p["sheet_column"], "cell_kind": kind,
@@ -593,7 +618,8 @@ def parse_settlements(sheet: dict, fetched_at: str, sheet_url: str = VIEW.format
         loadable = sum(kinds[k] for k in LOADABLE)
         counts["settlements"] += 1
         counts["settlements_with_a_figure" if loadable else "settlements_without_a_figure"] += 1
-        settlements.append({**desc, "location": loc, "sheet_row": n,
+        settlements.append({**desc, "series_key": series_key(sid),
+                            "location": loc, "sheet_row": n,
                             "figures": loadable, "cells": dict(kinds)})
     info = {"counts": dict(counts), "rows_dropped": dropped,
             "columns_taken": [labels[i] for i in sorted(labels)
@@ -603,6 +629,34 @@ def parse_settlements(sheet: dict, fetched_at: str, sheet_url: str = VIEW.format
             "periods": [periods[i]["period"] for i in pop_cols],
             "merged_cells": len(sheet.get("merged") or [])}
     return settlements, records, info
+
+
+def named_series(table: Path | None = None) -> dict[int, str] | None:
+    """DB_ID -> the name the series was given under, from the reviewed table.
+    None when the table is not there to read (it never stops a fetch)."""
+    try:
+        import yaml
+        doc = yaml.safe_load((table or NAMES_TABLE).read_text(encoding="utf-8"))
+        return {int(e["id"]): str(e["name"]) for e in doc["settlements"]}
+    except (OSError, ValueError, KeyError, TypeError, ImportError):
+        return None
+
+
+def unnamed_and_renamed(settlements: list[dict], named: dict[int, str] | None
+                        ) -> tuple[list[dict], list[dict]]:
+    """Settlements with a figure that the table does not name, and those it
+    names under a spelling the sheet no longer uses."""
+    if named is None:
+        return [], []
+    with_figure = [s for s in settlements if s["figures"]]
+    unnamed = [{"id": s["settlement_id"], "name": s["settlement_name"],
+                "indicator": indicator_of(s["settlement_id"])}
+               for s in with_figure if s["settlement_id"] not in named]
+    renamed = [{"id": s["settlement_id"], "sheet": s["settlement_name"],
+                "table": named[s["settlement_id"]]}
+               for s in with_figure if s["settlement_id"] in named
+               and named[s["settlement_id"]] != s["settlement_name"]]
+    return unnamed, renamed
 
 
 def column_sums(records: list[dict]) -> dict[str, int]:
@@ -636,6 +690,7 @@ def document(xlsx: bytes, name: str | None, door: str, sheet_id: str,
         basis += "; the page says: " + " / ".join(said)
     basis += (f"; the population columns run from \"{info['population_columns'][0]}\" "
               f"to \"{info['population_columns'][-1]}\"")
+    unnamed, renamed = unnamed_and_renamed(settlements, named_series())
     return {"metadata": {
         "fetched_at": fetched_at, "parser": PARSER,
         "source": "Peace Now — Settlement Watch, the list of settlements and outposts",
@@ -650,6 +705,10 @@ def document(xlsx: bytes, name: str | None, door: str, sheet_id: str,
         "settlements_with_a_figure": c.get("settlements_with_a_figure", 0),
         "settlements_with_a_point": c.get("settlements_with_a_point", 0),
         "figures": figures, "records": len(records),
+        "series": c.get("settlements_with_a_figure", 0),
+        "indicator_prefix": INDICATOR_PREFIX,
+        "series_without_a_name": unnamed,
+        "series_renamed": renamed,
         "cells": {k[5:]: v for k, v in sorted(c.items()) if k.startswith("cell:")},
         "first_period": min((r["period"] for r in records if r["cell_kind"] in LOADABLE), default=None),
         "last_year_end": max(year_ends, default=None),
@@ -727,6 +786,11 @@ def main(argv: list[str]) -> int:
           f"figures in {len(meta['population_columns'])} columns "
           f"({meta['first_period']} to {meta['data_through']}), {meta['records']} "
           f"cells read; vintage {meta['vintage']}; sheet found: {door.split(':')[0]}")
+    for what, rows in (("has a figure and no name in", meta["series_without_a_name"]),
+                       ("is spelt differently in the sheet than in", meta["series_renamed"])):
+        for r in rows:
+            print(f"         {r.get('name') or r.get('sheet')} (DB_ID {r['id']}) {what} "
+                  f"db/reference/{NAMES_TABLE.name}")
     moved = sheet_id != KNOWN_SHEET_ID
     if moved:
         print(f"         the page now links another document ({sheet_id}), not the "
@@ -742,8 +806,13 @@ def main(argv: list[str]) -> int:
                                 url=EXPORT.format(id=sheet_id)).ref
     fl.write_atomic(OUT, doc)
     fl.event(LABEL, "ok", rows=meta["records"], figures=meta["figures"],
-             settlements=meta["settlements"], data_through=meta["data_through"],
+             settlements=meta["settlements"], series=meta["series"],
+             data_through=meta["data_through"],
              vintage=meta["vintage"], sheet_link=door.split(":")[0],
+             **({"unnamed": len(meta["series_without_a_name"])}
+                if meta["series_without_a_name"] else {}),
+             **({"renamed": len(meta["series_renamed"])}
+                if meta["series_renamed"] else {}),
              **({"sheet_id": sheet_id} if moved else {}))
     return 0
 

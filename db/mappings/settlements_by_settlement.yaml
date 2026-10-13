@@ -12,13 +12,28 @@
 # routes a record by its source to the FIRST dataset of that source
 # (ingest/databank.py route()), so two Peace Now datasets in one spec cannot be
 # told apart; and a spec's `expect` floors and `drop` rules speak for the whole
-# file, while these rows need their own (five declared drops, a floor of
+# file, while these rows need their own (six declared drops, a floor of
 # thousands beside a series of 51). `v1_category: settlements` files the
 # dataset beside the total in the serving views.
 #
+# A SERIES PER SETTLEMENT (2026-10-13, the same day, second pass). The first
+# pass filed every settlement under ONE indicator with the settlement in
+# attrs. `series` answers by indicator and place and returns points without
+# attrs, so at a governorate it returned every settlement's figure for each
+# year, unlabelled, and no question could reach one settlement: loaded and
+# unanswerable. The store's pattern for "a series per entity" is the one
+# WHO's rows follow (health.<code>.sex_fmle): the entity is in the indicator
+# key and the registry names each key in both languages, which is what the
+# indicator search matches on. So:
+#
 # WHAT A ROW IS. One settlement x one period the sheet states a figure for:
-#   indicator   settlements.population_by_settlement   (one indicator; the
-#               settlement is in attrs and in the place, never in the key)
+#   indicator   settlements.population_by_settlement.pn<DB_ID>, the DB_ID in
+#               four digits (pn0016 is Ariel). Peace Now's own number is the
+#               stable part; a name can change its spelling. Four digits and
+#               not three because the ids reach 1397 and the keys should sort.
+#               141 series today, one per settlement with a figure, each named
+#               in English and Arabic (db/reference/peacenow_settlement_
+#               names.yaml -> db/registry/names.yaml).
 #   value       persons, as the sheet states them
 #   date        a "Population <year>" column is that year, precision year,
 #               stored at the year's start with reference "period-end stock":
@@ -35,10 +50,11 @@
 # Nothing is interpolated or filled. A blank cell is no row. A cell holding 0
 # is no row either, for the reason measured in `drop:` below.
 #
-# NEVER ONE SERIES WITH THE WEST BANK TOTAL. The total (settlements.
-# settler_population) is the page's chart; these are the sheet's cells. Their
-# yearly sums are not the chart's numbers (the comparison, year by year, is in
-# the notes), and the registry rule says so beside every answer.
+# NEVER ADDED UP INTO THE WEST BANK TOTAL. The total (settlements.
+# settler_population) is the page's chart; these series are the sheet's
+# cells. Their yearly sums are not the chart's numbers (the comparison, year
+# by year, is in the notes), and the registry rule says so beside every
+# answer.
 category: settlements_by_settlement
 transform: engine
 v1_category: settlements         # joins the settlements serving views
@@ -65,7 +81,11 @@ datasets:
                                  #   no-license-found, no-redistribution
 
 indicator:
-  template: "settlements.population_by_settlement"
+  template: "settlements.population_by_settlement.{series_key}"
+  # series_key is written by the fetcher from Peace Now's DB_ID: pn0016. A row
+  # of the sheet with no DB_ID never becomes a record (the fetcher drops it by
+  # rule and counts it), and a record with no series_key is the declared drop
+  # `no_settlement_id` below: the bare prefix is never an indicator.
 
 value:
   num_from: value
@@ -138,6 +158,10 @@ attrs_literal:
   coverage: "West Bank settlements; East Jerusalem settlements are not in the list"
 
 drop:
+  - reason: no_settlement_id
+    if: "the record carries no series_key (no DB_ID in the sheet): refused, never filed under the bare prefix"
+    when: {field: series_key, op: absent}
+    measured: 0
   # THE SHEET'S ZERO IS A FILLER, NOT A COUNT (measured 2026-10-13). Up to its
   # "Population 2007" column the sheet writes 0 where it has no figure; from
   # "Population 2008" on it leaves the cell blank (not one 0 in the 17 columns
@@ -181,17 +205,18 @@ drop:
     measured: 0
 
 identity:
-  # One figure per settlement and period. The settlement is Peace Now's own
-  # number, not its name (names change spelling between Peace Now's own
-  # sources: "Modi'in Ilit" here, "Modi'in Illit" in its 2018 footprints). The
-  # period is in the key beside the date so that a month's figure and a year's
-  # can never meet: "Population May 2024" is 2024-05-01 and a later
-  # "Population 2024" will be 2024-01-01, but a "Population January 2025"
-  # would share 2025-01-01 with "Population 2025". The value is NOT in the
-  # key: a figure Peace Now revises supersedes the held one.
-  # MEASURED 2026-10-13: 4,370 rows, 4,370 keys.
+  # One figure per settlement and period. The settlement is in the indicator,
+  # as Peace Now's own number and not its name (names change spelling between
+  # Peace Now's own sources: "Modi'in Ilit" here, "Modi'in Illit" in its 2018
+  # footprints). The period is in the key beside the date so that a month's
+  # figure and a year's can never meet: "Population May 2024" is 2024-05-01
+  # and a later "Population 2024" will be 2024-01-01, but a "Population
+  # January 2025" would share 2025-01-01 with "Population 2025". The value is
+  # NOT in the key: a figure Peace Now revises supersedes the held one.
+  # MEASURED 2026-10-13: 4,370 rows, 4,370 keys, 141 indicators, and no
+  # indicator with two rows on one date.
   fields: [indicator, occurred_at]
-  attrs: [settlement_id, period]
+  attrs: [period]
   # Every fetch is the whole sheet, so a figure Peace Now takes out of it is
   # closed here too (kept, no longer current). The ceiling is a judgement, not
   # a measurement, because there is no history of withdrawals to measure: one
@@ -213,8 +238,12 @@ expect:
 registry:
   max_unclassified: 0
   rules:
-    - when: {equals: "settlements.population_by_settlement"}
-      # The name is in db/registry/names.yaml, as the total's is.
+    # One rule for every settlement's series, by the prefix WITH its closing
+    # dot: it cannot reach settlements.settler_population, and settlements.
+    # yaml's rule (`equals`) cannot reach these. Their names are in
+    # db/registry/names.yaml, one per series, written by one rule from
+    # db/reference/peacenow_settlement_names.yaml.
+    - when: {prefix: "settlements.population_by_settlement."}
       concept: settlement
       measure_kind: stock        # residents at the period's end (a year) or
                                  #   in the month named
@@ -226,37 +255,22 @@ registry:
                                  #   (as refugees.camp_population does)
       canonical_unit: persons
       serve_warning: >-
-        Peace Now's population figure for one Israeli settlement in one year,
-        from the list of settlements it publishes on its site. The
-        settlement's name is on each row, and each row is filed under the
-        governorate that contains the settlement, so one place and year hold
-        many rows. Peace Now's page gives the Israeli CBS (Central Bureau of
-        Statistics) as the source of its chart of settlers by year; the list
-        itself names no source for these columns. East Jerusalem settlements
-        are not in it. A year with no row is a year the list gives no figure
-        for, not a year with no residents, and the 15 figures of 2008 marked
-        "estimated" are Peace Now's estimates. The figures dated May 2024 are
-        a count as of that month, not the end of 2024. Do not add the
-        settlements up to get the West Bank total: the list's yearly sums
-        equal the total series (settlements.settler_population) only for 2023,
-        stay within 1,000 of it for 2005 to 2007 and 2009 to 2021, and differ
-        from it by 2,698 to 14,881 in every other year (2022: 484,340 against
-        478,600).
+        Peace Now's figure for this one settlement, from the list of
+        settlements on its site. The list names no source; Peace Now's page
+        cites the Israeli CBS for its chart of settlers. East Jerusalem
+        settlements are not in the list. A figure dated May 2024 is a count
+        for that month, not year-end 2024. Do not sum these series for the
+        West Bank total (settlements.settler_population): their yearly sums
+        equal it only for 2023 and differ by 18 to 14,881 in the other 42
+        years (2022: 484,340 against 478,600).
       serve_warning_ar: >-
-        هاد عدد سكان مستوطنة إسرائيلية وحدة بسنة وحدة حسب «السلام الآن»، من
-        قائمة المستوطنات اللي بتنشرها على موقعها. اسم المستوطنة مكتوب بكل سطر،
-        وكل سطر محطوط تحت المحافظة اللي المستوطنة واقعة فيها، فنفس المكان
-        والسنة فيهم سطور كثيرة. صفحة السلام الآن بتقول إنه مصدر رسمة أعداد
-        المستوطنين حسب السنة هو دائرة الإحصاء المركزية الإسرائيلية، والقائمة
-        نفسها ما بتذكر مصدر لهالأعمدة. مستوطنات القدس الشرقية مش فيها. والسنة
-        اللي ما إلها سطر معناها إنه القائمة ما فيها رقم إلها، مش إنه المستوطنة
-        كانت فاضية، و15 رقم من سنة 2008 مكتوب جنبهم estimated (تقديري) هدول
-        تقديرات السلام الآن. والأرقام المؤرّخة بأيار 2024 عدّ لهداك الشهر، مش
-        لنهاية 2024. وما تجمع المستوطنات عشان تطلّع مجموع الضفة: مجاميع القائمة
-        السنوية ما بتساوي سلسلة المجموع (settlements.settler_population) إلا
-        بسنة 2023، وبتضل قريبة منها بأقل من 1,000 من 2005 لـ2007 ومن 2009
-        لـ2021، وبكل سنة ثانية الفرق من 2,698 لـ14,881 (سنة 2022: 484,340
-        مقابل 478,600).
+        هاد رقم «السلام الآن» لعدد سكان هالمستوطنة لحالها، من قائمة المستوطنات
+        اللي على موقعها. القائمة ما بتذكر مصدر، وصفحة السلام الآن بتنسب رسمة
+        أعداد المستوطنين لدائرة الإحصاء الإسرائيلية. مستوطنات القدس الشرقية مش
+        بالقائمة. والرقم المؤرّخ بأيار 2024 عدّ لهداك الشهر، مش لنهاية 2024. وما
+        تجمع هالسلاسل عشان تطلّع مجموع الضفة (settlements.settler_population):
+        مجاميعها السنوية ما بتساويه إلا بسنة 2023، وبتفرق عنه من 18 لـ14,881
+        بالـ42 سنة الباقية (سنة 2022: 484,340 مقابل 478,600).
 
 notes: |
   THE SOURCE (read 2026-10-13). Peace Now's Population page
@@ -302,8 +316,9 @@ notes: |
   lists 152; which six it leaves out of its count it does not say.
 
   THE SHEET'S YEARLY SUMS AGAINST THE CHART (measured 2026-10-13 from the two
-  raw files; sheet = the loaded cells of that column, chart = settlements.
-  settler_population; n = settlements with a figure that year):
+  raw files; sheet = the loaded cells of that column, i.e. the sum of the 141
+  series for that year; chart = settlements.settler_population; n =
+  settlements with a figure that year):
     year   n    sheet     chart     sheet - chart
     1980     3     4,000    12,500     -8,500
     1981     1     3,100    16,200    -13,100
@@ -352,10 +367,12 @@ notes: |
     2024     -         -   511,100          -     the sheet has May 2024 only: 127
                                                    figures, 496,852
   43 years can be compared (1980 to 2023 without 1984). The two are equal in
-  one (2023), within 1,000 in 16 more (2005 to 2007, 2009 to 2021; the widest
-  is 989 and none is over 0.23 %), and 2,698 to 14,881 apart in the other 26. The chart also
-  holds 1967, 1972, 1976 to 1979, 1984 and 2024, for which the sheet has no
-  loaded figure. Why the two differ where they do is not stated by Peace Now
+  one (2023), within 1,000 in 16 more (2005 to 2007, 2009 to 2021; the
+  narrowest is 18, in 2012, the widest 989, and none is over 0.23 %), and
+  2,698 to 14,881 apart in the other 26. So across the 42 years in which they
+  differ the difference runs from 18 to 14,881, which is what the serve
+  warning says. The chart also holds 1967, 1972, 1976 to 1979, 1984 and 2024,
+  for which the sheet has no loaded figure. Why the two differ where they do is not stated by Peace Now
   and is not guessed here.
 
   WHICH YEAR A COLUMN IS. The sheet says "Population 2023", not "end of
@@ -391,12 +408,11 @@ notes: |
   governorate, and for Shani the shifted point falls just inside Hebron's.
   The degrees are loaded as the sheet writes them, with the grid point beside
   them (attrs.itm_x, attrs.itm_y), so Shani can be placed by hand or by a
-  shifted point if Zaid wants it. The settlement itself is
-  attrs.settlement_id and attrs.settlement_name on every row. The consequence
-  a reader must know is in the serve warning: one governorate and year hold
-  many rows of this one indicator, and `series` at a governorate returns them
-  all. One place row per settlement would cure it; that is a proposal for
-  Zaid, not something this spec does. The place table has no settlement kind.
+  shifted point if Zaid wants it. The settlement itself is the indicator
+  (and attrs.settlement_id, attrs.settlement_name on every row), so a
+  governorate holds many series and each series one row a date: no place row
+  per settlement is needed for a question to reach one settlement. The place
+  table has no settlement kind.
   Among its 4,028 localities are rows that carry a settlement's name, from
   Palestine Open Maps (group "Jewish", not servable) and from the road tier's
   known locations (servable), often both for one settlement and in other

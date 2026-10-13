@@ -1,0 +1,216 @@
+# The name of each Peace Now settlement series, in English and Arabic.
+#
+# Every settlement in Peace Now's list that has at least one population figure
+# is its own series, settlements.population_by_settlement.pn<DB_ID> (four
+# digits; db/mappings/settlements_by_settlement.yaml). This is the file a
+# person edits to name one. ops/build_settlement_names.py checks it and writes
+# the names into db/registry/names.yaml, where the registry loader reads them:
+#
+#   .venv/bin/python -m ops.build_settlement_names           # check and write
+#   .venv/bin/python -m ops.build_settlement_names --check   # check only
+#
+# THE RULE (one for all of them, held by tests/test_more_settlements.py):
+#   English   Population of the Israeli settlement of <name>, West Bank (Peace Now)
+#   Arabic    عدد سكان مستوطنة <ar> في الضفة الغربية (السلام الآن)
+# <name> is the sheet's "Name" exactly as Peace Now writes it (read
+# 2026-10-13). None of the 141 names had a typing slip in its capitals, so
+# none was changed (the slips in that sheet are in other columns).
+#
+# WHERE THE ARABIC COMES FROM. A name is a transliteration either way; the
+# question is whose. The spelling a Palestinian or Arabic source PRINTS is
+# used wherever one was found, and `from` says which (read 2026-10-13):
+#
+#   arij          ARIJ (Applied Research Institute - Jerusalem), «قاعدة بيانات
+#                 للمستوطنات الإسرائيلية في الضفة الغربية المحتلة 1967-2022»,
+#                 March 2023: 199 settlements by governorate, each with its
+#                 English and Arabic name.
+#                 https://www.arij.org/wp-content/uploads/2023/03/Israeli-Settlements-Database-1967-2022.pdf
+#                 Two things are done to ARIJ's letters and nothing else:
+#                 (1) `printed` is given where ARIJ leaves an opening alef
+#                 bare and the name here writes its hamza (ادورا -> أدورا,
+#                 افرات -> إفرات: أ before a, o, u and إ before e, i, by the
+#                 sheet's own English spelling). 25 names.
+#                 (2) the PDF's text layer reverses lam-alef (رام هللا for
+#                 رام الله); the three names it touches were read off the
+#                 page image (حلاميش، ميهولا، شدموت ميهولا).
+#                 Where ARIJ prints two names for one settlement, the one the
+#                 sheet uses is taken and `note` quotes ARIJ in full.
+#   arwiki        the title of the settlement's own Arabic Wikipedia article
+#                 (ARIJ does not list it). 3 names.
+#   arwiki_list   Arabic Wikipedia, «قائمة المستوطنات الإسرائيلية». 1 name.
+#   ips           Institute for Palestine Studies, «توثيق استهداف الضفة
+#                 الغربية», the settlement's page
+#                 (documentwestbank.palestine-studies.org/ar/node/9410). 1 name.
+#   watan         Dunia Al-Watan, 2018-10-06, the weekly settlement report of
+#                 the National Bureau for Defending Land
+#                 (alwatanvoice.com/arabic/news/2018/10/06/1179953.html). 1 name.
+#   city          the Arabic name of the Palestinian city the sheet's row is
+#                 inside (Hebron). 1 name.
+#   transliterated  NO printed spelling was found. Written from the Hebrew by
+#                 the convention ARIJ's own names follow. 1 name. MARKED so it
+#                 can be replaced the day a source prints it.
+#
+# What was looked for and not found: the Palestinian Central Bureau of
+# Statistics' yearly report («المستعمرات الإسرائيلية في الضفة الغربية، التقرير
+# الإحصائي السنوي 2024», November 2025) prints 24 tables by governorate and
+# type and no list of settlements by name; its settlements database is
+# "بيانات غير منشورة" (unpublished).
+#
+# Arabic sources do not agree with each other on these names (Ariel is أريئيل
+# in ARIJ and أرئيل as an Arabic Wikipedia title; Eli is ايلي in ARIJ and عيلي
+# in Arabic Wikipedia). One source was followed so that the list is one
+# hand's spelling; a name Zaid would write differently is changed here, in
+# `ar`, and nowhere else.
+#
+# No Arabic "meaning" is given to any name: these are spellings, not
+# translations.
+#
+# A settlement that gains its first figure later has no entry here. Its rows
+# still load and are classified; the fetcher names it in its output and its
+# ledger line (`unnamed`) until an entry is added.
+rule:
+  en: "Population of the Israeli settlement of {name}, West Bank (Peace Now)"
+  ar: "عدد سكان مستوطنة {ar} في الضفة الغربية (السلام الآن)"
+
+settlements:
+  - {id: 1, name: "Avnei Hefetz", he: "אבני חפץ", ar: "أفني حيفتس", from: arij, printed: "افني حيفتس"}
+  - {id: 2, name: "Ovnat", he: "אבנת", ar: "أفينات", from: arij, printed: "افينات"}
+  - {id: 3, name: "Adora", he: "אדורה", ar: "أدورا", from: arij, printed: "ادورا"}
+  - {id: 4, name: "Oranit", he: "אורנית", ar: "أورانيت", from: arij, printed: "اورانيت"}
+  - {id: 5, name: "Itamar", he: "איתמר", ar: "إيتمار", from: arij, printed: "ايتمار"}
+  - {id: 6, name: "Alon", he: "אלון", ar: "ألون", from: arij, printed: "الون"}
+  - {id: 7, name: "Elon More", he: "אלון מורה", ar: "إلون موريه", from: arij, printed: "الون موريه"}
+  - {id: 8, name: "Alon Shvut", he: "אלון שבות", ar: "ألون شيفوت", from: arij, printed: "الون شيفوت"}
+  - {id: 9, name: "Almog", he: "אלמוג", ar: "ألموج", from: arij, printed: "الموج"}
+  - {id: 10, name: "El'azar", he: "אלעזר", ar: "إليعيزر", from: arij, printed: "اليعيزر"}
+  - {id: 11, name: "Alfei Menashe", he: "אלפי מנשה", ar: "ألفي منشيه", from: arij, printed: "الفي منشيه"}
+  - {id: 12, name: "Elkana", he: "אלקנה", ar: "إلكانا", from: arij, printed: "الكانا"}
+  - {id: 13, name: "Asfar", he: "אספר (מיצד)", ar: "أسفر", from: arij, note: "ARIJ prints «أسفر (متساد)»"}
+  - {id: 14, name: "Efrat", he: "אפרת", ar: "إفرات", from: arij, printed: "افرات"}
+  - {id: 15, name: "Argaman", he: "ארגמן", ar: "أرجمان", from: arij, printed: "ارجمان"}
+  - {id: 16, name: "Ariel", he: "אריאל", ar: "أريئيل", from: arij}
+  - {id: 17, name: "Eshkolot", he: "אשכולות", ar: "إشكولوت", from: arij, printed: "اشكولوت"}
+  - {id: 18, name: "Beit El", he: "בית אל", ar: "بيت إيل", from: arij, printed: "بيت ايل"}
+  - {id: 19, name: "Beit Arye", he: "בית אריה", ar: "بيت أرييه", from: arij}
+  - {id: 20, name: "Beit Ha'arava", he: "בית הערבה", ar: "بيت هعرافاه", from: arij}
+  - {id: 21, name: "Beit Horon", he: "בית חורון", ar: "بيت هورون", from: arij}
+  - {id: 22, name: "Beitar Illit", he: "ביתר עילית", ar: "بيتار عيليت", from: arij}
+  - {id: 23, name: "Bqa'ot", he: "בקעות", ar: "بيقاعوت", from: arij}
+  - {id: 24, name: "Bracha", he: "ברכה", ar: "براخا", from: arij}
+  - {id: 25, name: "Barqan", he: "ברקן (בית אב\"א)", ar: "برقان", from: arij}
+  - {id: 26, name: "Bat Ayin", he: "בת עין", ar: "بيت عين", from: arij, note: "ARIJ prints «بيت عين (تسوريف)»"}
+  - {id: 27, name: "Geva Binyamin (aka Adam)", he: "גבע בנימין (אדם)", ar: "آدم (جفعات بنيامين)", from: arij}
+  - {id: 28, name: "Giv'on", he: "גבעון", ar: "جفعون", from: arij}
+  - {id: 29, name: "Giv'on Ha'hadasha", he: "גבעון החדשה", ar: "جفعون حداشاه", from: arij}
+  - {id: 30, name: "Gva'ot", he: "גבעות", ar: "جفاعوت", from: arij}
+  - {id: 31, name: "Givat Ze'ev", he: "גבעת זאב", ar: "جفعات زئيف", from: arij}
+  - {id: 32, name: "Gitit", he: "גיתית", ar: "جتيت", from: arij}
+  - {id: 33, name: "Gilgal", he: "גלגל", ar: "جلجال", from: arij}
+  - {id: 34, name: "Dolev", he: "דולב", ar: "دوليف", from: arij}
+  - {id: 35, name: "Har Adar", he: "הר אדר", ar: "هار أدار", from: arij, printed: "هار ادار", note: "ARIJ prints «هار ادار (جفعات هارادار)»"}
+  - {id: 36, name: "Har Gilo", he: "הר גילה", ar: "هار جيلو", from: arij}
+  - {id: 37, name: "Har Shmuel", he: "הר שמואל", ar: "هار صموئيل", from: arij}
+  - {id: 38, name: "Vered Yericho", he: "ורד יריחו", ar: "فيرد يريحو", from: arij}
+  - {id: 39, name: "Hebron", he: "חברון", ar: "الخليل", from: city, note: "the sheet's row is the settlers inside Hebron city; ARIJ lists their sites one by one (تل الرميدة، بيت رومانو، ابراهام افينو، بيت هداسا), not as one settlement"}
+  - {id: 40, name: "Haggai", he: "חגי", ar: "بيت هجاي", from: arij}
+  - {id: 41, name: "Hinanit", he: "חיננית", ar: "حنانيت", from: arij}
+  - {id: 42, name: "Halamish", he: "חלמיש", ar: "حلاميش", from: arij, note: "ARIJ prints «حلاميش (نيفيه تسوف)»; the PDF's text layer reverses the lam-alef (حالميش), the page image shows حلاميش"}
+  - {id: 43, name: "Chemdat", he: "חמדת", ar: "حمدات", from: arij}
+  - {id: 44, name: "Hamra", he: "חמרה", ar: "حمرا", from: arij}
+  - {id: 45, name: "Hermesh", he: "חרמש", ar: "حرميش", from: arij}
+  - {id: 46, name: "Hashmonaim", he: "חשמונאים", ar: "هشمونائيم", from: arij}
+  - {id: 47, name: "Tal Menashe", he: "טל מנשה", ar: "تل مناشيه", from: arij}
+  - {id: 48, name: "Talmon", he: "טלמון", ar: "تلمون", from: arij}
+  - {id: 49, name: "Tene", he: "טנא", ar: "تينه", from: arij, note: "ARIJ prints «تينه (معاليه اوماريم)»"}
+  - {id: 50, name: "Yitav", he: "ייט\"ב", ar: "يتاف", from: arij}
+  - {id: 51, name: "Yafit", he: "יפית", ar: "يافيت", from: arij}
+  - {id: 52, name: "Yitzhar", he: "יצהר", ar: "يتسهار", from: arij}
+  - {id: 53, name: "Yakir", he: "יקיר", ar: "ياكير", from: arij}
+  - {id: 54, name: "Kochav Ha'shachar", he: "כוכב השחר", ar: "كوخاف هشاحر", from: arij}
+  - {id: 55, name: "Kochav Ya'akov", he: "כוכב יעקב", ar: "كوخاف يعقوف", from: arij, note: "ARIJ prints «كوخاف يعقوف (عبير يعقوب)»"}
+  - {id: 56, name: "Kfar Adumim", he: "כפר אדומים", ar: "كفار أدوميم", from: arij, printed: "كفار ادوميم"}
+  - {id: 57, name: "Kfar Ha'oranim", he: "כפר האורנים (מנורה)", ar: "كفار هأورانيم (مينورا)", from: ips, note: "ARIJ prints only its other name, «مينورا»"}
+  - {id: 58, name: "Kfar Etzion", he: "כפר עציון", ar: "كفار عتصيون", from: arij}
+  - {id: 59, name: "Kfar Tapuah", he: "כפר תפוח", ar: "كفار تبواح", from: arij}
+  - {id: 60, name: "Karmei Tzur", he: "כרמי צור", ar: "كرمي تسور", from: arij}
+  - {id: 61, name: "Carmel", he: "כרמל", ar: "كرمئيل", from: arij}
+  - {id: 62, name: "Mevo Dotan", he: "מבוא דותן", ar: "ميفو دوتان", from: arij}
+  - {id: 63, name: "Mevo Horon", he: "מבוא חורון", ar: "ميفو هورون", from: arij}
+  - {id: 64, name: "Migdal Oz", he: "מגדל עוז", ar: "مجدال عوز", from: arij}
+  - {id: 65, name: "Migdalim", he: "מגדלים", ar: "ميجداليم", from: arij}
+  - {id: 66, name: "Modi'in Ilit", he: "מודיעין עילית", ar: "موديعين عيليت", from: arij, note: "ARIJ prints «موديعين عيليت (كريات سيفر)»"}
+  - {id: 67, name: "Mechola", he: "מחולה", ar: "ميهولا", from: arij, note: "ARIJ prints «ميهولا (ميخولا)»; lam-alef restored from the PDF's text layer (ميهوال)"}
+  - {id: 68, name: "Mechora", he: "מכורה", ar: "ميخورا", from: arij}
+  - {id: 69, name: "Ma'on", he: "מעון", ar: "ماعون", from: arij}
+  - {id: 70, name: "Ma'ale Adumim", he: "מעלה אדומים", ar: "معاليه أدوميم", from: arij}
+  - {id: 71, name: "Ma'ale Efraim", he: "מעלה אפרים", ar: "معاليه إفرايم", from: arij, printed: "معاليه افرايم"}
+  - {id: 72, name: "Ma'ale Levona", he: "מעלה לבונה", ar: "معاليه ليفونا", from: arij}
+  - {id: 73, name: "Ma'ale Michmash", he: "מעלה מכמש", ar: "معاليه مخماس", from: arij}
+  - {id: 74, name: "Ma'ale Amos", he: "מעלה עמוס", ar: "معاليه عاموس", from: arij}
+  - {id: 75, name: "Ma'ale Shomron", he: "מעלה שומרון", ar: "معاليه شمرون", from: arij}
+  - {id: 76, name: "Yatir (aka Metzadot Yehuda)", he: "מצדות יהודה", ar: "ميزادوت يهودا (بيت ياتير)", from: arij}
+  - {id: 77, name: "Mitzpe Yericho", he: "מצפה יריחו", ar: "متسبيه يريحو", from: arij}
+  - {id: 78, name: "Mitzpe Shalem", he: "מצפה שלם", ar: "متسبيه شالم", from: arij}
+  - {id: 79, name: "Masu'a", he: "משואה", ar: "مسوع", from: arij}
+  - {id: 80, name: "Maskiyot", he: "משכיות", ar: "مسكيوت", from: arij, note: "ARIJ prints «مسكيوت (ناحال مسكيوت)»"}
+  - {id: 82, name: "Negohot", he: "נגוהות", ar: "نيجوهوت", from: arij}
+  - {id: 83, name: "Neve Daniel", he: "נווה דניאל", ar: "نفيه دانييل", from: arij}
+  - {id: 84, name: "Nofei Prat", he: "נופי פרת", ar: "نوفي برات", from: arwiki_list, note: "ARIJ prints its other name, «نيفيه برات»"}
+  - {id: 85, name: "Nofim", he: "נופים", ar: "نوفيم", from: arij}
+  - {id: 86, name: "Nokdim", he: "נוקדים", ar: "نوكديم", from: arij}
+  - {id: 87, name: "Nahliel", he: "נחליאל", ar: "نحلئيل", from: arij}
+  - {id: 90, name: "Niran", he: "נירן", ar: "نيران", from: arij, note: "ARIJ prints «نيران (معران)»"}
+  - {id: 91, name: "Na'ale", he: "נעלה", ar: "نعاليه", from: arij}
+  - {id: 92, name: "Na'ama", he: "נעמי (נעמה)", ar: "نعمة", from: arij}
+  - {id: 94, name: "Netiv Ha'gdud", he: "נתיב הגדוד", ar: "نيتف هجدود", from: arij}
+  - {id: 95, name: "Susiya", he: "סוסיה", ar: "سوسية", from: arij}
+  - {id: 96, name: "Sal'it", he: "סלעית", ar: "سلعيت", from: arij}
+  - {id: 98, name: "Ofarim", he: "עופרים", ar: "عوفاريم", from: arij}
+  - {id: 99, name: "Ateret", he: "עטרת", ar: "عتيريت", from: arij}
+  - {id: 100, name: "Eli", he: "עלי", ar: "إيلي", from: arij, printed: "ايلي"}
+  - {id: 101, name: "Alei Zahav", he: "עלי זהב", ar: "ألي زهاف", from: arij, printed: "الي زهاف", note: "ARIJ prints «الي زهاف (يوتسهير)»"}
+  - {id: 102, name: "Almon", he: "עלמון", ar: "ألمون", from: arij, printed: "المون", note: "ARIJ prints «المون (اناتوت)»"}
+  - {id: 103, name: "Immanuel", he: "עמנואל", ar: "عمانوئيل", from: arij}
+  - {id: 104, name: "Enav", he: "ענב", ar: "عناب", from: arij}
+  - {id: 105, name: "Ofra", he: "עפרה", ar: "عوفرا", from: arij}
+  - {id: 106, name: "Etz Efraim", he: "עץ אפרים", ar: "عيتس إفرايم", from: arij, printed: "عيتس افرايم"}
+  - {id: 107, name: "Otniel", he: "עתניאל", ar: "عوتنيئيل", from: arij}
+  - {id: 108, name: "Pedu'el", he: "פדואל", ar: "بيدوئيل", from: arij}
+  - {id: 109, name: "Pnei Hever", he: "פני חבר", ar: "بني حيفر", from: arij, note: "ARIJ prints «معاليه حيفر (بني حيفر)»"}
+  - {id: 110, name: "Psagot", he: "פסגות", ar: "بساجوت", from: arij}
+  - {id: 111, name: "Petzael", he: "פצאל", ar: "بيتسائيل", from: arij}
+  - {id: 112, name: "Tzofim", he: "צופים", ar: "تسوفيم", from: arij, note: "ARIJ prints «زوفين (تسوفيم)»"}
+  - {id: 113, name: "Kedumim", he: "קדומים", ar: "كدوميم", from: arij}
+  - {id: 114, name: "Keidar", he: "קדר", ar: "كيدار", from: arij}
+  - {id: 115, name: "Kalia", he: "קליה", ar: "كاليا", from: arij}
+  - {id: 116, name: "Kiryat Arba", he: "קרית ארבע", ar: "كريات أربع", from: arij, printed: "كريات اربع"}
+  - {id: 117, name: "Kiryat Netafim", he: "קרית נטפים", ar: "كريات نيتافيم", from: arij}
+  - {id: 118, name: "Karnei Shomron", he: "קרני שומרון", ar: "كارني شمرون", from: arij}
+  - {id: 119, name: "Rosh Tzurim", he: "ראש צורים", ar: "روش تسوريم", from: arij}
+  - {id: 120, name: "Revava", he: "רבבה", ar: "ريفافا", from: arij}
+  - {id: 121, name: "Ro'i", he: "רועי", ar: "روعي", from: arij}
+  - {id: 122, name: "Rotem", he: "רותם", ar: "روتم", from: arij}
+  - {id: 123, name: "Rechelim", he: "רחלים", ar: "ريخاليم", from: arij}
+  - {id: 124, name: "Reihan", he: "ריחן", ar: "ريحان", from: arij}
+  - {id: 125, name: "Rimonim", he: "רימונים", ar: "رمونيم", from: arij}
+  - {id: 126, name: "Shvut Rachel", he: "שבות רחל", ar: "شيفوت راحيل", from: arij, note: "ARIJ prints «متسبيه راحيل (شيفوت راحيل)»"}
+  - {id: 127, name: "Shavei Shomron", he: "שבי שומרון", ar: "شفي شومرون", from: arij}
+  - {id: 128, name: "Shadmot Mehola", he: "שדמות מחולה", ar: "شدموت ميهولا", from: arij, note: "lam-alef restored from the PDF's text layer (ميهوال)"}
+  - {id: 129, name: "Shilo", he: "שילה", ar: "شيلو", from: arij}
+  - {id: 130, name: "Shim'a", he: "שמעה", ar: "شمعة", from: arij}
+  - {id: 131, name: "Shani", he: "שני", ar: "شاني", from: arij, note: "ARIJ prints «شاني (لفني)»"}
+  - {id: 132, name: "Sha'arei Tikva", he: "שערי תקווה", ar: "شعار تكفا", from: arij}
+  - {id: 133, name: "Shaked", he: "שקד", ar: "شاكيد", from: arij}
+  - {id: 134, name: "Tomer", he: "תומר", ar: "تومر", from: arij}
+  - {id: 135, name: "Telem", he: "תלם", ar: "تيليم", from: arij}
+  - {id: 136, name: "Tko'a", he: "תקוע", ar: "تكواع", from: arij}
+  - {id: 233, name: "Bruchin", he: "ברוכין", ar: "بروخين", from: arij}
+  - {id: 275, name: "Mevo'ot Jericho", he: "מבואות יריחו", ar: "ميفوت يريحو", from: arwiki}
+  - {id: 302, name: "Nerya", he: "נריה", ar: "نيريا", from: arwiki}
+  - {id: 305, name: "Sansana", he: "סנסנה", ar: "سنسانا", from: arij}
+  - {id: 337, name: "Matityahu", he: "מתתיהו", ar: "متتياهو", from: arij}
+  - {id: 341, name: "Nili", he: "ניל\"י", ar: "نيلي", from: arij}
+  - {id: 1062, name: "Amihai", he: "עמיחי", ar: "أميحاي", from: arij, printed: "اميحاي"}
+  - {id: 1078, name: "Ganei Modiin", he: "גני מודיעין", ar: "جاني موديعين", from: arwiki}
+  - {id: 1169, name: "Shaar Shomron", he: "שער שומרון", ar: "شعار شمرون", from: transliterated, note: "no printed Arabic spelling found; written as ARIJ writes the same two words elsewhere («شعار» in شعار تكفا, «شمرون» in معاليه شمرون)"}
+  - {id: 1231, name: "Tel Zion", he: "תל ציון", ar: "تل تسيون", from: watan}
