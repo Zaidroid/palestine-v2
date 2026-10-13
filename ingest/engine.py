@@ -213,11 +213,24 @@ def split_segments(template: str) -> list[str]:
     return segs
 
 
+def _filled(rec: dict, paths: str) -> Any:
+    """`a|b` inside a brace: the first path that is filled, as `value.num_from`
+    and `occurred_at.from` already read a list. Funding's records name their
+    series (`funding.series`); v1's frozen file, the spec's fallback, has only
+    `funding.status`, and one template has to read both."""
+    for path in paths.split("|"):
+        v = get_path(rec, path.strip())
+        if v is not None and v != "":
+            return v
+    return None
+
+
 def render(template: str, rec: dict, slug) -> str:
-    """`{braces}` are dotted paths. A brace resolving to null DROPS ITS
-    SEGMENT rather than rendering 'None' — the global loader convention, and
-    the reason `casualties.{dimension}.{label}` becomes
-    `casualties.annual_total` when there is no label. Values are slugged."""
+    """`{braces}` are dotted paths; `{a|b}` is the first of them that is
+    filled. A brace resolving to null DROPS ITS SEGMENT rather than rendering
+    'None' — the global loader convention, and the reason
+    `casualties.{dimension}.{label}` becomes `casualties.annual_total` when
+    there is no label. Values are slugged."""
     out = []
     for seg in split_segments(template):
         if "{" not in seg:
@@ -228,8 +241,8 @@ def render(template: str, rec: dict, slug) -> str:
         while i < len(seg):
             if seg[i] == "{":
                 j = seg.index("}", i)
-                v = get_path(rec, seg[i + 1:j])
-                if v is None or v == "":
+                v = _filled(rec, seg[i + 1:j])
+                if v is None:
                     dropped = True          # a null drops the whole segment
                     break
                 rendered.append(slug(v))

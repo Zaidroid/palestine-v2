@@ -858,13 +858,17 @@ def t_connectivity(rec, spec, places, counts):
 
 
 def t_funding(rec, spec, places, counts):
+    """NOT what runs: funding is spec-driven (`TRANSFORMERS["funding"]` is
+    t_engine) and this is its hand-written twin, kept in step with the spec's
+    template: the record's series (`parked_parent` for a parked parent with
+    nothing left on it, ops/fetch_fts.py), else its status."""
     ds = route(rec, spec, counts)
     if ds is None:
         return Drop("unroutable")
     f = rec.get("funding") or {}
     attrs = passthrough(rec, spec.get("attrs_passthrough"))
     place_id, located = region_place(places, rec["location"]["region"], attrs)
-    return [Row(ds, f"funding.{slug(f['status'])}", str(rec["date"])[:10],
+    return [Row(ds, f"funding.{slug(f.get('series') or f['status'])}", str(rec["date"])[:10],
                 "day", rec["stable_id"], value_num=f.get("amount_usd"),
                 unit="USD", place_id=place_id, located=located, attrs=attrs)]
 

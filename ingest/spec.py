@@ -291,8 +291,9 @@ _k("datasets[].overrides", "enforced", "per-dataset narrowing", types=(dict,))
 # -- indicator / value / event -----------------------------------------------
 _k("indicator", "implemented", "how observation.indicator is built", types=(dict,))
 _k("indicator.template", "implemented",
-   "fields in {braces}; a brace resolving to null drops its segment; "
-   "interpolated values are slugged", types=(str,))
+   "fields in {braces}; `{a|b}` reads the first of the paths that is filled; "
+   "a brace resolving to null drops its segment; interpolated values are "
+   "slugged", types=(str,))
 _k("indicator.overrides", "data_map",
    "per-event_type indicator behaviour inside one dataset", types=(dict,))
 _k("indicators", "rationale",

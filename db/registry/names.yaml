@@ -456,6 +456,10 @@ names:
   funding.pledge:
     en: "Humanitarian funding, pledge, US$ per flow (OCHA Financial Tracking Service)"
     ar: "التمويل الإنساني، تعهّد، بالدولار الأمريكي لكل تحويل (خدمة التتبّع المالي، أوتشا)"
+  # A parked contribution with nothing left on it: its money is in its child flows, under the three series above.
+  funding.parked_parent:
+    en: "Humanitarian funding, parent contribution already counted in its child flows, US$ per flow (OCHA Financial Tracking Service)"
+    ar: "التمويل الإنساني، مساهمة أصلية محسوبة في تحويلاتها الفرعية، بالدولار الأمريكي لكل تحويل (خدمة التتبّع المالي، أوتشا)"
 
   # gaza.moh.*: the Gaza Ministry of Health's own «التقرير الإحصائي» (db/registry/datasets.yaml, cascade/moh_gaza.py).
   # Three tiers the Ministry keeps apart: one bulletin (24 hours, or 48 hours and more), a running count since a date

@@ -10,7 +10,7 @@ largest dataset still read through v1: v1's `scripts/sources/unfts.js` asked
 FTS's public API every night, `funding-transformer.js` flattened each flow into
 v1's unified record, and the loader read v1's partition files. The day v1 is
 switched off the dataset stops. This asks the same API the same question and
-writes the record `t_funding` already reads.
+writes the record the funding spec already reads.
 
 THE QUESTION ASKED (v1's, unchanged)
     GET https://api.hpc.tools/v1/public/fts/flow?countryISO3=PSE&year=Y&limit=200
@@ -40,23 +40,54 @@ and first-reported dates, every destination country of a shared flow, the
 boundary) — in the raw file and in bronze, not in a served row.
 
 A flow whose amount (amountUSD, else its parked amount) is not above zero is
-not a record: v1's rule, 40 of 10,381 flows on 2026-10-12 (6 with no amount,
-34 with a negative amountUSD beside a positive parked amount).
+not a record: v1's rule, 6 of 10,381 flows on 2026-10-13 (amountUSD 0 and no
+parked amount).
 A flow with no date at all is skipped and counted: v1 stamped it with the fetch
 day, which is the ingest-date masquerade (mapping law 1). Measured 0.
 
-KNOWN AND KEPT, BECAUSE THE CUT CHANGES NOTHING: A PARKED PARENT AND ITS
-CHILDREN ARE BOTH RECORDS. FTS "parks" a contribution on a parent flow and
-files its allocations as child flows; the parent's amountUSD is what is left
-unallocated and fullParkedAmountUSD is the whole. v1's `amountUSD || parked`
-therefore gives a fully allocated parent (amountUSD 0) its whole parked amount
-again. Measured 2026-10-12: 520 such parents, USD 1,925,916,430, and 519 of
-them have their children in the same answer (USD 1,869,165,529) — flow 152896
-is USD 38,000,000 and its 16 children sum to USD 38,000,000. The same rule
-drops the 34 parents whose remainder is negative. The record keeps flow_type
-and, under `fts`, parent_flow_id and child_flow_ids, so the rule can be changed
-in one place (`flow_record`) the day it is decided; that change would close
-about 520 held rows and is not this commit's to make.
+A PARKED PARENT WITH NOTHING LEFT ON IT IS NOT FUNDING A SECOND TIME
+(2026-10-13). FTS "parks" a contribution on a parent flow and files its
+allocations as child flows; the parent's amountUSD is what is left unallocated
+and fullParkedAmountUSD is the whole. v1's `amountUSD || parked` gave a fully
+allocated parent (amountUSD 0) its whole parked amount again, beside the
+children that carry the same money. Measured on the answer of 2026-10-13: 520
+such parents, USD 1,926,516,664 (paid 397, commitment 122, pledge 1); 494 have
+every child in the same answer and the children sum to the parked amount to
+the dollar on all 494 (flow 152896 is USD 38,000,000 and its 16 children sum
+to USD 38,000,000).
+
+The rule, in one place (`is_parked_parent`): a flow with a parked amount above
+zero, at least one child flow, and an amountUSD of zero OR BELOW is a parked
+parent. Its record says `funding.series: parked_parent` (the loader's indicator
+reads that field) and carries the whole parked amount, the count of its
+children, their ids when the list is short, and how many of them are in this
+answer. It is kept so the contribution stays visible; it is never part of the
+paid, commitment or pledge series, where its children are. Every other record's
+`series` is its status. Both of FTS's amounts are kept as FTS gave them, under
+`fts.amount_usd` and `fts.full_parked_amount_usd`.
+
+- BELOW ZERO: 34 parents on 2026-10-13 have a negative amountUSD (FTS shows
+  more allocated to their children than was parked; on 11 of them by one
+  dollar). v1 dropped them. Dropped, a parent held from a night when its
+  remainder was still positive stays in the status series for ever, because
+  its flow number is no longer emitted and nothing revises it: 3 such rows,
+  USD 17,099,866, on 2026-10-13. They are parked parents like the rest.
+- A partly allocated parent (amountUSD above zero, 231 on 2026-10-13) keeps
+  what is left on it under its status, as before. 117 of them have no child
+  yet and carry the whole amount. Of the 114 with children, 99 have every
+  child in the answer, and remainder plus children equals the parked amount
+  to the dollar on all 99.
+- A chain needs no rule of its own: a child that is itself a parked parent
+  with nothing left is treated the same way and its money is in ITS children.
+  Measured 2026-10-13: no child is one; 21 children are parked flows nobody
+  has allocated yet (they count, whole) and one is partly allocated.
+- NOT EVERY CHILD IS IN THIS ANSWER. 26 of the 520 have a child FTS does not
+  file under PSE inside the window (53 children, USD 57,351,135 of the
+  1,926,516,664): allocations to another country (flow 277446, USD 600,234,
+  went whole to UNRWA in Syria), to no country at all, or to a usage year the
+  window has not reached (8 children under 2027, USD 11,195,842, which enter on
+  1 January 2027). `child_flows_fetched` beside `child_flow_count` says so on
+  the row.
 
 STABLE ID: `fts-flow-<id>`, FTS's own flow number. v1's stable_id was a hash of
 its whole unified record, so it changed whenever a description did. Rows are
@@ -112,6 +143,9 @@ OUT = fl.ROOT / "data" / "raw" / "fts" / "flows.json"
 LABEL = "fts:flows"
 FLOOR = 9300                      # 0.9 × 10,341 records measured 2026-10-12
 STABLE_PREFIX = "fts-flow-"
+PARKED_PARENT = "parked_parent"   # `funding.series` of a parent with nothing left on it
+CHILD_IDS_KEPT = 30               # a longer child list is counted, not listed
+                                  #   (the longest on 2026-10-13 has 21)
 
 # sources[0] exactly as v1 wrote it: the spec routes on `name`.
 SOURCE = {"name": "UN OCHA Financial Tracking Service",
@@ -189,18 +223,35 @@ def _day(v) -> str | None:
     return s
 
 
+def is_parked_parent(flow: dict) -> bool:
+    """A parked contribution with nothing left on it: a parked amount above
+    zero, at least one child flow, and a remainder (amountUSD) of zero or
+    below. Its money is on its children (see the module docstring)."""
+    remainder = js_number(flow.get("amountUSD"))
+    parked = js_number(flow.get("fullParkedAmountUSD"))
+    return (isinstance(parked, (int, float)) and parked > 0
+            and isinstance(remainder, (int, float)) and remainder <= 0
+            and bool(flow.get("childFlowIds")))
+
+
 def flow_record(flow: dict, fetched_at: str) -> dict | str:
-    """One FTS flow → the record t_funding reads, or the reason it is not one
-    ('no_amount' | 'undated')."""
+    """One FTS flow → the record the funding spec reads, or the reason it is
+    not one ('no_amount' | 'undated')."""
     src, dst = flow.get("sourceObjects"), flow.get("destinationObjects")
     donor, recipient = _first(src, "Organization"), _first(dst, "Organization")
     dst_loc = _first(dst, "Location")
     cluster = _first(dst, "GlobalCluster") or _first(dst, "Cluster")
     plan, emergency = _first(dst, "Plan"), _first(dst, "Emergency")
 
-    amount = js_number(flow.get("amountUSD")) or js_number(flow.get("fullParkedAmountUSD"))
+    parent = is_parked_parent(flow)
+    # A parked parent carries the whole contribution; any other flow carries
+    # what FTS has on it (v1's `amountUSD || parked`).
+    amount = (js_number(flow.get("fullParkedAmountUSD")) if parent else
+              js_number(flow.get("amountUSD")) or js_number(flow.get("fullParkedAmountUSD")))
     if not (isinstance(amount, (int, float)) and amount > 0):
         return "no_amount"
+    children = [str(c) for c in flow.get("childFlowIds") or []] if parent else []
+    status = str(flow.get("status") or "commitment").lower()
     # v1: date || createdAt, then firstReportedDate, then decisionDate, then
     # the fetch day. The last rung is not taken (see the module docstring).
     day = (_day(flow.get("date")) or _day(flow.get("createdAt"))
@@ -222,7 +273,15 @@ def flow_record(flow: dict, fetched_at: str) -> dict | str:
             "amount_usd": amount,
             "original_amount": js_number(flow.get("originalAmount")),
             "original_currency": flow.get("originalCurrency") or "USD",
-            "status": str(flow.get("status") or "commitment").lower(),
+            "status": status,
+            # The series the loader files this record under: its status, or
+            # `parked_parent`, which is never added to a status series.
+            "series": PARKED_PARENT if parent else status,
+            # A parked parent names its children; None on every other record
+            # (an empty value is not passed through to a row's attrs).
+            "child_flow_count": len(children) or None,
+            "child_flow_ids": children if 0 < len(children) <= CHILD_IDS_KEPT else None,
+            "child_flows_fetched": None,       # filled by build(), which sees every flow
             "flow_type": flow.get("flowType") or None,
             "contribution_type": flow.get("contributionType") or None,
             "method": flow.get("method") or None,
@@ -242,6 +301,10 @@ def flow_record(flow: dict, fetched_at: str) -> dict | str:
         "sources": [dict(SOURCE, fetched_at=fetched_at)],
         # The publisher's own fields v1 dropped. Not read by the loader.
         "fts": {
+            # both amounts exactly as FTS gave them: what is left on the flow,
+            # and the whole of a parked contribution (None on a flow not parked)
+            "amount_usd": flow.get("amountUSD"),
+            "full_parked_amount_usd": flow.get("fullParkedAmountUSD"),
             "version_id": flow.get("versionId"),
             "updated_at": flow.get("updatedAt"),
             "created_at": flow.get("createdAt"),
@@ -284,6 +347,16 @@ def build(flows_by_year: dict[int, list[dict]], fetched_at: str) -> tuple[list[d
                 continue
             status_defaulted += not flow.get("status")
             recs.append(rec)
+    # How many of a parked parent's children this answer carries: counted once
+    # every flow is seen, because a child may be filed under a later usage year
+    # than its parent. Fewer than `child_flow_count` means part of the
+    # contribution was allocated outside PSE or outside the window.
+    parents = [r for r in recs if r["funding"]["series"] == PARKED_PARENT]
+    children_elsewhere = 0
+    for r in parents:
+        kids = [str(c) for c in r["fts"]["child_flow_ids"] or []]
+        r["funding"]["child_flows_fetched"] = sum(1 for c in kids if c in seen)
+        children_elsewhere += r["funding"]["child_flows_fetched"] < len(kids)
     return recs, {
         "years": [min(flows_by_year), max(flows_by_year)] if flows_by_year else None,
         "rows_returned": rows,
@@ -292,6 +365,10 @@ def build(flows_by_year: dict[int, list[dict]], fetched_at: str) -> tuple[list[d
         "skipped_no_amount": skipped["no_amount"],
         "skipped_undated": skipped["undated"],
         "status_defaulted_to_commitment": status_defaulted,
+        # filed under `funding.parked_parent`, never under a status series
+        "parked_parents": len(parents),
+        "parked_parents_usd": sum(r["funding"]["amount_usd"] for r in parents),
+        "parked_parents_with_a_child_outside_the_answer": children_elsewhere,
         "data_through": max((r["date"] for r in recs), default=None),
         "newest_flow_update": newest_update,
     }
@@ -414,6 +491,9 @@ def main(argv: list[str]) -> int:
           f"data through {summary['data_through']}, newest update {summary['newest_flow_update']}")
     print(f"         skipped: no amount {summary['skipped_no_amount']}, "
           f"undated {summary['skipped_undated']}")
+    print(f"         parked parents (not in a status series): {summary['parked_parents']}, "
+          f"USD {summary['parked_parents_usd']:,.0f}; "
+          f"{summary['parked_parents_with_a_child_outside_the_answer']} with a child outside this answer")
     if dry:
         print(f"         would write {_rel(OUT)}")
         fl.stage(staged, OUT.name, doc)
