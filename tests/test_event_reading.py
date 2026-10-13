@@ -144,3 +144,43 @@ def test_an_event_dataset_fed_by_files_of_two_dates_keeps_a_vintage(tmp_path):
     assert v["ucdp"]["vintage"] == "2026-09-20"
     assert "vintage_by_indicator" not in v["ucdp"]
     assert v["ucdp"]["vintage_basis"].endswith("(the others: 2026-03-30)")
+
+
+# ── the versions view (migration 111) ────────────────────────────────────────
+
+def _view(path, name):
+    from pathlib import Path
+    src = (Path(__file__).resolve().parent.parent / path).read_text(encoding="utf-8")
+    i = src.index(f"CREATE OR REPLACE VIEW {name} AS")
+    return src[i:src.index(";", i)]
+
+
+def test_the_versions_view_is_the_current_view_over_history_too():
+    """An `as_of` answer must read an event exactly as the present answer does.
+    The two definitions are kept word for word, apart from where they read."""
+    rows = _view("db/migrations/093_fragments_insecurity_insight.sql", "databank_event_rows")
+    versions = _view("db/migrations/111_event_versions_for_as_of.sql", "databank_event_versions")
+    want = (rows.replace("VIEW databank_event_rows AS", "VIEW databank_event_versions AS")
+                .replace("  FROM event e\n",
+                         "  FROM (SELECT * FROM event UNION ALL SELECT * FROM event_history) e\n")
+                .replace("\n   AND upper_inf(e.sys_period)", ""))
+    assert versions == want
+
+
+def test_the_current_rows_read_through_the_versions_are_the_current_view():
+    from resolve.db import connect
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT to_regclass('databank_event_versions') IS NOT NULL")
+        if not cur.fetchone()[0]:
+            pytest.skip("migration 111 not applied")
+        cur.execute("""SELECT (SELECT count(*) FROM databank_event_versions WHERE upper_inf(sys_period)),
+                              (SELECT count(*) FROM databank_event_rows)""")
+        a, b = cur.fetchone()
+        assert a == b and b > 0
+        # no event stands twice on any one day: its versions do not overlap
+        cur.execute("""SELECT count(*) FROM databank_event_versions a
+                         JOIN databank_event_versions b
+                           ON a.observation_id = b.observation_id
+                          AND a.sys_period && b.sys_period
+                          AND lower(a.sys_period) < lower(b.sys_period)""")
+        assert cur.fetchone()[0] == 0

@@ -3354,18 +3354,22 @@ def databank_category(category: str, indicator: str | None = None,
         conds.append("r.sys_period @> %s::date::timestamptz")
     else:
         conds.append("upper_inf(r.sys_period)")
-    # The held conflict events (083) are served beside the observations. Their
-    # rows are current versions only, so an `as_of` before the day they entered
-    # the databank correctly finds none of them.
+    # The held conflict events (083) are served beside the observations. An
+    # event changed in place (a re-key, a publisher's revision) has a current
+    # row that begins the day it changed, so under `as_of` the events are read
+    # through their versions (migration 111): the day's answer holds the event
+    # as it stood, and a day before it entered the databank finds none.
     events = _event_rows_served()
-    event_branch = """
+    event_view = ("databank_event_versions" if as_of and _event_versions_served()
+                  else "databank_event_rows")
+    event_branch = f"""
         UNION ALL
         SELECT e.indicator, e.occurred_at, e.occurred_precision::text, e.value_num,
                e.value_text, e.unit, e.attrs, e.place_id, e.sys_period, e.v1_category,
                e.source_key, e.dataset_key, e.attribution_text, e.license_spdx,
                e.redistribution, e.commercial_use, NULL::text AS dataset_vintage,
                NULL::text AS dataset_coverage_start
-          FROM databank_event_rows e""" if events else ""
+          FROM {event_view} e""" if events else ""
     base = f"""
         SELECT o.indicator, o.occurred_at, o.occurred_precision::text AS occurred_precision,
                o.value_num, o.value_text, o.unit, o.attrs, o.place_id, o.sys_period,
@@ -3490,6 +3494,14 @@ def _indicator_names(indicators: list[str]) -> dict:
     except Exception:                                            # noqa: BLE001
         return {}
     return {r["indicator"]: {"en": r["name_en"], "ar": r["name_ar"]} for r in rows}
+
+
+def _event_versions_served() -> bool:
+    """Migration 111 applied: an `as_of` answer can read an event's earlier versions."""
+    try:
+        return bool(q_cached("SELECT to_regclass('databank_event_versions') IS NOT NULL AS ok")[0]["ok"])
+    except Exception:                                            # noqa: BLE001
+        return False
 
 
 def _event_rows_served() -> bool:
