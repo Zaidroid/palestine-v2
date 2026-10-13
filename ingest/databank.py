@@ -307,6 +307,7 @@ class HeldEvent:
     lon: float | None
     metrics: dict
     attrs: dict
+    place_id: int | None = None
 
 
 def event_content(event_type, day, precision, lat, lon, metrics, attrs,
@@ -404,6 +405,19 @@ def event_readings(spec: dict, category: str, from_fallback: bool = False,
             rules[rule["dataset"]] = rule
             files_of[rule["dataset"]] = files
     return rules, files_of
+
+
+def revised_event_place(h: HeldEvent, e, changed: list | None) -> int | None:
+    """The place row a revised event is left with. The place is this store's
+    reading of the point, so a revision that did not move the point does not
+    move the place: 8 of GED 26.1's 812 revised events would have lost theirs
+    (the Rafah crossing, Jerusalem city), because v1 had placed them by its
+    own gazetteer and the release's record carries only the point, which falls
+    outside every polygon. A point that moved is resolved again."""
+    moved = changed is not None and ("lat" in changed or "lon" in changed)
+    if moved:
+        return e.place_id
+    return h.place_id if h.place_id is not None else e.place_id
 
 
 def revised_event_attrs(h: HeldEvent, e, rule: dict) -> dict:
@@ -3069,14 +3083,15 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                     "SELECT event_id, attrs->>'v1_stable_id', status::text, correction_note, "
                     "       event_type, occurred_at::date::text, occurred_precision::text, "
                     "       ST_Y(geom::geometry), ST_X(geom::geometry), metrics, attrs, "
-                    "       attrs->>'dataset_key' "
+                    "       attrs->>'dataset_key', place_id "
                     "FROM event WHERE attrs->>'dataset_key' = ANY(%s) "
                     "  AND upper_inf(sys_period) AND attrs ? 'v1_stable_id'",
                     (list(reading_rule),))
                 held_by_ds: dict[str, dict] = defaultdict(dict)
-                for (eid, sid, st, note, et, day, prec, la, lo, met, at, dsk) in cur.fetchall():
+                for (eid, sid, st, note, et, day, prec, la, lo, met, at, dsk,
+                     pid) in cur.fetchall():
                     held_by_ds[dsk][sid] = HeldEvent(eid, st, note, et, day, prec, la, lo,
-                                                     met or {}, at or {})
+                                                     met or {}, at or {}, pid)
             others = []
             emitted_by_ds: dict[str, list] = defaultdict(list)
             for e in event_rows:
@@ -3417,7 +3432,8 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                                    "holds this event again; it had been withdrawn"))
                         cur.execute(EVENT_REVISE_SQL, {
                             "event_id": h.event_id, "event_type": e.event_type,
-                            "place_id": e.place_id, "lat": e.lat, "lon": e.lon,
+                            "place_id": revised_event_place(h, e, changed),
+                            "lat": e.lat, "lon": e.lon,
                             "occurred_at": e.occurred_at, "precision": e.precision,
                             "confidence": e.confidence,
                             "independent_sources": e.independent_sources,

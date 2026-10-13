@@ -97,6 +97,26 @@ def test_a_revised_event_keeps_what_the_store_added_and_loses_what_the_publisher
     assert a["ucdp_release"] == "26.1"
 
 
+def test_a_revision_that_did_not_move_the_point_does_not_move_the_place():
+    """8 of GED 26.1's 812 revised events would have lost their place: v1 had
+    placed the Rafah crossing by its own gazetteer, and the release's record
+    has only the point, which falls outside every polygon."""
+    h = held(1)
+    h.place_id = 44
+    e = emitted("a", killed=9)
+    e.place_id = None
+    assert D.revised_event_place(h, e, ["metrics"]) == 44
+    e.place_id = 7
+    assert D.revised_event_place(h, e, ["metrics"]) == 44, "our reading of an unmoved point stays"
+    assert D.revised_event_place(h, e, ["lat", "lon"]) == 7, "a point that moved is resolved again"
+    e.place_id = None
+    assert D.revised_event_place(h, e, ["lat"]) is None
+    h.place_id = None
+    e.place_id = 7
+    assert D.revised_event_place(h, e, ["name"]) == 7
+    assert D.revised_event_place(h, e, None) == 7          # reinstated
+
+
 def test_half_a_reading_is_refused_and_none_of_it_lets_the_frozen_copy_load(tmp_path):
     spec = {"input": {"root": str(tmp_path)},
             "event_reading": [{"dataset": "ds", "label": "UCDP", "files": ["a.json", "b.json"]}]}
