@@ -163,10 +163,16 @@ if [ "$final" -eq 0 ]; then
   .venv/bin/python -m ops.alert --resolve palestine-v2-databank.service >/dev/null 2>&1 || true
 fi
 # The archive (2026-10-13, migration 116): bring what v1 and this store took in
-# since last night, and any channel history ops/fetch_telegram_public.py has
-# written, into `document`. It decides nothing about the night: a failure here
-# is printed, the exit code above stands, and nothing pages.
-.venv/bin/python -m ingest.archive --apply > ops/archive-last-run.json 2> ops/archive-last-run.err \
-  || echo "archive load failed (exit $?) - see ops/archive-last-run.err; the night's result is unchanged" >&2
+# since last night, and what the two readers (ops/fetch_telegram_public.py,
+# ops/fetch_wp_json.py) have written, into `document`. It decides nothing about
+# the night: a failure here is printed, the exit code above stands, and nothing
+# pages.
+# FIFTEEN MINUTES AT MOST. The unit is killed at sixty (TimeoutStartSec), and
+# while the readers are bringing whole archives a night's backlog can be
+# hundreds of thousands of long texts (measured 2026-10-13: 46,967 UN documents
+# took about thirteen minutes). The loader commits file by file, so a run that is
+# stopped keeps what it finished and the next night goes on from there.
+timeout 900 .venv/bin/python -m ingest.archive --apply > ops/archive-last-run.json 2> ops/archive-last-run.err \
+  || echo "archive load stopped or failed (exit $?; 124 = its fifteen minutes ran out, the rest follows tomorrow) - see ops/archive-last-run.err; the night's result is unchanged" >&2
 
 exit $final

@@ -279,6 +279,8 @@ def test_the_nightly_archive_step_cannot_change_the_nights_result():
     i, j = sh.index("ingest.archive --apply"), sh.rindex("exit $final")
     assert sh.index("final=") < i < j
     assert "|| echo" in sh[i:j] and "final=" not in sh[i:j] and "fails=" not in sh[i:j]
+    line = next(ln for ln in sh.splitlines() if "ingest.archive --apply" in ln)
+    assert line.startswith("timeout 900 ")                 # the unit is killed at sixty minutes; this step gets fifteen
 
 
 # ── a publisher's own listing (ops/fetch_wp_json.py) ────────────────────────
