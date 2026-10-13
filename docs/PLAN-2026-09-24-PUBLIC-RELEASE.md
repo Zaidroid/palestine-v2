@@ -1439,3 +1439,65 @@ add it too."
   six questions answered. Licence and databank test files on the copy after it: 272 passed, and the one that
   needs a live network measurement.
 
+2026-10-13 10:41 UTC · Peace Now's population of each settlement; a series served when asked for by name; the UN's projections
+built and left off · built and rehearsed, NOT yet run (HANDS §13j, after §13i) · proof: branch `databank-more2`,
+commands 9 then 10 run back to back on a freshly built copy of the store
+Zaid, 13 October, after the first answer: "im interested in wht you found for the un population projections and
+peace now population per settlement". Both built by helper agents in their own worktrees; I reviewed, reshaped,
+integrated and rehearsed.
+- **Peace Now, per settlement (agent, branch `more-settlements`).** `ops/fetch_peacenow_settlements.py` finds the
+  sheet's link on Peace Now's Population page each run (the document id is a checked fallback), reads the public
+  export with the standard library and writes `data/raw/peacenow/settlement_population.json`. Spec
+  `settlements_by_settlement.yaml`, dataset `peacenow_settlement_population`, the declarative engine. **4,370
+  figures, 141 settlements, 1980 to May 2024.** Decided from the sheet: a blank is no row; a zero is no row
+  (2,248 cells: the sheet writes 0 where it has no figure up to 2007 and leaves the cell blank from 2008); 261
+  cells «כ-50» ("about 50", 1969 to 1979) and 5 "?" are kept in the raw file and not loaded; 15 "(estimated)"
+  cells load and say so; "Population May 2024" is stored as that month, not as 2024's year-end. Each row sits at
+  the governorate of the sheet's own point (140 of 141 settlements placed). East Jerusalem is excluded, as Peace
+  Now's page says. Peace Now states no licence: the rows carry the source's existing grade, no-redistribution,
+  and reach no partner payload.
+- **My reshaping, first.** As first built it was ONE indicator with the settlement in attrs: `series` at a
+  governorate would have returned every settlement's figure unlabelled, and no question could ask for one
+  settlement. Sent back: **each settlement is its own series, `settlements.population_by_settlement.pn<DB_ID>`**,
+  named in English and Arabic by one rule. The Arabic spellings are printed ones: 133 from ARIJ's settlements
+  database of March 2023 (a hamza written on a bare opening alef for 25), 7 from other printed sources, 1
+  transliterated and marked (`db/reference/peacenow_settlement_names.yaml`, `ops/build_settlement_names.py`).
+  One series is named outside the rule: Hebron, where the rule would have called the city itself a settlement.
+- **My reshaping, second: a series that is served when it is asked for by name (migration 114, `serve/`).** Loaded
+  as 141 ordinary series on the copy, they took over their category: the answer to "settlements" was three single
+  settlements' counts for May 2024, and the West Bank total (511,100 for 2024) had left it. A registry rule now
+  declares such a family (`ask_by_name: true`), `ops/load_registry.py` writes `indicator_def.ask_by_name`, and the
+  category route leaves its members out unless the `indicator` filter names only series of that kind, and says
+  how many are held that way (`by_name_only`, spoken in both languages). Found by name in the listing; `series`,
+  `compare` and `correlate` read them like any other. 54 lines in `serve/`. Timed on the copy through the
+  uncached path: a category that holds no such series costs what it did (health 0.53 s, conflict 0.67 s,
+  economic 0.45 s, before and after); my first version added 0.6 s to every category and was rewritten.
+- **The nightly:** the sync runs the new fetcher (it re-reads weekly); the radar gets the supply line and a
+  1,460-day allowance, measured on the same publisher's chart (its newest label was 1,309 days old the day before
+  it gained 2024). The fetch record travels with the staged file (command 10 appends it).
+- **Sheet against chart, every comparable year (43):** equal in 2023 (503,732), within 1,000 in 16 more (2005 to
+  2007, 2009 to 2021), 2,698 to 14,881 apart in the other 26 (2022: 484,340 against 478,600). The series' warning
+  says they are not to be summed for the total.
+- **Rehearsal:** copy built fresh from the live store; command 9 (42 s) then command 10 (29 s): 4,370 rows
+  written, 141 series named and marked, 0 unclassified. A second run of 10 writes nothing. Its four questions
+  answered by a test API on the copy: "settlements" leads with the total and says 141 series are held by name;
+  a search for Ariel finds its series; Ariel's newest figures are May 2024 (21,004) and 2023 (21,841). Databank
+  and licence test files on the copy after both commands: 476 passed.
+- **The UN's projections (agent, branch `more-projections`): built, NOT merged, switched off.** 3,928 rows for
+  2024 to 2101 as dataset `un_wpp_2024_projection` with their own indicators and names; the spec ships
+  `migrate: false`. Three projected years are already in the past, so no date test can tell a projection from a
+  fact: it needs a declared flag and guards on every answer path (category rows, the spoken latest line, the
+  listing, series, compare, correlate, the scan). The agent measured that at 110 added lines in five `serve/`
+  files, twice my limit, stopped, and left a tested draft (`scratchpad/more/projections-serving-rule.patch`). I
+  applied the draft on branch `more-projections-serving` and rehearsed it end to end on the copy: never in a
+  category's newest rows, refused beside an observed series with a reason, served by name with "a projection,
+  not a measurement" in both languages. **Zaid's decision; nothing of it is in command 10.** If yes, it should
+  reuse migration 114's by-name mark for the category rule and keep its own flag for the refusals and wording.
+- **Left out on purpose, his call:** the 261 "about 50" cells; Peace Now's Outposts sheet (413 outposts with
+  year and point, no population, 69 without an id); `db/scout/verdicts.yaml` still holds "peace_now_gis: BLOCKED
+  on permission", and this dataset loads under the same no-redistribution grade as the chart already held.
+- **Suite.** The whole suite from `databank-more2` against the live store as it stands before either command (the
+  documented way): **2,058 passed, 1 failed, 12 skipped (592 s)**. The failure is the README's withheld floor,
+  written for the store after both commands (39,000+; 48,453 held today); of the skips, five need the evidence
+  vault the build copy does not hold and four wait for migrations 111 and 114.
+
