@@ -95,7 +95,11 @@ def test_collision_allowances_are_measured_not_round(category) -> None:
 def test_identity_is_injective_over_what_the_spec_emits(category) -> None:
     """THE INVARIANT. A dry run fails loudly if any dataset's identity maps
     two emitted rows onto one key beyond its declared allowance."""
-    report = databank.run(category, dry_run=True)      # raises on collision
+    # The ceilings on what one run may close or revise are lifted here: they
+    # have their own tests, and a publisher's release waiting to be applied by
+    # hand (UCDP's GED 26.1 and funding's parked parents on 2026-10-13) is
+    # refused by design until it is. Injectivity is what this run is read for.
+    report = databank.run(category, dry_run=True, allow_absent=10**9)  # raises on collision
     assert report["observations_emitted"] >= 0
 
 
