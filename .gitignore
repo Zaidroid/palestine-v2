@@ -99,3 +99,5 @@ ops/archive-last-run.json
 ops/archive-last-run.err
 # publishers' open listings (2026-10-13): regenerate with ops/fetch_wp_json.py
 data/raw/wp/
+# published chronologies (2026-10-13): regenerate with ops/fetch_chronology.py
+data/raw/chronology/

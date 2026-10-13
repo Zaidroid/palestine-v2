@@ -166,6 +166,7 @@ def test_an_unreadable_date_is_none_and_a_bare_one_is_utc():
     assert A.stamp("2026-10-13T12:52:39.000Z") == "2026-10-13T12:52:39+00:00"
     assert A.stamp("2026-10-13T13:00:13") == "2026-10-13T13:00:13+00:00"
     assert A.stamp("") is None and A.stamp("yesterday") is None and A.stamp("0001-01-01T00:00:00") is None
+    assert A.stamp("0201-11-09T11:37:59") is None and A.stamp("1516-08-23T00:00:00+00:00") == "1516-08-23T00:00:00+00:00"
 
 
 def test_the_language_is_read_from_the_letters():
@@ -357,3 +358,86 @@ def test_every_listed_publisher_states_its_pace_and_one_refusal_does_not_end_the
     assert W.SITES["unispal"]["pause"] == 10 and W.SITES["imemc"]["pause"] == 20 and W.SITES["pchr"]["pause"] == 3
     src = (ROOT / "ops" / "fetch_wp_json.py").read_text()
     assert "worst = max(worst, run(" in src and 'return 3 if outcome == "refused" else 0' in src
+
+
+# ── a published chronology (ops/fetch_chronology.py) ────────────────────────
+from ops import fetch_chronology as C  # noqa: E402
+
+CHRON_PAGE = """
+<div class="views-row views-row-2020 views-row-even">
+  <article data-sideview="4624" data-timelineyear="1996" data-id="4624" class="node node-event tl clearfix">
+    <div class="clearfix"> <p class="karla text-12 upper pull-left">
+      <span style="color: #c02b43">Violence</span> <span style="color: #2f74a3">Biographical</span> </p> </div>
+    <div class="london text-16 lh18 black marginb-8" >
+      <a href="/en/overallchronology#4624"> Assassination of Yahya Ayyash in Beit Lahiya </a> </div>
+    <div class="text-12 karla upper black"> 5 January 1996 </div> </article> </div>
+<div class="views-row"> <article data-sideview="5946" data-timelineyear="1948" data-id="5946"
+    class="node node-event tl clearfix"> <p><span style="color: #c02b43">Violence</span></p>
+    <a href="/en/overallchronology#5946"> Arab Gains in Gush Etzion </a>
+    <div class="text-12 karla upper black"> 3 May 1948 - 14 May 1948 </div> </article> </div>
+<div class="views-row"> <article data-sideview="5946" data-timelineyear="1948" data-id="5946"
+    class="node node-event tl clearfix"> <a href="/en/overallchronology#5946"> Arab Gains in Gush Etzion </a>
+    <div class="text-12 karla upper black"> 3 May 1948 - 14 May 1948 </div> </article> </div>
+<div class="views-row"> <article data-sideview="40204" data-timelineyear="1535" data-id="40204"
+    class="node node-event tl clearfix"> <p><span style="color: #777">Social-Economic</span></p>
+    <a href="/en/overallchronology#40204"> Restoration Works of Sultan Suleiman in Jerusalem </a>
+    <div class="text-12 karla upper black"> 1535 - 1540 </div> </article> </div>
+<div class="views-row"> <article data-sideview="7" data-timelineyear="1900" data-id="7"
+    class="node node-event tl clearfix"> <a href="/en/overallchronology#7"> An event with an odd date </a>
+    <div class="text-12 karla upper black"> Early spring </div> </article> </div>
+"""
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("5 January 1996", {"date": "1996-01-05", "precision": "day"}),
+    ("July 1872", {"date": "1872-07-01", "precision": "month"}),
+    ("1605", {"date": "1605-01-01", "precision": "year"}),
+    ("23 August 1516 - 12 January 1517", {"date": "1516-08-23", "precision": "day", "end": "1517-01-12", "end_precision": "day"}),
+    ("2 September 1908 - April 1909", {"date": "1908-09-02", "precision": "day", "end": "1909-04-01", "end_precision": "month"}),
+    ("October 1831 - 1834", {"date": "1831-10-01", "precision": "month", "end": "1834-01-01", "end_precision": "year"}),
+])
+def test_a_published_date_keeps_the_precision_it_was_given(text, expected):
+    assert C.when(text) == expected
+
+
+@pytest.mark.parametrize("text", ["Early spring", "5 Januar 1996", "1996 - 1997 - 1998", ""])
+def test_a_date_the_rule_does_not_know_is_not_guessed(text):
+    assert C.when(text) is None
+
+
+def test_the_chronology_page_gives_each_event_once_in_date_order():
+    entries, odd = C.parse_palquest(CHRON_PAGE)
+    assert [e["id"] for e in entries] == ["40204", "5946", "4624"] and odd == 1     # the repeated block once; the odd date counted
+    ayyash = entries[-1]
+    assert ayyash["title"] == "Assassination of Yahya Ayyash in Beit Lahiya" and ayyash["tags"] == ["Violence", "Biographical"]
+    assert ayyash["url"].endswith("#4624") and ayyash["date_text"] == "5 January 1996"
+
+
+def test_a_chronology_event_is_an_entry_dated_as_published(tmp_path):
+    entries, _ = C.parse_palquest(CHRON_PAGE)
+    site = {"key": "palquest", "source": "chron:palquest", "name": "The chronology", "home_url": "https://www.palquest.org"}
+    old = A.chron_entry(site, entries[0])
+    assert (old.kind, old.source, old.external_id, old.via, old.via_rank) == ("entry", "chron:palquest", "40204", "chronology", 3)
+    assert old.published_at == "1535-01-01T00:00:00+00:00" and old.precision == "year"
+    assert old.attrs["end"] == "1540-01-01" and old.extra == "Social-Economic" and old.body == ""
+    d = tmp_path / "palquest"
+    d.mkdir()
+    with gzip.open(d / "entries.ndjson.gz", "wt", encoding="utf-8") as fh:
+        fh.writelines(json.dumps(e) + "\n" for e in entries)
+    assert list(A.read_chronology(tmp_path)) == []                  # no site.json: not a folder this reader knows
+    (d / "site.json").write_text(json.dumps(site))
+    src, label, mark, docs, empty = next(A.read_chronology(tmp_path))
+    assert (src.key, src.kind, label, len(docs), empty) == ("chron:palquest", "chronology", "palquest/entries.ndjson.gz", 3, 0)
+    assert list(A.read_chronology(tmp_path, loaded={label: mark})) == []
+
+
+def test_a_short_chronology_is_refused_and_the_file_on_disk_is_kept(tmp_path, monkeypatch):
+    page = tmp_path / "page.html"
+    page.write_text(CHRON_PAGE)
+    out = tmp_path / "raw"
+    (out / "palquest").mkdir(parents=True)
+    (out / "palquest" / "entries.ndjson.gz").write_bytes(b"yesterday")
+    monkeypatch.setattr(C.fetchlib, "EVENTS", tmp_path / "ledger.ndjson")
+    assert C.run("palquest", out, page, use_bronze=False) == 2      # three events, the floor is 2,000
+    assert (out / "palquest" / "entries.ndjson.gz").read_bytes() == b"yesterday"
+    assert '"outcome": "refused"' in (tmp_path / "ledger.ndjson").read_text()

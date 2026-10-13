@@ -16,6 +16,9 @@ THE READERS, each a function that yields texts as the publisher wrote them:
   wp_json     data/raw/wp/<publisher>/items-*.ndjson.gz, written by
               ops/fetch_wp_json.py: a publisher's own listing, full text
               (the UN's Palestine documents, PCHR, POICA, several outlets).
+  chronology  data/raw/chronology/<publisher>/entries.ndjson.gz, written by
+              ops/fetch_chronology.py: a published chronology, one dated
+              event a row (kind `entry`), precise to the day, month or year.
   v1_news     v1's news.db: 15 outlets' articles, the full text where v1 has it.
   v1_alerts   v1's alerts.db: the channel posts and feed items v1 keeps.
   v2_claim    this store's own channel and feed messages, WITHOUT the two road
@@ -56,6 +59,7 @@ from resolve.db import connect, v1_path                         # noqa: E402
 
 TG_PUBLIC = ROOT / "data" / "raw" / "tg_public"
 WP = ROOT / "data" / "raw" / "wp"
+CHRON = ROOT / "data" / "raw" / "chronology"
 ROBOTS = ("tg_palhubappfuel", "tg_palhubapproad")    # tables every 15 minutes, not news
 SERVICE = {"channel photo updated", "channel created", "channel name was changed", "channel photo removed"}
 BATCH = 2000
@@ -125,7 +129,8 @@ def stamp(s: str | None) -> str | None:
         return None
     if d.tzinfo is None:
         d = d.replace(tzinfo=timezone.utc)
-    return d.isoformat() if 1900 <= d.year <= datetime.now(timezone.utc).year + 1 else None
+    # a chronology reaches back to the 1500s; a mistyped year (0001, 0201) is still no date
+    return d.isoformat() if 1000 <= d.year <= datetime.now(timezone.utc).year + 1 else None
 
 
 def guess_lang(text: str) -> str | None:
@@ -265,6 +270,38 @@ def read_wp(root: Path = WP, loaded: dict | None = None,
                     else:
                         docs.append(doc)
             yield src, label, mark, docs, empty
+
+
+def chron_entry(site: dict, e: dict) -> Doc:
+    """One event of a published chronology → a document of kind `entry`. Its
+    title is the event; the kinds the publisher gave it are searchable beside it."""
+    attrs = {k: e[k] for k in ("date_text", "tags", "end", "end_precision") if e.get(k)}
+    return Doc(source=site["source"], external_id=str(e["id"]), kind="entry", title=e["title"],
+               body=e.get("text") or "", extra=", ".join(e.get("tags") or []) or None, url=e.get("url"),
+               lang=guess_lang(e["title"]), published_at=e["date"] + "T00:00:00+00:00",
+               precision=e["precision"], via="chronology", via_rank=3, attrs=attrs)
+
+
+def read_chronology(root: Path = CHRON, loaded: dict | None = None,
+                    only: set[str] | None = None) -> Iterator[tuple[Source, str, str, list[Doc], int]]:
+    """Yields (source, file label, file mark, documents, 0) for every
+    chronology file not already loaded (ops/fetch_chronology.py writes them)."""
+    loaded = loaded or {}
+    if not root.exists():
+        return
+    for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "site.json").exists()):
+        if only and d.name.lower() not in only:
+            continue
+        site = json.loads((d / "site.json").read_text())
+        src = Source(site["source"], site["name"], "chronology", site.get("home_url"))
+        for f in sorted(d.glob("entries*.ndjson.gz")):
+            st = f.stat()
+            label, mark = f"{d.name}/{f.name}", f"{st.st_size}:{int(st.st_mtime)}"
+            if loaded.get(label) == mark:
+                continue
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                docs = [chron_entry(site, json.loads(line)) for line in fh]
+            yield src, label, mark, docs, 0
 
 
 def read_v1_news(path: Path | None = None) -> Iterator[tuple[Source, list[Doc], int]]:
@@ -512,6 +549,10 @@ def run(readers: list[str], apply: bool, only: set[str] | None = None) -> dict:
                 mark("wp_json", label, value, len(docs))
                 files += 1
             report["readers"].setdefault("wp_json", {"sources": {}, "no_text": 0})["files"] = files
+        if "chronology" in readers:
+            for src, label, value, docs, empty in read_chronology(loaded=loaded.get("chronology"), only=only):
+                take("chronology", src, docs, empty)
+                mark("chronology", label, value, len(docs))
         if "v1_news" in readers:
             for src, docs, empty in read_v1_news():
                 take("v1_news", src, docs, empty)
@@ -564,7 +605,7 @@ def reindex(apply: bool) -> dict:
     return {"apply": apply, "terms_version": T.VERSION, "rows_of_an_older_rule": todo, "rewritten": done}
 
 
-READERS = ("tg_public", "wp_json", "v1_news", "v1_alerts", "v2_claim")
+READERS = ("tg_public", "wp_json", "chronology", "v1_news", "v1_alerts", "v2_claim")
 
 
 def main() -> int:
