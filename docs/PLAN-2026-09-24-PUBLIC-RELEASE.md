@@ -1530,3 +1530,48 @@ the live store, the live API and the public partner door
   series by-name; the Arabic names were explained to him (optional, spelling only). Both are being built as one
   more command on branch `databank-more3`.
 
+2026-10-13 11:32 UTC · the UN's projections served as projections; the funding answer leads with what was paid · built and
+rehearsed, NOT yet run (HANDS §13k) · proof: branch `databank-more3`, command 11 run twice on a fresh copy of the
+store
+Zaid, 13 October: "1. yes" (serve the projections), "3. go for it" (the funding parent series by name).
+- **What a projection is, declared once (migration 115, `indicator_def.projection`).** The agent's draft of the
+  morning, re-based on migration 114: the 51 projection series are ALSO `ask_by_name`, so the category route
+  keeps the one condition it has, and the projection flag drives what is specific to a projection. `compare` and
+  `correlate` refuse it beside an observed series, with the reason in both languages; the scan never takes it as
+  a candidate; the listing flags it and sorts it last; a named projection's rows travel under their own key
+  (`projected_by_indicator`), so `latest_by_indicator` never carries one, and the partner licence filter reads
+  that key; `databank` and `series` say "a projection, not a measurement" and give its farthest year, not a
+  "latest". 115 writes the 51 definitions (flag, by-name mark, names, warning) BEFORE any row exists, and a test
+  holds its 51 rows to what the registry loader would write. 113 added and 20 removed lines in five `serve/`
+  files. The gap radar gives the dataset a status of its own (no age, no "fresh until 2104"), and ATTRIBUTION
+  states the span of observations and counts the projected values apart.
+- **The data.** `un_wpp_2024_projection`: 3,928 values, 51 series `population.wpp_projection.*`, 2024 to 2101,
+  the UN's medium variant of July 2024; the estimates (`population.wpp.*`, to 2023) are not touched. The warning
+  says what the first years already show: deaths falling from 38,937 in 2023 to 16,412 in 2026 in the model.
+- **Funding.** `funding.parked_parent` is declared `ask_by_name`: the funding answer leads with the paid figure
+  and says one series is held by name.
+- **A defect of mine, found by timing and fixed here.** The by-name condition of migration 114, live since
+  10:56 UTC, was `r.indicator <> ALL(<names>)`: pushed down to every row of every chunk, 0.3 to 0.4 s on each
+  uncached question to a category that holds such series (today only `settlements`). Rewritten as an anti-join
+  on the registry, no parameter, same answers: economic through the route 0.50 to 0.57 s on the copy (1.3 s with
+  the old form and the projections loaded; 0.45 s before either), settlements 0.45 to 0.50 s.
+- **A cost that stays, measured.** The projection rows are dated to 2101 and `observation` is chunked by 365
+  days: 83 chunks become 158. Planning a query over `observation` takes about 0.17 s on the copy with 158 chunks
+  against 0.10 to 0.13 s on the live store with 83, so roughly 0.06 s more on each uncached databank query.
+  Cached answers are unaffected. A larger chunk interval for future years would remove it; that is a change to a
+  core table and is not made here.
+- **The order of the command, and why.** Migration, staged file, the registry once (the funding mark), the
+  load, the API restart straight after the load, then the registry again (expected: nothing to change) and five
+  questions. Between the load and the restart the old code could answer a projection row for a second or two;
+  the row would carry its projection name and warning, which 115 wrote first.
+- **Rehearsal.** A copy built fresh from the live store after commands 9 and 10. First run 54 s: 3,928 rows
+  written, the funding mark written, the second registry pass changed nothing. Second run 17 s, writes nothing.
+  Questions answered by a test API on the copy: economic's newest row is of 2025 with no projection among its
+  rows and says 51 series are held by name; a projection by name is served and marked; the estimate is as it
+  was (5,409,202 in 2023); estimate beside projection is refused; funding leads with `funding.paid`. Databank
+  and licence test files on the copy after the command: 339 passed. README: exportable floor 300,000+ (true
+  before and after the load).
+- **Suite.** The whole suite from `databank-more3` against the live store as it stands before the command (the
+  documented way): **2,123 passed, 0 failed, 8 skipped (610 s)**; five of the skips need the evidence vault the
+  build copy does not hold.
+
