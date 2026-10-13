@@ -238,7 +238,125 @@ def fetch(get=_get) -> tuple[str, str, bytes, str]:
     raise OSError("; ".join(errors))
 
 
+HISTORY = OUT.parent / "history.json"
+HISTORY_LABEL = "addameer:history"
+MONTH_PAGE = "https://www.addameer.ps/statistics/{y}/{m:02d}"
+MIN_HISTORY = 400            # 170 months × 4 series on 2026-10-13, less the months the nightly file carries
+
+
+def history_records(pages: dict[str, str], skip: set[tuple[str, str]],
+                    fetched_at: str) -> tuple[list[dict], dict]:
+    """Addameer keeps one page a month (statistics/YYYY/MM), each with that
+    month's dated block. `pages` maps "YYYY-MM" to a page; the records are the
+    four series the databank already names (total, administrative, child,
+    female), filed under the block's own month, in the shape t_prisoners
+    reads. `skip` is the (month, series) pairs the nightly file carries, so
+    one month never arrives from two files."""
+    recs, seen = [], set()
+    notes: dict = {"pages": len(pages), "no_block": [], "block_in_another_month": []}
+    for ym in sorted(pages):
+        day, block = statistics_block(pages[ym])
+        if not day or not block:
+            notes["no_block"].append(ym)
+            continue
+        if day[:7] != ym:
+            notes["block_in_another_month"].append({"page": ym, "block": day})
+        month = day[:7] + "-01"
+        url = MONTH_PAGE.format(y=int(ym[:4]), m=int(ym[5:7]))
+        src = {"name": SOURCE_NAME, "organization": SOURCE_NAME, "url": url,
+               "license": "all rights reserved (no-license-found)", "via": "direct",
+               "fetched_at": fetched_at, "block_date": day}
+        for label, n in block.items():
+            metric = classify(label)
+            if metric is None or (month, metric) in skip or (month, metric) in seen:
+                continue
+            seen.add((month, metric))
+            recs.append({
+                "stable_id": f"addameer:{month}:{metric}",
+                "id": f"addameer_{metric}_{month}",
+                "date": month,
+                "event_type": "prisoners_count",
+                "prisoner_metric_type": metric,
+                "indicator_name": label,
+                "location": {"name": "West Bank & Gaza", "region": "Palestine"},
+                "metrics": {"count": n, "unit": "persons"},
+                "sources": [src]})
+    recs.sort(key=lambda r: (r["date"], r["prisoner_metric_type"]), reverse=True)
+    notes["months"] = len({r["date"] for r in recs})
+    notes["newest_block"] = max((r["sources"][0]["block_date"] for r in recs), default=None)
+    return recs, notes
+
+
+def history(argv: list[str]) -> int:
+    """`--history [--from-dir DIR]`: the monthly pages since January 2011,
+    once each, two seconds apart (or the pages already saved in DIR as
+    YYYY-MM.html). Run by hand when the back months are wanted again; the
+    nightly run reads the current page only."""
+    import time
+    import urllib.error
+    dry = "--dry-run" in argv
+    pages: dict[str, str] = {}
+    if "--from-dir" in argv:
+        d = Path(argv[argv.index("--from-dir") + 1])
+        for f in sorted(d.glob("[12][0-9][0-9][0-9]-[01][0-9].html")):
+            pages[f.stem] = f.read_text(encoding="utf-8", errors="replace")
+    else:
+        now = datetime.now(timezone.utc)
+        for y in range(2011, now.year + 1):
+            for m in range(1, 13):
+                if (y, m) > (now.year, now.month):
+                    break
+                try:
+                    pages[f"{y}-{m:02d}"] = _get(MONTH_PAGE.format(y=y, m=m), fl.UA).decode("utf-8", "replace")
+                except urllib.error.HTTPError as e:
+                    if e.code != 404:            # a month with no page is skipped; a refusal ends the walk
+                        print(f"  FAIL {HISTORY_LABEL}: HTTP {e.code} at {y}-{m:02d}; keeping the file on disk")
+                        if not dry:
+                            fl.event(HISTORY_LABEL, "refused", error=f"HTTP {e.code}", at_month=f"{y}-{m:02d}")
+                        return 1
+                time.sleep(2.0)
+    skip: set[tuple[str, str]] = set()
+    if OUT.exists():
+        skip = {(r["date"], r["prisoner_metric_type"]) for r in json.loads(OUT.read_text())["data"]}
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    recs, notes = history_records(pages, skip, fetched_at)
+    if len(recs) < MIN_HISTORY:
+        print(f"  REFUSED {HISTORY_LABEL}: {len(recs)} records below the floor of {MIN_HISTORY}"
+              " — keeping the file already on disk")
+        if not dry:
+            fl.event(HISTORY_LABEL, "refused", rows=len(recs), floor=MIN_HISTORY)
+        return 1
+    months = sorted({r["date"] for r in recs})
+    print(f"  ok   {HISTORY_LABEL}  {len(months)} months {months[0][:7]} → {months[-1][:7]}, {len(recs)} records"
+          f" from {notes['pages']} pages ({len(notes['no_block'])} with no block)")
+    doc = {"metadata": {
+        "fetched_at": fetched_at,
+        "source": "Addameer Prisoner Support and Human Rights Association — Statistics, the monthly pages",
+        "source_url": PAGE, "via": "direct",
+        # No `vintage` here on purpose: the nightly file states the dataset's
+        # vintage (the current block's date). This file is the back months, and
+        # its newest block is older than that; each record carries its own
+        # block date in sources[0].block_date.
+        "license": "\"All rights reserved\" in the page footer (no-license-found); attribution",
+        "attribution": "Prisoner statistics: Addameer Prisoner Support and Human Rights Association (addameer.ps).",
+        "first_month": months[0][:7], "data_through": months[-1][:7], **notes},
+        "data": recs}
+    if dry:
+        print(f"         would write {HISTORY.relative_to(fl.ROOT)}  (dry run, nothing written)")
+        fl.stage(fl.stage_dir(argv), HISTORY.name, doc)
+        return 0
+    from ingest import bronze
+    for ym, page in pages.items():
+        bronze.put("addameer", page, "html", url=MONTH_PAGE.format(y=int(ym[:4]), m=int(ym[5:7])))
+    fl.write_atomic(HISTORY, doc)
+    fl.event(HISTORY_LABEL, "ok", rows=len(recs), months=len(months), first=months[0][:7],
+             data_through=months[-1][:7])
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if "--history" in argv:
+        return history(argv)
     dry = "--dry-run" in argv
     try:
         page, via, raw, url = fetch()

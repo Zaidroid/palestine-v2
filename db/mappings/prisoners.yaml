@@ -99,16 +99,20 @@ expect:
                             #   Was 800 while the input was v1's whole file
                             #   (864 HaMoked + Addameer); the fallback still
                             #   reads 894 and drops 864.
-  max_observations: 60      # 30 emitted on 2026-10-12 (14 months × 2 + child
-                            #   + female); the page's window is about 14
-                            #   entries. Twice that is a page that changed.
+  max_observations: 900     # 30 from the current page (14 months × 2 + child + female) and, since
+                            #   2026-10-13, 650 from the monthly pages back to January 2011. It was
+                            #   60 while the current page was the only input.
 
 # Format v2 `input:` — v2's own fetch (2026-10-12). The frozen corpus is v1's
 # unified file of that day and is read only by a machine that has never
 # fetched (additive only).
 input:
   root: data/raw/addameer
-  glob: statistics.json
+  glob:
+    - statistics.json       # the current page, fetched nightly
+    - history.json          # the monthly pages since January 2011, read once
+                            #   (ops/fetch_addameer.py --history, 2026-10-13);
+                            #   it carries no month the nightly file carries
   fallback:
     root: data/frozen
     glob: prisoners.json.gz

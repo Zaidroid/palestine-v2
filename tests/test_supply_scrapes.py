@@ -425,7 +425,7 @@ def test_each_fetcher_stages_a_raw_file_with_the_publishers_vintage(tmp_path, mo
 
 FETCHED = {"land": ("data/raw/land", ["barrier.json", "settlements.json", "demolitions.json"]),
            "settlements": ("data/raw/peacenow", "settlers.json"),
-           "prisoners": ("data/raw/addameer", "statistics.json")}
+           "prisoners": ("data/raw/addameer", ["statistics.json", "history.json"])}
 
 
 def test_the_three_fetched_specs_read_v2s_fetch_and_fall_back_to_the_frozen_corpus():
@@ -495,3 +495,48 @@ def test_the_frozen_fallbacks_transform_to_the_family_datasets():
     assert len(moved) == 864 and {d.reason for d in moved} == {"moved"}
     assert len(out) - len(moved) == 30
     assert spec["expect"]["min_records"] <= 30 <= spec["expect"]["max_observations"]
+
+
+# ── Addameer's monthly pages: the back months (2026-10-13) ───────────────────
+
+def ad_month(day: str, total: int, admin: int, child: int, female: int, extra: str = "") -> str:
+    """One monthly page, cut to the markup the block reader reads (the real
+    pages carry the same fields; statistics/2015/06 gives exactly these figures)."""
+    field = '<span class="views-label views-label-x">{}</span> <div class="field-content">{:,}</div>'
+    rows = [("Total Number of Political Prisoners", total), ("Administrative Detainees", admin),
+            ("Child prisoners", child), ("Female prisoners", female), ("Gaza prisoners", 360)]
+    return ('<div class="views-field views-field-field-date-of-statistics"><time datetime="' + day
+            + 'T12:00:00Z">x</time></div>' + "".join(field.format(k, v) for k, v in rows) + extra)
+
+
+def test_the_monthly_pages_give_each_month_its_own_dated_figures():
+    pages = {"2015-06": ad_month("2015-06-01", 5850, 480, 162, 26),
+             "2022-11": ad_month("2022-11-21", 4760, 820, 160, 33),
+             "2016-06": "<html>a month with no block</html>"}
+    recs, notes = ad.history_records(pages, set(), AT)
+    v = {(r["date"], r["prisoner_metric_type"]): r["metrics"]["count"] for r in recs}
+    assert v[("2015-06-01", "child")] == 162 and v[("2015-06-01", "female")] == 26
+    assert v[("2022-11-01", "total")] == 4760 and v[("2022-11-01", "administrative")] == 820
+    assert len(recs) == 8 and notes["no_block"] == ["2016-06"] and notes["months"] == 2
+    assert not any(r["prisoner_metric_type"] == "gaza" for r in recs)      # only the four series the databank names
+    one = next(r for r in recs if r["date"] == "2022-11-01" and r["prisoner_metric_type"] == "total")
+    assert one["stable_id"] == "addameer:2022-11-01:total"                 # the identity the held row has
+    assert one["sources"][0]["url"].endswith("/statistics/2022/11") and one["sources"][0]["block_date"] == "2022-11-21"
+    assert notes["newest_block"] == "2022-11-21" and "vintage" not in notes
+
+
+def test_a_month_the_nightly_file_carries_is_not_sent_twice():
+    pages = {"2026-10": ad_month("2026-10-05", 9300, 3101, 350, 91)}
+    skip = {("2026-10-01", m) for m in ("total", "administrative", "child", "female")}
+    assert ad.history_records(pages, skip, AT)[0] == []
+    part = ad.history_records(pages, {("2026-10-01", "total"), ("2026-10-01", "administrative")}, AT)[0]
+    assert sorted(r["prisoner_metric_type"] for r in part) == ["child", "female"]
+
+
+def test_the_history_file_does_not_speak_for_the_datasets_vintage():
+    src = (ROOT / "ops" / "fetch_addameer.py").read_text()
+    body = src[src.index("def history("):src.index("def main(")]
+    assert '"vintage":' not in body and "newest_block" in src
+    spec = load_spec("prisoners")
+    assert spec["input"]["glob"] == ["statistics.json", "history.json"]
+    assert spec["expect"]["max_observations"] >= 680
