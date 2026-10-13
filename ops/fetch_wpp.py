@@ -26,6 +26,21 @@ POSTURE (ops/fetchlib.py): atomic write, a floor (95 % of 74 years × 12
 indicators; fewer is a truncated file and yesterday's copy stands), one ledger line per
 attempt. WPP changes every two years, so a held copy younger than 30 days is
 not re-downloaded (16.5 MB).
+
+THE NEXT EDITION (read 2026-10-13)
+There is none yet, and 2023 stays the newest estimate until there is. "The
+next revision, originally planned for 2026, has been postponed for public
+release until 11 July 2027" — World Population Prospects 2024: Interim Update,
+19 January 2026 (.../wpp/assets/Files/WPP2024_Release-Note-rev1.pdf). That
+interim update changed Togo only (its indicator file holds 151 rows, all
+LocID 768); the file at URL was last modified 2024-12-13 and still parses to
+the 888 held records, value for value. No WPP2025 or WPP2026 file exists
+beside it (404). Everything here is pinned to the edition: URL, LABEL,
+LAST_ESTIMATE, the stable ids and t_population_wpp's `revision` and dataset
+key. A new edition revises the whole series back to 1950, and the UN's FAQ
+says only the most recent one stays online outside its archive folder, so
+this URL may stop answering the day it lands. Either way those names are
+repointed by hand; nothing here finds a new edition by itself.
 """
 from __future__ import annotations
 

@@ -11,6 +11,14 @@
 # prior permission under a Creative Commons license (CC BY 3.0 IGO)" — the WPP
 # 2024 Summary of Results. The portal's own terms page renders client-side and
 # was not readable; migration 089's source row says so.
+#
+# How old the newest row can honestly be (read 2026-10-13): the 2024 edition's
+# estimates end at 2023 ("The 2024 revision provides population estimates for
+# the period 1950-2023", population.un.org/wpp/faqs), so the newest row was
+# 557 days old on release day. The 2026 edition was postponed: "The next one is
+# due on 11 July 2027" (same page; release note rev. 1 of 19 January 2026). On
+# that day the 2023 row will be 1,652 days old with nothing newer ever
+# published. What to repoint then is in ops/fetch_wpp.py.
 category: population_wpp
 transform: python:t_population_wpp
 v1_category: economic            # beside the World Bank population series
