@@ -12,10 +12,30 @@ and registration, revised every two years), and every row says so.
 WHAT IS KEPT
 The State of Palestine (LocID 275), the Medium variant, years 1950-2023 — the
 ESTIMATES. WPP's file runs to 2100; the projections are not the past and are
-not written. Fifty-one indicators (INDICATORS below): the twelve taken on
+not written with them (THE PROJECTIONS, below, says where they go).
+Fifty-one indicators (INDICATORS below): the twelve taken on
 2026-09-26 and thirty-nine more on 2026-10-13, every one filled for all 74
 years. Counts are converted from thousands to persons with the source unit
 kept in attrs; every value keeps three decimals, as the first twelve do.
+
+THE PROJECTIONS (2026-10-13)
+The same file holds the UN's medium-variant projection for the same columns:
+every year from 2024 to 2100, and for the population on 1 January one year
+more, 2101 (measured: 78 rows after 2023, 3,928 filled cells of the 51
+columns taken). They are a model's output of July 2024, not a record of
+anything, so they are kept APART from the estimates at every step: a second
+file (palestine_projection.json beside palestine.json), other stable ids
+(wpp-2024-projection:<year>:<indicator>), every record saying `projection:
+true` with the variant as the UN names it, the edition and its release day,
+and a second spec, transformer, dataset (un_wpp_2024_projection) and indicator
+family (population.wpp_projection.*) in db/mappings/population_wpp_projection.yaml.
+Nothing about an estimate row changes: parse() writes the records it wrote
+before, and LAST_ESTIMATE is still where the past ends.
+This file holds the Medium variant only. The UN publishes eighteen more for
+the same years in another file (..._Demographic_Indicators_OtherVariants.csv.gz,
+75 MB: low, high, constant fertility, constant mortality, zero migration,
+the 80 % and 95 % prediction bounds and others; 1,403 rows for Palestine,
+measured 2026-10-13). None of them is fetched.
 
 WHAT EACH COLUMN IS
 The UN's own two documents, read 2026-10-13, and nothing else: the indicator
@@ -60,10 +80,13 @@ the loader copies them (ingest/databank.py read_vintage).
 
 POSTURE (ops/fetchlib.py): atomic write, a floor (95 % of 74 years × 51
 indicators; fewer is a truncated file and yesterday's copy stands), one ledger line per
-attempt. WPP changes every two years, so a held copy younger than 30 days is
+attempt. One download feeds both files, both floors are judged before either
+file is written, and the one `ok` line counts both (rows, projection_rows).
+WPP changes every two years, so a held copy younger than 30 days is
 not re-downloaded (16.5 MB) — unless it was written before the indicators
-taken today, in which case it is read again whatever its age: a loader
-handed the old twelve would be refused by the spec's floor.
+taken today, or the projection file is not beside it yet, in which case it is
+read again whatever its age: a loader handed the old twelve would be refused
+by the spec's floor.
 
 THE NEXT EDITION (read 2026-10-13)
 There is none yet, and 2023 stays the newest estimate until there is. "The
@@ -111,10 +134,17 @@ VINTAGE_SAID = ("The 2024 revision is the most recent revision of World Populati
                 "Prospects, the official United Nations population estimates and "
                 "projections released on 11 July 2024 (World Population Day)")
 OUT = ROOT / "data" / "raw" / "wpp" / "palestine.json"
+PROJECTION_NAME = "palestine_projection.json"   # beside OUT: see projection_out()
 LOC_ID = "275"                          # State of Palestine
 FIRST, LAST_ESTIMATE = 1950, 2023
 MAX_AGE_DAYS = 30
 LABEL = "wpp-2024"
+# The projection: the UN's own name for the variant (the file's Variant
+# column), the edition, and other stable ids than the estimates'. Another
+# variant would be another file, another label and another dataset.
+VARIANT = "Medium"
+EDITION = 2024
+PROJECTION_LABEL = "wpp-2024-projection"
 UA = "palestine-v2 databank (+https://live-api.zaidlab.xyz)"
 
 # WPP column → (our indicator, unit written, multiplier from WPP's unit, WPP's unit)
@@ -198,31 +228,68 @@ NOT_TAKEN = ("DoublingTime", "PopDensity", "PopChange")
 # 3,774 when every value is present (measured 2026-10-13); 95 % of it, so a
 # blank cell does not refuse a good file but a truncated one is refused
 FLOOR = int((LAST_ESTIMATE - FIRST + 1) * len(INDICATORS) * 0.95)     # 3585
+# The projection, measured 2026-10-13: 2024-2100 for all 51 columns (77 × 51 =
+# 3,927) and 2101 for the 1 January population alone: 3,928. 95 % of it.
+PROJECTION_MEASURED = 3928
+FLOOR_PROJECTION = int(PROJECTION_MEASURED * 0.95)                    # 3731
+
+
+def _palestine(text: str):
+    """(year, row) for every Medium-variant row of the State of Palestine."""
+    for row in csv.DictReader(io.StringIO(text)):
+        if row.get("LocID") != LOC_ID or row.get("Variant") != VARIANT:
+            continue
+        try:
+            year = int(float(row["Time"]))
+        except (KeyError, ValueError):
+            continue
+        yield year, row
+
+
+def _cells(year: int, row: dict, label: str):
+    """One record per column the row fills, in INDICATORS' order."""
+    for col, (ind, unit, mult, src_unit) in INDICATORS.items():
+        raw = (row.get(col) or "").strip()
+        if not raw:
+            continue
+        value = float(raw) * mult
+        yield {"stable_id": f"{label}:{year}:{ind}", "year": year,
+               "indicator": ind, "value": round(value, 3), "unit": unit,
+               "wpp_column": col, "wpp_unit": src_unit,
+               "location": row.get("Location")}
 
 
 def parse(text: str) -> list[dict]:
     """The Palestine rows of the CSV, estimates only, one record per (year,
     indicator)."""
     out = []
-    for row in csv.DictReader(io.StringIO(text)):
-        if row.get("LocID") != LOC_ID or row.get("Variant") != "Medium":
-            continue
-        try:
-            year = int(float(row["Time"]))
-        except (KeyError, ValueError):
-            continue
+    for year, row in _palestine(text):
         if not FIRST <= year <= LAST_ESTIMATE:
             continue                          # projections are not the past
-        for col, (ind, unit, mult, src_unit) in INDICATORS.items():
-            raw = (row.get(col) or "").strip()
-            if not raw:
-                continue
-            value = float(raw) * mult
-            out.append({"stable_id": f"{LABEL}:{year}:{ind}", "year": year,
-                        "indicator": ind, "value": round(value, 3), "unit": unit,
-                        "wpp_column": col, "wpp_unit": src_unit,
-                        "location": row.get("Location")})
+        out.extend(_cells(year, row, LABEL))
     return out
+
+
+def parse_projection(text: str) -> list[dict]:
+    """The Palestine rows AFTER the last estimate year, to the last year the
+    file gives: the UN's projection, one record per (year, indicator) the file
+    fills. Each record says what it is (`projection`, the variant in the UN's
+    word, the edition and the day it was released), because the loader refuses
+    a projection record that does not, and refuses one among the estimates."""
+    out = []
+    for year, row in _palestine(text):
+        if year <= LAST_ESTIMATE:
+            continue                          # the estimates are parse()'s
+        for rec in _cells(year, row, PROJECTION_LABEL):
+            out.append({**rec, "projection": True, "variant": row["Variant"],
+                        "edition": EDITION, "released": VINTAGE})
+    return out
+
+
+def projection_out() -> Path:
+    """Where the projection is written: beside the estimates, under another
+    name the estimates' spec does not read (its glob is `palestine.json`)."""
+    return OUT.with_name(PROJECTION_NAME)
 
 
 def _fresh(path: Path, days: int = MAX_AGE_DAYS) -> bool:
@@ -231,7 +298,8 @@ def _fresh(path: Path, days: int = MAX_AGE_DAYS) -> bool:
 
 def holds_every_indicator(path: Path) -> bool:
     """False for a held file written before the indicators taken today (or one
-    that cannot be read): its age then says nothing, and it is fetched again."""
+    that cannot be read, or the projection file before it was first written):
+    its age then says nothing, and it is fetched again."""
     try:
         held = {r.get("indicator")
                 for r in json.loads(path.read_text(encoding="utf-8"))["data"]}
@@ -261,7 +329,9 @@ def vintage(last_modified: str | None) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    if "--force" not in argv and _fresh(OUT) and holds_every_indicator(OUT):
+    out_projection = projection_out()
+    if "--force" not in argv and all(_fresh(p) and holds_every_indicator(p)
+                                     for p in (OUT, out_projection)):
         print(f"{LABEL}: held copy is younger than {MAX_AGE_DAYS} days — not re-fetched")
         return 0
     try:
@@ -270,7 +340,14 @@ def main(argv: list[str]) -> int:
             modified = last_modified_day(r.headers.get("Last-Modified"))
             text = gzip.decompress(r.read()).decode("utf-8-sig")
         recs = parse(text)
+        proj = parse_projection(text)
+        # both floors before either file is written: the two files are one download
         check_floor(LABEL, len(recs), FLOOR)
+        if len(proj) < FLOOR_PROJECTION:
+            event(LABEL, "refused", rows=len(proj), floor=FLOOR_PROJECTION, part="projection")
+            raise FetchRefused(
+                f"{LABEL}: {len(proj)} projection rows below the floor of "
+                f"{FLOOR_PROJECTION} — keeping both files already on disk.")
     except FetchRefused as e:
         print(e, file=sys.stderr)
         return 1
@@ -281,15 +358,32 @@ def main(argv: list[str]) -> int:
     write_atomic(OUT, {"fetched_at": datetime.now(timezone.utc).isoformat(),
                        "source": "UN DESA Population Division — World Population Prospects 2024",
                        "url": URL, "terms_url": TERMS_URL, "license": "CC-BY-IGO-3.0",
-                       "note": "modelled estimates, Medium variant, 1950-2023; projections not kept",
+                       "note": "modelled estimates, Medium variant, 1950-2023; the projections "
+                               f"are not here: {PROJECTION_NAME}",
                        "metadata": {**vintage(modified),
                                     "indicators": len({r["indicator"] for r in recs}),
                                     "indicator_reference_url": NOTES_URL,
                                     "glossary_url": GLOSSARY_URL},
                        "data": recs})
+    years = sorted({r["year"] for r in proj})
+    write_atomic(out_projection, {
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "source": "UN DESA Population Division — World Population Prospects 2024",
+        "url": URL, "terms_url": TERMS_URL, "license": "CC-BY-IGO-3.0",
+        "note": f"PROJECTION, {VARIANT} variant, {years[0]}-{years[-1]}: a model's output "
+                f"released {VINTAGE}, not a measurement. The estimates ({FIRST}-"
+                f"{LAST_ESTIMATE}) are in {OUT.name}",
+        "metadata": {**vintage(modified), "projection": True, "variant": VARIANT,
+                     "edition": EDITION, "first_year": years[0], "last_year": years[-1],
+                     "indicators": len({r["indicator"] for r in proj}),
+                     "indicator_reference_url": NOTES_URL, "glossary_url": GLOSSARY_URL},
+        "data": proj})
     event(LABEL, "ok", rows=len(recs), indicators=len({r["indicator"] for r in recs}),
-          data_through=str(LAST_ESTIMATE))
-    print(f"{LABEL}: {len(recs)} rows ({FIRST}-{LAST_ESTIMATE}) → {OUT.relative_to(ROOT)}")
+          data_through=str(LAST_ESTIMATE), projection_rows=len(proj),
+          projection_through=str(years[-1]))
+    print(f"{LABEL}: {len(recs)} rows ({FIRST}-{LAST_ESTIMATE}) → {OUT.relative_to(ROOT)}; "
+          f"{len(proj)} projection rows ({years[0]}-{years[-1]}) → "
+          f"{out_projection.relative_to(ROOT)}")
     return 0
 
 

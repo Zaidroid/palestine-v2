@@ -395,6 +395,7 @@ def test_a_fresh_but_older_copy_is_fetched_again_and_a_complete_one_is_not(tmp_p
     monkeypatch.setattr(fetch_wpp, "OUT", out)
     monkeypatch.setattr(fetch_wpp, "ROOT", tmp_path)
     monkeypatch.setattr(fetch_wpp, "FLOOR", 150)               # the sample holds four years, not 74
+    monkeypatch.setattr(fetch_wpp, "FLOOR_PROJECTION", 40)     # ...and one projected year, not 77
     monkeypatch.setattr(fetch_wpp, "event", lambda label, outcome, **kw: events.append((label, outcome, kw)))
     monkeypatch.setattr(fetch_wpp.urllib.request, "urlopen",
                         lambda req, timeout=0: calls.append(req.full_url) or _Answer())
@@ -406,7 +407,10 @@ def test_a_fresh_but_older_copy_is_fetched_again_and_a_complete_one_is_not(tmp_p
     assert doc["metadata"]["vintage"] == "2024-07-11"
     assert "2024-12-13" in doc["metadata"]["vintage_basis"]
     assert doc["license"] == "CC-BY-IGO-3.0" and doc["url"] == fetch_wpp.URL
-    assert events == [("wpp-2024", "ok", {"rows": 204, "indicators": 51, "data_through": "2023"})]
+    # one line for the fetch; since 2026-10-13 it also counts the projection it
+    # wrote beside the estimates (the sample's 2024 row; tests/test_more_projections.py)
+    assert events == [("wpp-2024", "ok", {"rows": 204, "indicators": 51, "data_through": "2023",
+                                          "projection_rows": 51, "projection_through": "2024"})]
 
     assert fetch_wpp.main([]) == 0                             # now complete and fresh: left alone
     assert len(calls) == 1 and len(events) == 1

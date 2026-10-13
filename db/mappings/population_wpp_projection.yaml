@@ -1,0 +1,241 @@
+# population_wpp_projection — the UN's projection for 2024 to 2100, kept apart
+# from its estimates (2026-10-13).
+#
+# UN DESA Population Division, World Population Prospects 2024: the State of
+# Palestine, MEDIUM VARIANT, the years after the last estimate. The same file
+# and the same 51 columns as db/mappings/population_wpp.yaml (the estimates,
+# 1950-2023), written by the same fetch into a second file
+# (data/raw/wpp/palestine_projection.json; ops/fetch_wpp.py parse_projection).
+# Measured 2026-10-13: 78 rows of the UN's file after 2023; every one of the
+# 51 columns is filled for 2024-2100 (77 x 51 = 3,927) and one, the population
+# on 1 January, also for 2101: 3,928 records. Nothing the UN's indicator
+# reference says marks a column as not projected.
+#
+# WHAT THIS IS NOT. A projection is a model's output released on 11 July 2024.
+# It is not a value, not `unknown` and not `no source`, and its first years
+# are already contradicted: it has deaths falling from 38,937 in 2023 to
+# 16,412 in 2026 and life expectancy at birth rising from 65.2 to 77.4 years.
+# So it is its own dataset (un_wpp_2024_projection) and its own indicator
+# family (population.wpp_projection.*): no answer about population.wpp.* can
+# end in a projected year, and every row carries attrs.projection = true, the
+# variant as the UN names it, the edition and the release day.
+#
+# WHY IT IS SWITCHED OFF (`migrate: false`). These would be the first rows the
+# store has ever held with a date after today (measured 2026-10-13: 0 current
+# observations and 0 events dated after now()), and three of the projected
+# years (2024, 2025, 2026) are NOT after today, so no date test tells them
+# from facts. Every answer path reads the newest-dated row of a series as the
+# latest fact: loaded as they are, the newest rows of the `economic` category
+# would be dated 2101 and 2100. The spec, the fetcher, the transformer, the
+# names and the warning are built and tested; the two lines below come out the
+# day the serving rule is live (a projection is served only when it is asked
+# for by name), not before.
+#
+# Only the Medium variant. The UN publishes eighteen more in another file
+# (low, high, constant fertility, the 80 % and 95 % prediction bounds, ...:
+# 1,403 rows for Palestine); none is fetched or loaded.
+#
+# Terms and source row: the estimates' (un_wpp, migration 089; CC BY 3.0 IGO).
+category: population_wpp_projection
+transform: python:t_population_wpp_projection
+v1_category: economic            # beside its estimates
+shape: observation
+status: reviewed
+migrate: false
+skip_reason: "the rows are dated 2024 to 2101 and every answer path reads a series' newest-dated row as the latest fact; they load when the serving rule (a projection only when asked for by name) is live"
+records_measured: 3928           # 77 years x 51 indicators + the 1 January population of 2101, 2026-10-13
+
+input:
+  root: data/raw/wpp
+  glob: palestine_projection.json
+cadence: irregular                # one edition, one projection; the next is due 11 July 2027
+
+source_routing:
+  by_name:
+    "UN DESA Population Division — World Population Prospects 2024": un_wpp
+  default: un_wpp
+
+datasets:
+  - key: un_wpp_2024_projection
+    source: un_wpp
+
+indicator:
+  template: "population.wpp_projection.{indicator}"
+
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit
+
+occurred_at:
+  from: year
+  precision: year
+  rules: []                      # one value per calendar year; law 2
+
+place:
+  strategy: region               # the whole territory → place NULL + attrs.region
+  min_decided_pct: 1.0
+
+stable_id: stable_id             # wpp-2024-projection:<year>:<indicator>
+
+expect:
+  min_records: 3731              # 95 % of 3,928 — ops/fetch_wpp.py
+                                 #   FLOOR_PROJECTION, the same number
+  max_observations: 4517         # 1.15 × 3,928
+
+identity:
+  fields: [indicator, occurred_at]
+
+# Each series is classified exactly as its estimate is in population_wpp.yaml
+# (tests/test_more_projections.py holds the 51 pairs to that), and all of them
+# carry ONE warning: what the number is not.
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {prefix: "population.wpp_projection.population_total"}
+      concept: population.count
+      measure_kind: stock
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: &projection_en >-
+        A PROJECTION, not a measurement: the United Nations' medium-variant
+        projection from World Population Prospects 2024, a model's output
+        released on 11 July 2024. It assumed a recovery that the years since
+        have not shown: it has deaths falling from 38,937 in 2023 to 16,412 in
+        2026, and life expectancy at birth rising from 65.2 to 77.4 years. The
+        UN's estimates end at 2023 (population.wpp.*); every year here, from
+        2024 on, is the model. The UN has announced its next revision for 11
+        July 2027.
+      serve_warning_ar: &projection_ar >-
+        هاد إسقاط مش قياس: إسقاط الأمم المتحدة بالمتغير المتوسط من «التوقعات
+        السكانية في العالم 2024»، يعني ناتج نموذج انتشر بـ11 تموز 2024.
+        النموذج افترض تعافي ما شفناه بالسنين اللي بعدها: عنده الوفيات بتنزل
+        من 38,937 سنة 2023 لـ16,412 سنة 2026، والعمر المتوقع عند الولادة
+        بيطلع من 65.2 لـ77.4 سنة. تقديرات الأمم المتحدة بتوقف عند سنة 2023
+        (population.wpp.*)، وكل سنة هون، من 2024 وطالع، هي النموذج. والأمم
+        المتحدة أعلنت إنه المراجعة الجاية بتطلع بـ11 تموز 2027.
+    - when: {regex: "^population\\.wpp_projection\\.(births|deaths|net_migration)$"}
+      concept: population.count
+      measure_kind: flow
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.(infant|under5)_mortality_rate$"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.crude_death_rate"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.life_expectancy"}
+      concept: mortality.general
+      measure_kind: index
+      polarity: 1
+      grain: year
+      place_grain: region
+      canonical_unit: years
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.crude_birth_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.total_fertility_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: births_per_woman
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.median_age"}
+      concept: population.structure
+      measure_kind: index
+      grain: year
+      place_grain: region
+      canonical_unit: years
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {prefix: "population.wpp_projection.population_growth_rate"}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.population_(male|female)$"}
+      concept: population.count
+      measure_kind: stock
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.(natural_change|births_women_15_19|births_surviving_to_age_1|deaths_male|deaths_female|infant_deaths|under5_deaths)$"}
+      concept: population.count
+      measure_kind: flow
+      grain: year
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.mortality_(before_40|before_60|15_to_50|15_to_60)(_male|_female)?$"}
+      concept: mortality.general
+      measure_kind: rate
+      polarity: -1
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.(natural_change_rate|net_migration_rate)$"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: per_1000
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {equals: "population.wpp_projection.net_reproduction_rate"}
+      concept: population.structure
+      measure_kind: rate
+      grain: year
+      place_grain: region
+      canonical_unit: daughters_per_woman
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {equals: "population.wpp_projection.mean_age_childbearing"}
+      concept: population.structure
+      measure_kind: index
+      grain: year
+      place_grain: region
+      canonical_unit: years
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar
+    - when: {regex: "^population\\.wpp_projection\\.sex_ratio(_at_birth)?$"}
+      concept: population.structure
+      measure_kind: ratio
+      grain: year
+      place_grain: region
+      canonical_unit: males_per_100_females
+      serve_warning: *projection_en
+      serve_warning_ar: *projection_ar

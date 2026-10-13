@@ -767,6 +767,166 @@ names:
     en: "Net migration rate per 1,000 population (UN World Population Prospects 2024 estimate)"
     ar: "معدل صافي الهجرة (لكل 1000 نسمة) (تقديرات التوقعات السكانية في العالم 2024، الأمم المتحدة)"
 
+  # population.wpp_projection.*: the UN's MEDIUM-VARIANT PROJECTION of each population.wpp.* series, 2024 to
+  # 2100 (db/mappings/population_wpp_projection.yaml). A model's output, not a measurement, so the word comes
+  # first in both languages, where a list or a spoken answer cannot lose it. Written BY RULE from the 51
+  # estimate names above, never by hand: "Projection: " / «إسقاط: » in front, and the bracket naming the
+  # edition and the variant in place of the one that says "estimate" / «تقديرات». tests/test_more_projections.py
+  # holds every pair to that rule, so an estimate's name cannot be reworded without its projection's.
+  population.wpp_projection.population_total:
+    en: "Projection: Total population at mid-year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: إجمالي عدد السكان في منتصف السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.births:
+    en: "Projection: Births per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد المواليد في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.deaths:
+    en: "Projection: Deaths per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد الوفيات في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.net_migration:
+    en: "Projection: Net migration per year, persons (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: صافي الهجرة في السنة (عدد الأشخاص) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.crude_birth_rate:
+    en: "Projection: Crude birth rate per 1,000 population (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل المواليد الخام (لكل 1000 نسمة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.crude_death_rate:
+    en: "Projection: Crude death rate per 1,000 population (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل الوفيات الخام (لكل 1000 نسمة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.total_fertility_rate:
+    en: "Projection: Total fertility rate, live births per woman (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل الخصوبة الكلي (مولود حي لكل امرأة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy:
+    en: "Projection: Life expectancy at birth, years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند الولادة (بالسنوات) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.infant_mortality_rate:
+    en: "Projection: Infant mortality rate per 1,000 live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل وفيات الرضّع (لكل 1000 مولود حي) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.under5_mortality_rate:
+    en: "Projection: Under-five mortality rate per 1,000 live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل وفيات الأطفال دون سن الخامسة (لكل 1000 مولود حي) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.median_age:
+    en: "Projection: Median age of the population, years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر الوسيط للسكان (بالسنوات) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.population_growth_rate:
+    en: "Projection: Population growth rate, % per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل النمو السكاني (% سنويًا) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.population_total_1jan:
+    en: "Projection: Total population on 1 January (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: إجمالي عدد السكان في 1 كانون الثاني/يناير (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.population_male:
+    en: "Projection: Male population at mid-year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد السكان الذكور في منتصف السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.population_female:
+    en: "Projection: Female population at mid-year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد السكان الإناث في منتصف السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.sex_ratio:
+    en: "Projection: Population sex ratio at mid-year, males per 100 females (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: نسبة الذكور إلى الإناث بين السكان في منتصف السنة (ذكور لكل 100 أنثى) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.natural_change:
+    en: "Projection: Natural change per year, births minus deaths, persons (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: الزيادة الطبيعية في السنة: المواليد ناقص الوفيات (عدد الأشخاص) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.natural_change_rate:
+    en: "Projection: Rate of natural change per 1,000 population (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل الزيادة الطبيعية (لكل 1000 نسمة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.births_women_15_19:
+    en: "Projection: Births by women aged 15 to 19, per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد المواليد لأمهات في سن 15 إلى 19 سنة، في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.net_reproduction_rate:
+    en: "Projection: Net reproduction rate, surviving daughters per woman (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل التكاثر الصافي (بنات باقيات على قيد الحياة لكل امرأة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mean_age_childbearing:
+    en: "Projection: Mean age at childbearing, years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: متوسط العمر عند الإنجاب (بالسنوات) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.sex_ratio_at_birth:
+    en: "Projection: Sex ratio at birth, male births per 100 female births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: نسبة الذكور إلى الإناث عند الولادة (مواليد ذكور لكل 100 مولودة أنثى) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.deaths_male:
+    en: "Projection: Male deaths per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد وفيات الذكور في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.deaths_female:
+    en: "Projection: Female deaths per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد وفيات الإناث في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_male:
+    en: "Projection: Male life expectancy at birth, years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند الولادة للذكور (بالسنوات) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_female:
+    en: "Projection: Female life expectancy at birth, years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند الولادة للإناث (بالسنوات) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_15:
+    en: "Projection: Life expectancy at age 15, remaining years, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 15: السنوات المتبقية، كلا الجنسين (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_15_male:
+    en: "Projection: Male life expectancy at age 15, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 15 للذكور: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_15_female:
+    en: "Projection: Female life expectancy at age 15, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 15 للإناث: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_65:
+    en: "Projection: Life expectancy at age 65, remaining years, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 65: السنوات المتبقية، كلا الجنسين (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_65_male:
+    en: "Projection: Male life expectancy at age 65, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 65 للذكور: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_65_female:
+    en: "Projection: Female life expectancy at age 65, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 65 للإناث: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_80:
+    en: "Projection: Life expectancy at age 80, remaining years, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 80: السنوات المتبقية، كلا الجنسين (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_80_male:
+    en: "Projection: Male life expectancy at age 80, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 80 للذكور: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.life_expectancy_at_80_female:
+    en: "Projection: Female life expectancy at age 80, remaining years (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: العمر المتوقع عند سن 80 للإناث: السنوات المتبقية (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.infant_deaths:
+    en: "Projection: Infant deaths (under age 1) per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد وفيات الرضّع (دون السنة الأولى من العمر) في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.births_surviving_to_age_1:
+    en: "Projection: Live births surviving to age 1, per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: المواليد الأحياء الباقون على قيد الحياة حتى إتمام سنتهم الأولى، في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.under5_deaths:
+    en: "Projection: Deaths under age 5 per year (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: عدد وفيات الأطفال دون سن الخامسة في السنة (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_40:
+    en: "Projection: Mortality before age 40 per 1,000 live births, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 40، كلا الجنسين (لكل 1000 مولود حي) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_40_male:
+    en: "Projection: Male mortality before age 40 per 1,000 male live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 40 للذكور (لكل 1000 مولود حي من الذكور) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_40_female:
+    en: "Projection: Female mortality before age 40 per 1,000 female live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 40 للإناث (لكل 1000 مولودة حية من الإناث) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_60:
+    en: "Projection: Mortality before age 60 per 1,000 live births, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 60، كلا الجنسين (لكل 1000 مولود حي) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_60_male:
+    en: "Projection: Male mortality before age 60 per 1,000 male live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 60 للذكور (لكل 1000 مولود حي من الذكور) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_before_60_female:
+    en: "Projection: Female mortality before age 60 per 1,000 female live births (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة قبل بلوغ سن 60 للإناث (لكل 1000 مولودة حية من الإناث) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_50:
+    en: "Projection: Mortality between ages 15 and 50 per 1,000 alive at age 15, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و50، كلا الجنسين (لكل 1000 ممن بلغوا سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_50_male:
+    en: "Projection: Male mortality between ages 15 and 50 per 1,000 males alive at age 15 (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و50 للذكور (لكل 1000 من الذكور الذين بلغوا سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_50_female:
+    en: "Projection: Female mortality between ages 15 and 50 per 1,000 females alive at age 15 (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و50 للإناث (لكل 1000 من الإناث اللواتي بلغن سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_60:
+    en: "Projection: Mortality between ages 15 and 60 per 1,000 alive at age 15, both sexes (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و60، كلا الجنسين (لكل 1000 ممن بلغوا سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_60_male:
+    en: "Projection: Male mortality between ages 15 and 60 per 1,000 males alive at age 15 (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و60 للذكور (لكل 1000 من الذكور الذين بلغوا سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.mortality_15_to_60_female:
+    en: "Projection: Female mortality between ages 15 and 60 per 1,000 females alive at age 15 (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: احتمال الوفاة بين سن 15 و60 للإناث (لكل 1000 من الإناث اللواتي بلغن سن 15) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+  population.wpp_projection.net_migration_rate:
+    en: "Projection: Net migration rate per 1,000 population (UN World Population Prospects 2024, medium variant)"
+    ar: "إسقاط: معدل صافي الهجرة (لكل 1000 نسمة) (التوقعات السكانية في العالم 2024، الأمم المتحدة، المتغير المتوسط)"
+
   # prisoners.*: Palestinians held by Israel, a count at the start of each month. total and administrative
   # carry two publishers' rows, HaMoked and Addameer (db/mappings/prisoners.yaml, prisoners_hamoked.yaml).
   prisoners.total:
