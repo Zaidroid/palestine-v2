@@ -12,7 +12,7 @@ records_measured: 9986
 
 # CUT FROM v1, 2026-10-12. ops/fetch_fts.py asks FTS's public API the question
 # v1 asked (countryISO3=PSE, one request series per usage year from 2015 to
-# the current year) and writes the record t_funding reads. Measured that day
+# the current year) and writes the record this spec reads. Measured that day
 # against v1's file of the same night: the same 10,341 flow ids, 10,340
 # identical on every field the loader reads, 1 revised by FTS twelve hours
 # after v1 fetched it. The window is v1's and is not the whole of FTS: a flow
@@ -39,8 +39,14 @@ datasets:
     source: unfts
 
 indicator:
-  template: "funding.{funding.status}"
-  # measured, 100% filled, 3 values: paid 7,374 · commitment 2,575 · pledge 37.
+  template: "funding.{funding.series|funding.status}"
+  # `funding.series` is written by ops/fetch_fts.py: the flow's status (paid /
+  # commitment / pledge), or `parked_parent` for a parked contribution with
+  # nothing left on it, whose money is on its child flows (see notes, PARKED
+  # PARENTS). v1's frozen file (the fallback) has no `series` and reads its
+  # status, as it always did.
+  # measured 2026-10-13, 10,375 records: paid 7,314 · commitment 2,471 ·
+  # pledge 36 · parked_parent 554.
   # See notes for why status and not donor, cluster, plan or appeal.
 
 value:
@@ -84,6 +90,13 @@ attrs_passthrough:
                                  #   NOK 308 · SEK 251 · …
   - funding.usage_years          # 1 year 9,851 · 2 years 76 · 3+ 59
   - funding.ref_code
+  # filled on a parked parent only (None, so absent, on every other row):
+  - funding.child_flow_count     # how many child flows FTS lists for it
+  - funding.child_flow_ids       # their flow ids, when there are 30 or fewer
+                                 #   (the longest list on 2026-10-13 has 21)
+  - funding.child_flows_fetched  # how many of them are in the same FTS answer;
+                                 #   fewer than the count = part of the
+                                 #   contribution went outside PSE or the window
   - location.name                # keeps the 50 non-oPt destinations visible
 
 expect:
@@ -163,6 +176,41 @@ notes: |
   reads funding.amount_usd because that is the field the FTS API actually
   populates; metrics.value is v1's copy of it.
 
+  PARKED PARENTS (2026-10-13). FTS "parks" a contribution on a parent flow and
+  files its allocations as child flows. The parent's amountUSD is what is left
+  on it; fullParkedAmountUSD is the whole. Until this date a parent with
+  nothing left (amountUSD 0) was a row of its status series carrying the whole
+  parked amount, beside the children that carry the same money: 520 parents,
+  USD 1,926,516,664 (paid 397 / 1,110,621,301 · commitment 122 / 815,837,426 ·
+  pledge 1 / 57,937), measured on the answer of 2026-10-13.
+  Now such a parent is one row of `funding.parked_parent`: the whole parked
+  amount, the date, place and attrs it always had, plus child_flow_count,
+  child_flow_ids and child_flows_fetched. It is kept so the contribution can be
+  seen and followed to its children. IT IS NEVER ADDED TO paid, commitment OR
+  pledge, and the registry rule below says so beside every answer.
+  The fetcher decides (ops/fetch_fts.py, `is_parked_parent`), because only it
+  sees both of FTS's amounts; it writes the decision as `funding.series`.
+  - A parent whose remainder is BELOW zero (FTS shows more allocated to its
+    children than was parked; 34 on 2026-10-13, USD 596,778,654 parked) is a
+    parked parent too.
+    v1 dropped such a flow, and a row held from a night when its remainder was
+    still positive then stayed in its status series for ever (3 rows,
+    USD 17,099,866 on 2026-10-13: flows 291050, 292049, 390239).
+  - A partly allocated parent (231 on 2026-10-13) keeps its REMAINDER under
+    its status. Measured: 117 have no child yet and carry the whole amount;
+    of the 114 with children, 99 have every child in the answer, and
+    remainder + children = the parked amount, to the dollar, on all 99.
+  - 28 of the 554 parents have a child that is not in the answer. Such a
+    child's money is not in a status series: FTS files it under another
+    country or under no country, or under a usage year the window has not
+    reached (8 children of usage year 2027, USD 11,195,842, on 2026-10-13;
+    they enter on 1 January 2027).
+  - v1's frozen file (the fallback) keeps only the amount v1 chose, so a
+    fallback run cannot tell a parked parent and files it under its status.
+  The held rows close through `identity.revises_by` below: the parent's flow
+  number comes back under `funding.parked_parent`, so its older reading under
+  funding.<status> is closed, never deleted.
+
 identity:
   # UN FTS flows carry their own flow_id, which is the honest key — two
   # grants to the same recipient on the same day are two grants.
@@ -181,6 +229,17 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # FIRST, or the prefix rule below would file the parked parents with the
+    # money that may be added up.
+    - when: {equals: "funding.parked_parent"}
+      concept: funding.humanitarian
+      measure_kind: flow         # dated amounts; see the warning for what
+                                 #   they must never be added to
+      grain: event
+      place_grain: region
+      canonical_unit: USD
+      serve_warning: "A contribution that UN OCHA's Financial Tracking Service parked on a parent flow and has since allocated in full. The row shows the whole contribution, and the same money is already counted in its child flows under paid, commitment or pledge: never add this series to those. Some child flows are outside this databank (another country, no country, or a usage year not reached yet); child_flows_fetched beside child_flow_count says how many are here."
+      serve_warning_ar: "هاي مساهمة سجّلتها خدمة التتبّع المالي (أوتشا) كتحويل أصلي ووزّعتها كلها على تحويلات فرعية. السطر بيعرض المساهمة كاملة، ونفس المبلغ محسوب أصلاً في تحويلاتها الفرعية تحت المدفوع أو الالتزام أو التعهّد: ما بتنجمع مع هاي السلاسل أبداً. وبعض التحويلات الفرعية خارج هاي القاعدة (لبلد ثاني، أو بدون بلد، أو لسنة استخدام ما وصلناها بعد)، والرقم child_flows_fetched جنب child_flow_count بيقول كم واحد منها موجود هون."
     - when: {prefix: "funding."}
       concept: funding.humanitarian
       measure_kind: flow         # money moving, summable over a period

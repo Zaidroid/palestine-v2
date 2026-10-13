@@ -83,14 +83,20 @@ def test_a_flow_becomes_the_record_v1_wrote():
     assert rec["fts"]["updated_at"] == FLOW["401966"]["updatedAt"]
 
 
-def test_a_parked_flow_takes_its_parked_amount_and_an_empty_or_negative_one_is_no_record():
+def test_a_parked_parent_carries_its_parked_amount_in_its_own_series_and_an_empty_flow_is_no_record():
+    """Until 2026-10-13 a parent with nothing left on it was a row of its
+    status series, beside the children that carry the same money
+    (tests/test_more_funding.py holds the rule)."""
     assert FLOW["152896"]["amountUSD"] == 0
-    assert ff.flow_record(FLOW["152896"], AT)["funding"]["amount_usd"] == 38000000
-    assert ff.flow_record(FLOW["402264"], AT)["funding"]["amount_usd"] == 7330000
-    # amountUSD -14,520 beside a parked 6.4 M: v1's `amountUSD || parked` took
-    # the negative and its `> 0` filter dropped the flow. Kept as v1 had it.
+    for fid, usd in (("152896", 38000000), ("402264", 7330000)):
+        f = ff.flow_record(FLOW[fid], AT)["funding"]
+        assert (f["amount_usd"], f["series"], f["status"]) == (usd, "parked_parent", "paid")
+    # amountUSD -14,520 beside a parked 6.4 M: the children were allocated more
+    # than was parked. v1's `amountUSD || parked` took the negative and its
+    # `> 0` filter dropped the flow; it is a parked parent like the others.
     assert FLOW["390239"]["amountUSD"] < 0 < FLOW["390239"]["fullParkedAmountUSD"]
-    assert ff.flow_record(FLOW["390239"], AT) == "no_amount"
+    f = ff.flow_record(FLOW["390239"], AT)["funding"]
+    assert (f["amount_usd"], f["series"]) == (6433626, "parked_parent")
     assert ff.flow_record(FLOW["234685"], AT) == "no_amount"
 
 
@@ -139,7 +145,8 @@ def test_a_flow_filed_under_two_usage_years_is_one_record():
     ids = [r["funding"]["flow_id"] for r in recs]
     assert ids.count("359611") == 1 and len(ids) == len(set(ids))
     assert summary["rows_returned"] == 10 and summary["flows"] == 9
-    assert summary["records"] == 7 and summary["skipped_no_amount"] == 2
+    assert summary["records"] == 8 and summary["skipped_no_amount"] == 1
+    assert summary["parked_parents"] == 3
     assert summary["skipped_undated"] == 0
     assert summary["years"] == [2015, 2026]
     assert summary["data_through"] == "2026-10-10"
@@ -182,14 +189,27 @@ def test_a_year_that_comes_back_short_refuses_the_fetch():
 
 # ── FTS: the identity and the content the store already holds ────────────────
 
-UNCHANGED = ("124783", "125236", "152896", "160700", "401966", "402264")
+# 152896 and 402264 left this list on 2026-10-13: they are parked parents with
+# nothing left on them and are re-filed under `funding.parked_parent`.
+UNCHANGED = ("124783", "125236", "160700", "401966")
+
+
+def _funding_row(rec, spec):
+    """Through what runs: the spec engine. `t_funding` is its unregistered
+    twin and has to say the same."""
+    assert databank.TRANSFORMERS["funding"] is databank.t_engine
+    (row,) = databank.TRANSFORMERS["funding"](rec, spec, PLACES, Counter())
+    (twin,) = databank.t_funding(rec, spec, PLACES, Counter())
+    assert (twin.indicator, twin.occurred_at, twin.value_num, twin.attrs, twin.place_id) == \
+        (row.indicator, row.occurred_at, row.value_num, row.attrs, row.place_id)
+    return row
 
 
 def test_a_fetched_flow_keeps_the_identity_and_the_content_the_store_holds():
     spec = load_spec("funding")
     for fid in UNCHANGED:
         rec = ff.flow_record(FLOW[fid], AT)
-        (row,) = databank.t_funding(rec, spec, PLACES, Counter())
+        row = _funding_row(rec, spec)
         held = FTS_HELD[fid]
         key = identity_key_for(spec["identity"], row.dataset_key,
                                indicator=row.indicator, occurred_at=row.occurred_at,
@@ -206,7 +226,7 @@ def test_a_revised_flow_keeps_its_number_under_a_new_identity():
     is a new row; `revises_by: flow_id` is what closes the old one."""
     spec = load_spec("funding")
     assert spec["identity"]["revises_by"] == "flow_id"
-    (row,) = databank.t_funding(ff.flow_record(FLOW["359611"], AT), spec, PLACES, Counter())
+    row = _funding_row(ff.flow_record(FLOW["359611"], AT), spec)
     held = FTS_HELD["359611"]
     key = identity_key_for(spec["identity"], row.dataset_key, indicator=row.indicator,
                            occurred_at=row.occurred_at, place_id=row.place_id,
@@ -216,12 +236,24 @@ def test_a_revised_flow_keeps_its_number_under_a_new_identity():
     assert row.attrs["flow_id"] == held["attrs"]["flow_id"] == "359611"
 
 
-def test_a_held_flow_fts_now_reports_negative_is_left_alone_not_closed():
-    """390239 is held from an earlier night with a positive amount. Tonight it
-    is no record, so its number is not emitted and nothing revises it."""
-    assert "390239" in FTS_HELD
+def test_a_held_flow_fts_now_reports_negative_comes_back_as_a_parked_parent():
+    """390239 is held under a status series from a night when it still had a
+    positive amount. Dropped (v1's rule, until 2026-10-13), its number was not
+    emitted and nothing revised it: the held row stayed in the series for ever
+    beside its child. As a parked parent its number is emitted under another
+    identity, which is what `revises_by` closes the held row on."""
+    spec = load_spec("funding")
+    held = FTS_HELD["390239"]
+    assert held["indicator"] in ("funding.paid", "funding.commitment")
     recs, _ = ff.build(FLOWS, AT)
-    assert "390239" not in {r["funding"]["flow_id"] for r in recs}
+    (rec,) = [r for r in recs if r["funding"]["flow_id"] == "390239"]
+    row = _funding_row(rec, spec)
+    assert row.indicator == "funding.parked_parent"
+    assert row.attrs["flow_id"] == held["attrs"]["flow_id"] == "390239"
+    key = identity_key_for(spec["identity"], row.dataset_key, indicator=row.indicator,
+                           occurred_at=row.occurred_at, place_id=row.place_id,
+                           value_num=row.value_num, attrs=row.attrs)
+    assert key != held["identity_key"]
 
 
 # ── FTS: the run ─────────────────────────────────────────────────────────────
@@ -244,7 +276,7 @@ def test_a_dry_run_writes_no_file_and_no_ledger_line(monkeypatch, tmp_path):
     assert not out.exists() and not ledger.exists()
     doc = json.loads((stage / "flows.json").read_text())
     meta = doc["metadata"]
-    assert len(doc["data"]) == 7 == meta["records"]
+    assert len(doc["data"]) == 8 == meta["records"]
     assert meta["vintage"] == max(f["updatedAt"] for f in FLOW.values())
     assert meta["vintage_basis"] and meta["vintage_url"].startswith("https://api.hpc.tools/")
     assert meta["license_url"] == "https://fts.unocha.org/content/terms-use"

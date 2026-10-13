@@ -1,0 +1,383 @@
+{
+ "captured": "2026-10-13",
+ "from": "observation, dataset v1_funding_unfts, current rows, before the parked parents were re-filed",
+ "rows": {
+  "162034": {
+   "attrs": {
+    "cluster": "Coordination and support services",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "162034",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "GBP",
+    "recipient": {
+     "name": "United Nations Office for Project Services",
+     "type": "Multilateral Organizations"
+    },
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2017"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2016-08-30||162034",
+   "indicator": "funding.commitment",
+   "occurred_at": "2016-08-30",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "b0a7197c07f24227506183f0a115328d",
+   "value_num": 1945525.0
+  },
+  "162035": {
+   "attrs": {
+    "cluster": "Coordination and support services",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "162035",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 1000000,
+    "original_currency": "GBP",
+    "recipient": {
+     "name": "United Nations Office for Project Services",
+     "type": "Multilateral Organizations"
+    },
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2017"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2016-08-30||162035",
+   "indicator": "funding.paid",
+   "occurred_at": "2016-08-30",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "9fef546ebf99913f4840b5074b949467",
+   "value_num": 1297017.0
+  },
+  "162036": {
+   "attrs": {
+    "cluster": "Coordination and support services",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "162036",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 500000,
+    "original_currency": "GBP",
+    "recipient": {
+     "name": "United Nations Office for Project Services",
+     "type": "Multilateral Organizations"
+    },
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2018"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2016-08-30||162036",
+   "indicator": "funding.commitment",
+   "occurred_at": "2016-08-30",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "cf24b9744578600dec8f1110024bb735",
+   "value_num": 648508.0
+  },
+  "247980": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "247980",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 1235258,
+    "original_currency": "GBP",
+    "recipient": {
+     "name": "United Nations Children's Fund",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "SM210662",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2022"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2022-01-20||247980",
+   "indicator": "funding.paid",
+   "occurred_at": "2022-01-20",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "c5e516f2becd539e22a4374c48eeb80a",
+   "value_num": 1523504.0
+  },
+  "257274": {
+   "attrs": {
+    "cluster": "Water Sanitation Hygiene",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "257274",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 323469,
+    "original_currency": "GBP",
+    "plan": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+    "recipient": {
+     "name": "United Nations Children's Fund",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "SM210662",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2022"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2022-01-20||257274",
+   "indicator": "funding.paid",
+   "occurred_at": "2022-01-20",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "f2fad5cb60da648bddb6c67419d5f4e8",
+   "value_num": 398951.0
+  },
+  "277446": {
+   "attrs": {
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Japan, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "277446",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "USD",
+    "recipient": {
+     "name": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+     "type": "Multilateral Organizations"
+    },
+    "ref_code": "PQ23S12",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2023"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2023-05-23||277446",
+   "indicator": "funding.paid",
+   "occurred_at": "2023-05-23",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "4dcdcd5f8c59318731919ab2fbfa314d",
+   "value_num": 600234.0
+  },
+  "292049": {
+   "attrs": {
+    "contribution_type": "in kind",
+    "donor": {
+     "name": "Sweden, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "292049",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 0,
+    "original_currency": "SEK",
+    "recipient": {
+     "name": "Oxfam GB",
+     "type": "NGOs"
+    },
+    "ref_code": "Sida contribution nr: 14405",
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2023",
+     "2024"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2023-10-23||292049",
+   "indicator": "funding.commitment",
+   "occurred_at": "2023-10-23",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "a586bc78dd826a77f5b53d6d51e91500",
+   "value_num": 229779.0
+  },
+  "292109": {
+   "attrs": {
+    "cluster": "Emergency Shelter and NFI",
+    "contribution_type": "in kind",
+    "donor": {
+     "name": "Sweden, Government of",
+     "type": "Governments"
+    },
+    "emergency": "oPt Complex Emergency 2023-24",
+    "flow_id": "292109",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 1075000,
+    "original_currency": "SEK",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2023",
+    "recipient": {
+     "name": "Oxfam GB",
+     "type": "NGOs"
+    },
+    "ref_code": "Sida contribution nr: 14405",
+    "region": "Palestine",
+    "status": "commitment",
+    "usage_years": [
+     "2023"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.commitment|2023-10-23||292109",
+   "indicator": "funding.commitment",
+   "occurred_at": "2023-10-23",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "ab32e1d01a77fe75932b37827e003bb4",
+   "value_num": 98805.0
+  },
+  "323808": {
+   "attrs": {
+    "cluster": "Health",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "flow_id": "323808",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 900000,
+    "original_currency": "EUR",
+    "plan": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+    "recipient": {
+     "name": "Médicos do Mundo",
+     "type": "NGOs"
+    },
+    "ref_code": "2022.1817.0",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2022"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2024-10-07||323808",
+   "indicator": "funding.paid",
+   "occurred_at": "2024-10-07",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "84b86c39cf8b96c836ce9cbba1bc5af5",
+   "value_num": 1004240.0
+  },
+  "323809": {
+   "attrs": {
+    "cluster": "Health",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "United Kingdom, Government of",
+     "type": "Governments"
+    },
+    "emergency": "oPt Complex Emergency 2023-24",
+    "flow_id": "323809",
+    "flow_type": "Parked",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 2300000,
+    "original_currency": "EUR",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2024",
+    "recipient": {
+     "name": "Médicos do Mundo",
+     "type": "NGOs"
+    },
+    "ref_code": "2022.1817.0",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2024"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2024-10-07||323809",
+   "indicator": "funding.paid",
+   "occurred_at": "2024-10-07",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "fb82c68cac3e59bb0f497eff5314dba7",
+   "value_num": 2566391.0
+  },
+  "401972": {
+   "attrs": {
+    "cluster": "Water Sanitation Hygiene",
+    "contribution_type": "financial",
+    "donor": {
+     "name": "Swedish International Development Cooperation Agency (SIDA)",
+     "type": "Governments"
+    },
+    "emergency": "oPt Complex Emergency 2023-24",
+    "flow_id": "401972",
+    "flow_type": "Standard",
+    "method": "Traditional aid",
+    "name": "Occupied Palestinian Territory",
+    "new_money": true,
+    "original_amount": 2500000,
+    "original_currency": "SEK",
+    "plan": "Escalation of Hostilities in the OPT Flash Appeal 2023",
+    "recipient": {
+     "name": "Oxfam GB",
+     "type": "NGOs"
+    },
+    "ref_code": "14405",
+    "region": "Palestine",
+    "status": "paid",
+    "usage_years": [
+     "2023"
+    ]
+   },
+   "identity_key": "v1_funding_unfts|funding.paid|2026-10-07||401972",
+   "indicator": "funding.paid",
+   "occurred_at": "2026-10-07",
+   "place_id": null,
+   "unit": "USD",
+   "v1_stable_id": "df299c063cbbbfb99c16a839eaacccdc",
+   "value_num": 224568.0
+  }
+ }
+}

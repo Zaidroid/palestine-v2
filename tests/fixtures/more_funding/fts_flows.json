@@ -1,0 +1,1351 @@
+{
+ "captured": "2026-10-13",
+ "from": "https://api.hpc.tools/v1/public/fts/flow?countryISO3=PSE&year=<2015..2026>&limit=200",
+ "note": "twelve real flows, unedited, as FTS returned them: four parked parents and the children of theirs that the PSE answer carries, and one partly allocated parent",
+ "flows": [
+  {
+   "id": "162034",
+   "amountUSD": 0,
+   "fullParkedAmountUSD": 1945525,
+   "budgetYear": "2017",
+   "childFlowIds": [
+    162035,
+    162036
+   ],
+   "contributionType": "financial",
+   "createdAt": "2017-07-26T08:46:24.678Z",
+   "date": "2016-08-30T00:00:00Z",
+   "decisionDate": "2016-07-15T00:00:00Z",
+   "description": "Humanitarian Access in the OPTs; support to Access Coordination Unit (ACU) and Materials Monitoring Unit (MMU).  Multi-year award 2017 and 2018",
+   "grandBargainEarmarkingType": null,
+   "exchangeRate": 0.771,
+   "firstReportedDate": "2017-07-25T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "originalAmount": 0,
+   "originalCurrency": "GBP",
+   "method": "Traditional aid",
+   "parentFlowId": null,
+   "status": "commitment",
+   "updatedAt": "2017-07-26T08:54:34.531Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "36",
+     "name": "2016",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "8",
+     "name": "United Nations Office for Project Services",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "26480",
+     "name": "Coordination and support services",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "38",
+     "name": "2017",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "United Kingdom, Government of",
+     "reportChannel": "FTS Web",
+     "date": "2017-07-25T00:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "id": "162035",
+   "amountUSD": 1297017,
+   "budgetYear": "2017",
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2017-07-26T08:53:19.495Z",
+   "date": "2016-08-30T00:00:00Z",
+   "decisionDate": "2016-07-15T00:00:00Z",
+   "description": "Humanitarian Access in the OPTs; support to Access Coordination Unit (ACU) and Materials Monitoring Unit (MMU).  Multi-year award 2017 and 2018",
+   "grandBargainEarmarkingType": null,
+   "exchangeRate": 0.771,
+   "firstReportedDate": "2017-07-25T00:00:00Z",
+   "flowType": "Standard",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": 1000000,
+   "originalCurrency": "GBP",
+   "method": "Traditional aid",
+   "parentFlowId": 162034,
+   "status": "paid",
+   "updatedAt": "2017-07-26T08:54:34.886Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "36",
+     "name": "2016",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "8",
+     "name": "United Nations Office for Project Services",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "26480",
+     "name": "Coordination and support services",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "38",
+     "name": "2017",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "United Kingdom, Government of",
+     "reportChannel": "FTS Web",
+     "date": "2017-07-25T00:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "id": "162036",
+   "amountUSD": 648508,
+   "budgetYear": "2017",
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2017-07-26T08:53:55.840Z",
+   "date": "2016-08-30T00:00:00Z",
+   "decisionDate": "2016-07-15T00:00:00Z",
+   "description": "Humanitarian Access in the OPTs; support to Access Coordination Unit (ACU) and Materials Monitoring Unit (MMU).  Multi-year award 2017 and 2018",
+   "grandBargainEarmarkingType": null,
+   "exchangeRate": 0.771,
+   "firstReportedDate": "2017-07-25T00:00:00Z",
+   "flowType": "Standard",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": 500000,
+   "originalCurrency": "GBP",
+   "method": "Traditional aid",
+   "parentFlowId": 162034,
+   "status": "commitment",
+   "updatedAt": "2017-07-26T08:54:34.886Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "36",
+     "name": "2016",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "8",
+     "name": "United Nations Office for Project Services",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "26480",
+     "name": "Coordination and support services",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "39",
+     "name": "2018",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "United Kingdom, Government of",
+     "reportChannel": "FTS Web",
+     "date": "2017-07-25T00:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "id": "277446",
+   "amountUSD": 0,
+   "fullParkedAmountUSD": 600234,
+   "budgetYear": null,
+   "childFlowIds": [
+    286327,
+    286328
+   ],
+   "contributionType": "financial",
+   "createdAt": "2023-05-11T06:46:39.906Z",
+   "date": "2023-05-23T00:00:00Z",
+   "decisionDate": "2023-04-18T00:00:00Z",
+   "description": "Programme Budget Contribution from Japan 2023  Multi-Sector",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": null,
+   "firstReportedDate": "2023-05-10T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "method": "Traditional aid",
+   "parentFlowId": null,
+   "status": "paid",
+   "updatedAt": "2023-08-17T11:19:47.303Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "4537",
+     "name": "Japan, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "112",
+     "name": "Japan",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "3035",
+     "name": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "shared"
+    },
+    {
+     "type": "Location",
+     "id": "124",
+     "name": "Lebanon",
+     "behavior": "shared"
+    },
+    {
+     "type": "Location",
+     "id": "114",
+     "name": "Jordan",
+     "behavior": "shared"
+    },
+    {
+     "type": "Location",
+     "id": "218",
+     "name": "Syrian Arab Republic",
+     "behavior": "shared"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "shared",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Japan, Government of",
+     "reportChannel": "Email",
+     "date": "2023-05-10T00:00:00.000Z"
+    },
+    {
+     "sourceType": "Primary",
+     "organization": "United Nations Relief and Works Agency for Palestine Refugees in the Near East",
+     "reportChannel": "Email",
+     "date": "2023-08-17T00:00:00.000Z"
+    }
+   ],
+   "refCode": "PQ23S12"
+  },
+  {
+   "id": "323807",
+   "amountUSD": -71,
+   "fullParkedAmountUSD": 3570560,
+   "budgetYear": null,
+   "childFlowIds": [
+    323808,
+    323809
+   ],
+   "contributionType": "financial",
+   "createdAt": "2024-10-07T16:30:49.136Z",
+   "date": "2024-10-07T00:00:00Z",
+   "decisionDate": "2022-11-08T00:00:00Z",
+   "description": "Strengthening access to quality MHPSS services for the conflict-affected population in oPt by strengthening existing structures while improving the resilience of vulnerable communities",
+   "grandBargainEarmarkingType": [
+    "tightly earmarked"
+   ],
+   "exchangeRate": 0.8962,
+   "firstReportedDate": "2024-10-03T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": 0,
+   "originalCurrency": "EUR",
+   "method": "Traditional aid",
+   "parentFlowId": null,
+   "status": "paid",
+   "updatedAt": "2024-10-07T16:35:07.107Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "2586",
+     "name": "Médicos do Mundo",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "International NGOs"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "shared"
+    },
+    {
+     "type": "UsageYear",
+     "id": "43",
+     "name": "2022",
+     "behavior": "shared"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "shared"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "shared",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Médicos do Mundo",
+     "reportChannel": "Email",
+     "date": "2024-10-03T00:00:00.000Z"
+    }
+   ],
+   "refCode": "2022.1817.0"
+  },
+  {
+   "id": "323808",
+   "amountUSD": 1004240,
+   "fullParkedAmountUSD": 1004240,
+   "budgetYear": null,
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2024-10-07T16:33:02.118Z",
+   "date": "2024-10-07T00:00:00Z",
+   "decisionDate": "2022-11-08T00:00:00Z",
+   "description": "Strengthening access to quality MHPSS services for the conflict-affected population in oPt by strengthening existing structures while improving the resilience of vulnerable communities",
+   "grandBargainEarmarkingType": [
+    "tightly earmarked"
+   ],
+   "exchangeRate": 0.8962,
+   "firstReportedDate": "2024-10-03T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "originalAmount": 900000,
+   "originalCurrency": "EUR",
+   "method": "Traditional aid",
+   "parentFlowId": 323807,
+   "status": "paid",
+   "updatedAt": "2024-10-07T16:33:02.118Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Plan",
+     "id": "1059",
+     "name": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+     "behavior": "single"
+    },
+    {
+     "type": "Organization",
+     "id": "2586",
+     "name": "Médicos do Mundo",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "International NGOs"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Cluster",
+     "id": "6307",
+     "name": "Health",
+     "behavior": "single"
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "7",
+     "name": "Health",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "43",
+     "name": "2022",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Médicos do Mundo",
+     "reportChannel": "Email",
+     "date": "2024-10-03T00:00:00.000Z"
+    }
+   ],
+   "refCode": "2022.1817.0"
+  },
+  {
+   "id": "323809",
+   "amountUSD": 2566391,
+   "fullParkedAmountUSD": 2566391,
+   "budgetYear": null,
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2024-10-07T16:33:47.733Z",
+   "date": "2024-10-07T00:00:00Z",
+   "decisionDate": "2022-11-08T00:00:00Z",
+   "description": "Strengthening access to quality MHPSS services for the conflict-affected population in oPt by strengthening existing structures while improving the resilience of vulnerable communities",
+   "grandBargainEarmarkingType": [
+    "tightly earmarked"
+   ],
+   "exchangeRate": 0.8962,
+   "firstReportedDate": "2024-10-03T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "originalAmount": 2300000,
+   "originalCurrency": "EUR",
+   "method": "Traditional aid",
+   "parentFlowId": 323807,
+   "status": "paid",
+   "updatedAt": "2024-10-07T16:33:47.733Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Plan",
+     "id": "1156",
+     "name": "Escalation of Hostilities in the OPT Flash Appeal 2024",
+     "behavior": "single"
+    },
+    {
+     "type": "Organization",
+     "id": "2586",
+     "name": "Médicos do Mundo",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "International NGOs"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Cluster",
+     "id": "7242",
+     "name": "Health",
+     "behavior": "single"
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "7",
+     "name": "Health",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "Emergency",
+     "id": "962",
+     "name": "oPt Complex Emergency 2023-24",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Médicos do Mundo",
+     "reportChannel": "Email",
+     "date": "2024-10-03T00:00:00.000Z"
+    }
+   ],
+   "refCode": "2022.1817.0"
+  },
+  {
+   "id": "292049",
+   "amountUSD": -98805,
+   "fullParkedAmountUSD": 224568,
+   "budgetYear": "2023",
+   "childFlowIds": [
+    292109,
+    401972
+   ],
+   "contributionType": "in kind",
+   "createdAt": "2023-10-27T02:25:48.603Z",
+   "date": "2023-10-23T00:00:00Z",
+   "decisionDate": "2023-10-23T00:00:00Z",
+   "description": "Oxfam, PEF and YEC is proposing a 5-month life-saving emergency response, focused on water & sanitation and protection assistance to 21,500 most affected women, men, boys and girls, residing in the temporarily shelters across Gaza.",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": 10.88,
+   "firstReportedDate": "2023-10-26T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": -1075000,
+   "originalCurrency": "SEK",
+   "method": "Traditional aid",
+   "parentFlowId": null,
+   "status": "commitment",
+   "updatedAt": "2026-10-07T10:40:32.469Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "14445",
+     "name": "Swedish International Development Cooperation Agency (SIDA)",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "International Government Entities"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "216",
+     "name": "Sweden",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "8582",
+     "name": "Oxfam GB",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "Internationally Affiliated Organizations"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "shared"
+    },
+    {
+     "type": "UsageYear",
+     "id": "45",
+     "name": "2024",
+     "behavior": "shared"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "shared",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Sweden, Government of",
+     "reportChannel": "From EDRIS",
+     "date": "2023-10-26T00:00:00.000Z"
+    }
+   ],
+   "refCode": "Sida contribution nr: 14405"
+  },
+  {
+   "id": "292109",
+   "amountUSD": 98805,
+   "budgetYear": "2023",
+   "childFlowIds": null,
+   "contributionType": "in kind",
+   "createdAt": "2023-10-27T05:58:28.662Z",
+   "date": "2023-10-23T00:00:00Z",
+   "decisionDate": "2023-10-23T00:00:00Z",
+   "description": "Oxfam, PEF and YEC is proposing a 5-month life-saving emergency response, focused on water & sanitation and protection assistance to 21,500 most affected women, men, boys and girls, residing in the temporarily shelters across Gaza.",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": 10.88,
+   "firstReportedDate": "2023-10-26T00:00:00Z",
+   "flowType": "Standard",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": 1075000,
+   "originalCurrency": "SEK",
+   "method": "Traditional aid",
+   "parentFlowId": 292049,
+   "status": "commitment",
+   "updatedAt": "2023-10-27T05:58:28.662Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2921",
+     "name": "Sweden, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "216",
+     "name": "Sweden",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Plan",
+     "id": "1186",
+     "name": "Escalation of Hostilities in the OPT Flash Appeal 2023",
+     "behavior": "single"
+    },
+    {
+     "type": "Organization",
+     "id": "8582",
+     "name": "Oxfam GB",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "Internationally Affiliated Organizations"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Cluster",
+     "id": "7428",
+     "name": "Shelter and Non-Food Items",
+     "behavior": "single"
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "4",
+     "name": "Emergency Shelter and NFI",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "Emergency",
+     "id": "962",
+     "name": "oPt Complex Emergency 2023-24",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Sweden, Government of",
+     "reportChannel": "From EDRIS",
+     "date": "2023-10-26T00:00:00.000Z"
+    }
+   ],
+   "refCode": "Sida contribution nr: 14405"
+  },
+  {
+   "id": "401972",
+   "amountUSD": 224568,
+   "budgetYear": "2023",
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2026-10-07T09:51:24.510Z",
+   "date": "2026-10-07T00:00:00Z",
+   "decisionDate": "2023-11-01T00:00:00Z",
+   "description": "WASH and NFI humanitarian assistance to IDPs in Rafah and Khan Younis for 7 months",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": 11.132485,
+   "firstReportedDate": "2026-09-17T00:00:00Z",
+   "flowType": "Standard",
+   "keywords": [
+    "Multiyear"
+   ],
+   "newMoney": true,
+   "originalAmount": 2500000,
+   "originalCurrency": "SEK",
+   "method": "Traditional aid",
+   "parentFlowId": 292049,
+   "status": "paid",
+   "updatedAt": "2026-10-07T10:40:32.360Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "14445",
+     "name": "Swedish International Development Cooperation Agency (SIDA)",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "International Government Entities"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "216",
+     "name": "Sweden",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Plan",
+     "id": "1186",
+     "name": "Escalation of Hostilities in the OPT Flash Appeal 2023",
+     "behavior": "single"
+    },
+    {
+     "type": "Organization",
+     "id": "8582",
+     "name": "Oxfam GB",
+     "behavior": "single",
+     "organizationTypes": [
+      "NGOs"
+     ],
+     "organizationSubTypes": [
+      "Internationally Affiliated Organizations"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Cluster",
+     "id": "7431",
+     "name": "Water, Sanitation and Hygiene",
+     "behavior": "single"
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "11",
+     "name": "Water Sanitation Hygiene",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "Emergency",
+     "id": "962",
+     "name": "oPt Complex Emergency 2023-24",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "44",
+     "name": "2023",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "Oxfam GB",
+     "reportChannel": "From Excel",
+     "date": "2026-10-07T00:00:00.000Z"
+    }
+   ],
+   "refCode": "14405"
+  },
+  {
+   "id": "247980",
+   "amountUSD": 1523504,
+   "fullParkedAmountUSD": 1922455,
+   "budgetYear": "2021",
+   "childFlowIds": [
+    257274
+   ],
+   "contributionType": "financial",
+   "createdAt": "2022-03-23T10:15:56.878Z",
+   "date": "2022-01-20T00:00:00Z",
+   "decisionDate": null,
+   "description": "Non-Thematic - Occupied Palestinian Territory. Social protection & cash transfers",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": 0.8108,
+   "firstReportedDate": "2022-01-20T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "originalAmount": 1235258,
+   "originalCurrency": "GBP",
+   "method": "Traditional aid",
+   "parentFlowId": null,
+   "status": "paid",
+   "updatedAt": "2023-03-01T12:53:04.394Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "42",
+     "name": "2021",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Organization",
+     "id": "2915",
+     "name": "United Nations Children's Fund",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "43",
+     "name": "2022",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "United Nations Children's Fund",
+     "reportChannel": "Email",
+     "date": "2022-01-20T00:00:00.000Z"
+    }
+   ],
+   "refCode": "SM210662"
+  },
+  {
+   "id": "257274",
+   "amountUSD": 398951,
+   "fullParkedAmountUSD": 398951,
+   "budgetYear": "2021",
+   "childFlowIds": null,
+   "contributionType": "financial",
+   "createdAt": "2022-03-23T10:15:56.878Z",
+   "date": "2022-01-20T00:00:00Z",
+   "decisionDate": null,
+   "description": "Non-Thematic - Occupied Palestinian Territory. Social protection & cash transfers",
+   "grandBargainEarmarkingType": [
+    "earmarked"
+   ],
+   "exchangeRate": 0.8108,
+   "firstReportedDate": "2022-01-20T00:00:00Z",
+   "flowType": "Parked",
+   "keywords": null,
+   "newMoney": true,
+   "originalAmount": 323469,
+   "originalCurrency": "GBP",
+   "method": "Traditional aid",
+   "parentFlowId": 247980,
+   "status": "paid",
+   "updatedAt": "2023-03-01T12:53:04.276Z",
+   "versionId": 1,
+   "sourceObjects": [
+    {
+     "type": "Organization",
+     "id": "2917",
+     "name": "United Kingdom, Government of",
+     "behavior": "single",
+     "organizationTypes": [
+      "Governments"
+     ],
+     "organizationSubTypes": [
+      "National Governments"
+     ],
+     "organizationLevels": [
+      "National and Sub-National State Actors"
+     ]
+    },
+    {
+     "type": "Location",
+     "id": "236",
+     "name": "United Kingdom",
+     "behavior": "single"
+    },
+    {
+     "type": "UsageYear",
+     "id": "42",
+     "name": "2021",
+     "behavior": "single"
+    }
+   ],
+   "destinationObjects": [
+    {
+     "type": "Plan",
+     "id": "1059",
+     "name": "Occupied Palestinian Territory Humanitarian Response Plan 2022",
+     "behavior": "single"
+    },
+    {
+     "type": "Organization",
+     "id": "2915",
+     "name": "United Nations Children's Fund",
+     "behavior": "single",
+     "organizationTypes": [
+      "Multilateral Organizations"
+     ],
+     "organizationSubTypes": [
+      "UN Agencies"
+     ],
+     "organizationLevels": [
+      "International Actors"
+     ]
+    },
+    {
+     "type": "Cluster",
+     "id": "6310",
+     "name": "WASH",
+     "behavior": "single"
+    },
+    {
+     "type": "GlobalCluster",
+     "id": "11",
+     "name": "Water Sanitation Hygiene",
+     "behavior": "single"
+    },
+    {
+     "type": "Location",
+     "id": "171",
+     "name": "Occupied Palestinian Territory",
+     "behavior": "single"
+    },
+    {
+     "type": "Project",
+     "id": "183676",
+     "name": "Provision of WASH response for vulnerable households and communities in the Gaza Strip ",
+     "behavior": "single",
+     "code": "HPSE22-WSH-183676-1"
+    },
+    {
+     "type": "UsageYear",
+     "id": "43",
+     "name": "2022",
+     "behavior": "single"
+    }
+   ],
+   "boundary": "incoming",
+   "onBoundary": "single",
+   "reportDetails": [
+    {
+     "sourceType": "Primary",
+     "organization": "United Nations Children's Fund",
+     "reportChannel": "Email",
+     "date": "2022-01-20T00:00:00.000Z"
+    },
+    {
+     "sourceType": "Primary",
+     "organization": "United Nations Children's Fund",
+     "reportChannel": "Email",
+     "date": "2022-08-11T00:00:00.000Z"
+    }
+   ],
+   "refCode": "SM210662"
+  }
+ ]
+}
