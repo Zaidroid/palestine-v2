@@ -1525,4 +1525,8 @@ the live store, the live API and the public partner door
   faults only.
 - Seen and left: the spoken funding headline leads with a parent row (named, warned). One line would fix it:
   mark `funding.parked_parent` `ask_by_name` too. Not done; it changes an answer and waits for his word.
+- **Suite on the merged tree against the live store, after both commands: 2,068 passed, 0 failed, 3 skipped
+  (885 s).** Zaid, the same hour: yes to serving the projections; "go for it" on marking the funding parent
+  series by-name; the Arabic names were explained to him (optional, spelling only). Both are being built as one
+  more command on branch `databank-more3`.
 
