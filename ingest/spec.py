@@ -583,6 +583,14 @@ _k("registry.rules[].ask_by_name", "enforced",
 _k("registry.rules[].serve_warning_ar", "enforced",
    "the same sentence in Palestinian Arabic, spoken by `answer`",
    types=(str,))
+_k("registry.rules[].projection", "enforced",
+   "true = the series is a PROJECTION: a model's output, not a measurement. "
+   "Written to indicator_def.projection by ops/load_registry.py (migration "
+   "115); serve/app.py _projections() reads it: such a series is never "
+   "compared or correlated with an observed one, never a candidate of the "
+   "scan, and is spoken as a projection. A rule that says it says "
+   "`ask_by_name` too, which is what keeps it out of a category's rows",
+   types=(bool,))
 _k("registry.rules[].name_en", "rationale", "", types=(str,))
 _k("registry.rules[].name_ar", "rationale", "", types=(str,))
 _k("registry.rules[].note", "rationale", "why this rule", types=(str,))

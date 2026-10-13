@@ -139,7 +139,7 @@ def matches(rule: dict, indicator: str, unit: str | None) -> bool:
 
 FIELDS = ("concept", "measure_kind", "polarity", "grain", "place_grain",
           "canonical_unit", "name_en", "name_ar",
-          "serve_warning", "serve_warning_ar", "ask_by_name")
+          "serve_warning", "serve_warning_ar", "ask_by_name", "projection")
 
 
 def classify(pairs: list[tuple[str, str | None, int]],
@@ -280,6 +280,11 @@ def main(argv: list[str]) -> int:
                         WHERE table_name = 'indicator_def' AND column_name = 'ask_by_name'""")
         has_by_name = bool(cur.fetchone()[0])
         by_name_written = 0
+        # indicator_def.projection (migration 115): the same
+        cur.execute("""SELECT count(*) FROM information_schema.columns
+                        WHERE table_name = 'indicator_def' AND column_name = 'projection'""")
+        has_projection = bool(cur.fetchone()[0])
+        projection_written = 0
         total_unclassified = 0
         warned = 0
         declared_warnings = 0
@@ -397,6 +402,19 @@ def main(argv: list[str]) -> int:
                                 "WHERE indicator = %s AND ask_by_name IS DISTINCT FROM %s",
                                 (want, ind, want))
                     by_name_written += cur.rowcount
+                # `projection` (migration 115) is written the same way and
+                # follows its rule both ways too. Only an indicator that HAS
+                # rows is classified here, so the 51 definitions migration 115
+                # writes before the projection's first row is loaded are left
+                # as it wrote them until then; tests/test_more_projections_serving.py
+                # holds every rule of that spec to saying it, and every other
+                # spec's rules to not reaching those series.
+                if has_projection:
+                    want = meta.get("projection") is True
+                    cur.execute("UPDATE indicator_def SET projection = %s "
+                                "WHERE indicator = %s AND projection IS DISTINCT FROM %s",
+                                (want, ind, want))
+                    projection_written += cur.rowcount
             # Unclassified indicators get a ROW too, marked as such. A
             # missing row and a row saying "nobody has classified this" look
             # identical to a query and are completely different facts.
@@ -464,6 +482,18 @@ def main(argv: list[str]) -> int:
         print(f"{n_by_name} indicator(s) are served when asked for by name"
               + (f" · {by_name_written} written or changed" if apply and has_by_name else "")
               + ("" if has_by_name else " · indicator_def.ask_by_name is absent (migration 114): not written"))
+        n_proj = sum(1 for m in rule_meta.values() if m.get("projection"))
+        print(f"{n_proj} indicator(s) are declared a projection"
+              + (f" · {projection_written} written or changed" if apply and has_projection else "")
+              + ("" if has_projection else " · indicator_def.projection is absent (migration 115): not written"))
+        if n_proj and not has_projection:
+            # Rows of a declared projection are in the store and the store has
+            # nowhere to say so: they were loaded before migration 115. That
+            # is the one order the migration forbids, and it fails the night.
+            problems.append(
+                f"{n_proj} indicator(s) with rows are declared a projection and "
+                "indicator_def.projection does not exist: apply migration 115 "
+                "(until then nothing tells the serving code they are not measurements)")
 
         cur.execute("""SELECT count(*) FROM databank_serving ds
                        LEFT JOIN unit_alias ua ON ua.raw = ds.unit

@@ -38,7 +38,7 @@ from typing import Any
 
 from serve.mcp_en import (SEEN_WORDS, effective_groups, field_words,  # noqa: E402
                           product_labels, searching, seen_on_route, share_words)
-from serve.when import (cited_ar, is_cited, label_ar, short_source, statements,  # noqa: E402
+from serve.when import (_num, cited_ar, is_cited, label_ar, short_source, statements,  # noqa: E402
                         when_ar)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -1614,6 +1614,10 @@ def compare(indicators: str, place: str | None = None) -> dict:
         if g.get("found"):
             place_id = g.get("place_id")
     d = api("/v2/databank/compare", indicators=indicators, place_id=place_id)
+    if d.get("refused"):
+        from serve.correlate import reason_ar
+        return {"answer": "ما بحطهم جنب بعض: " + "؛ و".join(reason_ar(r) for r in d["reasons"])
+                          + "." + _warnings_ar(d), **d}
     ss = d.get("series", [])
     # A MODEL READS THIS, NOT A CHART. Thousands of points per series is the
     # route's job (a frontend draws them); the tool keeps the newest
@@ -1801,6 +1805,18 @@ def trend(indicator: str, days: int = 90, place: str | None = None) -> dict:
     frm = (date.today() - timedelta(days=days)).isoformat()
     d = api("/v2/databank/compare", indicators=f"{indicator},{indicator}",
             place_id=place_id, frm=frm)
+    if ((d.get("series") or [{}])[0] or {}).get("projection"):
+        # A projection has no "last 90 days" and no readings: its dates are
+        # years a model was run for. It is said whole, as what it is.
+        d = api("/v2/databank/compare", indicators=f"{indicator},{indicator}", place_id=place_id)
+        pts = [p for p in d["series"][0].get("points", []) if p.get("value") is not None]
+        span = (f" من {_num(pts[0]['value'])} سنة {str(pts[0]['at'])[:4]} لـ{_num(pts[-1]['value'])} "
+                f"سنة {str(pts[-1]['at'])[:4]}" if pts else "")
+        return {"answer": f"{label_ar(d, indicator)}: إسقاط مش قياس، {len(pts)} سنة{span}."
+                          + _warnings_ar(d),
+                "indicator": indicator, "projection": True, "n": len(pts),
+                "first": pts[0] if pts else None, "last": pts[-1] if pts else None,
+                **{k: d[k] for k in ("warnings", "names") if d.get(k)}}
     pts = [p for p in (d.get("series") or [{}])[0].get("points", [])
            if p.get("value") is not None]
     window_note = ""
@@ -2177,18 +2193,27 @@ def databank(category: str | None = None, indicator: str | None = None,
         bits.append(f"{nm}: {val:,}{unit} {when_}{partial}{where}" if isinstance(val, (int, float))
                     else f"{nm}: {val} {when_}{where}")
     src = short_source(d.get("attribution"), "؛ ")
-    answer = (f"{category}{when} — آخر الأرقام: " + "؛ ".join(bits) + "."
+    # A projection asked for by name is said as one: its newest row is its
+    # FARTHEST year, never "the latest figures" and never `latest_by_indicator`.
+    projected = bool(d.get("projections"))
+    answer = (f"{category}{when} — " + ("إسقاط مش قياس، وهاي أبعد سنة فيه: " if projected
+                                        else "آخر الأرقام: ") + "؛ ".join(bits) + "."
               + (f" المصدر: {src}." if src else "") + span
-              + f" (أحدث {d['count']} سجلات معروضة" + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
+              + f" ({'أبعد' if projected else 'أحدث'} {d['count']} سجلات معروضة"
+              + (" من أصل أكثر" if d["count"] >= limit else "") + ")")
     answer += _event_note_ar(d)
     bn = d.get("by_name_only") or {}
     if bn.get("series"):
         answer += (f" وفي كمان {bn['series']:,} سلسلة، كل وحدة لحالها وبتنطلب بالاسم"
                    + (f" (مثلاً: {bn['example_ar']})" if bn.get("example_ar") else "") + ".")
+    said: list[str] = []
     for ind, w in (d.get("warnings") or {}).items():
-        if ind in newest and w.get("ar"):
+        if ind in newest and w.get("ar") and w["ar"] not in said:
+            said.append(w["ar"])                       # one warning shared by a family is said once
             answer += f" تنبيه: {w['ar']}"
-    return {"answer": answer, "latest_by_indicator": list(newest.values())[:3],
+    top = list(newest.values())[:3]
+    return {"answer": answer, "latest_by_indicator": [] if projected else top,
+            **({"projected_by_indicator": top} if projected else {}),
             "series_span": series_span, **d}
 
 

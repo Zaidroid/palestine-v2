@@ -30,6 +30,16 @@ def test_the_parked_parent_rule_declares_it_and_the_status_series_rule_does_not(
     assert status["when"] == {"prefix": "funding."} and not status.get("ask_by_name")
 
 
+def test_the_un_s_projection_series_declare_it_beside_what_they_are():
+    """A projection (migration 115) is kept out of its category's rows by this
+    flag and no other condition: every rule of its spec says both."""
+    from ingest.databank import load_spec
+    rules = load_spec("population_wpp_projection")["registry"]["rules"]
+    assert len(rules) == 16 and all(r["ask_by_name"] is True and r["projection"] is True for r in rules)
+    for r in load_spec("population_wpp")["registry"]["rules"]:
+        assert not r.get("ask_by_name") and not r.get("projection")
+
+
 def test_the_registry_loader_carries_the_flag_from_a_rule():
     from ops import load_registry as L
     assert "ask_by_name" in L.FIELDS
@@ -58,8 +68,8 @@ def _flagged():
                         WHERE table_name = 'indicator_def' AND column_name = 'ask_by_name'""")
         if not cur.fetchone()[0]:
             pytest.skip("migration 114 not applied")
-        # the settlements family alone: other categories hold series by name too
-        # (a parked funding parent)
+        # the settlements family alone: a parked funding parent and the UN's 51
+        # projection series are held by name too, in other categories
         cur.execute("""SELECT count(*) FROM indicator_def i WHERE i.ask_by_name AND EXISTS
                         (SELECT 1 FROM databank_serving ds WHERE ds.indicator = i.indicator
                             AND ds.v1_category = 'settlements')""")

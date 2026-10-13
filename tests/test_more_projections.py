@@ -14,9 +14,9 @@ What is held here: the file is split at the last estimate year and nowhere
 else; a projection record says what it is and neither transformer takes the
 other's records; the estimates are written as before; identities do not
 collide; every projection series is classified as its estimate is, carries the
-one warning, and is named from its estimate by rule with the word first; the
-spec's floors are the measured file's; and the spec is switched off until the
-serving rule exists.
+one warning, and is named from its estimate by rule with the word first; and
+the spec's floors are the measured file's. How a projection is served is held
+in tests/test_more_projections_serving.py.
 """
 from __future__ import annotations
 
@@ -216,23 +216,17 @@ def test_the_identity_is_injective_and_apart_from_the_estimates():
 
 # ── the spec ─────────────────────────────────────────────────────────────────
 
-def test_the_spec_validates_switched_on_or_off():
+def test_the_spec_validates_and_loads_with_the_rule_that_serves_it():
+    """It was built switched off (`migrate: false`) until a projection could
+    not be read as a fact. It is on since the serving rule ships with it:
+    every registry rule declares `ask_by_name` and `projection`, and migration
+    115 writes both before the first row (tests/test_more_projections_serving.py)."""
     assert spec_mod.validate(SPEC, "population_wpp_projection") == []
-    on = {k: v for k, v in SPEC.items() if k not in ("migrate", "skip_reason")}
-    assert spec_mod.validate(on, "population_wpp_projection") == []
+    assert "migrate" not in SPEC and "skip_reason" not in SPEC
+    assert databank.load_spec("population_wpp_projection")["category"] == "population_wpp_projection"
+    assert all(r["ask_by_name"] is True and r["projection"] is True for r in SPEC["registry"]["rules"])
     assert spec_mod.validate(ESTIMATES, "population_wpp") == []
-    assert ESTIMATES.get("migrate", True) is True          # the estimates load whatever the switch says
-
-
-def test_the_spec_is_switched_off_until_the_serving_rule_is_live():
-    """THE SWITCH. Loaded as they are, these rows would be the newest of the
-    `economic` category, dated 2101 and 2100. The loader refuses the spec by
-    name and the nightly run passes over it (ingest/databank.py run_all).
-    This test goes the day the two lines (`migrate`, `skip_reason`) come out
-    of the spec, and not before the serving rule answers on the live API."""
-    assert SPEC["migrate"] is False and "serving rule" in SPEC["skip_reason"]
-    with pytest.raises(spec_mod.SpecRefused, match="migrate=false"):
-        databank.load_spec("population_wpp_projection")
+    assert ESTIMATES.get("migrate", True) is True
 
 
 def test_the_spec_s_floor_and_ceiling_are_the_measured_file_s():

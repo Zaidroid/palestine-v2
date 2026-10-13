@@ -540,7 +540,7 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
         # source; what leaves is the ROWS, and the cut is named, never silent.
         dropped: dict[str, int] = {}
         total = non_commercial = 0
-        for key in ("items", "latest_by_indicator"):
+        for key in ("items", "latest_by_indicator", "projected_by_indicator"):
             rows = out.get(key)
             if not isinstance(rows, list):
                 continue

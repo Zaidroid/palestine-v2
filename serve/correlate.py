@@ -98,6 +98,14 @@ GRAIN_WORD = {"day": "daily", "month": "monthly", "year": "yearly",
               "census": "a census"}
 
 
+def projection_reason(projected: list[str], observed: list[str]) -> str:
+    """Why a projection is never put beside an observed series."""
+    return (f"{', '.join(projected)} is a PROJECTION (a model's output, not a "
+            f"measurement) and {', '.join(observed)} is observed. Side by side "
+            "they would read as one record of what happened; a projection is "
+            "compared only with other projections.")
+
+
 def check_comparable(a: dict, b: dict, detrend: str = "none") -> list[str]:
     """Every reason these two series must not be correlated. Empty means go.
 
@@ -107,6 +115,9 @@ def check_comparable(a: dict, b: dict, detrend: str = "none") -> list[str]:
     the second call was refused with the same sentence. A running total that is
     about to be differenced is not correlated as a running total."""
     stop = []
+    if bool(a.get("projection")) != bool(b.get("projection")):
+        p, o = (a, b) if a.get("projection") else (b, a)
+        stop.append(projection_reason([p["indicator"]], [o["indicator"]]))
     for s in (a, b):
         if s["measure_kind"] in (None, "unclassified"):
             stop.append(
@@ -325,6 +336,7 @@ TIME_AR = {"month": "شهري", "year": "سنوي", "day": "يومي", "snapshot
            "event": "أحداث", "register": "سجل", "census": "تعداد", "period": "فترات"}
 
 SKIP_AR = {"cumulative — a running total": "مجموع تراكمي",
+           "a projection against an observed series": "إسقاط مقابل سلسلة مرصودة",
            "more than one unit under one label": "أكثر من وحدة تحت اسم واحد",
            "categorical status": "تصنيف مش رقم",
            "different place grain": "مستوى مكان مختلف",
@@ -355,6 +367,10 @@ def reason_ar(reason: str) -> str:
         where = " بهالمكان" if "place" in m[2] else ""
         when = " بالفترة المطلوبة" if "window" in m[2] else ""
         return f"{m[1]} موجودة بس ما فيها نقاط{where}{when}"
+    m = _re.match(r"(.+?) is a PROJECTION .*? and (.+?) is observed", r)
+    if m:
+        return (f"{m[1]} إسقاط (ناتج نموذج، مش قياس) و{m[2]} سلسلة مرصودة — جنب بعض "
+                "بينقرأوا كأنهم سجل واحد للي صار، والإسقاط بينقارن بس مع إسقاط")
     m = _re.match(r"(\S+): nobody has established what KIND", r)
     if m:
         return f"{m[1]}: نوع الرقم غير مصنّف، فما بتنقارن بشي"

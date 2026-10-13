@@ -2735,6 +2735,11 @@ def databank_indicators(concept: str | None = None, q_: str | None = None,
               FROM databank_serving GROUP BY 1) x ON x.indicator = i.indicator
         WHERE {' AND '.join(where)}
         ORDER BY x.n DESC LIMIT %(lim)s""", params)
+    # A projection is listed (it is found by name) and says what it is; its
+    # `to_date` is a projected year, so it never sorts above an observed series.
+    proj = _projections()
+    rows = sorted(({**r, "projection": r["indicator"] in proj} for r in rows),
+                  key=lambda r: r["projection"])
     return {"indicators": rows, "count": len(rows),
             "note": "measure_kind governs what may be done with a series: a "
                     "cumulative one must be differenced first: pass detrend=diff "
@@ -2926,6 +2931,7 @@ def _series_at(indicator: str, place_id: int | None, frm: str | None,
         p.pop("source_key", None)
     units = sorted({str(p["unit"]) for p in pts if p.get("unit")})
     return {**m, "known": bool(meta), "indicator": indicator,
+            "projection": indicator in _projections(),
             "points": pts, "n": len(pts),
             # More than one unit in one series (108 per-litre and 854 per-kg
             # milk points under one label, F030) is said, not blended.
@@ -2953,6 +2959,14 @@ def databank_compare(indicators: str, place_id: int | None = None,
     keys = [s.strip() for s in indicators.split(",") if s.strip()][:6]
     if len(keys) < 2:
         raise HTTPException(422, "pass at least two indicators, comma-separated")
+    proj = _projections()
+    if len({k in proj for k in keys}) > 1:
+        from serve import correlate as C
+        return {"refused": True, "series": [], "overlap": {"from": None, "to": None, "n": 0},
+                "reasons": [C.projection_reason([k for k in keys if k in proj],
+                                                [k for k in keys if k not in proj])],
+                **({"warnings": w} if (w := _serve_warnings(sorted(set(keys)))) else {}),
+                **({"names": n} if (n := _indicator_names(sorted(set(keys)))) else {})}
     series = [_series(k, place_id, frm, to, source) for k in keys]
     dated = [{p["at"] for p in s["points"]} for s in series if s["points"]]
     overlap = set.intersection(*dated) if len(dated) == len(series) else set()
@@ -3151,6 +3165,7 @@ def databank_correlate_scan(
           FROM indicator_def d
           JOIN v_observation_canonical v ON v.indicator = d.indicator
          WHERE d.indicator <> %(a)s
+           AND d.indicator <> ALL(%(proj)s)       -- a projection is never a candidate
            AND d.place_grain IS NOT DISTINCT FROM %(grain)s
            AND d.measure_kind NOT IN ('cumulative', 'status', 'unclassified')
            AND d.measure_kind IS NOT NULL
@@ -3160,7 +3175,7 @@ def databank_correlate_scan(
          ORDER BY n DESC
          LIMIT %(lim)s
     """, {"a": a, "grain": sa["place_grain"], "p": place_id,
-          "minn": C.MIN_N, "lim": candidates})
+          "minn": C.MIN_N, "lim": candidates, "proj": sorted(_projections())})
     if not rows:
         return {"refused": True, "a": a, "reasons": [
             f"nothing else held is comparable to {a}: no other series shares "
@@ -3279,7 +3294,8 @@ def databank_correlate_scan(
 
 def _skip_reason(reason: str) -> str:
     """Collapse a full refusal sentence into something countable."""
-    for needle, label in (("CUMULATIVE", "cumulative — a running total"),
+    for needle, label in (("is a PROJECTION", "a projection against an observed series"),
+                          ("CUMULATIVE", "cumulative — a running total"),
                           ("categorical", "categorical status"),
                           ("place grains differ", "different place grain"),
                           ("both series are", "same concept as the subject"),
@@ -3430,6 +3446,13 @@ def databank_category(category: str, indicator: str | None = None,
     names = _indicator_names(sorted({r["indicator"] for r in rows if r["indicator"]}))
     if names:
         out["names"] = names
+    # A PROJECTION (migration 115) is kept out of a category's rows by the same
+    # `ask_by_name` condition above: its series declare both. What is its own
+    # is said here: when one was asked for by name, the rows are marked as a
+    # model's output, so no answer reads its farthest year as the newest fact.
+    proj = _projections()
+    if (shown := sorted({r["indicator"] for r in rows} & proj)):
+        out["projections"] = shown
     if by_name and not {r["indicator"] for r in rows} & set(by_name):
         # They were left out, so the answer says they are there: a category
         # that silently holds 141 more series is a quietly short answer.
@@ -3440,8 +3463,10 @@ def databank_category(category: str, indicator: str | None = None,
             out["by_name_only"] = {
                 "series": len(held), "indicator_prefix": pre[:pre.rfind(".") + 1] or pre,
                 "example": held[0], "example_en": one.get("en"), "example_ar": one.get("ar"),
-                "note": "series held one per entity; each is served when asked for by name "
-                        "(the indicator filter, or /v2/databank/indicators?q_=<a name>)"}
+                "note": ("projections (a model's output, not measurements); "
+                         if set(held) <= proj else "series held one per entity; ")
+                        + "each is served when asked for by name "
+                          "(the indicator filter, or /v2/databank/indicators?q_=<a name>)"}
     if events:
         # A register of single events is summarised, not sampled: "the newest
         # ten rows" of 589 localities says nothing about the 589 (P1-B.1).
@@ -3491,6 +3516,21 @@ def _district_1945(name: str) -> str:
         if n.startswith(pre):
             n = n[len(pre):]
     return _DISTRICTS_AR.get(n, n)
+
+
+def _projections() -> frozenset:
+    """The series the registry declares a PROJECTION (indicator_def.projection,
+    migration 115): a model's output, never a series' newest fact. One declared
+    fact, read here and nowhere else. It decides what is said and what is
+    refused; what keeps such a series out of a category's rows is `ask_by_name`
+    (114), which the same series declare. Before the migration there is no
+    such column and no such series; any other failure is raised, because an
+    answer that cannot tell a projection from a measurement must not be given."""
+    try:
+        return frozenset(r["indicator"] for r in q_cached(
+            "SELECT indicator FROM indicator_def WHERE projection"))
+    except psycopg.errors.UndefinedColumn:
+        return frozenset()
 
 
 def _serve_warnings(indicators: list[str]) -> dict:

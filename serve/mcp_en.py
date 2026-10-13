@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from serve.when import cited_en, is_cited, label_en, short_source, statements, when_en
+from serve.when import _num, cited_en, is_cited, label_en, short_source, statements, when_en
 
 FLOW = {"open": "open", "closed": "closed", "congested": "congested",
         "slow": "slow", "unknown": "no recent reading"}
@@ -615,6 +615,12 @@ def _warnings_en(d: dict) -> str:
 def trend(d: dict) -> str:
     if d.get("refused"):
         return d.get("reason", "Refused.")
+    if d.get("projection"):
+        first, last = d.get("first") or {}, d.get("last") or {}
+        return (f"{label_en(d, d.get('indicator'))}: a projection, not a measurement; "
+                f"{d.get('n', 0)} projected years"
+                + (f", from {_num(first['value'])} in {str(first['at'])[:4]} to {_num(last['value'])} "
+                   f"in {str(last['at'])[:4]}" if first and last else "") + "." + _warnings_en(d))
     used = d.get("place_used")
     at = ((f" (kept for {_nm(used)}" + (" governorate" if used.get("kind") == "governorate" else "")
            + ", not for the place asked on its own)") if used else "")
@@ -656,6 +662,8 @@ def what_correlates_with(d: dict) -> str:
 
 
 def compare(d: dict) -> str:
+    if d.get("refused"):
+        return "Refused: " + " ".join(d.get("reasons", [])) + _warnings_en(d)
     ss = d.get("series") or []
     bits = [f"{label_en(d, s['indicator'])} ({s['n']} points, {s.get('canonical_unit') or 'no unit'}"
             + (f", read at {_nm(s['place_used'])}" if s.get("place_used") else "")
@@ -811,8 +819,11 @@ def databank(d: dict) -> str:
 
     # The same facts as the Arabic: latest value per indicator, the series'
     # span, the source — not a row count (F062).
+    # a projection asked for by name comes under its own key and its own words
+    projected = d.get("projected_by_indicator") or []
+    shown = d.get("latest_by_indicator") or projected
     bits = []
-    for it in (d.get("latest_by_indicator") or [])[:3]:
+    for it in shown[:3]:
         val = it.get("value_num") if it.get("value_num") is not None else it.get("value_text")
         if isinstance(val, float) and val.is_integer():
             val = int(val)
@@ -835,20 +846,21 @@ def databank(d: dict) -> str:
     spans = d.get("series_span") or {}
     lo = sorted(v["from"] for v in spans.values() if v.get("from"))
     hi = sorted(v["to"] for v in spans.values() if v.get("to"))
-    dated = any(it.get("occurred_precision") != "unknown"
-                for it in (d.get("latest_by_indicator") or [])[:3])
+    dated = any(it.get("occurred_precision") != "unknown" for it in shown[:3])
     span = f" Series {lo[0][:4]}→{hi[-1][:4]}." if lo and hi and dated else ""
     src = short_source(d.get("attribution"))
     if not bits:
         return (f"No matching rows in {d.get('category')}"
                 + (f" as of {d['as_of']}" if d.get("as_of") else "") + ".")
+    notes: list[str] = []
+    for ind, w in (d.get("warnings") or {}).items():
+        if w.get("en") and w["en"] not in notes and any(it.get("indicator") == ind for it in shown):
+            notes.append(w["en"])
     return (f"{d.get('category')}" + (f" as of {d['as_of']}" if d.get("as_of") else "")
-            + " — latest: " + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
-            + f" (newest {d.get('count', 0)} rows shown.)" + _event_note_en(d)
-            + _by_name_note_en(d)
-            + "".join(f" Note: {w['en']}" for ind, w in (d.get("warnings") or {}).items()
-                      if w.get("en") and any(it.get("indicator") == ind
-                                             for it in d.get("latest_by_indicator") or [])))
+            + (" — a projection, not a measurement; its farthest year: " if projected else " — latest: ")
+            + "; ".join(bits) + "." + (f" Source: {src}." if src else "") + span
+            + f" ({'farthest' if projected else 'newest'} {d.get('count', 0)} rows shown.)"
+            + _event_note_en(d) + _by_name_note_en(d) + "".join(f" Note: {n}" for n in notes))
 
 
 def _by_name_note_en(d: dict) -> str:
