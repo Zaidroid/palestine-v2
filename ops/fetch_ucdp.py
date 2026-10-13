@@ -36,34 +36,36 @@ last file (data/frozen/conflict.json.gz), and every other event gets
 its UCDP id (measured: 3,131 of the 3,150 candidate events of 2025 are in GED
 26.1 under the same id), so it would keep its row.
 
-A RELEASE IS A NEW READING OF OLD YEARS, AND THE LOADER CANNOT APPLY ONE. An
-event whose stable id is held is skipped whatever the release now says about
-it, and a held event the release no longer contains stays current: the loader
-has no revision and no absent-upstream rule for events. GED 26.1 shows why
-that matters (measured 2026-10-12 against the 7,638 held events): 1,115 were
-revised and 18 are gone, and 493 events dated 1989 to 2024 are in the release
-and not in the store. They belong together. October 2023 reads 10,582 deaths
-in GED 25.1 and 10,553 in 26.1, yet UCDP's month-long row "Gaza Strip, October
-2023" fell from 4,731 to 2,911: the deaths moved to 143 added events (1,378)
-and to events already there that were revised upward (473 net), while 4 events
-(60) were withdrawn. November is the same shape (the month-long row 3,612 to
-2,925, 83 events added with 623, the month 7,167 to 7,165). Loading the
-additions beside the unrevised rows would count those deaths twice. So this
-fetcher writes three files, and the loader is given two:
+A RELEASE IS A NEW READING OF OLD YEARS. Until 2026-10-13 the loader could not
+apply one: an event whose stable id was held was skipped whatever the release
+now said about it, and a held event the release no longer contained stayed
+current. GED 26.1 shows why that matters (measured 2026-10-12 against the
+7,638 held events): 1,115 were revised (812 of them in a field the store
+holds; the rest in UCDP's source headlines and its low and high estimates,
+which the store does not keep), 18 are gone, and 493 events dated 1989 to 2024
+are in the release and not in the store. They belong together. October 2023
+reads 10,582 deaths in GED 25.1 and 10,553 in 26.1, yet UCDP's month-long row
+"Gaza Strip, October 2023" fell from 4,731 to 2,911: the deaths moved to 143
+added events (1,378) and to events already there that were revised upward (473
+net), while 4 events (60) were withdrawn. November is the same shape (the
+month-long row 3,612 to 2,925, 83 events added with 623, the month 7,167 to
+7,165). Loading the additions beside the unrevised rows would count those
+deaths twice. So this fetcher writes three files, and since 2026-10-13 the
+conflict spec declares the three together as UCDP's whole current reading
+(`event_reading` in db/mappings/conflict.yaml): a held event that now states
+something else is revised in place, and one the reading no longer holds is
+retracted and kept.
 
-  data/raw/ucdp/ged.json           the release's events dated AFTER the last
-                                   day the store holds (2024-12-31): 2025.
-                                   Nothing held overlaps them. Loaded.
+  data/raw/ucdp/ged_revision.json  the release's reading of the period the
+                                   store held before it: every event to
+                                   2024-12-31, each marked identical, revised
+                                   or not_held against v1's last file, with
+                                   the held events it dropped listed in the
+                                   metadata.
+  data/raw/ucdp/ged.json           the release's events dated after that day:
+                                   2025.
   data/raw/ucdp/candidate.json     the candidate events dated after the
                                    release's last year, tagged provisional.
-                                   Loaded (one line of the spec's glob).
-  data/raw/ucdp/ged_revision.json  the release's reading of the period the
-                                   store already holds: every event to
-                                   2024-12-31, each marked identical, revised
-                                   or not_held, with the held events it
-                                   dropped listed in the metadata. NOT read by
-                                   any spec. It is the whole correction, kept
-                                   ready for the day it can be applied as one.
 
 The same reasoning pins the release. `LOADS_RELEASE` names the one whose events
 the loader has been given; when the page lists a newer one the fetch stops and
@@ -76,8 +78,8 @@ CANDIDATE EVENTS DRIFT, AND NOTHING HERE CAN STOP THAT. UCDP re-extracts them
 new events will be added", candidate codebook 1.5). Measured on two months of
 2025 against GED 26.1: of June's 334 events, 9 were dropped, 69 changed in
 type, day, point or deaths, and 32 were added later; of October's 142, 8, 31
-and 19. This file always holds UCDP's current reading; the loader takes the
-additions and ignores the rest. Each record says `ucdp_candidate: true`, the
+and 19. This file always holds UCDP's current reading, and the loader follows
+it: the same rule revises and retracts a candidate event. Each record says `ucdp_candidate: true`, the
 file it came from and UCDP's own code status, and carries no quality score.
 
 Posture as fetchlib's: ATOMIC, FLOORED, LEDGERED. One more habit, for a 39 MB
@@ -641,8 +643,8 @@ def build_release(rows: list[dict], seen: dict, *, version: str, url: str,
     revision = {"metadata": {
         **common,
         "holds": f"the release's reading of the period the store holds (to {end}). "
-                 "NOT loaded: the loader cannot supersede a revised event or close a "
-                 "withdrawn one, and the additions are only right beside the revisions",
+                 "Read with ged.json and candidate.json as UCDP's whole current reading: "
+                 "the loader revises a held event that changed and retracts one that left",
         "coverage": cover(inside),
         "held": summary,
     }, "data": inside}

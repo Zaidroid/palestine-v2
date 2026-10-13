@@ -294,6 +294,137 @@ class Drop:
     reason: str
 
 
+@dataclass
+class HeldEvent:
+    """A current event row, as much of it as `decide_event_reading` compares."""
+    event_id: int
+    status: str
+    note: str | None
+    event_type: str
+    day: str
+    precision: str
+    lat: float | None
+    lon: float | None
+    metrics: dict
+    attrs: dict
+
+
+def event_content(event_type, day, precision, lat, lon, metrics, attrs,
+                  rule: dict, held_attrs: dict | None = None) -> dict:
+    """What an event STATES, for telling a publisher's revision from a re-fetch.
+
+    The place row is not in it: which place a point falls in is this store's
+    reading, and it moves when the gazetteer does. `content_attrs` are always
+    compared. `content_attrs_when.attrs` are compared only against a held row
+    that carries the marker attr (`held_has`): the 7,638 UCDP events loaded
+    from v1's file never had UCDP's precision codes, and gaining a field is
+    not the publisher changing its mind."""
+    def pt(v):
+        return None if v is None else round(float(v), 5)
+    keys = list(rule.get("content_attrs") or [])
+    when = rule.get("content_attrs_when") or {}
+    basis = attrs if held_attrs is None else held_attrs
+    if when and when.get("held_has") in (basis or {}):
+        keys += list(when.get("attrs") or [])
+    return {"type": event_type, "day": str(day)[:10], "precision": str(precision),
+            "lat": pt(lat), "lon": pt(lon),
+            "metrics": {k: v for k, v in (metrics or {}).items() if v not in (None, 0)},
+            "attrs": {k: (attrs or {}).get(k) for k in keys}}
+
+
+def decide_event_reading(held: dict, emitted: list, rule: dict) -> dict:
+    """One dataset's events against the publisher's whole current reading.
+
+    held     stable id -> HeldEvent (every current row, whatever its status)
+    emitted  the EventRows of the reading, one per stable id
+
+    new         an id the store does not hold
+    revised     held and believed, and it now states something else: the held
+                row takes the new reading (the old version goes to
+                event_history through the versioning trigger)
+    reinstated  an event this rule withdrew, published again
+    withdrawn   held and believed, and no longer in the reading: marked
+                `retracted`, kept, not served
+    Anything held under another status (a duplicate retired by hand) is left
+    exactly as it is."""
+    label = rule["label"]
+    out = {"new": [], "revised": [], "reinstated": [], "withdrawn": [],
+           "same": 0, "left_as_held": 0}
+    seen = set()
+    for e in emitted:
+        seen.add(e.v1_stable_id)
+        h = held.get(e.v1_stable_id)
+        if h is None:
+            out["new"].append(e)
+            continue
+        if h.status == "retracted" and (h.note or "").startswith(label):
+            out["reinstated"].append((h, e))
+            continue
+        if h.status != "believed":
+            out["left_as_held"] += 1
+            continue
+        was = event_content(h.event_type, h.day, h.precision, h.lat, h.lon,
+                            h.metrics, h.attrs, rule)
+        now = event_content(e.event_type, e.occurred_at, e.precision, e.lat, e.lon,
+                            e.metrics, e.attrs, rule, held_attrs=h.attrs)
+        if was == now:
+            out["same"] += 1
+            continue
+        changed = sorted([k for k in ("type", "day", "precision", "lat", "lon", "metrics")
+                          if was[k] != now[k]]
+                         + [k for k in now["attrs"] if was["attrs"].get(k) != now["attrs"][k]])
+        out["revised"].append((h, e, changed))
+    out["withdrawn"] = [h for sid, h in held.items()
+                        if h.status == "believed" and sid not in seen]
+    return out
+
+
+def event_readings(spec: dict, category: str, from_fallback: bool = False,
+                   root: Path | None = None) -> tuple[dict, dict]:
+    """(dataset -> its `event_reading` rule, dataset -> the files of the reading)
+    for the readings in force this run: every file of one is on disk. None of
+    them on disk (a machine that has never fetched) or a fallback input: the
+    rule sleeps and the dataset loads as it always did. Some of them: refused,
+    because half a reading would retract every event of the missing half."""
+    rules: dict[str, dict] = {}
+    files_of: dict[str, set] = {}
+    for rule in (spec.get("event_reading") or []):
+        base = root or Path((spec.get("input") or {}).get("root", "data"))
+        if not base.is_absolute():
+            base = ROOT / base
+        files = {base / f for f in rule["files"]}
+        there = {f for f in files if f.exists()}
+        if there and there != files:
+            raise SpecRefused(
+                f"{category}: {rule['dataset']} declares its publisher's reading as "
+                f"{len(files)} files and {len(files - there)} of them are missing "
+                f"({', '.join(sorted(f.name for f in files - there))}) — half a reading "
+                "would retract every event of the missing part; nothing is read")
+        if there and not from_fallback:
+            rules[rule["dataset"]] = rule
+            files_of[rule["dataset"]] = files
+    return rules, files_of
+
+
+def revised_event_attrs(h: HeldEvent, e, rule: dict) -> dict:
+    """The attrs a revised event is left with: what this store added to the
+    held row stays (its enrichment marks), what the publisher says now wins,
+    and a compared field the publisher no longer gives is gone."""
+    attrs = {**(h.attrs or {}), **(e.attrs or {})}
+    compared = list(rule.get("content_attrs") or []) + list(
+        (rule.get("content_attrs_when") or {}).get("attrs") or [])
+    for k in compared:
+        if k not in (e.attrs or {}):
+            attrs.pop(k, None)
+    if "raw_lat" in attrs or "raw_lon" in attrs:
+        attrs["raw_lat"], attrs["raw_lon"] = e.lat, e.lon
+    attrs["v1_stable_id"] = e.v1_stable_id
+    attrs["dataset_key"] = e.dataset_key
+    if e.raw_ref:
+        attrs["raw_ref"] = e.raw_ref
+    return attrs
+
+
 class PointResolver:
     """lat/lon → governorate place_id by containment (T2.3 prerequisite —
     resolve/geo.py is text-only). Cached per run; rounding to ~11 m."""
@@ -2331,6 +2462,19 @@ ON CONFLICT (dataset_id, v1_stable_id, occurred_at)
 DO NOTHING
 """
 
+EVENT_REVISE_SQL = """
+UPDATE event
+   SET event_type = %(event_type)s, place_id = %(place_id)s,
+       geom = CASE WHEN %(lon)s::float8 IS NULL THEN NULL
+                   ELSE ST_SetSRID(ST_MakePoint(%(lon)s, %(lat)s), 4326)::geography END,
+       occurred_at = %(occurred_at)s, occurred_precision = %(precision)s,
+       status = 'believed', confidence = %(confidence)s,
+       independent_sources = %(independent_sources)s,
+       metrics = %(metrics)s, attrs = %(attrs)s,
+       correction_note = %(note)s, updated_at = now()
+ WHERE event_id = %(event_id)s AND upper_inf(sys_period)
+"""
+
 EVENT_INSERT_SQL = """
 INSERT INTO event (event_type, place_id, geom, occurred_at,
                    occurred_precision, status, confidence, claim_count,
@@ -2477,8 +2621,22 @@ def read_vintage(spec: dict, files, fed: dict | None = None) -> dict[str, dict]:
         if len({v["vintage"] for v, _ in items}) == 1:
             out[ds] = items[0][0]
         else:
-            out[ds] = {"vintage_by_indicator": {
-                ind: v for v, inds in items for ind in sorted(inds)}}
+            by_ind = {ind: v for v, inds in items for ind in sorted(inds)}
+            if by_ind:
+                out[ds] = {"vintage_by_indicator": by_ind}
+            else:
+                # Events have no indicator to hang a date on. UCDP's yearly
+                # release (extracted 2026-03-30) and its monthly candidate
+                # files (2026-09-20) feed one dataset, and an empty
+                # `vintage_by_indicator` would have taken the dataset's
+                # vintage away (2026-10-13). The dataset is as new as its
+                # newest file, and the basis names the others.
+                newest = max((v for v, _ in items), key=lambda v: v["vintage"])
+                others = sorted({v["vintage"] for v, _ in items} - {newest["vintage"]})
+                out[ds] = {**newest, "vintage_basis": (
+                    (newest.get("vintage_basis") or "").rstrip(". ")
+                    + "; the newest of this dataset's files (the others: "
+                    + ", ".join(others) + ")")}
     return out
 
 
@@ -2633,6 +2791,25 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
 
     event_rows: list[EventRow] = []
     fed: dict[Path, set] = defaultdict(set)     # input file -> the (dataset, indicator) pairs it fed
+
+    # ── `event_reading` (2026-10-13): events that follow their publisher ─────
+    # An event used to be taken once and never touched: held under its id, it
+    # was skipped whatever the publisher said about it later, and one the
+    # publisher withdrew stayed current. UCDP's GED 26.1 revised 1,115 of the
+    # 7,638 held events, withdrew 18 and added 493 dated 1989 to 2024 — and the
+    # additions are only right beside the revisions (the deaths moved from
+    # month-long rows into the new events), so none of it could be loaded.
+    # A dataset that declares `event_reading` says: these files are the
+    # publisher's WHOLE current reading of it. Then an emitted event whose id
+    # is held and states something else replaces what is held; a held event
+    # the reading no longer contains is retracted (kept, not served); and the
+    # same dataset's records in any other input file are an older reading and
+    # are not emitted at all. All or none of the files must be there: a
+    # machine that has never fetched reads the frozen copy as before, and half
+    # a reading is refused.
+    reading_rule, reading_files = event_readings(spec, category, from_fallback)
+    reading_decision: dict[str, dict] = {}
+    reading_over: list[str] = []
     with connect() as conn:
         places = load_places(conn)
         places["_pip"] = PointResolver(conn)
@@ -2698,7 +2875,8 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                     "FROM event "
                     "WHERE attrs->>'dataset_key' = ANY(%s) "
                     "  AND upper_inf(sys_period)",
-                    ([ds["key"] for ds in spec["datasets"]],))
+                    ([ds["key"] for ds in spec["datasets"]
+                      if ds["key"] not in reading_rule],))
                 held_keys = []
                 for et, oc, pid, lat, lon, met in cur.fetchall():
                     held_keys.append("|".join([
@@ -2714,6 +2892,10 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                 held_event_ids = {row[0] for row in cur.fetchall()}
                 known_events = Counter(held_keys)
         for f, r in transform_all(category, spec, places, counts, drops):
+            if (isinstance(r, EventRow) and r.dataset_key in reading_rule
+                    and f not in reading_files[r.dataset_key]):
+                counts[f"event_older_reading_not_emitted:{r.dataset_key}"] += 1
+                continue
             fed[f].add((r.dataset_key, None if isinstance(r, EventRow) else r.indicator))
             if f not in refs:
                 refs[f] = bronze.put(f"v1_{category}", read_payload(f),
@@ -2881,6 +3063,56 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
         # the retired copies of an incident (status superseded, still listed).
         by_id_only = (spec.get("event_identity") or {}).get("match") == "stable_id"
         rekey_problem = None
+        if reading_rule:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT event_id, attrs->>'v1_stable_id', status::text, correction_note, "
+                    "       event_type, occurred_at::date::text, occurred_precision::text, "
+                    "       ST_Y(geom::geometry), ST_X(geom::geometry), metrics, attrs, "
+                    "       attrs->>'dataset_key' "
+                    "FROM event WHERE attrs->>'dataset_key' = ANY(%s) "
+                    "  AND upper_inf(sys_period) AND attrs ? 'v1_stable_id'",
+                    (list(reading_rule),))
+                held_by_ds: dict[str, dict] = defaultdict(dict)
+                for (eid, sid, st, note, et, day, prec, la, lo, met, at, dsk) in cur.fetchall():
+                    held_by_ds[dsk][sid] = HeldEvent(eid, st, note, et, day, prec, la, lo,
+                                                     met or {}, at or {})
+            others = []
+            emitted_by_ds: dict[str, list] = defaultdict(list)
+            for e in event_rows:
+                (emitted_by_ds[e.dataset_key] if e.dataset_key in reading_rule
+                 else others).append(e)
+            kept = []
+            for ds_key, rule in reading_rule.items():
+                d = decide_event_reading(held_by_ds[ds_key], emitted_by_ds[ds_key], rule)
+                reading_decision[ds_key] = d
+                n_held = sum(1 for h in held_by_ds[ds_key].values() if h.status == "believed")
+                counts["event_new"] += len(d["new"])
+                counts["event_already_held"] += d["same"] + d["left_as_held"]
+                counts[f"event_revised:{ds_key}"] = len(d["revised"])
+                counts[f"event_reinstated:{ds_key}"] = len(d["reinstated"])
+                counts[f"event_withdrawn:{ds_key}"] = len(d["withdrawn"])
+                for what, key, default in (("revised", "max_revised", 0.05),
+                                           ("withdrawn", "max_withdrawn", 0.01)):
+                    cap = rule.get(key)
+                    if cap is None:
+                        cap = max(1, int(n_held * default))
+                    if allow_absent is not None:
+                        cap = max(cap, allow_absent)
+                    if len(d[what]) > cap:
+                        reading_over.append(
+                            f"{ds_key}: {len(d[what])} held events {what} by the publisher's "
+                            f"reading > ceiling {cap} of {n_held} — a new release or a broken "
+                            "fetch, and applying it is a decision (run once by hand with "
+                            "--allow-absent N); nothing is changed")
+                for h, e, changed in d["revised"][:5]:
+                    revision_samples.append(
+                        f"event {h.event_id} {h.day}: {', '.join(changed)}")
+                # a dry run reports what the spec emits; a real run inserts the new ones
+                kept += emitted_by_ds[ds_key] if dry_run else d["new"]
+            event_rows = others
+        else:
+            kept = []
         if event_rows and by_id_only and held_event_ids:
             # A night in which most of the held ids are not emitted is not a
             # night: the ids were re-keyed on one side only (the new fetch ran
@@ -2923,6 +3155,7 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                 if dry_run:
                     keep.append(e)      # a dry run reports what the spec emits
             event_rows = keep
+        event_rows = event_rows + kept
 
         # ── withdrawn upstream (DATABANK-V08 + -02, 2026-09-26) ─────────────
         # A dataset whose input is the source's WHOLE current publication
@@ -3105,6 +3338,7 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                     f"{ds['key']}: located {loc_ds}/{n_ds} = "
                     f"{loc_ds / n_ds:.3f} < min_located_pct {floor}")
         problems.extend(absent_over)
+        problems.extend(reading_over)
         if rekey_problem:
             problems.append(rekey_problem)
         # a held row this same run closes frees its stable id for its successor
@@ -3122,6 +3356,7 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
             raise SpecRefused(why)
 
         written = events_written = closed_absent = closed_revised = 0
+        events_revised = events_withdrawn = 0
         if not dry_run:
             dataset_ids = ensure_datasets(conn, spec, category)
             with conn.cursor() as cur:
@@ -3170,6 +3405,37 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
                     })
                     written += cur.rowcount
                     took[r.dataset_key] += cur.rowcount
+                today = datetime.now(timezone.utc).date().isoformat()
+                for ds_key, d in reading_decision.items():
+                    rule = reading_rule[ds_key]
+                    for h, e, changed in ([(h, e, c) for h, e, c in d["revised"]]
+                                          + [(h, e, None) for h, e in d["reinstated"]]):
+                        note = (f"{rule['label']} {today}: the publisher's current reading "
+                                + (f"replaced the one held ({', '.join(changed)}); "
+                                   "the version before is in event_history"
+                                   if changed is not None else
+                                   "holds this event again; it had been withdrawn"))
+                        cur.execute(EVENT_REVISE_SQL, {
+                            "event_id": h.event_id, "event_type": e.event_type,
+                            "place_id": e.place_id, "lat": e.lat, "lon": e.lon,
+                            "occurred_at": e.occurred_at, "precision": e.precision,
+                            "confidence": e.confidence,
+                            "independent_sources": e.independent_sources,
+                            "metrics": json.dumps(e.metrics, ensure_ascii=False),
+                            "attrs": json.dumps(revised_event_attrs(h, e, rule),
+                                                ensure_ascii=False),
+                            "note": note})
+                        events_revised += cur.rowcount
+                    if d["withdrawn"]:
+                        cur.execute(
+                            "UPDATE event SET status = 'retracted', correction_note = %s, "
+                            "       updated_at = now() "
+                            " WHERE event_id = ANY(%s) AND upper_inf(sys_period) "
+                            "   AND status = 'believed'",
+                            (f"{rule['label']} {today}: no longer in the publisher's current "
+                             "reading; kept, not served",
+                             [h.event_id for h in d["withdrawn"]]))
+                        events_withdrawn += cur.rowcount
                 for e in event_rows:
                     attrs = dict(e.attrs)
                     attrs["v1_stable_id"] = e.v1_stable_id
@@ -3258,6 +3524,20 @@ def run(category: str, dry_run: bool = False, allow_absent: int | None = None) -
             "closed": closed_revised, "would_close": len(revised),
             "ids": [oid for _, oid in revised][:500],
             "samples": [k for k, _ in revised][:8]}
+    for ds_key, d in reading_decision.items():
+        # Rollback of a night's event changes: each changed event's version
+        # before is the newest row of event_history for its event_id;
+        # a withdrawn one is `UPDATE event SET status='believed',
+        # correction_note=NULL WHERE event_id = ANY(<withdrawn_ids>)`.
+        report.setdefault("event_reading", {})[ds_key] = {
+            "same": d["same"], "left_as_held": d["left_as_held"], "new": len(d["new"]),
+            "revised": len(d["revised"]), "reinstated": len(d["reinstated"]),
+            "withdrawn": len(d["withdrawn"]),
+            "revised_written": events_revised, "withdrawn_written": events_withdrawn,
+            "revised_ids": [h.event_id for h, _, _ in d["revised"]][:2000],
+            "withdrawn_ids": [h.event_id for h in d["withdrawn"]][:500],
+            "changed_fields": dict(Counter(c for _, _, ch in d["revised"] for c in ch)),
+        }
     with RUNS.open("a") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report

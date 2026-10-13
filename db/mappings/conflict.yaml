@@ -42,28 +42,24 @@ records_measured: 10495
 #     overlaps them.
 #   raw/ucdp/candidate.json   ops/fetch_ucdp.py: UCDP's candidate events for
 #     the months after the release (2026), each marked `ucdp_candidate`.
-#     Provisional: UCDP re-extracts them, and this loader takes later
-#     additions but cannot apply later corrections or withdrawals (measured
-#     on June 2025: of 334 candidate events, 9 withdrawn, 69 changed and 32
-#     added by the time of the release). Remove this one line to stop loading
-#     them; nothing else depends on it.
+#     Provisional: UCDP re-extracts them (measured on June 2025: of 334
+#     candidate events, 9 withdrawn, 69 changed and 32 added by the time of
+#     the release). LOADED SINCE 2026-10-13: `event_reading` below applies
+#     each month's corrections and withdrawals, and the series' serve warning
+#     says what a candidate event is.
 #
-# NOT READ, ON PURPOSE: raw/ucdp/ged_revision.json, GED 26.1's reading of 1989
-# to 2024. It revises 1,115 of the 7,638 held events, withdraws 18 and adds
-# 493 the store never held (310 new in 26.1; 183 that v1 dropped because its
-# content hash could not tell them from another event). The loader skips an
-# event whose id is held whatever it now says and closes none, so it could
-# take the additions and nothing else, and the additions are only right
-# beside the revisions: UCDP's month-long row for Gaza in October 2023 fell
-# from 4,731 deaths to 2,911 because 143 added events and upward revisions
-# now carry them (the month: 10,582 before, 10,553 after). Adding that file
-# here before the loader can supersede and close events would leave 1989 to
-# 2024 at 58,858 deaths against the release's own 56,925: 1,933 too many
-# (1,753 that left revised events, 180 in the withdrawn ones). Measured with
-# it added, for the record: frozen copy
-# first, event_already_held 8,495 and event_new 4,256; release first, 8,514
-# and 4,237, because a revised event leaves its old type|day|place|point|
-# deaths key unclaimed and 19 real events were swallowed by the re-hash guard.
+#   raw/ucdp/ged_revision.json  ops/fetch_ucdp.py: GED 26.1's reading of 1989
+#     to 2024, the period the frozen copy holds as GED 25.1. It revises 1,115
+#     of the 7,638 held events, withdraws 18 and adds 493 the store never held
+#     (310 new in 26.1; 183 that v1 dropped because its content hash could not
+#     tell them from another event). READ SINCE 2026-10-13, under
+#     `event_reading` below. Before that rule the loader skipped an event whose
+#     id was held whatever it now said, and closed none, so it could take the
+#     additions and nothing else, and the additions are only right beside the
+#     revisions: UCDP's month-long row for Gaza in October 2023 fell from 4,731
+#     deaths to 2,911 because 143 added events and upward revisions now carry
+#     them (the month: 10,582 before, 10,553 after). The additions alone would
+#     have left 1989 to 2024 at 58,858 deaths against the release's own 56,925.
 #
 # A machine that has never fetched reads the frozen copy alone and holds
 # exactly what the store held on 2026-10-12.
@@ -71,13 +67,51 @@ input:
   root: data
   glob:
     - frozen/conflict.json.gz
+    - raw/ucdp/ged_revision.json
     - raw/ucdp/ged.json
-    # raw/ucdp/candidate.json is fetched and NOT loaded (2026-10-12). Candidate
-    # events are provisional and UCDP revises them: of June 2025's 334, the
-    # final release withdrew 9, changed 69 and added 32. The loader takes an
-    # event once and cannot yet revise or withdraw one, so a candidate loaded
-    # today would stay as first written. They wait for the same event rule the
-    # 1989-2024 revisions of GED 26.1 wait for (raw/ucdp/ged_revision.json).
+    - raw/ucdp/candidate.json
+
+# UCDP's events follow UCDP (2026-10-13). The three files are its whole current
+# reading of the scope: the yearly release split at the last day the store held
+# before it (1989 to 2024, then 2025), and the monthly candidate events after
+# the release. With them present, the frozen copy's UCDP records are the
+# reading before (GED 25.1) and are not emitted.
+event_reading:
+  - dataset: v1_conflict_ucdp
+    label: "UCDP"
+    files:
+      - raw/ucdp/ged_revision.json
+      - raw/ucdp/ged.json
+      - raw/ucdp/candidate.json
+    content_attrs:
+      - name
+      - region
+      - actors
+      - conflict_name
+      - dyad_name
+      - deaths_a
+      - deaths_b
+      - deaths_civilians
+      - deaths_unknown
+    # UCDP's own codes reach only events written since ops/fetch_ucdp.py
+    # (ucdp_id marks them); the 7,638 loaded from v1's file never had them.
+    # ucdp_release and ucdp_candidate_version are not here: they change for
+    # every event with every file and say nothing about the event.
+    content_attrs_when:
+      held_has: ucdp_id
+      attrs:
+        - ucdp_candidate
+        - ucdp_code_status
+        - ucdp_date_prec
+        - ucdp_where_prec
+        - ucdp_date_end
+    rationale: >
+      Ceilings are the defaults (5% revised, 1% withdrawn of the believed
+      events): a month of candidate events moves about a fifth of that month
+      (June 2025: 69 changed and 9 withdrawn of 334). A yearly release moves
+      more (GED 26.1: 1,115 and 18) and ops/fetch_ucdp.py stops at a release it
+      was not told to load, so applying one is a run by hand with
+      --allow-absent.
 cadence: monthly                  # a release a year, candidate events each
                                   #   month on the 20th; fetched nightly
 
@@ -287,8 +321,8 @@ attrs_passthrough:               # all source-sparse; nothing is on every row
                                  #   / Wikidata attribution survives routing
   # UCDP's own fields, from ops/fetch_ucdp.py (2026-10-12). No other source's
   # record carries any of these keys (measured on the frozen copy), so no held
-  # observation changes its content. They reach NEW events only: the loader
-  # never rewrites a held event.
+  # observation changes its content. They reach new events, and a held event
+  # the day UCDP revises it (`event_reading`, 2026-10-13).
   - name                         # UCDP's place name; until now only a one-off
                                  #   backfill gave the held events theirs
   - ucdp_id                      # UCDP's persistent event id
@@ -489,6 +523,10 @@ registry:
       grain: event               # one row per UCDP GED event, at its point
       place_grain: point
       canonical_unit: persons
+      # The year is the last one of the release ops/fetch_ucdp.py loads
+      # (LOADS_RELEASE); tests/test_event_reading.py holds the two together.
+      serve_warning: "Events dated after 2025 are UCDP candidate events: provisional monthly data that UCDP re-reads, changes and sometimes withdraws before its yearly release. Each such row says ucdp_candidate. Events to the end of 2025 are UCDP's yearly release, and a later release can revise them too."
+      serve_warning_ar: "الأحداث اللي تاريخها بعد 2025 هي «أحداث مرشّحة» من UCDP: بيانات شهرية أولية بترجع UCDP تقراها، وبتغيّر فيها، وأحياناً بتسحب منها قبل إصدارها السنوي. كل سطر منها مكتوب عليه ucdp_candidate. والأحداث لحد آخر 2025 من الإصدار السنوي، وممكن إصدار جديد يعدّل فيها كمان."
     - when: {equals: "conflict.journalists_killed"}
       concept: mortality.conflict
       measure_kind: flow

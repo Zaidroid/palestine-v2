@@ -427,6 +427,35 @@ _k("identity.generation_indicators", "enforced",
    "a whole publication AND a series that grows by a row a day (the names "
    "roster beside its daily summary). Held rows of any other indicator are "
    "left alone. Needs `indicator` in identity.fields", types=(list,))
+_k("event_reading", "enforced",
+   "datasets whose EVENTS follow their publisher: the files named are its whole "
+   "current reading, so a held event that now states something else is revised "
+   "in place (the version before goes to event_history), a held event the "
+   "reading no longer contains is retracted (kept, not served), and the same "
+   "dataset's records in any other input file are an older reading and are not "
+   "emitted. All of the files or none (2026-10-13)", types=(list,))
+_k("event_reading[].dataset", "enforced", "the dataset key", types=(str,))
+_k("event_reading[].label", "enforced",
+   "starts every correction_note this rule writes; a retracted event is "
+   "reinstated only when its note starts with it", types=(str,))
+_k("event_reading[].files", "enforced",
+   "the reading, relative to input.root; every one is also in input.glob",
+   types=(list,))
+_k("event_reading[].content_attrs", "enforced",
+   "the attrs that are part of what an event states (type, day, precision, "
+   "point and metrics always are; the place row never is)", types=(list,))
+_k("event_reading[].content_attrs_when", "enforced",
+   "attrs compared only against a held row that carries `held_has`", types=(dict,))
+_k("event_reading[].content_attrs_when.held_has", "enforced", "the marker attr",
+   types=(str,))
+_k("event_reading[].content_attrs_when.attrs", "enforced", "the attrs", types=(list,))
+_k("event_reading[].max_revised", "enforced",
+   "most held events one run may revise; default 5% of the believed ones. "
+   "Above it the run fails and nothing is changed", types=(int,))
+_k("event_reading[].max_withdrawn", "enforced",
+   "most held events one run may retract; default 1% of the believed ones",
+   types=(int,))
+_k("event_reading[].rationale", "rationale", "why, with the measurement", types=(str,))
 _k("event_identity", "enforced",
    "how an EVENT-shaped spec recognises an event it already holds", types=(dict,))
 _k("event_identity.match", "enforced",

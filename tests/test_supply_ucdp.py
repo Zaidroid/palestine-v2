@@ -190,7 +190,7 @@ def test_the_revision_file_says_what_the_release_did_to_each_held_event(release)
     assert h["absent"][0]["ucdp_id"] == "496209" and h["absent"][0]["day"] == "2023-10-20"
     assert (h["not_held"], h["not_held_killed"]) == (2, 16)
     assert h["not_held_same_content_as_a_held_event"] == 1                   # 348283, the twin
-    assert "NOT loaded" in revision["metadata"]["holds"]
+    assert "whole current reading" in revision["metadata"]["holds"]
 
 
 def test_the_release_states_its_vintage_and_licence_as_the_publisher_does(release):
@@ -400,12 +400,13 @@ def test_t_conflict_reads_a_candidate_record_as_provisional(release):
 
 def test_the_conflict_spec_reads_the_frozen_copy_and_ucdps_release_never_v1():
     spec = load_spec("conflict")
-    # the candidate events are fetched and not loaded: the loader cannot yet
-    # revise or withdraw an event, and UCDP revises its candidates (2026-10-12)
-    assert spec["input"] == {"root": "data", "glob": [
-        "frozen/conflict.json.gz", "raw/ucdp/ged.json"]}
-    assert "ged_revision" not in json.dumps(spec["input"])    # held back on purpose
-    assert "candidate" not in json.dumps(spec["input"])
+    # since 2026-10-13 the three UCDP files are read together as its whole
+    # current reading (`event_reading`): revised events are revised, withdrawn
+    # ones retracted, and the frozen copy's UCDP records are the reading before
+    ucdp = ["raw/ucdp/ged_revision.json", "raw/ucdp/ged.json", "raw/ucdp/candidate.json"]
+    assert spec["input"] == {"root": "data", "glob": ["frozen/conflict.json.gz"] + ucdp}
+    (rule,) = spec["event_reading"]
+    assert rule["dataset"] == "v1_conflict_ucdp" and rule["files"] == ucdp
     assert spec["stable_id"] == "stable_id" and spec["transform"] == "python:t_conflict"
     for key in ("name", "ucdp_id", "ucdp_release", "ucdp_candidate",
                 "ucdp_candidate_version", "ucdp_code_status"):
