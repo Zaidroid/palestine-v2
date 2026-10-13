@@ -1501,3 +1501,28 @@ integrated and rehearsed.
   written for the store after both commands (39,000+; 48,453 held today); of the skips, five need the evidence
   vault the build copy does not hold and four wait for migrations 111 and 114.
 
+2026-10-13 10:58 UTC · commands 9 and 10 RUN by Zaid, 10:54 to 10:57 UTC · done · proof: the scripts' own output, read-only SQL on
+the live store, the live API and the public partner door
+- **Both ran whole, back to back** (83 s and 72 s; 42 s and 29 s on the copy, the difference is `db/migrate.sh`
+  walking 114 files). Migrations 111 to 114 applied 10:55 to 10:56 UTC; API restarted 10:56:54 UTC.
+- **The live store holds what the rehearsal held:** UCDP 11,876 believed events (72,535 deaths), 18 retracted
+  (180), 812 revised with their earlier versions in `event_history`; 1989 to 2024 = 8,113 events and 56,925
+  deaths, UCDP's own total. Funding: paid 7,331 rows / USD 14,626,965,570, commitment 2,540 / 4,967,089,638,
+  pledge 37 / 332,580,929, parked_parent 554 / 2,523,295,318. World Population Prospects 3,774 rows in 51
+  series. Peace Now per settlement 4,370 rows in 141 series, all 141 marked `ask_by_name`. Sources `ucdp` and
+  `fao_diem` CC-BY-4.0, commercial use true, terms read 2026-10-12. 259 warnings. No served row is dated after
+  today.
+- **Asked of the running API (house door, `/mcp`):** conflict leads with a provisional event of 2026-08-31 and
+  says so; `as_of=2026-10-12` answers 7,071 state-based events, the store as it stood; funding names the parent
+  series and warns; Ariel is found by name (21,004 in May 2024); two settlements compare over 43 shared dates;
+  female life expectancy 71.5 years in 2023; a 2,000-row food answer leaves at 31 KB.
+- **Asked through the public partner door (claude.ai connector):** UCDP's rows are carried (CC-BY-4.0, sellable)
+  with the provisional warning; FAO DIEM's rows are carried with FAO's condition in the credit; "settlements"
+  leads with the total, says 141 series are held by name, and withholds Peace Now's rows with the reason.
+- **Tonight:** no table is smaller than in the backup of 06:46 UTC (37 tables compared; 3,613,901 → 3,628,432
+  rows), so the shrink guard has nothing to refuse. The radar's own functions, read-only: 31 fresh, 0 dead supply
+  lines (the three staged files' fetch records are in the ledger), exit 0. `/health`: the two upstream source
+  faults only.
+- Seen and left: the spoken funding headline leads with a parent row (named, warned). One line would fix it:
+  mark `funding.parked_parent` `ask_by_name` too. Not done; it changes an answer and waits for his word.
+

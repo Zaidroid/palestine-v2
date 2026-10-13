@@ -1,7 +1,7 @@
 {
  "names": {
-  "named_ar": 2169,
-  "named_en": 2484,
+  "named_ar": 2350,
+  "named_en": 2665,
   "unnamed": 17,
   "unnamed_sample": [
    "fao_diem.income_shocks.hh_education_4",
@@ -105,7 +105,7 @@
   },
   "economic": {
    "classified": 149,
-   "indicators": 161,
+   "indicators": 200,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -139,8 +139,8 @@
    "unit_conflicts": []
   },
   "funding": {
-   "classified": 3,
-   "indicators": 3,
+   "classified": 4,
+   "indicators": 4,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -195,8 +195,8 @@
    "unit_conflicts": []
   },
   "population_wpp": {
-   "classified": 12,
-   "indicators": 161,
+   "classified": 51,
+   "indicators": 200,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -231,7 +231,14 @@
   },
   "settlements": {
    "classified": 1,
-   "indicators": 1,
+   "indicators": 142,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "settlements_by_settlement": {
+   "classified": 141,
+   "indicators": 142,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
