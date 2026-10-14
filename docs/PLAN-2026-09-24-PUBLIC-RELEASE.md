@@ -2258,3 +2258,9 @@ built and rehearsed, WAITING FOR ZAID'S COMMAND 31 · proof: branch `databank-ro
 - **Suite** on the branch against the live store: 2,289 passed, 0 failed (4 skipped on live-data conditions).
 - Not done, and why: IPC (its only keyless route is an HDX download: waits for Zaid's answer on HDX's robots file);
   OCHA's casualty incidents (a Power BI decoder; private use only); the joint monthly arrests report; more outlets.
+
+2026-10-14 15:33 UTC · command 31 RAN (Zaid, 15:30:09-15:32:20 UTC), verified · done · proof: who_ssa_monthly 2,912,
+ilostat_quarterly 1,872, nightlights_monthly 5,376 current rows, all at `ask`; withheld 46,992 → 57,152 and served
+347,981 → 358,141 (+10,160 each); 64 series named in both languages; its own judgement: the three fresh, no dead line;
+the partner door says «2 هجوم» for attacks on facilities in October 2026 and withholds the row; night lights answer
+with the governorate's Arabic name and «نانوواط لكل سنتيمتر مربع لكل ستيراديان». Grades wait for Zaid.
