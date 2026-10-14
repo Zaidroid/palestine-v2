@@ -1903,3 +1903,39 @@ terminal output; read back by Claude, read-only, from the store, the public API 
   tool (partner tier) withholds the 79 points and cites the figure with its source, as it should.
 - Seen on the way, not from this work: `db/migrate.sh` warns that 022_compress_state_observation.sql changed after
   it was applied (only commit touching it: 9ac1270). Harmless to this run; left as it is.
+
+2026-10-14 07:39 UTC · prices in Gaza's markets and the Chamber's price index · built and rehearsed, WAITING FOR ZAID'S
+COMMAND 20 · proof: branch `databank-gazacham-prices` (`98c55e4`, the test fix, this commit),
+`tmp/20-gazacham-prices.sh`, HANDS §13t.
+- `ops/build_gazacham_prices.py` reads the price tables of the Chamber's reports in the archive (no request): 30
+  goods, 1,815 week prices (weeks 36-111, 1 April 2025 to 13 September 2026, but for 62-65, priced North and South
+  apart), each with the pre-war price its report compares it with; 121 weeks a table printed NA for a good (kept as
+  the report's mark in `*_unpriced` series, never as a price; the reports do not define NA); the GCPI as index
+  (pre-war basket ILS 92.44 = 100) and as the basket's cost in shekels: 447 days from 27 May 2025, 14 of the
+  index's own weeks from 31 January 2025, 19 months. 2,896 figures.
+- Held only when a row's own percent says what its prices say. Left out and listed in the file's notes: 15 rows
+  (week 40's non-food pre-war column is rotated, week 86's repeats the pre-war price, week 67 three rows, weeks 85
+  and 106 one each), one index month (March 2026: ILS 341 is index 369, printed 365), and 14 months printed "up to"
+  a day. One-week reports print a pre-war table and a previous-week table in the same three columns; they are told
+  apart by caption, and week 39 prints dishwashing liquid at 35.00 in one and 38.57 in the other (the first held,
+  the second noted; ten such in all). Weeks 1-35 are not read: their tables state no unit per row ("ILS/Kg" over
+  flour by the sack and eggs by the tray).
+- What it shows: a 25 kg sack of flour, ILS 35 before the war, cost ILS 1,810.71 in the week of 20 May 2025 and
+  ILS 63.71 in the week of 7 September 2026; sugar ILS 448.57 a kilo in the week of 22 July 2025 (pre-war 3); the
+  basket's daily index peaked at 4,755 on 18 July 2025 (ILS 4,395 for a basket that cost 92.44) and read 200 on 13
+  September 2026.
+- Migration 118: the prices as a second dataset of 117's source (`gazacham_prices`, food category; held for the
+  house). Units: `ILS/400 G` (baby milk, per kilo beside it), `ILS_per_piece` (packs of 10 and 40), `ILS`. 44
+  series named in both languages with warnings; the API puts the per-kilo or per-piece value beside the report's
+  own (a sack at 1,767.86 reads 70.71 a kilo). Radar allowance 120 days, as the trucks.
+- Rehearsed on the scratch copy from a clean state: 2,896 written, registry 44 classified and every unit resolved,
+  a second run writes none; a test API there answered the script's three questions. 9 offline tests.
+  **Suite on the branch against the live store: 2,227 passed, 0 failed** (the one failure of the full run,
+  `test_english_answers_use_english_names`, came from the day's closures: a checkpoint named "DCO"; the test now
+  checks only names in Arabic script, and its file passed).
+- Consequence to know: the food category's newest rows are now the Chamber's (daily), so a partner's unfiltered
+  food question gets them withheld and cited with their source, as prisoners (Addameer) and aid (the trucks)
+  already do.
+- Next on this line: the earliest reports' daily prices by region (weeks 1-35, after a decision on their units),
+  North and South for weeks 62-65 and the index's weeks 1-13, the cash-out commission table (weekly, from January
+  2025) and the medicine prices table.
