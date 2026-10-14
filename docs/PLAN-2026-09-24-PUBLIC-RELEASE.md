@@ -1947,3 +1947,29 @@ proof: his terminal output; read back by Claude, read-only, from the store, the 
   of 20 May 2025 reads 72.43 a kilo beside it. The public API serves `price_gazacham.gcpi_daily` with source
   `gaza_chamber`, `no-redistribution` and its warning; the MCP `series` tool answers with the warning in both
   languages and the partner tier filtered.
+
+2026-10-14 08:06 UTC · the price of cash in Gaza: the Chamber's cash-out commission · built and rehearsed, WAITING FOR ZAID'S
+COMMAND 21 · proof: branch `databank-gazacham-cash` (`8f9b546`, `0e2b177`, this commit), `tmp/21-gazacham-cash.sh`,
+HANDS §13u.
+- Also on 14 October: the outlet reader stopped at 07:40 UTC on a reply PIC Arabic cut off mid-way
+  (`IncompleteRead`, not a URLError); fixed in `ce1cf94` (retried like any broken connection), merged by Zaid,
+  reader restarted detached from its cursor (page 1,702). The hand-off page «Palestine Data, Read Whole» is
+  republished as version 23 with the state of 14 October.
+- `ops/build_gazacham_cash.py` reads the commission a person paid a cash trader to receive cash in hand for a
+  balance sent from a bank or wallet (the reports' own explanation, week 33): 386 days, 17 June 2025 to 19 July
+  2026 (highest 52% on 7 August 2025, last 4%); 24 of the commission's own weeks from the ceasefire of 19 January
+  2025 (17% to 45%); the 12 whole months of 2025 (17, 18, 27, 30, 32, 42, 42, 38, 36, 23, 17, 14). 422 figures.
+- Not held: 12 days two reports print differently. Report 49 gives 24 to 30 June 2025 the run 41, 42, 42, 42, 35,
+  36, 40 and report 50 gives the same run to 1 to 7 July: a copied block nobody can place, so neither is held.
+  Months given before they ended (July 2025 "to 21/07", January 2026 in a report ending 18 January) are not held;
+  three sideways monthly tables whose values do not match their caption's months are not read.
+- The reports of August 2026 say the commission "has become largely insignificant due to the widespread adoption of
+  electronic payment systems" and print no table after report 102-103; the dataset's vintage is the newest report.
+- The single medicine table (week 36: 12 brand-name drugs, April 2025, no pack size stated) is not made a series:
+  twelve one-date values with no unit; it stays findable as text in the archive.
+- Migration 119 (dataset `gazacham_cash`, economic category, 117's source, held for the house); radar 120 days.
+  Rehearsed on the scratch copy from a clean state: 422 written, three series classified and warned, a second run
+  writes none; a test API there answered the script's three questions. 4 offline tests.
+  **Suite on the branch against the live store: 2,237 passed, 0 failed** (the full run's one failure was the
+  README's withheld floor, 39,000+, outgrown by commands 19 and 20 at 43,789; raised to 43,000+, with queryable
+  340,000+ and observations 490,000+).
