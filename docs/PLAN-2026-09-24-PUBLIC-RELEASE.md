@@ -2154,3 +2154,18 @@ this commit), `tmp/27-round-3.sh`, `tmp/27-raw/`, HANDS §13aa.
 - Rehearsed on the scratch copy: WAFA 138,881 in 111 s with its dry run; prices 913 and prisoners 11 (written in
   earlier rehearsals there); registry 0 unclassified. **Suite on the branch against the live store: 2,250 passed, 0
   failed** (one test that wrote the UN estimates down as late, updated).
+
+2026-10-14 12:53 UTC · command 27 RAN (Zaid, 12:44:56-12:46:52 UTC, 125 s), verified · done, with one fault found and fixed
+for command 28 · proof: archive 2,365,149 texts (WAFA 138,881); price_gazacham 3,809 rows (913 written, 2,896
+held); prisoners 11 written; registry 0 unclassified; radar measured read-only: 36 fresh, 0 late, 3 dead upstream,
+4 closed, 1 awaiting permission, 1 projection, 1 continued; /health ok; the public address answers the deaths in
+custody and the north's regional basket (2,524.69 on 1 November 2024 to 235.98 on 24 January 2025); the partner
+door names the arrest series in both languages with its warning and withholds its 3 rows (no-redistribution).
+- **Checked against the source:** flour in the north at 3 shekels a 25 kg sack in week 8 (18-24 September 2024) is
+  the report's own figure (its table: 3, -91.43% against 35 before the war; its text: aid flour flooded the north).
+- **The fault:** the arrest rows went in with the unit "persons" and the reference "period-end stock", and the
+  partner door read out "26,000 persons". `ingest/databank.py` t_prisoners wrote both on every row, whatever the
+  record said; the spec's `unit_from` was never read on this path. Fixed on `prisoners-running-totals` (`beb406c`):
+  the record's unit (3,666 of 3,675 records say persons; the 9 arrest counts say arrests) and "running total to
+  the page's date" for the two running totals. Rehearsed: 11 corrections, the old rows kept and closed, no other
+  prisoner row touched. Command 28 (`tmp/28-arrests-unit.sh`), HANDS §13ab.
