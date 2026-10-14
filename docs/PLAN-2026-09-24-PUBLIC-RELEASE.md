@@ -2138,7 +2138,8 @@ this commit), `tmp/27-round-3.sh`, `tmp/27-raw/`, HANDS §13aa.
 - **Addameer's running totals:** arrests since 7 October 2023 (10,000 in August 2024 to 26,000 in October 2026, in
   arrests) and deaths in custody since 1967 (300, then 328); rules of their own, as cumulative; 11 records added to
   the history, none changed.
-- **WAFA's headlines:** 2,328 daily sitemaps read 08:16-12:33 UTC; 139,907 listed, 138,881 distinct. The first run
+- **WAFA's headlines:** 2,328 daily sitemaps read 10:13-12:33 UTC (one dated 24 December 2018 with one item, the
+  rest 5 February 2020 to 14 October 2026, 16,000 to 25,000 a year); 139,907 listed, 138,881 distinct. The first run
   ended at 12:01 on a reply cut off mid-way (IncompleteRead), the fault I had fixed in the outlet reader this morning
   and not carried into the sitemap and article readers; both now try again, and the run resumed from its cache.
 - **B'Tselem** ("refresh them now"): not possible from here. statistics.btselem.org and btselem.org/statistics answer
