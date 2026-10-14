@@ -157,8 +157,8 @@ def main(argv: list[str]) -> int:
         return 1
     analyses = sorted({r["analysis"] for r in recs}, key=lambda a: datetime.strptime(a, "%b %Y"))
     meta = {"fetched_at": datetime.now(timezone.utc).isoformat(), "source": SOURCE_NAME, "source_url": PAGE,
-            "license": pkg.get("license_title"), "attribution": "Acute food insecurity: Integrated Food Security "
-            "Phase Classification (IPC), National IPC Technical Working Group, via HDX.",
+            "license": pkg.get("license_title"), "attribution": "Acute food insecurity: IPC (Integrated Food Security Phase "
+            "Classification), via HDX.",
             **hdx.stamp(pkg, None, kind="series"), "analyses": analyses, **notes}
     print(f"  ok   {LABEL}: {len(recs)} records, {len({r['measure'] for r in recs})} series, analyses "
           f"{analyses[0]} to {analyses[-1]}; West Bank rows left out {notes['west_bank_rows_left_out']}")
