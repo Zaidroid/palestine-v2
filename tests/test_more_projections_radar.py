@@ -58,12 +58,13 @@ def test_the_radar_gives_a_projection_no_age_and_never_calls_it_fresh():
     assert pro["freshness_basis"].startswith("projection") and pro["largest_hole"] is None
     assert pro["projection_reason"] == gap_radar.PROJECTION["un_wpp_2024_projection"]
     assert pro["span"] == ["2024-01-01", "2101-01-01"] and pro["rows"] == 3928   # still listed, as what it is
-    # the estimates beside it are judged exactly as before
+    # the estimates beside it: fresh since 2026-10-14, under an allowance that waits for the revision the UN
+    # announced for 11 July 2027 (under the learned rhythm they read "late", with nothing newer published)
     assert (est["dataset"], est["status"], est["age_days"], est["projection_reason"]) == \
-        ("un_wpp_2024", "late", (today - date(2023, 1, 1)).days, None)
-    # no gap line, no dead line, and never one of the fresh
+        ("un_wpp_2024", "fresh", (today - date(2023, 1, 1)).days, None)
+    # no gap line for either, and the projection never one of the fresh
     gaps = gap_radar.rank_gaps([est, pro], [], {"dead": []})
-    assert [g["subject"] for g in gaps] == ["un_wpp_2024"]
+    assert [g["subject"] for g in gaps] == []
     supply = gap_radar.judge_supply_lines({}, {}, [est, pro],
                                           datetime(2026, 10, 14, tzinfo=timezone.utc))
     assert supply["data"] == [] and not [x for x in supply["dead"] if "projection" in x["line"]]
