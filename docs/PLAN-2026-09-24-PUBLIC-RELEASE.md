@@ -2345,3 +2345,10 @@ branch `databank-round-8` (`74aa60f`), `tmp/35-ocha-arrests-outlets.sh`, `tmp/35
   arrests).
 - Suite on `databank-round-8` against the live store: 2,323 passed, 1 failed, then fixed: the letters' "from 30 other"
   sources undersold the 38 now served by more than a fifth; raised to 36 (`letters:` commit), the letter tests pass.
+
+2026-10-14 17:21 UTC · command 35 RAN (Zaid, 17:18:36-17:20:14 UTC), verified · done · proof: ocha_monthly 6,102 and
+arrests_joint 272 written, 40 series named, 0 unclassified; OCHA fresh, the arrests a closed collection, no dead line;
+the store: 515,712 rows held, 365,529 served, 53,366 withheld, 322,563 exportable, 62 datasets. Ma'an and Palestine
+Today: 0 in the archive until tonight's load. Missed before the command: the README's withheld floor (46,000) is a
+tenth below the 53,366 the two withheld datasets leave (I computed it for command 32, not for 35): raised to 50,000
+here, riding with the next command. The command's last line says Ma'an takes "about a day": it is about 54 hours.
