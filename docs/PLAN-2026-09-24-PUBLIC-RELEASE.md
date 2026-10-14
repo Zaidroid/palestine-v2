@@ -1973,3 +1973,10 @@ HANDS §13u.
   **Suite on the branch against the live store: 2,237 passed, 0 failed** (the full run's one failure was the
   README's withheld floor, 39,000+, outgrown by commands 19 and 20 at 43,789; raised to 43,000+, with queryable
   340,000+ and observations 490,000+).
+
+2026-10-14 08:09 UTC · command 21 RUN (Zaid, 08:08:09-08:09:07 UTC, 58 s) · the cash-out commission is served · proof: his
+terminal output; read back by Claude, read-only, from the store, the public API and the MCP tool.
+- Migration 119 applied; 422 written; registry: 3 classified and warned; API restarted.
+- The store serves `cash_gazacham.cashout_commission_daily` 386 days (17 June 2025 to 19 July 2026, highest 52),
+  `_weekly` 24, `_monthly` 12 (precision month). The public API serves them `no-redistribution` with the warning;
+  the MCP `series` tool answers with the warning in both languages and says the series has stopped.
