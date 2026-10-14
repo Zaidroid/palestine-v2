@@ -12,7 +12,7 @@ Over a million state observations across 35,000+ claims and 359 checkpoints,
 and growing every few minutes — which is why those three are rounded here and
 exact only in the API.
 
-**Tier 2 — what has happened.** 470,000+ observations and 29,000+ events from
+**Tier 2 — what has happened.** 490,000+ observations and 29,000+ events from
 **1922 to today**, across 21 categories and 105 sources, each row carrying
 its origin, its licence and the window it was true in.
 
@@ -67,9 +67,9 @@ was true once and quietly stopped being true.
 
 | | |
 |---|---:|
-| queryable through the API, credited | 315,000+ |
+| queryable through the API, credited | 340,000+ |
 | exportable as a file | 300,000+ |
-| held but not exportable — see `WITHHELD.md` | 39,000+ |
+| held but not exportable — see `WITHHELD.md` | 43,000+ |
 | carrying a share-alike obligation | 45,000+ |
 
 **Query and bulk are different acts.** A query returning twenty credited
