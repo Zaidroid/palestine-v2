@@ -202,6 +202,7 @@ ALLOWANCE_OVERRIDE_DAYS = {
     # night on a dataset nobody is meant to fetch nightly. 120 = fresh for four
     # months after the newest report read, late to eight, stalled after that.
     "gazacham_trucks_weekly": 120,
+    "gazacham_prices": 120,           # the same reports, read the same way (2026-10-14)
 }
 
 # Event-recording series: silence can mean "no events", not "feed died".

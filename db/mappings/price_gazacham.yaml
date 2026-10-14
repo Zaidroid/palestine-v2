@@ -1,0 +1,521 @@
+# Prices in Gaza's markets, from the Gaza Chamber of Commerce and Industry's weekly "Gaza Movement of
+# Goods" reports (2026-10-14). The reports are in the archive whole (source org:gazacham, read by
+# ops/fetch_gazacham.py); ops/build_gazacham_prices.py reads their price tables into
+# data/raw/gazacham/prices.json, each row checked against its own percent columns:
+#   - 30 goods, the week's average price beside the pre-war price, weeks 36-111 (1 April 2025 to 13
+#     September 2026) but for 62-65 (priced North and South apart): 1,815 prices on 2026-10-14;
+#   - 121 weeks the table printed NA for a good in place of a price, as a mark of their own;
+#   - the Chamber's price index (GCPI): 447 days, 14 of the index's weeks, 19 months, each as the
+#     index and as the basket's cost in shekels.
+# 2,896 figures on 2026-10-14. The rows a report prints that do not add up are listed in the file's
+# metadata and are not here; so are weeks 1-35, whose tables state no unit per row.
+category: price_gazacham
+transform: engine
+v1_category: food                # beside WFP's monthly prices, never merged with them
+shape: observation
+status: reviewed
+records_measured: 2896
+input:
+  root: data/raw/gazacham
+  glob: prices.json
+cadence: irregular               # a report every two weeks since July 2025
+source_routing:
+  by_name:
+    "Gaza Chamber of Commerce and Industry — Gaza Movement of Goods weekly reports": gaza_chamber
+datasets:
+  - key: gazacham_prices
+    source: gaza_chamber         # migration 118: all rights reserved, held for the house
+indicator:
+  template: "price_gazacham.{measure}"
+value:
+  num_from: value
+  text_from: text                # "NA" on the *_unpriced rows, nothing else
+  unit_from: unit                # ILS/KG · ILS/25 KG · ILS/L · ILS/400 G · ILS/PIECE · ILS/10 PIECES · ILS/40 PIECES · index · ILS
+occurred_at:
+  from: date                     # a day, or a week's or a month's first day; its last is attrs.period_end
+  precision: day
+  rules:
+    - when: {op: present, field: precision}
+      then: {precision_from: precision}   # "month" on the index's monthly rows, "day" on the others
+place:
+  strategy: region               # every record: region = 'Gaza Strip'
+  min_decided_pct: 1.0
+attrs_passthrough: [period_start, period_end, week, index_week, prewar_price, stated_change_vs_prewar_pct,
+                    prewar_basket, name_printed, unit_printed, report]
+stable_id: stable_id             # gazacham:prices:week<NNN>:<good> · gazacham:prices:<measure>:<date>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 2600
+  max_observations: 4000         # 2,896 on 2026-10-14; a report adds about 90
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "price_gazacham.flour_25kg_sack"}
+      name_en: "Average price of wheat flour in Gaza's markets in the week beginning on this date, ILS per 25 kg sack (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر طحين في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيس (25 كغم) (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.sugar"}
+      name_en: "Average price of sugar in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر سكر في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.rice"}
+      name_en: "Average price of rice in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر أرز في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.macaroni"}
+      name_en: "Average price of macaroni in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر معكرونة في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.kidney_beans"}
+      name_en: "Average price of kidney beans in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر فاصولياء حمراء في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.vegetable_oil"}
+      name_en: "Average price of vegetable oil in Gaza's markets in the week beginning on this date, ILS per litre (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر زيت نباتي في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل لليتر (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_litre
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.onion"}
+      name_en: "Average price of onion in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر بصل في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.tomato"}
+      name_en: "Average price of tomato in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر بندورة في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.potato"}
+      name_en: "Average price of potato in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر بطاطا في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.cucumber"}
+      name_en: "Average price of cucumber in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر خيار في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.eggplant"}
+      name_en: "Average price of eggplant in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر باذنجان في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.pepper"}
+      name_en: "Average price of pepper in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر فلفل في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.garlic"}
+      name_en: "Average price of garlic in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر ثوم في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.lemon"}
+      name_en: "Average price of lemon in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر ليمون في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.apple"}
+      name_en: "Average price of apple in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر تفاح في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.banana"}
+      name_en: "Average price of banana in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر موز في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.orange"}
+      name_en: "Average price of orange in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر برتقال في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.eggs"}
+      name_en: "Average price of eggs in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر بيض في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.frozen_chicken"}
+      name_en: "Average price of frozen chicken in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر دجاج مجمّد في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.frozen_chicken_thigh"}
+      name_en: "Average price of frozen chicken thighs in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر أفخاذ دجاج مجمّدة في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.frozen_chicken_wing"}
+      name_en: "Average price of frozen chicken wings in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر أجنحة دجاج مجمّدة في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.frozen_veal"}
+      name_en: "Average price of frozen veal in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر لحم عجل مجمّد في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: food.price
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.baby_milk_400g_can"}
+      name_en: "Average price of baby milk in Gaza's markets in the week beginning on this date, ILS per 400 g can (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر حليب أطفال في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للعلبة (400 غرام) (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.baby_diapers_40_pack"}
+      name_en: "Average price of baby diapers in Gaza's markets in the week beginning on this date, ILS per pack of 40 (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر حفاضات أطفال في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للعبوة (40 قطعة) (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_piece
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.sanitary_towels_10_pack"}
+      name_en: "Average price of sanitary towels in Gaza's markets in the week beginning on this date, ILS per pack of 10 (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر فوط صحية في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للعبوة (10 قطع) (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_piece
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.soap_piece"}
+      name_en: "Average price of soap in Gaza's markets in the week beginning on this date, ILS per bar (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر صابون في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للقطعة (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_piece
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.dishwashing_liquid"}
+      name_en: "Average price of dishwashing liquid in Gaza's markets in the week beginning on this date, ILS per litre (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر سائل جلي في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل لليتر (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_litre
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.laundry_detergent"}
+      name_en: "Average price of laundry detergent in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر مسحوق غسيل في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.firewood"}
+      name_en: "Average price of firewood in Gaza's markets in the week beginning on this date, ILS per kg (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر حطب في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل للكيلوغرام (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_kg
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.diesel"}
+      name_en: "Average price of diesel in Gaza's markets in the week beginning on this date, ILS per litre (Gaza Chamber of Commerce)"
+      name_ar: "متوسط سعر سولار في أسواق قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، بالشيكل لليتر (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS_per_litre
+      serve_warning: "A week's average of the prices the Gaza Chamber of Commerce recorded in Gaza's markets, dated by the week's first day (its last day is in the row), in the unit the Chamber prices the good in; each row also carries the pre-war price the report compares it with (prewar_price). Weeks 62 to 65 (October 2025) were priced for North and South apart and are not in this series. Not WFP's monthly retail price: never one series."
+      serve_warning_ar: "هاد معدّل أسعار أسبوع سجّلتها غرفة تجارة غزة بأسواق القطاع، مأرّخ بأول يوم بالأسبوع وآخر يوم مكتوب بالسطر، وبالوحدة اللي الغرفة بتسعّر فيها؛ وكل سطر فيه كمان سعر ما قبل الحرب اللي التقرير بيقارن فيه. أسابيع 62 لـ65 (تشرين الأول 2025) انسعّرت شمال وجنوب كل وحدة لحال، ومش بهاي السلسلة. وهاد مش سعر برنامج الأغذية العالمي الشهري، وما بنحطهم بسلسلة وحدة."
+    - when: {equals: "price_gazacham.banana_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for banana in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر موز (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.apple_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for apple in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر تفاح (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.frozen_chicken_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for frozen chicken in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر دجاج مجمّد (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.garlic_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for garlic in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر ثوم (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.orange_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for orange in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر برتقال (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.lemon_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for lemon in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر ليمون (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.frozen_veal_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for frozen veal in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر لحم عجل مجمّد (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.potato_unpriced"}
+      name_en: "Weeks the Gaza Chamber of Commerce's price table printed NA for potato in place of a price (week beginning on this date)"
+      name_ar: "الأسابيع التي كتب فيها جدول أسعار غرفة تجارة غزة NA مكان سعر بطاطا (الأسبوع الذي يبدأ بهذا التاريخ)"
+      concept: food.price
+      measure_kind: status
+      grain: period
+      place_grain: region
+      serve_warning: "The Chamber's price table printed NA for this good in these weeks, in place of a price. The reports do not define NA; their summaries say, in the same weeks, that such goods were no longer found in the markets. A week with no row here is not a week the good was found: it is a week with a price, or with no table."
+      serve_warning_ar: "جدول أسعار الغرفة كتب NA لهاي السلعة بهاي الأسابيع بدل السعر. التقارير ما بتعرّف NA؛ بس ملخصاتها بتقول بنفس الأسابيع إن هيك سلع ما عادت موجودة بالأسواق. والأسبوع اللي ما إله سطر هون مش معناه إن السلعة كانت موجودة: معناه إنه إله سعر، أو ما كان فيه جدول."
+    - when: {equals: "price_gazacham.gcpi_daily"}
+      name_en: "Gaza Consumer Price Index (GCPI) on this day: the cost of the Chamber's basket of essential goods against its pre-war cost, pre-war = 100 (Gaza Chamber of Commerce)"
+      name_ar: "مؤشر أسعار المستهلك في غزة (GCPI) بهاد اليوم: كلفة سلة السلع الأساسية للغرفة مقابل كلفتها قبل الحرب، ما قبل الحرب = 100 (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: index
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: index
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid; before the war it cost ILS 92.44, which is 100, so 3,000 means thirty times the pre-war cost (the reports print it as 3,000%). Daily from 27 May 2025; 29 September to 26 October 2025 were measured for North and South apart and are not here."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي؛ قبل الحرب كانت كلفتها 92.44 شيكل، وهاد هو الـ100، يعني 3,000 معناها ثلاثين ضعف كلفة ما قبل الحرب (التقارير بتكتبها 3,000%). يومي من 27 أيار 2025؛ ومن 29 أيلول لـ26 تشرين الأول 2025 انقاس شمال وجنوب كل وحدة لحال، ومش هون."
+    - when: {equals: "price_gazacham.basket_cost_daily"}
+      name_en: "Cost in shekels of the Gaza Chamber of Commerce's basket of essential goods on this day (pre-war: ILS 92.44)"
+      name_ar: "كلفة سلة السلع الأساسية لغرفة تجارة غزة بالشيكل بهاد اليوم (قبل الحرب: 92.44 شيكل)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: ILS
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid. Daily from 27 May 2025; 29 September to 26 October 2025 were measured for North and South apart and are not here."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي. يومي من 27 أيار 2025؛ ومن 29 أيلول لـ26 تشرين الأول 2025 انقاس شمال وجنوب كل وحدة لحال، ومش هون."
+    - when: {equals: "price_gazacham.gcpi_weekly"}
+      name_en: "Gaza Consumer Price Index (GCPI) in the index's week beginning on this date: the cost of the Chamber's basket of essential goods against its pre-war cost, pre-war = 100 (Gaza Chamber of Commerce)"
+      name_ar: "مؤشر أسعار المستهلك في غزة (GCPI) بأسبوع المؤشر اللي بيبلّش بهاد التاريخ: كلفة سلة السلع الأساسية للغرفة مقابل كلفتها قبل الحرب، ما قبل الحرب = 100 (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: index
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: index
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid; before the war it cost ILS 92.44, which is 100, so 3,000 means thirty times the pre-war cost (the reports print it as 3,000%). The index's own weeks (numbered by the Chamber from 1 November 2024, not the report's weeks), 31 January to 8 May 2025, when one value was measured for all of Gaza; its earlier weeks were measured for North and South apart and are not here."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي؛ قبل الحرب كانت كلفتها 92.44 شيكل، وهاد هو الـ100، يعني 3,000 معناها ثلاثين ضعف كلفة ما قبل الحرب (التقارير بتكتبها 3,000%). هاي أسابيع المؤشر نفسه (الغرفة بتعدّها من 1 تشرين الثاني 2024، مش أسابيع التقرير)، من 31 كانون الثاني لـ8 أيار 2025، لما انقاس رقم واحد لكل غزة؛ والأسابيع اللي قبلها انقاست شمال وجنوب كل وحدة لحال، ومش هون."
+    - when: {equals: "price_gazacham.basket_cost_weekly"}
+      name_en: "Cost in shekels of the Gaza Chamber of Commerce's basket of essential goods in the index's week beginning on this date (pre-war: ILS 92.44)"
+      name_ar: "كلفة سلة السلع الأساسية لغرفة تجارة غزة بالشيكل بأسبوع المؤشر اللي بيبلّش بهاد التاريخ (قبل الحرب: 92.44 شيكل)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: ILS
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid. The index's own weeks (numbered by the Chamber from 1 November 2024, not the report's weeks), 31 January to 8 May 2025, when one value was measured for all of Gaza; its earlier weeks were measured for North and South apart and are not here."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي. هاي أسابيع المؤشر نفسه (الغرفة بتعدّها من 1 تشرين الثاني 2024، مش أسابيع التقرير)، من 31 كانون الثاني لـ8 أيار 2025، لما انقاس رقم واحد لكل غزة؛ والأسابيع اللي قبلها انقاست شمال وجنوب كل وحدة لحال، ومش هون."
+    - when: {equals: "price_gazacham.gcpi_monthly"}
+      name_en: "Gaza Consumer Price Index (GCPI) in the month beginning on this date: the cost of the Chamber's basket of essential goods against its pre-war cost, pre-war = 100 (Gaza Chamber of Commerce)"
+      name_ar: "مؤشر أسعار المستهلك في غزة (GCPI) بالشهر اللي بيبلّش بهاد التاريخ: كلفة سلة السلع الأساسية للغرفة مقابل كلفتها قبل الحرب، ما قبل الحرب = 100 (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: index
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: index
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid; before the war it cost ILS 92.44, which is 100, so 3,000 means thirty times the pre-war cost (the reports print it as 3,000%). The Chamber's monthly value, February 2025 on. A month the newest report gives only 'up to' a day is left until a report gives it whole; where two reports print a month differently, the later report's value is held."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي؛ قبل الحرب كانت كلفتها 92.44 شيكل، وهاد هو الـ100، يعني 3,000 معناها ثلاثين ضعف كلفة ما قبل الحرب (التقارير بتكتبها 3,000%). رقم الغرفة الشهري، من شباط 2025. الشهر اللي آخر تقرير بيعطيه \"لغاية\" يوم معيّن بس، بيستنّى لحد ما تقرير يعطيه كامل؛ ولما تقريرين يكتبوا نفس الشهر بشكل مختلف، بناخد رقم التقرير الأحدث."
+    - when: {equals: "price_gazacham.basket_cost_monthly"}
+      name_en: "Cost in shekels of the Gaza Chamber of Commerce's basket of essential goods in the month beginning on this date (pre-war: ILS 92.44)"
+      name_ar: "كلفة سلة السلع الأساسية لغرفة تجارة غزة بالشيكل بالشهر اللي بيبلّش بهاد التاريخ (قبل الحرب: 92.44 شيكل)"
+      concept: economy.prices
+      measure_kind: stock
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: ILS
+      serve_warning: "The Chamber's basket is rice 1.38 kg, vegetable oil 1.37 l, sugar 1 kg, flour 12.65 kg, tomato 3.5 kg, cucumber 3.45 kg, onion 3.5 kg, potato 2.5 kg, soap, sanitary towels, washing liquid and dishwashing liquid. The Chamber's monthly value, February 2025 on. A month the newest report gives only 'up to' a day is left until a report gives it whole; where two reports print a month differently, the later report's value is held."
+      serve_warning_ar: "سلة الغرفة فيها أرز 1.38 كغم، زيت 1.37 لتر، سكر 1 كغم، طحين 12.65 كغم، بندورة 3.5 كغم، خيار 3.45 كغم، بصل 3.5 كغم، بطاطا 2.5 كغم، صابون، فوط صحية، سائل غسيل وسائل جلي. رقم الغرفة الشهري، من شباط 2025. الشهر اللي آخر تقرير بيعطيه \"لغاية\" يوم معيّن بس، بيستنّى لحد ما تقرير يعطيه كامل؛ ولما تقريرين يكتبوا نفس الشهر بشكل مختلف، بناخد رقم التقرير الأحدث."

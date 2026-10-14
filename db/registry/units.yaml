@@ -224,6 +224,34 @@ units:
       "ILS/25 KG":  {factor_num: 1,    factor_den: 25}
       "ILS/50 KG":  {factor_num: 1,    factor_den: 50}
       "ILS/60 KG":  {factor_num: 1,    factor_den: 60}
+      # The Gaza Chamber of Commerce's baby milk, by the 400 g can (2026-10-14).
+      "ILS/400 G":  {factor_num: 1000, factor_den: 400}
+
+  ILS_per_piece:
+    name_en: shekels per piece
+    name_ar: شيكل للقطعة
+    dimension: price_per_item
+    notes: >-
+      A price per counted item: a bar of soap, one diaper, one sanitary towel.
+      The Gaza Chamber of Commerce prices diapers by the pack of 40 and
+      sanitary towels by the pack of 10 (2026-10-14); each converts exactly.
+      Never merged with a price per kilogram: a piece has no weight here.
+    aliases:
+      "ILS/PIECE":      {factor_num: 1, factor_den: 1}
+      "ILS/10 PIECES":  {factor_num: 1, factor_den: 10}
+      "ILS/40 PIECES":  {factor_num: 1, factor_den: 40}
+
+  ILS:
+    name_en: Israeli new shekels
+    name_ar: شيكل
+    dimension: currency
+    notes: >-
+      An amount in shekels, at the prices of its date: the Gaza Chamber of
+      Commerce's cost of its basket of essential goods (2026-10-14). Never
+      converted to dollars here: the rate of a day in Gaza is not the bank's.
+    aliases:
+      ILS: {}
+      NIS: {}
 
   ILS_per_litre:
     name_en: shekels per litre
