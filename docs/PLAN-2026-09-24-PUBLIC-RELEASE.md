@@ -1790,3 +1790,25 @@ this commit), `tmp/16-addameer-months.sh`, HANDS §13p.
 - Left on the pages and not loaded: Jerusalemites, prisoners from the 1948 territories, Gaza, life sentences,
   Legislative Council members (about 168 months each) and, on nine pages, the count of arrests since 7 October
   2023. They need names in both languages before they are series.
+
+2026-10-14 05:54 UTC · command 16 RUN by Zaid (05:52:45 to 05:52:56 UTC), and the night of 14 October · done · proof:
+the script's own output, `systemctl show`, the two units' journals, read-only SQL, `/health`.
+- Command 16: fast-forward to `aa9a4d4`; the dry run said 680 read, 34 held, 16 to correct; the load wrote 646, 16 of
+  them corrections. Asked through the API: children in prison 170 months, January 2011 to October 2026, lowest 104,
+  highest 470, newest 350; total prisoners for November 2022 now 4,760, and 9,900 when asked `as_of=2026-10-13`
+  (the old row kept).
+- **The night of 14 October was clean**, the first with every change of 12 and 13 October. Backup 02:30:08 to
+  02:47:22, success: 2,003.9 MB, 3,935,014 rows, uploaded and checksum-verified to the storage box. Sync 03:41:22 to
+  04:11:27, success, exit 0; supply lines 0 dead, v2's fetches 23 of 23 live. No unit is in a failed state.
+- The archive step ran into its fifteen minutes (exit 124), as the cap intends, and the night's result stood. In
+  those fifteen minutes it loaded 255,170 channel posts and the rest of the publishers' files: the archive holds
+  609,124 texts (2.7 GB with its index), up from 289,377 the evening before.
+- The listing reader finished UNISPAL, PCHR, POICA, PIC English, Middle East Monitor (149,225) and IMEMC (64,193).
+  Two publishers stopped it: Mondoweiss with HTTP 429 at 7,100 of 35,535, and PIC Arabic with HTTP 525 (the site's
+  own certificate handshake failing at its CDN) at 57,900 of 323,121. Resumed at 05:54: PIC Arabic from its
+  cursor, then Mondoweiss once at ten seconds a page; if it refuses again it is left.
+- The channel reader finished its first slice for all 22 channels (back to June 2026; Palrcs, wfp_gaza, gedcogaza,
+  palmoh and mohepalestine have little to give) and in the second (back to October 2025) has read Quds News
+  (67,951 posts) and Safa (44,977).
+- `/health` is degraded by one upstream source fault (`tg_peopleofhebron` silent), not this work. Disk: 86 GB free;
+  the readers' page caches hold 909 MB and can be deleted.
