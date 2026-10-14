@@ -81,6 +81,8 @@ step .venv/bin/python -m ops.fetch_un2720
 # both keyless (2026-10-14). The World Bank's night lights are read by hand: one file a year.
 step .venv/bin/python -m ops.fetch_who_ssa
 step .venv/bin/python -m ops.fetch_ilostat
+# IPC's acute food insecurity analyses through HDX (2026-10-14; Zaid: "we need this data").
+step .venv/bin/python -m ops.fetch_ipc
 # Hand-entered cited figures: checked and written from db/reference/ (no network).
 step .venv/bin/python -m ops.build_cited_figures
 

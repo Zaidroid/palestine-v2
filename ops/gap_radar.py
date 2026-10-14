@@ -223,6 +223,10 @@ ALLOWANCE_OVERRIDE_DAYS = {
     # file. The learned monthly rhythm would call it stalled the night it is loaded. Read by hand,
     # no supply line. 550 = late when a yearly file is about four months overdue.
     "nightlights_monthly": 550,
+    # IPC's analyses (2026-10-14): one every two to seven months (September 2024 to April 2025 was
+    # seven), each dated by its periods' first days. The learned rhythm of those dates would call the
+    # gap between two analyses late. 365 = late after a year with no analysis; stalled at 730.
+    "ipc_phases": 365,
     # The Gaza Chamber of Commerce's reports (2026-10-14) come every two weeks and are
     # read by hand (ops/fetch_gazacham.py --new-only) until they get a nightly supply
     # line, which waits on the house network resolving gazacham.ps again (its DNS
@@ -360,6 +364,9 @@ SUPPLY_LINES = {
     "ilostat": {"labels": ["ilostat:quarterly"], "feeds": ["ilostat_quarterly"],
                 "fetcher": "ops/fetch_ilostat.py", "every_days": 1,
                 "note": "ILO's quarterly labour series, four GETs a night (2026-10-14)"},
+    "ipc": {"labels": ["ipc:phases"], "feeds": ["ipc_phases"],
+            "fetcher": "ops/fetch_ipc.py", "every_days": 1,
+            "note": "IPC's analyses through HDX, three requests ten seconds apart (2026-10-14)"},
     "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
                "fetcher": "ops/fetch_un2720.py", "every_days": 1,
                "note": "UN2720's aid dashboard, one attempt a night for all "
