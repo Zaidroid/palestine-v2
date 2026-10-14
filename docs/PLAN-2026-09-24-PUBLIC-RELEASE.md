@@ -2209,3 +2209,16 @@ say their units in Arabic · built and rehearsed, WAITING FOR ZAID'S COMMAND 29 
 - **Scouted for the next round** (a researcher, text only): the prisoner institutions' joint monthly arrests report
   runs from January 2016 (arrests by month, children, women, often by governorate, administrative orders new and
   renewed), indexed on Addameer's monthly-reports pages; the longest monthly series not yet held.
+
+2026-10-14 14:26 UTC · command 29 RAN (Zaid, 14:21:34-14:22:36 UTC), verified, with one fault found and fixed for command 30 ·
+proof: price_asarsook 1,848 rows current in 280 series (2024-11-19 to 2026-09-01), all no-redistribution, withheld
+45,144 → 46,992 (v_withheld); 280 named in both languages with warnings; 0 prices failing canonical conversion; the
+partner door says «30 شيكل للكيلوغرام» for flour in the south and withholds the rows; the API hands `units`.
+- **The fault:** the radar, measured read-only, reads `market_channel_prices` STALLED (last information 2026-09-01,
+  43 days against a learned 7), and a stalled dataset no supply line feeds is a dead data line: tonight's run (03:41
+  UTC) would have failed and paged. The rehearsal copy has no night, so the rehearsal could not show it. Fixed on
+  `market-channel-closed` (`8777bfd`): CLOSED_CORPUS, beside the cited figures (built by hand from held posts, nothing
+  refreshes it at night). Judged read-only with the fix and the main tree's fetch record: no dead line. Command 30
+  (`tmp/30-radar-closed.sh`), HANDS §13ad.
+- The migration runner's warning "022_compress_state_observation.sql already applied but file changed" is old: the
+  file was changed by `9ac1270` (the backups work), not by this round.
