@@ -123,6 +123,15 @@ CLOSED_CORPUS = {
     # allowance 90) reach STALLED in the first week of February 2027 and
     # need the same answer; that is not decided here.
     "v1_culture_heritage_composite",
+    # Gaza's market prices from the Telegram channel «أسعار السوق - غزة» (migration
+    # 120, 2026-10-14): built by hand (ops/build_market_channel.py) from the posts
+    # the channel reader holds; nothing refreshes it at night. The channel's lists
+    # stopped carrying their prices as text on 1 September 2026, so judged on its
+    # data dates it read STALLED the day it was loaded (43 days against a learned
+    # 7) and would have failed the night as a dead data line. It grows only when
+    # the builder is run again on newer posts; if the channel's text lists return
+    # and a nightly step builds it, take it out of this set.
+    "market_channel_prices",
 }
 
 # A model's PROJECTION: rows dated after the day they were published. Its

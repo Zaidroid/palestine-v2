@@ -125,3 +125,16 @@ def test_the_spec_names_every_series_it_holds_and_every_unit_converts():
     aliases = {a for u in units["units"].values() for a in (u.get("aliases") or {})}
     assert {"ILS/KG", "ILS/L", "ILS/25 KG", "ILS/3 KG", "ILS/4 KG", "ILS/5 KG", "ILS/10 KG", "ILS/800 G",
             "ILS/PIECE", "ILS/30 PIECES"} <= aliases
+
+
+def test_the_radar_holds_it_as_a_closed_collection_not_a_dead_line():
+    """Loaded 2026-10-14 with its last list 43 days old: judged on its dates it
+    read STALLED, which fails the night as a dead data line and pages."""
+    from datetime import datetime, timezone
+    from ops import gap_radar as G
+    assert "market_channel_prices" in G.CLOSED_CORPUS
+    d = {"dataset": "market_channel_prices", "status": "closed_corpus", "age_days": 43,
+         "allowance_days": 7, "last_information_day": "2026-09-01"}
+    supply = G.judge_supply_lines({}, {}, [d], datetime(2026, 10, 15, 3, 41, tzinfo=timezone.utc))
+    assert not [x for x in supply["data"] if "market_channel_prices" in x["feeds"]]
+
