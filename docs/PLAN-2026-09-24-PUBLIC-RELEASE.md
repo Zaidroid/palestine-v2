@@ -2228,3 +2228,33 @@ partner door says «30 شيكل للكيلوغرام» for flour in the south an
 2026-10-14 14:41 UTC · command 30 RAN (Zaid, 14:41:18 UTC), verified · done · proof: ff to `3ede986`; its read-only judgement
 from the main tree: 36 fresh, 5 closed collections (market_channel_prices among them), 3 dead upstream, 1 awaiting
 permission, 1 projection, 1 continued; dead lines tonight: none.
+
+2026-10-14 15:07 UTC · round 5: WHO's attacks on health care, ILO's quarterly labour series, the World Bank's night lights ·
+built and rehearsed, WAITING FOR ZAID'S COMMAND 31 · proof: branch `databank-round-5` (`d8f10fa`),
+`tmp/31-who-ilo-nightlights.sh`, `tmp/31-raw/`, HANDS §13ae.
+- **WHO SSA** (`ops/fetch_who_ssa.py`, nightly, one GET): 3,507 attacks in the oPt, 2017-07-06 to 2026-10-07,
+  1,083 killed, 3,303 injured; 26 monthly series, 2,912 records (October 2023: 271 attacks, 494 killed). An attack
+  carries one to four of WHO's 15 types (7, 12, 13, 14 read off combined labels): counted under each. Floor 3,000
+  and never a tenth fewer than held (WHO can withdraw records).
+- **ILO** (`ops/fetch_ilostat.py`, nightly, four GETs to rplumber.ilo.org; ilostat.ilo.org sits behind a challenge
+  and is not used): unemployment and participation, 2000Q1-2025Q4, by sex and age, 1,872 records, 36 series. ILO's
+  note S4:6333, read in its own dictionary, is "Geographical coverage: Excluding Gaza Strip" from 2023Q4: those
+  quarters are series of their own in the West Bank (unemployment 24.1% in 2023Q3 for both, 35.2% in 2024Q1 for the
+  West Bank alone). Dated by the quarter's first day at month precision (the store has no quarter precision).
+- **Night lights** (`ops/fetch_nightlights.py`, by hand): Palestine's block of each yearly Space2Stats file by range
+  requests and bisection (~15 reads of 8 KB a file, 3 s apart; 14 files in 12 minutes), 5,376 records, 16
+  governorates, 2012-01 to 2025-12 (Gaza: 8,315 in September 2023, 569 in November). Five World Bank names mapped
+  («Jabalya» = North Gaza). The catalog API answered 429: the yearly addresses are listed in the reader.
+- **Licences:** all three held at `ask` until Zaid grades them. who_ssa's 042 row ("CC-BY-IGO via HDX", never
+  verified, used by nothing) tightened with WHO's own words, read on the dashboard; ILO's CC BY 4.0 read through a
+  search index; the World Bank's CC BY 4.0 as the scout read it (not reread).
+- **The night:** steps for WHO and ILO, supply lines `who-ssa` and `ilostat`, allowances of 550 days for ILO's late
+  quarters and the yearly night-light files. Judged read-only on the rehearsal copy with the real fetch record and
+  the staged lines: all three fresh (13/93, 378/550, 317/550 days), both lines live, no dead line.
+- **Rehearsed** as a first run on the scratch copy: it caught one fault (a spec cadence "quarterly", which the spec
+  format refuses; now "irregular"); rows read back with their places and notes; 0 conversions failing; the three
+  questions asked of a test API, taken from the script's own text (two of mine had been wrong: an indicator prefix
+  that matched 25 other series, and a limit above the API's 2,000).
+- **Suite** on the branch against the live store: 2,289 passed, 0 failed (4 skipped on live-data conditions).
+- Not done, and why: IPC (its only keyless route is an HDX download: waits for Zaid's answer on HDX's robots file);
+  OCHA's casualty incidents (a Power BI decoder; private use only); the joint monthly arrests report; more outlets.
