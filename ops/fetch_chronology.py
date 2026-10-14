@@ -749,9 +749,10 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
     site = SITES[key]
     lang = site["lang"]
     info: dict = {"pages": 0, "pages_missing": 0, "days_that_do_not_exist": 0, "redirected": [],
-                  "timeline_redirects_not_read": []}
+                  "timeline_redirects_not_read": [], "copies_on_another_page": 0}
     seen_pages: set[str] = set()
     timeline_years: set[int] = set()                     # years read from a timeline page of their own
+    seen_text: set[tuple[str, str]] = set()
     entries: dict[str, dict] = {}
     cache = from_dir or ((cache_root or ROOT / "data" / "cache" / "wikipedia") / lang)
     cache.mkdir(parents=True, exist_ok=True)
@@ -815,6 +816,13 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
         info["pages"] += 1
         info["days_that_do_not_exist"] += undated
         for e in got:
+            # the same day's text on two pages of one publisher (the 2024 timeline and the war
+            # timeline share 189) is one item: the first page read keeps it
+            k = (e["date"], e["text"])
+            if k in seen_text:
+                info["copies_on_another_page"] += 1
+                continue
+            seen_text.add(k)
             entries.setdefault(e["id"], e)
     info["timeline_redirects_not_read"] = len(info["timeline_redirects_not_read"])
     return sorted(entries.values(), key=lambda e: (e["date"], e["id"])), info

@@ -741,3 +741,16 @@ def test_a_war_timeline_spanning_years_dates_each_event_by_its_month_heading():
     assert [(e["date"], e["text"][:16]) for e in got] == [
         ("2023-12-31", "Israeli strikes "), ("2024-01-01", "The Gaza Health "), ("2025-10-03", "A strike hit a s")]
     assert got[1]["id"].startswith("en:2024:")
+
+
+def test_the_same_days_text_on_two_pages_of_one_publisher_is_one_item(tmp_path, monkeypatch):
+    from ops import fetch_chronology as F
+    year_page = WIKI_EN.replace("2024_in_Palestine", "2024_in_Palestine")
+    war_page = WIKI_EN.replace('href="https://en.wikipedia.org/wiki/2024_in_Palestine"',
+                               'href="https://en.wikipedia.org/wiki/Timeline_of_the_Gaza_war_(1)"')
+    (tmp_path / "2024_in_Palestine.html").write_text(year_page, encoding="utf-8")
+    (tmp_path / "copy_2024.html").write_text(war_page, encoding="utf-8")
+    monkeypatch.setitem(F.SITES, "wikipedia_test", {**F.SITES["wikipedia_en"], "titles": [
+        ("2024_in_Palestine", [2024]), ("copy_{y}", [2024])]})
+    entries, info = F.read_wikipedia("wikipedia_test", tmp_path)
+    assert info["pages"] == 2 and info["copies_on_another_page"] == len(entries) == 8
