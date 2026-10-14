@@ -1980,3 +1980,26 @@ terminal output; read back by Claude, read-only, from the store, the public API 
 - The store serves `cash_gazacham.cashout_commission_daily` 386 days (17 June 2025 to 19 July 2026, highest 52),
   `_weekly` 24, `_monthly` 12 (precision month). The public API serves them `no-redistribution` with the warning;
   the MCP `series` tool answers with the warning in both languages and says the series has stopped.
+
+2026-10-14 08:53 UTC · Wikipedia's year pages into the archive, in English and in Arabic · built, fetched and rehearsed, WAITING
+FOR ZAID'S COMMAND 22 · proof: branch `archive-wikipedia` (`c6555dd`, this commit), `tmp/22-wikipedia.sh`,
+`tmp/22-raw/` (the two entry files, 150 pages in bronze, five fetch records), HANDS §13v.
+- Read as article pages (/wiki/...), which Wikipedia's robots file allows; its API paths (/w/, /api/) are disallowed
+  to crawlers and were not used; nothing in the file names us. One page every three seconds, 08:16 to 08:31 UTC:
+  English "YYYY in Mandatory Palestine" and "YYYY in Palestine" for 1900 to 2026 (75 pages read, 27 redirects to a
+  page already read, 57 missing), Arabic «YYYY في فلسطين» (48 pages, 79 missing). Pages kept in
+  `data/cache/wikipedia/` and in bronze (`chron_wikipedia_en`, `chron_wikipedia_ar`).
+- 2,908 English entries (1920 to 13 October 2026; 2,663 to the day, 38 to the month, 207 to the year; 740 births and
+  250 deaths, tagged) and 1,210 Arabic (1977 to 20 September 2026; 1,052 to the day, 112 month, 46 year). The
+  Arabic pages are thinner and are not translations of the English ones (2024: 32 against 247), except 1990.
+- Fixed on the way, before anything was written: births had been tagged "deaths" (my regex), "Notable deaths" was
+  not tagged, and the page footer («سياسة الخصوصية») was read as events because reading did not stop where the
+  article's text ends. Undated items under an events heading (the English "Unknown dates", the Arabic «أبرز الأحداث»)
+  are now entries of their year instead of being dropped. The Arabic site's home address I first wrote was a list
+  page I had not checked exists; it is now the site's root.
+- The loader passes a chronology's language from its site.json (`ingest/archive.py`, one line); the rehearsal holds
+  the Arabic entries as `ar`, and «الانتفاضة» finds 18 of them from 1987.
+- Rehearsed on the scratch copy: 4,118 written, a second run writes none; the script's three questions answer
+  (the general strike of 1936 to 1938; «مخيم» 34 entries from 1981; Gaza in 2024, 92). 3 offline tests.
+  **Suite on the branch against the live store: 2,238 passed, 0 failed, 3 skipped** (all three skip on the day's
+  live data: no search reported, a correlation fit at lag 0, no measurement).
