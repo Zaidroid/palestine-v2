@@ -2312,3 +2312,34 @@ Uppsala Conflict Data", its citation wording, left as UCDP asks: the spoken shor
 commercial use allowed; withheld 48,006 → 46,992; the README test passed; the partner door delivers IPC's rows
 (grade open) and reads its credit whole ("Acute food insecurity: IPC (Integrated Food Security Phase
 Classification), via HDX").
+
+2026-10-14 17:03 UTC · Zaid: "do 2 and whatever ready from 3" · built and rehearsed, WAITING FOR ZAID'S COMMAND 35 · proof:
+branch `databank-round-8` (`74aa60f`), `tmp/35-ocha-arrests-outlets.sh`, `tmp/35-raw/`, HANDS §13ai.
+- **OCHA's casualty incidents by month** (`ops/fetch_ocha_monthly.py`, nightly, supply line `ocha-monthly`): one
+  grouped query over the casualty report's incident table (vw_BS_Pal_Fatalities; columns read from its schema;
+  the Name column never asked for): 7,500 killed, January 2008 to now, every perpetrator Israeli (military
+  forces, non-military security forces, settlers 82, civilians); 27 series, 6,102 records, each split checked
+  against the month's total. Gaza's dead since 7 October 2023 are not in OCHA's record (said on every row). West
+  Bank by year matches OCHA's own totals (506 in 2023, 499 in 2024). Source ocha_casualties (non-commercial).
+- **The joint monthly arrests report** (`ops/fetch_joint_arrests.py`): Addameer's index (7 pages, 80 items, to
+  January 2024); 60 months, 272 records (arrests, children, women, Jerusalem, administrative orders new and
+  renewed; 44 months with orders). Read from each lead sentence; faults found and fixed on the way: the listing's
+  links are already percent-encoded (encoding them again gave 404 for every report of 2016-2021); «امر» matched
+  «امرأة» (13 women read as 13 orders); children held in prison read as children arrested; a running count's
+  filter reaching into the sentence before. Three titles misprint the month's figure (July 2016 547/574, September
+  2017 413/431, January 2019 506/509): the text's held, the title's beside it. Year, half-year and two-month
+  reports listed, not months. A closed collection (CLOSED_CORPUS); source addameer (all rights reserved).
+- **For the archive, already running** (the nightly archive load takes their files in; no command needed for
+  that): Ma'an's whole listing (`ops/fetch_maan.py`, 35,177 pages, started 16:40 UTC, about 29 hours, every page
+  in bronze `listing_maan`, about 1.2 GB); Palestine Today's 51 sitemaps (`ops/fetch_sitemaps.py paltoday`):
+  248,686 headlines whose image caption holds every whole word of the cut address (older addresses open with
+  «خبر-», a fault found at 25 files and re-run from cache), 243,169 listed apart (untitled-*.ndjson.gz) for a page
+  reader not yet started (about eight days at one request every three seconds).
+- **Gaza's Government Media Office channel** (@mediagovps): the channel reader was paused (stop file), the channel
+  read whole (3,776 posts, 28 December 2022 to today), and the news channels resumed from their cursors
+  (`tmp/tg-chain.sh`). It is the office's channel (Salama Ma'rouf 180 posts, Ismail al-Thawabta 34) carrying the
+  ministries' statements; its "day N" statistics are not in its text (3 posts), so no series is built from it.
+- **Rehearsed** as a first run on the scratch copy: 6,102 and 272 written, 40 series named, 0 unclassified; judged
+  with the staged lines: OCHA fresh (13/93), the arrests a closed collection, no dead line; the questions asked
+  of a test API from the script's text (82 killed by settlers since 2008, 39 since October 2023; April 2022 1,228
+  arrests).
