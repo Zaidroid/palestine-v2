@@ -2343,3 +2343,5 @@ branch `databank-round-8` (`74aa60f`), `tmp/35-ocha-arrests-outlets.sh`, `tmp/35
   with the staged lines: OCHA fresh (13/93), the arrests a closed collection, no dead line; the questions asked
   of a test API from the script's text (82 killed by settlers since 2008, 39 since October 2023; April 2022 1,228
   arrests).
+- Suite on `databank-round-8` against the live store: 2,323 passed, 1 failed, then fixed: the letters' "from 30 other"
+  sources undersold the 38 now served by more than a fifth; raised to 36 (`letters:` commit), the letter tests pass.
