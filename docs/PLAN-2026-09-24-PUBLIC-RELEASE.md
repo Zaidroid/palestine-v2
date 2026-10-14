@@ -2288,3 +2288,6 @@ WAITING FOR ZAID'S COMMAND 32 · proof: branch `databank-round-6` (`3cbe089`, `3
 - **Suite** on the branch against the live store: 2,299 passed, 1 failed: the README's withheld floor (43,000) was a
   tenth below the 57,152 command 31 left; raised to 46,000, which holds once command 32 runs (48,006 then); command
   32 ends by running that test against the store.
+- Suite on `gazacham-nightly` (round 6 and the Chamber's nightly line) against the live store, 16:14 UTC: 2,300
+  passed, 1 failed by design until command 32 runs: the README's withheld floor (46,000) against today's 57,152; it
+  holds at the 48,006 command 32 leaves, and command 32 ends by running that test.
