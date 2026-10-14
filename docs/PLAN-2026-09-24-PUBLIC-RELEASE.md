@@ -2170,3 +2170,10 @@ door names the arrest series in both languages with its warning and withholds it
   the page's date" for the two running totals. Rehearsed: 11 corrections, the old rows kept and closed, no other
   prisoner row touched. Command 28 (`tmp/28-arrests-unit.sh`), HANDS §13ab. Suite on the branch against the live
   store: 2,251 passed, 0 failed.
+
+2026-10-14 13:13 UTC · command 28 RAN (Zaid, 13:12:43-13:12:46 UTC), verified · done · proof: prisoners 11 written, 11
+corrected; held: the 9 arrest rows current with unit "arrests" and reference "running total to the page's date",
+the 2 deaths-in-custody rows current with that reference, the 11 old rows kept and closed; no other current prisoner
+row differs from "persons" / "period-end stock"; the partner door reads "26,000 arrests"; withheld unchanged
+(45,144). Seen on the way, not fixed: the Arabic answer prints a unit's English code ("26,000 arrests", as it printed
+"persons"), for every unit; `unit_def.name_ar` exists for it (a serve/ change, so a restart).
