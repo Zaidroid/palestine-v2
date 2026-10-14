@@ -1893,3 +1893,13 @@ this commit), `tmp/19-gazacham-trucks.sh`, HANDS §13s.
   **Suite on the branch against the live store: 2,218 passed, 0 failed, 2 skipped (665 s).**
 - Next on this line: the reports' price tables (food and non-food against pre-war, from 61 reports) and the Chamber's
   price index; the early reports price goods day by day in another layout.
+
+2026-10-14 07:10 UTC · command 19 RUN (Zaid, 07:08:54-07:09:50 UTC, 56 s) · the weekly trucks are served · proof: his
+terminal output; read back by Claude, read-only, from the store, the public API and the MCP tool.
+- Migration 117 applied; 146 written; registry wrote the three warnings; API restarted.
+- The store serves `aid_gazacham.trucks_entered` 109 weeks (124,615 trucks in all; highest 4,406 in the week of 21
+  January 2025), `trucks_looted` 19 weeks (6,445), `trucks_delivered` 18 weeks (3,049). The public API serves the
+  rows with source `gaza_chamber`, `no-redistribution`, `commercial_use` false and the warnings; the MCP `series`
+  tool (partner tier) withholds the 79 points and cites the figure with its source, as it should.
+- Seen on the way, not from this work: `db/migrate.sh` warns that 022_compress_state_observation.sql changed after
+  it was applied (only commit touching it: 9ac1270). Harmless to this run; left as it is.
