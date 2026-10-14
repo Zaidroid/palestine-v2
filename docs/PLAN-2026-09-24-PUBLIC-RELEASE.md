@@ -1812,3 +1812,23 @@ the script's own output, `systemctl show`, the two units' journals, read-only SQ
   (67,951 posts) and Safa (44,977).
 - `/health` is degraded by one upstream source fault (`tg_peopleofhebron` silent), not this work. Disk: 86 GB free;
   the readers' page caches hold 909 MB and can be deleted.
+
+2026-10-14 06:14 UTC · Addameer's other monthly figures as series of their own · built and rehearsed, WAITING FOR ZAID'S
+COMMAND 17 · proof: branch `databank-addameer-series` (`d9188fc` and the test fix after it), `tmp/17-addameer-series.sh`,
+HANDS §13q.
+- The monthly pages carry more than the four series: prisoners from Jerusalem (168 months, 141 to 550), from the
+  1948 territories (168), from Gaza (154; up to 1,932), serving life sentences (168; 803 down to 113 after the
+  releases of 2025), Legislative Council members held (168), held since before Oslo (148 from August 2012; 120 down
+  to 8), and from November 2024 Gaza detainees held as "unlawful combatants" (16, beside HaMoked's series of that
+  name). Names in both languages in `db/registry/names.yaml`.
+- Left on the page on purpose: two readings of "twenty years" that cannot be told apart over the run, the running
+  count of arrests since 7 October 2023 (nine pages, counted in arrests, not persons) and deaths in custody (two).
+- The current page was read once with the widened reader at 05:59 UTC (48 figures: three chart series and the
+  block's others for October); the history file rebuilt from the pages in hand (1,622 figures). Dry run on the live
+  store, read-only: 1,670 read, 680 already held, no revision, vintage unchanged. Rehearsed from the live state: 990
+  written, none corrected, the registry names the seven, a second run writes none.
+- Suite on the branch against the live store: 2,197 passed and 2 failed. Both checked against the main tree's code:
+  `test_databank_asof_serves_superseded_value` failed there too, because command 16 made its example true (Addameer's
+  own page for July 2026 says 350 children); it now uses November 2022 (4,760 served, 9,900 as of 13 October) and
+  passes. `test_english_answers_use_english_names` passed on the second run: it reads which checkpoints are being
+  searched at that moment, and one carried "DCO" in its English name. **Re-run of both test files: 122 passed.**
