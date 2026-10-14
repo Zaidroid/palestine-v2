@@ -2115,3 +2115,9 @@ was said); 80 GB free. /health lists one upstream fault (`tg_palhubapproad` narr
 - Rehearsed on the scratch copy (which held the 17): 166 changed, a second run none; the three questions answer from the
   texts. **Suite on the branch against the live store: 2,247 passed, 0 failed, 4 skipped** (all on the day's data).
 - WAFA's sitemap fetch is still running (1,408 of 2,329 daily files at 11:32 UTC); it comes as command 27.
+
+2026-10-14 11:37 UTC · command 26 RUN (Zaid, 11:37:34-11:37:39 UTC; its first try at 11:35 stopped at step 1 on a check of mine
+that named a branch I had moved after command 25, fixed to check commit `c94bd55`; nothing had run) · 183 article texts
+are in the archive · proof: his output; read back by Claude, read-only: 183 rows read from their pages at rank 3, 183
+earlier versions in `document_history`. The questions now reach PCHR's testimonies too (flour at 80 to 100 shekels, a
+20-litre gallon of water at 5, February-March 2024).
