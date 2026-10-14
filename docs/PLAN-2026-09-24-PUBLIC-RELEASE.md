@@ -2088,3 +2088,10 @@ COMMAND 25 · proof: branch `archive-sitemaps` (`a6fd367`, `0b73aac`, this commi
   («ولاعة السجائر بـ 30 شيكلا في غزة!», Sama, 7 June 2026); the water crisis since October 2023, 100; cooking gas, 129.
   **Suite on the branch's first commit against the live store: 2,245 passed, 0 failed, 4 skipped** (all on the day's
   data); the second commit changed only the sitemap reader and its tests (`tests/test_archive.py`, 87 passed).
+
+2026-10-14 11:03 UTC · command 25 RUN (Zaid, 10:49:05-11:02:26 UTC, 801 s) · 1,600,082 outlet headlines are in the archive ·
+proof: his output (a background task of his terminal, exit 0); read back by Claude, read-only: Sama 559,926 (from
+2009-09-01), Safa 407,053 (2009-06-06), Arab48 357,636 (1999-11-30), Felesteen 184,660 (2016-04-02), Shehab 90,807
+(2016-05-25); archive 2,226,268 texts. The table grew from 2.76 to 4.24 GB and the database from 4.1 to 5.6 GB (1.4 GB
+was said); 80 GB free. /health lists one upstream fault (`tg_palhubapproad` narrowed). The load took 13 minutes against
+13 rehearsed.
