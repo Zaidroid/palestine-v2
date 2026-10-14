@@ -83,6 +83,13 @@ step .venv/bin/python -m ops.fetch_who_ssa
 step .venv/bin/python -m ops.fetch_ilostat
 # IPC's acute food insecurity analyses through HDX (2026-10-14; Zaid: "we need this data").
 step .venv/bin/python -m ops.fetch_ipc
+# The Gaza Chamber of Commerce's weekly reports (2026-10-14): only the reports not yet held (a quiet
+# night asks for one listing page), then the three builders that read them into trucks, prices and
+# the cash commission (no network). Added once the house DNS let gazacham.ps through.
+step .venv/bin/python -m ops.fetch_gazacham --new-only
+step .venv/bin/python -m ops.build_gazacham_series
+step .venv/bin/python -m ops.build_gazacham_prices
+step .venv/bin/python -m ops.build_gazacham_cash
 # Hand-entered cited figures: checked and written from db/reference/ (no network).
 step .venv/bin/python -m ops.build_cited_figures
 

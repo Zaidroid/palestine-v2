@@ -76,3 +76,15 @@ def test_the_night_reads_ipc_with_an_allowance_and_the_spec_names_every_series()
     assert len(rules) >= 200 and all(r["name_ar"] and r["serve_warning_ar"] for r in rules)
     proj = [r for r in rules if r["when"]["equals"].endswith("_projected")]
     assert proj and all("PROJECTION" in r["serve_warning"] for r in proj)
+
+
+def test_the_night_reads_the_chambers_new_reports_and_builds_its_three_series():
+    sync = (ROOT / "ops" / "databank-sync.sh").read_text()
+    steps = ["ops.fetch_gazacham --new-only", "ops.build_gazacham_series", "ops.build_gazacham_prices",
+             "ops.build_gazacham_cash"]
+    at = [sync.index(f"step .venv/bin/python -m {s}") for s in steps]
+    assert at == sorted(at) and at[-1] < sync.index("ingest.databank --all")   # read, built, then loaded
+    line = gap_radar.SUPPLY_LINES["gazacham"]
+    assert line["labels"] == ["reports:gazacham"]
+    assert set(line["feeds"]) == {"gazacham_trucks_weekly", "gazacham_prices", "gazacham_cash"}
+

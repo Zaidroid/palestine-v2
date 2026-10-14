@@ -227,11 +227,9 @@ ALLOWANCE_OVERRIDE_DAYS = {
     # seven), each dated by its periods' first days. The learned rhythm of those dates would call the
     # gap between two analyses late. 365 = late after a year with no analysis; stalled at 730.
     "ipc_phases": 365,
-    # The Gaza Chamber of Commerce's reports (2026-10-14) come every two weeks and are
-    # read by hand (ops/fetch_gazacham.py --new-only) until they get a nightly supply
-    # line, which waits on the house network resolving gazacham.ps again (its DNS
-    # answered 0.0.0.0 on 14 October). 120 = fresh for four months after the newest
-    # report, late to eight, stalled after that.
+    # The Gaza Chamber of Commerce's reports (2026-10-14) come every two weeks; the night reads the
+    # new ones (supply line `gazacham`) since the house DNS let gazacham.ps through. 120 = fresh
+    # for four months after the newest report, late to eight, stalled after that.
     "gazacham_trucks_weekly": 120,
     "gazacham_prices": 120,           # the same reports, read the same way (2026-10-14)
     "gazacham_cash": 120,             # the same reports; its vintage is the newest report read
@@ -367,6 +365,10 @@ SUPPLY_LINES = {
     "ipc": {"labels": ["ipc:phases"], "feeds": ["ipc_phases"],
             "fetcher": "ops/fetch_ipc.py", "every_days": 1,
             "note": "IPC's analyses through HDX, three requests ten seconds apart (2026-10-14)"},
+    "gazacham": {"labels": ["reports:gazacham"],
+                 "feeds": ["gazacham_trucks_weekly", "gazacham_prices", "gazacham_cash"],
+                 "fetcher": "ops/fetch_gazacham.py", "every_days": 1,
+                 "note": "the Chamber's new reports, then the three builders (2026-10-14)"},
     "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
                "fetcher": "ops/fetch_un2720.py", "every_days": 1,
                "note": "UN2720's aid dashboard, one attempt a night for all "
