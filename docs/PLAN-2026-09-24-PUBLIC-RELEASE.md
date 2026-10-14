@@ -2222,3 +2222,5 @@ partner door says «30 شيكل للكيلوغرام» for flour in the south an
   (`tmp/30-radar-closed.sh`), HANDS §13ad.
 - The migration runner's warning "022_compress_state_observation.sql already applied but file changed" is old: the
   file was changed by `9ac1270` (the backups work), not by this round.
+- Suite on `market-channel-closed` against the live store: 2,267 passed, 1 failed, then fixed: the permission letters'
+  floor ("more than 315,000 observations") fell a tenth below the 347,981 served; raised to 345,000 (`letters:` commit).
