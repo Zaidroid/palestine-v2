@@ -17,12 +17,20 @@ files read the same day allow the sitemaps and name no crawler of ours):
              modified, kept to the day when it falls in the month of the
              image's folder (95.7% of a sample), else that month
   felesteen  post-1..21 × 10,000 · as Safa (95.4%)
-  shehab     post-1..19 × 10,000 · headline in <image:title> · every
-             last-modified date reads 1 October 2026 (the site was re-saved),
-             so the date is the image folder's month
+  shehab     post-1..19 × 10,000 · headline in <image:title> · as Safa,
+             except that the site re-saved its files 2 to 18 on 30 September,
+             1 and 4 October 2026: a day that covers 5% of a file dates
+             nothing, and those items take the image folder's month. Files 3
+             to 8 (about 60,000 items, 2017 to 2021) have no image month
+             either: they are left out, counted, never dated by guess
   sama       part-1..25 × 25,000 · headline from the address · last modified,
              which follows the post ids without one inversion in 25,000
-  arab48     news1..11 × 49,000 · headline and day from the address
+  arab48     news1..9 × 49,000 · headline and day from the address, except
+             that the site moved its archive in 2010 and gave the moved items
+             addresses of that year: 53,429 items carry 2010 in their address,
+             6,058 were last modified that day and the rest in their own years
+             (2003, 2007 ...). Where the last-modified day is earlier than the
+             address's, it is the item's date
   wafa       one sitemap a day from 5 February 2020 (2,328 days) · headline and
              day from the address
 
@@ -87,7 +95,7 @@ OUTLETS = {
     "shehab": {"name": "Shehab News Agency (وكالة شهاب)", "home_url": "https://shehabnews.com/",
                "source": "web:shehab", "index": "https://shehabnews.com/sitemap.xml",
                "sub": r"/uploads/sitemaps/post-(\d+)\.xml$", "newest": "max", "id": r"/post/(\d+)(?:/|$)",
-               "title": "image", "date": "image_month"},
+               "title": "image", "date": "lastmod_in_image_month"},
     "sama": {"name": "Sama News Agency (وكالة سما الإخبارية)", "home_url": "https://samanews.ps/ar/",
              "source": "web:samanews", "index": "https://samanews.ps/ar/sitemap.xml",
              "sub": r"/ar/sitemap/google/part-(\d+)-sitemap\.xml$", "newest": "min", "id": r"/ar/post/(\d+)(?:/|$)",
@@ -95,7 +103,7 @@ OUTLETS = {
     "arab48": {"name": "Arab48 (عرب 48)", "home_url": "https://www.arab48.com/", "source": "web:arab48",
                "index": "https://www.arab48.com/sitemap/https/sitemapIndex",
                "sub": r"data\.arab48\.com/sitemap/https/news(\d+)\.xml$", "newest": "min", "id": None,
-               "title": "address", "date": "address"},
+               "title": "address", "date": "address_or_earlier_lastmod"},
     "wafa": {"name": "WAFA, the Palestinian News & Info Agency (وفا)", "home_url": "https://www.wafa.ps/",
              "source": "web:wafa", "index": "https://www.wafa.ps/sitemap.xml",
              "sub": r"sitemap\.xml\?yyyy=(\d{4})&mm=(\d{1,2})&dd=(\d{1,2})$", "newest": "days:3", "id": None,
@@ -112,6 +120,9 @@ _IMG_MONTH = re.compile(r"/(20\d\d|19\d\d)/(\d\d)/")
 
 class Refused(Exception):
     pass
+
+
+UNDATED = {"undated": True}           # an item whose date no rule can vouch for: counted, not written
 
 
 def _unescape(s: str) -> str:
@@ -140,13 +151,17 @@ def _same_start(caption: str, from_address: str) -> bool:
     return bool(a) and len(b) >= 2 and a[:len(b)] == b[:len(a)]
 
 
-def entry_of(o: dict, block: str) -> dict | None:
-    """One <url> block → a headline record, or None when it is not an item."""
+def entry_of(o: dict, block: str, resaved: set[str] | frozenset = frozenset()) -> dict | None:
+    """One <url> block → a headline record, or None when it is not an item.
+    `resaved`: the last-modified days the file's entries share in bulk (a
+    re-save of the site, not an edit of the item), which date nothing."""
     m = _LOC.search(block)
     if not m:
         return None
     url = _unescape(m.group(1))
     lastmod = _unescape(_LASTMOD.search(block).group(1)) if _LASTMOD.search(block) else None
+    if lastmod and (lastmod[:4] < "1995" or lastmod[:10] in resaved):
+        lastmod = None                    # 1970-01-01 (Safa: 16 items) or the site's re-save day: no date
     img = _IMG.search(block)
     img_title = _IMG_TITLE.search(block)
     rec: dict = {"url": url}
@@ -172,12 +187,14 @@ def entry_of(o: dict, block: str) -> dict | None:
         if mm:
             month = f"{mm.group(1)}-{mm.group(2)}"
     rule = o["date"]
-    if rule == "address":
+    if rule in ("address", "address_or_earlier_lastmod"):
         md = _ADDR_DATE.search(urllib.parse.unquote(url))
         if not md:
-            return None
+            return UNDATED
         y, mo, d = (int(x) for x in md.groups())
         rec.update(date=f"{y:04d}-{mo:02d}-{d:02d}", precision="day", date_basis="the address")
+        if rule == "address_or_earlier_lastmod" and lastmod and lastmod[:10] < rec["date"]:
+            rec.update(date=lastmod[:10], date_basis="last modified, earlier than the address: a migrated item")
     elif rule == "lastmod" and lastmod:
         rec.update(date=lastmod[:10], precision="day", date_basis="last modified")
     elif rule == "lastmod_in_image_month":
@@ -188,20 +205,29 @@ def entry_of(o: dict, block: str) -> dict | None:
         elif lastmod:
             rec.update(date=lastmod[:10], precision="day", date_basis="last modified")
         else:
-            return None
+            return UNDATED
     elif rule == "image_month" and month:
         rec.update(date=f"{month}-01", precision="month", date_basis="the image folder's month")
     else:
-        return None
+        return UNDATED
     if lastmod:
         rec["lastmod"] = lastmod
     return rec
 
 
-def parse(o: dict, xml: str) -> tuple[list[dict], int]:
+def parse(o: dict, xml: str) -> tuple[list[dict], int, int]:
+    """A sub-sitemap → its records and the number of entries it holds. A
+    last-modified day that covers 5% or more of a file's entries (and at least
+    200 of them) is a re-save of the site, not a day's news: these sites carry
+    about 1% of a file a day. Shehab re-saved its files 2-18 on 30 September,
+    1 and 4 October 2026; those days date nothing."""
+    import collections
     blocks = _ENTRY.findall(xml)
-    out = [r for r in (entry_of(o, b) for b in blocks) if r]
-    return out, len(blocks)
+    days = collections.Counter(m.group(1)[:10] for m in (_LASTMOD.search(b) for b in blocks) if m)
+    resaved = frozenset(d for d, n in days.items() if n >= 200 and n >= 0.05 * len(blocks))
+    got = [entry_of(o, b, resaved) for b in blocks]
+    undated = sum(1 for r in got if r is UNDATED)
+    return [r for r in got if r and r is not UNDATED], len(blocks), undated
 
 
 def get(url: str) -> bytes:
@@ -281,9 +307,10 @@ def run(key: str, out: Path, cache_root: Path, from_cache: bool, use_bronze: boo
                     bronze.put(f"sitemap_{key}", raw, "xml", url=url)
                 facts["files_fetched"] += 1
                 xml = raw.decode("utf-8", "replace")
-            items, blocks = parse(o, xml)
-            if blocks and len(items) < 0.95 * blocks:
-                facts["refused_files"].append(f"{name}: {len(items)} of {blocks} read")
+            items, blocks, undated = parse(o, xml)
+            facts["undated"] = facts.get("undated", 0) + undated
+            if blocks and len(items) < 0.95 * (blocks - undated):
+                facts["refused_files"].append(f"{name}: {len(items)} of {blocks - undated} dated entries read")
                 continue
             target = d / f"items-{name}.ndjson.gz"
             body = "".join(json.dumps(i, ensure_ascii=False) + "\n" for i in items).encode("utf-8")

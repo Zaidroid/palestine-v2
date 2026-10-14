@@ -764,23 +764,24 @@ SM_SAFA = """<urlset><url><loc>https://safa.ps/post/300378/فتح-معبر-رف�
 SM_SHEHAB = """<urlset><url><loc>https://shehabnews.com/post/91441/شديد-من-المبكر-الحديث-عن-قرب-التوصل-لاتفاق</loc>
 <lastmod>2026-10-01T09:58:51+03:00</lastmod><image:image><image:loc>https://shehabnews.com/uploads/images/2021/11/p.jpg</image:loc>
 <image:title>القيادي في حركة حماس عبدالرحمن شديد</image:title></image:image></url>
-<url><loc>https://shehabnews.com/post/91450/خبر-بلا-صورة-ولا-تاريخ</loc><lastmod>2026-10-01T09:58:51+03:00</lastmod></url></urlset>"""
+""" + "".join(f"""<url><loc>https://shehabnews.com/post/{91450 + i}/خبر-بلا-صورة-ولا-تاريخ</loc>
+<lastmod>2026-10-01T09:58:51+03:00</lastmod></url>""" for i in range(250)) + "</urlset>"   # a file re-saved in one day
 SM_WAFA = """<urlset><url><loc>https://www.wafa.ps/news/2024/3/12/شهيد-ثانٍ-برصاص-الاحتلال-شمال-طولكرم</loc>
 <lastmod>2025-12-26T01:39:02.5+00:00</lastmod></url></urlset>"""
 
 
 def test_sitemap_headlines_take_the_title_and_date_each_outlet_can_vouch_for():
     from ops import fetch_sitemaps as F
-    safa, blocks = F.parse(F.OUTLETS["safa"], SM_SAFA)
+    safa, blocks, _ = F.parse(F.OUTLETS["safa"], SM_SAFA)
     assert blocks == 2 and [(e["id"], e["title_from"]) for e in safa] == [("300378", "headline"), ("300400", "address")]
     assert safa[0]["title"] == "فتح معبر رفح استثنائيًا لليوم الثالث"
     assert (safa[0]["date"], safa[0]["precision"]) == ("2021-02-03", "day")       # last modified, in the image's month
     assert (safa[1]["date"], safa[1]["precision"]) == ("2021-02-01", "month")     # edited in May: the image's month
-    shehab, blocks = F.parse(F.OUTLETS["shehab"], SM_SHEHAB)
-    assert len(shehab) == 1 and blocks == 2                                         # no image, no date: left out
+    shehab, blocks, undated = F.parse(F.OUTLETS["shehab"], SM_SHEHAB)
+    assert len(shehab) == 1 and blocks == 251 and undated == 250                    # the re-save dates nothing: left out, counted
     assert shehab[0]["title_from"] == "address" and shehab[0]["title"].startswith("شديد من المبكر")
     assert (shehab[0]["date"], shehab[0]["precision"]) == ("2021-11-01", "month")  # never the site's re-save date
-    wafa, _ = F.parse(F.OUTLETS["wafa"], SM_WAFA)
+    wafa, _, _ = F.parse(F.OUTLETS["wafa"], SM_WAFA)
     assert wafa[0]["date"] == "2024-03-12" and wafa[0]["id"] == "/news/2024/3/12/شهيد-ثانٍ-برصاص-الاحتلال-شمال-طولكرم"
     assert wafa[0]["title"] == "شهيد ثانٍ برصاص الاحتلال شمال طولكرم"
 
