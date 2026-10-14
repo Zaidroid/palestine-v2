@@ -2121,3 +2121,34 @@ that named a branch I had moved after command 25, fixed to check commit `c94bd55
 are in the archive · proof: his output; read back by Claude, read-only: 183 rows read from their pages at rank 3, 183
 earlier versions in `document_history`. The questions now reach PCHR's testimonies too (flour at 80 to 100 shekels, a
 20-litre gallon of water at 5, February-March 2024).
+
+2026-10-14 12:36 UTC · the third round of 14 October, after Zaid's answers ("lets finish everything else first"; the licence cut
+later) · built and rehearsed, WAITING FOR ZAID'S COMMAND 27 · proof: branch `databank-round-3` (`0268dc0` to `6881472`,
+this commit), `tmp/27-round-3.sh`, `tmp/27-raw/`, HANDS §13aa.
+- **The Chamber's first weeks** ("if its needed data then yes"): weeks 5-35 and 62-65 read from their four layouts;
+  913 figures, the north and the south apart from August 2024 to January 2025 (flour in the south: 15 shekels a sack
+  in August 2024, 985 in December) and the Strip from week 27. A row takes its good's unit only when its pre-war price
+  is the later tables'; 25 rows use their own report's pre-war price where the unit is not in doubt; 62 carry the
+  daily table's differing average beside the held figure. Weeks 1-4 are not read (no region named). A box of bottled
+  water (new good and unit): 17 to 50 shekels. The regional basket of the index's weeks 1-13 is held as shekels: the
+  table heads it "index value", but 2,524.69 is 2,731% of 92.44, the text's 2,732%. 103 price series named.
+- **The two alarms that were not late** ("if it serves the purpose ... do it"): allowances of 1,460 days (Peace Now's
+  chart) and 1,825 (the UN's estimates, next revision 11 July 2027). The nightly check reads no late dataset.
+- **Addameer's running totals:** arrests since 7 October 2023 (10,000 in August 2024 to 26,000 in October 2026, in
+  arrests) and deaths in custody since 1967 (300, then 328); rules of their own, as cumulative; 11 records added to
+  the history, none changed.
+- **WAFA's headlines:** 2,328 daily sitemaps read 08:16-12:33 UTC; 139,907 listed, 138,881 distinct. The first run
+  ended at 12:01 on a reply cut off mid-way (IncompleteRead), the fault I had fixed in the outlet reader this morning
+  and not carried into the sitemap and article readers; both now try again, and the run resumed from its cache.
+- **B'Tselem** ("refresh them now"): not possible from here. statistics.btselem.org and btselem.org/statistics answer
+  every request without a browser with HTTP 429 behind a Deflect (eQualit.ie) challenge; getting past it would be
+  evading their protection, so it is not done. The held file (to 24 September 2023) stays; Zaid can save the export in
+  his browser.
+- **The Chamber's nightly feed:** `ops/fetch_gazacham.py --new-only` reads only reports not yet held. Its nightly step
+  and supply line are not added: the house network's DNS answers 0.0.0.0 for gazacham.ps since 14 October (a public
+  resolver gives Cloudflare's addresses), so the step would fail nightly and the night would fail with it.
+- **The Government Media Office's statistics:** its channel is @mediagovps (found with reach); queued for the channel
+  reader after its current pass (one reader at a time). FAO's condition left as it is (Zaid).
+- Rehearsed on the scratch copy: WAFA 138,881 in 111 s with its dry run; prices 913 and prisoners 11 (written in
+  earlier rehearsals there); registry 0 unclassified. **Suite on the branch against the live store: 2,250 passed, 0
+  failed** (one test that wrote the UN estimates down as late, updated).
