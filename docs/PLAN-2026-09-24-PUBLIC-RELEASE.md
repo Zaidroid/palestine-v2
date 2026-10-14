@@ -1858,3 +1858,8 @@ rehearsed, WAITING FOR ZAID'S COMMAND 18 · proof: branch `archive-gazacham` (`a
 - Rehearsed on the scratch copy: 81 written, a second run wrote none; "firewood" returns 45 reports from December
   2024, "GCPI" 46 from April 2025. 76 offline tests in `tests/test_archive.py`. **Suite on the branch against the
   live store: 2,208 passed, 0 failed, 2 skipped (624 s).**
+
+2026-10-14 06:46 UTC · command 18 RUN by Zaid (06:46:04 to 06:46:12 UTC) · done · proof: the script's own output.
+- Fast-forward to `050786c`; the reports file, its fetch record and the 81 report files in place; 81 written. The
+  archive holds 609,205 texts. "firewood" and "GCPI" answered as in the rehearsal (45 and 46 reports).
+- Nothing is owed from Zaid.
