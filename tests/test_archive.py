@@ -496,3 +496,38 @@ def test_an_entry_without_a_title_is_its_own_words():
     d = A.chron_entry({"source": "chron:passia"}, {**e, "file": "1400-1962"})
     assert d.title is None and d.body.startswith("Irgun and Stern Gangs") and d.lang == "en"
     assert (d.kind, d.precision, d.published_at, d.attrs["file"]) == ("entry", "day", "1948-04-09T00:00:00+00:00", "1400-1962")
+
+
+# ── a publisher's periodic reports (ops/fetch_gazacham.py) ───────────────────
+from ops import fetch_gazacham as G  # noqa: E402
+
+
+@pytest.mark.parametrize("slug, start, end, weeks", [
+    ("weekly-report-(1)-from-1-7-august-2024", "2024-08-01", "2024-08-07", [1]),
+    ("weekly-report-(9)-from-25-30-september-2024", "2024-09-25", "2024-09-30", [9]),
+    ("weekly-report-55-from-12-18-aug-2025-", "2025-08-12", "2025-08-18", [55]),
+    ("weekly-report-58-59-from-september-01-14-2025", "2025-09-01", "2025-09-14", [58, 59]),
+    ("weekly-report-56-57-from-august-19-to-01-sep-2025-", "2025-08-19", "2025-09-01", [56, 57]),
+    ("weekly-report-74-75--from-dec-22-2025-to-jan-04-2026", "2025-12-22", "2026-01-04", [74, 75]),
+    ("weekly-report-110---111-from-31-august---13-september-2026", "2026-08-31", "2026-09-13", [110, 111]),
+    ("weekly-report-100-101-from-june-22---july-05-2026", "2026-06-22", "2026-07-05", [100, 101]),
+])
+def test_a_reports_period_is_read_from_its_address_in_every_spelling(slug, start, end, weeks):
+    s, e = G.report_period(slug)
+    assert (s.isoformat(), e.isoformat()) == (start, end) and G.weeks_of(slug) == weeks
+
+
+def test_a_report_folder_is_read_by_the_loader_as_reports(tmp_path):
+    d = tmp_path / "gazacham"
+    d.mkdir()
+    (d / "site.json").write_text(json.dumps(G.SITE))
+    with gzip.open(d / "items-all.ndjson.gz", "wt", encoding="utf-8") as fh:
+        fh.write(json.dumps({"id": "weekly-report-110---111-from-31-august---13-september-2026",
+                             "date": "2026-09-13T00:00:00", "start": "2026-08-31", "weeks": [110, 111],
+                             "title": "Weekly Report 110 - 111", "text": "A total of 2,458 trucks entered Gaza",
+                             "link": "https://gazacham.ps/InformationCenter/Details?slug=weekly-report-110"}) + "\n")
+    src, label, mark, docs, empty = next(A.read_wp(tmp_path))
+    d0 = docs[0]
+    assert (src.key, src.kind, d0.kind, d0.precision) == ("org:gazacham", "reports", "report", "day")
+    assert d0.published_at == "2026-09-13T00:00:00+00:00" and "2,458 trucks" in d0.body
+    assert "reports" in A.READERS

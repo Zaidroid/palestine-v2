@@ -101,3 +101,5 @@ ops/archive-last-run.err
 data/raw/wp/
 # published chronologies (2026-10-13): regenerate with ops/fetch_chronology.py
 data/raw/chronology/
+# publishers' periodic reports (2026-10-14): regenerate with ops/fetch_gazacham.py
+data/raw/reports/

@@ -16,6 +16,9 @@ THE READERS, each a function that yields texts as the publisher wrote them:
   wp_json     data/raw/wp/<publisher>/items-*.ndjson.gz, written by
               ops/fetch_wp_json.py: a publisher's own listing, full text
               (the UN's Palestine documents, PCHR, POICA, several outlets).
+  reports     data/raw/reports/<publisher>/items-*.ndjson.gz, in the same shape:
+              a publisher's periodic reports made text (ops/fetch_gazacham.py,
+              the Gaza Chamber of Commerce's weekly goods reports).
   chronology  data/raw/chronology/<publisher>/entries.ndjson.gz, written by
               ops/fetch_chronology.py: a published chronology, one dated
               event a row (kind `entry`), precise to the day, month or year.
@@ -60,6 +63,7 @@ from resolve.db import connect, v1_path                         # noqa: E402
 TG_PUBLIC = ROOT / "data" / "raw" / "tg_public"
 WP = ROOT / "data" / "raw" / "wp"
 CHRON = ROOT / "data" / "raw" / "chronology"
+REPORTS = ROOT / "data" / "raw" / "reports"
 ROBOTS = ("tg_palhubappfuel", "tg_palhubapproad")    # tables every 15 minutes, not news
 SERVICE = {"channel photo updated", "channel created", "channel name was changed", "channel photo removed"}
 BATCH = 2000
@@ -549,6 +553,10 @@ def run(readers: list[str], apply: bool, only: set[str] | None = None) -> dict:
                 mark("wp_json", label, value, len(docs))
                 files += 1
             report["readers"].setdefault("wp_json", {"sources": {}, "no_text": 0})["files"] = files
+        if "reports" in readers:                 # publishers' reports, the listing reader's file shape
+            for src, label, value, docs, empty in read_wp(root=REPORTS, loaded=loaded.get("reports"), only=only):
+                take("reports", src, docs, empty)
+                mark("reports", label, value, len(docs))
         if "chronology" in readers:
             for src, label, value, docs, empty in read_chronology(loaded=loaded.get("chronology"), only=only):
                 take("chronology", src, docs, empty)
@@ -605,7 +613,7 @@ def reindex(apply: bool) -> dict:
     return {"apply": apply, "terms_version": T.VERSION, "rows_of_an_older_rule": todo, "rewritten": done}
 
 
-READERS = ("tg_public", "wp_json", "chronology", "v1_news", "v1_alerts", "v2_claim")
+READERS = ("tg_public", "wp_json", "reports", "chronology", "v1_news", "v1_alerts", "v2_claim")
 
 
 def main() -> int:
