@@ -2291,3 +2291,13 @@ WAITING FOR ZAID'S COMMAND 32 · proof: branch `databank-round-6` (`3cbe089`, `3
 - Suite on `gazacham-nightly` (round 6 and the Chamber's nightly line) against the live store, 16:14 UTC: 2,300
   passed, 1 failed by design until command 32 runs: the README's withheld floor (46,000) against today's 57,152; it
   holds at the 48,006 command 32 leaves, and command 32 ends by running that test.
+
+2026-10-14 16:30 UTC · gazacham.ps let through both Pi-holes (Zaid, ~16:20: homelab-tp's web page; homelab-sp3 by
+`ssh sp3 'docker exec pihole pihole allow gazacham.ps'` — its own web page fails every https handshake with an
+"internal error" alert, left to Zaid), then commands 32 and 33 RAN (16:27:10-16:29:19 UTC), verified · done · proof:
+both Pi-holes answer 188.114.96.x, the site 200; 122 applied; IPC 1,014 written, 260 named, fresh; withheld 57,152 →
+48,006, served 359,155, exportable 321,549, 60 datasets, 40 fresh; the README test passed against the store; the
+partner door now carries WHO's rows (attribution) and withholds IPC's (ask); the Chamber: no report since week 111
+(13 September), the builders and loads unchanged (146, 3,809, 422 held), line `gazacham` live; no dead line tonight.
+Seen: IPC's attribution is longer than the spoken answer's 120 characters and is cut to "... Working Group, via." —
+to shorten in the next command.
