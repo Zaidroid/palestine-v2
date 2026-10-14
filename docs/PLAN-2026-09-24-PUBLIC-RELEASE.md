@@ -2301,3 +2301,9 @@ partner door now carries WHO's rows (attribution) and withholds IPC's (ask); the
 (13 September), the builders and loads unchanged (146, 3,809, 422 held), line `gazacham` live; no dead line tonight.
 Seen: IPC's attribution is longer than the spoken answer's 120 characters and is cut to "... Working Group, via." —
 to shorten in the next command.
+
+2026-10-14 16:33 UTC · "yes for ipc data" · built, WAITING FOR ZAID'S COMMAND 34 · proof: `2bbfecb`, migration 123 (ipc_hdx:
+CC0-1.0, open, commercial use allowed; credit line 122 → 84 characters, read whole), `tmp/34-ipc-grade.sh`, HANDS §13ah.
+Rehearsed on the scratch copy. Withheld 48,006 → 46,992 expected (README floor 46,000 holds). Of 42 sources with
+datasets, 10 credit lines are shortened when spoken; all end on a clean clause but IPC's (fixed) and UCDP's ("...
+Uppsala Conflict Data", its citation wording, left as UCDP asks: the spoken shortening is to improve later).
