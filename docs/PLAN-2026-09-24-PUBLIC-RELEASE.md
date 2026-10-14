@@ -2095,3 +2095,23 @@ proof: his output (a background task of his terminal, exit 0); read back by Clau
 (2016-05-25); archive 2,226,268 texts. The table grew from 2.76 to 4.24 GB and the database from 4.1 to 5.6 GB (1.4 GB
 was said); 80 GB free. /health lists one upstream fault (`tg_palhubapproad` narrowed). The load took 13 minutes against
 13 rehearsed.
+
+2026-10-14 11:34 UTC · article texts on demand: 183 articles for four questions · read and rehearsed, WAITING FOR ZAID'S COMMAND 26
+· proof: branch `archive-articles` (`9b3eda9`, this commit), `tmp/26-article-texts.sh`, `tmp/26-raw/` (17 article files,
+190 pages in bronze, 17 fetch records), HANDS §13z.
+- `ops/fetch_articles.py`: a question asked of the archive read-only; the outlet headlines it finds with no text; those
+  articles only, one request every three seconds. From each page the headline (og:title), the minute published
+  (datePublished; Arab48 writes local time, read as +02:00) and the paragraphs in the article's container (measured on
+  one page per outlet: `post-text` for Safa, Felesteen, Shehab, Sama; `text-right` for Arab48, less its read-also and app
+  lines); older pages with no paragraphs give the container's own lines (found on Safa's and Sama's pages of 2012-2022,
+  which first gave no text: 5 of 17).
+- The archive's `articles` reader loads each text at rank 3 under its headline's id: the row takes the text and keeps
+  the headline in its history; a headline never replaces a text.
+- Read 11:08-11:33 UTC: lighters (17), cooking gas since October 2023 (129), firewood (27), water by truck or litre
+  (11); 183 distinct (one under two questions), every one with text. The lighter texts hold the prices: 40 shekels
+  (Felesteen, April 2025), about 70 (Felesteen June 2025; Shehab July 2025, "half a shekel" before the war), 70 to 100
+  (Felesteen, July 2026). Hijab, as Zaid's example meant it, is not in the headlines (24 found, about detainees); it waits
+  for texts.
+- Rehearsed on the scratch copy (which held the 17): 166 changed, a second run none; the three questions answer from the
+  texts. **Suite on the branch against the live store: 2,247 passed, 0 failed, 4 skipped** (all on the day's data).
+- WAFA's sitemap fetch is still running (1,408 of 2,329 daily files at 11:32 UTC); it comes as command 27.
