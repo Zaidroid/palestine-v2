@@ -99,9 +99,10 @@ expect:
                             #   Was 800 while the input was v1's whole file
                             #   (864 HaMoked + Addameer); the fallback still
                             #   reads 894 and drops 864.
-  max_observations: 900     # 30 from the current page (14 months × 2 + child + female) and, since
-                            #   2026-10-13, 650 from the monthly pages back to January 2011. It was
-                            #   60 while the current page was the only input.
+  max_observations: 2500    # about 50 from the current page (three chart series of 14 months and the
+                            #   block's other figures for its month) and about 1,650 from the monthly
+                            #   pages back to January 2011 (ten series since 2026-10-14). It was 60
+                            #   while the current page was the only input, 900 for one day.
 
 # Format v2 `input:` — v2's own fetch (2026-10-12). The frozen corpus is v1's
 # unified file of that day and is read only by a machine that has never

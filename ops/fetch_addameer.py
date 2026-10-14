@@ -93,6 +93,27 @@ def classify(series_name: str | None) -> str | None:
         return "child"
     if "female" in n or "women" in n:
         return "female"
+    # The block's other figures, added 2026-10-14 (each on about 168 monthly
+    # pages since 2011). Order matters: the unlawful-combatant line names Gaza.
+    if "1948" in n:
+        return "from_1948"
+    if "jerusalem" in n:                     # "Jerusalemite prisoners"; the chart's "East Jerusalem prisoners"
+        return "jerusalem"
+    if "legislative council" in n:
+        return "legislative_council"
+    if "life sentence" in n:
+        return "life_sentence"
+    if "unlawful combatant" in n:
+        return "unlawful_combatants"
+    if "gaza" in n:
+        return "gaza"
+    if "before oslo" in n:
+        return "pre_oslo"
+    # Left on the page, not loaded: "serving more than 20 / 25 years" and "a
+    # sentence above 20 years" (two readings of twenty years that cannot be told
+    # apart over the run), the running count of arrests since 7 October 2023
+    # (nine pages, counted in arrests, not persons) and the deaths in custody
+    # since 1967 (two pages).
     return None
 
 
@@ -165,7 +186,7 @@ def month_records(page: str, via: str, fetched_at: str) -> tuple[list[dict], dic
         month = block_day[:7] + "-01"
         for label, n in block.items():
             metric = classify(label)
-            if metric in ("child", "female"):
+            if metric is not None:                # the chart's reading of a month wins where it has one
                 points.setdefault((month, metric), (n, label))
         # the block and the chart state the same month's total; say so if not
         total = next((n for label, n in block.items()

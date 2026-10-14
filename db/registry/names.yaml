@@ -947,6 +947,25 @@ names:
   prisoners.female:
     en: "Palestinian women prisoners held by Israel (Addameer)"
     ar: "الأسيرات الفلسطينيات في سجون الاحتلال (الضمير)"
+  # Added 2026-10-14 from Addameer's monthly pages (statistics/YYYY/MM), each a count on the block's date.
+  prisoners.jerusalem:
+    en: "Palestinian prisoners from Jerusalem held by Israel (Addameer)"
+    ar: "الأسرى المقدسيون في سجون الاحتلال (الضمير)"
+  prisoners.from_1948:
+    en: "Palestinian prisoners from the 1948 territories held by Israel (Addameer)"
+    ar: "أسرى الأراضي المحتلة عام 1948 في سجون الاحتلال (الضمير)"
+  prisoners.gaza:
+    en: "Palestinian prisoners from the Gaza Strip held by Israel; from November 2024 those held as 'unlawful combatants' are counted apart (Addameer)"
+    ar: "الأسرى من قطاع غزة في سجون الاحتلال، ومنذ تشرين الثاني 2024 يُعدّ المحتجزون بصفة «مقاتل غير شرعي» على حدة (الضمير)"
+  prisoners.life_sentence:
+    en: "Palestinian prisoners serving life sentences in Israeli prisons (Addameer)"
+    ar: "الأسرى المحكومون بالسجن المؤبد في سجون الاحتلال (الضمير)"
+  prisoners.legislative_council:
+    en: "Members of the Palestinian Legislative Council held by Israel (Addameer)"
+    ar: "نواب المجلس التشريعي الفلسطيني الأسرى في سجون الاحتلال (الضمير)"
+  prisoners.pre_oslo:
+    en: "Palestinian prisoners held since before the Oslo Accords of 1993 (Addameer)"
+    ar: "الأسرى القدامى المعتقلون منذ ما قبل اتفاق أوسلو عام 1993 (الضمير)"
 
   # refugees.* (v1 series): UNHCR's summed series, UNRWA's camp registry and IDMC's events (db/mappings/refugees.yaml).
   refugees.cross_border:
@@ -1759,8 +1778,8 @@ names:
     en: "Killed on Land Day, 30 March 1976 (cited figures)"
     ar: "شهداء يوم الأرض، 30 مارس 1976 (أرقام مقتبسة)"
   prisoners.unlawful_combatants:
-    en: "Palestinians held by Israel under the 'unlawful combatants' law, mostly from Gaza (HaMoked)"
-    ar: "الفلسطينيون المحتجزون بموجب قانون «المقاتل غير الشرعي»، وأغلبهم من قطاع غزة (هموكيد)"
+    en: "Palestinians held by Israel under the 'unlawful combatants' law, mostly from Gaza (HaMoked; Addameer)"
+    ar: "الفلسطينيون المحتجزون بموجب قانون «المقاتل غير الشرعي»، وأغلبهم من قطاع غزة (هموكيد؛ الضمير)"
 
   # fao_diem.*: FAO's Data in Emergencies (DIEM) household surveys, one column of FAO's aggregated files per
   # indicator. Every name is FAO's own description of the column, shortened: "DIEM_2023_-_Fields_descriptions.xlsx",

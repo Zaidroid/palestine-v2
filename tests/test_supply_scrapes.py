@@ -284,27 +284,37 @@ def ad_page() -> str:
     return (FX / "addameer_statistics.html").read_text(encoding="utf-8")
 
 
-def test_addameer_charts_and_block_give_the_four_series():
+def test_addameer_charts_and_block_give_their_series():
     recs, notes = ad.month_records(ad_page(), "direct", AT)
     v = {(r["date"], r["prisoner_metric_type"]): r["metrics"]["count"] for r in recs}
-    assert len(recs) == 30 and len({r["date"] for r in recs}) == 14
-    assert Counter(m for _, m in v) == {"total": 14, "administrative": 14,
-                                        "child": 1, "female": 1}
+    assert len(recs) == 48 and len({r["date"] for r in recs}) == 14
+    # three chart series by month; the block's other figures for its own month (since 2026-10-14)
+    assert Counter(m for _, m in v) == {"total": 14, "administrative": 14, "jerusalem": 12,
+                                        "child": 1, "female": 1, "from_1948": 1, "gaza": 1,
+                                        "life_sentence": 1, "legislative_council": 1, "pre_oslo": 1,
+                                        "unlawful_combatants": 1}
+    assert v[("2026-10-01", "jerusalem")] == 400 and v[("2026-10-01", "gaza")] == 40
+    assert v[("2026-10-01", "life_sentence")] == 118 and v[("2026-10-01", "unlawful_combatants")] == 1419
     assert v[("2026-10-01", "total")] == 9300
     assert v[("2026-10-01", "administrative")] == 3101
     assert v[("2026-10-01", "child")] == 350 and v[("2026-10-01", "female")] == 91
     assert v[("2025-05-01", "total")] == 10100 and v[("2025-10-01", "administrative")] == 3544
     assert notes["block_date"] == "2026-10-05"
     assert notes["statistics_block"]["Gaza Strip Detainees (Unlawful Combatant)"] == 1419
-    # read, kept in the raw file, not loaded: v1 did not load them
-    assert list(notes["series_not_loaded"]) == ["East Jerusalem prisoners"]
-    assert len(notes["series_not_loaded"]["East Jerusalem prisoners"]) == 12
+    # the East Jerusalem chart was read and not loaded until 2026-10-14; now every chart series is one
+    assert notes["series_not_loaded"] == {}
     assert "block_total_differs_from_chart" not in notes
     assert recs[0]["date"] == "2026-10-01"            # newest first
     names = {r["prisoner_metric_type"]: r["indicator_name"] for r in recs}
     assert names == {"total": "Total Number of Political Prisoners",
                      "administrative": "Administrative Detainees",
-                     "child": "Child prisoners", "female": "Female prisoners"}
+                     "child": "Child prisoners", "female": "Female prisoners",
+                     "jerusalem": "East Jerusalem prisoners",       # the chart's name: the chart's month wins
+                     "from_1948": "1948 Territories prisoners", "gaza": "Gaza prisoners",
+                     "life_sentence": "Prisoners serving life sentences",
+                     "legislative_council": "Palestinian Legislative Council members",
+                     "pre_oslo": "Prisoners before Oslo",
+                     "unlawful_combatants": "Gaza Strip Detainees (Unlawful Combatant)"}
 
 
 def test_child_and_female_are_filed_under_the_blocks_own_month():
@@ -320,8 +330,8 @@ def test_child_and_female_are_filed_under_the_blocks_own_month():
         "month": "2026-09-01", "block": 9300, "chart": 9350}
     undated = ad_page().replace("field-date-of-statistics", "field-date")
     recs, notes = ad.month_records(undated, "direct", AT)
-    assert {r["prisoner_metric_type"] for r in recs} == {"total", "administrative"}
-    assert len(recs) == 28 and "no_block_date" in notes
+    assert {r["prisoner_metric_type"] for r in recs} == {"total", "administrative", "jerusalem"}
+    assert len(recs) == 40 and "no_block_date" in notes     # the charts alone: nothing from an undated block
 
 
 def test_addameer_records_land_on_the_held_rows():
@@ -413,7 +423,7 @@ def test_each_fetcher_stages_a_raw_file_with_the_publishers_vintage(tmp_path, mo
     assert ad.main(stage) == 0
     doc = json.loads((tmp_path / "statistics.json").read_text())
     assert doc["metadata"]["vintage"] == "2026-10-05" and doc["metadata"]["via"] == "direct"
-    assert doc["metadata"]["data_through"] == "2026-10" and len(doc["data"]) == 30
+    assert doc["metadata"]["data_through"] == "2026-10" and len(doc["data"]) == 48
 
     for name in ("demolitions.json", "settlers.json", "statistics.json"):
         meta = json.loads((tmp_path / name).read_text())["metadata"]
@@ -517,8 +527,8 @@ def test_the_monthly_pages_give_each_month_its_own_dated_figures():
     v = {(r["date"], r["prisoner_metric_type"]): r["metrics"]["count"] for r in recs}
     assert v[("2015-06-01", "child")] == 162 and v[("2015-06-01", "female")] == 26
     assert v[("2022-11-01", "total")] == 4760 and v[("2022-11-01", "administrative")] == 820
-    assert len(recs) == 8 and notes["no_block"] == ["2016-06"] and notes["months"] == 2
-    assert not any(r["prisoner_metric_type"] == "gaza" for r in recs)      # only the four series the databank names
+    assert len(recs) == 10 and notes["no_block"] == ["2016-06"] and notes["months"] == 2
+    assert v[("2015-06-01", "gaza")] == 360                                  # the block's other figures too (2026-10-14)
     one = next(r for r in recs if r["date"] == "2022-11-01" and r["prisoner_metric_type"] == "total")
     assert one["stable_id"] == "addameer:2022-11-01:total"                 # the identity the held row has
     assert one["sources"][0]["url"].endswith("/statistics/2022/11") and one["sources"][0]["block_date"] == "2022-11-21"
@@ -527,10 +537,10 @@ def test_the_monthly_pages_give_each_month_its_own_dated_figures():
 
 def test_a_month_the_nightly_file_carries_is_not_sent_twice():
     pages = {"2026-10": ad_month("2026-10-05", 9300, 3101, 350, 91)}
-    skip = {("2026-10-01", m) for m in ("total", "administrative", "child", "female")}
+    skip = {("2026-10-01", m) for m in ("total", "administrative", "child", "female", "gaza")}
     assert ad.history_records(pages, skip, AT)[0] == []
     part = ad.history_records(pages, {("2026-10-01", "total"), ("2026-10-01", "administrative")}, AT)[0]
-    assert sorted(r["prisoner_metric_type"] for r in part) == ["child", "female"]
+    assert sorted(r["prisoner_metric_type"] for r in part) == ["child", "female", "gaza"]
 
 
 def test_the_history_file_does_not_speak_for_the_datasets_vintage():
@@ -540,3 +550,15 @@ def test_the_history_file_does_not_speak_for_the_datasets_vintage():
     spec = load_spec("prisoners")
     assert spec["input"]["glob"] == ["statistics.json", "history.json"]
     assert spec["expect"]["max_observations"] >= 680
+
+
+def test_the_twenty_year_lines_and_the_arrest_count_stay_on_the_page():
+    """Read, not loaded: two readings of 'twenty years' that cannot be told
+    apart over the run, a count of arrests (not persons) on nine pages, and
+    deaths in custody on two."""
+    for label in ("Prisoners serving more than 20 years", "Prisoners serving more than 25 years",
+                  "Prisoners serving a sentence above 20 years", "Number of arrests since October 7, 2023",
+                  "Number of martyred prisoners since 1967 (including those who died after October 7, 2023)"):
+        assert ad.classify(label) is None, label
+    assert ad.classify("Gaza Strip Detainees (Unlawful Combatant)") == "unlawful_combatants"
+    assert ad.classify("East Jerusalem prisoners") == ad.classify("Jerusalemite prisoners") == "jerusalem"
