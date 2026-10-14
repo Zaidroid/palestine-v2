@@ -76,12 +76,18 @@ SITES = {
                "page": "https://passia.org/palestine-chronology/",
                "source": "chron:passia", "floor": 4000},
     "wikipedia_en": {"name": "Wikipedia (English), the year pages: 'YYYY in Palestine', 'YYYY in Mandatory Palestine', "
-                             "and the timelines: 'Timeline of the Israeli–Palestinian conflict in YYYY'",
+                             "and the timelines: 'Timeline of the Israeli–Palestinian conflict in YYYY', "
+                             "'Timeline of the Gaza war'",
                      "home_url": "https://en.wikipedia.org/wiki/List_of_years_in_Palestine",
                      "page": "https://en.wikipedia.org/wiki/", "source": "chron:wikipedia_en", "lang": "en",
                      "titles": [("{y}_in_Mandatory_Palestine", range(1917, 1949)), ("{y}_in_Palestine", range(1900, 2027)),
                                 ("Timeline_of_the_Israeli–Palestinian_conflict_in_{y}", range(2000, 2027),
-                                 {"paragraphs": True, "timeline": True})],
+                                 {"paragraphs": True, "timeline": True}),
+                                ("Timeline_of_the_Israeli–Palestinian_conflict", [0], {"tables": True}),
+                                ("Timeline_of_the_Gaza_war", [2023],
+                                 {"index_only": True, "paragraphs": True, "war": True,
+                                  "follow": r'href="(?:https://en\.wikipedia\.org)?(?:/wiki/|\./)'
+                                            r'(Timeline_of_the_Gaza_war_(?:\(|%28)[^"#?]+)"'})],
                      "floor": 2000},
     "wikipedia_ar": {"name": "ويكيبيديا العربية، صفحات السنوات: «YYYY في فلسطين»",
                      "home_url": "https://ar.wikipedia.org/",
@@ -505,6 +511,19 @@ def _day_of(head: str | None, lang: str) -> tuple[int, int] | None:
     return (MONTHS[b.lower()], int(a)) if a.isdigit() else (MONTHS[a.lower()], int(b))
 
 
+_HEAD_YEAR = re.compile(rf"^(?:\d{{1,2}}\s+)?(?:{_EN_MONTH})\s+(\d{{4}})$")
+
+
+def _year_of(heads: dict) -> int | None:
+    """The year a heading names when it is a month or a day of it ("November
+    2023", "3 October 2025"): a page that spans two years dates by it."""
+    for level in ("h4", "h3", "h2"):
+        m = _HEAD_YEAR.match((heads.get(level) or "").strip())
+        if m:
+            return int(m.group(1))
+    return None
+
+
 def wiki_entries(page: str, lang: str, year: int, url: str, title: str,
                  paragraphs: bool = False) -> tuple[list[dict], int]:
     """A year page → its entries, and the number of items left out because their
@@ -515,7 +534,9 @@ def wiki_entries(page: str, lang: str, year: int, url: str, title: str,
     items = wiki_items(page, paragraphs)
     dates: dict[int, dict | None] = {}
     out, undated = [], 0
+    page_year = year
     for i, it in enumerate(items):
+        year = _year_of(it["heads"]) or page_year
         h2 = it["heads"].get("h2", "")
         if not h2 or _W_SKIP.match(h2):
             continue
@@ -580,6 +601,137 @@ def wiki_entries(page: str, lang: str, year: int, url: str, title: str,
     return out, undated
 
 
+def wiki_table_rows(page: str) -> list[list[tuple[str, int, int]]]:
+    """The rows of a page's `wikitable` tables, each a list of (text, rowspan,
+    colspan) cells; references inside cells are not read."""
+    from html.parser import HTMLParser
+
+    class T(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.depth, self.skip = 0, 0
+            self.rows: list = []
+            self.cell = None
+
+        def handle_starttag(self, tag, attrs):
+            a = dict(attrs)
+            if tag == "table":
+                if self.depth or "wikitable" in (a.get("class") or "").split():
+                    self.depth += 1
+                return
+            if not self.depth:
+                return
+            if tag in ("sup", "style", "script"):
+                self.skip += 1
+            elif tag == "tr" and self.depth == 1:
+                self.rows.append([])
+            elif tag in ("td", "th") and self.depth == 1 and self.rows:
+                self.cell = [[], int(a.get("rowspan") or 1), int(a.get("colspan") or 1), tag]
+
+        def handle_endtag(self, tag):
+            if tag == "table" and self.depth:
+                self.depth -= 1
+            elif not self.depth:
+                return
+            elif tag in ("sup", "style", "script") and self.skip:
+                self.skip -= 1
+            elif tag in ("td", "th") and self.cell is not None and self.depth == 1:
+                text = re.sub(r"\s+", " ", "".join(self.cell[0])).strip()
+                self.rows[-1].append((text, self.cell[1], self.cell[2], self.cell[3]))
+                self.cell = None
+
+        def handle_data(self, data):
+            if self.depth and self.cell is not None and not self.skip:
+                self.cell[0].append(data)
+
+    p = T()
+    p.feed(page)
+    return p.rows
+
+
+_CELL_EN = [re.compile(rf"^({_EN_MONTH})\s+(\d{{1,2}})(?:\s*[–-]\s*(?:({_EN_MONTH})\s+)?(\d{{1,2}}))?$"),
+            re.compile(rf"^(\d{{1,2}})(?:\s*[–-]\s*(\d{{1,2}}))?\s+({_EN_MONTH})$"),
+            re.compile(rf"^(?:(?:early|mid|late)[- ])?({_EN_MONTH})(?:\s*[–-]\s*({_EN_MONTH}))?$", re.I),
+            re.compile(rf"^({_EN_MONTH})\s+(\d{{1,2}})\s*[–-]\s*({_EN_MONTH})$"),
+            re.compile(rf"^(?:(\d{{1,2}})\s+({_EN_MONTH})|({_EN_MONTH})\s+(\d{{1,2}}),?)\s+(\d{{4}})$")]
+
+
+def wiki_table_entries(page: str, url: str, title: str, skip_years: set[int]) -> tuple[list[dict], int]:
+    """The general timeline page ("Timeline of the Israeli–Palestinian
+    conflict"): its tables give a year in a row across both columns ("1951
+    The State of Israel was confronted by …", the rest of the cell a summary
+    of the year) and then a row a date ("February 6–7 | Sharafat, a village
+    …"), a date cell spanning the rows below it. Years in `skip_years` (those
+    with a timeline page of their own, read already) are left out."""
+    import hashlib
+    out, odd = [], 0
+    year = None
+    carry: tuple[str, int] | None = None                  # a date cell's text and the rows it still spans
+    for cells in wiki_table_rows(page):
+        if not cells or all(c[3] == "th" for c in cells):
+            continue
+        if len(cells) == 1 and cells[0][2] >= 2:
+            m = re.match(r"^(\d{4})\b\s*(.*)$", cells[0][0])
+            if m:
+                year, summary = int(m.group(1)), m.group(2).strip()
+                carry = None
+                if summary and len(summary) >= 12 and year not in skip_years:
+                    out.append(("year", year, None, summary))
+            continue
+        if year is None or year in skip_years:
+            continue
+        if carry and carry[1] > 0 and len(cells) == 1:
+            when, text = carry[0], cells[0][0]
+            carry = (carry[0], carry[1] - 1)
+        elif len(cells) >= 2:
+            when, text = cells[0][0], " ".join(c[0] for c in cells[1:])
+            carry = (when, cells[0][1] - 1) if cells[0][1] > 1 else None
+        else:
+            odd += 1
+            continue
+        out.append(("row", year, when, text))
+    entries = []
+    for kind, y, when, text in out:
+        if len(text) < 12:
+            continue
+        entry: dict = {"precision": "year", "date": f"{y:04d}-01-01"}
+        if kind == "row":
+            w = when.strip()
+            m = _CELL_EN[0].match(w)
+            if m:
+                mon, d1, mon2, d2 = m.groups()
+                entry = {"date": datetime.date(y, MONTHS[mon.lower()], int(d1)).isoformat(), "precision": "day"}
+                if d2:
+                    try:
+                        last = datetime.date(y, MONTHS[(mon2 or mon).lower()], int(d2))
+                        if last.isoformat() > entry["date"]:
+                            entry.update(end=last.isoformat(), end_precision="day")
+                    except ValueError:
+                        pass
+            elif (m := _CELL_EN[1].match(w)):
+                d1, d2, mon = m.groups()
+                entry = {"date": datetime.date(y, MONTHS[mon.lower()], int(d1)).isoformat(), "precision": "day"}
+                if d2 and int(d2) > int(d1):
+                    entry.update(end=datetime.date(y, MONTHS[mon.lower()], int(d2)).isoformat(), end_precision="day")
+            elif (m := _CELL_EN[2].match(w)):
+                entry = {"date": datetime.date(y, MONTHS[m.group(1).lower()], 1).isoformat(), "precision": "month"}
+            elif (m := _CELL_EN[3].match(w)):                 # "October 29 –November": a day, then a month
+                entry = {"date": datetime.date(y, MONTHS[m.group(1).lower()], int(m.group(2))).isoformat(),
+                         "precision": "day",
+                         "end": datetime.date(y, MONTHS[m.group(3).lower()], 1).isoformat(), "end_precision": "month"}
+            elif (m := _CELL_EN[4].match(w)) and int(m.group(5)) == y:   # "9 October 1982"
+                d, mon = (m.group(1), m.group(2)) if m.group(1) else (m.group(4), m.group(3))
+                entry = {"date": datetime.date(y, MONTHS[mon.lower()], int(d)).isoformat(), "precision": "day"}
+            elif w:
+                odd += 1                                  # a date this rule does not read: held to the year
+        key = f"{title}|{entry['date']}|{when or ''}|{text}"
+        entry.update(id=f"en:{y}:" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:16], text=text,
+                     url=f"{url}#{y}", date_text=(when or str(y))[:80], file=title,
+                     tags=["summary of the year"] if kind == "year" else [])
+        entries.append({k: v for k, v in entry.items() if v not in (None, "", [])})
+    return entries, odd
+
+
 def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
                    cache_root: Path | None = None) -> tuple[list[dict], dict]:
     """Every year page of one Wikipedia that exists, as entries. A page that
@@ -588,7 +740,9 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
     A timeline page is read with its paragraphs, and the half-year pages an
     index page links (2015: "... in January–June 2015") are read with it; a
     timeline title that redirects to a page not named for its year (2010 goes
-    to the general timeline) is not read, since its text is not that year's."""
+    to the general timeline) is not read, since its text is not that year's.
+    The general timeline page itself is read last, for its tables, and only for
+    the years no timeline page of their own was read for."""
     import time
     import urllib.error
     import urllib.parse
@@ -597,6 +751,7 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
     info: dict = {"pages": 0, "pages_missing": 0, "days_that_do_not_exist": 0, "redirected": [],
                   "timeline_redirects_not_read": []}
     seen_pages: set[str] = set()
+    timeline_years: set[int] = set()                     # years read from a timeline page of their own
     entries: dict[str, dict] = {}
     cache = from_dir or ((cache_root or ROOT / "data" / "cache" / "wikipedia") / lang)
     cache.mkdir(parents=True, exist_ok=True)
@@ -637,13 +792,26 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
         if opts.get("timeline") and (f"_{y}" not in urllib.parse.unquote(canon) or "#" in canon):
             info["timeline_redirects_not_read"].append(title)
             continue
-        if opts.get("timeline") and not opts.get("sub"):
-            for sub in sorted(set(re.findall(r'href="/wiki/(Timeline_of_the_Israeli%E2%80%93Palestinian_conflict_in_[^"#]+)"',
+        if (opts.get("timeline") or opts.get("index_only")) and not opts.get("sub"):
+            # the links are written /wiki/…, ./… or https://en.wikipedia.org/wiki/…, the dash
+            # literal or %-encoded (measured: the 2015 page's half-year pages were never followed)
+            for sub in sorted(set(re.findall(opts.get("follow") or
+                                             r'href="(?:https://en\.wikipedia\.org)?(?:/wiki/|\./)'
+                                             r'(Timeline_of_the_Israeli(?:%E2%80%93|–)Palestinian_conflict_in_[^"#?]+)"',
                                              page))):
                 st = urllib.parse.unquote(sub)
-                if st != title and st.endswith(f"_{y}"):
-                    queue.append((st, y, {**opts, "sub": True}))
-        got, undated = wiki_entries(page, lang, y, canon, title, paragraphs=bool(opts.get("paragraphs")))
+                if st != title and (opts.get("follow") or st.endswith(f"_{y}")):
+                    sy = int(re.search(r"(\d{4})", st).group(1)) if opts.get("index_only") else y
+                    queue.append((st, sy, {**{k: v for k, v in opts.items() if k not in ("index_only", "follow")},
+                                           "sub": True}))
+        if opts.get("index_only"):
+            continue                                                      # an index: read for its links only
+        if opts.get("tables"):
+            got, undated = wiki_table_entries(page, canon.split("#")[0], title, timeline_years)
+        else:
+            got, undated = wiki_entries(page, lang, y, canon, title, paragraphs=bool(opts.get("paragraphs")))
+        if opts.get("timeline"):
+            timeline_years.add(y)
         info["pages"] += 1
         info["days_that_do_not_exist"] += undated
         for e in got:

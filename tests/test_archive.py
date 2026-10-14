@@ -695,3 +695,49 @@ def test_a_timeline_that_redirects_to_the_general_page_is_not_read(tmp_path, mon
     entries, info = F.read_wikipedia("wikipedia_test", tmp_path)
     assert info["timeline_redirects_not_read"] == 1 and info["pages"] == 1
     assert {e["date"][:4] for e in entries} == {"2023"}
+
+
+WIKI_TABLES = """<html><body><div class="mw-parser-output"><h2 id="1948">1948–1949</h2>
+<table class="wikitable"><tbody><tr><th>Month, Day</th><th>Event(s)</th></tr>
+<tr><td colspan="2"><h3 id="1948">1948</h3></td></tr>
+<tr><td>May 13</td><td>Haganah took control of Jaffa.<sup class="reference">[1]</sup></td></tr>
+<tr><td rowspan="2">May 14</td><td>The Jewish People's Council approved a proclamation.</td></tr>
+<tr><td>At midnight the British Mandate over Palestine terminated.</td></tr>
+<tr><td colspan="2">1956 A year of raids across the armistice lines, summarised here.</td></tr>
+<tr><td>October 29 –November</td><td>Suez Crisis. Israel invaded Egypt's Sinai Peninsula.</td></tr>
+<tr><td colspan="2">2003</td></tr>
+<tr><td>March 5</td><td>An event of a year that has a timeline page of its own.</td></tr>
+</tbody></table></div></body></html>"""
+
+
+def test_the_general_timeline_reads_its_tables_for_years_without_a_page():
+    from ops import fetch_chronology as F
+    got, odd = F.wiki_table_entries(WIKI_TABLES, "u", "t", skip_years={2003})
+    rows = [(e["date"], e["precision"], e.get("end"), e["text"][:22]) for e in got]
+    assert rows == [("1948-05-13", "day", None, "Haganah took control o"),
+                    ("1948-05-14", "day", None, "The Jewish People's Co"),
+                    ("1948-05-14", "day", None, "At midnight the Britis"),     # the date cell spans two rows
+                    ("1956-01-01", "year", None, "A year of raids across"),
+                    ("1956-10-29", "day", "1956-11-01", "Suez Crisis. Israel in")]
+    assert got[3]["tags"] == ["summary of the year"] and odd == 0
+    assert "[1]" not in got[0]["text"]
+
+
+WIKI_WAR = """<html><body><div class="mw-parser-output">
+<p>An overview paragraph before the first month, not an event.</p>
+<section><h2 id="December_2023">December 2023</h2><section><h3 id="31_December">31 December</h3>
+<p>Israeli strikes hit the Maghazi refugee camp on the last night of the year.</p></section></section>
+<section><h2 id="January_2024">January 2024</h2><section><h3 id="1_January">1 January</h3>
+<p>The Gaza Health Ministry reported 156 people killed in the past 24 hours.</p></section></section>
+<section><h2 id="October_2025">October 2025</h2><section><h3 id="3_October_2025">3 October 2025</h3>
+<ul><li>A strike hit a school sheltering displaced families in Gaza City.</li></ul></section></section>
+</div></body></html>"""
+
+
+def test_a_war_timeline_spanning_years_dates_each_event_by_its_month_heading():
+    from ops import fetch_chronology as F
+    got, _ = F.wiki_entries(WIKI_WAR, "en", 2023, "u", "Timeline_of_the_Gaza_war_(24_November_2023_–_11_January_2024)",
+                            paragraphs=True)
+    assert [(e["date"], e["text"][:16]) for e in got] == [
+        ("2023-12-31", "Israeli strikes "), ("2024-01-01", "The Gaza Health "), ("2025-10-03", "A strike hit a s")]
+    assert got[1]["id"].startswith("en:2024:")
