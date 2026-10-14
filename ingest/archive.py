@@ -297,7 +297,7 @@ def read_chronology(root: Path = CHRON, loaded: dict | None = None,
         if only and d.name.lower() not in only:
             continue
         site = json.loads((d / "site.json").read_text())
-        src = Source(site["source"], site["name"], "chronology", site.get("home_url"))
+        src = Source(site["source"], site["name"], "chronology", site.get("home_url"), lang=site.get("lang"))
         for f in sorted(d.glob("entries*.ndjson.gz")):
             st = f.stat()
             label, mark = f"{d.name}/{f.name}", f"{st.st_size}:{int(st.st_mtime)}"

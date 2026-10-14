@@ -564,3 +564,69 @@ def test_a_listing_page_cut_off_midway_is_tried_again(monkeypatch):
     calls["n"] = -10
     with pytest.raises(W.Refused, match="IncompleteRead after 3 tries"):
         W.get("https://example.org/wp-json/wp/v2/posts")
+
+
+WIKI_EN = """<html><head><link rel="canonical" href="https://en.wikipedia.org/wiki/2024_in_Palestine"></head><body>
+<div class="mw-content-ltr mw-parser-output">
+<div class="infobox"><ul><li>1 January – an infobox line that is not an event</li></ul></div>
+<h2 id="Incumbents">Incumbents</h2><ul><li>President: Mahmoud Abbas of the State of Palestine</li></ul>
+<h2 id="Events">Events</h2>
+<h3 id="January">January</h3>
+<ul><li>1 January –<ul>
+  <li>At least 20 rockets are fired at Jerusalem and southern Israel.<sup class="reference">[1]</sup></li>
+  <li>The IDF withdraws seven brigades from the Gaza Strip.</li></ul></li>
+<li>23 January – Twenty-one Israeli soldiers are killed in an explosion in Khan Yunis.</li>
+<li>A strike without its day is reported across the West Bank.</li></ul>
+<h3 id="March">March</h3>
+<ul><li>March 5–7 – A three-day general strike is held in Ramallah and Nablus.</li></ul>
+<h3 id="Unknown_dates">Unknown dates</h3>
+<ul><li>The founding of a cooperative in the Jordan Valley.</li></ul>
+<h2 id="Births">Births</h2><ul><li>17 January; a writer born in Gaza City, died 2001.</li></ul>
+<h2 id="Notable_deaths">Notable deaths</h2><ul><li>14 December – Deiab al-Jaro, mayor of Deir al-Balah (b. 1970)</li></ul>
+<h2 id="References">References</h2><ul><li>1 January 2024 – a citation, not an event</li></ul>
+<div class="navbox" role="navigation"><ul><li>2 February – a navigation link</li></ul></div>
+</div>
+<footer id="footer"><ul><li>This page was last edited on 20 July 2026, at 19:51 (UTC).</li></ul></footer>
+</body></html>"""
+
+WIKI_AR = """<html><head><link rel="canonical" href="https://ar.wikipedia.org/wiki/2024_في_فلسطين"></head><body>
+<div class="mw-parser-output">
+<h2 id="أحداث">أحداث</h2>
+<h3 id="نوفمبر">نوفمبر</h3>
+<ul><li>في 27 نوفمبر 2024 أقر الرئيس محمود عباس إعلانا دستوريا بشأن شغور المنصب.</li>
+<li>١٢ تشرين الأول: افتُتحت مدرسة جديدة في خان يونس رغم القصف.</li>
+<li>21حتى27 يناير - قمة طابا حيث جرت محادثات بين الجانبين.</li></ul>
+<h3 id="جارية">أحداث جارية حاليًا</h3><ul><li>الحرب الفلسطينية الإسرائيلية 2023 (منذ 7 أكتوبر 2023)</li></ul>
+<h2 id="المراجع">المراجع</h2><ul><li>5 يناير: مرجع وليس حدثا من الأحداث</li></ul>
+</div></body></html>"""
+
+
+def test_wikipedia_year_pages_give_their_dated_events_and_nothing_else():
+    from ops import fetch_chronology as F
+    got, undated = F.wiki_entries(WIKI_EN, "en", 2024, "https://en.wikipedia.org/wiki/2024_in_Palestine",
+                                  "2024_in_Palestine")
+    by = {e["text"][:20]: e for e in got}
+    assert len(got) == 8 and undated == 0
+    assert by["At least 20 rockets "]["date"] == "2024-01-01"            # a date-only item dates its children
+    assert "[1]" not in by["At least 20 rockets "]["text"]               # references are not read
+    assert by["The IDF withdraws se"]["date"] == "2024-01-01"
+    assert by["A strike without its"]["precision"] == "month" and by["A strike without its"]["date"] == "2024-01-01"
+    assert (by["A three-day general "]["date"], by["A three-day general "]["end"]) == ("2024-03-05", "2024-03-07")
+    assert by["Deiab al-Jaro, mayor"]["tags"] == ["deaths"]                # "Notable deaths" too
+    assert by["a writer born in Gaz"]["tags"] == ["births"] and by["a writer born in Gaz"]["date"] == "2024-01-17"
+    coop = by["The founding of a co"]
+    assert (coop["date"], coop["precision"], coop["tags"]) == ("2024-01-01", "year", ["Events", "Unknown dates"])
+    assert not [e for e in got if "last edited" in e["text"]]                # the footer is not the article
+    assert by["Twenty-one Israeli s"]["url"].endswith("#January")
+    assert not [e for e in got if "infobox" in e["text"] or "citation" in e["text"] or "navigation" in e["text"]]
+    again, _ = F.wiki_entries(WIKI_EN, "en", 2024, "https://en.wikipedia.org/wiki/2024_in_Palestine", "2024_in_Palestine")
+    assert [e["id"] for e in again] == [e["id"] for e in got]           # ids come from the page, not the run
+
+
+def test_arabic_year_pages_read_both_month_names_and_eastern_digits():
+    from ops import fetch_chronology as F
+    got, _ = F.wiki_entries(WIKI_AR, "ar", 2024, "https://ar.wikipedia.org/wiki/2024_في_فلسطين", "2024_في_فلسطين")
+    dates = sorted((e["date"], e["precision"], e.get("end")) for e in got)
+    assert dates == [("2024-01-21", "day", "2024-01-27"), ("2024-10-12", "day", None), ("2024-11-27", "day", None)]
+    assert all(not e["text"].startswith(("في", "١٢")) for e in got)
+    assert all("مرجع" not in e["text"] for e in got)
