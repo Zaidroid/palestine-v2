@@ -65,6 +65,7 @@ WP = ROOT / "data" / "raw" / "wp"
 CHRON = ROOT / "data" / "raw" / "chronology"
 REPORTS = ROOT / "data" / "raw" / "reports"
 SITEMAPS = ROOT / "data" / "raw" / "sitemaps"
+ARTICLES = ROOT / "data" / "raw" / "articles"
 ROBOTS = ("tg_palhubappfuel", "tg_palhubapproad")    # tables every 15 minutes, not news
 SERVICE = {"channel photo updated", "channel created", "channel name was changed", "channel photo removed"}
 BATCH = 2000
@@ -573,6 +574,10 @@ def run(readers: list[str], apply: bool, only: set[str] | None = None) -> dict:
             for src, label, value, docs, empty in read_sitemaps(loaded=loaded.get("sitemaps"), only=only):
                 take("sitemaps", src, docs, empty)
                 mark("sitemaps", label, value, len(docs))
+        if "articles" in readers:                # the texts of headlines a question needed, ops/fetch_articles.py
+            for src, label, value, docs, empty in read_articles(loaded=loaded.get("articles"), only=only):
+                take("articles", src, docs, empty)
+                mark("articles", label, value, len(docs))
         if "v1_news" in readers:
             for src, docs, empty in read_v1_news():
                 take("v1_news", src, docs, empty)
@@ -658,7 +663,47 @@ def read_sitemaps(root: Path = SITEMAPS, loaded: dict | None = None,
             yield src, label, mark, docs, 0
 
 
-READERS = ("tg_public", "wp_json", "reports", "chronology", "sitemaps", "v1_news", "v1_alerts", "v2_claim")
+def article_item(site: dict, e: dict) -> Doc:
+    """One article read from its page (ops/fetch_articles.py) → the article's
+    text, under the same id as its sitemap headline and above it (rank 3): the
+    headline's row takes the text and keeps its earlier words in the history."""
+    return Doc(source=site["source"], external_id=str(e["id"]), kind="article", title=e.get("title"),
+               body=e.get("text") or "", url=clean_url(e.get("url")), lang=site.get("lang") or "ar",
+               published_at=e["published"], precision="second", via="article_page", via_rank=3,
+               attrs={"fetched_at": e["fetched_at"]} if e.get("fetched_at") else {})
+
+
+def read_articles(root: Path = ARTICLES, loaded: dict | None = None,
+                  only: set[str] | None = None) -> Iterator[tuple[Source, str, str, list[Doc], int]]:
+    """Yields (source, file label, file mark, documents, articles without a date)
+    for every article file not already loaded. An article whose page gave no
+    publication time keeps the headline's date: it is not written."""
+    loaded = loaded or {}
+    if not root.exists():
+        return
+    for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "site.json").exists()):
+        if only and d.name.lower() not in only:
+            continue
+        site = json.loads((d / "site.json").read_text())
+        src = Source(site["source"], site["name"], "outlet", site.get("home_url"), lang=site.get("lang"))
+        for f in sorted(d.glob("items-*.ndjson.gz")):
+            st = f.stat()
+            label, mark = f"{d.name}/{f.name}", f"{st.st_size}:{int(st.st_mtime)}"
+            if loaded.get(label) == mark:
+                continue
+            docs, undated = [], 0
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                for line in fh:
+                    e = json.loads(line)
+                    if not e.get("published"):
+                        undated += 1
+                        continue
+                    docs.append(article_item(site, e))
+            yield src, label, mark, docs, undated
+
+
+READERS = ("tg_public", "wp_json", "reports", "chronology", "sitemaps", "articles", "v1_news", "v1_alerts",
+           "v2_claim")
 
 
 def main() -> int:

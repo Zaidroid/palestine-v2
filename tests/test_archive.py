@@ -806,3 +806,58 @@ def test_a_sitemap_headline_is_a_textless_article_that_never_outranks_a_text(tmp
                    via_rank=3)
     held = {"300378": (A.content_hash(fuller) if hasattr(A, "content_hash") else "x", 3)}
     assert [d.external_id for d in A.decide(held, [doc])["kept_fuller"]] == ["300378"]
+
+
+ART_NEW = """<html><head><meta property="og:title" content="ولاعة مفقودة.. شرارة تختصر وجع غزة">
+<script type="application/ld+json">{"datePublished": "2025-07-02T17:12:00+03:00"}</script></head><body>
+<div class="post-text mb-30"><p>قبل حرب الإبادة، كان سعر القداحة لا يتجاوز نصف شيقل. اليوم تباع بسعر يصل إلى 70.</p>
+<p>قبل حرب الإبادة، كان سعر القداحة لا يتجاوز نصف شيقل. اليوم تباع بسعر يصل إلى 70.</p>
+<script>var ad = "not text";</script></div>
+<div class="footer"><p>جميع الحقوق محفوظة © 2021 وكالة شهاب الإخبارية</p></div></body></html>"""
+ART_OLD = """<html><head><meta property="og:title" content="ولاعة تلتهم منزلاً كاملاً بالخليل">
+<meta property="article:published_time" content="2012-05-13T10:20:00+03:00"></head><body>
+<div class="post-text">تعرض منزل المواطن أحمد محمد بحر في بيت أمر شمال الخليل لحريق كبير<br>
+<br>وقال الدفاع المدني إن ولاعة في يد طفل أشعلت النار في غرفة النوم<br>صفا</div></body></html>"""
+ART_ARAB48 = """<html><head><meta property="og:title" content="مأساة حورة"><meta property="article:published_time"
+content="2021-03-04 19:12:04"></head><body><div class="mt-3 text-right"><p>استبعد التحقيق الأولي حول المأساة التي وقعت صباح اليوم أن يكون الحريق متعمدا.</p></div>
+<div><p>تابعوا تطبيق "عرب ٤٨"... سرعة الخبر</p></div>
+<div class="mt-3 text-right"><p>اقرأ/ي أيضًا | مأساة في النقب</p><p>وأعلن الحداد الرسمي لمدة ثلاثة أيام في البلدة.</p></div></body></html>"""
+
+
+def test_an_article_page_gives_its_headline_minute_and_text_only():
+    from ops import fetch_articles as F
+    a = F.article_of("web:shehab", ART_NEW)
+    assert a["title"] == "ولاعة مفقودة.. شرارة تختصر وجع غزة" and a["published"] == "2025-07-02T17:12:00+03:00"
+    assert a["text"].count("نصف شيقل") == 1                                 # a repeated paragraph once
+    assert "الحقوق" not in a["text"] and "not text" not in a["text"]          # outside the container; a script
+    old = F.article_of("web:safa", ART_OLD)                                   # no paragraphs: the container's lines
+    assert old["text"].split("\n") == ["تعرض منزل المواطن أحمد محمد بحر في بيت أمر شمال الخليل لحريق كبير",
+                                       "وقال الدفاع المدني إن ولاعة في يد طفل أشعلت النار في غرفة النوم"]
+    a48 = F.article_of("web:arab48", ART_ARAB48)
+    assert a48["text"].split("\n")[1] == "وأعلن الحداد الرسمي لمدة ثلاثة أيام في البلدة."
+    assert "تطبيق" not in a48["text"] and "اقرأ" not in a48["text"]
+    assert a48["published"] == "2021-03-04T19:12:04+02:00"                    # local time written without a zone
+
+
+def test_an_article_text_replaces_its_headline_and_never_the_reverse(tmp_path):
+    import gzip, json
+    from ingest import archive as A
+    d = tmp_path / "shehab"
+    d.mkdir()
+    (d / "site.json").write_text(json.dumps({"name": "Shehab", "home_url": "https://shehabnews.com/",
+                                              "source": "web:shehab", "kind": "outlet", "lang": "ar"}))
+    recs = [{"id": "143157", "url": "https://shehabnews.com/post/143157/x", "title": "ولاعة مفقودة", "text": "نص المقال",
+             "published": "2025-07-02T17:12:00+03:00", "fetched_at": "2026-10-14T11:30:00+00:00"},
+            {"id": "143158", "url": "https://shehabnews.com/post/143158/y", "title": "بلا تاريخ", "text": "نص",
+             "published": None}]
+    with gzip.open(d / "items-20261014T113000Z.ndjson.gz", "wt", encoding="utf-8") as fh:
+        fh.write("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in recs))
+    (src, label, mark, docs, undated), = list(A.read_articles(tmp_path))
+    assert undated == 1 and len(docs) == 1
+    doc = docs[0]
+    assert (doc.external_id, doc.via, doc.via_rank, doc.precision) == ("143157", "article_page", 3, "second")
+    headline = A.sitemap_item({"source": "web:shehab", "lang": "ar"}, {"id": "143157", "url": "https://shehabnews.com/post/143157/x",
+                                                                       "title": "ولاعة مفقودة", "date": "2025-07-01",
+                                                                       "precision": "month"})
+    assert [x.external_id for x in A.decide({"143157": ("old", 0)}, [doc])["changed"]] == ["143157"]
+    assert [x.external_id for x in A.decide({"143157": ("old", 3)}, [headline])["kept_fuller"]] == ["143157"]
