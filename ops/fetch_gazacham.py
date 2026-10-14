@@ -3,6 +3,7 @@ of goods into Gaza and the state of its markets, whole, into the archive.
 
     .venv/bin/python -m ops.fetch_gazacham                    # read the listing, the pages and the files
     .venv/bin/python -m ops.fetch_gazacham --from-dir DIR     # the files already in DIR (with walk.json)
+    .venv/bin/python -m ops.fetch_gazacham --new-only         # nightly: only reports not yet held
 
 WHAT THEY ARE. A report every week from August 2024, every two weeks since
 (81 reports, weeks 1 to 111 on 2026-10-14): trucks entering by crossing and by
@@ -19,6 +20,11 @@ in the archive's report shape: the period it covers (read from the report's
 address, which spells a period five ways), its weeks, title, text and link.
 The tables inside are kept as text here; reading them into series is a later,
 separate step, because their layout changed at least three times.
+
+NIGHTLY (--new-only, 2026-10-14). The listing is newest first; it is read
+page by page until a page brings no report not already held, and only the new
+reports' pages and files are asked for. A night with nothing new asks for one
+listing page and writes nothing.
 
 THE POSTURE: atomic, FLOORED (fewer than 70 reports is refused and the file on
 disk kept), ledgered as `reports:gazacham`, each file archived in bronze
@@ -115,14 +121,16 @@ def _get(url: str) -> bytes:
     return data
 
 
-def walk(work: Path) -> list[dict]:
-    """The listing, each report's page and its file. Returns one record per report."""
+def walk(work: Path, held: set[str] | None = None) -> list[dict]:
+    """The listing, each report's page and its file. Returns one record per report.
+    With `held` (report pages already in the archive), it stops at the first
+    listing page that brings nothing not held, and reads only the new reports."""
     q = urllib.parse.quote(SLUG)
     pages: list[str] = []
     for n in range(1, 30):
         t = _get(f"{BASE}/InformationCenter/Reports?slug={q}" + ("" if n == 1 else f"&&page={n}")).decode("utf-8", "replace")
         found = [html_mod.unescape(x) for x in re.findall(r'href="(/InformationCenter/Details\?slug=[^"]+)"', t)]
-        new = [f for f in dict.fromkeys(found) if f not in pages]
+        new = [f for f in dict.fromkeys(found) if f not in pages and (held is None or BASE + f not in held)]
         if not new:
             break
         pages += new
@@ -176,9 +184,22 @@ def main() -> int:
     ap.add_argument("--from-dir", type=Path, help="the files already read, with walk.json beside them")
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--no-bronze", action="store_true")
+    ap.add_argument("--new-only", action="store_true", help="read only the reports not already held (nightly)")
     a = ap.parse_args()
+    held_items: list[dict] = []
+    if a.new_only and (a.out / "items-all.ndjson.gz").exists():
+        with gzip.open(a.out / "items-all.ndjson.gz", "rt", encoding="utf-8") as fh:
+            held_items = [json.loads(line) for line in fh]
     try:
-        if a.from_dir:
+        if a.new_only:
+            work = a.out / "_files"
+            work.mkdir(parents=True, exist_ok=True)
+            reports = walk(work, {i["link"] for i in held_items})
+            if not reports:
+                fetchlib.event(LABEL, "ok", rows=len(held_items), new=0)
+                print(f"gazacham: no new report ({len(held_items)} held)")
+                return 0
+        elif a.from_dir:
             reports = json.loads((a.from_dir / "walk.json").read_text())["reports"]
             work = a.from_dir / "pdf"
         else:
@@ -186,6 +207,10 @@ def main() -> int:
             work.mkdir(parents=True, exist_ok=True)
             reports = walk(work)
         items, notes = items_from(reports, work, not a.no_bronze)
+        if a.new_only:
+            ids = {i["id"] for i in items}
+            notes["new"] = len(items)
+            items = sorted([i for i in held_items if i["id"] not in ids] + items, key=lambda i: i["date"])
     except (urllib.error.URLError, OSError, subprocess.CalledProcessError, ValueError) as e:
         fetchlib.event(LABEL, "failed", why=f"{type(e).__name__}: {e}"[:200])
         print(f"gazacham: not read ({type(e).__name__}: {e}); the file on disk is kept")

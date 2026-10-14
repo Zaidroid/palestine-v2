@@ -62,7 +62,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from ops import fetchlib                                        # noqa: E402
-from ops.build_gazacham_series import SOURCE_NAME, week_periods  # noqa: E402
+from ops.build_gazacham_series import SOURCE_NAME, dated_elsewhere, week_periods  # noqa: E402
 
 REPORTS = ROOT / "data" / "raw" / "reports" / "gazacham" / "items-all.ndjson.gz"
 OUT = ROOT / "data" / "raw" / "gazacham" / "prices.json"
@@ -111,7 +111,22 @@ GOODS = {
     "firewood":             ("firewood", "Kg", "ILS/KG", "nonfood", "Firewood", "حطب"),
     "fire wood":            ("firewood", "Kg", "ILS/KG", "nonfood", "Firewood", "حطب"),
     "diesel":               ("diesel", "Liter", "ILS/L", "nonfood", "Diesel", "سولار"),
+    # priced by the early reports only (weeks 1-18), by the box; the reports never give its size
+    "bottled water box":    ("bottled_water_box", "Box", "ILS/BOX", "food", "Bottled water, a box", "مياه معبأة، صندوق"),
 }
+# The pre-war price each good is compared with, as the tables of weeks 36-111 print it (measured
+# 2026-10-14: one value per good across every row), and the box of water as weeks 5-7 print it.
+# An early row, which states no unit, takes its good's unit only when its pre-war price is this one.
+PREWAR = {"apple": 5.0, "baby_diapers_40_pack": 29.0, "baby_milk_400g_can": 25.0, "banana": 2.5, "cucumber": 2.0,
+          "diesel": 6.0, "dishwashing_liquid": 6.0, "eggplant": 2.0, "eggs": 12.0, "firewood": 0.5,
+          "flour_25kg_sack": 35.0, "frozen_chicken": 8.0, "frozen_chicken_thigh": 5.0, "frozen_chicken_wing": 6.0,
+          "frozen_veal": 20.0, "garlic": 10.0, "kidney_beans": 7.0, "laundry_detergent": 8.0, "lemon": 4.0,
+          "macaroni": 2.5, "onion": 2.0, "orange": 4.0, "pepper": 10.0, "potato": 2.0, "rice": 8.0,
+          "sanitary_towels_10_pack": 6.0, "soap_piece": 2.5, "sugar": 3.0, "tomato": 2.0, "vegetable_oil": 9.0,
+          "bottled_water_box": 7.0}
+EARLY_NAMES = {"kedney beans": "kidney beans"}
+REGION_NAMES = {"north": ("in the northern part of the Gaza Strip", "في شمال قطاع غزة"),
+                "south": ("in the south of the Gaza Strip", "في جنوب قطاع غزة")}
 _UNIT = r"(Kg|KG|kg|Liter|Litre|liter|Sack\s*\(\s*25\s*Kg\)|Pack\s*\(\s*\d+\s*pcs\s*\)|Can\s*\(\s*400\s*gm\s*\)|Piece|piece)"
 _ROW = re.compile(r"^[ \t]*(\d{1,2})[ \t]+([A-Za-z][A-Za-z .'-]*?[A-Za-z])[ \t]{2,}" + _UNIT + r"[ \t]{2,}(\S.*?)[ \t]*$", re.M)
 _NUM = re.compile(r"^-?[\d,]*\.?\d+$")
@@ -247,6 +262,128 @@ def goods_rows(item: dict, notes: dict) -> list[dict]:
     return out
 
 
+_ROW_EARLY = re.compile(r"^[ \t]*\d{1,2}[ \t]+([A-Za-z][A-Za-z .'-]*?[A-Za-z])[ \t]{2,}"
+                        r"((?:(?:-?[\d.,]+%?-?|N/?A)(?:[ \t]+|$))+)[ \t]*$", re.M)
+
+
+def _early_kind(caption: str) -> tuple[str, str | None]:
+    """What an early table holds, from its caption, and the region it names."""
+    c = caption.lower()
+    region = "north" if "north" in c else "south" if "south" in c else None
+    if "before and after the war" in c:
+        return "both", None                                # pre-war · South · % · North · %
+    if "average market prices of selected food items" in c:
+        return "north_south_two_weeks", None               # pre-war · week N · S · week N · S (weeks 62-65)
+    if "average of daily market prices" in c:
+        return "average", region                           # pre-war · the week · % · 3 weeks before · %
+    if "normal prices before the war" in c:
+        return "prewar", None                              # pre-war · the week · %
+    if "daily market prices" in c or "price of food items in the northern part" in c:
+        return "daily", region if "northern part" not in c else "north"
+    return "other", region
+
+
+def early_rows(item: dict, notes: dict) -> list[dict]:
+    """The prices of weeks 5-35 and 62-65, read from the layouts those reports use.
+    No row states its unit: a good takes its unit when the row's pre-war price is
+    the one the later tables give it (PREWAR), or, in a daily table that prints no
+    pre-war price, from its name alone, which the row's basis says. The region is
+    the table's (North, South, or the whole Gaza Strip where a table names none
+    after the reports stopped splitting them, weeks 27-35). A daily table whose
+    caption names no region (weeks 1-5) is not read: in those weeks the North
+    paid up to ten times the South, and a price with no region would mislead."""
+    weeks = item["weeks"]
+    periods = week_periods(item)
+    t = item["text"]
+    out = []
+    for m in _ROW_EARLY.finditer(t):
+        name = re.sub(r"\s+", " ", m.group(1)).strip().lower()
+        name = re.sub(r" kg$", "", EARLY_NAMES.get(name, name))
+        if name not in GOODS:
+            continue
+        key = GOODS[name][0]
+        caps = list(_CAPTION.finditer(t, 0, m.start()))
+        caption = re.sub(r"\s+", " ", caps[-1].group(1)) if caps else ""
+        kind, region = _early_kind(caption)
+        toks = m.group(2).split()
+        nums = [_num(x) for x in toks]
+        pcts = [_pct(x) for x in toks]
+        cells: list[tuple[int, str | None, float | None, float | None, float | None]] = []
+        prewar = None
+        if kind == "both" and len(toks) == 5:
+            prewar = nums[0]
+            cells = [(weeks[0], "south", nums[1], pcts[2], prewar), (weeks[0], "north", nums[3], pcts[4], prewar)]
+        elif kind == "average" and len(toks) >= 3 and (region or min(weeks) >= 27):
+            prewar = nums[0]
+            cells = [(weeks[0], region, nums[1], pcts[2], prewar)]
+        elif kind == "prewar" and len(toks) == 3 and min(weeks) >= 27:
+            prewar = nums[0]
+            cells = [(weeks[0], None, nums[1], pcts[2], prewar)]
+        elif kind == "north_south_two_weeks" and len(toks) == 5 and len(weeks) == 2:
+            prewar = nums[0]
+            cells = [(weeks[0], "north", nums[1], None, prewar), (weeks[0], "south", nums[2], None, prewar),
+                     (weeks[1], "north", nums[3], None, prewar), (weeks[1], "south", nums[4], None, prewar)]
+        elif kind == "daily" and region and len(toks) >= 3:
+            cells = [(weeks[0], region, nums[-2], None, None)]                 # the Average column
+        else:
+            continue
+        own_prewar = False
+        if prewar is not None and abs(prewar - PREWAR.get(key, -1)) > 0.001:
+            if GOODS[name][1] in ("Kg", "Liter") and key not in ("eggs",):
+                own_prewar = True              # the unit is not in doubt; the report's own pre-war price is used
+                notes["early_own_prewar"].append(f"weeks {weeks}: {name}: pre-war {prewar:g} here, "
+                                                 f"{PREWAR.get(key):g} in the later tables")
+            else:
+                notes["early_rows_not_matched"].append(f"weeks {weeks}: {name}: pre-war {prewar:g}, the later "
+                                                       f"tables give {PREWAR.get(key)}")
+                continue
+        for wk, reg, value, stated, pw in cells:
+            a, b = periods[wk]
+            measure = f"{key}_{reg}" if reg else key
+            base = {"week": wk, "date": a, "period_start": a, "period_end": b, "good": key, "name_printed": name,
+                    "unit_printed": "not stated (the table says ILS/Kg over every row)",
+                    "prewar_price": pw if own_prewar else PREWAR[key],
+                    "report": item["link"], "market": reg or "the Gaza Strip",
+                    "basis": ("a daily table's weekly average; the unit is the later tables' for this good"
+                              if kind == "daily" else
+                              f"this report's own pre-war price ({pw:g}) differs from the later tables' "
+                              f"({PREWAR[key]:g}); the unit (per {GOODS[name][1].lower()}) is not in doubt"
+                              if own_prewar else
+                              "the unit is the later tables' for the same pre-war price")}
+            tok = toks[[i for i, x in enumerate(nums) if x == value][0]] if value is not None else None
+            if value is None:
+                if any(x.upper() in ("NA", "N/A") for x in toks):
+                    out.append({**base, "measure": f"{measure}_unpriced", "value": None, "text": "NA"})
+                continue
+            if stated is not None and not _agrees(value, base["prewar_price"], stated):
+                notes["rows_that_do_not_add_up"].append(
+                    f"week {wk}: {name} ({reg or 'Gaza'}): {value:g} against {base['prewar_price']:g} before the "
+                    f"war is {(value / base['prewar_price'] - 1) * 100:+.0f}%, the row says {stated:+g}%")
+                continue
+            out.append({**base, "measure": measure, "value": value, "stated_change_vs_prewar_pct": stated,
+                        "rank": 0 if kind == "daily" else 1})
+    return out
+
+
+def regional_index_rows(item: dict, notes: dict) -> list[dict]:
+    """The index's own weeks 1-13 (1 November 2024 to 30 January 2025), North and
+    South. The table heads its columns "index value", but its numbers are the
+    basket's cost in shekels: North 2,524.69 is 2,731% of the pre-war 92.44, the
+    "2,732%" the same report's text gives for that week. They are held as the
+    basket's cost, which is what they are."""
+    out = []
+    t = item["text"]
+    if "index value (North)" not in t:
+        return out
+    for wk, d1, d2, n, s in re.findall(r"^[ \t]*Week[ \t]*(\d+)[ \t]+" + _DAY + r"[ \t]+" + _DAY + r"[ \t]+"
+                                       + _AMT + r"[ \t]+" + _AMT + r"[ \t]*$", t, flags=re.M):
+        a, z = _day(d1), _day(d2)
+        for reg, v in (("north", n), ("south", s)):
+            out.append({"grain": "weekly", "region": reg, "date": a, "period_start": a, "period_end": z,
+                        "index_week": int(wk), "basket": float(v.replace(",", "")), "report": item["link"]})
+    return out
+
+
 def index_rows(item: dict, notes: dict) -> list[dict]:
     """The GCPI values one report prints: daily, weekly and monthly."""
     out = []
@@ -291,9 +428,32 @@ def build(items: list[dict]) -> tuple[list[dict], dict]:
                    "rows_that_do_not_add_up": [], "units_printed_otherwise": [],
                    "index_values_that_do_not_add_up": [], "months_provisional": [], "names_read": {},
                    "printed_twice_differently": [], "printed_otherwise_in_the_same_report": []}
+    notes.update(early_rows_not_matched=[], early_own_prewar=[], early_printed_twice=[],
+                 regional_index_printed_twice=[])
     goods: dict[tuple, dict] = {}
     index: dict[tuple, dict] = {}
+    regional: dict[tuple, dict] = {}
     for item in sorted(items, key=lambda i: i["weeks"]):
+        if item["weeks"] in ([62, 63], [64, 65]) or max(item["weeks"]) <= 35:
+            if dated_elsewhere(item):
+                continue                                   # week 6's file is week 7's report (the trucks found it)
+            for r in sorted(early_rows(item, notes), key=lambda r: -r.get("rank", 1)):
+                k = (r["measure"], r["week"])
+                if k in goods:
+                    if goods[k]["value"] != r["value"] and r["value"] is not None:
+                        # the publisher's two tables disagree: the comparison table's figure (its percent
+                        # checks against its pre-war price) is held, and the daily table's sits beside it
+                        goods[k]["daily_table_average"] = r["value"]
+                        notes["early_printed_twice"].append(f"week {r['week']} {r['measure']}: {goods[k]['value']} "
+                                                            f"held, the daily table's {r['value']} beside it")
+                    continue
+                goods[k] = r
+        for r in regional_index_rows(item, notes):
+            k = (r["region"], r["date"])
+            if k in regional and regional[k]["basket"] != r["basket"]:
+                notes["regional_index_printed_twice"].append(f"{r['region']} {r['date']}: {regional[k]['basket']:g} "
+                                                             f"then {r['basket']:g} (the later held)")
+            regional[k] = r
         if min(item["weeks"]) < FIRST_PRICED_WEEK:
             continue
         for r in goods_rows(item, notes):
@@ -322,10 +482,19 @@ def build(items: list[dict]) -> tuple[list[dict], dict]:
             "date": r["date"], "period_start": r["period_start"], "period_end": r["period_end"], "week": wk,
             "prewar_price": r["prewar_price"], "stated_change_vs_prewar_pct": r.get("stated_change_vs_prewar_pct"),
             "name_printed": r["name_printed"], "unit_printed": r["unit_printed"], "report": r["report"],
+            "market": r.get("market"), "basis": r.get("basis"), "daily_table_average": r.get("daily_table_average"),
             "indicator_name": f"{names[4]} ({'not priced' if r['value'] is None else 'price'})",
             "location": {"region": "Gaza Strip"},
             "sources": [{"name": SOURCE_NAME, "organization": "Gaza Chamber of Commerce and Industry", "url": r["report"]}],
             "good": key})
+    for (reg, date), r in sorted(regional.items()):
+        measure = f"basket_cost_weekly_{reg}"
+        records.append({
+            "stable_id": f"gazacham:prices:{measure}:{date}", "measure": measure, "value": r["basket"], "text": None,
+            "unit": "ILS", "date": date, "precision": "day", "period_start": r["period_start"],
+            "period_end": r["period_end"], "index_week": r["index_week"], "prewar_basket": PREWAR_BASKET,
+            "market": reg, "report": r["report"], "indicator_name": measure, "location": {"region": "Gaza Strip"},
+            "sources": [{"name": SOURCE_NAME, "organization": "Gaza Chamber of Commerce and Industry", "url": r["report"]}]})
     for (grain, date), r in sorted(index.items()):
         for measure, value, unit in ((f"gcpi_{grain}", r["index"], "index"), (f"basket_cost_{grain}", r["basket"], "ILS")):
             records.append({

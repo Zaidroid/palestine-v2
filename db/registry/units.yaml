@@ -241,6 +241,17 @@ units:
       "ILS/10 PIECES":  {factor_num: 1, factor_den: 10}
       "ILS/40 PIECES":  {factor_num: 1, factor_den: 40}
 
+  ILS_per_box:
+    name_en: shekels per box
+    name_ar: شيكل للصندوق
+    dimension: price_per_item
+    notes: >-
+      The Gaza Chamber of Commerce's box of bottled water (2026-10-14): the
+      reports price it by the box and never give the box's size, so it
+      converts to nothing.
+    aliases:
+      "ILS/BOX": {factor_num: 1, factor_den: 1}
+
   ILS:
     name_en: Israeli new shekels
     name_ar: شيكل

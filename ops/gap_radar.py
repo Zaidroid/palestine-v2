@@ -204,12 +204,11 @@ ALLOWANCE_OVERRIDE_DAYS = {
     # stalled (and the night fails) after that. Bring it back down when the
     # cap goes: data/raw/un2720/daily.json, metadata.capped.
     "un2720_aid_daily": 45,
-    # The Gaza Chamber of Commerce's weekly trucks (2026-10-14) are read by hand
-    # (ops/fetch_gazacham.py, then ops/build_gazacham_series.py) until they have
-    # a nightly supply line; the Chamber publishes a report every two weeks. The
-    # learned rhythm (a week) would read STALLED within a month and fail the
-    # night on a dataset nobody is meant to fetch nightly. 120 = fresh for four
-    # months after the newest report read, late to eight, stalled after that.
+    # The Gaza Chamber of Commerce's reports (2026-10-14) come every two weeks and are
+    # read by hand (ops/fetch_gazacham.py --new-only) until they get a nightly supply
+    # line, which waits on the house network resolving gazacham.ps again (its DNS
+    # answered 0.0.0.0 on 14 October). 120 = fresh for four months after the newest
+    # report, late to eight, stalled after that.
     "gazacham_trucks_weekly": 120,
     "gazacham_prices": 120,           # the same reports, read the same way (2026-10-14)
     "gazacham_cash": 120,             # the same reports; its vintage is the newest report read

@@ -35,6 +35,7 @@ import argparse
 import datetime
 import gzip
 import html as html_mod
+import http.client
 import json
 import re
 import sys
@@ -154,19 +155,24 @@ def wanted(question: str, *, source: str | None, date_from: str | None, date_to:
     return [{"doc_id": r[0], "source": r[1], "id": r[2], "url": r[3], "title": r[4]} for r in rows][:limit]
 
 
-def get(url: str) -> str:
-    time.sleep(PAUSE)
+def get(url: str, tries: int = 3) -> str:
+    """One article page; a reply cut off mid-way is tried again, a minute apart."""
     p = urllib.parse.urlsplit(url)
     quoted = urllib.parse.urlunsplit((p.scheme, p.netloc, urllib.parse.quote(p.path), p.query, ""))
-    try:
-        with urllib.request.urlopen(urllib.request.Request(quoted, headers={"User-Agent": UA}), timeout=90) as r:
-            return r.read().decode("utf-8", "replace")
-    except urllib.error.HTTPError as e:
-        if e.code in (404, 410):
-            raise FileNotFoundError(url) from None
-        raise Refused(f"HTTP {e.code}") from None
-    except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
-        raise Refused(f"network: {type(e).__name__}") from None
+    for attempt in range(1, tries + 1):
+        time.sleep(PAUSE)
+        try:
+            with urllib.request.urlopen(urllib.request.Request(quoted, headers={"User-Agent": UA}), timeout=90) as r:
+                return r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            if e.code in (404, 410):
+                raise FileNotFoundError(url) from None
+            raise Refused(f"HTTP {e.code}") from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError, http.client.HTTPException) as e:
+            if attempt == tries:
+                raise Refused(f"network: {type(e).__name__} after {tries} tries") from None
+            time.sleep(60 * attempt)
+    raise Refused("unreachable")
 
 
 def run(items: list[dict], out: Path, use_bronze: bool) -> int:

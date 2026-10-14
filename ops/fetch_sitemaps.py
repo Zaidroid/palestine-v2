@@ -64,6 +64,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import html as html_mod
+import http.client
 import json
 import re
 import sys
@@ -230,18 +231,26 @@ def parse(o: dict, xml: str) -> tuple[list[dict], int, int]:
     return [r for r in got if r and r is not UNDATED], len(blocks), undated
 
 
-def get(url: str) -> bytes:
-    time.sleep(PAUSE)
-    try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=180) as r:
-            body = r.read()
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            raise FileNotFoundError(url) from None
-        raise Refused(f"HTTP {e.code}") from None
-    except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
-        raise Refused(f"network: {type(e).__name__}") from None
-    return gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body
+def get(url: str, tries: int = 3) -> bytes:
+    """One sub-sitemap. A reply cut off mid-way (IncompleteRead) or a broken
+    connection is tried again, a minute apart, then refused: measured 2026-10-14
+    12:01 UTC, WAFA's day file of 21 August 2025 came back cut off and ended the
+    run instead of being tried again."""
+    for attempt in range(1, tries + 1):
+        time.sleep(PAUSE)
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=180) as r:
+                body = r.read()
+            return gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise FileNotFoundError(url) from None
+            raise Refused(f"HTTP {e.code}") from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError, http.client.HTTPException) as e:
+            if attempt == tries:
+                raise Refused(f"network: {type(e).__name__} after {tries} tries") from None
+            time.sleep(60 * attempt)
+    raise Refused("unreachable")
 
 
 def subs_of(o: dict, index: str) -> list[tuple[str, str]]:
