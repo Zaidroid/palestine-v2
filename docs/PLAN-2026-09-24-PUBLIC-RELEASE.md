@@ -2061,3 +2061,30 @@ fetch records), HANDS §13x.
 2026-10-14 09:52 UTC · command 24 RUN (Zaid, 09:51:17-09:51:27 UTC) · the Gaza war timelines are in the archive · proof: his
 terminal output; read back by Claude, read-only: `chron:wikipedia_en` 15,771 (9,977 since 7 October 2023; the three
 held second copies stay), archive 626,186 texts from 65 sources.
+
+2026-10-14 10:37 UTC · every headline five Palestinian outlets list in their sitemaps · fetched and rehearsed, WAITING FOR ZAID'S
+COMMAND 25 · proof: branch `archive-sitemaps` (`a6fd367`, `0b73aac`, this commit), `tmp/25-sitemap-headlines.sh`,
+`tmp/25-raw/` (headline files, 93 MB of bronze, 19 fetch records), HANDS §13y.
+- `ops/fetch_sitemaps.py`: robots files read 14 October allow the sitemaps and name no crawler of ours; one request
+  every three seconds, 09:58-10:13 UTC for these five; each sub-sitemap kept in the cache and in bronze.
+  Safa 407,053 · Felesteen 184,660 · Shehab 90,807 · Sama 559,926 · Arab48 357,636 unique (411,740 listed; 54,030
+  listed in two files). 1,600,082 headlines, 1999 to 14 October 2026.
+- Measured, and built on: a headline is an image title only where it opens with the address's words (Shehab's are photo
+  captions), else the address's words (`title_from`: an index, not a quotation; an address drops decimal points,
+  "3.69 مليار" reads «369 مليار»). Dates: the address's (Arab48), last modified where it follows the ids (Sama), last
+  modified within the image folder's month else that month (Safa, Felesteen), and a day that covers 5% of a file is a
+  site re-save that dates nothing (Shehab re-saved its files on 30 September, 1 and 4 October 2026: 72,009 items have
+  no other date and are left out, counted). Arab48 gave its 2010 archive move's items addresses of that year; where the
+  last-modified day is earlier, it is the item's (47,227). Placeholder dates of 1970 date nothing (16).
+- Found on the way, all before anything was written: Shehab's image titles are captions; Shehab's re-save; Arab48's
+  2010 bunch (53,429 items dated 2010 by address); Safa's 1970 dates; and a refusal rule that refused Shehab's files
+  for their undatable entries rather than for unreadable ones.
+- Palestine Today is not read (headlines cut at about thirty letters); WAFA is fetching (2,328 daily files) and comes
+  as its own command.
+- The archive's `sitemaps` reader: each item an article with a title and no text, ranked 0 below every reader, so a
+  text read later replaces it and it never replaces a text.
+- Rehearsed on the scratch copy: dry run 8 minutes (1,654,112 "new": the load sees Arab48's second listings as held),
+  load 5 minutes, 1,600,082 written; 1.1 GB of rows. The three questions answer: lighters, 12 headlines from 2012
+  («ولاعة السجائر بـ 30 شيكلا في غزة!», Sama, 7 June 2026); the water crisis since October 2023, 100; cooking gas, 129.
+  **Suite on the branch's first commit against the live store: 2,245 passed, 0 failed, 4 skipped** (all on the day's
+  data); the second commit changed only the sitemap reader and its tests (`tests/test_archive.py`, 87 passed).
