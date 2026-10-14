@@ -1,6 +1,6 @@
 # The databank index · فهرس بنك البيانات
 
-Every area, dataset and series of the Palestine databank, measured on the store at 2026-10-14 18:07 UTC. Regenerate with `.venv/bin/python -m ops.databank_index` (read-only; a minute or two).
+Every area, dataset and series of the Palestine databank, measured on the store at 2026-10-14 18:11 UTC. Regenerate with `.venv/bin/python -m ops.databank_index` (read-only; a minute or two).
 
 ## What is held
 
@@ -12,9 +12,9 @@ Every area, dataset and series of the Palestine databank, measured on the store 
 | … withheld from partners, the figure cited | 53,366 |
 | Older values kept after a correction (never deleted) | 90,033 |
 | Datasets · sources · series with rows | 62 · 112 · 3,538 |
-| Event records (incidents, attacks, depopulated places) | 49,297 |
-| Live readings (checkpoints, fuel, weather, internet, power) | 2,138,560 |
-| Crowd messages read by the live tier | 145,446 |
+| Event records (incidents, attacks, depopulated places) | 49,299 |
+| Live readings (checkpoints, fuel, weather, internet, power) | 2,138,703 |
+| Crowd messages read by the live tier | 145,448 |
 | Archive texts (headlines, articles, posts, reports, chronologies) | 2,365,149 |
 | Places in the register | 4,946 |
 

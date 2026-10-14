@@ -4,12 +4,12 @@ Readings written every few minutes from public channels, crowd reports, station 
 
 | What is read | Readings | Places | First | Last |
 |---|---:|---:|---|---|
-| `checkpoint_flow` | 910,423 | 340 | 2026-06-09 | 2026-10-14 |
+| `checkpoint_flow` | 910,433 | 340 | 2026-06-09 | 2026-10-14 |
 | `fuel_gasoline` | 425,205 | 212 | 2026-07-31 | 2026-09-23 |
 | `fuel_diesel` | 422,847 | 212 | 2026-07-31 | 2026-09-23 |
-| `checkpoint_status` | 260,396 | 239 | 2026-06-09 | 2026-10-14 |
+| `checkpoint_status` | 260,404 | 239 | 2026-06-09 | 2026-10-14 |
 | `weather` | 70,686 | 11 | 2026-07-31 | 2026-10-14 |
-| `checkpoint_idf` | 27,893 | 226 | 2026-06-09 | 2026-10-14 |
+| `checkpoint_idf` | 27,895 | 226 | 2026-06-09 | 2026-10-14 |
 | `checkpoint_inspection` | 8,474 | 157 | 2026-06-09 | 2026-10-14 |
 | `internet` | 6,430 | 1 | 2026-07-31 | 2026-10-14 |
 | `checkpoint_police` | 4,205 | 174 | 2026-06-09 | 2026-10-14 |

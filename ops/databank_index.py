@@ -413,7 +413,9 @@ def write(m: dict) -> list[Path]:
                "datasets": [{k: v for k, v in d.items() if k != "series_list"} |
                             {"series": [[s["indicator"], s["name_en"], s["name_ar"], s["unit"], s["rows"],
                                          s["from"], s["to"], s["places"]] for s in d["series_list"]]}
-                            for d in m["datasets"]]}
+                            for d in m["datasets"]],
+               "events_by_type": m["events_by_type"], "live_by_kind": m["live_by_kind"],
+               "places_by_kind": m["places_by_kind"], "archive": m["archive"]}
     (OUT / "index.json").write_text(json.dumps(compact, ensure_ascii=False, separators=(",", ":"), default=str),
                                     encoding="utf-8")
     files.append(OUT / "index.json")

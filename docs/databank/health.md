@@ -1,6 +1,6 @@
 # Health · الصحة
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Health indicators by year, 1975 on: mortality, disease, services, water and sanitation (WHO GHO)
 

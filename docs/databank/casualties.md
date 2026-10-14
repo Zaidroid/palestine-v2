@@ -1,6 +1,6 @@
 # Casualties · الضحايا
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Palestinians killed, one row per person, 2000 to September 2023 (B'Tselem)
 

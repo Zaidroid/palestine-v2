@@ -1,6 +1,6 @@
 # Land · الأرض
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Structures demolished per day, West Bank and East Jerusalem (Good Shepherd Collective)
 

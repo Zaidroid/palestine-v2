@@ -1,6 +1,6 @@
 # Demolitions · عمليات الهدم
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Demolitions in the West Bank: structures and people displaced, by year and locality (OCHA)
 

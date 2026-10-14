@@ -1,6 +1,6 @@
 # Conflict · النزاع
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Attacks on health care, aid workers, schools, food and water systems (Insecurity Insight)
 

@@ -1,6 +1,6 @@
 # Funding · التمويل
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Humanitarian funding flows: paid, committed, pledged (OCHA Financial Tracking Service)
 

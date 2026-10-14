@@ -10,7 +10,7 @@ One record = one incident, one attack or one place (the depopulation record). Se
 | `attack.explosive_weapons` | insecurity_insight_incidents | 6,861 | 2020-11-24 | 2026-09-13 |
 | `attack.food_systems` | insecurity_insight_incidents | 2,987 | 2023-10-07 | 2026-08-28 |
 | `raid` | tracker | 2,933 | 2026-06-20 | 2026-10-14 |
-| `settler_attack` | tracker | 1,852 | 2026-07-01 | 2026-10-14 |
+| `settler_attack` | tracker | 1,854 | 2026-07-01 | 2026-10-14 |
 | `conflict.village_depopulation` | v1_conflict_palopenmaps | 1,163 | 1935-01-01 | 1967-06-10 |
 | `attack.education` | insecurity_insight_incidents | 982 | 2017-06-01 | 2026-05-31 |
 | `attack.aid_worker` | insecurity_insight_incidents | 754 | 2002-04-01 | 2026-09-13 |

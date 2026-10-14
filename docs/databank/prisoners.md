@@ -1,6 +1,6 @@
 # Prisoners · الأسرى
 
-Measured on the store at 2026-10-14 18:07 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Palestinians held by Israel by month, 2011 on: children, women, administrative detention and more (Addameer)
 
