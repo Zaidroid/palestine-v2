@@ -2003,3 +2003,31 @@ FOR ZAID'S COMMAND 22 · proof: branch `archive-wikipedia` (`c6555dd`, this comm
   (the general strike of 1936 to 1938; «مخيم» 34 entries from 1981; Gaza in 2024, 92). 3 offline tests.
   **Suite on the branch against the live store: 2,238 passed, 0 failed, 3 skipped** (all three skip on the day's
   live data: no search reported, a correlation fit at lag 0, no measurement).
+
+2026-10-14 08:56 UTC · command 22 RUN (Zaid, 08:56:47-08:56:52 UTC) · Wikipedia's year pages are in the archive ·
+proof: his terminal output; read back by Claude, read-only: `chron:wikipedia_en` 2,908 (`en`), `chron:wikipedia_ar`
+1,210 (`ar`), archive 613,323 texts; a question across the four chronologies answers from three publishers.
+
+2026-10-14 09:23 UTC · Wikipedia's detailed timelines, and 14 range ends the year pages lost · built, fetched and rehearsed,
+WAITING FOR ZAID'S COMMAND 23 · proof: branch `archive-wikipedia-2` (`ee5ea89`, this commit),
+`tmp/23-wikipedia-timelines.sh`, `tmp/23-raw/` (two entry files, 177 pages in bronze, three fetch records), HANDS §13w.
+- Found reading command 22's answer: "April 1 - April 11 Battle of Jenin" was held as 1 April with "April 11" left in
+  its text. 14 entries (13 English, 1 Arabic) wrote a range whose end names its own month or year; now read as ranges
+  (Cast Lead: 27 December 2008 to 18 January 2009). The id stands on the text after the first date as printed, so the
+  14 are corrected in place and the archive keeps their earlier words (rehearsed: 14 changed, 14 history rows, no new
+  id); a date that is a name ("13 July 2024 al-Mawasi attack") is left as printed.
+- "Timeline of the Israeli–Palestinian conflict in YYYY", 2000 to 2026, fetched 09:05-09:10 UTC (one page every three
+  seconds): 24 pages with the half-year pages an index links, 3,533 entries, 3,415 to the day. They write a day's
+  events as list items and as paragraphs under the day's heading; both are read on these pages only (the year pages'
+  paragraphs are introductions). Three timeline titles redirect to the general page (2010 among them); they are not
+  read, since its paragraphs (1948, the First Intifada) would have been dated to the year asked for.
+- Found on the way: the pages open with an unclosed empty paragraph before a <div>; I had listed its class as not to
+  be read, so on the 2023 page it hid the text after it. A block opening now closes an open paragraph as a browser
+  does, and the class is read (it holds no text). A 404 title is not asked for again for thirty days.
+- The loader kept a source's first name for good; a chronology's name, address and language now follow its
+  site.json (other readers name sources from their texts and keep the first name). Rehearsed: the English source
+  now says it holds the timelines.
+- Rehearsed on the scratch copy (which held command 22's 4,118): 3,533 written, 14 changed, a second run writes none;
+  the three questions answer (Jenin and Defensive Shield as ranges; hospitals and fuel, October to December 2023, 13;
+  Huwara in 2023, 13). 5 more offline tests (82 in `tests/test_archive.py`).
+  **Suite on the branch against the live store: 2,241 passed, 0 failed, 3 skipped** (the same three, on the day's data).
