@@ -442,20 +442,29 @@ def test_exports_carry_the_honesty_columns() -> None:
 
 
 def test_databank_asof_serves_superseded_value() -> None:
-    """T2.4's whole point, through the public surface: what did Addameer
-    report for children in detention as of 15 July? 350 — a value revised
-    upstream on 1 August, absent from the current surface at that date+value,
-    reachable only at its own time."""
+    """T2.4's whole point, through the public surface: a superseded value is
+    absent from the current surface and reachable at its own time.
+
+    The example until 2026-10-14 was children in detention for July 2026 (350,
+    revised upstream on 1 August). Addameer's own page for July 2026, loaded
+    that day, says 350, so that pair is current again and true. The example is
+    now one of the sixteen figures v1 had filed under the wrong month: total
+    prisoners for November 2022 were served as 9,900 (Addameer's figure for
+    August 2024) until command 16 replaced them with the page's 4,760."""
     r = client.get("/v2/databank/prisoners",
                    params={"indicator": "prisoners.child",
                            "as_of": "2026-07-15"})
     assert r.status_code == 200
-    items = r.json()["items"]
-    assert any(i["value_num"] == 350 for i in items), items
-    r = client.get("/v2/databank/prisoners",
-                   params={"indicator": "prisoners.child"})
-    current = [(i["occurred_at"][:10], i["value_num"]) for i in r.json()["items"]]
-    assert ("2026-07-01", 350.0) not in current, current
+    assert any(i["value_num"] == 350 for i in r.json()["items"])
+    now = client.get("/v2/databank/prisoners",
+                     params={"indicator": "prisoners.total", "limit": 400})
+    then = client.get("/v2/databank/prisoners",
+                      params={"indicator": "prisoners.total", "limit": 400, "as_of": "2026-10-13"})
+    assert now.status_code == then.status_code == 200
+    cur = {(i["occurred_at"][:7], i["value_num"]) for i in now.json()["items"]}
+    old = {(i["occurred_at"][:7], i["value_num"]) for i in then.json()["items"]}
+    assert ("2022-11", 4760.0) in cur and ("2022-11", 9900.0) not in cur
+    assert ("2022-11", 9900.0) in old
 
 
 def test_databank_categories_carry_licenses() -> None:
