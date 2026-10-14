@@ -2036,3 +2036,24 @@ WAITING FOR ZAID'S COMMAND 23 · proof: branch `archive-wikipedia-2` (`ee5ea89`,
 terminal output; read back by Claude, read-only: `chron:wikipedia_en` 6,441 (42 ranges), `chron:wikipedia_ar` 1,210
 (9 ranges); Jenin 1 to 11 April 2002 and Cast Lead 27 December 2008 to 18 January 2009 as ranges; 14 earlier versions
 in `document_history`; the English source's name now says it holds the timelines. Archive: 616,856 texts.
+
+2026-10-14 09:48 UTC · Wikipedia's Gaza war timelines, the half-years of 2015 and the general timeline's tables · built,
+fetched and rehearsed, WAITING FOR ZAID'S COMMAND 24 · proof: branch `archive-wikipedia-3` (`4e3c7d6`, `ac6b31c`,
+this commit), `tmp/24-wikipedia-gaza-war.sh`, `tmp/24-raw/` (the English entry file, 147 pages in bronze, three
+fetch records), HANDS §13x.
+- "Timeline of the Gaza war" is an index of 14 pages, 7 October 2023 to the present (fetched 09:30 UTC, one every
+  three seconds); the index is read for its links only. 8,250 entries, 7 October 2023 to 12 October 2026, dated by
+  the year their month heading names, since pages span years.
+- Found: the 2015 timeline's two half-year pages were never followed in command 23 (its links are written
+  https://en.wikipedia.org/wiki/… with a literal dash; I matched only /wiki/… %-encoded). Now read: 863 entries.
+  2013 redirects to the general page like 2010 and 2009.
+- The general timeline page (one request) is read for its tables, only for the years no timeline page of their own was
+  read for: 217 entries, 1948 to 1999, and 2009, 2010 and 2013 (a row across both columns opens a year and summarises
+  it; a date cell may span rows; "October 29 –November" and "9 October 1982" read).
+- Found reading the rehearsal's answer: 314 events appear word for word on two pages (the 2024 timeline and the war
+  page of 12 January to 6 May 2024 share 189). Within one publisher an event whose date and text repeat one already
+  read is one item now; 329 copies are left out and counted. Nothing held changes; three held second copies stay.
+- Rehearsed on the scratch copy put back to command 23's state: 9,330 written, 0 changed, a second run writes none;
+  the three questions answer (Kafr Qasim from 1956; water wells and desalination since October 2023, 7; the flotillas
+  of 2025, 8). 85 offline tests in `tests/test_archive.py`.
+  **Suite on the branch against the live store: 2,244 passed, 0 failed, 3 skipped** (the same three, on the day's data).
