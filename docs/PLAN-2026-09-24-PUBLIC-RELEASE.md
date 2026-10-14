@@ -2031,3 +2031,8 @@ WAITING FOR ZAID'S COMMAND 23 · proof: branch `archive-wikipedia-2` (`ee5ea89`,
   the three questions answer (Jenin and Defensive Shield as ranges; hospitals and fuel, October to December 2023, 13;
   Huwara in 2023, 13). 5 more offline tests (82 in `tests/test_archive.py`).
   **Suite on the branch against the live store: 2,241 passed, 0 failed, 3 skipped** (the same three, on the day's data).
+
+2026-10-14 09:27 UTC · command 23 RUN (Zaid, 09:26:45-09:26:53 UTC) · Wikipedia's timelines are in the archive · proof: his
+terminal output; read back by Claude, read-only: `chron:wikipedia_en` 6,441 (42 ranges), `chron:wikipedia_ar` 1,210
+(9 ranges); Jenin 1 to 11 April 2002 and Cast Lead 27 December 2008 to 18 January 2009 as ranges; 14 earlier versions
+in `document_history`; the English source's name now says it holds the timelines. Archive: 616,856 texts.
