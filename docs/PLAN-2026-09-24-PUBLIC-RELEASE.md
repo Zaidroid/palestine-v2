@@ -2202,6 +2202,10 @@ say their units in Arabic · built and rehearsed, WAITING FOR ZAID'S COMMAND 29 
 - **Rehearsed** on the scratch copy as a first run: migration 120, build, 1,848 written, registry 280 named and 0
   unclassified, three questions from a test API on it. Read back: units, values, areas, ranges, the missing mark;
   every multi-kilo, sack and tray price converts (0 failed).
+- **Suite** on the branch against the live store: 2,267 passed, 0 failed (four tests first met the new unit lookup
+  with a stand-in store that answers every query alike; the lookup now keeps only its own rows, `1d2473d`).
+- **HDX's robots file** disallows /api/ and direct .csv/.xlsx links; seven nightly readers use both (UNHCR, IDMC,
+  Insecurity Insight, FAO DIEM, UNRWA, land, infrastructure). HDX documents the API for programs. Zaid's call; unchanged.
 - **Scouted for the next round** (a researcher, text only): the prisoner institutions' joint monthly arrests report
   runs from January 2016 (arrests by month, children, women, often by governorate, administrative orders new and
   renewed), indexed on Addameer's monthly-reports pages; the longest monthly series not yet held.
