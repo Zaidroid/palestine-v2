@@ -58,7 +58,11 @@ def test_english_answers_use_english_names(mcp_call, mcp_payload):
     assert "نابلس" not in p["answer_en"]
     s = mcp_payload(mcp_call("checkpoints"))
     for c in (s.get("closed_now") or [])[:6]:
-        if c.get("name_en"):
+        # Only a name in Arabic script can leak: on 2026-10-14 a closed
+        # checkpoint's name was the Latin "DCO", which its English name
+        # "DCO (Beit El)" rightly contains, and the test failed on the day's
+        # closures rather than on the answer.
+        if c.get("name_en") and any("\u0600" <= ch <= "\u06ff" for ch in c["name"]):
             assert c["name"] not in s["answer_en"]
 
 
