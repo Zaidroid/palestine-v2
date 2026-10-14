@@ -18,6 +18,10 @@ its origin, its licence and the window it was true in.
 
     GET https://live-api.zaidlab.xyz/v2/databank/categories
 
+Every area, dataset and series, with its publisher, terms, span and freshness:
+[the databank index](docs/databank/README.md) (written from the store by
+`ops/databank_index.py`).
+
 ---
 
 ## What makes this different from a pile of numbers
