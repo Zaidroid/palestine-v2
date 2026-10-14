@@ -1832,3 +1832,10 @@ HANDS §13q.
   own page for July 2026 says 350 children); it now uses November 2022 (4,760 served, 9,900 as of 13 October) and
   passes. `test_english_answers_use_english_names` passed on the second run: it reads which checkpoints are being
   searched at that moment, and one carried "DCO" in its English name. **Re-run of both test files: 122 passed.**
+
+2026-10-14 06:16 UTC · command 17 RUN by Zaid (06:16:12 to 06:16:40 UTC) · done · proof: the script's own output.
+- Fast-forward to `217f084`; the dry run said 1,670 read, 680 held, none to change; the load wrote 990; the registry
+  named the seven; the API restarted. Asked through it: prisoners from Gaza, 154 months from January 2011, highest
+  1,932, newest 40; serving life sentences, 798 in January 2011 and 118 in October 2026; 13 prisoner series served,
+  all 13 with an Arabic name. The as-of test's fix is on main with it.
+- Nothing is owed from Zaid.
