@@ -3564,7 +3564,7 @@ def _unit_names(units: list[str]) -> dict:
                             WHERE a.raw = ANY(%s)""", (units,))
     except Exception:                                            # noqa: BLE001
         rows = []
-    known = {r["raw"]: r for r in rows}
+    known = {r["raw"]: r for r in rows if isinstance(r, dict) and r.get("raw")}
     out = {}
     for u in units:
         r = known.get(u) or {}
