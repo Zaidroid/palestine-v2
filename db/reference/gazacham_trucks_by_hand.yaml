@@ -1,0 +1,30 @@
+# Trucks into Gaza, by week, as the Gaza Chamber of Commerce's weekly reports state them,
+# for the weeks whose figures are in sentences and not in the regular table (weeks 32 to 50,
+# and 55). Read by hand on 2026-10-14 from the report text in the archive
+# (data/raw/reports/gazacham/items-all.ndjson.gz; source org:gazacham). Every figure below is
+# the report's own; `quote` is the sentence it stands on; nothing is derived.
+#
+# The other weeks (1 to 31, 51 to 111 except 55) are read from the reports' tables by
+# ops/build_gazacham_series.py. Week 42 (13 to 19 May 2025) states no figure for the week:
+# its report gives the trucks "since the resumption ... up till the date of this report",
+# a span that is not the week, and the week is left without a value.
+weeks:
+  32: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip last week."}
+  33: {trucks_entered: 0, quote: "All crossings are completely closed, as shown on the map in (Figure 1), as no trucks were allowed to enter at all."}
+  34: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  35: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  36: {trucks_entered: 0, quote: "This week witnessed the continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  37: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  38: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  39: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli occupation on Gaza Strip since 02/03/2025."}
+  40: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  41: {trucks_entered: 0, quote: "This week witnessed continuation of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025."}
+  43: {trucks_entered: 232, trucks_looted: 139, quote: "139 out of 232 trucks were looted, either on route or after reaching storage facilities."}
+  44: {trucks_entered: 233, trucks_looted: 233, trucks_delivered: 0, quote: "A total of 233 trucks entered during this period. ... Data indicates that all trucks which entered on the four days (May 27 and 30, and June 1 and 2) were completely looted and failed to reach their intended destinations."}
+  45: {trucks_entered: 58, trucks_looted: 30, trucks_delivered: 28, quote: "58 trucks entered Gaza during the reporting period; 30 trucks carrying humanitarian aid and were all looted, and 28 trucks carrying commercial goods and were sold in the market at very high prices."}
+  46: {trucks_entered: 300, trucks_looted: 300, trucks_delivered: 0, quote: "300 trucks entered Gaza during the reporting period through 3 crossings ... all trucks carrying humanitarian aid and were all looted on the routes."}
+  47: {trucks_entered: 128, trucks_looted: 120, trucks_delivered: 8, quote: "A total of 128 trucks entered Gaza over four days ... 94% of the trucks were looted before reaching beneficiaries; only 8 trucks were successfully delivered."}
+  48: {trucks_entered: 409, trucks_looted: 354, trucks_delivered: 55, quote: "409 humanitarian aid trucks entered Gaza, yet 86% (354 trucks) were looted before delivery, leaving only 55 secured trucks."}
+  49: {trucks_entered: 84, trucks_looted: 74, trucks_delivered: 10, quote: "A total of 84 trucks entered Gaza over four days ... Only 10 out of 84 incoming trucks reached beneficiaries; 88% were looted during transit."}
+  50: {trucks_entered: 119, trucks_looted: 61, trucks_delivered: 58, quote: "A total of 119 trucks were recorded during this period, of which only 58 successfully reached their destinations, while 61 were looted, representing over 51% of the total."}
+  55: {trucks_entered: 981, trucks_looted: 556, trucks_delivered: 425, quote: "981 trucks entered Gaza during the reporting week, 57% (556 trucks) were looted before reaching their destinations. Only 425 trucks were delivered successfully."}

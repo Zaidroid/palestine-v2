@@ -1,0 +1,100 @@
+# Trucks into Gaza by week, from the Gaza Chamber of Commerce and Industry's weekly "Gaza Movement
+# of Goods" reports (2026-10-14). The reports are in the archive whole (source org:gazacham, read
+# by ops/fetch_gazacham.py); ops/build_gazacham_series.py reads their figures into
+# data/raw/gazacham/weekly.json: the crossings table for weeks 1-31 and 51-111, sentences read by
+# hand for weeks 32-50 and 55 (db/reference/gazacham_trucks_by_hand.yaml), looted and delivered
+# trucks where a report states them (weeks 43-61). 146 figures on 2026-10-14: trucks entered for
+# 109 of 111 weeks (none for week 6, whose linked file is week 7's report, nor for week 42, whose
+# report states no figure for its week), looted and delivered for 19 weeks.
+category: aid_gazacham
+transform: engine
+v1_category: aid_access          # joins the aid_access serving views
+shape: observation
+status: reviewed
+records_measured: 146
+input:
+  root: data/raw/gazacham
+  glob: weekly.json
+cadence: irregular               # a report every week from August 2024, every two weeks since July 2025
+source_routing:
+  by_name:
+    "Gaza Chamber of Commerce and Industry — Gaza Movement of Goods weekly reports": gaza_chamber
+datasets:
+  - key: gazacham_trucks_weekly
+    source: gaza_chamber         # migration 117: all rights reserved, held for the house
+indicator:
+  template: "aid_gazacham.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # truck
+occurred_at:
+  from: date                     # the week's first day; its last is attrs.period_end
+  precision: day
+  rules: []
+place:
+  strategy: region               # every record: region = 'Gaza Strip'
+  min_decided_pct: 1.0
+attrs_passthrough: [period_start, period_end, week, basis, report, report_title]
+stable_id: stable_id             # gazacham:week<NNN>:<measure>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 130
+  max_observations: 400          # 146 on 2026-10-14; a report every two weeks adds two to six
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "aid_gazacham.trucks_entered"}
+      name_en: "Trucks that entered Gaza in the week beginning on this date, all crossings (Gaza Chamber of Commerce)"
+      name_ar: "الشاحنات التي دخلت قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، من كل المعابر (غرفة تجارة وصناعة غزة)"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        A week's count, dated by the week's first day (its last day is in the row): every truck
+        the Gaza Chamber of Commerce recorded entering Gaza, commercial and humanitarian, through
+        all crossings. The weeks of March to mid-May 2025 are zero because the reports state the
+        crossings were closed; a zero is the report's sentence, not a missing figure. It is not
+        UN2720's count (only UN-coordinated aid) nor UNRWA's (ended January 2025): never one series.
+      serve_warning_ar: >-
+        هاد عدد أسبوع، مأرّخ بأول يوم فيه وآخر يوم مكتوب بالسطر: كل الشاحنات اللي سجّلت غرفة
+        تجارة غزة إنها دخلت القطاع، تجارية ومساعدات، من كل المعابر. أسابيع آذار لنص أيار 2025
+        صفر لأن التقارير بتقول المعابر كانت مسكّرة؛ الصفر هو كلام التقرير، مش رقم ناقص. وهاد مش
+        عدّ آلية 2720 (مساعدات الأمم المتحدة بس) ولا عدّ الأونروا (وقف بكانون الثاني 2025)، وما
+        بنحطهم بسلسلة وحدة.
+    - when: {equals: "aid_gazacham.trucks_looted"}
+      name_en: "Trucks looted before reaching their destination after entering Gaza, in the week beginning on this date (Gaza Chamber of Commerce)"
+      name_ar: "الشاحنات التي نُهبت قبل وصولها إلى وجهتها بعد دخولها قطاع غزة، في الأسبوع الذي يبدأ بهذا التاريخ (غرفة تجارة وصناعة غزة)"
+      concept: aid.access
+      measure_kind: flow
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        Stated by the reports for 19 weeks, 20 May to 28 September 2025; the other weeks have no
+        figure, which is not zero. Looted here is the Chamber's word for trucks taken on the road or
+        from warehouses before they reached the people or traders they were sent to.
+      serve_warning_ar: >-
+        التقارير ذكرت هالرقم لـ19 أسبوع، من 20 أيار لـ28 أيلول 2025؛ باقي الأسابيع ما إلها رقم،
+        وهاد مش صفر. "منهوبة" هي كلمة الغرفة للشاحنات اللي انأخذت عالطريق أو من المخازن قبل ما
+        توصل للناس أو التجار اللي انبعتتلهم.
+    - when: {equals: "aid_gazacham.trucks_delivered"}
+      name_en: "Trucks that reached their destination after entering Gaza, in the week beginning on this date (Gaza Chamber of Commerce)"
+      name_ar: "الشاحنات التي وصلت إلى وجهتها بعد دخولها قطاع غزة، في الأسبوع الذي يبدأ بهذا التاريخ (غرفة تجارة وصناعة غزة)"
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: >-
+        Stated with the looted trucks for 18 weeks of May to September 2025 (week 43 states only the
+        looted); with them it makes the week's trucks entered.
+      serve_warning_ar: >-
+        مذكور مع الشاحنات المنهوبة لـ18 أسبوع من أيار لأيلول 2025 (الأسبوع 43 ذكر المنهوبة بس)؛
+        ومعها بتعمل مجموع الشاحنات اللي دخلت بالأسبوع.

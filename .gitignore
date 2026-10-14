@@ -103,3 +103,5 @@ data/raw/wp/
 data/raw/chronology/
 # publishers' periodic reports (2026-10-14): regenerate with ops/fetch_gazacham.py
 data/raw/reports/
+# the Chamber's weekly trucks (2026-10-14): regenerate with ops/build_gazacham_series.py
+data/raw/gazacham/
