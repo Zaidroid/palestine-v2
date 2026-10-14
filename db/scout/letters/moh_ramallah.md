@@ -18,7 +18,7 @@ service interruptions — and any published health indicator series for the West
 and East Jerusalem.
 
 **What we would do with it**
-- Store it alongside more than 315,000 observations from 30 other sources, each row carrying
+- Store it alongside more than 345,000 observations from 30 other sources, each row carrying
   its origin and licence, queryable back to 1922.
 - Credit you on every row the API returns, in a public ATTRIBUTION file, and on
   any page that shows your figures.
