@@ -161,7 +161,16 @@ ALLOWANCE_OVERRIDE_DAYS = {
     "v1_conflict_ucdp": 730,
     "v1_health_who": 730,
     "v1_pcbs_pcbs": 730,
-    "v1_settlements_peace_now": 730,   # the key was misspelt until 2026-10-12, so it never applied
+    # Peace Now's settler chart (2026-10-14, Zaid: "if it serves the purpose ... do it"). Its newest
+    # year is stamped at the start of that year and reaches the chart one to two years after the
+    # year ends: 2024 arrived on 4 August 2026, 1,017 days after its label. 730 called a living
+    # chart late. 1,460 = four years, the same as the per-settlement sheet below: late after a
+    # whole missed year, stalled at 2,920.
+    "v1_settlements_peace_now": 1460,
+    # The UN's population estimates (WPP 2024, 2026-10-14). The newest estimate is 2023, and the
+    # next revision is announced for 11 July 2027, about 1,650 days after that label; until then
+    # nothing newer exists. 1,825 = five years: late only once the 2027 revision is missed.
+    "un_wpp_2024": 1825,
     # Peace Now's per-settlement sheet (2026-10-13). Its newest label is old BY
     # DESIGN: a year's figure is stored at the start of its year and reaches
     # the sheet one to two years after the year ends. On 2026-10-13 the newest
