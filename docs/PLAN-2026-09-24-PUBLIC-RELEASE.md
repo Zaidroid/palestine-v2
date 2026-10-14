@@ -1939,3 +1939,11 @@ COMMAND 20 · proof: branch `databank-gazacham-prices` (`98c55e4`, the test fix,
 - Next on this line: the earliest reports' daily prices by region (weeks 1-35, after a decision on their units),
   North and South for weeks 62-65 and the index's weeks 1-13, the cash-out commission table (weekly, from January
   2025) and the medicine prices table.
+
+2026-10-14 07:43 UTC · command 20 RUN (Zaid, 07:41:08-07:42:20 UTC, 72 s) · the Chamber's prices and price index are served ·
+proof: his terminal output; read back by Claude, read-only, from the store, the public API and the MCP tool.
+- Migration 118 applied; 2,896 written; registry: 44 classified, 44 warnings, every served unit resolves; API restarted.
+- The store serves 2,896 rows in 44 series, 31 January 2025 to 13 September 2026; a flour sack of 1,810.71 in the week
+  of 20 May 2025 reads 72.43 a kilo beside it. The public API serves `price_gazacham.gcpi_daily` with source
+  `gaza_chamber`, `no-redistribution` and its warning; the MCP `series` tool answers with the warning in both
+  languages and the partner tier filtered.
