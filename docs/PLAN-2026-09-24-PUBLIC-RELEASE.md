@@ -1863,3 +1863,33 @@ rehearsed, WAITING FOR ZAID'S COMMAND 18 · proof: branch `archive-gazacham` (`a
 - Fast-forward to `050786c`; the reports file, its fetch record and the 81 report files in place; 81 written. The
   archive holds 609,205 texts. "firewood" and "GCPI" answered as in the rehearsal (45 and 46 reports).
 - Nothing is owed from Zaid.
+
+2026-10-14 07:07 UTC · trucks into Gaza by week, August 2024 to September 2026, from the Gaza Chamber of Commerce's
+reports · built and rehearsed, WAITING FOR ZAID'S COMMAND 19 · proof: branch `databank-gazacham-trucks` (`81e108b`,
+this commit), `tmp/19-gazacham-trucks.sh`, HANDS §13s.
+- The reports in the archive (command 18) hold a weekly count nobody has charted. `ops/build_gazacham_series.py`
+  reads it without a request: the crossings table for weeks 1-31 and 51-111; sentences read by hand for weeks 32-50
+  and 55 (`db/reference/gazacham_trucks_by_hand.yaml`, each with its sentence); looted and delivered trucks where a
+  report states them. 146 figures: trucks entered for 109 of 111 weeks, looted and delivered for 19 (20 May to 28
+  September 2025: 6,445 trucks looted in all).
+- The ten weeks of 4 March to 12 May 2025 are zero by the reports' own sentences ("This week witnessed continuation
+  of the comprehensive closure imposed by the Israeli side on Gaza Strip since 02/03/2025"; week 33: "no trucks were
+  allowed to enter at all"). Week 42 (13 to 19 May) has no figure: its report counts from the resumption to the
+  report's date, which is not the week.
+- The builder refuses rather than guesses: a week's rows must add to the table's Total, looted and delivered must
+  make the week's trucks, a hand-read figure may not contradict a table. They found two things in the publisher's
+  files: weeks 82-83 print 1,749 for week 82 where that row's own columns, the report's private and humanitarian rows
+  and its text all make 1,678 (1,678 is taken and the slip noted in the dataset); and the file linked for week 6 is
+  week 7's report, its tables dated 12 to 18 September 2024 (week 6 has no figure).
+- Migration 117: the Chamber as a source (footer "جميع الحقوق محفوظة، 2023"; no licence, no terms; held for the
+  house, withheld from partners, like Addameer) and the dataset `gazacham_trucks_weekly`. `db/mappings/aid_gazacham.yaml`
+  names the three series "in the week beginning on this date" in both languages, each with a serve warning (the zeros
+  are the reports' sentences; not UN2720's count, not UNRWA's). A week is dated by its first day, its last day in
+  attrs: the store has no week precision. The gap radar gives the dataset 120 days, since it is read by hand until it
+  has a supply line (without that, the learned weekly rhythm would mark it stalled within a month and fail a night).
+- Rehearsed on the scratch copy from a clean state: migration, build, 146 written, registry, a second run writes
+  none; a test API on the scratch copy answered the script's three questions (109 weeks; ten with none, 4 March to 6
+  May 2025; 19 looted weeks, warned; three series named in Arabic). 5 offline tests in `tests/test_gazacham_series.py`.
+  **Suite on the branch against the live store: 2,218 passed, 0 failed, 2 skipped (665 s).**
+- Next on this line: the reports' price tables (food and non-food against pre-war, from 61 reports) and the Chamber's
+  price index; the early reports price goods day by day in another layout.
