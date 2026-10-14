@@ -1839,3 +1839,22 @@ HANDS §13q.
   1,932, newest 40; serving life sentences, 798 in January 2011 and 118 in October 2026; 13 prisoner series served,
   all 13 with an Arabic name. The as-of test's fix is on main with it.
 - Nothing is owed from Zaid.
+
+2026-10-14 06:44 UTC · the archive takes in the Gaza Chamber of Commerce's weekly goods reports, whole · built and
+rehearsed, WAITING FOR ZAID'S COMMAND 18 · proof: branch `archive-gazacham` (`affe903`, this commit),
+`tmp/18-gazacham-reports.sh`, HANDS §13r.
+- A scout named them; read once on 14 October, two seconds apart, with no refusal (gazacham.ps's robots file sets
+  no rule and no content signal; its first listing page answers 500 when numbered 0, so the walk starts unnumbered):
+  81 reports, weeks 1 to 111, 1 August 2024 to 13 September 2026, 151 MB of files.
+- `ops/fetch_gazacham.py` turns each file into text and reads the report's period from its address, which spells a
+  period five ways ("1-7-august-2024", "august-19-to-01-sep-2025", "september-01-14-2025", "13-to-26-oct-2025",
+  "dec-22-2025-to-jan-04-2026"): all 81 read, every period after the one before and as long as its weeks.
+  `ingest/archive.py` takes the file as a seventh reader, `reports` (the listing reader's file shape).
+- What the reports carry and what is not yet a series: trucks by crossing and by day, private-sector and
+  humanitarian shares, cargo by kind, food and non-food prices against their pre-war level, and from April 2025 the
+  Chamber's own Gaza consumer price index (GCPI). Measured: the sentence "A total of N trucks entered" appears in 20
+  reports, weekly subtotal rows in 30, a pre-war price table in 61; the earliest reports price goods day by day. The
+  layouts changed at least three times, so the tables stay text for now and become series in a separate step.
+- Rehearsed on the scratch copy: 81 written, a second run wrote none; "firewood" returns 45 reports from December
+  2024, "GCPI" 46 from April 2025. 76 offline tests in `tests/test_archive.py`. **Suite on the branch against the
+  live store: 2,208 passed, 0 failed, 2 skipped (624 s).**
