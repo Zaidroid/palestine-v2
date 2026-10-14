@@ -132,6 +132,10 @@ CLOSED_CORPUS = {
     # the builder is run again on newer posts; if the channel's text lists return
     # and a nightly step builds it, take it out of this set.
     "market_channel_prices",
+    # The prisoner institutions' joint monthly report as Addameer indexes it (2026-10-14): the index ends with
+    # January 2024 (later months are in the institutions' news, not yet read). Built by hand, nothing
+    # refreshes it at night: judged on its dates it would read STALLED and fail the night.
+    "arrests_joint_monthly",
 }
 
 # A model's PROJECTION: rows dated after the day they were published. Its
@@ -362,6 +366,9 @@ SUPPLY_LINES = {
     "ilostat": {"labels": ["ilostat:quarterly"], "feeds": ["ilostat_quarterly"],
                 "fetcher": "ops/fetch_ilostat.py", "every_days": 1,
                 "note": "ILO's quarterly labour series, four GETs a night (2026-10-14)"},
+    "ocha-monthly": {"labels": ["ocha:fatalities_monthly"], "feeds": ["ocha_fatalities_monthly"],
+                     "fetcher": "ops/fetch_ocha_monthly.py", "every_days": 1,
+                     "note": "OCHA's casualty incidents by month, one grouped query a night (2026-10-14)"},
     "ipc": {"labels": ["ipc:phases"], "feeds": ["ipc_phases"],
             "fetcher": "ops/fetch_ipc.py", "every_days": 1,
             "note": "IPC's analyses through HDX, three requests ten seconds apart (2026-10-14)"},

@@ -2433,6 +2433,8 @@ TRANSFORMERS = {
     "ilostat": t_engine,               # ILO's quarterly labour series (2026-10-14)
     "nightlights": t_engine,           # the World Bank's night lights by governorate (2026-10-14)
     "ipc": t_engine,                   # IPC's acute food insecurity analyses (2026-10-14)
+    "ocha_monthly": t_engine,          # OCHA's casualty incidents by month (2026-10-14)
+    "arrests_joint": t_engine,         # the prisoner institutions' joint monthly report (2026-10-14)
     "cited_figures": t_engine,            # 2026-10-12: hand-entered figures, one publisher's statement a row
     "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal
     "insecurity_insight": t_insecurity_insight,                 # 2026-10-11

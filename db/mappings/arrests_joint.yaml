@@ -1,0 +1,187 @@
+# The Palestinian prisoner institutions' joint monthly report: arrests by month, with children, women,
+# Jerusalem and the administrative detention orders issued (2026-10-14). ops/fetch_joint_arrests.py reads
+# Addameer's index of the reports (seven pages) and each report's lead sentence into
+# data/raw/addameer/joint_monthly.json: 60 months, 2016-01 to 2024-01 (the index ends there;
+# later months are in the institutions' news: to read). Year, half-year and two-month reports are listed and
+# not read as months. 272 records on 2026-10-14. A closed collection until the later months are read.
+category: arrests_joint
+transform: engine
+v1_category: prisoners
+shape: observation
+status: reviewed
+records_measured: 272
+input:
+  root: data/raw/addameer
+  glob: joint_monthly.json
+cadence: irregular
+source_routing:
+  by_name:
+    "Addameer Prisoner Support and Human Rights Association": addameer
+datasets:
+  - key: arrests_joint_monthly
+    source: addameer             # "All rights reserved": no-redistribution, as the prisoner statistics
+indicator:
+  template: "arrests_joint.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # arrests · count (orders)
+occurred_at:
+  from: date
+  precision: month
+place:
+  strategy: region               # 'Palestine'; 'West Bank' from October 2023
+  min_decided_pct: 1.0
+attrs_passthrough: [report, report_title, basis, title_says]
+stable_id: stable_id             # joint_arrests:<measure>:<month>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 200
+  max_observations: 2000         # 272 on 2026-10-14
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "arrests_joint.admin_orders"}
+      name_en: "Administrative detention orders issued by Israel in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري التي أصدرها الاحتلال خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.admin_orders_new"}
+      name_en: "New administrative detention orders issued in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري الجديدة خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.admin_orders_new_west_bank"}
+      name_en: "New administrative detention orders issued in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري الجديدة خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."
+    - when: {equals: "arrests_joint.admin_orders_renewed"}
+      name_en: "Administrative detention orders renewed in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري المجدّدة خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.admin_orders_renewed_west_bank"}
+      name_en: "Administrative detention orders renewed in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري المجدّدة خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."
+    - when: {equals: "arrests_joint.admin_orders_west_bank"}
+      name_en: "Administrative detention orders issued by Israel in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "أوامر الاعتقال الإداري التي أصدرها الاحتلال خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: count
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."
+    - when: {equals: "arrests_joint.children"}
+      name_en: "Arrests of children by Israeli forces in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "حالات اعتقال الأطفال خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.children_west_bank"}
+      name_en: "Arrests of children by Israeli forces in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "حالات اعتقال الأطفال خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."
+    - when: {equals: "arrests_joint.jerusalem"}
+      name_en: "Arrests by Israeli forces in Jerusalem in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "حالات الاعتقال في القدس خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.total"}
+      name_en: "Arrests by Israeli forces in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "حالات الاعتقال التي نفّذتها قوات الاحتلال خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.total_west_bank"}
+      name_en: "Arrests by Israeli forces in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "حالات الاعتقال التي نفّذتها قوات الاحتلال خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."
+    - when: {equals: "arrests_joint.women"}
+      name_en: "Arrests of women by Israeli forces in the month (the occupied territory) (prisoner institutions' joint report)"
+      name_ar: "حالات اعتقال النساء خلال الشهر (الأرض المحتلة) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says)."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه."
+    - when: {equals: "arrests_joint.women_west_bank"}
+      name_en: "Arrests of women by Israeli forces in the month (the West Bank, Jerusalem included) (prisoner institutions' joint report)"
+      name_ar: "حالات اعتقال النساء خلال الشهر (الضفة الغربية بما فيها القدس) (التقرير المشترك لمؤسسات الأسرى)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: "The Palestinian prisoner institutions' joint monthly report (the Commission of Detainees' Affairs, the Prisoners' Society, Addameer; some years Al Mezan and the Wadi Hilweh centre), as Addameer indexes it: the arrests Israeli forces made in the month, from the report's lead sentence. It counts arrest cases, not people: a person arrested twice counts twice. Months the index does not hold as a month's report are missing, not zero (the year, half-year and two-month reports are not read as months). Where a report's title prints a different figure from its text, the text's is held and the title's sits beside it (title_says). From October 2023 the reports count the West Bank, Jerusalem included, only: these months are a series of their own."
+      serve_warning_ar: "هاد التقرير الشهري المشترك لمؤسسات الأسرى (هيئة شؤون الأسرى والمحررين، نادي الأسير، الضمير، وببعض السنين الميزان ومركز وادي حلوة)، زي ما بتفهرسه الضمير: حالات الاعتقال اللي نفّذتها قوات الاحتلال بالشهر، من أول جملة بالتقرير. بيعدّ حالات الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والأشهر اللي ما إلها تقرير شهري بالفهرس ناقصة، مش صفر (تقارير السنة ونص السنة والشهرين ما بتنقرأ كأشهر). ولما عنوان التقرير يكتب رقم غير اللي بالنص، بنحط رقم النص ورقم العنوان جنبه. من تشرين الأول 2023 التقارير بتعدّ الضفة الغربية بما فيها القدس بس: هاي الأشهر إلها سلسلة لحالها."

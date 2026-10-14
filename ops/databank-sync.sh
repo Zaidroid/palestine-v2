@@ -38,6 +38,7 @@ step .venv/bin/python -m ops.fetch_ioda
 # atomic, floored, ledgered; a failed fetch keeps yesterday's file, and the
 # gap radar below judges every line on its own attempts.
 step .venv/bin/python -m ops.fetch_ocha          # OCHA casualties + demolitions
+step .venv/bin/python -m ops.fetch_ocha_monthly  # OCHA's casualty incidents by month (2026-10-14)
 step .venv/bin/python -m ops.fetch_pcbs          # PCBS population + CPI
 step .venv/bin/python -m ops.fetch_hamoked       # HaMoked detention, monthly
 step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (monthly at most)

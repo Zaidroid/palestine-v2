@@ -109,12 +109,20 @@ OUTLETS = {
              "source": "web:wafa", "index": "https://www.wafa.ps/sitemap.xml",
              "sub": r"sitemap\.xml\?yyyy=(\d{4})&mm=(\d{1,2})&dd=(\d{1,2})$", "newest": "days:3", "id": None,
              "title": "address", "date": "address"},
+    # Palestine Today (2026-10-14): its addresses cut the headline after about 30 characters, so an
+    # address is never a headline; the image's caption is, when it opens with the address's first
+    # words. The others are listed apart (untitled-*.ndjson.gz) for a reader of their pages.
+    "paltoday": {"name": "Palestine Today (فلسطين اليوم)", "home_url": "https://paltoday.ps/ar",
+                 "source": "web:paltoday", "index": "https://paltoday.ps/ar/sitemap.xml",
+                 "sub": r"/ar/uploads/sitemaps/post-(\d+)\.xml$", "newest": "max", "id": r"/ar/post/(\d+)(?:/|$)",
+                 "title": "image_only", "date": "lastmod"},
 }
 _ENTRY = re.compile(r"<url>(.*?)</url>", re.S)
 _LOC = re.compile(r"<loc>\s*(.*?)\s*</loc>", re.S)
 _LASTMOD = re.compile(r"<lastmod>\s*(.*?)\s*</lastmod>", re.S)
 _IMG = re.compile(r"<image:loc>\s*(.*?)\s*</image:loc>", re.S)
 _IMG_TITLE = re.compile(r"<image:title>\s*(.*?)\s*</image:title>", re.S)
+_IMG_CAPTION = re.compile(r"<image:caption>\s*(.*?)\s*</image:caption>", re.S)
 _ADDR_DATE = re.compile(r"/(\d{4})/(\d{1,2})/(\d{1,2})/")
 _IMG_MONTH = re.compile(r"/(20\d\d|19\d\d)/(\d\d)/")
 
@@ -152,6 +160,19 @@ def _same_start(caption: str, from_address: str) -> bool:
     return bool(a) and len(b) >= 2 and a[:len(b)] == b[:len(a)]
 
 
+def _covers_cut_address(caption: str, from_address: str) -> bool:
+    """For an address cut short (Palestine Today, about 30 characters): the
+    caption is the headline only when it holds every whole word of the address
+    (all but the last, which may be cut) and runs to three words or more. A
+    one-word label that matches the address's first word («الديمقراطية» over
+    «الديمقراطية اقتحام مؤسسة الضمي…») is a caption, not the headline."""
+    a, b = _letters(caption), _letters(from_address)
+    if b and b[0] == "خبر" and (not a or a[0] != "خبر"):
+        b = b[1:]                         # older addresses open with «خبر-» ("news-") before the headline
+    need = b[:-1]
+    return len(need) >= 2 and len(a) >= max(3, len(need)) and a[:len(need)] == need
+
+
 def entry_of(o: dict, block: str, resaved: set[str] | frozenset = frozenset()) -> dict | None:
     """One <url> block → a headline record, or None when it is not an item.
     `resaved`: the last-modified days the file's entries share in bulk (a
@@ -164,7 +185,7 @@ def entry_of(o: dict, block: str, resaved: set[str] | frozenset = frozenset()) -
     if lastmod and (lastmod[:4] < "1995" or lastmod[:10] in resaved):
         lastmod = None                    # 1970-01-01 (Safa: 16 items) or the site's re-save day: no date
     img = _IMG.search(block)
-    img_title = _IMG_TITLE.search(block)
+    img_title = _IMG_TITLE.search(block) or _IMG_CAPTION.search(block)
     rec: dict = {"url": url}
     if o["id"]:
         mid = re.search(o["id"], urllib.parse.urlsplit(url).path)
@@ -178,9 +199,13 @@ def entry_of(o: dict, block: str, resaved: set[str] | frozenset = frozenset()) -
     caption = _unescape(img_title.group(1)) if img_title else ""
     if o["title"] == "image" and caption and _same_start(caption, from_address):
         rec["title"], rec["title_from"] = caption, "headline"                 # the address's words, punctuated
+    elif o["title"] == "image_only" and caption and _covers_cut_address(caption, from_address):
+        rec["title"], rec["title_from"] = caption, "headline"
+    elif o["title"] == "image_only":
+        rec["title"], rec["title_from"], rec["untitled"] = None, None, True    # a cut-short address is no headline
     else:
         rec["title"], rec["title_from"] = from_address, "address"
-    if not rec["title"]:
+    if not rec["title"] and not rec.get("untitled"):
         return None
     month = None
     if img:
@@ -321,6 +346,13 @@ def run(key: str, out: Path, cache_root: Path, from_cache: bool, use_bronze: boo
             if blocks and len(items) < 0.95 * (blocks - undated):
                 facts["refused_files"].append(f"{name}: {len(items)} of {blocks - undated} dated entries read")
                 continue
+            untitled = [i for i in items if i.get("untitled")]
+            if untitled:                                  # read later from their pages; the archive skips this file
+                facts["untitled"] = facts.get("untitled", 0) + len(untitled)
+                (d / f"untitled-{name}.ndjson.gz").write_bytes(gzip.compress("".join(
+                    json.dumps({k: i[k] for k in ("id", "url", "date", "precision") if k in i}, ensure_ascii=False)
+                    + "\n" for i in untitled).encode("utf-8")))
+                items = [i for i in items if not i.get("untitled")]
             target = d / f"items-{name}.ndjson.gz"
             body = "".join(json.dumps(i, ensure_ascii=False) + "\n" for i in items).encode("utf-8")
             if target.exists() and gzip.decompress(target.read_bytes()) == body:
@@ -358,7 +390,10 @@ def main() -> int:
     ap.add_argument("--cache", type=Path, default=CACHE)
     ap.add_argument("--from-cache", action="store_true", help="parse the sub-sitemaps already fetched; ask for nothing")
     ap.add_argument("--no-bronze", action="store_true")
+    ap.add_argument("--bronze-root", type=Path, default=None, help="keep the bronze copies under this folder")
     a = ap.parse_args()
+    if a.bronze_root:
+        bronze.BRONZE = a.bronze_root
     worst = 0
     for k in a.outlets:
         worst = max(worst, run(k, a.out, a.cache, a.from_cache, not a.no_bronze))
