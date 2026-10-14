@@ -236,6 +236,12 @@ units:
       "ILS/60 KG":  {factor_num: 1,    factor_den: 60}
       # The Gaza Chamber of Commerce's baby milk, by the 400 g can (2026-10-14).
       "ILS/400 G":  {factor_num: 1000, factor_den: 400}
+      # The market channel's lists (2026-10-14): «3 كيلو بصل», «4 كيلو بطاطا», a pack of 800 g.
+      "ILS/3 KG":   {factor_num: 1,    factor_den: 3}
+      "ILS/4 KG":   {factor_num: 1,    factor_den: 4}
+      "ILS/5 KG":   {factor_num: 1,    factor_den: 5}
+      "ILS/10 KG":  {factor_num: 1,    factor_den: 10}
+      "ILS/800 G":  {factor_num: 1000, factor_den: 800}
 
   ILS_per_piece:
     name_en: shekels per piece
@@ -250,6 +256,8 @@ units:
       "ILS/PIECE":      {factor_num: 1, factor_den: 1}
       "ILS/10 PIECES":  {factor_num: 1, factor_den: 10}
       "ILS/40 PIECES":  {factor_num: 1, factor_den: 40}
+      # A tray of eggs in the market channel's lists (2026-10-14): 30 to Gaza's tray.
+      "ILS/30 PIECES":  {factor_num: 1, factor_den: 30}
 
   ILS_per_box:
     name_en: shekels per box

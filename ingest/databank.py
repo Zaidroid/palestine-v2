@@ -2428,6 +2428,7 @@ TRANSFORMERS = {
     "aid_gazacham": t_engine,          # the Gaza Chamber of Commerce's weekly trucks (2026-10-14)
     "price_gazacham": t_engine,        # the Chamber's market prices and price index (2026-10-14)
     "cash_gazacham": t_engine,         # the Chamber's cash-out commission (2026-10-14)
+    "price_asarsook": t_engine,        # the market channel's prices by day (2026-10-14)
     "cited_figures": t_engine,            # 2026-10-12: hand-entered figures, one publisher's statement a row
     "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal
     "insecurity_insight": t_insecurity_insight,                 # 2026-10-11

@@ -640,3 +640,38 @@ def test_a_source_line_is_never_cut_inside_a_word():
     assert short_source(["أ" * 50, "ب" * 50], "؛ ") == "أ" * 50 + "؛ " + "ب" * 50
     assert short_source(None) == ""
 
+
+
+# ── the unit's word in an Arabic answer (2026-10-14) ──────────────────────────
+from serve.when import unit_word_ar                                           # noqa: E402
+
+
+def test_an_arabic_answer_says_its_unit_in_arabic_and_counts_in_the_singular():
+    """It said "26,000 arrests" and "9,265 persons" until 2026-10-14."""
+    assert unit_word_ar("arrests", "arrests", (1.0, 1.0), "حالات اعتقال") == "حالة اعتقال"
+    assert unit_word_ar("persons", "persons", (1.0, 1.0), "أشخاص") == "شخص"
+    assert unit_word_ar("people", "persons", (1.0, 1.0), "أشخاص") == "شخص"
+    assert unit_word_ar("count", "count", (1.0, 1.0), "عدد") == ""          # the number says it
+    assert unit_word_ar("ILS/KG", "ILS_per_kg", (1.0, 1.0), "شيكل للكيلوغرام") == "شيكل للكيلوغرام"
+
+
+def test_a_pack_size_is_said_as_it_was_priced_not_as_the_unit_it_converts_to():
+    assert unit_word_ar("ILS/25 KG", "ILS_per_kg", (1.0, 25.0), "شيكل للكيلوغرام") == "شيكل لكل 25 كغم"
+    assert unit_word_ar("ILS/500 G", "ILS_per_kg", (1000.0, 500.0), "شيكل للكيلوغرام") == "شيكل لكل 500 غرام"
+    assert unit_word_ar("ILS/30 PIECES", "ILS_per_piece", (1.0, 30.0), "شيكل للقطعة") == "شيكل لكل 30 قطعة"
+    assert unit_word_ar("thousand_persons", "persons", (1000.0, 1.0), "أشخاص") == "ألف شخص"
+    # the printed word before the unit it is counted in
+    assert unit_word_ar("pallet", "packages", (1.0, 1.0), "طرود") == "منصّة"
+    assert unit_word_ar("truck", "vehicles", (1.0, 1.0), "مركبات") == "شاحنة"
+    assert unit_word_ar("schools", "facilities", (1.0, 1.0), "منشآت") == "مدرسة"
+    # a converted unit with no word of its own keeps the raw string (the caller's fallback)
+    assert unit_word_ar("crate", "packages", (1.0, 3.0), "طرود") is None
+    assert unit_word_ar("per_1000", "per_1000", (1.0, 1.0), None) is None
+    assert unit_word_ar(None) is None
+
+
+def test_the_databank_answer_uses_the_word_and_falls_back_to_the_raw_unit():
+    src = (ROOT / "serve" / "mcp_server.py").read_text(encoding="utf-8")
+    assert 'word = ((d.get("units") or {}).get(it.get("unit") or "") or {}).get("ar")' in src
+    app = (ROOT / "serve" / "app.py").read_text(encoding="utf-8")
+    assert 'units = _unit_names(sorted({r["unit"] for r in rows if r["unit"]}))' in app

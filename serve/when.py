@@ -133,6 +133,52 @@ def label_en(d: dict, indicator: str) -> str:
     return ((d.get("names") or {}).get(indicator) or {}).get("en") or indicator
 
 
+# The word a unit takes after a number in an Arabic answer (2026-10-14). Until then
+# the answer printed the unit's English code: "26,000 arrests", "9,265 persons".
+# Arabic counts above ten take the singular, so the counted form is the
+# singular («26,000 حالة اعتقال», «9,265 شخص»); `count` adds no word.
+COUNTED_AR = {
+    "count": "", "persons": "شخص", "arrests": "حالة اعتقال", "events": "حادثة", "structures": "مبنى",
+    "tonne": "طن", "years": "سنة", "vehicles": "مركبة", "facilities": "منشأة", "sites": "موقع",
+    "localities": "تجمّع", "households": "أسرة", "packages": "طرد", "km": "كم", "USD": "دولار",
+    "ILS": "شيكل", "percent": "٪", "index": "(مؤشر)",
+}
+# The printed word first: a pallet is not «طرد» because the registry counts it in
+# packages, nor a truck «مركبة», nor a school «منشأة».
+PRINTED_AR = {
+    "pallet": "منصّة", "truck": "شاحنة", "vehicle": "مركبة", "attacks": "هجوم", "schools": "مدرسة",
+    "piece": "قطعة", "box": "صندوق", "tent": "خيمة", "buildings": "مبنى", "fatalities": "شخص",
+    "settlers": "مستوطن", "people": "شخص", "cases": "", "number": "", "units": "",
+    "Percent of GDP": "٪ من الناتج المحلي", "Percent of World": "٪ من العالم",
+    "Annual percent change": "٪ تغيّر سنوي", "Index": "(مؤشر)",
+}
+_PACK_AR = {"KG": "كغم", "G": "غرام", "L": "لتر", "PIECES": "قطعة"}
+
+
+def unit_word_ar(raw: str | None, unit_key: str | None = None, factor: tuple | None = None,
+                 name_ar: str | None = None) -> str | None:
+    """The Arabic for a row's unit as printed (`raw`), from the units registry
+    (`unit_key`, the alias's factor, the unit's `name_ar`); None when there is
+    nothing better than the raw string. A pack size is said as it was priced
+    («شيكل لكل 25 كغم»), never as the unit it converts to."""
+    import re
+    if not raw:
+        return None
+    m = re.fullmatch(r"ILS/(\d+(?:\.\d+)?) ?(KG|G|L|PIECES)", raw.strip())
+    if m:
+        return f"شيكل لكل {m.group(1)} {_PACK_AR[m.group(2)]}"
+    if raw == "thousand_persons":
+        return "ألف شخص"
+    if raw in PRINTED_AR:
+        return PRINTED_AR[raw]
+    one = factor is None or (factor[0] == factor[1])
+    if one and unit_key in COUNTED_AR:
+        return COUNTED_AR[unit_key]
+    if one and name_ar:
+        return name_ar
+    return None
+
+
 def label_ar(d: dict, indicator: str) -> str:
     """Arabic first, then English, then the key: a name in the other language
     still says more than `health.m_est_cig_curr_std.sex_fmle`."""

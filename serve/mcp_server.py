@@ -2179,7 +2179,8 @@ def databank(category: str | None = None, indicator: str | None = None,
             val = int(val)
         elif isinstance(val, float):
             val = round(val, 2) if abs(val) >= 1 else round(val, 4)
-        unit = f" {it['unit']}" if it.get("unit") else ""
+        word = ((d.get("units") or {}).get(it.get("unit") or "") or {}).get("ar")
+        unit = (f" {word}" if word else "") if word is not None else (f" {it['unit']}" if it.get("unit") else "")
         when_ = when_ar(it)
         partial = " (سنة ناقصة)" if (it.get("attrs") or {}).get("partial_year") else ""
         where = f"، {it['place_ar']}" if it.get("place_ar") else ""

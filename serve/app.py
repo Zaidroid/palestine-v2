@@ -3448,6 +3448,9 @@ def databank_category(category: str, indicator: str | None = None,
     names = _indicator_names(sorted({r["indicator"] for r in rows if r["indicator"]}))
     if names:
         out["names"] = names
+    units = _unit_names(sorted({r["unit"] for r in rows if r["unit"]}))
+    if units:
+        out["units"] = units
     # A PROJECTION (migration 115) is kept out of a category's rows by the same
     # `ask_by_name` condition above: its series declare both. What is its own
     # is said here: when one was asked for by name, the rows are marked as a
@@ -3546,6 +3549,30 @@ def _serve_warnings(indicators: list[str]) -> dict:
     except Exception:                                            # noqa: BLE001 — before 086
         return {}
     return {r["indicator"]: {"en": r["serve_warning"], "ar": r["serve_warning_ar"]} for r in rows}
+
+
+def _unit_names(units: list[str]) -> dict:
+    """raw unit -> {ar}: the word an Arabic answer says after the number, from
+    unit_alias and unit_def (2026-10-14); a unit with no better word is left out
+    and the answer keeps the raw string."""
+    from serve.when import unit_word_ar
+    if not units:
+        return {}
+    try:
+        rows = q_cached("""SELECT a.raw, a.unit_key, a.factor_num, a.factor_den, d.name_ar
+                             FROM unit_alias a LEFT JOIN unit_def d ON d.key = a.unit_key
+                            WHERE a.raw = ANY(%s)""", (units,))
+    except Exception:                                            # noqa: BLE001
+        rows = []
+    known = {r["raw"]: r for r in rows}
+    out = {}
+    for u in units:
+        r = known.get(u) or {}
+        f = (r.get("factor_num"), r.get("factor_den")) if r.get("factor_num") is not None else None
+        w = unit_word_ar(u, r.get("unit_key"), (float(f[0]), float(f[1])) if f else None, r.get("name_ar"))
+        if w is not None:
+            out[u] = {"ar": w}
+    return out
 
 
 def _indicator_names(indicators: list[str]) -> dict:
