@@ -2177,3 +2177,31 @@ the 2 deaths-in-custody rows current with that reference, the 11 old rows kept a
 row differs from "persons" / "period-end stock"; the partner door reads "26,000 arrests"; withheld unchanged
 (45,144). Seen on the way, not fixed: the Arabic answer prints a unit's English code ("26,000 arrests", as it printed
 "persons"), for every unit; `unit_def.name_ar` exists for it (a serve/ change, so a restart).
+
+2026-10-14 13:36 UTC · Gaza's market prices by day from the Telegram channel «أسعار السوق - غزة» (@asarsook); the Arabic answers
+say their units in Arabic · built and rehearsed, WAITING FOR ZAID'S COMMAND 29 · proof: branch `databank-round-4`
+(`949f83c`), `tmp/29-market-prices.sh`, HANDS §13ac.
+- **The channel:** 2,542 posts held by the channel reader (November 2024 to 12 October 2026); 209 price lists read into
+  1,848 prices, 68 goods, 280 series, 19 November 2024 to 1 September 2026 (after that the channel's posts carry fewer
+  than three prices in text). By area where a heading or a section names one (the north 144 prices, Gaza City 183,
+  the middle area 322, the south 148; 1,051 from lists that name none); paid by app as series of their own (25); the days a
+  good was missing (12). A line's own unit, else the kilo; a range as its midpoint with its ends; the list's date when
+  within three days of the post (108 lists), else the post's day in Gaza (101). Not read, counted in the file:
+  exchange rates 75 posts (the official rate), adverts 63, commentary 11, a wholesale table 2; the uqiya 97 lines and
+  the ratl 19 (their weights differ by town), packs of no stated size 78, oil and flour of no stated measure 76.
+- **Checked:** every price more than five times off its good's median was read against its line (159): the famine
+  months of November-December 2024 and July-August 2025 against 2026, except the faults fixed on the way: a whole
+  chicken breast read as a whole chicken, a dish («قلاية بندورة»), citric acid, roasted seeds, «للموزع» read as
+  banana, a range's first number read as 25 kg, the ratl, an essay's prices («مين باعنا كيلو السكر بـ 500؟»). Onions
+  at 320 shekels a kilo on 26 June 2025 are the list's own figure. 20 random prices read against their posts.
+- **Licence:** no licence stated on the channel: the cautious default of 117 (held for the house, withheld from
+  partners) until Zaid says otherwise.
+- **Units in Arabic:** the Arabic databank answer said "26,000 arrests"; the API now hands each unit's Arabic word
+  (unit_alias + unit_def; the printed word first, so a pallet is not «طرد»; a pack size as priced, «شيكل لكل 25
+  كغم»; the singular after a number) and the answer says «26,000 حالة اعتقال», «9,265 شخص». Restart needed.
+- **Rehearsed** on the scratch copy as a first run: migration 120, build, 1,848 written, registry 280 named and 0
+  unclassified, three questions from a test API on it. Read back: units, values, areas, ranges, the missing mark;
+  every multi-kilo, sack and tray price converts (0 failed).
+- **Scouted for the next round** (a researcher, text only): the prisoner institutions' joint monthly arrests report
+  runs from January 2016 (arrests by month, children, women, often by governorate, administrative orders new and
+  renewed), indexed on Addameer's monthly-reports pages; the longest monthly series not yet held.
