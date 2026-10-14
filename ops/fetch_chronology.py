@@ -75,10 +75,13 @@ SITES = {
                "home_url": "https://passia.org/palestine-chronology/",
                "page": "https://passia.org/palestine-chronology/",
                "source": "chron:passia", "floor": 4000},
-    "wikipedia_en": {"name": "Wikipedia (English), the year pages: 'YYYY in Palestine', 'YYYY in Mandatory Palestine'",
+    "wikipedia_en": {"name": "Wikipedia (English), the year pages: 'YYYY in Palestine', 'YYYY in Mandatory Palestine', "
+                             "and the timelines: 'Timeline of the Israeli–Palestinian conflict in YYYY'",
                      "home_url": "https://en.wikipedia.org/wiki/List_of_years_in_Palestine",
                      "page": "https://en.wikipedia.org/wiki/", "source": "chron:wikipedia_en", "lang": "en",
-                     "titles": [("{y}_in_Mandatory_Palestine", range(1917, 1949)), ("{y}_in_Palestine", range(1900, 2027))],
+                     "titles": [("{y}_in_Mandatory_Palestine", range(1917, 1949)), ("{y}_in_Palestine", range(1900, 2027)),
+                                ("Timeline_of_the_Israeli–Palestinian_conflict_in_{y}", range(2000, 2027),
+                                 {"paragraphs": True, "timeline": True})],
                      "floor": 2000},
     "wikipedia_ar": {"name": "ويكيبيديا العربية، صفحات السنوات: «YYYY في فلسطين»",
                      "home_url": "https://ar.wikipedia.org/",
@@ -321,13 +324,20 @@ _W_DEATHS = re.compile(r"^(notable deaths|deaths|الوفيات|وفيات)$", r
 _W_BIRTHS = re.compile(r"^(notable births|births|المواليد|مواليد)$", re.I)
 _W_NOT_READ = ("navbox", "reflist", "refbegin", "reference", "mw-editsection", "infobox", "sidebar", "hatnote",
                "thumb", "toc", "catlinks", "noprint", "metadata", "ambox", "mw-references-wrap", "printfooter",
-               "gallery", "mw-empty-elt")
+               "gallery")
 
 
-def wiki_items(page: str) -> list[dict]:
+_VOID = {"br", "img", "meta", "link", "wbr", "hr", "input", "source", "col", "area", "base", "embed", "param", "track"}
+_BLOCK = {"p", "div", "ul", "ol", "dl", "table", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "figure", "section",
+          "pre", "hr", "li", "details", "aside"}
+
+
+def wiki_items(page: str, paragraphs: bool = False) -> list[dict]:
     """The list items of a Wikipedia article's text, each with the headings it
-    sits under, its own text (nested items apart) and the item it is nested in.
-    Navigation boxes, references, tables, infoboxes and edit links are not read."""
+    sits under, its own text (nested items apart) and the item it is nested in;
+    with `paragraphs`, every paragraph outside a list too (the timeline pages
+    write a day's events as paragraphs under the day's heading). Navigation
+    boxes, references, tables, infoboxes and edit links are not read."""
     from html.parser import HTMLParser
 
     class P(HTMLParser):
@@ -338,6 +348,7 @@ def wiki_items(page: str) -> list[dict]:
             self.head = None
             self.items: list[dict] = []
             self.open: list[int] = []
+            self.para: int | None = None
 
         def handle_starttag(self, tag, attrs):
             a = dict(attrs)
@@ -346,8 +357,15 @@ def wiki_items(page: str) -> list[dict]:
                 self.on = 1
                 self.stack.append(("content", tag))                  # reading stops where the article's text ends
                 return
-            if not self.on or tag in ("br", "img", "meta", "link", "wbr", "hr", "input"):
+            if not self.on or tag in _VOID:
                 return
+            # a block opening closes an open paragraph, as a browser does: Wikipedia's pages open with
+            # <p class="mw-empty-elt"> left unclosed before a <div> (measured on the 2023 timeline, where
+            # it hid 1,148 of 1,367 list items)
+            while tag in _BLOCK and self.stack and (self.stack[-1] == "p" or self.stack[-1] == ("skip", "p")):
+                if isinstance(self.stack.pop(), tuple):
+                    self.skip -= 1
+                self.para = None
             if self.skip or tag in ("style", "script", "sup", "table", "figure") or any(c in cls for c in _W_NOT_READ) \
                     or a.get("role") == "navigation":
                 self.skip += 1
@@ -359,10 +377,15 @@ def wiki_items(page: str) -> list[dict]:
             elif tag == "li":
                 self.items.append({"heads": dict(self.heads), "text": [], "parent": self.open[-1] if self.open else None})
                 self.open.append(len(self.items) - 1)
+            elif tag == "p" and paragraphs and not self.open:
+                self.items.append({"heads": dict(self.heads), "text": [], "parent": None, "paragraph": True})
+                self.para = len(self.items) - 1
 
         def handle_endtag(self, tag):
-            if not self.on or tag in ("br", "img", "meta", "link", "wbr", "hr", "input"):
+            if not self.on or tag in _VOID:
                 return
+            if tag not in [s[1] if isinstance(s, tuple) else s for s in self.stack]:
+                return                                                  # a closing tag with nothing open to close
             # close up to the matching tag: the parser does not repair a page's stray tags
             while self.stack:
                 top = self.stack.pop()
@@ -380,6 +403,8 @@ def wiki_items(page: str) -> list[dict]:
                     self.head = None
                 elif name == "li" and self.open:
                     self.open.pop()
+                elif name == "p":
+                    self.para = None
                 if name == tag:
                     break
 
@@ -390,6 +415,8 @@ def wiki_items(page: str) -> list[dict]:
                 self.head[1].append(data)
             elif self.open:
                 self.items[self.open[-1]]["text"].append(data)
+            elif self.para is not None:
+                self.items[self.para]["text"].append(data)
 
     p = P()
     p.feed(page)
@@ -424,6 +451,32 @@ def _wiki_date(text: str, lang: str, year: int, month: int | None) -> tuple[dict
     return None, text
 
 
+_W_END_EN = [re.compile(rf"^({_EN_MONTH})\s+(\d{{1,2}})\b(?:,?\s+(\d{{4}}))?\s*(?:[–—:;-]\s*)?(.*)$", re.S),
+             re.compile(rf"^(\d{{1,2}})\s+({_EN_MONTH})\b(?:,?\s+(\d{{4}}))?\s*(?:[–—:;-]\s*)?(.*)$", re.S)]
+_W_END_AR = re.compile(rf"^(\d{{1,2}})\s*({_AR_MONTH})(?:\s+(\d{{4}}))?\s*(?:[–—:؛;-]\s*)?(.*)$", re.S)
+
+
+def _range_end(rest: str, lang: str) -> tuple[tuple[int, int, int | None] | None, str]:
+    """A range whose end names its own month ("22 April–2 May – Operation …",
+    "March 29 – May 3 Operation …", «21 أغسطس–1 سبتمبر: …»): the end as (month,
+    day, year when it is printed) and the text after it. Measured 2026-10-14:
+    14 entries of the first load kept the end at the front of their text. The
+    caller takes it only when it falls after the start; otherwise the text is
+    left as printed ("13 July 2024 al-Mawasi attack" is a name, not a range)."""
+    t = rest.translate(_AR_DIGITS)
+    if lang == "ar":
+        m = _W_END_AR.match(t)
+        return ((_AR_MONTHS[m.group(2)], int(m.group(1)), int(m.group(3)) if m.group(3) else None),
+                m.group(4).strip()) if m else (None, rest)
+    m = _W_END_EN[0].match(t)
+    if m:
+        return (MONTHS[m.group(1).lower()], int(m.group(2)), int(m.group(3)) if m.group(3) else None), m.group(4).strip()
+    m = _W_END_EN[1].match(t)
+    if m:
+        return (MONTHS[m.group(2).lower()], int(m.group(1)), int(m.group(3)) if m.group(3) else None), m.group(4).strip()
+    return None, rest
+
+
 def _month_of(head: str | None, lang: str) -> int | None:
     if not head:
         return None
@@ -436,13 +489,30 @@ def _month_of(head: str | None, lang: str) -> int | None:
     return MONTHS.get(h.split()[0].lower()) if h.split() else None
 
 
-def wiki_entries(page: str, lang: str, year: int, url: str, title: str) -> tuple[list[dict], int]:
+def _day_of(head: str | None, lang: str) -> tuple[int, int] | None:
+    """A heading that is a day ("9 October", "October 9", «9 أكتوبر») → (month, day)."""
+    if not head:
+        return None
+    h = head.strip().translate(_AR_DIGITS)
+    if lang == "ar":
+        m = re.fullmatch(rf"(\d{{1,2}})\s*({_AR_MONTH})(?:\s+\d{{4}})?", h)
+        return (_AR_MONTHS[m.group(2)], int(m.group(1))) if m else None
+    m = re.fullmatch(rf"(\d{{1,2}})\s+({_EN_MONTH})(?:\s+\d{{4}})?", h) or re.fullmatch(
+        rf"({_EN_MONTH})\s+(\d{{1,2}})(?:,?\s+\d{{4}})?", h)
+    if not m:
+        return None
+    a, b = m.groups()
+    return (MONTHS[b.lower()], int(a)) if a.isdigit() else (MONTHS[a.lower()], int(b))
+
+
+def wiki_entries(page: str, lang: str, year: int, url: str, title: str,
+                 paragraphs: bool = False) -> tuple[list[dict], int]:
     """A year page → its entries, and the number of items left out because their
     day does not exist (31 February). An item with no day or month of its own
     and none from a heading is an entry of the year (precision: year), tagged
     with its heading ("Unknown dates", «تأسيسات»)."""
     import hashlib
-    items = wiki_items(page)
+    items = wiki_items(page, paragraphs)
     dates: dict[int, dict | None] = {}
     out, undated = [], 0
     for i, it in enumerate(items):
@@ -456,8 +526,23 @@ def wiki_entries(page: str, lang: str, year: int, url: str, title: str) -> tuple
         got, rest = _wiki_date(it["text"], lang, year, month)
         if got is None and it["parent"] is not None and dates.get(it["parent"]):
             got, rest = dict(dates[it["parent"]]), it["text"]              # a date-only item's children
+        heading_day = _day_of(it["heads"].get("h4"), lang) or _day_of(it["heads"].get("h3"), lang)
+        if got is None and heading_day:
+            got, rest = {"day": heading_day[1], "month": heading_day[0], "end_day": None}, it["text"]
         dates[i] = got
         rest = rest.strip(" –—-:")
+        printed = rest                    # the id stands on the text after the first date, as printed
+        end = None
+        if got and got.get("day") and not got.get("end_day") and it["text"].translate(_AR_DIGITS) != rest:
+            end, after = _range_end(rest, lang)
+            if end:
+                try:
+                    if datetime.date(end[2] or year, end[0], end[1]) > datetime.date(year, got["month"], got["day"]):
+                        rest = after
+                    else:
+                        end = None
+                except ValueError:
+                    end = None
         if not rest or len(rest) < 12:
             continue                                                      # a date alone, or a stub
         if got and got.get("day") is None:
@@ -471,8 +556,12 @@ def wiki_entries(page: str, lang: str, year: int, url: str, title: str) -> tuple
                 continue
             entry = {"date": day.isoformat(), "precision": "day"}
             if got.get("end_day") and got["end_day"] > got["day"]:
+                end = (mo, got["end_day"], None)
+            if end:
                 try:
-                    entry.update(end=datetime.date(year, mo, got["end_day"]).isoformat(), end_precision="day")
+                    last = datetime.date(end[2] or year, end[0], end[1])
+                    if last > day:
+                        entry.update(end=last.isoformat(), end_precision="day")
                 except ValueError:
                     pass
         elif month:
@@ -483,7 +572,7 @@ def wiki_entries(page: str, lang: str, year: int, url: str, title: str) -> tuple
         tags = ["deaths"] if _W_DEATHS.match(h2) else ["births"] if _W_BIRTHS.match(h2) else []
         if entry["precision"] == "year":
             tags = tags or [h2]
-        key = f"{title}|{entry['date']}|{rest}"
+        key = f"{title}|{entry['date']}|{printed}"
         entry.update(id=f"{lang}:{year}:" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:16],
                      text=rest, url=f"{url}#{anchor}", date_text=it["text"][:80], file=title,
                      tags=tags + ([sub] if sub and not month and sub not in tags else []))
@@ -495,50 +584,71 @@ def read_wikipedia(key: str, from_dir: Path | None, pause: float = 3.0,
                    cache_root: Path | None = None) -> tuple[list[dict], dict]:
     """Every year page of one Wikipedia that exists, as entries. A page that
     does not exist (404) is skipped; any other refusal ends the run with what
-    was read kept out of it (nothing is written unless the floor is met)."""
+    was read kept out of it (nothing is written unless the floor is met).
+    A timeline page is read with its paragraphs, and the half-year pages an
+    index page links (2015: "... in January–June 2015") are read with it; a
+    timeline title that redirects to a page not named for its year (2010 goes
+    to the general timeline) is not read, since its text is not that year's."""
     import time
     import urllib.error
     import urllib.parse
     site = SITES[key]
     lang = site["lang"]
-    info: dict = {"pages": 0, "pages_missing": 0, "days_that_do_not_exist": 0, "redirected": []}
+    info: dict = {"pages": 0, "pages_missing": 0, "days_that_do_not_exist": 0, "redirected": [],
+                  "timeline_redirects_not_read": []}
     seen_pages: set[str] = set()
     entries: dict[str, dict] = {}
     cache = from_dir or ((cache_root or ROOT / "data" / "cache" / "wikipedia") / lang)
     cache.mkdir(parents=True, exist_ok=True)
-    for pattern, years in site["titles"]:
-        for y in years:
-            title = pattern.format(y=y)
-            f = cache / f"{title}.html"
-            url = site["page"] + urllib.parse.quote(title)
-            if f.exists():
-                page, final = f.read_text(encoding="utf-8"), url
-            elif from_dir:
-                continue
-            else:
-                time.sleep(pause)
-                try:
-                    req = urllib.request.Request(url, headers={"User-Agent": UA_WIKI})
-                    with urllib.request.urlopen(req, timeout=90) as r:
-                        page, final = r.read().decode("utf-8", "replace"), r.geturl()
-                except urllib.error.HTTPError as e:
-                    if e.code == 404:
-                        info["pages_missing"] += 1
-                        continue
-                    raise
-                f.write_text(page, encoding="utf-8")
-                bronze.put(f"chron_{key}", page, "html", url=final)
-            canon = re.search(r'<link rel="canonical" href="([^"]+)"', page)
-            canon = canon.group(1) if canon else url
-            if canon in seen_pages:
-                info["redirected"].append(title)
-                continue                                                  # a redirect to a page already read
-            seen_pages.add(canon)
-            got, undated = wiki_entries(page, lang, y, canon, title)
-            info["pages"] += 1
-            info["days_that_do_not_exist"] += undated
-            for e in got:
-                entries.setdefault(e["id"], e)
+    queue = [(pattern.format(y=y), y, opts) for pattern, years, *rest in site["titles"]
+             for opts in [rest[0] if rest else {}] for y in years]
+    while queue:
+        title, y, opts = queue.pop(0)
+        f = cache / f"{title}.html"
+        url = site["page"] + urllib.parse.quote(title)
+        gone = cache / f"{title}.404"
+        if f.exists():
+            page = f.read_text(encoding="utf-8")
+        elif from_dir:
+            continue
+        elif gone.exists() and time.time() - gone.stat().st_mtime < 30 * 86400:
+            info["pages_missing"] += 1                                    # asked within thirty days: not there
+            continue
+        else:
+            time.sleep(pause)
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": UA_WIKI})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    page, final = r.read().decode("utf-8", "replace"), r.geturl()
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    info["pages_missing"] += 1
+                    gone.write_text(datetime.datetime.now(datetime.timezone.utc).isoformat())
+                    continue
+                raise
+            f.write_text(page, encoding="utf-8")
+            bronze.put(f"chron_{key}", page, "html", url=final)
+        canon = re.search(r'<link rel="canonical" href="([^"]+)"', page)
+        canon = canon.group(1) if canon else url
+        if canon in seen_pages:
+            info["redirected"].append(title)
+            continue                                                      # a redirect to a page already read
+        seen_pages.add(canon)
+        if opts.get("timeline") and (f"_{y}" not in urllib.parse.unquote(canon) or "#" in canon):
+            info["timeline_redirects_not_read"].append(title)
+            continue
+        if opts.get("timeline") and not opts.get("sub"):
+            for sub in sorted(set(re.findall(r'href="/wiki/(Timeline_of_the_Israeli%E2%80%93Palestinian_conflict_in_[^"#]+)"',
+                                             page))):
+                st = urllib.parse.unquote(sub)
+                if st != title and st.endswith(f"_{y}"):
+                    queue.append((st, y, {**opts, "sub": True}))
+        got, undated = wiki_entries(page, lang, y, canon, title, paragraphs=bool(opts.get("paragraphs")))
+        info["pages"] += 1
+        info["days_that_do_not_exist"] += undated
+        for e in got:
+            entries.setdefault(e["id"], e)
+    info["timeline_redirects_not_read"] = len(info["timeline_redirects_not_read"])
     return sorted(entries.values(), key=lambda e: (e["date"], e["id"])), info
 
 

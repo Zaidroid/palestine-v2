@@ -630,3 +630,68 @@ def test_arabic_year_pages_read_both_month_names_and_eastern_digits():
     assert dates == [("2024-01-21", "day", "2024-01-27"), ("2024-10-12", "day", None), ("2024-11-27", "day", None)]
     assert all(not e["text"].startswith(("في", "١٢")) for e in got)
     assert all("مرجع" not in e["text"] for e in got)
+
+
+WIKI_RANGES = """<html><body><div class="mw-parser-output"><h2 id="Events">Events</h2><ul>
+<li>April 1 - April 11 Battle of Jenin – Israel attacks Palestinian militants in the city of Jenin.</li>
+<li>22 April–2 May – Operation Yevusi: Haganah capture of buildings in Jerusalem.</li>
+<li>December 27 – January 18, 2009 – Operation Cast Lead: a three-week military campaign in Gaza.</li>
+<li>13 July –<ul><li>13 July 2024 al-Mawasi attack: at least 90 Palestinians are killed.</li></ul></li>
+</ul></div></body></html>"""
+
+
+def test_a_range_whose_end_names_its_own_month_is_read_and_the_id_stays():
+    """2026-10-14: fourteen entries of the first load kept a range's end at the
+    front of their text ("April 11 Battle of Jenin"). The end is read now; the
+    id stands on the printed text, so the loaded rows are corrected in place."""
+    import hashlib
+    from ops import fetch_chronology as F
+    got, _ = F.wiki_entries(WIKI_RANGES, "en", 2008, "https://en.wikipedia.org/wiki/x", "x")
+    by = {e["text"][:14]: e for e in got}
+    jenin = by["Battle of Jeni"]
+    assert (jenin["date"], jenin["end"]) == ("2008-04-01", "2008-04-11")
+    assert jenin["id"] == "en:2008:" + hashlib.sha1(
+        "x|2008-04-01|April 11 Battle of Jenin – Israel attacks Palestinian militants in the city of Jenin.".encode()).hexdigest()[:16]
+    assert (by["Operation Yevu"]["date"], by["Operation Yevu"]["end"]) == ("2008-04-22", "2008-05-02")
+    assert (by["Operation Cast"]["date"], by["Operation Cast"]["end"]) == ("2008-12-27", "2009-01-18")
+    named = by["13 July 2024 a"]                                            # a name that opens with a date
+    assert named["date"] == "2008-07-13" and "end" not in named
+
+
+WIKI_TIMELINE = """<html><head><link rel="canonical" href="https://en.wikipedia.org/wiki/Timeline_of_the_Israeli–Palestinian_conflict_in_2023"></head>
+<body><div class="mw-parser-output"><p class="mw-empty-elt"><span></span><div class="hatnote">For later events see another page.</div>
+<p>This lead paragraph introduces the whole year and is not an event of its own.</p>
+<section><h2 id="October">October</h2>
+<section><h3 id="9_October">9 October</h3>
+<p>Israeli forces killed a Palestinian and wounded others driving in a car south of Hebron.</p>
+<ul><li>Israeli forces bombed the Rafah border crossing between Gaza and Egypt.</li></ul></section>
+<section><h3 id="23_October">23 October</h3>
+<p>On 23 October, the Indonesia Hospital ran out of fuel and completely lost power.</p></section></section>
+<div class="mw-references-wrap"><ol class="references"><li>A reference that is not an event at all.</li></ol></div>
+</div></body></html>"""
+
+WIKI_GENERAL = """<html><head><link rel="canonical" href="https://en.wikipedia.org/wiki/Timeline_of_the_Israeli–Palestinian_conflict#2010"></head>
+<body><div class="mw-parser-output"><h2 id="1948">1948</h2><p>Israel gained independence on May 14, 1948, a paragraph of history.</p></div></body></html>"""
+
+
+def test_a_timeline_page_reads_its_paragraphs_under_day_headings():
+    from ops import fetch_chronology as F
+    got, _ = F.wiki_entries(WIKI_TIMELINE, "en", 2023, "u", "Timeline_2023", paragraphs=True)
+    dates = sorted((e["date"], e["text"][:22]) for e in got)
+    assert dates == [("2023-10-09", "Israeli forces bombed "), ("2023-10-09", "Israeli forces killed "),
+                     ("2023-10-23", "the Indonesia Hospital")]                # the lead and the reference are not events
+    year_page, _ = F.wiki_entries(WIKI_TIMELINE, "en", 2023, "u", "x")         # a year page reads no paragraphs
+    assert [e["text"][:22] for e in year_page] == ["Israeli forces bombed "]
+
+
+def test_a_timeline_that_redirects_to_the_general_page_is_not_read(tmp_path, monkeypatch):
+    """2010 has no timeline of its own and redirects to the general page, whose
+    paragraphs are about 1948 and the First Intifada: they are not 2010's."""
+    from ops import fetch_chronology as F
+    (tmp_path / "Timeline_of_the_Israeli–Palestinian_conflict_in_2010.html").write_text(WIKI_GENERAL, encoding="utf-8")
+    (tmp_path / "Timeline_of_the_Israeli–Palestinian_conflict_in_2023.html").write_text(WIKI_TIMELINE, encoding="utf-8")
+    monkeypatch.setitem(F.SITES, "wikipedia_test", {**F.SITES["wikipedia_en"], "titles": [
+        ("Timeline_of_the_Israeli–Palestinian_conflict_in_{y}", [2010, 2023], {"paragraphs": True, "timeline": True})]})
+    entries, info = F.read_wikipedia("wikipedia_test", tmp_path)
+    assert info["timeline_redirects_not_read"] == 1 and info["pages"] == 1
+    assert {e["date"][:4] for e in entries} == {"2023"}

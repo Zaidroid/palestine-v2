@@ -491,9 +491,16 @@ def held_for(conn, source: str, ids: list[str], table: bool) -> dict[str, tuple[
 
 
 def write(conn, src: Source, sorted_docs: dict[str, list[Doc]]) -> None:
+    # A chronology's name, address and language come from its own site.json and may be
+    # corrected there (Wikipedia's English source gained its timelines on 2026-10-14); every
+    # other reader names a source from its texts, where spellings vary, so its first name stays.
     conn.execute("INSERT INTO archive_source (key, name, kind, home_url, lang, source_key)"
                  " VALUES (%s, %s, %s, %s, %s, (SELECT key FROM source WHERE key = %s))"
-                 " ON CONFLICT (key) DO NOTHING",
+                 " ON CONFLICT (key) DO UPDATE SET name = EXCLUDED.name, home_url = EXCLUDED.home_url,"
+                 " lang = EXCLUDED.lang"
+                 " WHERE archive_source.kind = 'chronology' AND EXCLUDED.kind = 'chronology'"
+                 " AND (archive_source.name, archive_source.home_url, archive_source.lang)"
+                 " IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.home_url, EXCLUDED.lang)",
                  (src.key, src.name, src.kind, src.home_url, src.lang, src.source_key))
     with conn.cursor() as cur:
         new = sorted_docs["new"]
