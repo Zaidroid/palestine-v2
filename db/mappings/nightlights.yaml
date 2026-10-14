@@ -1,0 +1,67 @@
+# Night lights over Palestine by governorate and month, from the World Bank's Space2Stats Black Marble files
+# (2026-10-14). ops/fetch_nightlights.py reads Palestine's block of each yearly file by range requests into
+# data/raw/nightlights/monthly.json: the sum and the mean of radiance for the 16 governorates,
+# 2012-01-01 on; 5376 records on 2026-10-14. Read by hand (yearly files): not in the night.
+category: nightlights
+transform: engine
+v1_category: infrastructure
+shape: observation
+status: reviewed
+records_measured: 5376
+input:
+  root: data/raw/nightlights
+  glob: monthly.json
+cadence: irregular               # a year's file about the February after it
+source_routing:
+  by_name:
+    "World Bank Space2Stats: Black Marble night lights by administrative area (NASA VNP46A3)": worldbank_space2stats
+datasets:
+  - key: nightlights_monthly
+    source: worldbank_space2stats   # migration 121: held at ask until Zaid grades it
+indicator:
+  template: "nightlights.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # nW/cm2/sr
+occurred_at:
+  from: date
+  precision: month
+place:
+  strategy: governorate
+  name_from: location.governorate
+  fallback: [none]
+  min_decided_pct: 1.0
+  min_located_pct: 1.0
+attrs_passthrough: [share_good_quality, adm1_code, name_printed]
+stable_id: stable_id             # nightlights:<measure>:<governorate>:<month>
+identity:
+  fields: [indicator, occurred_at, place_id]
+expect:
+  min_records: 4000
+  max_observations: 8000         # 5376 on 2026-10-14; 32 a month
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "nightlights.radiance_sum"}
+      name_en: "Sum of night-time radiance over the governorate in the month, nW/cm²/sr (World Bank Space2Stats, NASA Black Marble)"
+      name_ar: "مجموع الإشعاع الضوئي الليلي فوق المحافظة خلال الشهر، نانوواط/سم²/ستيراديان (البنك الدولي، بلاك ماربل من ناسا)"
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: month
+      place_grain: governorate
+      canonical_unit: nW_per_cm2_sr
+      serve_warning: "Night-time light seen from space over this governorate in the month: NASA's Black Marble (VNP46A3), summed or averaged per governorate by the World Bank (Space2Stats), in nanowatts per square centimetre per steradian. It measures light, not electricity or population: a blackout, a displaced population and a destroyed city all darken it, and clouds, snow and the moon are corrected by NASA, imperfectly (the share of good-quality pixels is on the row). The World Bank releases a year's file about the February after it."
+      serve_warning_ar: "هاد الضوء الليلي اللي بينشاف من الفضاء فوق المحافظة بالشهر: صور «بلاك ماربل» من ناسا (VNP46A3)، مجموعها أو معدّلها لكل محافظة حسبه البنك الدولي (Space2Stats)، بالنانوواط لكل سنتيمتر مربع لكل ستيراديان. بيقيس الضو، مش الكهربا ولا عدد الناس: انقطاع الكهربا والنزوح والدمار كلهم بيعتّموه، والغيم والثلج والقمر ناسا بتصحّحهم بس مش تمام (نسبة البكسلات الجيدة مكتوبة عالسطر). والبنك الدولي بينشر ملف السنة تقريباً بشباط اللي بعدها."
+    - when: {equals: "nightlights.radiance_mean"}
+      name_en: "Mean night-time radiance per pixel over the governorate in the month, nW/cm²/sr (World Bank Space2Stats, NASA Black Marble)"
+      name_ar: "متوسط الإشعاع الضوئي الليلي لكل بكسل فوق المحافظة خلال الشهر، نانوواط/سم²/ستيراديان (البنك الدولي، بلاك ماربل من ناسا)"
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: month
+      place_grain: governorate
+      canonical_unit: nW_per_cm2_sr
+      serve_warning: "Night-time light seen from space over this governorate in the month: NASA's Black Marble (VNP46A3), summed or averaged per governorate by the World Bank (Space2Stats), in nanowatts per square centimetre per steradian. It measures light, not electricity or population: a blackout, a displaced population and a destroyed city all darken it, and clouds, snow and the moon are corrected by NASA, imperfectly (the share of good-quality pixels is on the row). The World Bank releases a year's file about the February after it."
+      serve_warning_ar: "هاد الضوء الليلي اللي بينشاف من الفضاء فوق المحافظة بالشهر: صور «بلاك ماربل» من ناسا (VNP46A3)، مجموعها أو معدّلها لكل محافظة حسبه البنك الدولي (Space2Stats)، بالنانوواط لكل سنتيمتر مربع لكل ستيراديان. بيقيس الضو، مش الكهربا ولا عدد الناس: انقطاع الكهربا والنزوح والدمار كلهم بيعتّموه، والغيم والثلج والقمر ناسا بتصحّحهم بس مش تمام (نسبة البكسلات الجيدة مكتوبة عالسطر). والبنك الدولي بينشر ملف السنة تقريباً بشباط اللي بعدها."

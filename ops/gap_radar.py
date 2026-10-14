@@ -213,6 +213,16 @@ ALLOWANCE_OVERRIDE_DAYS = {
     # stalled (and the night fails) after that. Bring it back down when the
     # cap goes: data/raw/un2720/daily.json, metadata.capped.
     "un2720_aid_daily": 45,
+    # ILO's quarters from PCBS's labour survey (2026-10-14): a quarter reaches ILOSTAT months after it
+    # ends (2025Q4, stamped 2025-10-01, was the newest on 2026-10-14, 378 days after its label), so the
+    # learned 91-day rhythm (273 allowed) calls a living series late. 550 = late once a quarter is
+    # some six months later than that; stalled (and the night fails) at 1,100.
+    "ilostat_quarterly": 550,
+    # The World Bank's night lights (2026-10-14): one file a year, released about the February after
+    # it (2025's on 6 February 2026), so December's month is ~430 days old the day before the next
+    # file. The learned monthly rhythm would call it stalled the night it is loaded. Read by hand,
+    # no supply line. 550 = late when a yearly file is about four months overdue.
+    "nightlights_monthly": 550,
     # The Gaza Chamber of Commerce's reports (2026-10-14) come every two weeks and are
     # read by hand (ops/fetch_gazacham.py --new-only) until they get a nightly supply
     # line, which waits on the house network resolving gazacham.ps again (its DNS
@@ -344,6 +354,12 @@ SUPPLY_LINES = {
              "fetcher": "ops/fetch_idmc.py", "every_days": 1, "replaces": "idmc-displacement"},
     "ucdp": {"labels": ["ucdp:ged", "ucdp:candidate"], "feeds": ["v1_conflict_ucdp"],
              "fetcher": "ops/fetch_ucdp.py", "every_days": 1, "replaces": "ucdp-conflict"},
+    "who-ssa": {"labels": ["who:ssa"], "feeds": ["who_ssa_monthly"],
+                "fetcher": "ops/fetch_who_ssa.py", "every_days": 1,
+                "note": "WHO's attacks on health care, one GET a night (2026-10-14)"},
+    "ilostat": {"labels": ["ilostat:quarterly"], "feeds": ["ilostat_quarterly"],
+                "fetcher": "ops/fetch_ilostat.py", "every_days": 1,
+                "note": "ILO's quarterly labour series, four GETs a night (2026-10-14)"},
     "un2720": {"labels": ["un2720:daily"], "feeds": ["un2720_aid_daily"],
                "fetcher": "ops/fetch_un2720.py", "every_days": 1,
                "note": "UN2720's aid dashboard, one attempt a night for all "

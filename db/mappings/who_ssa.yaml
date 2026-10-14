@@ -1,0 +1,331 @@
+# WHO's Surveillance System for Attacks on Health Care (SSA), the occupied Palestinian territory, by
+# month (2026-10-14). ops/fetch_who_ssa.py reads the dashboard's own JSON nightly (one GET, no key) and
+# writes every incident (data/raw/who_ssa/attacks.json) and the monthly series loaded here
+# (data/raw/who_ssa/monthly.json): attacks, killed, injured, attacks by what was hit and by type (an
+# attack under each it carries), health workers and patients abducted, arrested or detained.
+# 3507 incidents, July 2017 to October 2026, on 2026-10-14; 2912 monthly records.
+# A month with no attack is 0 (the surveillance ran); the newest month is partial (attrs.partial_month).
+category: who_ssa
+transform: engine
+v1_category: health
+shape: observation
+status: reviewed
+records_measured: 2912
+input:
+  root: data/raw/who_ssa
+  glob: monthly.json
+cadence: daily
+source_routing:
+  by_name:
+    "WHO Surveillance System for Attacks on Health Care (SSA)": who_ssa
+datasets:
+  - key: who_ssa_monthly
+    source: who_ssa              # migration 121: held at ask until Zaid grades it
+indicator:
+  template: "who_ssa.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # attacks · persons
+occurred_at:
+  from: date
+  precision: month
+place:
+  strategy: region               # every record: region = 'Palestine' (no place below the territory)
+  min_decided_pct: 1.0
+attrs_passthrough: [partial_month]
+stable_id: stable_id             # who_ssa:<measure>:<month>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 2500
+  max_observations: 6000         # 2912 on 2026-10-14; 26 a month
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "who_ssa.attacks"}
+      name_en: "Attacks on health care recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month)."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص."
+    - when: {equals: "who_ssa.attacks_on_facilities"}
+      name_en: "Attacks on health care that hit health facilities, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت منشآت صحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_on_patients"}
+      name_en: "Attacks on health care that hit patients, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت مرضى، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_on_personnel"}
+      name_en: "Attacks on health care that hit health personnel, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت عاملين صحيين، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_on_supplies"}
+      name_en: "Attacks on health care that hit health supplies and assets, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت إمدادات وأصول صحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_on_transport"}
+      name_en: "Attacks on health care that hit health transport (ambulances), recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت وسائل نقل صحية (إسعاف)، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_on_warehouses"}
+      name_en: "Attacks on health care that hit health warehouses and storage, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية التي أصابت مستودعات ومخازن صحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_abduction_arrest_detention"}
+      name_en: "Attacks on health care of the type abduction, arrest or detention of health personnel or patients, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع اختطاف أو اعتقال أو احتجاز عاملين صحيين أو مرضى، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_armed_search"}
+      name_en: "Attacks on health care of the type armed or violent search of health care personnel, facility or transport, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع تفتيش مسلّح أو عنيف لعاملين صحيين أو منشأة أو وسيلة نقل، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_assault_without_weapons"}
+      name_en: "Attacks on health care of the type assault without weapons, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع اعتداء دون سلاح، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_chemical_agent"}
+      name_en: "Attacks on health care of the type chemical agent, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع مادة كيميائية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_criminalization"}
+      name_en: "Attacks on health care of the type criminalization of health care, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع تجريم الرعاية الصحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_heavy_weapons"}
+      name_en: "Attacks on health care of the type violence with heavy weapons (tanks, missiles, bombs, mortars), recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع عنف بأسلحة ثقيلة (دبابات، صواريخ، قنابل، هاون)، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_individual_weapons"}
+      name_en: "Attacks on health care of the type violence with individual weapons (knives, clubs, guns, grenades, IEDs), recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع عنف بأسلحة فردية (سكاكين، هراوات، بنادق، قنابل يدوية، عبوات)، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_militarization"}
+      name_en: "Attacks on health care of the type militarization of a health care asset, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع عسكرة منشأة أو أصل صحي، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_obstruction"}
+      name_en: "Attacks on health care of the type obstruction to health care delivery (physical, administrative, legal), recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع عرقلة تقديم الرعاية الصحية (مادية أو إدارية أو قانونية)، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_other"}
+      name_en: "Attacks on health care of the type Other, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع أخرى، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_psychological_violence"}
+      name_en: "Attacks on health care of the type psychological violence, threat of violence or intimidation, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع عنف نفسي أو تهديد أو ترهيب، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_removal_of_assets"}
+      name_en: "Attacks on health care of the type removal of health care assets (transport, supplies, materials), recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع الاستيلاء على أصول الرعاية الصحية (نقل، إمدادات، مواد)، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_setting_fire"}
+      name_en: "Attacks on health care of the type setting fire, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع إضرام النار، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_sexual_assault"}
+      name_en: "Attacks on health care of the type sexual assault, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع اعتداء جنسي، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.attacks_type_unknown_type"}
+      name_en: "Attacks on health care of the type type unknown, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "الهجمات على الرعاية الصحية من نوع نوع غير معروف، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: violence
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month). An attack hit or carried one or more of these at once: it is counted under each, so these do not add up to the attacks."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص. الهجوم الواحد ممكن يصيب أو يحمل أكثر من وحدة من هدول مرة وحدة: بينعدّ تحت كل وحدة، فمجموعهم مش هو عدد الهجمات."
+    - when: {equals: "who_ssa.health_workers_detained"}
+      name_en: "Health workers abducted, arrested or detained in attacks on health care, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "عاملون صحيون اختُطفوا أو اعتُقلوا أو احتُجزوا في الهجمات على الرعاية الصحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month)."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص."
+    - when: {equals: "who_ssa.injured"}
+      name_en: "People injured in attacks on health care recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "المصابون في الهجمات على الرعاية الصحية التي سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month)."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص."
+    - when: {equals: "who_ssa.killed"}
+      name_en: "People killed in attacks on health care recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "القتلى في الهجمات على الرعاية الصحية التي سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: mortality.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month)."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص."
+    - when: {equals: "who_ssa.patients_detained"}
+      name_en: "Patients abducted, arrested or detained in attacks on health care, recorded by WHO in the occupied Palestinian territory in the month (WHO SSA)"
+      name_ar: "مرضى اختُطفوا أو اعتُقلوا أو احتُجزوا في الهجمات على الرعاية الصحية، كما سجّلتها منظمة الصحة العالمية في الأرض الفلسطينية المحتلة خلال الشهر (منظمة الصحة العالمية)"
+      concept: detention
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Counted by month from WHO's Surveillance System for Attacks on Health Care (SSA) for the occupied Palestinian territory: the attacks WHO recorded, by the month of the attack. WHO gives no West Bank / Gaza split and no place below the territory. These are attacks on health care as WHO defines them, not every health worker or hospital harmed in the war: the Ministry of Health and others count differently. WHO can withdraw a record at any time, so a month can fall. The newest month is partial until it ends (partial_month)."
+      serve_warning_ar: "هاد عدّ شهري من نظام منظمة الصحة العالمية لرصد الهجمات على الرعاية الصحية (SSA) بالأرض الفلسطينية المحتلة: الهجمات اللي سجّلتها المنظمة، حسب شهر الهجوم. المنظمة ما بتفصل بين الضفة وغزة وما بتعطي مكان أصغر من الأرض المحتلة. وهاي الهجمات على الرعاية الصحية زي ما بتعرّفها المنظمة، مش كل عامل صحي أو مستشفى انضرّ بالحرب: وزارة الصحة وغيرها بيعدّوا بطريقة ثانية. والمنظمة ممكن تسحب أي سجل بأي وقت، فممكن رقم الشهر ينزل. وآخر شهر ناقص لحد ما يخلص."

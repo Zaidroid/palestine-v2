@@ -54,6 +54,16 @@ units:
     name_ar: أسر
     dimension: count
 
+  nW_per_cm2_sr:
+    name_en: nanowatts per square centimetre per steradian
+    name_ar: نانوواط لكل سنتيمتر مربع لكل ستيراديان
+    dimension: radiance
+    notes: >-
+      NASA Black Marble's unit of night-time radiance, as the World Bank's
+      Space2Stats sums and averages it per governorate (2026-10-14).
+    aliases:
+      "nW/cm2/sr": {}
+
   arrests:
     name_en: arrests
     name_ar: حالات اعتقال

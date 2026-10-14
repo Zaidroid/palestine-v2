@@ -2429,6 +2429,9 @@ TRANSFORMERS = {
     "price_gazacham": t_engine,        # the Chamber's market prices and price index (2026-10-14)
     "cash_gazacham": t_engine,         # the Chamber's cash-out commission (2026-10-14)
     "price_asarsook": t_engine,        # the market channel's prices by day (2026-10-14)
+    "who_ssa": t_engine,               # WHO's attacks on health care, by month (2026-10-14)
+    "ilostat": t_engine,               # ILO's quarterly labour series (2026-10-14)
+    "nightlights": t_engine,           # the World Bank's night lights by governorate (2026-10-14)
     "cited_figures": t_engine,            # 2026-10-12: hand-entered figures, one publisher's statement a row
     "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal
     "insecurity_insight": t_insecurity_insight,                 # 2026-10-11

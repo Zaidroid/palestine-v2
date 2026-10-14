@@ -1,0 +1,439 @@
+# ILO's quarterly labour figures for Palestine (ILOSTAT, from PCBS's Labour Force Survey), 2026-10-14.
+# ops/fetch_ilostat.py reads ILO's data API nightly (four GETs, no key) into data/raw/ilostat/quarterly.json:
+# the unemployment rate and the labour force participation rate, by sex (total, men, women) and age (15+,
+# 15-24, 25+), 2000Q1 to 2025Q4. From 2023Q4 the survey excludes Gaza (ILO note
+# S4:6333): those quarters are series of their own, placed in the West Bank. 1872 records on 2026-10-14.
+category: ilostat
+transform: engine
+v1_category: economic
+shape: observation
+status: reviewed
+records_measured: 1872
+input:
+  root: data/raw/ilostat
+  glob: quarterly.json
+cadence: irregular               # ILO adds a quarter months after it ends
+source_routing:
+  by_name:
+    "ILOSTAT (ILO), from PCBS's Labour Force Survey": ilostat
+datasets:
+  - key: ilostat_quarterly
+    source: ilostat              # migration 121: held at ask until Zaid grades it
+indicator:
+  template: "ilostat.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # percent
+occurred_at:
+  from: date                     # the quarter's first day; the quarter is attrs.quarter
+  precision: month
+place:
+  strategy: region               # 'Palestine' to 2023Q3; 'West Bank' for the quarters that exclude Gaza
+  min_decided_pct: 1.0
+attrs_passthrough: [quarter, period_start, period_end, obs_status, notes, ilo_source]
+stable_id: stable_id             # ilostat:<measure>:<quarter>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 1500
+  max_observations: 4000         # 1872 on 2026-10-14; 18 a quarter
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "ilostat.participation_rate_men_15_24"}
+      name_en: "Labour force participation rate of men aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_men_15_24_excluding_gaza"}
+      name_en: "Labour force participation rate of men aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_men_15plus"}
+      name_en: "Labour force participation rate of men aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_men_15plus_excluding_gaza"}
+      name_en: "Labour force participation rate of men aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_men_25plus"}
+      name_en: "Labour force participation rate of men aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_men_25plus_excluding_gaza"}
+      name_en: "Labour force participation rate of men aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الذكور، 25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_total_15_24"}
+      name_en: "Labour force participation rate of people aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_total_15_24_excluding_gaza"}
+      name_en: "Labour force participation rate of people aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_total_15plus"}
+      name_en: "Labour force participation rate of people aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_total_15plus_excluding_gaza"}
+      name_en: "Labour force participation rate of people aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_total_25plus"}
+      name_en: "Labour force participation rate of people aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_total_25plus_excluding_gaza"}
+      name_en: "Labour force participation rate of people aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_women_15_24"}
+      name_en: "Labour force participation rate of women aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_women_15_24_excluding_gaza"}
+      name_en: "Labour force participation rate of women aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_women_15plus"}
+      name_en: "Labour force participation rate of women aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_women_15plus_excluding_gaza"}
+      name_en: "Labour force participation rate of women aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.participation_rate_women_25plus"}
+      name_en: "Labour force participation rate of women aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.participation_rate_women_25plus_excluding_gaza"}
+      name_en: "Labour force participation rate of women aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "نسبة المشاركة في القوى العاملة (الإناث، 25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_men_15_24"}
+      name_en: "Unemployment rate of men aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_men_15_24_excluding_gaza"}
+      name_en: "Unemployment rate of men aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_men_15plus"}
+      name_en: "Unemployment rate of men aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_men_15plus_excluding_gaza"}
+      name_en: "Unemployment rate of men aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_men_25plus"}
+      name_en: "Unemployment rate of men aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_men_25plus_excluding_gaza"}
+      name_en: "Unemployment rate of men aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الذكور، 25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_total_15_24"}
+      name_en: "Unemployment rate of people aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_total_15_24_excluding_gaza"}
+      name_en: "Unemployment rate of people aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_total_15plus"}
+      name_en: "Unemployment rate of people aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_total_15plus_excluding_gaza"}
+      name_en: "Unemployment rate of people aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_total_25plus"}
+      name_en: "Unemployment rate of people aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_total_25plus_excluding_gaza"}
+      name_en: "Unemployment rate of people aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_women_15_24"}
+      name_en: "Unemployment rate of women aged 15 to 24 in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 15 إلى 24 سنة) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_women_15_24_excluding_gaza"}
+      name_en: "Unemployment rate of women aged 15 to 24 in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 15 إلى 24 سنة) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_women_15plus"}
+      name_en: "Unemployment rate of women aged 15 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 15 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_women_15plus_excluding_gaza"}
+      name_en: "Unemployment rate of women aged 15 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 15 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."
+    - when: {equals: "ilostat.unemployment_rate_women_25plus"}
+      name_en: "Unemployment rate of women aged 25 and over in Palestine (the West Bank and Gaza), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 25 سنة فأكثر) في فلسطين (الضفة الغربية وغزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). These quarters cover the West Bank and Gaza; from the fourth quarter of 2023, when Gaza could not be surveyed, the figures are a series of their own (…_excluding_gaza)."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. هاي الأرباع بتشمل الضفة وغزة؛ ومن الربع الأخير من 2023، لما ما عاد ينفع مسح غزة، الأرقام إلها سلسلة لحالها."
+    - when: {equals: "ilostat.unemployment_rate_women_25plus_excluding_gaza"}
+      name_en: "Unemployment rate of women aged 25 and over in the West Bank (Gaza excluded), in the quarter beginning on this date, percent (ILO)"
+      name_ar: "معدل البطالة (الإناث، 25 سنة فأكثر) في الضفة الغربية (من دون غزة)، في الربع الذي يبدأ بهذا التاريخ، نسبة مئوية (منظمة العمل الدولية)"
+      concept: economy.labour
+      measure_kind: rate
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "ILO's quarterly figure from the Palestinian Central Bureau of Statistics' Labour Force Survey (ILOSTAT), dated by the quarter's first day (the quarter is in the row). A break in the series or a value ILO flags as unreliable is marked on the row (obs_status). From the fourth quarter of 2023 the survey excludes the Gaza Strip (ILO's note: \"Geographical coverage: Excluding Gaza Strip\"): this series is the West Bank's, never joined to the quarters before, which cover the West Bank and Gaza."
+      serve_warning_ar: "هاد رقم ربع سنوي من منظمة العمل الدولية، من مسح القوى العاملة للجهاز المركزي للإحصاء الفلسطيني (ILOSTAT)، مأرّخ بأول يوم بالربع (والربع مكتوب بالسطر). وإذا في انقطاع بالسلسلة أو رقم المنظمة بتقول إنه مش موثوق، مكتوب عالسطر. من الربع الأخير من 2023 المسح ما بيشمل قطاع غزة (ملاحظة المنظمة: «التغطية الجغرافية: باستثناء قطاع غزة»): هاي السلسلة للضفة الغربية، وما بتنحط مع الأرباع اللي قبلها، اللي بتشمل الضفة وغزة."

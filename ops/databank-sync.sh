@@ -77,6 +77,10 @@ step .venv/bin/python -m ops.fetch_ucdp
 # The UN2720 Mechanism's aid dashboard: trucks, pallets and tonnes offloaded,
 # collected and arrived in Gaza, per day. Five GETs, no key.
 step .venv/bin/python -m ops.fetch_un2720
+# WHO's attacks on health care in the oPt (one GET) and ILO's quarterly labour series (four GETs),
+# both keyless (2026-10-14). The World Bank's night lights are read by hand: one file a year.
+step .venv/bin/python -m ops.fetch_who_ssa
+step .venv/bin/python -m ops.fetch_ilostat
 # Hand-entered cited figures: checked and written from db/reference/ (no network).
 step .venv/bin/python -m ops.build_cited_figures
 
