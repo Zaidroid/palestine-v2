@@ -184,10 +184,44 @@ identity:
 registry:
   max_unclassified: 0
   rules:
-    - when: {prefix: "prisoners."}
+    # Addameer's two running totals (2026-10-14) are not people held on a date: they have rules of
+    # their own below, and this rule leaves them out (two rules of two kinds would conflict).
+    - when: {regex: "^prisoners\\.(?!arrests_since_|deaths_in_custody_)"}
       concept: detention
       measure_kind: stock        # how many are held ON that date — a level
       polarity: -1
       grain: month
       place_grain: region
       canonical_unit: persons
+    - when: {equals: "prisoners.arrests_since_7_october_2023"}
+      concept: detention
+      measure_kind: cumulative
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: arrests
+      serve_warning: >-
+        Addameer's running count of arrests by Israeli forces in the West Bank, Jerusalem included,
+        since 7 October 2023, as its monthly statistics page gives it on the month's date. It counts
+        arrests, not people: a person arrested twice counts twice. Addameer rounds it (to the
+        hundred or the thousand). Gaza's detainees are counted apart (the unlawful combatants).
+      serve_warning_ar: >-
+        هاد عدّ الضمير التراكمي لحالات الاعتقال اللي نفّذتها قوات الاحتلال بالضفة الغربية، مع القدس،
+        من 7 تشرين الأول 2023، زي ما بتعطيه صفحة إحصاءاتها الشهرية بتاريخ الشهر. بيعدّ حالات
+        الاعتقال مش الأشخاص: اللي انعتقل مرتين بينعدّ مرتين. والضمير بتقرّب الرقم (للمية أو للألف).
+        ومعتقلو غزة معدودين لحال (المقاتلين غير الشرعيين).
+    - when: {equals: "prisoners.deaths_in_custody_since_1967"}
+      concept: detention
+      measure_kind: cumulative
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: >-
+        Addameer's running count of Palestinian prisoners who died in Israeli custody since 1967,
+        those who died after 7 October 2023 included, as its monthly page gives it. Two months
+        carry the figure (April 2025 and August 2026).
+      serve_warning_ar: >-
+        هاد عدّ الضمير التراكمي للأسرى الفلسطينيين اللي استشهدوا بسجون الاحتلال من 1967، مع اللي
+        استشهدوا بعد 7 تشرين الأول 2023، زي ما بتعطيه صفحتها الشهرية. الرقم موجود بشهرين بس
+        (نيسان 2025 وآب 2026).

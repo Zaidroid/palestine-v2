@@ -287,12 +287,14 @@ def ad_page() -> str:
 def test_addameer_charts_and_block_give_their_series():
     recs, notes = ad.month_records(ad_page(), "direct", AT)
     v = {(r["date"], r["prisoner_metric_type"]): r["metrics"]["count"] for r in recs}
-    assert len(recs) == 48 and len({r["date"] for r in recs}) == 14
+    assert len(recs) == 49 and len({r["date"] for r in recs}) == 14          # 49 since the arrest count (2026-10-14)
+    arrests = [r for r in recs if r["prisoner_metric_type"] == "arrests_since_7_october_2023"]
+    assert [(r["date"], r["metrics"]) for r in arrests] == [("2026-10-01", {"count": 26000, "unit": "arrests"})]
     # three chart series by month; the block's other figures for its own month (since 2026-10-14)
     assert Counter(m for _, m in v) == {"total": 14, "administrative": 14, "jerusalem": 12,
                                         "child": 1, "female": 1, "from_1948": 1, "gaza": 1,
                                         "life_sentence": 1, "legislative_council": 1, "pre_oslo": 1,
-                                        "unlawful_combatants": 1}
+                                        "unlawful_combatants": 1, "arrests_since_7_october_2023": 1}
     assert v[("2026-10-01", "jerusalem")] == 400 and v[("2026-10-01", "gaza")] == 40
     assert v[("2026-10-01", "life_sentence")] == 118 and v[("2026-10-01", "unlawful_combatants")] == 1419
     assert v[("2026-10-01", "total")] == 9300
@@ -423,7 +425,7 @@ def test_each_fetcher_stages_a_raw_file_with_the_publishers_vintage(tmp_path, mo
     assert ad.main(stage) == 0
     doc = json.loads((tmp_path / "statistics.json").read_text())
     assert doc["metadata"]["vintage"] == "2026-10-05" and doc["metadata"]["via"] == "direct"
-    assert doc["metadata"]["data_through"] == "2026-10" and len(doc["data"]) == 48
+    assert doc["metadata"]["data_through"] == "2026-10" and len(doc["data"]) == 49
 
     for name in ("demolitions.json", "settlers.json", "statistics.json"):
         meta = json.loads((tmp_path / name).read_text())["metadata"]
@@ -552,13 +554,17 @@ def test_the_history_file_does_not_speak_for_the_datasets_vintage():
     assert spec["expect"]["max_observations"] >= 680
 
 
-def test_the_twenty_year_lines_and_the_arrest_count_stay_on_the_page():
+def test_the_twenty_year_lines_stay_on_the_page_and_the_running_totals_are_read():
     """Read, not loaded: two readings of 'twenty years' that cannot be told
-    apart over the run, a count of arrests (not persons) on nine pages, and
-    deaths in custody on two."""
+    apart over the run. Loaded since 2026-10-14, under rules of their own: the
+    count of arrests since 7 October 2023 (in arrests, not persons) and the
+    deaths in custody since 1967."""
     for label in ("Prisoners serving more than 20 years", "Prisoners serving more than 25 years",
-                  "Prisoners serving a sentence above 20 years", "Number of arrests since October 7, 2023",
-                  "Number of martyred prisoners since 1967 (including those who died after October 7, 2023)"):
+                  "Prisoners serving a sentence above 20 years"):
         assert ad.classify(label) is None, label
+    assert ad.classify("Number of arrests since October 7, 2023") == "arrests_since_7_october_2023"
+    assert ad.classify("Number of martyred prisoners since 1967 (including those who died after October 7, "
+                       "2023)") == "deaths_in_custody_since_1967"
+    assert ad.UNIT == {"arrests_since_7_october_2023": "arrests"}
     assert ad.classify("Gaza Strip Detainees (Unlawful Combatant)") == "unlawful_combatants"
     assert ad.classify("East Jerusalem prisoners") == ad.classify("Jerusalemite prisoners") == "jerusalem"

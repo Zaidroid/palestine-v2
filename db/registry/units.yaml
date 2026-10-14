@@ -54,6 +54,16 @@ units:
     name_ar: أسر
     dimension: count
 
+  arrests:
+    name_en: arrests
+    name_ar: حالات اعتقال
+    dimension: count
+    notes: >-
+      Arrests, not people: a person arrested twice counts twice (Addameer's
+      running count since 7 October 2023, 2026-10-14).
+    aliases:
+      arrests: {}
+
   count:
     name_en: count
     name_ar: عدد

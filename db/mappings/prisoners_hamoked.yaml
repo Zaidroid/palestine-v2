@@ -84,7 +84,9 @@ identity:
 registry:
   max_unclassified: 0
   rules:
-    - when: {prefix: "prisoners."}
+    # Addameer's two running totals (2026-10-14) are not people held on a date; their own
+    # rules are in prisoners.yaml, and this one leaves them out.
+    - when: {regex: "^prisoners\\.(?!arrests_since_|deaths_in_custody_)"}
       concept: detention
       measure_kind: stock
       polarity: -1

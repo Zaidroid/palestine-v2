@@ -109,12 +109,20 @@ def classify(series_name: str | None) -> str | None:
         return "gaza"
     if "before oslo" in n:
         return "pre_oslo"
+    # Two running totals, added 2026-10-14 under rules of their own (they are not
+    # people held on a date): arrests since 7 October 2023, counted in arrests (a
+    # person arrested twice counts twice), and deaths in custody since 1967.
+    if "arrests since october 7" in n or "arrests since 7 october" in n:
+        return "arrests_since_7_october_2023"
+    if "martyred prisoners" in n:
+        return "deaths_in_custody_since_1967"
     # Left on the page, not loaded: "serving more than 20 / 25 years" and "a
     # sentence above 20 years" (two readings of twenty years that cannot be told
-    # apart over the run), the running count of arrests since 7 October 2023
-    # (nine pages, counted in arrests, not persons) and the deaths in custody
-    # since 1967 (two pages).
+    # apart over the run).
     return None
+
+
+UNIT = {"arrests_since_7_october_2023": "arrests"}
 
 
 def month_start(label) -> str | None:
@@ -208,7 +216,7 @@ def month_records(page: str, via: str, fetched_at: str) -> tuple[list[dict], dic
         "prisoner_metric_type": metric,
         "indicator_name": name,                # Addameer's own wording
         "location": {"name": "West Bank & Gaza", "region": "Palestine"},
-        "metrics": {"count": n, "unit": "persons"},
+        "metrics": {"count": n, "unit": UNIT.get(metric, "persons")},
         "sources": [src]}
         for (day, metric), (n, name) in sorted(
             points.items(), key=lambda kv: (kv[0][0], kv[0][1]), reverse=True)]
@@ -300,7 +308,7 @@ def history_records(pages: dict[str, str], skip: set[tuple[str, str]],
                 "prisoner_metric_type": metric,
                 "indicator_name": label,
                 "location": {"name": "West Bank & Gaza", "region": "Palestine"},
-                "metrics": {"count": n, "unit": "persons"},
+                "metrics": {"count": n, "unit": UNIT.get(metric, "persons")},
                 "sources": [src]})
     recs.sort(key=lambda r: (r["date"], r["prisoner_metric_type"]), reverse=True)
     notes["months"] = len({r["date"] for r in recs})

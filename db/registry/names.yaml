@@ -957,6 +957,12 @@ names:
   prisoners.gaza:
     en: "Palestinian prisoners from the Gaza Strip held by Israel; from November 2024 those held as 'unlawful combatants' are counted apart (Addameer)"
     ar: "الأسرى من قطاع غزة في سجون الاحتلال، ومنذ تشرين الثاني 2024 يُعدّ المحتجزون بصفة «مقاتل غير شرعي» على حدة (الضمير)"
+  prisoners.arrests_since_7_october_2023:
+    en: "Arrests in the West Bank, Jerusalem included, since 7 October 2023, a running count (Addameer)"
+    ar: "حالات الاعتقال في الضفة الغربية بما فيها القدس منذ 7 تشرين الأول 2023، عدد تراكمي (الضمير)"
+  prisoners.deaths_in_custody_since_1967:
+    en: "Palestinian prisoners who died in Israeli custody since 1967, a running count (Addameer)"
+    ar: "الأسرى الفلسطينيون الذين استشهدوا في سجون الاحتلال منذ عام 1967، عدد تراكمي (الضمير)"
   prisoners.life_sentence:
     en: "Palestinian prisoners serving life sentences in Israeli prisons (Addameer)"
     ar: "الأسرى المحكومون بالسجن المؤبد في سجون الاحتلال (الضمير)"
