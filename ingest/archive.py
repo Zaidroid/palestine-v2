@@ -64,6 +64,7 @@ TG_PUBLIC = ROOT / "data" / "raw" / "tg_public"
 WP = ROOT / "data" / "raw" / "wp"
 CHRON = ROOT / "data" / "raw" / "chronology"
 REPORTS = ROOT / "data" / "raw" / "reports"
+SITEMAPS = ROOT / "data" / "raw" / "sitemaps"
 ROBOTS = ("tg_palhubappfuel", "tg_palhubapproad")    # tables every 15 minutes, not news
 SERVICE = {"channel photo updated", "channel created", "channel name was changed", "channel photo removed"}
 BATCH = 2000
@@ -568,6 +569,10 @@ def run(readers: list[str], apply: bool, only: set[str] | None = None) -> dict:
             for src, label, value, docs, empty in read_chronology(loaded=loaded.get("chronology"), only=only):
                 take("chronology", src, docs, empty)
                 mark("chronology", label, value, len(docs))
+        if "sitemaps" in readers:                # outlets' headlines, ops/fetch_sitemaps.py
+            for src, label, value, docs, empty in read_sitemaps(loaded=loaded.get("sitemaps"), only=only):
+                take("sitemaps", src, docs, empty)
+                mark("sitemaps", label, value, len(docs))
         if "v1_news" in readers:
             for src, docs, empty in read_v1_news():
                 take("v1_news", src, docs, empty)
@@ -620,7 +625,40 @@ def reindex(apply: bool) -> dict:
     return {"apply": apply, "terms_version": T.VERSION, "rows_of_an_older_rule": todo, "rewritten": done}
 
 
-READERS = ("tg_public", "wp_json", "reports", "chronology", "v1_news", "v1_alerts", "v2_claim")
+def sitemap_item(site: dict, e: dict) -> Doc:
+    """One headline an outlet's sitemap lists → an article with a title and no
+    text yet. It ranks below every other reader (0), so an article's text read
+    later from anywhere replaces it and nothing replaces a text with it."""
+    attrs = {k: e[k] for k in ("title_from", "date_basis", "lastmod") if e.get(k)}
+    return Doc(source=site["source"], external_id=str(e["id"]), kind="article", title=e["title"], body="",
+               url=clean_url(e.get("url")), lang=site.get("lang") or guess_lang(e["title"]),
+               published_at=e["date"] + "T00:00:00+00:00", precision=e["precision"], via="sitemap", via_rank=0,
+               attrs=attrs)
+
+
+def read_sitemaps(root: Path = SITEMAPS, loaded: dict | None = None,
+                  only: set[str] | None = None) -> Iterator[tuple[Source, str, str, list[Doc], int]]:
+    """Yields (source, file label, file mark, documents, 0) for every headline
+    file not already loaded (ops/fetch_sitemaps.py writes them)."""
+    loaded = loaded or {}
+    if not root.exists():
+        return
+    for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "site.json").exists()):
+        if only and d.name.lower() not in only:
+            continue
+        site = json.loads((d / "site.json").read_text())
+        src = Source(site["source"], site["name"], "outlet", site.get("home_url"), lang=site.get("lang"))
+        for f in sorted(d.glob("items-*.ndjson.gz")):
+            st = f.stat()
+            label, mark = f"{d.name}/{f.name}", f"{st.st_size}:{int(st.st_mtime)}"
+            if loaded.get(label) == mark:
+                continue
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                docs = [sitemap_item(site, json.loads(line)) for line in fh]
+            yield src, label, mark, docs, 0
+
+
+READERS = ("tg_public", "wp_json", "reports", "chronology", "sitemaps", "v1_news", "v1_alerts", "v2_claim")
 
 
 def main() -> int:
@@ -628,7 +666,7 @@ def main() -> int:
     ap.add_argument("readers", nargs="*", choices=[*READERS, []], help="default: all of them")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--reindex", action="store_true")
-    ap.add_argument("--channels", help="tg_public and wp_json only: these folders (comma-separated)")
+    ap.add_argument("--channels", help="tg_public, wp_json and sitemaps only: these folders (comma-separated)")
     a = ap.parse_args()
     if a.reindex:
         out = reindex(a.apply)

@@ -754,3 +754,54 @@ def test_the_same_days_text_on_two_pages_of_one_publisher_is_one_item(tmp_path, 
         ("2024_in_Palestine", [2024]), ("copy_{y}", [2024])]})
     entries, info = F.read_wikipedia("wikipedia_test", tmp_path)
     assert info["pages"] == 2 and info["copies_on_another_page"] == len(entries) == 8
+
+
+SM_SAFA = """<urlset><url><loc>https://safa.ps/post/300378/فتح-معبر-رفح-استثنائي-ا-لليوم-الثالث</loc>
+<lastmod>2021-02-03T09:21:16+02:00</lastmod><image:image><image:loc>https://safa.ps/uploads/images/2021/02/J.jpg</image:loc>
+<image:title>فتح معبر رفح استثنائيًا لليوم الثالث</image:title></image:image></url>
+<url><loc>https://safa.ps/post/300400/الاحتلال-يهدم-منزل-ا-شرقي-عناتا</loc><lastmod>2021-05-13T10:00:00+02:00</lastmod>
+<image:image><image:loc>https://safa.ps/uploads/images/2021/02/K.jpg</image:loc><image:title>صورة أرشيفية</image:title></image:image></url></urlset>"""
+SM_SHEHAB = """<urlset><url><loc>https://shehabnews.com/post/91441/شديد-من-المبكر-الحديث-عن-قرب-التوصل-لاتفاق</loc>
+<lastmod>2026-10-01T09:58:51+03:00</lastmod><image:image><image:loc>https://shehabnews.com/uploads/images/2021/11/p.jpg</image:loc>
+<image:title>القيادي في حركة حماس عبدالرحمن شديد</image:title></image:image></url>
+<url><loc>https://shehabnews.com/post/91450/خبر-بلا-صورة-ولا-تاريخ</loc><lastmod>2026-10-01T09:58:51+03:00</lastmod></url></urlset>"""
+SM_WAFA = """<urlset><url><loc>https://www.wafa.ps/news/2024/3/12/شهيد-ثانٍ-برصاص-الاحتلال-شمال-طولكرم</loc>
+<lastmod>2025-12-26T01:39:02.5+00:00</lastmod></url></urlset>"""
+
+
+def test_sitemap_headlines_take_the_title_and_date_each_outlet_can_vouch_for():
+    from ops import fetch_sitemaps as F
+    safa, blocks = F.parse(F.OUTLETS["safa"], SM_SAFA)
+    assert blocks == 2 and [(e["id"], e["title_from"]) for e in safa] == [("300378", "headline"), ("300400", "address")]
+    assert safa[0]["title"] == "فتح معبر رفح استثنائيًا لليوم الثالث"
+    assert (safa[0]["date"], safa[0]["precision"]) == ("2021-02-03", "day")       # last modified, in the image's month
+    assert (safa[1]["date"], safa[1]["precision"]) == ("2021-02-01", "month")     # edited in May: the image's month
+    shehab, blocks = F.parse(F.OUTLETS["shehab"], SM_SHEHAB)
+    assert len(shehab) == 1 and blocks == 2                                         # no image, no date: left out
+    assert shehab[0]["title_from"] == "address" and shehab[0]["title"].startswith("شديد من المبكر")
+    assert (shehab[0]["date"], shehab[0]["precision"]) == ("2021-11-01", "month")  # never the site's re-save date
+    wafa, _ = F.parse(F.OUTLETS["wafa"], SM_WAFA)
+    assert wafa[0]["date"] == "2024-03-12" and wafa[0]["id"] == "/news/2024/3/12/شهيد-ثانٍ-برصاص-الاحتلال-شمال-طولكرم"
+    assert wafa[0]["title"] == "شهيد ثانٍ برصاص الاحتلال شمال طولكرم"
+
+
+def test_a_sitemap_headline_is_a_textless_article_that_never_outranks_a_text(tmp_path):
+    import gzip, json
+    from ingest import archive as A
+    d = tmp_path / "safa"
+    d.mkdir()
+    (d / "site.json").write_text(json.dumps({"name": "Safa", "home_url": "https://safa.ps/", "source": "web:safa",
+                                              "kind": "outlet", "lang": "ar"}))
+    rec = {"id": "300378", "url": "https://www.safa.ps/post/300378/x?utm_source=t", "title": "فتح معبر رفح",
+           "title_from": "headline", "date": "2021-02-03", "precision": "day", "date_basis": "last modified"}
+    with gzip.open(d / "items-001.ndjson.gz", "wt", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    (src, label, mark, docs, _), = list(A.read_sitemaps(tmp_path))
+    doc = docs[0]
+    assert (src.key, src.kind, src.lang) == ("web:safa", "outlet", "ar")
+    assert (doc.kind, doc.body, doc.via_rank, doc.precision) == ("article", "", 0, "day")
+    assert doc.url == "https://safa.ps/post/300378/x" and doc.attrs["title_from"] == "headline"
+    fuller = A.Doc(source="web:safa", external_id="300378", kind="article", body="the whole article", via="v1_news",
+                   via_rank=3)
+    held = {"300378": (A.content_hash(fuller) if hasattr(A, "content_hash") else "x", 3)}
+    assert [d.external_id for d in A.decide(held, [doc])["kept_fuller"]] == ["300378"]
