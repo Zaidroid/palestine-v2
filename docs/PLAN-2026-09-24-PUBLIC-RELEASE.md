@@ -2057,3 +2057,7 @@ fetch records), HANDS §13x.
   the three questions answer (Kafr Qasim from 1956; water wells and desalination since October 2023, 7; the flotillas
   of 2025, 8). 85 offline tests in `tests/test_archive.py`.
   **Suite on the branch against the live store: 2,244 passed, 0 failed, 3 skipped** (the same three, on the day's data).
+
+2026-10-14 09:52 UTC · command 24 RUN (Zaid, 09:51:17-09:51:27 UTC) · the Gaza war timelines are in the archive · proof: his
+terminal output; read back by Claude, read-only: `chron:wikipedia_en` 15,771 (9,977 since 7 October 2023; the three
+held second copies stay), archive 626,186 texts from 65 sources.
