@@ -316,7 +316,8 @@ def test_addameer_charts_and_block_give_their_series():
                      "life_sentence": "Prisoners serving life sentences",
                      "legislative_council": "Palestinian Legislative Council members",
                      "pre_oslo": "Prisoners before Oslo",
-                     "unlawful_combatants": "Gaza Strip Detainees (Unlawful Combatant)"}
+                     "unlawful_combatants": "Gaza Strip Detainees (Unlawful Combatant)",
+                     "arrests_since_7_october_2023": "Number of arrests since October 7, 2023"}
 
 
 def test_child_and_female_are_filed_under_the_blocks_own_month():
