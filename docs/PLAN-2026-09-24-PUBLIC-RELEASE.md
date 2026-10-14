@@ -2168,4 +2168,5 @@ door names the arrest series in both languages with its warning and withholds it
   record said; the spec's `unit_from` was never read on this path. Fixed on `prisoners-running-totals` (`beb406c`):
   the record's unit (3,666 of 3,675 records say persons; the 9 arrest counts say arrests) and "running total to
   the page's date" for the two running totals. Rehearsed: 11 corrections, the old rows kept and closed, no other
-  prisoner row touched. Command 28 (`tmp/28-arrests-unit.sh`), HANDS §13ab.
+  prisoner row touched. Command 28 (`tmp/28-arrests-unit.sh`), HANDS §13ab. Suite on the branch against the live
+  store: 2,251 passed, 0 failed.
