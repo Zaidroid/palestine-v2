@@ -1,0 +1,105 @@
+# The price of cash in Gaza: the commission paid to turn a balance in a bank or a payment app into
+# cash in hand, from the Gaza Chamber of Commerce and Industry's weekly "Gaza Movement of Goods"
+# reports (2026-10-14). ops/build_gazacham_cash.py reads it from the reports the archive holds into
+# data/raw/gazacham/cash.json: 386 days (17 June 2025 to 19 July 2026), 24 of the commission's own
+# weeks from the ceasefire of 19 January 2025, and the 12 months of 2025. 422 figures on 2026-10-14.
+# Twelve days two reports print differently (a copied block of late June / early July 2025) are
+# held from neither and listed in the file's metadata.
+category: cash_gazacham
+transform: engine
+v1_category: economic
+shape: observation
+status: reviewed
+records_measured: 422
+input:
+  root: data/raw/gazacham
+  glob: cash.json
+cadence: irregular               # a table in every report from week 40 to report 102-103
+source_routing:
+  by_name:
+    "Gaza Chamber of Commerce and Industry — Gaza Movement of Goods weekly reports": gaza_chamber
+datasets:
+  - key: gazacham_cash
+    source: gaza_chamber         # migration 119: all rights reserved, held for the house
+indicator:
+  template: "cash_gazacham.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # percent
+occurred_at:
+  from: date                     # a day, or a week's or a month's first day; its last is attrs.period_end
+  precision: day
+  rules:
+    - when: {op: present, field: precision}
+      then: {precision_from: precision}   # "month" on the monthly rows
+place:
+  strategy: region               # every record: region = 'Gaza Strip'
+  min_decided_pct: 1.0
+attrs_passthrough: [period_start, period_end, commission_week, measured_from, report]
+stable_id: stable_id             # gazacham:cash:<measure>:<date>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 380
+  max_observations: 700          # 422 on 2026-10-14; the reports stopped printing the table in July 2026
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "cash_gazacham.cashout_commission_daily"}
+      name_en: "Commission paid in Gaza to turn a bank or wallet balance into cash, on this day, percent of the amount (Gaza Chamber of Commerce)"
+      name_ar: "عمولة تحويل الرصيد البنكي أو رصيد المحفظة الإلكترونية إلى نقد في قطاع غزة بهذا اليوم، نسبة من المبلغ (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: ratio
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: >-
+        The share of the amount a person in Gaza paid, that day, to receive cash in hand for a
+        balance sent from a bank or an electronic wallet to a cash trader's account, as the Gaza
+        Chamber of Commerce recorded it in the market (40 means 600 shekels in hand for 1,000).
+        Daily from 17 June 2025 to 19 July 2026. Twelve days of late June and early July 2025 are
+        printed differently by two reports, one of them a copied block, and are not here. The
+        reports of August 2026 say the commission had become largely insignificant as electronic
+        payment spread, and print no table after July 2026.
+      serve_warning_ar: >-
+        هاي النسبة اللي كان يدفعها الواحد بغزة بهداك اليوم عشان ياخد كاش بإيده مقابل رصيد بيحوّله
+        من البنك أو من محفظة إلكترونية لحساب تاجر الكاش، زي ما سجّلتها غرفة تجارة غزة بالسوق (40
+        يعني 600 شيكل بإيدك مقابل 1,000). يومي من 17 حزيران 2025 لـ19 تموز 2026. فيه 12 يوم من آخر
+        حزيران وأول تموز 2025 كتبهم تقريرين بشكل مختلف، واحد منهم منسوخ، ومش هون. وتقارير آب 2026
+        بتقول إن العمولة صارت شبه معدومة لما انتشر الدفع الإلكتروني، وما عاد فيه جدول بعد تموز 2026.
+    - when: {equals: "cash_gazacham.cashout_commission_weekly"}
+      name_en: "Commission paid in Gaza to turn a bank or wallet balance into cash, in the week beginning on this date, percent of the amount (Gaza Chamber of Commerce)"
+      name_ar: "عمولة تحويل الرصيد البنكي أو رصيد المحفظة الإلكترونية إلى نقد في قطاع غزة في الأسبوع الذي يبدأ بهذا التاريخ، نسبة من المبلغ (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: ratio
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: >-
+        The commission's own weeks, numbered by the Chamber from the ceasefire of 19 January 2025
+        (not the reports' weeks), 19 January to 5 July 2025; the daily series takes over from 17
+        June 2025. The share of the amount paid to receive cash in hand for a balance sent to a
+        cash trader.
+      serve_warning_ar: >-
+        هاي أسابيع العمولة نفسها، الغرفة بتعدّها من وقف إطلاق النار بـ19 كانون الثاني 2025 (مش
+        أسابيع التقارير)، من 19 كانون الثاني لـ5 تموز 2025؛ والسلسلة اليومية بتبلّش من 17 حزيران
+        2025. هي النسبة اللي بتندفع عشان تاخد كاش مقابل رصيد بتحوّله لتاجر الكاش.
+    - when: {equals: "cash_gazacham.cashout_commission_monthly"}
+      name_en: "Commission paid in Gaza to turn a bank or wallet balance into cash, in the month beginning on this date, percent of the amount (Gaza Chamber of Commerce)"
+      name_ar: "عمولة تحويل الرصيد البنكي أو رصيد المحفظة الإلكترونية إلى نقد في قطاع غزة في الشهر الذي يبدأ بهذا التاريخ، نسبة من المبلغ (غرفة تجارة وصناعة غزة)"
+      concept: economy.prices
+      measure_kind: ratio
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: >-
+        The Chamber's rate for each whole month of 2025 (January from the ceasefire of 19 January).
+        A month a report gives before it has ended is not here; where two reports print a whole
+        month differently, the later is held.
+      serve_warning_ar: >-
+        نسبة الغرفة لكل شهر كامل من 2025 (كانون الثاني من وقف إطلاق النار بـ19 منه). الشهر اللي
+        تقرير بيعطيه قبل ما يخلص مش هون؛ ولما تقريرين يكتبوا نفس الشهر الكامل بشكل مختلف بناخد الأحدث.
