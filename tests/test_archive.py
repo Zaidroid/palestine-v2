@@ -531,3 +531,36 @@ def test_a_report_folder_is_read_by_the_loader_as_reports(tmp_path):
     assert (src.key, src.kind, d0.kind, d0.precision) == ("org:gazacham", "reports", "report", "day")
     assert d0.published_at == "2026-09-13T00:00:00+00:00" and "2,458 trucks" in d0.body
     assert "reports" in A.READERS
+
+
+def test_a_listing_page_cut_off_midway_is_tried_again(monkeypatch):
+    """2026-10-14: PIC Arabic's page 1,702 came back cut off (IncompleteRead) and
+    the reader ended instead of trying again; now it retries, then ends cleanly."""
+    import http.client
+    from ops import fetch_wp_json as W
+
+    calls = {"n": 0}
+
+    class Body:
+        status = 200
+        headers = {"X-WP-Total": "1"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise http.client.IncompleteRead(b"partial")
+            return b"[]"
+
+    monkeypatch.setattr(W.urllib.request, "urlopen", lambda req, timeout=0: Body())
+    monkeypatch.setattr(W.time, "sleep", lambda s: None)
+    raw, head = W.get("https://example.org/wp-json/wp/v2/posts")
+    assert raw == b"[]" and calls["n"] == 3 and head["x-wp-total"] == "1"
+    calls["n"] = -10
+    with pytest.raises(W.Refused, match="IncompleteRead after 3 tries"):
+        W.get("https://example.org/wp-json/wp/v2/posts")

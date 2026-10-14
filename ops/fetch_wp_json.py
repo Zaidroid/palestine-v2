@@ -48,6 +48,7 @@ import argparse
 import fcntl
 import gzip
 import html as html_mod
+import http.client
 import json
 import random
 import re
@@ -144,7 +145,10 @@ def get(url: str, tries: int = 3) -> tuple[bytes, dict]:
                 return r.read(), {k.lower(): v for k, v in r.headers.items()}
         except urllib.error.HTTPError as e:
             raise Refused(f"HTTP {e.code}") from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as e:
+            # HTTPException: a body the server cut off mid-way (IncompleteRead). Measured
+            # 2026-10-14 07:40 UTC on PIC Arabic, page 1,702: it ended the run instead of
+            # being tried again like any other broken connection.
             if attempt == tries:
                 raise Refused(f"network: {type(e).__name__} after {tries} tries") from None
             time.sleep(60 * attempt)
