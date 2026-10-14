@@ -678,6 +678,11 @@ def passthrough(rec: dict, spec_list: list, base: dict | None = None) -> dict:
 
 # ── per-category transformers (each implements its reviewed spec) ────────────
 
+# Addameer's two running totals (2026-10-14): not people held at a period's end
+# but everything counted since a date, the arrests in arrests, not persons.
+PRISONER_RUNNING_TOTALS = {"arrests_since_7_october_2023", "deaths_in_custody_since_1967"}
+
+
 def t_prisoners(rec, spec, places, counts):
     if moved(rec, spec):
         return Drop("moved")
@@ -690,13 +695,15 @@ def t_prisoners(rec, spec, places, counts):
     if not day or day[8:10] != "01":
         counts["date_not_month_start"] += 1
     attrs = passthrough(rec, spec.get("attrs_passthrough"))
-    attrs["reference"] = "period-end stock"     # REVIEW.md decision 2
+    attrs["reference"] = ("running total to the page's date" if metric in PRISONER_RUNNING_TOTALS
+                          else "period-end stock")     # REVIEW.md decision 2
     place_id, located = region_place(places, rec["location"]["region"], attrs)
     fetched = (rec.get("sources") or [{}])[0].get("fetched_at")
     return [Row(dataset_key=ds, indicator=f"prisoners.{slug(metric)}",
                 occurred_at=day, precision="month",
                 v1_stable_id=rec["stable_id"],
-                value_num=rec["metrics"]["count"], unit="persons",
+                value_num=rec["metrics"]["count"],
+                unit=rec["metrics"].get("unit") or "persons",   # the spec's unit_from
                 place_id=place_id, located=located,
                 reported_at=fetched, attrs=attrs)]
 

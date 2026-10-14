@@ -569,3 +569,21 @@ def test_the_twenty_year_lines_stay_on_the_page_and_the_running_totals_are_read(
     assert ad.UNIT == {"arrests_since_7_october_2023": "arrests"}
     assert ad.classify("Gaza Strip Detainees (Unlawful Combatant)") == "unlawful_combatants"
     assert ad.classify("East Jerusalem prisoners") == ad.classify("Jerusalemite prisoners") == "jerusalem"
+
+
+def test_the_running_totals_load_in_their_own_unit_and_reference():
+    """Loaded 2026-10-14 with the unit "persons" and the reference "period-end
+    stock", both written into the prisoner reader: 26,000 arrests read as 26,000
+    persons held at the month's end. The reader now takes the record's unit."""
+    recs, _ = ad.month_records(ad_page(), "direct", AT)
+    by = {r["prisoner_metric_type"]: r for r in recs if r["date"] == "2026-10-01"}
+    spec = load_spec("prisoners")
+    [arrests] = databank.t_prisoners(by["arrests_since_7_october_2023"], spec, PLACES, Counter())
+    assert (arrests.indicator, arrests.value_num, arrests.unit) == \
+        ("prisoners.arrests_since_7_october_2023", 26000, "arrests")
+    assert arrests.attrs["reference"] == "running total to the page's date"
+    [total] = databank.t_prisoners(by["total"], spec, PLACES, Counter())
+    assert (total.unit, total.attrs["reference"]) == ("persons", "period-end stock")   # unchanged
+    deaths = dict(by["total"], prisoner_metric_type="deaths_in_custody_since_1967")
+    [d] = databank.t_prisoners(deaths, spec, PLACES, Counter())
+    assert (d.unit, d.attrs["reference"]) == ("persons", "running total to the page's date")

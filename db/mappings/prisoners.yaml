@@ -64,7 +64,8 @@ value:
                             #   0 on all 890; NOT metrics.detained, which is
                             #   non-zero on only 228 (the 'administrative' rows).
   text_from: null
-  unit_from: metrics.unit   # 'persons' 890/890 — correct here, unlike water
+  unit_from: metrics.unit   # 'persons' 890/890 — correct here, unlike water;
+                            #   'arrests' on Addameer's running count (2026-10-14)
 
 occurred_at:
   from: date
