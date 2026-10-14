@@ -2264,3 +2264,27 @@ ilostat_quarterly 1,872, nightlights_monthly 5,376 current rows, all at `ask`; w
 347,981 → 358,141 (+10,160 each); 64 series named in both languages; its own judgement: the three fresh, no dead line;
 the partner door says «2 هجوم» for attacks on facilities in October 2026 and withholds the row; night lights answer
 with the governorate's Arabic name and «نانوواط لكل سنتيمتر مربع لكل ستيراديان». Grades wait for Zaid.
+
+2026-10-14 16:01 UTC · Zaid's three answers applied: grades, IPC, and how to let gazacham.ps through · built and rehearsed,
+WAITING FOR ZAID'S COMMAND 32 · proof: branch `databank-round-6` (`3cbe089`, `3045bed`), `tmp/32-grades-and-ipc.sh`,
+`tmp/32-raw/`, HANDS §13af.
+- **"1. yes"** (may partners see WHO, ILO, the night lights): migration 122 grades who_ssa as WHO states it
+  (WHO-SSA-terms, attribution), ilostat and worldbank_space2stats CC BY 4.0, attribution; 10,160 rows leave the
+  withheld set.
+- **"2. we need this data for our own research and data collections and relations"** (HDX's robots file): the seven
+  HDX readers stay as they are. IPC through HDX (`ops/fetch_ipc.py`, nightly, three requests ten seconds apart, HDX's
+  Crawl-Delay): 8 analyses (December 2023 to May 2026), current and projected, 1,014 records, 260 series. Single
+  governorates are placed; combined areas are series of their own; the May 2024 file prints its combined areas as
+  "North Gaza" (300,000) and "Deir Al-Balah" (1,751,457), read as the combined areas their populations show; the
+  West Bank rows (population 0) are left out. The Gaza Strip in phase 5: 17% (December 2023), 30% (February 2024),
+  26% (July 2025, 513,720 people), 0% (May 2026). Held at ask (HDX: CC0) until Zaid grades it.
+- **"3. how?"** (gazacham.ps): the house DNS is Pi-hole v6 on 192.168.1.125 and .124 (version.bind
+  "dnsmasq-pi-hole-v2.92.2"; the answer carries EDE 15 "Blocked (gravity)": a subscribed blocklist), the router
+  (.254) resolves it. Steps given: allow the domain on both Pi-holes (Domains, or `pihole allow gazacham.ps`).
+  Command 33 (the Chamber's nightly reading) waits on it and checks resolution first.
+- **Rehearsed** as a first run on the scratch copy: grades as stated, IPC 1,014 written, 260 named, 0 unclassified;
+  rows read back with places; judged with the staged line: IPC fresh (105/365), no dead line; the questions asked of
+  a test API from the script's text.
+- **Suite** on the branch against the live store: 2,299 passed, 1 failed: the README's withheld floor (43,000) was a
+  tenth below the 57,152 command 31 left; raised to 46,000, which holds once command 32 runs (48,006 then); command
+  32 ends by running that test against the store.
