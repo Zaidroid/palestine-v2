@@ -69,7 +69,7 @@ was true once and quietly stopped being true.
 |---|---:|
 | queryable through the API, credited | 340,000+ |
 | exportable as a file | 300,000+ |
-| held but not exportable — see `WITHHELD.md` | 43,000+ |
+| held but not exportable — see `WITHHELD.md` | 46,000+ |
 | carrying a share-alike obligation | 45,000+ |
 
 **Query and bulk are different acts.** A query returning twenty credited
