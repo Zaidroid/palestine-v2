@@ -2128,8 +2128,9 @@ this commit), `tmp/27-round-3.sh`, `tmp/27-raw/`, HANDS §13aa.
 - **The Chamber's first weeks** ("if its needed data then yes"): weeks 5-35 and 62-65 read from their four layouts;
   913 figures, the north and the south apart from August 2024 to January 2025 (flour in the south: 15 shekels a sack
   in August 2024, 985 in December) and the Strip from week 27. A row takes its good's unit only when its pre-war price
-  is the later tables'; 25 rows use their own report's pre-war price where the unit is not in doubt; 62 carry the
-  daily table's differing average beside the held figure. Weeks 1-4 are not read (no region named). A box of bottled
+  is the later tables'; 51 rows (25 pairs of report and good, 19 goods) use their own report's pre-war price where
+  the unit is not in doubt; 62 carry the daily table's differing average beside the held figure. 913 = 887 week prices
+  and 26 weeks of the regional basket. Weeks 1-4 are not read (no region named). A box of bottled
   water (new good and unit): 17 to 50 shekels. The regional basket of the index's weeks 1-13 is held as shekels: the
   table heads it "index value", but 2,524.69 is 2,731% of 92.44, the text's 2,732%. 103 price series named.
 - **The two alarms that were not late** ("if it serves the purpose ... do it"): allowances of 1,460 days (Peace Now's
