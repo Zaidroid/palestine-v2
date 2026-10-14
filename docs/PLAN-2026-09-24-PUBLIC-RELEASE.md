@@ -2224,3 +2224,7 @@ partner door says «30 شيكل للكيلوغرام» for flour in the south an
   file was changed by `9ac1270` (the backups work), not by this round.
 - Suite on `market-channel-closed` against the live store: 2,267 passed, 1 failed, then fixed: the permission letters'
   floor ("more than 315,000 observations") fell a tenth below the 347,981 served; raised to 345,000 (`letters:` commit).
+
+2026-10-14 14:41 UTC · command 30 RAN (Zaid, 14:41:18 UTC), verified · done · proof: ff to `3ede986`; its read-only judgement
+from the main tree: 36 fresh, 5 closed collections (market_channel_prices among them), 3 dead upstream, 1 awaiting
+permission, 1 projection, 1 continued; dead lines tonight: none.
