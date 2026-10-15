@@ -583,7 +583,7 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
                 "rows": total, "by_source": dropped,
                 "reason": ("these publishers do not grant redistribution (or their terms "
                            "are unread), or license their data for non-commercial use "
-                           "only: the rows stay out of a partner payload (ZAID-10). "
+                           "only: the rows stay out of a partner payload. "
                            "The answer's figure is a cited fact with its source; read the "
                            "rows at the publisher."),
             }
@@ -620,6 +620,6 @@ def apply(tool: str, out: Any, tier: str, entry: dict | None = None, *,
             block["stripped"] = {"keys": cut,
                                  "reason": "the publisher grants no redistribution of its "
                                            "measurements: a partner receives the cited fact, "
-                                           "not the series (ZAID-10)."}
+                                           "not the series."}
     out["licence"] = block
     return out

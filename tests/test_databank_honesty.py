@@ -28,7 +28,8 @@ def test_a_partner_payload_carries_only_redistributable_rows_and_says_so():
     out = L.apply("databank", _payload(), "partner")
     assert [it["indicator"] for it in out["items"]] == ["b"] and out["latest_by_indicator"] == []
     w = out["licence"]["withheld"]
-    assert w["rows"] == 2 and "ZAID-10" in w["reason"]
+    assert w["rows"] == 2 and "stay out of a partner payload" in w["reason"]
+    assert "ZAID" not in w["reason"]                  # an owner's decision code is not public text (2026-10-15)
     assert "محجوبة" in out["answer"] and "withheld" in out["answer_en"]
     assert "678" in out["answer"]                      # the cited fact stays
 
