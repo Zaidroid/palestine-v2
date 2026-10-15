@@ -2434,6 +2434,7 @@ TRANSFORMERS = {
     "nightlights": t_engine,           # the World Bank's night lights by governorate (2026-10-14)
     "ipc": t_engine,                   # IPC's acute food insecurity analyses (2026-10-14)
     "ocha_monthly": t_engine,          # OCHA's casualty incidents by month (2026-10-14)
+    "ocha_injuries": t_engine,         # OCHA's injuries by month (2026-10-15)
     "arrests_joint": t_engine,         # the prisoner institutions' joint monthly report (2026-10-14)
     "cited_figures": t_engine,            # 2026-10-12: hand-entered figures, one publisher's statement a row
     "acled_hdx": t_acled_hdx,                                   # 2026-10-11, internal

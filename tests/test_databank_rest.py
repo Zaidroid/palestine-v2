@@ -641,6 +641,19 @@ def test_a_source_line_is_never_cut_inside_a_word():
     assert short_source(None) == ""
 
 
+def test_ucdp_credit_is_read_whole():
+    """Migration 125: UCDP's 374-character credit had no sentence end before 120 characters, so spoken answers
+    stopped at "… Uppsala Conflict Data". Its first sentence now names the programme and the licence."""
+    import re
+    from serve.when import short_source
+    sql = (Path(__file__).resolve().parent.parent / "db/migrations/125_ucdp_credit.sql").read_text(encoding="utf-8")
+    body = sql.split("UPDATE source", 2)[2]
+    text = "".join(re.findall(r"'((?:[^']|'')*)'", body.split("WHERE")[0])).replace("''", "'")
+    assert short_source([text]) == "Conflict events: Uppsala Conflict Data Program (UCDP), Georeferenced and Candidate Events datasets, CC BY 4.0"
+    for kept in ("Sundberg & Melander (2013)", "Davies, Pettersson & Öberg (2026)", "Hegre, Croicu, Eck & Högbladh (2020)", "ucdp.uu.se"):
+        assert kept in text
+
+
 
 # ── the unit's word in an Arabic answer (2026-10-14) ──────────────────────────
 from serve.when import unit_word_ar                                           # noqa: E402

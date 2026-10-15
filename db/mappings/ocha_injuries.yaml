@@ -1,0 +1,320 @@
+# OCHA oPt's record of Palestinians injured by Israelis, by month (2026-10-15). ops/fetch_ocha_injuries.py reads
+# the casualty page's "Palestinian injuries" report nightly (one grouped query through the public API the embed calls;
+# names are never asked for) into data/raw/ocha/injuries_monthly.json: by area, perpetrator, age and governorate,
+# January 2008 to this month, each split checked against the month's total. Gaza's injured since 7 October 2023 are
+# not in OCHA's record. 5650 records on 2026-10-15 (167,092 injured).
+category: ocha_injuries
+transform: engine
+v1_category: casualties
+shape: observation
+status: reviewed
+records_measured: 5650
+input:
+  root: data/raw/ocha
+  glob: injuries_monthly.json
+cadence: daily
+source_routing:
+  by_name:
+    "UN OCHA oPt — Data on Casualties": ocha_casualties
+datasets:
+  - key: ocha_injuries_monthly
+    source: ocha_casualties      # OCHA's terms of use (non-commercial, no redistribution), graded in 042
+indicator:
+  template: "ocha_injuries.{measure}"
+value:
+  num_from: value
+  text_from: null
+  unit_from: unit                # persons
+occurred_at:
+  from: date
+  precision: month
+place:
+  strategy: governorate
+  name_from: location.governorate
+  fallback: [region, none]
+  min_decided_pct: 1.0
+attrs_passthrough: [partial_month]
+stable_id: stable_id             # ocha_injuries:<measure>:<month>
+identity:
+  fields: [indicator, occurred_at]
+expect:
+  min_records: 5000
+  max_observations: 12000        # 5650 on 2026-10-15; 25 a month
+registry:
+  max_unclassified: 0
+  rules:
+    - when: {equals: "ocha_injuries.injured"}
+      name_en: "Palestinians injured by Israelis in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_west_bank"}
+      name_en: "Palestinians injured by Israelis in the West Bank in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في الضفة الغربية خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gaza_strip"}
+      name_en: "Palestinians injured by Israelis in the Gaza Strip in the month, to 2023 (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في قطاع غزة خلال الشهر، حتى 2023 (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_israel"}
+      name_en: "Palestinians injured by Israelis inside Israel in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون داخل إسرائيل خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_by_israeli_forces"}
+      name_en: "Palestinians injured by Israeli military forces in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابتهم القوات العسكرية الإسرائيلية خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_by_israeli_security"}
+      name_en: "Palestinians injured by Israeli non-military security forces (police, guards) in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابتهم قوات أمن إسرائيلية غير عسكرية (شرطة، حراس) خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_by_settlers"}
+      name_en: "Palestinians injured by Israeli settlers in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم مستوطنون إسرائيليون خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_by_other_or_disputed"}
+      name_en: "Palestinians injured by Israeli civilians, or by a perpetrator OCHA records as disputed or unknown, in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم مدنيون إسرائيليون، أو من تسجّل أوتشا هويته مختلفاً عليها أو مجهولة، خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_children"}
+      name_en: "Palestinian children injured by Israelis in the month (OCHA)"
+      name_ar: "الأطفال الفلسطينيون الذين أصابهم إسرائيليون خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_bethlehem"}
+      name_en: "Palestinians injured by Israelis in Bethlehem governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة بيت لحم خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_deir_al_balah"}
+      name_en: "Palestinians injured by Israelis in Deir Al-Balah governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة دير البلح خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_gaza"}
+      name_en: "Palestinians injured by Israelis in Gaza governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة غزة خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_north_gaza"}
+      name_en: "Palestinians injured by Israelis in North Gaza governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة شمال غزة خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_hebron"}
+      name_en: "Palestinians injured by Israelis in Hebron governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة الخليل خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_jenin"}
+      name_en: "Palestinians injured by Israelis in Jenin governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة جنين خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_jericho"}
+      name_en: "Palestinians injured by Israelis in Jericho governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة أريحا خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_jerusalem"}
+      name_en: "Palestinians injured by Israelis in Jerusalem governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة القدس خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_khan_younis"}
+      name_en: "Palestinians injured by Israelis in Khan Younis governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة خان يونس خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_nablus"}
+      name_en: "Palestinians injured by Israelis in Nablus governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة نابلس خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_qalqilya"}
+      name_en: "Palestinians injured by Israelis in Qalqilya governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة قلقيلية خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_rafah"}
+      name_en: "Palestinians injured by Israelis in Rafah governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة رفح خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_ramallah"}
+      name_en: "Palestinians injured by Israelis in Ramallah governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة رام الله خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_salfit"}
+      name_en: "Palestinians injured by Israelis in Salfit governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة سلفيت خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_tubas"}
+      name_en: "Palestinians injured by Israelis in Tubas governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة طوباس خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."
+    - when: {equals: "ocha_injuries.injured_gov_tulkarm"}
+      name_en: "Palestinians injured by Israelis in Tulkarm governorate in the month (OCHA)"
+      name_ar: "الفلسطينيون الذين أصابهم إسرائيليون في محافظة طولكرم خلال الشهر (أوتشا)"
+      concept: injury.conflict
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: persons
+      serve_warning: "OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial."
+      serve_warning_ar: "هاد سجل مكتب الأمم المتحدة لتنسيق الشؤون الإنسانية (أوتشا) الموثّق للفلسطينيين اللي أصابهم إسرائيليون (جيش، قوات أمن غير عسكرية زي الشرطة، مستوطنين، مدنيين)، معدودين حسب شهر الحادثة من جدول الإصابات، من كانون الثاني 2008. جرحى غزة من 7 تشرين الأول 2023 مش فيه: أوتشا ما بتسجّلهم إلا بعد التوثيق، فأرقام غزة بتوقف ب2023 وأي شهر بعدها هو للضفة وإسرائيل بس. الشهر اللي ما فيه أحد مسجّل صفر، وآخر شهر ناقص."

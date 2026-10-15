@@ -121,10 +121,29 @@ def test_palestine_todays_items_without_a_headline_are_listed_apart():
 def test_the_night_and_the_radar_know_the_new_datasets():
     sync = (ROOT / "ops" / "databank-sync.sh").read_text()
     assert "step .venv/bin/python -m ops.fetch_ocha_monthly" in sync
+    assert "step .venv/bin/python -m ops.fetch_ocha_injuries" in sync
+    assert gap_radar.SUPPLY_LINES["ocha-injuries"]["feeds"] == ["ocha_injuries_monthly"]
     assert gap_radar.SUPPLY_LINES["ocha-monthly"]["feeds"] == ["ocha_fatalities_monthly"]
     assert "arrests_joint_monthly" in gap_radar.CLOSED_CORPUS
-    for name in ("ocha_monthly", "arrests_joint"):
+    for name in ("ocha_monthly", "ocha_injuries", "arrests_joint"):
         spec = yaml.safe_load((ROOT / "db" / "mappings" / f"{name}.yaml").read_text(encoding="utf-8"))
         rules = spec["registry"]["rules"]
         assert rules and all(r["name_ar"] and r["serve_warning_ar"] for r in rules), name
     assert fl is not None
+
+
+def test_ocha_injuries_by_month_add_up_and_count_children():
+    """OCHA's injuries table joins the child flag and the sex in `SA`; every split must add up to the month."""
+    from datetime import date
+    from ops import fetch_ocha_injuries as oi
+    jan = 1704067200000                                   # 2024-01-01
+    rows = [[jan, "West Bank", "Hebron", "Military forces", "YesMale", 3],
+            [jan, "West Bank", "Nablus", "Civilian-settler", "NoFemale", 2],
+            [jan, "Israel (West Bank Related)", "Israel", "Civilian", "Unknownunknown", 1]]
+    recs, notes = oi.monthly(rows, date(2024, 2, 10))
+    v = {(r["measure"], r["date"]): r["value"] for r in recs}
+    assert v[("injured", "2024-01-01")] == 6 and v[("injured_children", "2024-01-01")] == 3
+    assert v[("injured_by_settlers", "2024-01-01")] == 2 and v[("injured_by_other_or_disputed", "2024-01-01")] == 1
+    assert v[("injured_israel", "2024-01-01")] == 1 and v[("injured_gov_hebron", "2024-01-01")] == 3
+    assert v[("injured", "2024-02-01")] == 0 and notes["governorate_not_listed"] == {"Israel": 1}
+    assert oi.age_of("YesFemale") == "children" and oi.age_of("NoMale") == "adults" and oi.age_of(None) == "age_unknown"
