@@ -654,6 +654,14 @@ def test_ucdp_credit_is_read_whole():
         assert kept in text
 
 
+def test_ocha_injuries_are_credited_as_injuries():
+    """Migration 127: the injuries (126) inherited the deaths' credit, "Palestinian fatalities: …"; the dataset now
+    carries its own line, and the deaths keep theirs."""
+    sql = (Path(__file__).resolve().parent.parent / "db/migrations/127_ocha_injuries_credit.sql").read_text(encoding="utf-8")
+    body = sql.split("UPDATE dataset", 2)[2]
+    assert "SET attribution_text = 'Palestinian injuries: UN OCHA oPt, Protection of Civilians database.'" in body
+    assert "WHERE key = 'ocha_injuries_monthly'" in body and "UPDATE source" not in sql
+
 
 # ── the unit's word in an Arabic answer (2026-10-14) ──────────────────────────
 from serve.when import unit_word_ar                                           # noqa: E402
