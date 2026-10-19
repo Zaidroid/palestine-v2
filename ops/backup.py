@@ -70,7 +70,7 @@ KEYFILE = Path(os.environ.get(
 STATUS_FILE = ROOT / "ops" / "backup-status.json"
 
 # Local copies are for fast restore, not for survival — keep few.
-LOCAL_KEEP = 7
+LOCAL_KEEP = 3
 # Remote is the actual backup. 30 dailies plus every first-of-month forever;
 # at ~80 MB/set that is ~2.4 GB rolling against a 15 GiB quota.
 REMOTE_KEEP = 30
