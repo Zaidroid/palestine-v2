@@ -47,7 +47,7 @@ INSERT INTO source (key, name, kind, license_spdx, commercial_use, attribution_t
                     redistribution, share_alike, attribution_required, terms_url)
 VALUES ('worldbank_gfpd',
         'World Bank — Global Fuel Prices Database (official prices compiled from news announcements)',
-        'dataset', 'ODbL-1.0', true,
+        'file', 'ODbL-1.0', true,
         'Fuel prices: World Bank Global Fuel Prices Database (datacatalog.worldbank.org/search/dataset/0066829), ODbL 1.0; West Bank official prices compiled from Palestinian news announcements.',
         1, 0.9, 'worldbank', true, 'share-alike', true, true,
         'https://datacatalog.worldbank.org/search/dataset/0066829/global-fuel-prices-database')
