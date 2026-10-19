@@ -317,6 +317,33 @@ registry:
       polarity: -1
       grain: day
       place_grain: region
+    # Migration 130 (2026-10-19): Gaza's daily electricity supply, OCHA's
+    # table from GEDCO's figures 2017-01-01 → 2023-09-30, loaded by
+    # ops/fetch_ocha_gaza_electricity.py, not by this spec; the rules are here
+    # because this file and nightlights.yaml are handed the whole
+    # infrastructure category. Megawatts by line and in total, the estimated
+    # demand, and the hours of supply a day (OCHA's column is titled power cuts;
+    # it is supply, the May 2018 check).
+    - when: {prefix: "energy.gaza.supply_mw"}
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: MW
+    - when: {equals: "energy.gaza.demand_mw"}
+      concept: energy.supply
+      measure_kind: stock
+      grain: day
+      place_grain: region
+      canonical_unit: MW
+    - when: {equals: "energy.gaza.supply_hours_per_day"}
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: hours_per_day
     - when: {equals: "infrastructure.locality_record"}
       # NOT a population (found 2026-10-12): v1 stored 342 boundary polygons
       # as "1 persons" each under population.count. The key stays.
