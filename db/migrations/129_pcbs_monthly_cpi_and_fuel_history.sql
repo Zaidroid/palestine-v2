@@ -83,19 +83,19 @@ ON CONFLICT (key) DO UPDATE
        cadence = EXCLUDED.cadence, active = EXCLUDED.active, attrs = EXCLUDED.attrs,
        attribution_text = EXCLUDED.attribution_text;
 
-INSERT INTO dataset (key, name, source_id, v1_category, cadence, active, attrs,
-                     license_spdx, redistribution, attribution_text)
+-- The licence rides on the source row (ODbL, share-alike, the catalogue URL);
+-- a dataset-level override would need its own terms evidence
+-- (dataset_override_needs_evidence), and there is nothing to override.
+INSERT INTO dataset (key, name, source_id, v1_category, cadence, active, attrs, attribution_text)
 SELECT 'worldbank_gfpd_fuel',
        'World Bank Global Fuel Prices Database — West Bank official fuel prices, monthly 2016-12 → 2025-04',
        source_id, 'fuel', 'irregular', true,
        '{"scope_note": "The official (maximum) consumer price in the West Bank for petrol 95/98, diesel, kerosene and the 5/12/48 kg cylinders, monthly from December 2016, as the World Bank compiled it from Palestinian news announcements for its Global Fuel Prices Database. The same measure as fuel_prices_official, compiled by one institution; the Bank''s last month is April 2025.", "scope_note_ar": "السعر الرسمي (الحد الأقصى) للمستهلك في الضفة الغربية لبنزين 95 و98 والسولار والكاز وأسطوانات 5 و12 و48 كغم، شهريًا من كانون الأول 2016، كما جمعه البنك الدولي من إعلانات الصحافة الفلسطينية لقاعدة بياناته لأسعار الوقود. المقياس نفسه الذي تحمله fuel_prices_official، جُمع من مؤسسة واحدة؛ آخر شهر لدى البنك نيسان 2025.", "reader": "fetch_worldbank_fuel@1", "workbook": "https://datacatalogfiles.worldbank.org/ddh-published/0066829/DR0095290/Global_Fuel_Prices_Database.xlsx"}'::jsonb,
-       'ODbL-1.0', 'share-alike',
        'Fuel prices: World Bank Global Fuel Prices Database, ODbL 1.0; West Bank official prices compiled from Palestinian news announcements.'
 FROM source WHERE key = 'worldbank_gfpd'
 ON CONFLICT (key) DO UPDATE
    SET name = EXCLUDED.name, source_id = EXCLUDED.source_id, v1_category = EXCLUDED.v1_category,
        cadence = EXCLUDED.cadence, active = EXCLUDED.active, attrs = EXCLUDED.attrs,
-       license_spdx = EXCLUDED.license_spdx, redistribution = EXCLUDED.redistribution,
        attribution_text = EXCLUDED.attribution_text;
 
 INSERT INTO dataset (key, name, source_id, v1_category, cadence, active, attrs, attribution_text)
