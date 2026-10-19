@@ -99,6 +99,22 @@ registry:
       measure_kind: index          # base 2018 = 100, pinned by the fetcher
       grain: year
       place_grain: region
+    # Migration 129 (2026-10-19): the same dashboard, monthly — the index and
+    # PCBS's own month-on-month change, four regions, 1996-01 →. Loaded by
+    # ops/fetch_pcbs_monthly.py, not by this spec; the rules are here because
+    # the registry scans every economic.pcbs_* indicator against this file.
+    - when: {equals: "economic.pcbs_cpi_monthly"}
+      concept: economy.prices
+      measure_kind: index          # base 2018 = 100, pinned by the fetcher
+      grain: month
+      place_grain: region
+      canonical_unit: index
+    - when: {equals: "economic.pcbs_cpi_monthly_change"}
+      concept: economy.prices
+      measure_kind: rate           # percent on the previous month, as PCBS gives it
+      grain: month
+      place_grain: region
+      canonical_unit: percent
     - when: {equals: "economic.pcbs_population"}
       concept: population.count
       measure_kind: stock
