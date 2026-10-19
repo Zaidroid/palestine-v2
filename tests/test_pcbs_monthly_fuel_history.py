@@ -167,14 +167,22 @@ def test_parse_workbook_refuses_a_missing_sheet():
 
 # ── the store (main-server only; skips until migration 129 is applied) ───────
 
-def _conn():
+@pytest.fixture
+def db():
+    """A read-only connection held open for the test (the context manager must
+    outlive the connection: a bare connect().__enter__() is collected at once,
+    which closes it)."""
     try:
         from resolve.db import connect
-        c = connect().__enter__()
-        c.execute("SET default_transaction_read_only = on")
-        return c
+        cm = connect()
+        c = cm.__enter__()
     except Exception as e:                                             # noqa: BLE001
         pytest.skip(f"no database here: {type(e).__name__}")
+    try:
+        c.execute("SET default_transaction_read_only = on")
+        yield c
+    finally:
+        cm.__exit__(None, None, None)
 
 
 def _dataset_loaded(c, key):
@@ -187,8 +195,8 @@ def _dataset_loaded(c, key):
     return ds[0], n
 
 
-def test_cpi_monthly_served_with_the_september_2026_release():
-    c = _conn()
+def test_cpi_monthly_served_with_the_september_2026_release(db):
+    c = db
     _dataset_loaded(c, "pcbs_cpi_monthly")
     rows = c.execute("""SELECT indicator, attrs->>'region', value_num FROM databank_serving
                         WHERE dataset_key = 'pcbs_cpi_monthly' AND occurred_at = '2026-09-01'""").fetchall()
@@ -201,8 +209,8 @@ def test_cpi_monthly_served_with_the_september_2026_release():
     assert str(first) == "1996-01-01"
 
 
-def test_fuel_monthly_served_with_the_september_2026_averages():
-    c = _conn()
+def test_fuel_monthly_served_with_the_september_2026_averages(db):
+    c = db
     _dataset_loaded(c, "pcbs_fuel_monthly")
     rows = c.execute("""SELECT indicator, value_num, unit FROM databank_serving
                         WHERE dataset_key = 'pcbs_fuel_monthly' AND place_id = 2 AND occurred_at = '2026-09-01'""").fetchall()
@@ -212,8 +220,8 @@ def test_fuel_monthly_served_with_the_september_2026_averages():
     assert got["fuel.price.average.lpg_12kg_delivered"] == (88.9, "ILS/cylinder")
 
 
-def test_worldbank_rows_match_wafa_october_2020_and_ride_the_official_indicators():
-    c = _conn()
+def test_worldbank_rows_match_wafa_october_2020_and_ride_the_official_indicators(db):
+    c = db
     _dataset_loaded(c, "worldbank_gfpd_fuel")
     rows = c.execute("""SELECT indicator, value_num, license_spdx FROM databank_serving
                         WHERE dataset_key = 'worldbank_gfpd_fuel' AND occurred_at = '2020-10-01'""").fetchall()
@@ -226,8 +234,8 @@ def test_worldbank_rows_match_wafa_october_2020_and_ride_the_official_indicators
     assert str(span[0]) == "2016-12-01" and str(span[1]) >= "2025-03-01"
 
 
-def test_offline_reload_is_idempotent():
-    c = _conn()
+def test_offline_reload_is_idempotent(db):
+    c = db
     _, before = _dataset_loaded(c, "pcbs_cpi_monthly")
     if not (P.OUT_CPI.exists() and P.OUT_FUEL.exists()):
         pytest.skip("raw monthly files not on disk yet")
