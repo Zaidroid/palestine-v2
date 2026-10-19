@@ -1,7 +1,7 @@
 {
  "names": {
-  "named_ar": 2401,
-  "named_en": 2716,
+  "named_ar": 3189,
+  "named_en": 3504,
   "unnamed": 17,
   "unnamed_sample": [
    "fao_diem.income_shocks.hh_education_4",
@@ -28,28 +28,49 @@
   },
   "aid_access": {
    "classified": 4,
-   "indicators": 13,
+   "indicators": 16,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "aid_gazacham": {
+   "classified": 3,
+   "indicators": 16,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "aid_un2720": {
    "classified": 9,
-   "indicators": 13,
+   "indicators": 16,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "arrests_joint": {
+   "classified": 13,
+   "indicators": 28,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "btselem_fatalities": {
    "classified": 1,
-   "indicators": 32,
+   "indicators": 84,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "cash_gazacham": {
+   "classified": 3,
+   "indicators": 290,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "casualties": {
    "classified": 31,
-   "indicators": 32,
+   "indicators": 84,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -105,7 +126,7 @@
   },
   "economic": {
    "classified": 149,
-   "indicators": 251,
+   "indicators": 290,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -126,14 +147,14 @@
   },
   "fao_diem": {
    "classified": 623,
-   "indicators": 664,
+   "indicators": 1307,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "food": {
    "classified": 41,
-   "indicators": 664,
+   "indicators": 1307,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -153,8 +174,8 @@
    "unit_conflicts": []
   },
   "health": {
-   "classified": 1405,
-   "indicators": 1405,
+   "classified": 1407,
+   "indicators": 1433,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -166,9 +187,16 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "ilostat": {
+   "classified": 36,
+   "indicators": 290,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "infrastructure": {
    "classified": 7,
-   "indicators": 7,
+   "indicators": 9,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -176,6 +204,13 @@
   "insecurity_insight": {
    "classified": 8,
    "indicators": 68,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "ipc": {
+   "classified": 260,
+   "indicators": 1307,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -194,30 +229,65 @@
    "unclassified": 0,
    "unit_conflicts": []
   },
+  "nightlights": {
+   "classified": 2,
+   "indicators": 9,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "ocha_injuries": {
+   "classified": 25,
+   "indicators": 84,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "ocha_monthly": {
+   "classified": 27,
+   "indicators": 84,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
   "population_wpp": {
    "classified": 51,
-   "indicators": 251,
+   "indicators": 290,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "population_wpp_projection": {
    "classified": 51,
-   "indicators": 251,
+   "indicators": 290,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "price_asarsook": {
+   "classified": 280,
+   "indicators": 1307,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "price_gazacham": {
+   "classified": 103,
+   "indicators": 1307,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "prisoners": {
-   "classified": 7,
-   "indicators": 7,
+   "classified": 15,
+   "indicators": 28,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
   },
   "prisoners_hamoked": {
-   "classified": 7,
-   "indicators": 7,
+   "classified": 13,
+   "indicators": 28,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []
@@ -260,6 +330,13 @@
   "water_gho": {
    "classified": 3,
    "indicators": 3,
+   "rows_unclassified": 0,
+   "unclassified": 0,
+   "unit_conflicts": []
+  },
+  "who_ssa": {
+   "classified": 26,
+   "indicators": 1433,
    "rows_unclassified": 0,
    "unclassified": 0,
    "unit_conflicts": []

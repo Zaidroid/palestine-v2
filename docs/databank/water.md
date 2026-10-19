@@ -1,6 +1,6 @@
 # Water · المياه
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Water and sanitation: open defecation by area type (WHO GHO)
 

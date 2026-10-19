@@ -1,6 +1,6 @@
 # Historical · تاريخي
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Locality populations in 1922, 1931, 1945 and 2016, and what became of each place (Palestine Open Maps)
 

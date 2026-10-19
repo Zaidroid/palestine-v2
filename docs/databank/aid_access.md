@@ -1,6 +1,6 @@
 # Aid Access · وصول المساعدات
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Aid consignments entering Gaza, Oct 2023 to Jan 2025 (UNRWA logistics log)
 
@@ -27,9 +27,9 @@ Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back 
 المساعدات المفرّغة والمستلمة والواصلة إلى غزة، يومياً (آلية 2720)
 
 - **Key:** `un2720_aid_daily` · **publisher:** UN2720 Mechanism for Gaza (UNOPS) — Monitoring & Tracking Dashboard (`un2720`)
-- **Rows:** 3,435 held · 3,435 a question can reach · 0 exportable · 1,546 older values kept
+- **Rows:** 3,435 held · 3,435 a question can reach · 0 exportable · 2,752 older values kept
 - **Span:** 2025-05-19 → 2026-08-31 · **series:** 9 · **cadence:** daily
-- **Freshness:** fresh: read on its own rhythm and within its allowance (last information 2026-08-31)
+- **Freshness:** late: past its allowance (last information 2026-08-31)
 - **Terms:** no-license-found · partners: withheld (ask); the figure is cited with its source · terms: https://info.un2720.org/
 - **Credit:** Aid movements into Gaza: UN2720 Mechanism for Gaza (UNOPS), Monitoring & Tracking Dashboard (tracking.un2720.org). No licence is stated; counts only consignments processed through the UN2720 Mechanism.
 - **Scope:** Only humanitarian consignments processed through the UN2720 Mechanism. Three stages of one journey (offloaded, collected, arrived): never added together. The publisher revises past days and caps the window at its last verified day.

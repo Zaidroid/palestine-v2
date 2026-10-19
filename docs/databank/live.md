@@ -4,18 +4,18 @@ Readings written every few minutes from public channels, crowd reports, station 
 
 | What is read | Readings | Places | First | Last |
 |---|---:|---:|---|---|
-| `checkpoint_flow` | 910,433 | 340 | 2026-06-09 | 2026-10-14 |
+| `checkpoint_flow` | 949,413 | 340 | 2026-06-09 | 2026-10-18 |
 | `fuel_gasoline` | 425,205 | 212 | 2026-07-31 | 2026-09-23 |
 | `fuel_diesel` | 422,847 | 212 | 2026-07-31 | 2026-09-23 |
-| `checkpoint_status` | 260,404 | 239 | 2026-06-09 | 2026-10-14 |
-| `weather` | 70,686 | 11 | 2026-07-31 | 2026-10-14 |
-| `checkpoint_idf` | 27,895 | 226 | 2026-06-09 | 2026-10-14 |
-| `checkpoint_inspection` | 8,474 | 157 | 2026-06-09 | 2026-10-14 |
-| `internet` | 6,430 | 1 | 2026-07-31 | 2026-10-14 |
-| `checkpoint_police` | 4,205 | 174 | 2026-06-09 | 2026-10-14 |
-| `checkpoint_settlers` | 1,267 | 112 | 2026-06-10 | 2026-10-14 |
-| `road_closure` | 661 | 142 | 2026-07-15 | 2026-10-14 |
-| `power` | 200 | 17 | 2026-08-03 | 2026-10-13 |
+| `checkpoint_status` | 270,590 | 239 | 2026-06-09 | 2026-10-18 |
+| `weather` | 74,954 | 11 | 2026-07-31 | 2026-10-18 |
+| `checkpoint_idf` | 29,314 | 227 | 2026-06-09 | 2026-10-18 |
+| `checkpoint_inspection` | 8,851 | 161 | 2026-06-09 | 2026-10-18 |
+| `internet` | 6,823 | 1 | 2026-07-31 | 2026-10-18 |
+| `checkpoint_police` | 4,341 | 174 | 2026-06-09 | 2026-10-18 |
+| `checkpoint_settlers` | 1,321 | 113 | 2026-06-10 | 2026-10-18 |
+| `road_closure` | 687 | 149 | 2026-07-15 | 2026-10-18 |
+| `power` | 201 | 17 | 2026-08-03 | 2026-10-18 |
 
 | Places in the register | |
 |---|---:|

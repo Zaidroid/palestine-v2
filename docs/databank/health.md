@@ -1,6 +1,6 @@
 # Health · الصحة
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Health indicators by year, 1975 on: mortality, disease, services, water and sanitation (WHO GHO)
 
@@ -1427,7 +1427,7 @@ Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back 
 الاعتداءات على الرعاية الصحية شهرياً من 2017: الاعتداءات والشهداء والجرحى وما أصيب (منظمة الصحة العالمية)
 
 - **Key:** `who_ssa_monthly` · **publisher:** WHO SSA (`who_ssa`)
-- **Rows:** 2,912 held · 2,912 a question can reach · 2,912 exportable · 0 older values kept
+- **Rows:** 2,912 held · 2,912 a question can reach · 2,912 exportable · 12 older values kept
 - **Span:** 2017-07-01 → 2026-10-01 · **series:** 26 · **cadence:** daily
 - **Freshness:** fresh: read on its own rhythm and within its allowance (last information 2026-10-01)
 - **Terms:** WHO-SSA-terms · partners: yes (attribution) · terms: https://extranet.who.int/ssa/Index.aspx

@@ -1,6 +1,6 @@
 # Infrastructure · البنية التحتية
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Night lights over each governorate by month, 2012 on (World Bank, Black Marble)
 
@@ -47,7 +47,7 @@ Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back 
 - **Key:** `v1_infrastructure_hdx` · **publisher:** Humanitarian Data Exchange (`hdx`)
 - **Rows:** 603 held · 603 a question can reach · 603 exportable · 1,547 older values kept
 - **Span:** 2026-08-07 → 2026-08-07 · **series:** 2 · **cadence:** as its publisher updates (ported from the first system)
-- **Freshness:** fresh: read on its own rhythm and within its allowance (last information 2026-10-14)
+- **Freshness:** fresh: read on its own rhythm and within its allowance (last information 2026-10-18)
 - **Terms:** CC-BY-IGO-3.0 · partners: yes (attribution) · terms: https://data.humdata.org/dataset/occupied-palestinian-territory-closures-barriers
 - **Credit:** Closures and barriers: OCHA occupied Palestinian territory via HDX, CC-BY-IGO 3.0.
 - **Read before use:** The 261 segments of the West Bank Separation Barrier as OCHA mapped it in January 2018, each with its length: 464 km constructed, 51 km under construction and 196 km projected, so the total includes what was only planned. A 2018 map, not today's. The same segments are also held as land.checkpoint; the two are never added.

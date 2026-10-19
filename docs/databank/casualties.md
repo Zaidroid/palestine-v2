@@ -1,6 +1,6 @@
 # Casualties · الضحايا
 
-Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back to the index](README.md)
+Measured on the store at 2026-10-18 20:41 UTC by `ops/databank_index.py`. [Back to the index](README.md)
 
 ## Palestinians killed, one row per person, 2000 to September 2023 (B'Tselem)
 
@@ -61,6 +61,48 @@ Measured on the store at 2026-10-14 18:11 UTC by `ops/databank_index.py`. [Back 
 | `ocha_monthly.killed_gov_tulkarm` | Palestinians killed by Israelis in Tulkarm governorate in the month (OCHA) · الفلسطينيون الذين قتلهم إسرائيليون في محافظة طولكرم خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
 | `ocha_monthly.killed_israel` | Palestinians killed by Israelis inside Israel in the month (OCHA) · الفلسطينيون الذين قتلهم إسرائيليون داخل إسرائيل خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
 | `ocha_monthly.killed_west_bank` | Palestinians killed by Israelis in the West Bank, East Jerusalem included, in the month (OCHA) · الفلسطينيون الذين قتلهم إسرائيليون في الضفة الغربية بما فيها القدس الشرقية خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+
+## OCHA oPt — Palestinians injured by Israelis, by month, area, perpetrator, age and governorate
+
+
+
+- **Key:** `ocha_injuries_monthly` · **publisher:** UN OCHA oPt — Data on Casualties (`ocha_casualties`)
+- **Rows:** 5,650 held · 5,650 a question can reach · 0 exportable · 4 older values kept
+- **Span:** 2008-01-01 → 2026-10-01 · **series:** 25 · **cadence:** daily
+- **Freshness:** fresh: read on its own rhythm and within its allowance (last information 2026-10-01)
+- **Terms:** UN-ToU-NC · partners: withheld (no-redistribution); the figure is cited with its source · terms: https://www.ochaopt.org/page/terms-use
+- **Credit:** Palestinian injuries: UN OCHA oPt, Protection of Civilians database.
+- **Scope:** Counted by month from the casualty page's injuries table (names never read). Gaza's injured since 7 October 2023 are not in OCHA's record.
+- **Read before use:** OCHA oPt's verified record of Palestinians injured by Israelis (military forces, non-military security forces such as police, settlers, civilians), counted by the month of the incident from its injuries table, January 2008 on. Gaza's injured since 7 October 2023 are NOT in it: OCHA records them only once verified, so its Gaza figures end in 2023 and a month after that is the West Bank and Israel only. A month with none recorded is 0; the newest month is partial.
+- **Ask:** MCP `databank(category="casualties", indicator="ocha_injuries.injured")` · REST `/v2/databank/casualties?indicator=ocha_injuries.injured`
+
+| Series | Name | Unit | Rows | From | To | Places |
+|---|---|---|---:|---|---|---:|
+| `ocha_injuries.injured` | Palestinians injured by Israelis in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_by_israeli_forces` | Palestinians injured by Israeli military forces in the month (OCHA) · الفلسطينيون الذين أصابتهم القوات العسكرية الإسرائيلية خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_by_israeli_security` | Palestinians injured by Israeli non-military security forces (police, guards) in the month (OCHA) · الفلسطينيون الذين أصابتهم قوات أمن إسرائيلية غير عسكرية (شرطة، حراس) خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_by_other_or_disputed` | Palestinians injured by Israeli civilians, or by a perpetrator OCHA records as disputed or unknown, in the month (OCHA) · الفلسطينيون الذين أصابهم مدنيون إسرائيليون، أو من تسجّل أوتشا هويته مختلفاً عليها أو مجهولة، خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_by_settlers` | Palestinians injured by Israeli settlers in the month (OCHA) · الفلسطينيون الذين أصابهم مستوطنون إسرائيليون خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_children` | Palestinian children injured by Israelis in the month (OCHA) · الأطفال الفلسطينيون الذين أصابهم إسرائيليون خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_gaza_strip` | Palestinians injured by Israelis in the Gaza Strip in the month, to 2023 (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في قطاع غزة خلال الشهر، حتى 2023 (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_gov_bethlehem` | Palestinians injured by Israelis in Bethlehem governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة بيت لحم خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_deir_al_balah` | Palestinians injured by Israelis in Deir Al-Balah governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة دير البلح خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_gaza` | Palestinians injured by Israelis in Gaza governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة غزة خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_hebron` | Palestinians injured by Israelis in Hebron governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة الخليل خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_jenin` | Palestinians injured by Israelis in Jenin governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة جنين خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_jericho` | Palestinians injured by Israelis in Jericho governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة أريحا خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_jerusalem` | Palestinians injured by Israelis in Jerusalem governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة القدس خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_khan_younis` | Palestinians injured by Israelis in Khan Younis governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة خان يونس خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_nablus` | Palestinians injured by Israelis in Nablus governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة نابلس خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_north_gaza` | Palestinians injured by Israelis in North Gaza governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة شمال غزة خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_qalqilya` | Palestinians injured by Israelis in Qalqilya governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة قلقيلية خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_rafah` | Palestinians injured by Israelis in Rafah governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة رفح خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_ramallah` | Palestinians injured by Israelis in Ramallah governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة رام الله خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_salfit` | Palestinians injured by Israelis in Salfit governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة سلفيت خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_tubas` | Palestinians injured by Israelis in Tubas governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة طوباس خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_gov_tulkarm` | Palestinians injured by Israelis in Tulkarm governorate in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في محافظة طولكرم خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 1 |
+| `ocha_injuries.injured_israel` | Palestinians injured by Israelis inside Israel in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون داخل إسرائيل خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
+| `ocha_injuries.injured_west_bank` | Palestinians injured by Israelis in the West Bank in the month (OCHA) · الفلسطينيون الذين أصابهم إسرائيليون في الضفة الغربية خلال الشهر (أوتشا) | persons | 226 | 2008-01-01 | 2026-10-01 | 0 |
 
 ## Palestinian casualties since 2008: yearly totals and splits (OCHA)
 
