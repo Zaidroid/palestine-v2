@@ -1,0 +1,93 @@
+{
+ "trees_uprooted": {
+  "reviewed": 60,
+  "kept": 45,
+  "dropped": 15,
+  "span": [
+   "2026"
+  ]
+ },
+ "unemployment": {
+  "reviewed": 60,
+  "kept": 50,
+  "dropped": 10,
+  "span": [
+   "2026"
+  ]
+ },
+ "land_orders": {
+  "reviewed": 30,
+  "kept": 28,
+  "dropped": 2,
+  "span": [
+   "2026"
+  ]
+ },
+ "rafah_crossing": {
+  "reviewed": 30,
+  "kept": 25,
+  "dropped": 5,
+  "span": [
+   "2026"
+  ]
+ },
+ "cooking_gas": {
+  "reviewed": 30,
+  "kept": 23,
+  "dropped": 7,
+  "span": [
+   "2025",
+   "2026"
+  ]
+ },
+ "aid_trucks": {
+  "reviewed": 30,
+  "kept": 25,
+  "dropped": 5,
+  "span": [
+   "2025",
+   "2026"
+  ]
+ },
+ "road_gates": {
+  "reviewed": 30,
+  "kept": 11,
+  "dropped": 19,
+  "span": [
+   "2025",
+   "2026"
+  ]
+ },
+ "power_plant": {
+  "reviewed": 30,
+  "kept": 27,
+  "dropped": 3,
+  "span": [
+   "2017",
+   "2018",
+   "2019",
+   "2020",
+   "2021",
+   "2022",
+   "2023",
+   "2026"
+  ]
+ },
+ "hospital_capacity": {
+  "reviewed": 20,
+  "kept": 12,
+  "dropped": 8,
+  "span": [
+   "2025",
+   "2026"
+  ]
+ },
+ "displaced": {
+  "reviewed": 20,
+  "kept": 15,
+  "dropped": 5,
+  "span": [
+   "2026"
+  ]
+ }
+}

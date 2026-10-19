@@ -1,7 +1,7 @@
 ---
 job: 06
 slug: archive-figures-lake
-status: open
+status: returned · 2026-10-19
 opened: 2026-10-19 by Claude (Fable), for an overnight run
 branch: job-06-archive-figures-lake
 deadline: 2026-10-20 08:00 UTC (write the return with whatever is finished)
