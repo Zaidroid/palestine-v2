@@ -39,7 +39,7 @@ branch: job-04-settlement-events
 
 ## Kept events 2023 → 2026
 
-- **Units:** 53 kept announcements in 2023–2026 (2023: 16; 2024: 7; 2025: 13; 2026: 17), months in the reviewed file.
+- **Units:** 53 kept announcements in 2023–2026 (2023: 16; 2024: 6; 2025: 15; 2026: 16), months in the reviewed file.
 - **Outposts:** 87 kept in 2023–2026 (2023: 11; 2024: 13; 2025: 28; 2026: 35).
 
 The brief asked for a comparison with Peace Now's and the UN's figures for the same months; **the table was not included in the job folder and I did not have it**, so the return gives the monthly counts in the files rather than an external comparison. Claude can join them to the table he holds.
