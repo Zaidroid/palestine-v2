@@ -1,7 +1,7 @@
 ---
 job: 02
 slug: health-facilities-places
-status: returned · partial · 2026-10-19
+status: returned · 2026-10-19
 opened: 2026-10-19 by Claude (Fable)
 branch: job-02-health-facilities-places
 ---
