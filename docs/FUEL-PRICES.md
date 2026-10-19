@@ -112,3 +112,33 @@ October values (petrol 95 = 8.17, diesel = 8.99, 12 kg gas = 90.00).
   bodies do not name the authority, the confirmed series stays recent.
 - Availability (which station has diesel) was **retired by Zaid on 23 Sep 2026**
   and is not revived here; the image cards are not used.
+
+## The history from official sources (2026-10-19, migration 129)
+
+Zaid's call on 19 October: hunt an official source rather than relax the
+two-outlet rule. The Petroleum Corporation has no site and no archive; two
+official, licensed series carry the history instead, each as its own dataset
+so a row's provenance and licence stay visible:
+
+| Dataset | What | Span | Licence | Loader |
+|---|---|---|---|---|
+| `worldbank_gfpd_fuel` | the West Bank's official prices, seven products, as the World Bank compiled them from Palestinian news announcements; rides on `fuel.price.official.*` | 2016-12 → 2025-04, monthly | ODbL-1.0 | `ops/fetch_worldbank_fuel.py` |
+| `pcbs_fuel_monthly` | PCBS's monthly average consumer price of six fuel items by region, from the CPI dashboard; its own concept `fuel.price.average.*` | 2019-01 → the latest month | CC-BY-4.0 | `ops/fetch_pcbs_monthly.py` |
+| `fuel_prices_official` | the announcements believed by the two-outlet rule (migration 071) | 2026-08 → | NONE (attribution) | `ops/load_fuel_prices.py` |
+
+Cross-checks: Oct 2020 Bank 5.32 / 4.79 / 58 = WAFA's announcement; Dec 2014
+PCBS energy table diesel 6.18, petrol 95 6.68 = the announcement; Sep 2026
+PCBS average diesel 8.39 = the cap. A survey average blends two caps when one
+changes mid-month (Sep 2026 petrol 95: 8.15 then 7.65 from the 7th, average
+7.78), and PCBS prices the 12 kg cylinder delivered to the home, 2–3 ILS above
+the cap — so the averages are never mixed into the official series.
+
+Before 2016-12: PCBS's yearly *Energy Tables* (PDF/HTML, 2012 → 2023, monthly
+by region) are queued as `docs/jobs/JOB-03` for the DeepSeek harness; before
+2012 PCBS has annual averages only.
+
+**The 5 October 2026 revision** (petrol 95 cut to 7.67 from the 5th) is not a
+believed row: WAFA names the ministry and says "from tomorrow" but carries the
+list as an image; Safa carries the list without a start date; the rest name no
+authority. The rule stands; the month shows in PCBS's October average when it
+is published.

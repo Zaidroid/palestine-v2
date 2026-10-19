@@ -41,6 +41,8 @@ step .venv/bin/python -m ops.fetch_ocha          # OCHA casualties + demolitions
 step .venv/bin/python -m ops.fetch_ocha_monthly  # OCHA's casualty incidents by month (2026-10-14)
 step .venv/bin/python -m ops.fetch_ocha_injuries # OCHA's injuries by month (2026-10-15)
 step .venv/bin/python -m ops.fetch_pcbs          # PCBS population + CPI
+step .venv/bin/python -m ops.fetch_pcbs_monthly  # PCBS monthly CPI by region (1996→) + monthly fuel averages (2019→), migration 129 (2026-10-19)
+step .venv/bin/python -m ops.fetch_worldbank_fuel # World Bank GFPD: West Bank official fuel prices 2016-12 → 2025-04, migration 129 (2026-10-19)
 step .venv/bin/python -m ops.fetch_hamoked       # HaMoked detention, monthly
 step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (monthly at most)
 step .venv/bin/python -m ops.fetch_unrwa_registered   # UNRWA registered refugees by field (HDX)
