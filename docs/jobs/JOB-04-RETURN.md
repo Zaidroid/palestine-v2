@@ -64,3 +64,7 @@ Also common: syndicated duplicates (43 unit, 28 outpost drops) and East Jerusale
 - The combined-total rows (no single settlement) — keep as a Jerusalem/West Bank total, or drop until apportioned?
 - The 2023–2026 monthly counts should be joined to Peace Now/UN; the table was not in the folder.
 - `settlement_other` names are the printed Arabic; the loader needs a mapping if they are to become place ids.
+
+## Claude's review (2026-10-19)
+
+**Loaded** by `ops/load_job_returns.py` (command 42) into `settlements_press_events`: 434 announcements as `settlements.units_announced` (East Jerusalem on the Jerusalem governorate, the rest on the West Bank; stage, settlement and quote in attrs) and 127 outposts as `settlements.outpost_reported` (on the village when placed, else the governorate). 20 kept units and 12 kept outposts re-read: all right. Combined totals with no single settlement stay as region rows. Against Peace Now's list, the kept outposts are 11/31 (2023), 17/59 (2024), 35/91 (2025), 24/93 (2026 to October): the detail, not the count, as the brief said.

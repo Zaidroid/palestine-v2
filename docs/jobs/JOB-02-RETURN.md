@@ -54,3 +54,7 @@ branch: job-02-health-facilities-places
 
 - Is the war-period register enough to start the map, with pre-2023 added by a second query?
 - Should historical mentions be dated by the event date in the text rather than publication? That needs a date parser and would change `as_of`.
+
+## Claude's review (2026-10-19)
+
+**Not loaded; fixes named.** 20 of the 79 events re-read: the status wording is right in every one, but about six sit on the wrong day — retrospective mentions dated by publication (a 2026 text about a 2023 siege, a May 2024 text about a January siege, a tribute dated 2025). For a timeline, `as_of` must be the event's own date when the text gives one. Fixes: (1) parse the date in the text («في 21 يناير/كانون الثاني», «يوم 15 نوفمبر 2023», «9/12/2023») and set `as_of` to it with `date_basis: text`; (2) drop a mention with no date of its own that is clearly retrospective (a trial, a tribute, an anniversary); (3) re-check 20 rows. Then the war-period register is enough to start the map; pre-2023 is a second query.

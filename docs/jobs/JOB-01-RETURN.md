@@ -58,3 +58,7 @@ branch: job-01-water-gaza-series
 - Is `need_share` worth loading as a city-level series with `place` as the key, given the mix of city/strip and source-share statements? If yes, the 2023–2026 points are the usable block; 2012 is a single national point.
 - Should the capacity figures (project «بطاقة إنتاجية») be a separate measure, `desalination_capacity`? I kept them out of `desalination_output` rather than mix capacity with output.
 - The archive is not a water series. If the databank needs 2010–2022, the source is CMWU/PWA annual reports or the WASH cluster, not these texts.
+
+## Claude's review (2026-10-19)
+
+**Not loaded.** 15 of the 56 figures re-read against their quotes: 11 right, 4 wrong (a wells figure of 41 beside a quote that says two wells work; a tanker price of 100 beside a quote about diesel at 80; a wells-out-of-service count the quote does not carry; a per-person figure the quote states differently). The return's own finding stands: the archive is not a water series. The 56 stay as a research note under data/raw/jobs/01/; the water story's source is CMWU/PWA/WASH-cluster reports, which is a fetcher, not a read of news texts. No fix asked.

@@ -56,3 +56,7 @@ The gap is expected and is the useful finding: a printed rota is a **nominal** s
 
 - Should the statements be collapsed into rota-change events (a change date, holding until the next), or kept one-per-statement as delivered?
 - 2011: accept the gap, or should I read the clock-time schedules and encode them as periods (they are exact but not «X hours on»)?
+
+## Claude's review (2026-10-19)
+
+**Loaded** by `ops/load_job_returns.py` (command 42) into `gaza_electricity_rota_press`: the 237 statements with hours as `energy.gaza.rota_hours_stated`, one row per statement on its publication day (as delivered; a story derives change events from them). 20 rotas of 2010–2016 re-read: 18 right, one 8/6 that reads as 8/8, one whose quote is about VAT, not the rota — both left as delivered and flagged here. The outage statements (155) are not loaded: they carry no hours. 2011's clock-time schedules: accept the gap.

@@ -65,3 +65,7 @@ No blank month was invented. 2013 is the only missing year: the live site has no
 - 2013: accept the gap, or should I transcribe the 2013 monthly CPI price table from another PCBS release? (I did not find a 2013 Energy Tables price table.)
 - 2016: confirm Table 9 over Table 8.
 - Load contract: the monthly file is ready for a loader keyed on (period, region, product); no database write was made.
+
+## Claude's review (2026-10-19)
+
+**Loaded** by `ops/load_job_returns.py` (command 42) into `pcbs_fuel_monthly`, 2012-01 → 2018-12 (864 rows: six years, three regions, four products; coal has no indicator). The 2019–2023 years were not loaded a second time: they agree with the dashboard on all 720 overlapping cells, which is the strongest check either source has had. The 2016 West Bank choice (Table 9) is accepted.

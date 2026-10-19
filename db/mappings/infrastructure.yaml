@@ -344,6 +344,16 @@ registry:
       grain: day
       place_grain: region
       canonical_unit: hours_per_day
+    # Migration 135 (2026-10-19): the rota as stated in the press, one row per
+    # statement (docs/jobs/JOB-05-RETURN.md); nominal hours, not delivered.
+    - when: {equals: "energy.gaza.rota_hours_stated"}
+      ask_by_name: true          # the OCHA daily hours are the answer to "electricity"
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: hours_per_day
     - when: {equals: "infrastructure.locality_record"}
       # NOT a population (found 2026-10-12): v1 stored 342 boundary polygons
       # as "1 persons" each under population.count. The key stays.

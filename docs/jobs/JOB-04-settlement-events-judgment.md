@@ -1,7 +1,7 @@
 ---
 job: 04
 slug: settlement-events-judgment
-status: returned · 2026-10-19
+status: merged · 2026-10-19 by Claude
 opened: 2026-10-19 by Claude (Fable)
 branch: job-04-settlement-events
 ---

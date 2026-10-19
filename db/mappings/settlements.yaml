@@ -202,3 +202,21 @@ registry:
       grain: month
       place_grain: point
       canonical_unit: events
+    # Migration 135 (2026-10-19): the archive's reviewed settlement events
+    # (ops/load_job_returns.py, docs/jobs/JOB-04-RETURN.md): announcements of
+    # housing units and new outposts as the outlets reported them.
+    - when: {equals: "settlements.units_announced"}
+      concept: settlement
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: region
+      canonical_unit: housing_units
+    - when: {equals: "settlements.outpost_reported"}
+      ask_by_name: true          # the detail; the count is settlements.outposts_established
+      concept: settlement
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: locality
+      canonical_unit: events

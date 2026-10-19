@@ -681,7 +681,8 @@ def test_neither_specs_rule_can_catch_the_others_indicators():
     # migration 130 (2026-10-19) added the two outpost indicators, by `equals` as well:
     # still nothing a prefix could catch across the two files
     assert [r["when"] for r in total["rules"]] == [{"equals": TOTAL}, {"equals": "settlements.outposts_established"},
-                                                  {"equals": "settlements.outpost"}]
+                                                  {"equals": "settlements.outpost"}, {"equals": "settlements.units_announced"},
+                                                  {"equals": "settlements.outpost_reported"}]
     # the prefix carries its closing dot: neither the bare key nor a neighbour is caught
     for other in ("settlements.population_by_settlement", "settlements.population_by_settlements.pn0016",
                   "settlements.settler_population.pn0016", TOTAL, "land.settlement"):

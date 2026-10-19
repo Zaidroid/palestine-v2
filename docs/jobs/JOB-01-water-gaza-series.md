@@ -1,7 +1,7 @@
 ---
 job: 01
 slug: water-gaza-series
-status: returned · 2026-10-19
+status: returned · not loaded · 2026-10-19 by Claude
 opened: 2026-10-19 by Claude (Fable)
 branch: job-01-water-gaza-series
 ---

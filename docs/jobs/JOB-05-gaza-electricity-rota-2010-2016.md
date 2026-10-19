@@ -1,7 +1,7 @@
 ---
 job: 05
 slug: gaza-electricity-rota-2010-2016
-status: returned · 2026-10-19
+status: merged · 2026-10-19 by Claude
 opened: 2026-10-19 by Claude (Fable)
 branch: job-05-gaza-electricity-rota
 ---
