@@ -80,7 +80,7 @@ def test_returns_served(db):
     assert n >= 550
     fuel = db.execute("""SELECT min(occurred_at)::date::text, count(*) FROM databank_serving
                          WHERE dataset_key = 'pcbs_fuel_monthly' AND indicator = 'fuel.price.average.diesel' AND place_id = 2""").fetchone()
-    assert fuel[0] == "2012-01-01" and fuel[1] >= 84 + 93                                        # the tables 2012–2018, then the dashboard
+    assert fuel[0] == "2012-01-01" and fuel[1] >= 72 + 93                                        # the tables 2012, 2014–2018 (no 2013 table), then the dashboard
     jan12 = db.execute("""SELECT value_num FROM databank_serving WHERE dataset_key = 'pcbs_fuel_monthly'
                           AND indicator = 'fuel.price.average.gasoline_95' AND place_id = 2 AND occurred_at = '2012-01-01'""").fetchone()
     assert jan12 and float(jan12[0]) == 6.88
