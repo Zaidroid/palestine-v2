@@ -14,10 +14,9 @@
 
 BEGIN;
 
-INSERT INTO place (kind, name_en, name_ar, geom, centroid, source_refs, confidence, attrs, servable)
+INSERT INTO place (kind, name_en, name_ar, geom, source_refs, confidence, attrs, servable)
 SELECT 'country', v.name_en, v.name_ar,
-       ST_SetSRID(ST_MakePoint(v.lon, v.lat), 4326),
-       ST_SetSRID(ST_MakePoint(v.lon, v.lat), 4326)::geography,
+       ST_SetSRID(ST_MakePoint(v.lon, v.lat), 4326),      -- centroid is a generated column
        v.source_refs, 1.0, v.attrs, true
 FROM (VALUES
   ('Albania', 'ألبانيا', 19.8172, 41.3317, '{"source": "unhcr_hdx", "iso3": "ALB", "point": "capital city, World Bank country API"}'::jsonb, '{"iso3": "ALB", "point_is": "capital", "asylum_country_name": "Albania"}'::jsonb),
