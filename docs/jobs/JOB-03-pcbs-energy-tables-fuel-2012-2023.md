@@ -1,7 +1,7 @@
 ---
 job: 03
 slug: pcbs-energy-tables-fuel-2012-2023
-status: open
+status: returned · 2026-10-19
 opened: 2026-10-19 by Claude (Fable)
 branch: job-03-pcbs-energy-tables
 ---
