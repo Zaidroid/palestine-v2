@@ -13,7 +13,7 @@ branch: job-06-archive-figures-lake
 - **Corpus dump:** 2,799,562 bodies, 74 publisher shards, 1.1 GB gzipped, 36 minutes, one server-side cursor, read-only DB. Deleted after the lake was built (rule 8).
 - **The lake:** `data/raw/jobs/06/lake/` — **284,728 figure sentences**, 29 families, 2003–2026. Each has `doc_id`, date, publisher, url, family, cue, number, printed number, unit, qualifier, place_hint, period_hint, authority_hint, quote ≤300. 6 workers, ~42 minutes, `STOP` support; no `other` family was emitted (see below).
 - **The catalogue:** `catalogue.json`, `catalogue.md`, `coverage.md` (year × family heat map, 2005–2026). Every family has the 12-row read and a verdict.
-- **Ten series, pilot-reviewed:** `data/raw/jobs/06/reviewed/` — **260 kept records**, every candidate in the reviewed window read against its quote, verdict + one-line note.
+- **Ten series, pilot-reviewed:** `data/raw/jobs/06/reviewed/` — **343 kept records**, every candidate in the reviewed window read against its quote, verdict + one-line note.
 
 ## Catalogue — top of the table
 
@@ -37,8 +37,8 @@ branch: job-06-archive-figures-lake
 
 | family | reviewed | kept | span |
 |---|---:|---:|---|
-| trees_uprooted | 60 | 45 | 2026-05 → 2026-10 |
-| unemployment | 60 | 49 | 2026-04 → 2026-10 |
+| trees_uprooted | 120 | 87 | 2026-01 → 2026-10 |
+| unemployment | 120 | 90 | 2025-08 → 2026-10 |
 | land_orders | 30 | 28 | 2026-07 → 2026-10 |
 | rafah_crossing | 30 | 25 | 2026-07 → 2026-10 |
 | cooking_gas | 30 | 23 | 2025-11 → 2026-09 |
@@ -70,7 +70,7 @@ This is a **pilot, not the 300–3,000 per family** the brief set: the most rece
 
 ## Not finished
 
-- Step 3's per-family volume (300–3,000 kept) — only the pilot 260.
+- Step 3's per-family volume (300–3,000 kept) — only the pilot 343.
 - The other 19 families were not reviewed as series.
 - `other` family, and a full place gazetteer mapping (`place_id` is filled only when `place_hint` matches a locality name exactly).
 
