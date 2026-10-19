@@ -33,5 +33,6 @@ A job is one file in this folder, `JOB-NN-slug.md`, written by Claude (Fable) an
 | [JOB-02](JOB-02-health-facilities-places.md) | returned · fixes named | Health facilities by place and status over time, from ministry/WHO/OCHA statements |
 | [JOB-03](JOB-03-pcbs-energy-tables-fuel-2012-2023.md) | merged (command 42) | PCBS Energy Tables: monthly fuel prices 2012→2023 transcribed from the PDFs |
 | [JOB-05](JOB-05-gaza-electricity-rota-2010-2016.md) | merged (command 42) | Gaza's electricity rota before 2017 from the archive, and the 2017→2023 statements checked against OCHA's daily hours |
-| JOB-06 (to write) | — | The 1948–2000 UN reports (10,468 texts): yearly figures for refugees, casualties, demolitions |
+| [JOB-06](JOB-06-archive-figures-lake.md) | open · overnight | The figures lake: every number in the archive tagged by family, the catalogue of series, the ten best reviewed |
+| JOB-07 (to write) | — | The 1948–2000 UN reports (10,468 texts): yearly figures for refugees, casualties, demolitions |
 | [JOB-04](JOB-04-settlement-events-judgment.md) | merged (command 42) | Judgment pass over the archive's 640 unit announcements and 188 new outposts (regex first pass done by Claude 19 Oct) |
