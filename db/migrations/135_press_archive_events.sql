@@ -25,6 +25,15 @@
 
 BEGIN;
 
+-- The unit the announcements are counted in. db/registry/units.yaml carries it
+-- too (with its aliases); the registry loads after the migrations, so the row
+-- is created here first, as 130 did for hours_per_day and MW.
+INSERT INTO unit_def (key, name_en, name_ar, dimension, notes)
+VALUES ('housing_units', 'housing units', 'وحدات سكنية', 'count',
+        'Dwellings in a plan, a tender or a count of construction starts; one unit is one home.')
+ON CONFLICT (key) DO UPDATE
+   SET name_en = EXCLUDED.name_en, name_ar = EXCLUDED.name_ar, dimension = EXCLUDED.dimension, notes = EXCLUDED.notes;
+
 INSERT INTO source (key, name, kind, license_spdx, commercial_use, attribution_text,
                     authority_rank, reliability, independence_group, active,
                     redistribution, share_alike, attribution_required)
