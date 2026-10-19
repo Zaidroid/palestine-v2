@@ -183,3 +183,22 @@ registry:
       grain: year
       place_grain: region
       canonical_unit: persons
+    # Migration 130 (2026-10-19): Peace Now's outposts list, loaded by
+    # ops/fetch_peacenow_outposts.py, not by this spec; the rules are here
+    # because the registry scans every settlements.* indicator against this
+    # file. A count per governorate and month, and one row per outpost.
+    - when: {equals: "settlements.outposts_established"}
+      concept: settlement
+      measure_kind: flow         # outposts established in the month (or year)
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: events
+    - when: {equals: "settlements.outpost"}
+      ask_by_name: true          # one outpost each; the count above is the answer to "outposts"
+      concept: settlement
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: point
+      canonical_unit: events

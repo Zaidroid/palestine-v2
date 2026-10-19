@@ -678,7 +678,10 @@ def test_neither_specs_rule_can_catch_the_others_indicators():
             "settlements": [], CATEGORY: []}
     assert mine["max_unclassified"] == total["max_unclassified"] == 0
     assert [r["when"] for r in mine["rules"]] == [{"prefix": PREFIX}]
-    assert [r["when"] for r in total["rules"]] == [{"equals": TOTAL}]
+    # migration 130 (2026-10-19) added the two outpost indicators, by `equals` as well:
+    # still nothing a prefix could catch across the two files
+    assert [r["when"] for r in total["rules"]] == [{"equals": TOTAL}, {"equals": "settlements.outposts_established"},
+                                                  {"equals": "settlements.outpost"}]
     # the prefix carries its closing dot: neither the bare key nor a neighbour is caught
     for other in ("settlements.population_by_settlement", "settlements.population_by_settlements.pn0016",
                   "settlements.settler_population.pn0016", TOTAL, "land.settlement"):
