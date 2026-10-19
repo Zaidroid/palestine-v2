@@ -230,7 +230,17 @@ def test_pilot_dry_runs_reproduce_spec_arithmetic():
                           if by_source["HaMoked"] else {})
     if databank.reads_fallback(spec):
         assert by_source["HaMoked"] == 864
-    assert r["observations_emitted"] == len(recs) - by_source["HaMoked"]
+    # The books must CLOSE, and a dedupe is one of the ways they close:
+    # Addameer lists the same reading on two of its own pages, so
+    # `addameer:2026-10-01:arrests_since_7_october_2023` arrives twice —
+    # once from /statistics (fetched 10-19) and once from /statistics/2026/10
+    # (fetched 10-14, carrying a block_date). The two agree on every fact
+    # (26,000 arrests, same date, same indicator) and differ only in
+    # provenance, so collapsing them loses nothing and the loader DECLARES it
+    # as `deduped`. Unlike unhcr_population's doubled cells (2026-10-12),
+    # where the values disagreed and refusing the row was right.
+    assert r["observations_emitted"] == (len(recs) - by_source["HaMoked"]
+                                         - r["deduped"])
     routing = spec["source_routing"]
     assert set(by_source) <= set(routing["by_name"]) | set(routing["moved"])
     months = {rec["date"] for rec in recs

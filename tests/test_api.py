@@ -551,9 +551,14 @@ def test_gap_radar_measures_on_data_dates_not_mtimes() -> None:
     dead = by_status["v1_aid_access_unrwa_aid_trucks"]
     assert dead["status"] == "dead_upstream" and dead["dead_reason"]
     for x in d["datasets"]:
+        # `projection` joined the vocabulary with migration 115 (2026-10-13):
+        # the UN's WPP medium variant is a model's output, never compared with
+        # an observed series and never the latest figure. The radar counts it
+        # in its own summary line; this list had not been told.
         assert x["status"] in ("fresh", "late", "stalled", "dead_upstream",
                                "closed_corpus", "continued", "unmeasured",
-                               "supply_dead", "awaiting_permission")
+                               "supply_dead", "awaiting_permission",
+                               "projection")
         if x["status"] in ("fresh", "late", "stalled", "continued"):
             assert x["age_days"] is not None and x["allowance_days"] > 0
     # `continued` is earned, not declared: a predecessor is only excused when

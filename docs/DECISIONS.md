@@ -949,3 +949,97 @@ unstable across days.
 
 **Trap for next Monday:** do not read a single day's known-fraction as a trend,
 in either direction, and do not read the 0.61 as the south being fixed.
+
+## 2026-10-19 · MAINTENANCE · Both health faults are quiet publishers, not broken code
+
+`power` and `tg_ahwalaltareq` both crossed their own p95 silence ceilings, and
+neither is ours.
+
+**`power`**, silent 9,140m against a 8,329m ceiling. The loader was run and
+measured, not assumed: **39 notices read, 36 windows parsed, 30 places resolved,
+`fetch_failed: 0`** — and the newest notice the publisher lists (id 4900, بيت
+ايبا) carries a window of **2026-10-13 05:30→09:00**. The feed's last
+observation is that cut. The publisher has announced no new one since. This is
+NOT the 2026-08-31 failure class it pattern-matches ("a real list, read
+faithfully, that is not the list the facts are in"): the index IS the right
+list, and the gap 10-02 → 10-11 in its own ids shows a 6-day quiet stretch is
+within its rhythm.
+
+**`tg_ahwalaltareq`**, silent 27h against a 24h floor. It delivers
+observations, not claims, so it arrives through v1's road reader — and three
+channels with nearly the same name came through that same reader at **17:21
+today**: `tg_ahwalaltreq` (8,679 rows/7d), `tg_ahwaltareq1` (331),
+`tg_ahwalaltorq` (1,923). The path is proven alive by its siblings; the channel
+itself is quiet. DECISIONS 2026-07-31 already measured it a **pure mirror**
+(first reporter 10%, sole reporter 1%), so a quiet day costs no coverage.
+
+**Filed, a threshold not a patch:** `power`'s ceiling is the p95 of
+minute-bucketed arrival gaps, and its arrivals are **bimodal** — the 15-minute
+poll writes a row on every tick while a cut is live, then nothing for days
+between announcements. p50 15m and p95 5.8d are two different processes in one
+number, so the ceiling answers "how long between writes" when the question is
+"has the publisher stopped announcing". A gate number is policy.
+
+## 2026-10-19 · MAINTENANCE · Three of round 10's nine defects are not the class they were filed as
+
+Nothing was fixed in the classifier, so **1.11.0 stays MEASURED at 0.740**. But
+re-reading the named claims at 1.11.0 changed what three of them ARE, and two
+of those corrections matter more than the fix would have.
+
+**Defect 1 is three different bugs, and only one is mechanical.** The reject
+pattern `اخطار\w*...ب?هدم` **does match** 62430 (`اخطارا بالهدم`) — it is then
+thrown away by the escape hatch at `news.py:1156`, which drops the notice
+reject whenever `_DEMOLITION_ACT_RE` also matches. Here it matches **`تهدموا`**,
+inside the slogan «ان هدمتم البنيان لن تهدموا الانسان». 72495 is the same
+hatch, triggered by the preamble «تزامنا مع تنفيذ **عمليات هدم**». Only 43198
+is a plain window: 10 tokens sit between تخطر and بالهدم and the pattern allows
+`{0,7}`.
+
+**Defect 9's "رأس عطية missing" is not a gazetteer gap at all.** The gazetteer
+is never consulted: `بلدة` at token 5 follows **`من`** with the person word
+`شابين` before it, so the round-3 origin≠site rule
+(`news.py:1034`) skips tokens 5–8 deliberately — the rule built because an
+arrest at مفرق فصايل was pinned to the detainee's home village. The name is
+refused on purpose, and `place did not resolve` is the honest answer. What then
+wins is `ابو انس`, a man's kunya read by the toponym-prefix reader — and it too
+fails to resolve, so nothing wrong is served.
+
+**Defect 8 cannot be fixed by vocabulary.** Adding تفجير changes neither named
+claim: 210292 («تنفذ تفجيرًا في مخيم جنين») has no structure object, so typing
+it demolition is an inference, not a lexicon entry; and 211470 is rejected by
+**aftermath** before any incident verb is read, because «قبل أسابيع قليلة»
+describes the shooting that motivated the demolition, not the demolition.
+
+**A TRAP, measured: the obvious patch for 183995 arms defect 7.** Adding
+`جامعه` to `_CUE_WORDS` does fix it (`لجامعه بيرزيت` → بيرزيت, raid, hand
+is_incident=True). Re-read over all 290 round-10 claims it changes **three**,
+and the third is **210457 — the Birzeit University martyrs' memorial**, defect
+7's own claim, which goes from `death, place=None` (unservable) to
+`death, place=بيرزيت` (**servable**). The one-line vocabulary fix promotes a
+known-false death into the serving set. It must not land until defect 7 does.
+
+**Verified ready, side-effect free:** the notice window `{0,7}` → `{0,12}`
+rejects 43198 as `notice not act` and touches nothing else in 290 claims. It
+was not committed: alone it is one claim, and landing it bumps the version and
+spends 1.11.0's only honest measurement. It should ride along with the next
+judgment-driven classifier change at no extra cost.
+
+## 2026-10-19 · MAINTENANCE · Addameer lists the same reading on two of its own pages
+
+`test_pilot_dry_runs_reproduce_spec_arithmetic` failed 1681 == 1682 - 0, which
+reads like the silent loss this project most fears. It is not one.
+`addameer:2026-10-01:arrests_since_7_october_2023` arrives **twice**: once from
+`/statistics` (fetched 10-19) and once from `/statistics/2026/10` (fetched
+10-14, carrying a `block_date`). The two agree on **every fact** — 26,000
+arrests, same date, same indicator, same unit — and differ only in provenance.
+The loader collapsed them and **declared it**: `deduped: 1`.
+
+So the loader is right and the test's arithmetic was incomplete: it asserted
+one record → one observation with no term for a dedupe. Fixed by closing the
+books (`read = emitted + drops + deduped`), which asserts more than before,
+not less. Unlike unhcr_population of 2026-10-12, where the doubled cells
+**disagreed** in value and refusing the row was the correct answer.
+
+**Trap for next Monday:** `deduped` is a legitimate way for the books to close.
+Before treating `emitted < read` as data loss, read the drop and dedupe
+counters — the loader says which it was.
