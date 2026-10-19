@@ -190,6 +190,31 @@ identity:
 registry:
   max_unclassified: 0
   rules:
+    # Migration 134 (2026-10-19): PCBS's yearly counts of schools, students and
+    # teachers by supervising authority, loaded by ops/fetch_pcbs_education.py,
+    # not by this spec; the rules are here because the registry scans every
+    # education.* indicator against this file.
+    - when: {prefix: "education.schools."}
+      concept: education.provision
+      measure_kind: stock
+      polarity: 1
+      grain: year
+      place_grain: governorate
+      canonical_unit: count
+    - when: {prefix: "education.students."}
+      concept: education.provision
+      measure_kind: stock
+      polarity: 1
+      grain: year
+      place_grain: governorate
+      canonical_unit: persons
+    - when: {prefix: "education.teachers."}
+      concept: education.provision
+      measure_kind: stock
+      polarity: 1
+      grain: year
+      place_grain: governorate
+      canonical_unit: persons
     - when: {equals: "education.school_record"}
       concept: education.facility
       measure_kind: stock

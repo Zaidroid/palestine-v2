@@ -289,23 +289,24 @@ def test_asof_harness_is_green():
 
 @needs_v1
 def test_snapshot_tree_intact_zero_days_deleted():
-    # Gate 2's no-data-loss bullet: v1's snapshot tree is read-only input;
-    # the replay must never have consumed a day. 35 days existed when Tier 2
-    # started (2026-06-25 onward); the count only grows.
+    # Gate 2's no-data-loss bullet, as it stands since 2026-10-19: the VAULT
+    # is the evidence base and holds every day v1 ever wrote (109 on 19 Oct,
+    # verified entry by entry, and the count only grows); v1 itself keeps the
+    # last 30 days — Zaid trimmed the 78 older folders that night (35 GB, the
+    # disk at 99 %) after the vault check. The replay reads the vault, never
+    # v1, so a day leaving v1 loses nothing. What must still never happen: a
+    # day in v1 that the vault does not hold, or the vault shrinking.
     days = sorted(p.name for p in
                   (V1 / "snapshots").iterdir() if p.is_dir())
-    assert len(days) >= 35
-    assert days[0] == "2026-06-25"
+    assert len(days) >= 28, f"v1 holds only {len(days)} days; it keeps the last 30"
 
-    # ...and since 2026-08-07 the vault must hold at least as many, because
-    # v1 prunes its own archive and we do not. A vault that falls behind is
-    # the evidence base quietly shrinking — see tests/test_evidence.py.
     man = Path(__file__).resolve().parent.parent / "data/evidence/manifest.json"
     if man.exists():
         import json as _json
         vaulted = _json.loads(man.read_text())["days"]
-        assert len(vaulted) >= len(days), \
-            f"vault has {len(vaulted)} days, v1 still has {len(days)}"
+        assert len(vaulted) >= 109, f"the vault shrank: {len(vaulted)} days"
+        missing = sorted(set(days) - set(vaulted))
+        assert not missing, f"days in v1 the vault does not hold: {missing[:5]}"
 
 
 @needs_v1

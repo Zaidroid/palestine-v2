@@ -1,0 +1,125 @@
+# Countries that host Palestinian refugees and asylum seekers in UNHCR's HDX
+# tables (116 on 2026-10-19), as places of kind `country` (migrations 132/133).
+#
+# WHY. 45,197 UNHCR rows carried the host country only in attrs (name and
+# ISO3); the gazetteer had no country, so the diaspora could not be asked for
+# by place. Each entry: iso3 (UNHCR's code), name_en (UNHCR's English name),
+# name_ar (the Arabic name in common use). No geometry: a map joins by iso3.
+# ops/build_country_places.py checks this file and writes the migration's rows.
+countries:
+- {iso3: ALB, name_en: Albania, name_ar: ألبانيا, lat: 41.3317, lon: 19.8172, point_is: capital}
+- {iso3: ARE, name_en: United Arab Emirates, name_ar: الإمارات العربية المتحدة, lat: 24.4764, lon: 54.3705, point_is: capital}
+- {iso3: ARG, name_en: Argentina, name_ar: الأرجنتين, lat: -34.6118, lon: -58.4173, point_is: capital}
+- {iso3: ARM, name_en: Armenia, name_ar: أرمينيا, lat: 40.1596, lon: 44.509, point_is: capital}
+- {iso3: AUS, name_en: Australia, name_ar: أستراليا, lat: -35.282, lon: 149.129, point_is: capital}
+- {iso3: AZE, name_en: Azerbaijan, name_ar: أذربيجان, lat: 40.3834, lon: 49.8932, point_is: capital}
+- {iso3: BEL, name_en: Belgium, name_ar: بلجيكا, lat: 50.8371, lon: 4.36761, point_is: capital}
+- {iso3: BEN, name_en: Benin, name_ar: بنين, lat: 6.4779, lon: 2.6323, point_is: capital}
+- {iso3: BGD, name_en: Bangladesh, name_ar: بنغلاديش, lat: 23.7055, lon: 90.4113, point_is: capital}
+- {iso3: BGR, name_en: Bulgaria, name_ar: بلغاريا, lat: 42.7105, lon: 23.3238, point_is: capital}
+- {iso3: BHR, name_en: Bahrain, name_ar: البحرين, lat: 26.1921, lon: 50.5354, point_is: capital}
+- {iso3: BIH, name_en: Bosnia and Herzegovina, name_ar: البوسنة والهرسك, lat: 43.8607, lon: 18.4214, point_is: capital}
+- {iso3: BLR, name_en: Belarus, name_ar: بيلاروسيا, lat: 53.9678, lon: 27.5766, point_is: capital}
+- {iso3: BOL, name_en: "Bolivia (Plurinational State of)", name_ar: بوليفيا, lat: -13.9908, lon: -66.1936, point_is: capital}
+- {iso3: BRA, name_en: Brazil, name_ar: البرازيل, lat: -15.7801, lon: -47.9292, point_is: capital}
+- {iso3: CAN, name_en: Canada, name_ar: كندا, lat: 45.4215, lon: -75.6919, point_is: capital}
+- {iso3: CHE, name_en: Switzerland, name_ar: سويسرا, lat: 46.948, lon: 7.44821, point_is: capital}
+- {iso3: CHL, name_en: Chile, name_ar: تشيلي, lat: -33.475, lon: -70.6475, point_is: capital}
+- {iso3: CHN, name_en: China, name_ar: الصين, lat: 40.0495, lon: 116.286, point_is: capital}
+- {iso3: CIV, name_en: "Côte d'Ivoire", name_ar: كوت ديفوار, lat: 5.332, lon: -4.0305, point_is: capital}
+- {iso3: COD, name_en: Democratic Republic of the Congo, name_ar: جمهورية الكونغو الديمقراطية, lat: -4.325, lon: 15.3222, point_is: capital}
+- {iso3: COL, name_en: Colombia, name_ar: كولومبيا, lat: 4.60987, lon: -74.082, point_is: capital}
+- {iso3: CRI, name_en: Costa Rica, name_ar: كوستاريكا, lat: 9.63701, lon: -84.0089, point_is: capital}
+- {iso3: CUB, name_en: Cuba, name_ar: كوبا, lat: 23.1333, lon: -82.3667, point_is: capital}
+- {iso3: CYP, name_en: Cyprus, name_ar: قبرص, lat: 35.1676, lon: 33.3736, point_is: capital}
+- {iso3: CZE, name_en: Czechia, name_ar: التشيك, lat: 50.0878, lon: 14.4205, point_is: capital}
+- {iso3: DEU, name_en: Germany, name_ar: ألمانيا, lat: 52.5235, lon: 13.4115, point_is: capital}
+- {iso3: DJI, name_en: Djibouti, name_ar: جيبوتي, lat: 11.5806, lon: 43.1425, point_is: capital}
+- {iso3: DNK, name_en: Denmark, name_ar: الدنمارك, lat: 55.6763, lon: 12.5681, point_is: capital}
+- {iso3: DZA, name_en: Algeria, name_ar: الجزائر, lat: 36.7397, lon: 3.05097, point_is: capital}
+- {iso3: ECU, name_en: Ecuador, name_ar: الإكوادور, lat: -0.229498, lon: -78.5243, point_is: capital}
+- {iso3: EGY, name_en: Egypt, name_ar: مصر, lat: 30.0982, lon: 31.2461, point_is: capital}
+- {iso3: ESP, name_en: Spain, name_ar: إسبانيا, lat: 40.4167, lon: -3.70327, point_is: capital}
+- {iso3: EST, name_en: Estonia, name_ar: إستونيا, lat: 59.4392, lon: 24.7586, point_is: capital}
+- {iso3: ETH, name_en: Ethiopia, name_ar: إثيوبيا, lat: 9.02274, lon: 38.7468, point_is: capital}
+- {iso3: FIN, name_en: Finland, name_ar: فنلندا, lat: 60.1608, lon: 24.9525, point_is: capital}
+- {iso3: FRA, name_en: France, name_ar: فرنسا, lat: 48.8566, lon: 2.35097, point_is: capital}
+- {iso3: GBR, name_en: United Kingdom of Great Britain and Northern Ireland, name_ar: المملكة المتحدة, lat: 51.5002, lon: -0.126236, point_is: capital}
+- {iso3: GEO, name_en: Georgia, name_ar: جورجيا, lat: 41.71, lon: 44.793, point_is: capital}
+- {iso3: GHA, name_en: Ghana, name_ar: غانا, lat: 5.57045, lon: -0.20795, point_is: capital}
+- {iso3: GRC, name_en: Greece, name_ar: اليونان, lat: 37.9792, lon: 23.7166, point_is: capital}
+- {iso3: HKG, name_en: "China, Hong Kong Special Administrative Region", name_ar: هونغ كونغ, lat: 22.3964, lon: 114.109, point_is: capital}
+- {iso3: HRV, name_en: Croatia, name_ar: كرواتيا, lat: 45.8069, lon: 15.9614, point_is: capital}
+- {iso3: HUN, name_en: Hungary, name_ar: المجر, lat: 47.4984, lon: 19.0408, point_is: capital}
+- {iso3: IDN, name_en: Indonesia, name_ar: إندونيسيا, lat: -6.19752, lon: 106.83, point_is: capital}
+- {iso3: IND, name_en: India, name_ar: الهند, lat: 28.6353, lon: 77.225, point_is: capital}
+- {iso3: IRL, name_en: Ireland, name_ar: أيرلندا, lat: 53.3441, lon: -6.26749, point_is: capital}
+- {iso3: IRQ, name_en: Iraq, name_ar: العراق, lat: 33.3302, lon: 44.394, point_is: capital}
+- {iso3: ISL, name_en: Iceland, name_ar: آيسلندا, lat: 64.1353, lon: -21.8952, point_is: capital}
+- {iso3: ISR, name_en: Israel, name_ar: إسرائيل, lat: 31.7717, lon: 35.2035, point_is: capital}
+- {iso3: ITA, name_en: Italy, name_ar: إيطاليا, lat: 41.8955, lon: 12.4823, point_is: capital}
+- {iso3: JOR, name_en: Jordan, name_ar: الأردن, lat: 31.9497, lon: 35.9263, point_is: capital}
+- {iso3: JPN, name_en: Japan, name_ar: اليابان, lat: 35.67, lon: 139.77, point_is: capital}
+- {iso3: KAZ, name_en: Kazakhstan, name_ar: كازاخستان, lat: 51.1879, lon: 71.4382, point_is: capital}
+- {iso3: KGZ, name_en: Kyrgyzstan, name_ar: قيرغيزستان, lat: 42.8851, lon: 74.6057, point_is: capital}
+- {iso3: KHM, name_en: Cambodia, name_ar: كمبوديا, lat: 11.5556, lon: 104.874, point_is: capital}
+- {iso3: KOR, name_en: Republic of Korea, name_ar: كوريا الجنوبية, lat: 37.5323, lon: 126.957, point_is: capital}
+- {iso3: KWT, name_en: Kuwait, name_ar: الكويت, lat: 29.3721, lon: 47.9824, point_is: capital}
+- {iso3: LBN, name_en: Lebanon, name_ar: لبنان, lat: 33.8872, lon: 35.5134, point_is: capital}
+- {iso3: LBR, name_en: Liberia, name_ar: ليبيريا, lat: 6.30039, lon: -10.7957, point_is: capital}
+- {iso3: LBY, name_en: Libya, name_ar: ليبيا, lat: 32.8578, lon: 13.1072, point_is: capital}
+- {iso3: LIE, name_en: Liechtenstein, name_ar: ليختنشتاين, lat: 47.1411, lon: 9.52148, point_is: capital}
+- {iso3: LKA, name_en: Sri Lanka, name_ar: سريلانكا, lat: 6.92148, lon: 79.8528, point_is: capital}
+- {iso3: LTU, name_en: Lithuania, name_ar: ليتوانيا, lat: 54.6896, lon: 25.2799, point_is: capital}
+- {iso3: LUX, name_en: Luxembourg, name_ar: لوكسمبورغ, lat: 49.61, lon: 6.1296, point_is: capital}
+- {iso3: LVA, name_en: Latvia, name_ar: لاتفيا, lat: 56.9465, lon: 24.1048, point_is: capital}
+- {iso3: MAR, name_en: Morocco, name_ar: المغرب, lat: 33.9905, lon: -6.8704, point_is: capital}
+- {iso3: MDA, name_en: Republic of Moldova, name_ar: مولدوفا, lat: 47.0167, lon: 28.8497, point_is: capital}
+- {iso3: MDG, name_en: Madagascar, name_ar: مدغشقر, lat: -20.4667, lon: 45.7167, point_is: capital}
+- {iso3: MEX, name_en: Mexico, name_ar: المكسيك, lat: 19.427, lon: -99.1276, point_is: capital}
+- {iso3: MKD, name_en: North Macedonia, name_ar: مقدونيا الشمالية, lat: 42.0024, lon: 21.4361, point_is: capital}
+- {iso3: MLT, name_en: Malta, name_ar: مالطا, lat: 35.9042, lon: 14.5189, point_is: capital}
+- {iso3: MNE, name_en: Montenegro, name_ar: الجبل الأسود, lat: 42.4602, lon: 19.2595, point_is: capital}
+- {iso3: MOZ, name_en: Mozambique, name_ar: موزمبيق, lat: -25.9664, lon: 32.5713, point_is: capital}
+- {iso3: MRT, name_en: Mauritania, name_ar: موريتانيا, lat: 18.2367, lon: -15.9824, point_is: capital}
+- {iso3: MYS, name_en: Malaysia, name_ar: ماليزيا, lat: 3.12433, lon: 101.684, point_is: capital}
+- {iso3: NER, name_en: Niger, name_ar: النيجر, lat: 13.514, lon: 2.1073, point_is: capital}
+- {iso3: NGA, name_en: Nigeria, name_ar: نيجيريا, lat: 9.05804, lon: 7.48906, point_is: capital}
+- {iso3: NLD, name_en: "Netherlands (Kingdom of the)", name_ar: هولندا, lat: 52.3738, lon: 4.89095, point_is: capital}
+- {iso3: NOR, name_en: Norway, name_ar: النرويج, lat: 59.9138, lon: 10.7387, point_is: capital}
+- {iso3: NRU, name_en: Naoero, name_ar: ناورو, lat: -0.5477, lon: 166.920867, point_is: capital}
+- {iso3: NZL, name_en: New Zealand, name_ar: نيوزيلندا, lat: -41.2865, lon: 174.776, point_is: capital}
+- {iso3: PAK, name_en: Pakistan, name_ar: باكستان, lat: 30.5167, lon: 72.8, point_is: capital}
+- {iso3: PER, name_en: Peru, name_ar: بيرو, lat: -12.0931, lon: -77.0465, point_is: capital}
+- {iso3: PHL, name_en: Philippines, name_ar: الفلبين, lat: 14.5515, lon: 121.035, point_is: capital}
+- {iso3: POL, name_en: Poland, name_ar: بولندا, lat: 52.26, lon: 21.02, point_is: capital}
+- {iso3: PRT, name_en: Portugal, name_ar: البرتغال, lat: 38.7072, lon: -9.13552, point_is: capital}
+- {iso3: PRY, name_en: Paraguay, name_ar: باراغواي, lat: -25.3005, lon: -57.6362, point_is: capital}
+- {iso3: PSE, name_en: State of Palestine, name_ar: دولة فلسطين}
+- {iso3: QAT, name_en: Qatar, name_ar: قطر, lat: 25.2948, lon: 51.5082, point_is: capital}
+- {iso3: ROU, name_en: Romania, name_ar: رومانيا, lat: 44.4479, lon: 26.0979, point_is: capital}
+- {iso3: RUS, name_en: Russian Federation, name_ar: روسيا, lat: 55.7558, lon: 37.6176, point_is: capital}
+- {iso3: SAU, name_en: Saudi Arabia, name_ar: السعودية, lat: 24.6748, lon: 46.6977, point_is: capital}
+- {iso3: SDN, name_en: Sudan, name_ar: السودان, lat: 15.5932, lon: 32.5363, point_is: capital}
+- {iso3: SEN, name_en: Senegal, name_ar: السنغال, lat: 14.7247, lon: -17.4734, point_is: capital}
+- {iso3: SOM, name_en: Somalia, name_ar: الصومال, lat: 2.07515, lon: 45.3254, point_is: capital}
+- {iso3: SRB, name_en: Serbia, name_ar: صربيا, lat: 44.8024, lon: 20.4656, point_is: capital}
+- {iso3: SVK, name_en: Slovakia, name_ar: سلوفاكيا, lat: 48.1484, lon: 17.1073, point_is: capital}
+- {iso3: SVN, name_en: Slovenia, name_ar: سلوفينيا, lat: 46.0546, lon: 14.5044, point_is: capital}
+- {iso3: SWE, name_en: Sweden, name_ar: السويد, lat: 59.3327, lon: 18.0645, point_is: capital}
+- {iso3: SYR, name_en: Syrian Arab Republic, name_ar: سوريا, lat: 33.5146, lon: 36.3119, point_is: capital}
+- {iso3: TCD, name_en: Chad, name_ar: تشاد, lat: 12.1048, lon: 15.0445, point_is: capital}
+- {iso3: TGO, name_en: Togo, name_ar: توغو, lat: 6.1228, lon: 1.2255, point_is: capital}
+- {iso3: THA, name_en: Thailand, name_ar: تايلاند, lat: 13.7308, lon: 100.521, point_is: capital}
+- {iso3: TUN, name_en: Tunisia, name_ar: تونس, lat: 36.7899, lon: 10.21, point_is: capital}
+- {iso3: TUR, name_en: Türkiye, name_ar: تركيا, lat: 39.7153, lon: 32.3606, point_is: capital}
+- {iso3: TZA, name_en: United Republic of Tanzania, name_ar: تنزانيا, lat: -6.17486, lon: 35.7382, point_is: capital}
+- {iso3: UGA, name_en: Uganda, name_ar: أوغندا, lat: 0.314269, lon: 32.5729, point_is: capital}
+- {iso3: UKR, name_en: Ukraine, name_ar: أوكرانيا, lat: 50.4536, lon: 30.5038, point_is: capital}
+- {iso3: URY, name_en: Uruguay, name_ar: الأوروغواي, lat: -34.8941, lon: -56.0675, point_is: capital}
+- {iso3: USA, name_en: United States of America, name_ar: الولايات المتحدة الأمريكية, lat: 38.8895, lon: -77.032, point_is: capital}
+- {iso3: UZB, name_en: Uzbekistan, name_ar: أوزبكستان, lat: 41.3052, lon: 69.269, point_is: capital}
+- {iso3: VEN, name_en: "Venezuela (Bolivarian Republic of)", name_ar: فنزويلا, lat: 9.08165, lon: -69.8371, point_is: capital}
+- {iso3: YEM, name_en: Yemen, name_ar: اليمن, lat: 15.352, lon: 44.2075, point_is: capital}
+- {iso3: ZAF, name_en: South Africa, name_ar: جنوب أفريقيا, lat: -25.746, lon: 28.1871, point_is: capital}
+- {iso3: ZMB, name_en: Zambia, name_ar: زامبيا, lat: -15.3982, lon: 28.2937, point_is: capital}

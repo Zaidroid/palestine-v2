@@ -19,6 +19,25 @@
 # how many rows are in that state.
 
 units:
+  # Settlement activity tallies (cited figures, 2026-10-19): housing units in
+  # plans, tenders and construction starts are counted in dwellings, not people.
+  housing_units:
+    name_en: housing units
+    name_ar: وحدات سكنية
+    dimension: count
+    notes: Dwellings in a plan, a tender or a count of construction starts; one unit is one home.
+    aliases:
+      housing_units: {}
+      units: {note: as the publishers write it ("12,159 housing units")}
+      "housing units": {}
+      HU: {note: the EU's abbreviation}
+  outposts:
+    name_en: outposts
+    name_ar: بؤر استيطانية
+    dimension: count
+    notes: Settler outposts counted as establishments; one is one outpost.
+    aliases:
+      outposts: {}
   persons:
     name_en: persons
     name_ar: أشخاص

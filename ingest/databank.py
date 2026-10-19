@@ -479,6 +479,16 @@ def load_places(conn) -> dict:
         rows = cur.fetchall()
     by_name = {(k, n): pid for pid, k, n, _ in rows}
     by_pcode = {pc: pid for pid, k, n, pc in rows if k == "governorate" and pc}
+    # Countries of asylum (migration 133, 2026-10-19): ISO3 → place_id, so a
+    # UNHCR row lands on its host country. Before the migration the kind does
+    # not exist and the dict is empty: the row keeps its honest NULL place.
+    with conn.cursor() as cur:
+        try:
+            cur.execute("SELECT place_id, attrs->>'iso3' FROM place WHERE kind = 'country' AND merged_into IS NULL")
+            by_iso3 = {iso: pid for pid, iso in cur.fetchall() if iso}
+        except Exception:                                              # noqa: BLE001 — the enum value is not there yet
+            conn.rollback()
+            by_iso3 = {}
     return {
         "region": {n: pid for (k, n), pid in by_name.items() if k == "region"},
         "governorate": {n: pid for (k, n), pid in by_name.items()
@@ -486,6 +496,7 @@ def load_places(conn) -> dict:
         "crossing": {n: pid for (k, n), pid in by_name.items()
                      if k == "crossing"},
         "pcode": by_pcode,
+        "country": by_iso3,
     }
 
 
@@ -2264,6 +2275,9 @@ def t_unhcr_population(rec, spec, places, counts):
              "asylum_country_code": code, "origin_country_code": origin}
     if code == "PSE":
         attrs["region"] = "Palestine"           # people residing in Palestine: honest NULL place
+    # The host country as a place (migration 133): UNHCR's own ISO3 on the row
+    # names it, so the row is placed by the publisher's code, not a guess.
+    place_id = places.get("country", {}).get(code) if code and code != "PSE" else None
     rows = []
     summed = None
     if table in _UNHCR_CELL:
@@ -2282,7 +2296,8 @@ def t_unhcr_population(rec, spec, places, counts):
         a = dict(attrs)
         a.update(dims or {})
         sid = "unhcr-" + hashlib.sha1("|".join([table, year, origin, code, key, ind]).encode("utf-8")).hexdigest()[:20]
-        rows.append(Row(ds, ind, day, "year", sid, value_num=value, unit=unit, attrs=a))
+        rows.append(Row(ds, ind, day, "year", sid, value_num=value, unit=unit, attrs=a,
+                        place_id=place_id, located=place_id is not None))
 
     if table == "stocks":
         for col, s in _UNHCR_STOCKS:

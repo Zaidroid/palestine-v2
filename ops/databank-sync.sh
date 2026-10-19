@@ -43,6 +43,7 @@ step .venv/bin/python -m ops.fetch_ocha_injuries # OCHA's injuries by month (202
 step .venv/bin/python -m ops.fetch_pcbs          # PCBS population + CPI
 step .venv/bin/python -m ops.fetch_pcbs_monthly  # PCBS monthly CPI by region (1996→) + monthly fuel averages (2019→), migration 129 (2026-10-19)
 step .venv/bin/python -m ops.fetch_worldbank_fuel # World Bank GFPD: West Bank official fuel prices 2016-12 → 2025-04, migration 129 (2026-10-19)
+step .venv/bin/python -m ops.fetch_pcbs_education # PCBS schools, students, teachers by year: regions 1994/95 →, governorates 2011/12 →, migration 134 (2026-10-19)
 step .venv/bin/python -m ops.fetch_hamoked       # HaMoked detention, monthly
 step .venv/bin/python -m ops.fetch_wpp           # UN WPP 2024, the 1950s (monthly at most)
 step .venv/bin/python -m ops.fetch_unrwa_registered   # UNRWA registered refugees by field (HDX)
@@ -76,6 +77,8 @@ step .venv/bin/python -m ops.fetch_peacenow_settlements   # Peace Now's populati
 step .venv/bin/python -m ops.fetch_peacenow_outposts      # Peace Now's outposts list: one row each at its establishment month + monthly count per governorate, migration 130 (2026-10-19)
 step .venv/bin/python -m ops.fetch_ocha_gaza_electricity  # OCHA's daily Gaza electricity table 2017-01-01 → 2023-09-30 (frozen; re-reads the cached copy), migration 130 (2026-10-19)
 step .venv/bin/python -m ops.fetch_addameer           # prisoner statistics, monthly
+step .venv/bin/python -m ops.extract_arrests          # the organisations' arrest tallies read from the archive (monthly 2014 →, overnight Oct 2023 →), migration 131 (2026-10-19)
+step .venv/bin/python -m ops.load_arrests_press       # … loaded into arrests_press
 step .venv/bin/python -m ops.fetch_gho_health         # WHO GHO health, every dimension kept (re-reads weekly)
 # UCDP's own bulk files: GED 26.1's events of 2025 (the candidate events are
 # fetched and not loaded). Exit 1 with a `pending` ledger line = a newer release.
