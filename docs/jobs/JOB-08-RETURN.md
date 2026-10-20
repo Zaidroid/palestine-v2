@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B · 2026-10-20
+status: returned · A+B+C · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -14,8 +14,9 @@ branch: job-08-lake-second-pass
 |---|---:|---:|---:|---|---|---|
 | A trees 2003–2025 | 3,191 | **705** (+42 tallies) | 188 reviewed + 517 new; 349 folded | 2004-08 → 2025-12 | 30 random: 3 errors dropped; 35 p95: 1 duplicate dropped; four 45-draws: last clean | returned · judgment pass (2,604 sentences) |
 | B land orders 2003–2025 | 1,986 | **247** | ~200 restatements folded by the readers | 2003-02 → 2025-12 | 30 random: 1 error dropped; 12 p95 read; 57.252 corrected | returned · judgment pass (1,986 sentences) |
+| C Gaza trucks 2008–9 Oct 2025 | 1,309 | **216** | 92 period + 124 day; duplicates folded | 2012-05 → 2025-09 | 30 random: 2 errors dropped; 9 p95 read | returned · judgment pass (1,045 in scope) |
 
-**C–K not started.** A and B each had every candidate sentence read; scripts only formatted and merged. A passed Claude's third review; B is new tonight.
+**D–K not started.** A and B passed Claude's review; C is new tonight. Every candidate sentence in A, B and C was read; scripts only formatted and merged.
 
 ## B — what is in the files
 
@@ -34,3 +35,10 @@ branch: job-08-lake-second-pass
 - 30 random kept rows read: one error (a shared Jayyous/Falamiya count), dropped; the other 29 pass.
 - Every row above p95 (8,160 dunums) read: 12 rows, all pass after the Kafr Qaddum correction.
 - Pattern failures: dot vs thousands, «137,500 ألف» misparse, shared counts across villages, continuations/renewals, plans/notices, wrong event dates, 2026.
+
+
+## C — what is in the files
+
+- `data/raw/jobs/08/gaza_trucks.read.ndjson.gz` — 1,309 lake records; **1,045** before the 2025-10-10 cutoff.
+- `data/raw/jobs/08/gaza_trucks.review.yaml` — **216** `gaza_trucks_stated` rows (`doc, idx, day or from+to, trucks, scope, authority, qualifier, note`) and **808** drops.
+- `data/raw/jobs/08/gaza_trucks.REVIEW.md` — numbers, 30-row self-check, 9 p95 rows, cluster report, pattern failures.
