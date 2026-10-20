@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C · judgment pass · 2026-10-20
+status: returned · A+B+C+D · judgment pass · 2026-10-20
 opened: 2026-10-20 by Claude (Fable), for two nights
 branch: job-08-lake-second-pass
 deadline: 2026-10-21 08:00 UTC first return (whatever is finished), 2026-10-22 08:00 UTC the rest; update JOB-08-RETURN.md at every stop point
