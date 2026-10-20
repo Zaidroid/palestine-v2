@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D+E+F+G · 2026-10-20
+status: returned · A+B+C+D+E+F+G+H · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -19,8 +19,9 @@ branch: job-08-lake-second-pass
 | E hunger strikes 2004–2026 | 1,061 | **612** | 404 drops; relays folded; 32 day-only null | 2004-08 → 2026-02 | 30 random: 3 fixed; 28 p95 read | returned · judgment pass (1,061 sentences) |
 | F iron gates 2004–2026 | 179 | **30** | 149 drops; cumulative totals not cited | 2008-03 → 2026-10 | 30 kept all read; 2 p95 read | returned · judgment pass (179 sentences) |
 | G settler-attack tallies 2012–2026 | 758 | **69** | 689 drops; relays folded | 2012-01 → 2026-10 | 30 read; 3 p95 read | returned · judgment pass (758 sentences) |
+| H administrative detention 1967–2026 | 1,216 | **137** | 1,010 drops; 35 stock; 69 folded relays | 1967-01 → 2026 | 30 read; 1 inferred sum dropped; 6 p95 read | returned · judgment pass (1,216 sentences) |
 
-**H–K not started.** A–F passed Claude's review; G is new tonight. Every candidate sentence in A–G was read; scripts only formatted and merged.
+**I–K not started.** A–G passed Claude's review; H is new tonight. Every candidate sentence in A–H was read; scripts only formatted and merged.
 
 ## B — what is in the files
 
@@ -74,3 +75,10 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/attack_tallies.read.ndjson.gz` — 758 lake records.
 - `data/raw/jobs/08/attack_tallies.review.yaml` — **69** `attack_tallies` rows (`doc, idx, authority, from, to, precision, rows`) and **689** drops.
 - `data/raw/jobs/08/attack_tallies.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
+
+
+## H — what is in the files
+
+- `data/raw/jobs/08/admin_detention.read.ndjson.gz` — 1,216 lake records.
+- `data/raw/jobs/08/admin_detention.review.yaml` — **137** `admin_detention_tallies` rows (`doc, idx, authority, from, to, precision, orders, new_orders, renewals, qualifier, stock, note`) and **1,010** drops.
+- `data/raw/jobs/08/admin_detention.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
