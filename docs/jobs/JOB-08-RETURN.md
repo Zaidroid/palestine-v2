@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D+E+F+G+H · 2026-10-20
+status: returned · A+B+C+D+E+F+G+H+I · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -20,8 +20,9 @@ branch: job-08-lake-second-pass
 | F iron gates 2004–2026 | 179 | **30** | 149 drops; cumulative totals not cited | 2008-03 → 2026-10 | 30 kept all read; 2 p95 read | returned · judgment pass (179 sentences) |
 | G settler-attack tallies 2012–2026 | 758 | **69** | 689 drops; relays folded | 2012-01 → 2026-10 | 30 read; 3 p95 read | returned · judgment pass (758 sentences) |
 | H administrative detention 1967–2026 | 1,216 | **137** | 1,010 drops; 35 stock; 69 folded relays | 1967-01 → 2026 | 30 read; 1 inferred sum dropped; 6 p95 read | returned · judgment pass (1,216 sentences) |
+| I demolitions 2001–2008 | 174 | **27** | 147 drops; corpus clause pass not done | 2004-08 → 2008-11 | all 27 read; 13-structure p95 read | returned · lake pass; corpus gap |
 
-**I–K not started.** A–G passed Claude's review; H is new tonight. Every candidate sentence in A–H was read; scripts only formatted and merged.
+**J–K not started.** A–H passed Claude's review; I is new tonight. Every lake sentence in A–I was read; I's corpus clause pass is the open gap.
 
 ## B — what is in the files
 
@@ -82,3 +83,10 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/admin_detention.read.ndjson.gz` — 1,216 lake records.
 - `data/raw/jobs/08/admin_detention.review.yaml` — **137** `admin_detention_tallies` rows (`doc, idx, authority, from, to, precision, orders, new_orders, renewals, qualifier, stock, note`) and **1,010** drops.
 - `data/raw/jobs/08/admin_detention.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
+
+
+## I — what is in the files
+
+- `data/raw/jobs/08/demolitions_reported.read.ndjson.gz` — 174 lake records (2001–2008).
+- `data/raw/jobs/08/demolitions_reported.review.yaml` — **27** `demolitions_reported` rows (`doc, idx, date, structures, kind, place_ar, gov, actor, warnings, note`) and **147** drops.
+- `data/raw/jobs/08/demolitions_reported.REVIEW.md` — numbers, all-27 self-check, p95, cluster report, pattern failures, and the corpus gap.
