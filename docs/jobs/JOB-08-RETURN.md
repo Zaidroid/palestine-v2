@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D+E+F+G+H+I · 2026-10-20
+status: returned · A+B+C+D+E+F+G+H+I+J · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -21,8 +21,9 @@ branch: job-08-lake-second-pass
 | G settler-attack tallies 2012–2026 | 758 | **69** | 689 drops; relays folded | 2012-01 → 2026-10 | 30 read; 3 p95 read | returned · judgment pass (758 sentences) |
 | H administrative detention 1967–2026 | 1,216 | **137** | 1,010 drops; 35 stock; 69 folded relays | 1967-01 → 2026 | 30 read; 1 inferred sum dropped; 6 p95 read | returned · judgment pass (1,216 sentences) |
 | I demolitions 2001–2008 | 174 | **27** | 147 drops; corpus clause pass not done | 2004-08 → 2008-11 | all 27 read; 13-structure p95 read | returned · lake pass; corpus gap |
+| J checkpoint states 2003–2023 | 3,571 lake + 2,629 corpus clauses | **1,224** | 3,428 lake + 1,426 corpus drops; 122 folded | 2004-11 → 2023-12 | 30 read; 22 null ids; no p95 measure | returned · judgment pass (6,200 sentences) |
 
-**J–K not started.** A–H passed Claude's review; I is new tonight. Every lake sentence in A–I was read; I's corpus clause pass is the open gap.
+**K not started.** A–I passed Claude's review; J is new tonight. Every lake sentence and every unique corpus checkpoint clause in A–J was read.
 
 ## B — what is in the files
 
@@ -90,3 +91,11 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/demolitions_reported.read.ndjson.gz` — 174 lake records (2001–2008).
 - `data/raw/jobs/08/demolitions_reported.review.yaml` — **27** `demolitions_reported` rows (`doc, idx, date, structures, kind, place_ar, gov, actor, warnings, note`) and **147** drops.
 - `data/raw/jobs/08/demolitions_reported.REVIEW.md` — numbers, all-27 self-check, p95, cluster report, pattern failures, and the corpus gap.
+
+
+## J — what is in the files
+
+- `data/raw/jobs/08/checkpoint_states.read.ndjson.gz` — 3,571 lake records plus 1,203 kept corpus clauses (4,774 lines); `idx` is the line.
+- `data/raw/jobs/08/checkpoint_states.review.yaml` — **1,224** `checkpoint_states` rows (`doc, idx, date, checkpoint_ar, checkpoint_id, state, who, authority, note`) and **3,428** lake drops.
+- `data/raw/jobs/08/checkpoints.json` — the 277-name checkpoint gazetteer used for ids.
+- `data/raw/jobs/08/checkpoint_states.REVIEW.md` — numbers, 30-row self-check, corpus method, cluster report, pattern failures.
