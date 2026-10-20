@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D · 2026-10-20
+status: returned · A+B+C+D · corrected D · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -15,7 +15,7 @@ branch: job-08-lake-second-pass
 | A trees 2003–2025 | 3,191 | **705** (+42 tallies) | 188 reviewed + 517 new; 349 folded | 2004-08 → 2025-12 | 30 random: 3 errors dropped; 35 p95: 1 duplicate dropped; four 45-draws: last clean | returned · judgment pass (2,604 sentences) |
 | B land orders 2003–2025 | 1,986 | **247** | ~200 restatements folded by the readers | 2003-02 → 2025-12 | 30 random: 1 error dropped; 12 p95 read; 57.252 corrected | returned · judgment pass (1,986 sentences) |
 | C Gaza trucks 2008–9 Oct 2025 | 1,309 | **216** | 92 period + 124 day; duplicates folded | 2012-05 → 2025-09 | 30 random: 2 errors dropped; 9 p95 read | returned · judgment pass (1,045 in scope) |
-| D fishing zone 2008–2026 | 175 | **29** | 146 drops; four duplicates folded | 2009-08 → 2021-09 | 30 random: 1 duplicate dropped; 20-nm p95 read | returned · judgment pass (175 sentences) |
+| D fishing zone 2008–2026 | 175 | **25** | 153 drops; 8 first-return rows corrected/dropped; split sectors | 2009-08 → 2021-09 | all 29 re-read; 8 fixed; 15-nm p95 read | returned · judgment pass (175 + 3 split records) |
 
 **E–K not started.** A and B passed Claude's review; C and D are new tonight. Every candidate sentence in A–D was read; scripts only formatted and merged.
 
