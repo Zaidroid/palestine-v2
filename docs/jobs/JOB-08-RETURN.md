@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D · corrected D · 2026-10-20
+status: returned · A+B+C+D+E · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -16,8 +16,9 @@ branch: job-08-lake-second-pass
 | B land orders 2003–2025 | 1,986 | **247** | ~200 restatements folded by the readers | 2003-02 → 2025-12 | 30 random: 1 error dropped; 12 p95 read; 57.252 corrected | returned · judgment pass (1,986 sentences) |
 | C Gaza trucks 2008–9 Oct 2025 | 1,309 | **216** | 92 period + 124 day; duplicates folded | 2012-05 → 2025-09 | 30 random: 2 errors dropped; 9 p95 read | returned · judgment pass (1,045 in scope) |
 | D fishing zone 2008–2026 | 175 | **25** | 153 drops; 8 first-return rows corrected/dropped; split sectors | 2009-08 → 2021-09 | all 29 re-read; 8 fixed; 15-nm p95 read | returned · judgment pass (175 + 3 split records) |
+| E hunger strikes 2004–2026 | 1,061 | **612** | 404 drops; relays folded; 32 day-only null | 2004-08 → 2026-02 | 30 random: 3 fixed; 28 p95 read | returned · judgment pass (1,061 sentences) |
 
-**E–K not started.** A and B passed Claude's review; C and D are new tonight. Every candidate sentence in A–D was read; scripts only formatted and merged.
+**F–K not started.** A–D passed Claude's review; E is new tonight. Every candidate sentence in A–E was read; scripts only formatted and merged.
 
 ## B — what is in the files
 
@@ -50,3 +51,10 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/fishing_zone.read.ndjson.gz` — 175 lake records.
 - `data/raw/jobs/08/fishing_zone.review.yaml` — **32** `fishing_zone` rows (`doc, idx, date, nautical_miles, kind, authority, note`) and **143** drops.
 - `data/raw/jobs/08/fishing_zone.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
+
+
+## E — what is in the files
+
+- `data/raw/jobs/08/hunger_strikes.read.ndjson.gz` — 1,061 lake records.
+- `data/raw/jobs/08/hunger_strikes.review.yaml` — **612** `hunger_strikes` rows (`doc, idx, date, prisoners, day_of_strike, prison, kind, name, authority, qualifier, note`) and **404** drops. 32 rows are day-only with `prisoners: null`; the loader must skip them.
+- `data/raw/jobs/08/hunger_strikes.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
