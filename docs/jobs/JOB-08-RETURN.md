@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D+E+F+G+H+I+J · 2026-10-20
+status: returned · A–K · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -22,8 +22,9 @@ branch: job-08-lake-second-pass
 | H administrative detention 1967–2026 | 1,216 | **137** | 1,010 drops; 35 stock; 69 folded relays | 1967-01 → 2026 | 30 read; 1 inferred sum dropped; 6 p95 read | returned · judgment pass (1,216 sentences) |
 | I demolitions 2001–2008 | 174 | **27** | 147 drops; corpus clause pass not done | 2004-08 → 2008-11 | all 27 read; 13-structure p95 read | returned · lake pass; corpus gap |
 | J checkpoint states 2003–2023 | 3,571 lake + 2,629 corpus clauses | **1,224** | 3,428 lake + 1,426 corpus drops; 122 folded | 2004-11 → 2023-12 | 30 read; 22 null ids; no p95 measure | returned · judgment pass (6,200 sentences) |
+| K wages 2004–2026 | 783 | **51 cited** | 732 drops; wage shares and bills excluded | 2008-02 → 2026-10 | 30 read; values in quotes | returned · cited rows |
 
-**K not started.** A–I passed Claude's review; J is new tonight. Every lake sentence and every unique corpus checkpoint clause in A–J was read.
+**All families A–K returned.** A–I passed Claude's review; J and K are new tonight. Every lake sentence and every unique corpus checkpoint clause in A–J, and every wage sentence in K, was read.
 
 ## B — what is in the files
 
@@ -99,3 +100,10 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/checkpoint_states.review.yaml` — **1,224** `checkpoint_states` rows (`doc, idx, date, checkpoint_ar, checkpoint_id, state, who, authority, note`) and **3,428** lake drops.
 - `data/raw/jobs/08/checkpoints.json` — the 277-name checkpoint gazetteer used for ids.
 - `data/raw/jobs/08/checkpoint_states.REVIEW.md` — numbers, 30-row self-check, corpus method, cluster report, pattern failures.
+
+
+## K — what is in the files
+
+- `data/raw/jobs/08/wages.read.ndjson.gz` — 783 lake records.
+- `data/raw/jobs/08/wages.review.yaml` — **51** `cited` rows (id, topic, measure, date, precision, value, qualifier, unit, region, publisher, document, url, quote, verification, caution) and **732** drops.
+- `data/raw/jobs/08/wages.REVIEW.md` — numbers, 30-row self-check, cluster report, pattern failures.
