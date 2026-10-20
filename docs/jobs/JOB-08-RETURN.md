@@ -12,9 +12,9 @@ branch: job-08-lake-second-pass
 
 | family | candidates read | kept | clusters | span | self-check | verdict |
 |---|---:|---:|---:|---|---|---|
-| A trees 2003–2025 | 3,191 | **199** | 133 citations merged | 2009-09 → 2025-12 | 12 random: 11 pass, 1 place corrected; 9/9 above p95 pass | series_ready from 2009; 2003–08 empty |
+| A trees 2003–2025 | 3,191 | **563** (+8 tallies) | 515 citations merged | 2004-08 → 2025-12 | 30 random: 1 error dropped; 45 drops: 7 real missed | returned · recall still short |
 
-**B–K not started.** This is the first stop point; the next night takes land orders, Gaza trucks and the rest.
+**B–K not started.** A second read raised A from 192 to 563 rows and added 8 tallies, but the 45-drop check still finds real incidents; the family is back to Claude, not accepted. B starts after A clears.
 
 ## A — what is in the files
 

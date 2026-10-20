@@ -14,13 +14,13 @@ for r in LOC:
     k=norm(r["ar"])
     if len(k)>=4:
         LOCS.setdefault(k,[]).append((r["ar"],r.get("gov_en"),r["place_id"]))
-GOVS={"Jenin":["جنين"],"Tubas":["طوباس"],"Tulkarm":["طولكرم"],"Nablus":["نابلس"],"Qalqilya":["قلقيلية"],
+GOVS={"Jenin":["جنين"],"Tubas":["طوباس"],"Tulkarm":["طولكرم"],"Nablus":["نابلس"],"Qalqilya":["قلقيلية"],"Salfit":["سلفيت"],
 "Ramallah":["رام الله","البيرة"],"Jericho":["أريحا","اريحا"],"Jerusalem":["القدس"],"Bethlehem":["بيت لحم"],"Hebron":["الخليل"]}
 # normalized governorate aliases
 GOVN={}
 for g,names in GOVS.items():
     for n in names: GOVN[norm(n)]=g
-BLACK={"الزيتون","الزيتونه","النخيل","البستان","الكروم","العنب","الشجره","الاشجار","البيادر"}
+BLACK={"جديده","الجديده","الزيتون","الزيتونه","النخيل","البستان","الكروم","العنب","الشجره","الاشجار","البيادر"}
 def places_in(q):
     """all locality matches, whole-word, via token n-gram lookup"""
     nq=norm(q); words=nq.split(); out=[]
