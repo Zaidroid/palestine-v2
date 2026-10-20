@@ -3732,6 +3732,33 @@ names:
     en: "Iron gates on the entrances of Hebron city, its villages and camps, on the day (cited: Governor of Hebron)"
     ar: "البوابات الحديدية على مداخل مدينة الخليل وقراها ومخيماتها، في اليوم (مقتبس: محافظ الخليل)"
 
+  # Migration 136 (2026-10-20, JOB-06): the migration sets these names in indicator_def;
+  # they are here too so the registry's naming pass counts them as named.
+  settlements.trees_uprooted_reported:
+    en: "Trees uprooted, cut, burned or poisoned in one incident, on the village when named (archive, reviewed)"
+    ar: "أشجار اقتُلعت أو قُطعت أو حُرقت أو سُمّمت في حادثة واحدة، على القرية إن سُمّيت (الأرشيف، مراجَع)"
+  settlements.land_seizure_order_reported:
+    en: "Land in one Israeli military seizure order or state-land declaration, dunums, on the village named (archive, reviewed)"
+    ar: "الأرض في أمر وضع يد عسكري إسرائيلي واحد أو إعلان أراضي دولة، بالدونم، على القرية المسمّاة (الأرشيف، مراجَع)"
+  settlements.trees_damaged_stated:
+    en: "Trees damaged in a period as a Palestinian authority tallied it (Colonization and Wall Resistance Commission monthly and yearly, Ministry of Agriculture weekly; archive, reviewed)"
+    ar: "الأشجار المتضررة في فترة كما عدّتها جهة فلسطينية (هيئة مقاومة الجدار والاستيطان شهريًا وسنويًا، وزارة الزراعة أسبوعيًا؛ الأرشيف، مراجَع)"
+  settlements.trees_damaged_olive_stated:
+    en: "Olive trees among the trees damaged in a period as a Palestinian authority tallied it (archive, reviewed)"
+    ar: "أشجار الزيتون من بين الأشجار المتضررة في فترة كما عدّتها جهة فلسطينية (الأرشيف، مراجَع)"
+  aid.gaza.ceasefire_trucks_entered_cumulative:
+    en: "Gaza Strip: trucks entered since the ceasefire of 10 October 2025, running total (Government Media Office, Gaza; archive, reviewed)"
+    ar: "قطاع غزة: الشاحنات التي دخلت منذ وقف إطلاق النار في 10 تشرين الأول 2025، مجموع تراكمي (المكتب الإعلامي الحكومي، غزة؛ الأرشيف، مراجَع)"
+  aid.gaza.ceasefire_trucks_agreed_cumulative:
+    en: "Gaza Strip: trucks the ceasefire agreement provided for since 10 October 2025 (600 a day), running total (Government Media Office, Gaza)"
+    ar: "قطاع غزة: الشاحنات التي نصّ عليها اتفاق وقف إطلاق النار منذ 10 تشرين الأول 2025 (600 يوميًا)، مجموع تراكمي (المكتب الإعلامي الحكومي، غزة)"
+  aid.gaza.aid_trucks_entered_day_stated:
+    en: "Gaza Strip: aid trucks that entered on one stated day (Government Media Office, Gaza; archive, reviewed)"
+    ar: "قطاع غزة: شاحنات المساعدات التي دخلت في يوم مذكور (المكتب الإعلامي الحكومي، غزة؛ الأرشيف، مراجَع)"
+  energy.gaza.cooking_gas_trucks_entered:
+    en: "Gaza Strip: one cooking-gas shipment, truckloads (General Petroleum Authority, Gaza; archive, reviewed)"
+    ar: "قطاع غزة: شحنة غاز طهي واحدة، بعدد الحمولات (هيئة البترول العامة، غزة؛ الأرشيف، مراجَع)"
+
 publisher_names:
 
   # WHO Global Health Observatory: its API carries English names only; translated in WHO's Arabic terminology
