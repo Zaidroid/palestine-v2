@@ -1,7 +1,7 @@
 ---
 job: 08
 slug: lake-second-pass
-status: returned · A+B+C+D+E+F · 2026-10-20
+status: returned · A+B+C+D+E+F+G · 2026-10-20
 returned: 2026-10-20 by DeepSeek
 branch: job-08-lake-second-pass
 ---
@@ -18,8 +18,9 @@ branch: job-08-lake-second-pass
 | D fishing zone 2008–2026 | 175 | **25** | 153 drops; 8 first-return rows corrected/dropped; split sectors | 2009-08 → 2021-09 | all 29 re-read; 8 fixed; 15-nm p95 read | returned · judgment pass (175 + 3 split records) |
 | E hunger strikes 2004–2026 | 1,061 | **612** | 404 drops; relays folded; 32 day-only null | 2004-08 → 2026-02 | 30 random: 3 fixed; 28 p95 read | returned · judgment pass (1,061 sentences) |
 | F iron gates 2004–2026 | 179 | **30** | 149 drops; cumulative totals not cited | 2008-03 → 2026-10 | 30 kept all read; 2 p95 read | returned · judgment pass (179 sentences) |
+| G settler-attack tallies 2012–2026 | 758 | **69** | 689 drops; relays folded | 2012-01 → 2026-10 | 30 read; 3 p95 read | returned · judgment pass (758 sentences) |
 
-**G–K not started.** A–E passed Claude's review; F is new tonight. Every candidate sentence in A–F was read; scripts only formatted and merged.
+**H–K not started.** A–F passed Claude's review; G is new tonight. Every candidate sentence in A–G was read; scripts only formatted and merged.
 
 ## B — what is in the files
 
@@ -66,3 +67,10 @@ branch: job-08-lake-second-pass
 - `data/raw/jobs/08/gates_installed.read.ndjson.gz` — 179 lake records.
 - `data/raw/jobs/08/gates_installed.review.yaml` — **30** `gates_installed` rows (`doc, idx, date, gates, place_ar, gov, note`) and **149** drops.
 - `data/raw/jobs/08/gates_installed.REVIEW.md` — numbers, all-30 self-check, p95, cluster report, pattern failures.
+
+
+## G — what is in the files
+
+- `data/raw/jobs/08/attack_tallies.read.ndjson.gz` — 758 lake records.
+- `data/raw/jobs/08/attack_tallies.review.yaml` — **69** `attack_tallies` rows (`doc, idx, authority, from, to, precision, rows`) and **689** drops.
+- `data/raw/jobs/08/attack_tallies.REVIEW.md` — numbers, 30-row self-check, p95, cluster report, pattern failures.
