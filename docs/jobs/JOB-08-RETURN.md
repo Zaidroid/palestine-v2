@@ -12,9 +12,9 @@ branch: job-08-lake-second-pass
 
 | family | candidates read | kept | clusters | span | self-check | verdict |
 |---|---:|---:|---:|---|---|---|
-| A trees 2003–2025 | 3,191 | **563** (+8 tallies) | 515 citations merged | 2004-08 → 2025-12 | 30 random: 1 error dropped; 45 drops: 7 real missed | returned · recall still short |
+| A trees 2003–2025 | 3,191 | **705** (+42 tallies) | 188 reviewed + 517 new; 349 folded | 2004-08 → 2025-12 | 30 random: 3 errors dropped; 35 p95: 1 duplicate dropped; four 45-draws: last clean | returned · judgment pass (2,604 sentences) |
 
-**B–K not started.** A second read raised A from 192 to 563 rows and added 8 tallies, but the 45-drop check still finds real incidents; the family is back to Claude, not accepted. B starts after A clears.
+**B–K not started.** A judgment pass read all 383 new rows and all 2,221 drops, kept the 188 reviewed rows, and returns 705 incidents with 42 tallies. B starts after A clears.
 
 ## A — what is in the files
 
