@@ -38,6 +38,36 @@ units:
     notes: Settler outposts counted as establishments; one is one outpost.
     aliases:
       outposts: {}
+  # Migration 136 (2026-10-20, JOB-06): trees uprooted, land in military
+  # orders, days a crossing was open, hospital beds.
+  trees:
+    name_en: trees
+    name_ar: أشجار
+    dimension: count
+    notes: Trees counted one by one (uprooted, cut, burned, poisoned); olive, almond, vines and fruit trees alike unless the row says which.
+    aliases:
+      trees: {}
+      شجرة: {}
+      أشجار: {}
+  dunums:
+    name_en: dunums
+    name_ar: دونم
+    dimension: area
+    notes: The dunum of Palestinian land records, 1,000 m²; a military order's "7.498 دونم" is 7 dunums and 498 m² (the dot is a decimal point).
+    aliases:
+      dunum: {}
+      dunums: {}
+      دونم: {}
+  days:
+    name_en: days
+    name_ar: أيام
+    dimension: time
+    notes: Calendar days, as in days a crossing was open or closed in a month.
+  beds:
+    name_en: beds
+    name_ar: أسرّة
+    dimension: count
+    notes: Hospital beds in service.
   persons:
     name_en: persons
     name_ar: أشخاص

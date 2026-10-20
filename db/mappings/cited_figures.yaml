@@ -157,6 +157,163 @@ registry:
       place_grain: region
       serve_warning: "One publisher's figure per row, entered by hand with its document and the day it was read. Publishers count different things (villages, localities, towns) and their figures are never added or averaged."
       serve_warning_ar: "كل سطر رقم ناشر واحد، مُدخل باليد مع وثيقته ويوم قراءتها. كل ناشر بيعدّ شي مختلف (قرى، تجمّعات، مدن)، وأرقامهم ما بتنجمع ولا بينحسب معدّلها."
+    # 2026-10-20: the settlement tallies of section H (2026-10-19) had fallen
+    # through to the catch-all below and were served as mortality in persons;
+    # and section I (JOB-06: unemployment, Gaza's crossings, cooking gas,
+    # hospital beds, the West Bank's gates) each get their concept and unit.
+    - when: {regex: "^cited\\.settlements\\.new_outposts$"}
+      concept: settlement
+      measure_kind: flow
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: outposts
+      serve_warning: "One publisher's tally for one period, entered by hand with its document and the day it was read; Peace Now counts the West Bank without East Jerusalem. Publishers' methods differ and are never summed together."
+      serve_warning_ar: "حصيلة ناشر واحد لفترة واحدة، مُدخلة باليد مع وثيقتها ويوم قراءتها؛ السلام الآن بتعدّ الضفة بدون القدس الشرقية. مناهج الناشرين بتختلف وما بتنجمع مع بعض."
+    - when: {regex: "^cited\\.settlements\\.land_seized_since"}
+      concept: land.confiscation
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: dunums
+      serve_warning: "A running total since 7 October 2023 as the Colonization and Wall Resistance Commission stated it, read from the press: a figure for the whole period, never added to anything."
+      serve_warning_ar: "مجموع تراكمي من 7 تشرين الأول 2023 زي ما قالته هيئة مقاومة الجدار والاستيطان، مقروء من الصحافة: رقم للفترة كلها وما بينضاف لإشي."
+    - when: {regex: "^cited\\.settlements\\.attacks_since"}
+      concept: violence.settler
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: events
+      serve_warning: "A running total since 7 October 2023 as the Colonization and Wall Resistance Commission stated it, read from the press: a figure for the whole period, never added to anything."
+      serve_warning_ar: "مجموع تراكمي من 7 تشرين الأول 2023 زي ما قالته هيئة مقاومة الجدار والاستيطان، مقروء من الصحافة: رقم للفترة كلها وما بينضاف لإشي."
+    - when: {regex: "^cited\\.settlements\\.structures_demolished_since"}
+      concept: demolition
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: structures
+      serve_warning: "A running total since 7 October 2023 as the Colonization and Wall Resistance Commission stated it, read from the press: a figure for the whole period, never added to anything."
+      serve_warning_ar: "مجموع تراكمي من 7 تشرين الأول 2023 زي ما قالته هيئة مقاومة الجدار والاستيطان، مقروء من الصحافة: رقم للفترة كلها وما بينضاف لإشي."
+    - when: {regex: "^cited\\.settlements\\.outposts_since"}
+      concept: settlement
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: outposts
+      serve_warning: "A running total since 7 October 2023 as the Colonization and Wall Resistance Commission stated it, read from the press: a figure for the whole period, never added to anything."
+      serve_warning_ar: "مجموع تراكمي من 7 تشرين الأول 2023 زي ما قالته هيئة مقاومة الجدار والاستيطان، مقروء من الصحافة: رقم للفترة كلها وما بينضاف لإشي."
+    - when: {regex: "^cited\\.settlements\\."}
+      concept: settlement
+      measure_kind: flow
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: housing_units
+      serve_warning: "One publisher's tally of housing units for one period, entered by hand with its document and the day it was read. Peace Now, the UN, Ir Amim and Israel's CBS count different stages (plans advanced, tenders, construction starts) over different areas, and their figures are never summed together."
+      serve_warning_ar: "حصيلة ناشر واحد للوحدات السكنية بفترة واحدة، مُدخلة باليد مع وثيقتها ويوم قراءتها. السلام الآن والأمم المتحدة وعير عميم ومكتب الإحصاء الإسرائيلي بيعدّوا مراحل مختلفة (مخططات، عطاءات، بدء بناء) على مناطق مختلفة، وأرقامهم ما بتنجمع مع بعض."
+    - when: {regex: "^cited\\.unemployment\\.unemployed_persons$"}
+      concept: economy.labour
+      measure_kind: stock
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "One publisher's figure for one period, read from the press and entered by hand; PCBS's quarterly survey and the trade-union federation's estimate are different methods, never averaged. ILOSTAT's quarterly rates are the series."
+      serve_warning_ar: "رقم ناشر واحد لفترة واحدة، مقروء من الصحافة ومُدخل باليد؛ مسح الإحصاء الفصلي وتقدير اتحاد النقابات منهجان مختلفان وما بينحسب معدّلهم. سلسلة منظمة العمل الدولية الفصلية هي السلسلة."
+    - when: {regex: "^cited\\.unemployment\\."}
+      concept: economy.labour
+      measure_kind: ratio
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: percent
+      serve_warning: "One publisher's rate for one period, read from the press and entered by hand; PCBS's survey, UNCTAD's report, the trade-union federation and the Gaza labour ministry are different methods, never averaged. ILOSTAT's quarterly rates are the series."
+      serve_warning_ar: "نسبة ناشر واحد لفترة واحدة، مقروءة من الصحافة ومُدخلة باليد؛ مسح الإحصاء وتقرير الأونكتاد واتحاد النقابات ووزارة العمل بغزة مناهج مختلفة وما بينحسب معدّلها. سلسلة منظمة العمل الدولية الفصلية هي السلسلة."
+    - when: {regex: "^cited\\.gaza_crossings\\..*_days$"}
+      concept: movement.closure
+      measure_kind: flow
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: days
+      serve_warning: "Days a crossing was open or closed in one period, as Gaza's Crossings and Borders Authority reported it and the press printed it; one period per row, never summed with another publisher's count."
+      serve_warning_ar: "أيام فتح أو إغلاق معبر بفترة واحدة، زي ما قالتها هيئة المعابر والحدود بغزة وطبعتها الصحافة؛ فترة بكل سطر، وما بتنجمع مع عدّ ناشر تاني."
+    - when: {regex: "^cited\\.gaza_crossings\\.deaths_awaiting"}
+      concept: mortality.conflict
+      measure_kind: cumulative
+      polarity: -1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "A running total of patients who died while waiting to leave for treatment, as stated on the day and printed by the press: never added across dates."
+      serve_warning_ar: "مجموع تراكمي للمرضى اللي توفوا وهم بيستنوا السفر للعلاج، زي ما انقال بيومه وطبعته الصحافة: ما بينجمع بين التواريخ."
+    - when: {regex: "^cited\\.gaza_crossings\\.patients_awaiting"}
+      concept: health.service
+      measure_kind: stock
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Patients on the referral lists on one day, as the Health Ministry in Gaza stated it and the press printed it; a stock on that day."
+      serve_warning_ar: "المرضى على قوائم التحويل بيوم واحد، زي ما قالتها وزارة الصحة بغزة وطبعتها الصحافة؛ رصيد بهاليوم."
+    - when: {regex: "^cited\\.gaza_crossings\\.medical_evacuations"}
+      concept: health.service
+      measure_kind: flow
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: persons
+      serve_warning: "Patients who left for treatment in one period, as one outlet printed it; the authority is not named in the sentence."
+      serve_warning_ar: "المرضى اللي طلعوا للعلاج بفترة واحدة، زي ما طبعتها صحيفة واحدة؛ الجهة مش مذكورة بالجملة."
+    - when: {regex: "^cited\\.gaza_cooking_gas\\.need_"}
+      concept: energy.supply
+      measure_kind: stock
+      polarity: 1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: tonne
+      serve_warning: "The strip's stated need as the General Petroleum Authority in Gaza put it, read from the press: a statement of need, not a measurement of supply."
+      serve_warning_ar: "حاجة القطاع زي ما قالتها هيئة البترول بغزة، مقروءة من الصحافة: تصريح عن الحاجة مش قياس للإمداد."
+    - when: {regex: "^cited\\.gaza_cooking_gas\\.trucks_"}
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: period
+      place_grain: region
+      canonical_unit: vehicles
+      serve_warning: "Cooking-gas trucks that entered, and the number the agreement provided for, in one period as the Government Media Office in Gaza stated it; compared within the row, never across rows."
+      serve_warning_ar: "شاحنات غاز الطهي اللي دخلت، والعدد اللي نصّ عليه الاتفاق، بفترة واحدة زي ما قالها المكتب الإعلامي الحكومي بغزة؛ بتتقارن جوّا السطر مش بين السطور."
+    - when: {regex: "^cited\\.gaza_health_capacity\\.hospital_beds"}
+      concept: health.service
+      measure_kind: stock
+      polarity: 1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: beds
+      serve_warning: "Beds in service on one day as the WHO stated it and the press printed it; a stock on that day, not the strip's capacity before the war."
+      serve_warning_ar: "الأسرّة الشغّالة بيوم واحد زي ما قالتها منظمة الصحة العالمية وطبعتها الصحافة؛ رصيد بهاليوم، مش طاقة القطاع قبل الحرب."
+    - when: {regex: "^cited\\.gaza_health_capacity\\."}
+      concept: health.service
+      measure_kind: stock
+      polarity: 1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: facilities
+      serve_warning: "Facilities partly functioning on one day as the WHO stated it and the press printed it; a stock on that day."
+      serve_warning_ar: "المرافق الشغّالة جزئيًا بيوم واحد زي ما قالتها منظمة الصحة العالمية وطبعتها الصحافة؛ رصيد بهاليوم."
+    - when: {regex: "^cited\\.west_bank_barriers\\."}
+      concept: movement.checkpoint
+      measure_kind: stock
+      polarity: -1
+      grain: snapshot
+      place_grain: region
+      canonical_unit: sites
+      serve_warning: "A count of checkpoints and iron gates on one day as the press printed it (WAFA, the Hebron governor); counts on different days use different definitions and are never compared as a series. The live checkpoint tier is the measured map."
+      serve_warning_ar: "عدد الحواجز والبوابات الحديدية بيوم واحد زي ما طبعته الصحافة (وفا، محافظ الخليل)؛ أرقام الأيام المختلفة بتستعمل تعريفات مختلفة وما بتتقارن كسلسلة. طبقة الحواجز الحية هي الخريطة المقيسة."
     - when: {prefix: "cited."}
       concept: mortality.conflict
       measure_kind: stock          # one total for an event or a period, per publisher

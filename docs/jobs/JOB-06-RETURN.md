@@ -75,3 +75,26 @@ This is a **pilot, not the 300–3,000 per family** the brief set: the most rece
 - `other` family, and a full place gazetteer mapping (`place_id` is filled only when `place_hint` matches a locality name exactly).
 
 Files: `lake/`, `catalogue.json`, `catalogue.md`, `coverage.md`, `samples.tsv`, `reviewed/`, `series/`. Corpus deleted.
+
+## Claude's review (2026-10-20)
+
+All 343 kept rows re-read against their quotes. DeepSeek's bar, "figure and subject match the family", is looser than a series needs: a sentence about trees is not a row of trees uprooted, one half-year report cited by five outlets on five dates is one tally, and the lake's number parser read `5.283 دونم` as 5,283 and `49 ألفا و973` as 973. The second read is `db/reference/job06_review.yaml` (every document taken, with its place and fix, and every document not taken, with why); the loader takes nothing that is not in it.
+
+**Four series hold up and are loaded** by `ops/load_job_returns.py --only 06` (command 43, migration 136):
+
+| series | rows | what |
+|---|---:|---|
+| `settlements.trees_uprooted_reported` | 45 | one incident each, on the village (41 of 45 placed), January–October 2026; 30 of DeepSeek's 87 were duplicates across outlets, repeated tallies, "8 orders", or unverified |
+| `settlements.trees_damaged_stated` / `_olive_stated` | 27 + 12 | the Commission's monthly tallies Jan–Apr 2026 with governorate splits, the half-year (45,195 / 26,395 olive), August, September, the 2025 year (35,273), and three Ministry of Agriculture weeks |
+| `settlements.land_seizure_order_reported` | 18 | one military order or declaration each, in dunums, on the village (17 of 18 placed); the dot is a decimal |
+| `aid.gaza.ceasefire_trucks_entered_cumulative` / `_agreed_cumulative` | 10 + 9 | the Media Office's running count against 600 a day, 20 Oct 2025 → 8 Sep 2026; scope changes from aid-only to all trucks at the new year and is in attrs |
+| `aid.gaza.aid_trucks_entered_day_stated` | 4 | aid trucks on a stated day |
+| `energy.gaza.cooking_gas_trucks_entered` | 11 | the Petroleum Authority's shipments, 2–6 truckloads, May–Sep 2026 |
+
+**Four are statements, not series**, and go to the cited figures (`db/reference/cited_figures.yaml` section I, 39 rows, each with its publisher, the outlet, the sentence and the archive document): unemployment (PCBS's 2025 rates 46 / 28 / 78, Q4 2025, Q2 2026, Q4 2024, the trade-union federation's 85 / 38, UNCTAD's 78, the Gaza labour ministry's 68), Rafah (open 10 and closed 20 days in September 2026, 21,000 patients waiting, 2,027 dead while waiting, 1,856 evacuated Feb–Aug), cooking gas (8,000 t a month needed; 104 of 660 trucks by 6 Dec 2025), hospital beds (WHO: 2,100 beds, 14 of 36 hospitals, 64 of 181 clinics), the West Bank's barriers (910 on 21 Dec 2025, 247 gates since 7 Oct 2023, Hebron's 106) and the Commission's three-year tally (64.2 k dunums, 62,916 attacks, 5,059 structures, 211 outposts).
+
+**Two are not loaded**: displaced (a shelter's 93 families, a minister's 1.86 million: nothing measures the same thing twice; OCHA's series stands) and power plant (fuel needs and grant dollars around the plant's stoppages; the rota statements and OCHA's daily table already hold the hours).
+
+**Corrections to the return's stories.** "5,283 dunums at Jaba'" is 5.283 dunums and "137,500 at Jayyous" is 160 by the other outlet; the 2026 land-order story is small parcels for military roads, not thousands of dunums. "Unemployment 85 %+ in late 2026" is the trade-union federation's figure, not PCBS's (PCBS: 78–80 % for 2025). The 45,195 trees is one half-year tally, not a series point per citation.
+
+**What the lake is worth beyond the pilot.** The candidate sets (`series/*.candidates.ndjson.gz`) hold 3,303 tree sentences back to 2003 and 2,023 land-order sentences; the same review at this bar would extend the two village-level series by a decade. That is JOB-08. The catalogue's own verdict is sound: phrase cues read clean, single-word cues do not.

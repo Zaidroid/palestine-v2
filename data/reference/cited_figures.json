@@ -2697,6 +2697,2349 @@
    "url": "https://www.ochaopt.org/sites/default/files/West%20Bank_info-graphic_14_September_2026.pdf",
    "value": 5927,
    "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2025",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Summary of 2025 in settlements",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "27,941 housing units approved by the Higher Planning Council",
+   "read_on": "2026-10-19",
+   "said": "27,941",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/summary-of-2025-in-settlements",
+   "value": 27941,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2025",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Summary of 2025 in settlements",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "9,629 housing units included in settlement tenders.",
+   "read_on": "2026-10-19",
+   "said": "9,629",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/summary-of-2025-in-settlements",
+   "value": 9629,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-new-outposts-2025",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Summary of 2025 in settlements",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "new_outposts",
+   "publisher": "Peace Now",
+   "quote": "86 new outposts, including 60 “agricultural farms” (an average of 1–2 outposts per week).",
+   "read_on": "2026-10-19",
+   "said": "86",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-new-outposts-2025",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://peacenow.org.il/en/summary-of-2025-in-settlements",
+   "value": 86,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "The year of annexation and expulsion: summary of settlement activity in 2024",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "Plans for 9,884 housing units in settlements were advanced by the Higher Planning Council.",
+   "read_on": "2026-10-19",
+   "said": "9,884",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/the-year-of-annexation-and-expulsion-summary-of-settlement-activity-in-2024",
+   "value": 9884,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "The year of annexation and expulsion: summary of settlement activity in 2024",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "New tenders were published for 1,399 units across the West Bank, excluding East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "1,399",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/the-year-of-annexation-and-expulsion-summary-of-settlement-activity-in-2024",
+   "value": 1399,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-new-outposts-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "The year of annexation and expulsion: summary of settlement activity in 2024",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "new_outposts",
+   "publisher": "Peace Now",
+   "quote": "In 2024, 59 new outposts were established, most of them shepherding outposts staffed by youth and hilltop settlers focused on land seizure and the expulsion of Palestinians from their surroundings.",
+   "read_on": "2026-10-19",
+   "said": "59",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-new-outposts-2024",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://peacenow.org.il/en/the-year-of-annexation-and-expulsion-summary-of-settlement-activity-in-2024",
+   "value": 59,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2023",
+   "coverage_end": "2023-12-31",
+   "coverage_start": "2023-01-01",
+   "date": "2023-12-31",
+   "date_precision": "year",
+   "document": "A good year for settlements, a bad year for Israel: summary of settlement activity in 2023",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "A record number of 12,349 housing units were promoted in settlements in the West Bank (East Jerusalem excluded).",
+   "read_on": "2026-10-19",
+   "said": "12,349",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2023",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/a-good-year-for-settlements-a-bad-year-for-israel-summary-of-settlement-activity-in-2023",
+   "value": 12349,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2023",
+   "coverage_end": "2023-12-31",
+   "coverage_start": "2023-01-01",
+   "date": "2023-12-31",
+   "date_precision": "year",
+   "document": "A good year for settlements, a bad year for Israel: summary of settlement activity in 2023",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "Additionally, the Ministry of Housing published tenders for 1,289 housing units in the West Bank.",
+   "read_on": "2026-10-19",
+   "said": "1,289",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2023",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/a-good-year-for-settlements-a-bad-year-for-israel-summary-of-settlement-activity-in-2023",
+   "value": 1289,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-new-outposts-2023",
+   "coverage_end": "2023-12-31",
+   "coverage_start": "2023-01-01",
+   "date": "2023-12-31",
+   "date_precision": "year",
+   "document": "A good year for settlements, a bad year for Israel: summary of settlement activity in 2023",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "new_outposts",
+   "publisher": "Peace Now",
+   "quote": "A record number of 26 new outposts were established during 2023, while 21 Palestinian communities were forcibly displaced from their homes.",
+   "read_on": "2026-10-19",
+   "said": "26",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-new-outposts-2023",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://peacenow.org.il/en/a-good-year-for-settlements-a-bad-year-for-israel-summary-of-settlement-activity-in-2023",
+   "value": 26,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2020",
+   "coverage_end": "2020-12-31",
+   "coverage_start": "2020-01-01",
+   "date": "2020-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2020",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "12,159 Housing units were advanced through plans in 55 settlements (East Jerusalem excluded), including the depositing of plans for 3,401 units in E1 for public review.",
+   "read_on": "2026-10-19",
+   "said": "12,159",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2020",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2020",
+   "value": 12159,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2020",
+   "coverage_end": "2020-12-31",
+   "coverage_start": "2020-01-01",
+   "date": "2020-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2020",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "Tenders were published for 3,512 housing units, 1,785 of them in settlements and 1,727 units in East Jerusalem Israeli neighborhoods, including 1,257 units in Givat Hamatos.",
+   "read_on": "2026-10-19",
+   "said": "1,785",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2020",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2020",
+   "value": 1785,
+   "verification": "read"
+  },
+  {
+   "caution": "Peace Now counts starts from aerial photographs; its 2020 count runs from the second half of 2019 to mid or late 2020.",
+   "cite_id": "settle-pn-construction-starts-2020",
+   "coverage_end": "2020-12-31",
+   "coverage_start": "2020-01-01",
+   "date": "2020-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2020",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Peace Now",
+   "quote": "2,433 new housing units began construction in 2020.",
+   "read_on": "2026-10-19",
+   "said": "2,433",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-construction-starts-2020",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2020",
+   "value": 2433,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-new-outposts-2020",
+   "coverage_end": "2020-12-31",
+   "coverage_start": "2020-01-01",
+   "date": "2020-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2020",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "new_outposts",
+   "publisher": "Peace Now",
+   "quote": "In 2020, 11 new outposts were established throughout the West Bank.",
+   "read_on": "2026-10-19",
+   "said": "11",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-new-outposts-2020",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2020",
+   "value": 11,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2019",
+   "coverage_end": "2019-12-31",
+   "coverage_start": "2019-01-01",
+   "date": "2019-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2019",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "8,457 Housing units were advanced through plans in 58 settlements.",
+   "read_on": "2026-10-19",
+   "said": "8,457",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2019",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2019",
+   "value": 8457,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2019",
+   "coverage_end": "2019-12-31",
+   "coverage_start": "2019-01-01",
+   "date": "2019-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2019",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "Tenders were published for 1,761 housing units, 956 of them in settlements and 805 units in East Jerusalem Israeli neighborhoods.",
+   "read_on": "2026-10-19",
+   "said": "956",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2019",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2019",
+   "value": 956,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-construction-starts-2019",
+   "coverage_end": "2019-12-31",
+   "coverage_start": "2019-01-01",
+   "date": "2019-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2019",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Peace Now",
+   "quote": "1,917 new housing units began construction in 2019.",
+   "read_on": "2026-10-19",
+   "said": "1,917",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-construction-starts-2019",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2019",
+   "value": 1917,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-new-outposts-2019",
+   "coverage_end": "2019-12-31",
+   "coverage_start": "2019-01-01",
+   "date": "2019-12-31",
+   "date_precision": "year",
+   "document": "Settlement construction report 2019",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "new_outposts",
+   "publisher": "Peace Now",
+   "quote": "The 11 new outposts set up in 2019 are all styled as farms.",
+   "read_on": "2026-10-19",
+   "said": "11",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-new-outposts-2019",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://peacenow.org.il/en/settlement-construction-report-2019",
+   "value": 11,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-plans-advanced-2018",
+   "coverage_end": "2018-12-31",
+   "coverage_start": "2018-01-01",
+   "date": "2018-12-31",
+   "date_precision": "year",
+   "document": "Annual settlement report 2018",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_plans_advanced",
+   "publisher": "Peace Now",
+   "quote": "5,618 housing units were advanced through plans in 79 settlements.",
+   "read_on": "2026-10-19",
+   "said": "5,618",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-plans-advanced-2018",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/annual-settlement-report-2018",
+   "value": 5618,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-units-in-tenders-2018",
+   "coverage_end": "2018-12-31",
+   "coverage_start": "2018-01-01",
+   "date": "2018-12-31",
+   "date_precision": "year",
+   "document": "Annual settlement report 2018",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "Peace Now",
+   "quote": "Tenders were published for 3,808 housing units, a record number of almost two decades.",
+   "read_on": "2026-10-19",
+   "said": "3,808",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-units-in-tenders-2018",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/annual-settlement-report-2018",
+   "value": 3808,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-pn-construction-starts-2018",
+   "coverage_end": "2018-12-31",
+   "coverage_start": "2018-01-01",
+   "date": "2018-12-31",
+   "date_precision": "year",
+   "document": "Annual settlement report 2018",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Peace Now",
+   "quote": "2,100 new housing units began construction in 2018, 9% above the annual average since 2009 (1,935 units per year).",
+   "read_on": "2026-10-19",
+   "said": "2,100",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-pn-construction-starts-2018",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://peacenow.org.il/en/annual-settlement-report-2018",
+   "value": 2100,
+   "verification": "read"
+  },
+  {
+   "caution": "The report's 2025 figures stop at its 2 December cutoff.",
+   "cite_id": "settle-unsg-units-advanced-area-c-2025",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "This significant increase was concentrated almost entirely in Area C, where over 29,870 housing units were advanced or approved, double the number recorded in 2024 (over 14,150).",
+   "read_on": "2026-10-19",
+   "said": "more than 29,870",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 29870,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-area-c-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "This significant increase was concentrated almost entirely in Area C, where over 29,870 housing units were advanced or approved, double the number recorded in 2024 (over 14,150).",
+   "read_on": "2026-10-19",
+   "said": "more than 14,150",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 14150,
+   "verification": "read"
+  },
+  {
+   "caution": "The sentence names no region; Area C, East Jerusalem and the tenders add up to the report's grand total, so the tenders are the West Bank's outside East Jerusalem.",
+   "cite_id": "settle-unsg-units-in-tenders-2025",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "The number of housing units tendered increased eightfold from 745 in 2024 to over 5,770 in 2025.",
+   "read_on": "2026-10-19",
+   "said": "more than 5,770",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 5770,
+   "verification": "read"
+  },
+  {
+   "caution": "See the 2025 row: the region is inferred from the report's totals.",
+   "cite_id": "settle-unsg-units-in-tenders-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "The number of housing units tendered increased eightfold from 745 in 2024 to over 5,770 in 2025.",
+   "read_on": "2026-10-19",
+   "said": "745",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 745,
+   "verification": "read"
+  },
+  {
+   "caution": "Includes tenders.",
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2025",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "The total number of housing units advanced and approved or tendered in East Jerusalem saw a slight increase from over 11,270 in 2024 to over 11,740 in 2025.",
+   "read_on": "2026-10-19",
+   "said": "more than 11,740",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 11740,
+   "verification": "read"
+  },
+  {
+   "caution": "Includes tenders.",
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "The total number of housing units advanced and approved or tendered in East Jerusalem saw a slight increase from over 11,270 in 2024 to over 11,740 in 2025.",
+   "read_on": "2026-10-19",
+   "said": "more than 11,270",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 11270,
+   "verification": "read"
+  },
+  {
+   "caution": "Advanced only; a further 3,400 were approved in the same period.",
+   "cite_id": "settle-unsg-units-advanced-area-c-2025-12",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-09-20",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "about",
+   "quote": "In Area C, approximately 2,340 housing units were advanced, and over 3,400 housing units were approved; almost all units approved are in two plans within the area designated for the E1 settlement plan.",
+   "read_on": "2026-10-19",
+   "said": "about 2,340",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2025-12",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 2340,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2025-12",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-09-20",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "In East Jerusalem, over 570 housing units were advanced in the settlement of Har Homa.",
+   "read_on": "2026-10-19",
+   "said": "more than 570",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2025-12",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 570,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-in-tenders-2025-12",
+   "coverage_end": "2025-12-02",
+   "coverage_start": "2025-09-20",
+   "date": "2025-12-02",
+   "date_precision": "day",
+   "document": "Report of the Secretary-General on the implementation of resolution 2334 (2016), December 2025",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "In addition, the Ministry of Housing published three tenders for over 460 housing units in the settlements of Ma‘ale Adumim and Adam in Area C.",
+   "read_on": "2026-10-19",
+   "said": "more than 460",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2025-12",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/implementation-of-security-council-resolution-2334-2016-report-of-the-secretary-general/",
+   "value": 460,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-area-c-2026-03",
+   "coverage_end": "2026-03-13",
+   "coverage_start": "2025-12-03",
+   "date": "2026-03-13",
+   "date_precision": "day",
+   "document": "Thirty-seventh report of the Secretary-General on the implementation of resolution 2334 (2016), March 2026",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "about",
+   "quote": "During the reporting period, Israeli planning authorities advanced or approved over 6,000 housing units in the occupied West Bank, including approximately 3,160 housing units in Area C, and 2,850 housing units in East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "about 3,160",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2026-03",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/thirty-seventh-report-of-the-secretary-general-on-the-implementation-of-security-council-resolution-2334-2016/",
+   "value": 3160,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2026-03",
+   "coverage_end": "2026-03-13",
+   "coverage_start": "2025-12-03",
+   "date": "2026-03-13",
+   "date_precision": "day",
+   "document": "Thirty-seventh report of the Secretary-General on the implementation of resolution 2334 (2016), March 2026",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "During the reporting period, Israeli planning authorities advanced or approved over 6,000 housing units in the occupied West Bank, including approximately 3,160 housing units in Area C, and 2,850 housing units in East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "2,850",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2026-03",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/thirty-seventh-report-of-the-secretary-general-on-the-implementation-of-security-council-resolution-2334-2016/",
+   "value": 2850,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-in-tenders-2026-03",
+   "coverage_end": "2026-03-13",
+   "coverage_start": "2025-12-03",
+   "date": "2026-03-13",
+   "date_precision": "day",
+   "document": "Thirty-seventh report of the Secretary-General on the implementation of resolution 2334 (2016), March 2026",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "The Israeli Housing Ministry published tenders for 5,375 housing units in Area C, out of which 3,401 are located in the area of E1.",
+   "read_on": "2026-10-19",
+   "said": "5,375",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2026-03",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/thirty-seventh-report-of-the-secretary-general-on-the-implementation-of-security-council-resolution-2334-2016/",
+   "value": 5375,
+   "verification": "read"
+  },
+  {
+   "caution": "Advanced only; nearly 1,270 more were approved in the same period.",
+   "cite_id": "settle-unsg-units-advanced-area-c-2026-06",
+   "coverage_end": "2026-06-12",
+   "coverage_start": "2026-03-14",
+   "date": "2026-06-12",
+   "date_precision": "day",
+   "document": "Thirty-eighth report of the Secretary-General on the implementation of resolution 2334 (2016), June 2026",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "Of those, 1,460 housing units were advanced in Area C, and nearly 1,270 housing units were approved.",
+   "read_on": "2026-10-19",
+   "said": "1,460",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2026-06",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/sg-report-24jun26/",
+   "value": 1460,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2026-06",
+   "coverage_end": "2026-06-12",
+   "coverage_start": "2026-03-14",
+   "date": "2026-06-12",
+   "date_precision": "day",
+   "document": "Thirty-eighth report of the Secretary-General on the implementation of resolution 2334 (2016), June 2026",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "more_than",
+   "quote": "In East Jerusalem, over 1,620 housing units were advanced in one plan in the settlement of Pisgat Ze’ev, and another 400 approved in Nof Zion.",
+   "read_on": "2026-10-19",
+   "said": "more than 1,620",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2026-06",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/sg-report-24jun26/",
+   "value": 1620,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-in-tenders-2026-06",
+   "coverage_end": "2026-06-12",
+   "coverage_start": "2026-03-14",
+   "date": "2026-06-12",
+   "date_precision": "day",
+   "document": "Thirty-eighth report of the Secretary-General on the implementation of resolution 2334 (2016), June 2026",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "No tenders were published during the reporting period.",
+   "read_on": "2026-10-19",
+   "said": "0",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2026-06",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.un.org/unispal/document/sg-report-24jun26/",
+   "value": 0,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-area-c-2026-09",
+   "coverage_end": "2026-09-18",
+   "coverage_start": "2026-06-13",
+   "date": "2026-09-18",
+   "date_precision": "day",
+   "document": "Security Council briefing on resolution 2334, 28 September 2026 (UNSCO)",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_advanced_area_c",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "about",
+   "quote": "During the reporting period, Israeli planning authorities advanced or approved nearly 4,570 housing units in Area C of the West Bank, and 3,515 units in East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "about 4,570",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-area-c-2026-09",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://unsco.unmissions.org/en/news/security-council-briefing-28-september-2026-unscr-2334",
+   "value": 4570,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-advanced-east-jerusalem-2026-09",
+   "coverage_end": "2026-09-18",
+   "coverage_start": "2026-06-13",
+   "date": "2026-09-18",
+   "date_precision": "day",
+   "document": "Security Council briefing on resolution 2334, 28 September 2026 (UNSCO)",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "quote": "During the reporting period, Israeli planning authorities advanced or approved nearly 4,570 housing units in Area C of the West Bank, and 3,515 units in East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "3,515",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-advanced-east-jerusalem-2026-09",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://unsco.unmissions.org/en/news/security-council-briefing-28-september-2026-unscr-2334",
+   "value": 3515,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-unsg-units-in-tenders-2026-09",
+   "coverage_end": "2026-09-18",
+   "coverage_start": "2026-06-13",
+   "date": "2026-09-18",
+   "date_precision": "day",
+   "document": "Security Council briefing on resolution 2334, 28 September 2026 (UNSCO)",
+   "location": {
+    "region": "Area C"
+   },
+   "measure": "units_in_tenders",
+   "publisher": "UN Secretary-General (report on resolution 2334)",
+   "qualifier": "about",
+   "quote": "The Israeli Housing Ministry published tenders for nearly 2,240 housing units in Area C of the West Bank, including for 1,234 units in the E1 area near Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "about 2,240",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-unsg-units-in-tenders-2026-09",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://unsco.unmissions.org/en/news/security-council-briefing-28-september-2026-unscr-2334",
+   "value": 2240,
+   "verification": "read"
+  },
+  {
+   "caution": "The EU cites Ir Amim's count.",
+   "cite_id": "settle-eu-units-advanced-east-jerusalem-2025",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "2025 report on Israeli settlements in the occupied West Bank, including East Jerusalem",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "European Union (EEAS)",
+   "quote": "In occupied East Jerusalem, a further record 35,370 HU across 56 plans were advanced according to data from the Jerusalem-based civil society organisation Ir Amim, nearly double the level of 2024 (18,988 HU).",
+   "read_on": "2026-10-19",
+   "said": "35,370",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-eu-units-advanced-east-jerusalem-2025",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.eeas.europa.eu/delegations/palestine-occupied-palestinian-territory-west-bank-and-gaza-strip/2025-report-israeli-settlements-occupied-west-bank-including-east-jerusalem-reporting-period-january_en",
+   "value": 35370,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-eu-units-advanced-east-jerusalem-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "Report on Israeli settlements in the occupied West Bank including East Jerusalem, January–December 2024",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "European Union (EEAS)",
+   "quote": "In 2024, 18,988 housing units (HU) were advanced in occupied East Jerusalem, while 9,884 HU were advanced in the occupied West Bank.",
+   "read_on": "2026-10-19",
+   "said": "18,988",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-eu-units-advanced-east-jerusalem-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.eeas.europa.eu/sites/default/files/2025/documents/Report%20on%20Israeli%20Settlements%20in%20the%20occupied%20West%20Bank%20including%20East%20Jerusalem%20%28Reporting%20period%20January%20-%20December%202024%29.pdf",
+   "value": 18988,
+   "verification": "read"
+  },
+  {
+   "cite_id": "settle-eu-units-advanced-east-jerusalem-2023",
+   "coverage_end": "2023-12-31",
+   "coverage_start": "2023-01-01",
+   "date": "2023-12-31",
+   "date_precision": "year",
+   "document": "One-year report on Israeli settlements in the occupied West Bank, including East Jerusalem, January–December 2023",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "European Union (EEAS)",
+   "quote": "In 2023, a total of 31 zoning plans for 18,333 housing units and seven tenders for 2,028 housing units were advanced in East Jerusalem.",
+   "read_on": "2026-10-19",
+   "said": "18,333",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-eu-units-advanced-east-jerusalem-2023",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.eeas.europa.eu/sites/default/files/documents/2024/One-Year%20Report%20on%20Israeli%20Settlements%20in%20the%20occupied%20West%20Bank%2C%20including%20East%20Jerusalem%20%28Reporting%20period%20January%20-%20December%202023%29.pdf",
+   "value": 18333,
+   "verification": "read"
+  },
+  {
+   "caution": "Read from the report's table, not a sentence; the columns are plans West Bank, plans East Jerusalem, plans total, tenders West Bank, tenders East Jerusalem, tenders total, total.",
+   "cite_id": "settle-eu-units-advanced-east-jerusalem-2022",
+   "coverage_end": "2022-12-31",
+   "coverage_start": "2022-01-01",
+   "date": "2022-12-31",
+   "date_precision": "year",
+   "document": "Report on Israeli settlements in the occupied West Bank including East Jerusalem, January–December 2024 (Table 1)",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "European Union (EEAS)",
+   "quote": "Table 1. Advancement of settlement units in the West Bank and East Jerusalem, 2018 – 2024 … 2022 4,427 23,097 27,524 197 489 686 28,210",
+   "read_on": "2026-10-19",
+   "said": "23,097",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-eu-units-advanced-east-jerusalem-2022",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.eeas.europa.eu/sites/default/files/2025/documents/Report%20on%20Israeli%20Settlements%20in%20the%20occupied%20West%20Bank%20including%20East%20Jerusalem%20%28Reporting%20period%20January%20-%20December%202024%29.pdf",
+   "value": 23097,
+   "verification": "read"
+  },
+  {
+   "caution": "Read from the report's table, not a sentence.",
+   "cite_id": "settle-eu-units-advanced-east-jerusalem-2021",
+   "coverage_end": "2021-12-31",
+   "coverage_start": "2021-01-01",
+   "date": "2021-12-31",
+   "date_precision": "year",
+   "document": "Report on Israeli settlements in the occupied West Bank including East Jerusalem, January–December 2024 (Table 1)",
+   "location": {
+    "region": "East Jerusalem"
+   },
+   "measure": "units_advanced_east_jerusalem",
+   "publisher": "European Union (EEAS)",
+   "quote": "Table 1. Advancement of settlement units in the West Bank and East Jerusalem, 2018 – 2024 … 2021 3,645 14,601 18,246 3,491 293 3,784 22,030",
+   "read_on": "2026-10-19",
+   "said": "14,601",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-eu-units-advanced-east-jerusalem-2021",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.eeas.europa.eu/sites/default/files/2025/documents/Report%20on%20Israeli%20Settlements%20in%20the%20occupied%20West%20Bank%20including%20East%20Jerusalem%20%28Reporting%20period%20January%20-%20December%202024%29.pdf",
+   "value": 14601,
+   "verification": "read"
+  },
+  {
+   "caution": "Israeli localities in the 'Judea and Samaria Area' column; 2024 is preliminary (a later abstract gives 1,092).",
+   "cite_id": "settle-ilcbs-construction-starts-2021",
+   "coverage_end": "2021-12-31",
+   "coverage_start": "2021-01-01",
+   "date": "2021-12-31",
+   "date_precision": "year",
+   "document": "Dwellings, by district and stage of construction (media release 091/2025, table 2)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Israel Central Bureau of Statistics",
+   "quote": "Table 2. - Dwellings, by district and stage of construction … BEGUN CONSTRUCTION … 2,989 | 11,496 | 15,227 | | 14,368 | 7,236 | 7,267 | 5,980 | 4,248 | 60,315 | 64,563 | | 2021",
+   "read_on": "2026-10-19",
+   "said": "2,989",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-ilcbs-construction-starts-2021",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.cbs.gov.il/he/mediarelease/doclib/2025/091/04_25_091t2.pdf",
+   "value": 2989,
+   "verification": "read"
+  },
+  {
+   "caution": "Israeli localities in the 'Judea and Samaria Area' column; 2024 is preliminary (a later abstract gives 1,092).",
+   "cite_id": "settle-ilcbs-construction-starts-2022",
+   "coverage_end": "2022-12-31",
+   "coverage_start": "2022-01-01",
+   "date": "2022-12-31",
+   "date_precision": "year",
+   "document": "Dwellings, by district and stage of construction (media release 091/2025, table 2)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Israel Central Bureau of Statistics",
+   "quote": "Table 2. - Dwellings, by district and stage of construction … BEGUN CONSTRUCTION … 2,725 | 13,061 | 14,279 | | 16,737 | 5,310 | 9,012 | 8,459 | 4,780 | 64,804 | 69,584 | | 2022",
+   "read_on": "2026-10-19",
+   "said": "2,725",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-ilcbs-construction-starts-2022",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.cbs.gov.il/he/mediarelease/doclib/2025/091/04_25_091t2.pdf",
+   "value": 2725,
+   "verification": "read"
+  },
+  {
+   "caution": "Israeli localities in the 'Judea and Samaria Area' column; 2024 is preliminary (a later abstract gives 1,092).",
+   "cite_id": "settle-ilcbs-construction-starts-2023",
+   "coverage_end": "2023-12-31",
+   "coverage_start": "2023-01-01",
+   "date": "2023-12-31",
+   "date_precision": "year",
+   "document": "Dwellings, by district and stage of construction (media release 091/2025, table 2)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Israel Central Bureau of Statistics",
+   "quote": "Table 2. - Dwellings, by district and stage of construction … BEGUN CONSTRUCTION … 2,234 | 10,239 | 12,392 | | 15,705 | 5,328 | 9,967 | 8,215 | 4,029 | 60,053 | 64,082 | | 2023",
+   "read_on": "2026-10-19",
+   "said": "2,234",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-ilcbs-construction-starts-2023",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.cbs.gov.il/he/mediarelease/doclib/2025/091/04_25_091t2.pdf",
+   "value": 2234,
+   "verification": "read"
+  },
+  {
+   "caution": "Israeli localities in the 'Judea and Samaria Area' column; 2024 is preliminary (a later abstract gives 1,092).",
+   "cite_id": "settle-ilcbs-construction-starts-2024",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-01-01",
+   "date": "2024-12-31",
+   "date_precision": "year",
+   "document": "Dwellings, by district and stage of construction (media release 091/2025, table 2)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "construction_starts",
+   "publisher": "Israel Central Bureau of Statistics",
+   "quote": "Table 2. - Dwellings, by district and stage of construction … BEGUN CONSTRUCTION … 1,072 | 12,690 | 13,989 | | 15,072 | 7,238 | 9,493 | 5,966 | 3,817 | 61,708 | 65,525 | | 2024",
+   "read_on": "2026-10-19",
+   "said": "1,072",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-ilcbs-construction-starts-2024",
+   "topic": "settlements",
+   "unit": "units",
+   "url": "https://www.cbs.gov.il/he/mediarelease/doclib/2025/091/04_25_091t2.pdf",
+   "value": 1072,
+   "verification": "read"
+  },
+  {
+   "cite_id": "unemp-pcbs-pma-2025-palestine",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Joint press release on the Palestinian economy in 2025, as WAFA reported it (21 December 2025)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "rate",
+   "publisher": "PCBS and the Palestine Monetary Authority",
+   "quote": "تعطل حوالي نصف القوى العاملة في فلسطين حيث بلغ معدل البطالة 46% خلال عام 2025، بواقع 28% في الضفة الغربية و78% في قطاع غزة.",
+   "read_on": "2026-10-20",
+   "said": "46",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-pma-2025-palestine",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/12/21/الإحصاء-وسلطة-النقد-الاقتصاد-الفلسطيني-لا",
+   "value": 46,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-pcbs-pma-2025-west-bank",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Joint press release on the Palestinian economy in 2025, as WAFA reported it (21 December 2025)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "rate",
+   "publisher": "PCBS and the Palestine Monetary Authority",
+   "quote": "تعطل حوالي نصف القوى العاملة في فلسطين حيث بلغ معدل البطالة 46% خلال عام 2025، بواقع 28% في الضفة الغربية و78% في قطاع غزة.",
+   "read_on": "2026-10-20",
+   "said": "28",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-pma-2025-west-bank",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/12/21/الإحصاء-وسلطة-النقد-الاقتصاد-الفلسطيني-لا",
+   "value": 28,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-pcbs-pma-2025-gaza-strip",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Joint press release on the Palestinian economy in 2025, as WAFA reported it (21 December 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "PCBS and the Palestine Monetary Authority",
+   "quote": "تعطل حوالي نصف القوى العاملة في فلسطين حيث بلغ معدل البطالة 46% خلال عام 2025، بواقع 28% في الضفة الغربية و78% في قطاع غزة.",
+   "read_on": "2026-10-20",
+   "said": "78",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-pma-2025-gaza-strip",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/12/21/الإحصاء-وسلطة-النقد-الاقتصاد-الفلسطيني-لا",
+   "value": 78,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The same sentence gives 13% for the third quarter of 2023.",
+   "cite_id": "unemp-pcbs-2025q4-west-bank",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-10-01",
+   "date": "2025-10-01",
+   "date_precision": "month",
+   "document": "Statement for Workers' Day 2026, as Ma'an reported it (30 April 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "qualifier": "about",
+   "quote": "كما ارتفعت معدلات البطالة في الضفة الغربية إلى نحو 28% في الربع الرابع من عام 2025 مقارنة مع 13% في الربع الثالث من عام 2023.",
+   "read_on": "2026-10-20",
+   "said": "about 28",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2025q4-west-bank",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://maannews.net/news/2160627.html",
+   "value": 28,
+   "verification": "secondary"
+  },
+  {
+   "caution": "'During the period of the war', no quarter stated; labour-force participation fell to about 25% from 40% before the war.",
+   "cite_id": "unemp-pcbs-gaza-during-the-war",
+   "date": "2026-04-30",
+   "date_precision": "day",
+   "document": "Statement for Workers' Day 2026, as Ma'an reported it (30 April 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "qualifier": "about",
+   "quote": "رام الله - معا- قال الجهاز المركزي للإحصاء إن معدلات البطالة في قطاع غزة ارتفعت إلى نحو 68% خلال فترة الحرب، مع انخفاض نسبة المشاركة في القوى العاملة إلى نحو 25% مقارنة مع 40% قبل الحرب، في حين ارتفعت في الضفة الغربية إلى نحو 28% في الربع الرابع من عام 2025 مق",
+   "read_on": "2026-10-20",
+   "said": "about 68",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-gaza-during-the-war",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://maannews.net/news/2160627.html",
+   "value": 68,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The survey is named before the quoted clause; 27.2% for men, 30.5% for women.",
+   "cite_id": "unemp-pcbs-2026q2-west-bank",
+   "coverage_end": "2026-06-30",
+   "coverage_start": "2026-04-01",
+   "date": "2026-04-01",
+   "date_precision": "month",
+   "document": "Labour force survey, second quarter of 2026, as the Government Communication Centre summarised it for WAFA (16 August 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "quote": "2026، التي أظهرت ارتفاع عدد العاملين من الضفة الغربية من نحو 700 ألف إلى 733 ألف عامل بنسبة 4.6%، فيما بلغ معدل البطالة 27.9%، بواقع 27.2% للذكور و30.5% للإناث، وارتفع عدد العاملين في إسرائيل والمستعمرات من 48 ألفًا إلى 53 ألف عامل.",
+   "read_on": "2026-10-20",
+   "said": "27.9",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2026q2-west-bank",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2026/8/16/مركز-الاتصال-الحكومي-يرصد-أهم-التدخلات-التي",
+   "value": 27.9,
+   "verification": "secondary"
+  },
+  {
+   "caution": "'Rose during the aggression to'; no quarter stated.",
+   "cite_id": "unemp-pcbs-2025-10-palestine",
+   "date": "2025-10-20",
+   "date_precision": "day",
+   "document": "Statement on World Statistics Day, as WAFA reported it (20 October 2025)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "quote": "الية الجودة لفائدة الجميع\"، أن معدل البطالة في فلسطين قد ارتفع خلال عدوان الاحتلال على الضفة الغربية وقطاع غزة ليصل إلى 50%، بواقع 34% في الضفة الغربية، و80% في قطاع غزة، ليبلغ عدد العاطلين عن العمل حوالي 550 ألف عاطل عن العمل في فلسطين.",
+   "read_on": "2026-10-20",
+   "said": "50",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2025-10-palestine",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/10/20/في-اليوم-العالمي-للإحصاء-قطاع-غزة-يغرق-في",
+   "value": 50,
+   "verification": "secondary"
+  },
+  {
+   "caution": "'Rose during the aggression to'; no quarter stated.",
+   "cite_id": "unemp-pcbs-2025-10-west-bank",
+   "date": "2025-10-20",
+   "date_precision": "day",
+   "document": "Statement on World Statistics Day, as WAFA reported it (20 October 2025)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "quote": "الية الجودة لفائدة الجميع\"، أن معدل البطالة في فلسطين قد ارتفع خلال عدوان الاحتلال على الضفة الغربية وقطاع غزة ليصل إلى 50%، بواقع 34% في الضفة الغربية، و80% في قطاع غزة، ليبلغ عدد العاطلين عن العمل حوالي 550 ألف عاطل عن العمل في فلسطين.",
+   "read_on": "2026-10-20",
+   "said": "34",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2025-10-west-bank",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/10/20/في-اليوم-العالمي-للإحصاء-قطاع-غزة-يغرق-في",
+   "value": 34,
+   "verification": "secondary"
+  },
+  {
+   "caution": "'Rose during the aggression to'; no quarter stated.",
+   "cite_id": "unemp-pcbs-2025-10-gaza-strip",
+   "date": "2025-10-20",
+   "date_precision": "day",
+   "document": "Statement on World Statistics Day, as WAFA reported it (20 October 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "quote": "الية الجودة لفائدة الجميع\"، أن معدل البطالة في فلسطين قد ارتفع خلال عدوان الاحتلال على الضفة الغربية وقطاع غزة ليصل إلى 50%، بواقع 34% في الضفة الغربية، و80% في قطاع غزة، ليبلغ عدد العاطلين عن العمل حوالي 550 ألف عاطل عن العمل في فلسطين.",
+   "read_on": "2026-10-20",
+   "said": "80",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2025-10-gaza-strip",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/10/20/في-اليوم-العالمي-للإحصاء-قطاع-غزة-يغرق-في",
+   "value": 80,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-pcbs-2025-10-unemployed",
+   "date": "2025-10-20",
+   "date_precision": "day",
+   "document": "Statement on World Statistics Day, as WAFA reported it (20 October 2025)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "unemployed_persons",
+   "publisher": "PCBS",
+   "qualifier": "about",
+   "quote": "الية الجودة لفائدة الجميع\"، أن معدل البطالة في فلسطين قد ارتفع خلال عدوان الاحتلال على الضفة الغربية وقطاع غزة ليصل إلى 50%، بواقع 34% في الضفة الغربية، و80% في قطاع غزة، ليبلغ عدد العاطلين عن العمل حوالي 550 ألف عاطل عن العمل في فلسطين.",
+   "read_on": "2026-10-20",
+   "said": "about 550,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2025-10-unemployed",
+   "topic": "unemployment",
+   "unit": "persons",
+   "url": "https://wafa.ps/news/2025/10/20/في-اليوم-العالمي-للإحصاء-قطاع-غزة-يغرق-في",
+   "value": 550000,
+   "verification": "secondary"
+  },
+  {
+   "caution": "Youth aged 15–29 in the same sentence: 80%.",
+   "cite_id": "unemp-pcbs-2024q4-gaza",
+   "coverage_end": "2024-12-31",
+   "coverage_start": "2024-10-01",
+   "date": "2024-10-01",
+   "date_precision": "month",
+   "document": "Labour force survey, fourth quarter of 2024, cited on International Youth Day, as WAFA reported it (12 August 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "PCBS",
+   "qualifier": "about",
+   "quote": "أما في قطاع غزة، فإن الأزمة تبدو أكثر حدة؛ فوفقاً لمسح القوى العاملة للربع الرابع من العام 2024، بلغ معدل البطالة نحو 69%، فيما سجل الشباب من عمر 15 إلى 29 عاماً معدلات بطالة كارثية وصلت إلى 80%، في ظل الحصار والعدوان المتواصل وتدمير البنية الاقتصادية للقطاع.",
+   "read_on": "2026-10-20",
+   "said": "about 69",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-pcbs-2024q4-gaza",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2025/8/12/الإحصاء-شباب-فلسطين-بين-الأمل-والصمود-في-وجه",
+   "value": 69,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The same sentence: about 92% of economic establishments damaged or destroyed; GDP per head about 212 dollars in 2025.",
+   "cite_id": "unemp-unctad-2025-gaza",
+   "coverage_end": "2025-12-31",
+   "coverage_start": "2025-01-01",
+   "date": "2025-12-31",
+   "date_precision": "year",
+   "document": "Report on UNCTAD assistance to the Palestinian people (2026), as Palinfo reported it (7 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "UNCTAD",
+   "qualifier": "about",
+   "quote": "الغزي من الحرب، ووفق أحدث تقرير للأونكتاد، تضرر أو دُمر نحو 92% من المنشآت الاقتصادية في غزة، فيما بلغ معدل البطالة نحو 78%، وانخفض نصيب الفرد من الناتج المحلي إلى نحو 212 دولارًا في عام 2025، أي إلى نحو 17% من مستواه في 2022.",
+   "read_on": "2026-10-20",
+   "said": "about 78",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-unctad-2025-gaza",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://palinfo.com/news/2026/10/07/1120152/",
+   "value": 78,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-gfptu-2026-04-gaza-strip",
+   "date": "2026-04-30",
+   "date_precision": "day",
+   "document": "Statement for Workers' Day 2026, as WAFA reported it (30 April 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "General Federation of Palestinian Trade Unions",
+   "quote": "وقال الاتحاد، في بيان، إن عدد المتعطلين عن العمل بلغ نحو 550 ألفا، مع ارتفاع غير مسبوق في نسب البطالة، وصلت إلى 85% في قطاع غزة، و38% في الضفة الغربية، ما يعكس حجم الكارثة التي تضرب سوق العمل، وتقوض مقومات الحياة الكريمة.",
+   "read_on": "2026-10-20",
+   "said": "85",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-gfptu-2026-04-gaza-strip",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2026/4/30/اتحاد-نقابات-العمال-550-ألف-عامل-بلا-دخل",
+   "value": 85,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-gfptu-2026-04-west-bank",
+   "date": "2026-04-30",
+   "date_precision": "day",
+   "document": "Statement for Workers' Day 2026, as WAFA reported it (30 April 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "rate",
+   "publisher": "General Federation of Palestinian Trade Unions",
+   "quote": "وقال الاتحاد، في بيان، إن عدد المتعطلين عن العمل بلغ نحو 550 ألفا، مع ارتفاع غير مسبوق في نسب البطالة، وصلت إلى 85% في قطاع غزة، و38% في الضفة الغربية، ما يعكس حجم الكارثة التي تضرب سوق العمل، وتقوض مقومات الحياة الكريمة.",
+   "read_on": "2026-10-20",
+   "said": "38",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-gfptu-2026-04-west-bank",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://wafa.ps/news/2026/4/30/اتحاد-نقابات-العمال-550-ألف-عامل-بلا-دخل",
+   "value": 38,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "unemp-gfptu-2026-04-unemployed",
+   "date": "2026-04-30",
+   "date_precision": "day",
+   "document": "Statement for Workers' Day 2026, as WAFA reported it (30 April 2026)",
+   "location": {
+    "region": "Palestine"
+   },
+   "measure": "unemployed_persons",
+   "publisher": "General Federation of Palestinian Trade Unions",
+   "qualifier": "about",
+   "quote": "وقال الاتحاد، في بيان، إن عدد المتعطلين عن العمل بلغ نحو 550 ألفا، مع ارتفاع غير مسبوق في نسب البطالة، وصلت إلى 85% في قطاع غزة، و38% في الضفة الغربية، ما يعكس حجم الكارثة التي تضرب سوق العمل، وتقوض مقومات الحياة الكريمة.",
+   "read_on": "2026-10-20",
+   "said": "about 550,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-gfptu-2026-04-unemployed",
+   "topic": "unemployment",
+   "unit": "persons",
+   "url": "https://wafa.ps/news/2026/4/30/اتحاد-نقابات-العمال-550-ألف-عامل-بلا-دخل",
+   "value": 550000,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The headline adds that most young people are outside education, training and work.",
+   "cite_id": "unemp-mol-gaza-2026-10",
+   "date": "2026-10-08",
+   "date_precision": "day",
+   "document": "Statement as Palinfo headlined it (8 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rate",
+   "publisher": "Ministry of Labour, Gaza",
+   "quote": "وزارة العمل بغزة: البطالة 68% وغالبية الشباب خارج التعليم والتدريب والعمل",
+   "read_on": "2026-10-20",
+   "said": "68",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:unemp-mol-gaza-2026-10",
+   "topic": "unemployment",
+   "unit": "percent",
+   "url": "https://palinfo.com/news/2026/10/08/1120299/",
+   "value": 68,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "crossings-2026-09-rafah-open-days",
+   "coverage_end": "2026-09-30",
+   "coverage_start": "2026-09-01",
+   "date": "2026-09-01",
+   "date_precision": "month",
+   "document": "Monthly report on the crossings, September 2026, as Safa reported it (1 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rafah_open_days",
+   "publisher": "General Authority for Crossings and Borders, Gaza",
+   "quote": "وأوضحت الهيئة، في تقريرها الشهري، أن معبر رفح البري فُتح أمام حركة المسافرين لمدة 10 أيام خلال سبتمبر، مقابل إغلاقه 20 يومًا، فيما فُتح معبر كرم أبو سالم المخصص للسفر لمدة 4 أيام وأُغلق 26 يومًا.",
+   "read_on": "2026-10-20",
+   "said": "10",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-2026-09-rafah-open-days",
+   "topic": "gaza_crossings",
+   "unit": "days",
+   "url": "https://safa.ps/post/419811/هيئة-المعابر-1197-مسافر-ا-غادروا-غزة-خلال-سبتمبر-ودخول-5265-شاحنة-عبر-كرم-أبو-سالم",
+   "value": 10,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "crossings-2026-09-rafah-closed-days",
+   "coverage_end": "2026-09-30",
+   "coverage_start": "2026-09-01",
+   "date": "2026-09-01",
+   "date_precision": "month",
+   "document": "Monthly report on the crossings, September 2026, as Safa reported it (1 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rafah_closed_days",
+   "publisher": "General Authority for Crossings and Borders, Gaza",
+   "quote": "وأوضحت الهيئة، في تقريرها الشهري، أن معبر رفح البري فُتح أمام حركة المسافرين لمدة 10 أيام خلال سبتمبر، مقابل إغلاقه 20 يومًا، فيما فُتح معبر كرم أبو سالم المخصص للسفر لمدة 4 أيام وأُغلق 26 يومًا.",
+   "read_on": "2026-10-20",
+   "said": "20",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-2026-09-rafah-closed-days",
+   "topic": "gaza_crossings",
+   "unit": "days",
+   "url": "https://safa.ps/post/419811/هيئة-المعابر-1197-مسافر-ا-غادروا-غزة-خلال-سبتمبر-ودخول-5265-شاحنة-عبر-كرم-أبو-سالم",
+   "value": 20,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "crossings-2026-09-kerem-shalom-travel-open-days",
+   "coverage_end": "2026-09-30",
+   "coverage_start": "2026-09-01",
+   "date": "2026-09-01",
+   "date_precision": "month",
+   "document": "Monthly report on the crossings, September 2026, as Safa reported it (1 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "kerem_shalom_travel_open_days",
+   "publisher": "General Authority for Crossings and Borders, Gaza",
+   "quote": "وأوضحت الهيئة، في تقريرها الشهري، أن معبر رفح البري فُتح أمام حركة المسافرين لمدة 10 أيام خلال سبتمبر، مقابل إغلاقه 20 يومًا، فيما فُتح معبر كرم أبو سالم المخصص للسفر لمدة 4 أيام وأُغلق 26 يومًا.",
+   "read_on": "2026-10-20",
+   "said": "4",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-2026-09-kerem-shalom-travel-open-days",
+   "topic": "gaza_crossings",
+   "unit": "days",
+   "url": "https://safa.ps/post/419811/هيئة-المعابر-1197-مسافر-ا-غادروا-غزة-خلال-سبتمبر-ودخول-5265-شاحنة-عبر-كرم-أبو-سالم",
+   "value": 4,
+   "verification": "secondary"
+  },
+  {
+   "caution": "Closed 4 days of the 7; Kerem Shalom open to travellers 1 day.",
+   "cite_id": "crossings-2026-08-07-rafah-open-days",
+   "coverage_end": "2026-08-13",
+   "coverage_start": "2026-08-07",
+   "date": "2026-08-07",
+   "date_precision": "day",
+   "document": "Weekly report on the crossings, 7–13 August 2026, as Safa reported it (14 August 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "rafah_open_days",
+   "publisher": "General Authority for Crossings and Borders, Gaza",
+   "quote": "لحدود في قطاع غزة تقريرها الأسبوعي حول حركة المعابر خلال الفترة من 7 إلى 13 أغسطس/آب، والذي أظهر فتح معبر رفح البري مدة 3 أيام وإغلاقه 4 أيام، فيما فُتح معبر كرم أبو سالم المخصص للسفر يومًا واحدًا وأُغلق 7 أيام.",
+   "read_on": "2026-10-20",
+   "said": "3",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-2026-08-07-rafah-open-days",
+   "topic": "gaza_crossings",
+   "unit": "days",
+   "url": "https://safa.ps/post/416011/هيئة-المعابر-1472-شاحنة-دخلت-القطاع-خلال-أسبوع-و354-مسافر-ا-غادروا-غزة",
+   "value": 3,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "crossings-patients-awaiting-2026-10-08",
+   "date": "2026-10-08",
+   "date_precision": "day",
+   "document": "Statement on the closure of the Rafah crossing to patients, as Felesteen reported it (8 October 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "patients_awaiting_evacuation",
+   "publisher": "Ministry of Health, Gaza",
+   "qualifier": "about",
+   "quote": "غزة، اليوم الخميس، من تداعيات استمرار إغلاق الاحتلال الإسرائيلي معبر رفح البري أمام إجلاء المرضى والجرحى، مؤكدة أن نحو 21 ألف مريض مدرجين ضمن قوائم السفر المعتمدة يواجهون انتظارًا طويلًا للحصول على العلاج خارج القطاع.",
+   "read_on": "2026-10-20",
+   "said": "about 21,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-patients-awaiting-2026-10-08",
+   "topic": "gaza_crossings",
+   "unit": "persons",
+   "url": "https://felesteen.news/post/187764/الصحة-21-ألف-مريض-وجريح-بغزة-يواجهون-الإعدام-البطيء",
+   "value": 21000,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The figure is WAFA's headline; the quoted sentence of the body gives the 21,000 patients waiting.",
+   "cite_id": "crossings-deaths-awaiting-2026-10-14",
+   "date": "2026-10-14",
+   "date_precision": "day",
+   "document": "WAFA, 14 October 2026 (the headline)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "deaths_awaiting_evacuation",
+   "publisher": "WAFA, quoting an official it names as Abu Afash",
+   "quote": "أبو عفش: وفاة 2027 مريضا أثناء انتظار العلاج",
+   "read_on": "2026-10-20",
+   "said": "2,027",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-deaths-awaiting-2026-10-14",
+   "topic": "gaza_crossings",
+   "unit": "persons",
+   "url": "https://wafa.ps/news/2026/10/14/أبو-عفش-وفاة-2027-مريضا-أثناء-انتظار-العلاج",
+   "value": 2027,
+   "verification": "read"
+  },
+  {
+   "caution": "1,641 via Rafah and 215 via Kerem Shalom.",
+   "cite_id": "crossings-medical-evacuations-2026-02-to-08",
+   "coverage_end": "2026-08-01",
+   "coverage_start": "2026-02-02",
+   "date": "2026-02-02",
+   "date_precision": "day",
+   "document": "Al-Kofiya TV, Telegram, 2 August 2026",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "medical_evacuations",
+   "publisher": "Al-Kofiya TV (the authority is not named in the sentence)",
+   "quote": "اع غزة للعلاج خلال الفترة الممتدة من 2 فبراير 2026 وحتى 1 أغسطس 2026 بلغ 1,856 مريضًا، منهم 1,641 مريضًا عبر معبر رفح، و215 مريضًا عبر معبر كرم أبو سالم.",
+   "read_on": "2026-10-20",
+   "said": "1,856",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:crossings-medical-evacuations-2026-02-to-08",
+   "topic": "gaza_crossings",
+   "unit": "persons",
+   "url": "https://t.me/alkofiyatv/315123",
+   "value": 1856,
+   "verification": "read"
+  },
+  {
+   "cite_id": "gas-need-per-month-2026-03",
+   "date": "2026-03-16",
+   "date_precision": "day",
+   "document": "Remarks to the Sanad agency, as Palinfo reported them (16 March 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "need_tonnes_per_month",
+   "publisher": "General Petroleum Authority, Gaza (Iyad al-Shurbaji)",
+   "qualifier": "about",
+   "quote": "وفي السياق، أفاد رئيس الهيئة العامة للبترول في غزة إياد الشوربجي في تصريحات لـوكالة سند، بأن القطاع يحتاج نحو 8 آلاف طن من غاز الطهي شهريًا، بمعدل استهلاك يومي يقارب 260 طنًا، بينما لا تتجاوز الكميات التي يُسمح بدخولها حاليًا 20% من الاحتياج الفعلي.",
+   "read_on": "2026-10-20",
+   "said": "about 8,000",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gas-need-per-month-2026-03",
+   "topic": "gaza_cooking_gas",
+   "unit": "tonne",
+   "url": "https://palinfo.com/news/2026/03/16/1103439/",
+   "value": 8000,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "gas-need-per-day-2026-03",
+   "date": "2026-03-16",
+   "date_precision": "day",
+   "document": "Remarks to the Sanad agency, as Palinfo reported them (16 March 2026)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "need_tonnes_per_day",
+   "publisher": "General Petroleum Authority, Gaza (Iyad al-Shurbaji)",
+   "qualifier": "about",
+   "quote": "وفي السياق، أفاد رئيس الهيئة العامة للبترول في غزة إياد الشوربجي في تصريحات لـوكالة سند، بأن القطاع يحتاج نحو 8 آلاف طن من غاز الطهي شهريًا، بمعدل استهلاك يومي يقارب 260 طنًا، بينما لا تتجاوز الكميات التي يُسمح بدخولها حاليًا 20% من الاحتياج الفعلي.",
+   "read_on": "2026-10-20",
+   "said": "about 260",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gas-need-per-day-2026-03",
+   "topic": "gaza_cooking_gas",
+   "unit": "tonne",
+   "url": "https://palinfo.com/news/2026/03/16/1103439/",
+   "value": 260,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "gas-trucks-entered-2025-10-10-to-12-06",
+   "coverage_end": "2025-12-06",
+   "coverage_start": "2025-10-10",
+   "date": "2025-10-10",
+   "date_precision": "day",
+   "document": "Statement as Ma'an reported it (7 December 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "trucks_entered",
+   "publisher": "Government Media Office, Gaza",
+   "quote": "المكتب الإعلامي الحكومي أن سلطات الاحتلال الإسرائيلي لم تسمح بإدخال العدد الكامل لشاحنات غاز الطهي إلى قطاع غزة، إذ دخل 104 شاحنات فقط منذ بدء وقف إطلاق النار وحتى 6 ديسمبر 2025، من أصل 660 شاحنة مقررة.",
+   "read_on": "2026-10-20",
+   "said": "104",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gas-trucks-entered-2025-10-10-to-12-06",
+   "topic": "gaza_cooking_gas",
+   "unit": "vehicles",
+   "url": "https://maannews.net/news/2152162.html",
+   "value": 104,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "gas-trucks-agreed-2025-10-10-to-12-06",
+   "coverage_end": "2025-12-06",
+   "coverage_start": "2025-10-10",
+   "date": "2025-10-10",
+   "date_precision": "day",
+   "document": "Statement as Ma'an reported it (7 December 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "trucks_agreed",
+   "publisher": "Government Media Office, Gaza",
+   "quote": "المكتب الإعلامي الحكومي أن سلطات الاحتلال الإسرائيلي لم تسمح بإدخال العدد الكامل لشاحنات غاز الطهي إلى قطاع غزة، إذ دخل 104 شاحنات فقط منذ بدء وقف إطلاق النار وحتى 6 ديسمبر 2025، من أصل 660 شاحنة مقررة.",
+   "read_on": "2026-10-20",
+   "said": "660",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:gas-trucks-agreed-2025-10-10-to-12-06",
+   "topic": "gaza_cooking_gas",
+   "unit": "vehicles",
+   "url": "https://maannews.net/news/2152162.html",
+   "value": 660,
+   "verification": "secondary"
+  },
+  {
+   "cite_id": "health-gaza-beds-who-2025-10-24",
+   "date": "2025-10-24",
+   "date_precision": "day",
+   "document": "Briefing as WAFA reported it (24 October 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "hospital_beds",
+   "publisher": "WHO (Rik Peeperkorn)",
+   "qualifier": "about",
+   "quote": "ولفت بيبركورن إلى أن جزءًا فقط من النظام الصحي في غزة لا يزال يعمل، مع نحو 2100 سرير لسكان يزيد عددهم على مليوني نسمة، بينما لا يزال 14 مستشفى فقط من أصل 36، و64 مركزًا للرعاية الصحية الأولية من أصل 181، تعمل جزئيًا في القطاع.",
+   "read_on": "2026-10-20",
+   "said": "about 2,100",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:health-gaza-beds-who-2025-10-24",
+   "topic": "gaza_health_capacity",
+   "unit": "beds",
+   "url": "https://wafa.ps/news/2025/10/24/الصحة-العالمية-تطالب-بفتح-دائم-للممرات",
+   "value": 2100,
+   "verification": "secondary"
+  },
+  {
+   "caution": "Of 36 hospitals.",
+   "cite_id": "health-gaza-hospitals-partly-functioning-2025-10-24",
+   "date": "2025-10-24",
+   "date_precision": "day",
+   "document": "Briefing as WAFA reported it (24 October 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "hospitals_partly_functioning",
+   "publisher": "WHO (Rik Peeperkorn)",
+   "quote": "ولفت بيبركورن إلى أن جزءًا فقط من النظام الصحي في غزة لا يزال يعمل، مع نحو 2100 سرير لسكان يزيد عددهم على مليوني نسمة، بينما لا يزال 14 مستشفى فقط من أصل 36، و64 مركزًا للرعاية الصحية الأولية من أصل 181، تعمل جزئيًا في القطاع.",
+   "read_on": "2026-10-20",
+   "said": "14",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:health-gaza-hospitals-partly-functioning-2025-10-24",
+   "topic": "gaza_health_capacity",
+   "unit": "facilities",
+   "url": "https://wafa.ps/news/2025/10/24/الصحة-العالمية-تطالب-بفتح-دائم-للممرات",
+   "value": 14,
+   "verification": "secondary"
+  },
+  {
+   "caution": "Of 181 primary health care centres.",
+   "cite_id": "health-gaza-phc-partly-functioning-2025-10-24",
+   "date": "2025-10-24",
+   "date_precision": "day",
+   "document": "Briefing as WAFA reported it (24 October 2025)",
+   "location": {
+    "region": "Gaza Strip"
+   },
+   "measure": "phc_centres_partly_functioning",
+   "publisher": "WHO (Rik Peeperkorn)",
+   "quote": "ولفت بيبركورن إلى أن جزءًا فقط من النظام الصحي في غزة لا يزال يعمل، مع نحو 2100 سرير لسكان يزيد عددهم على مليوني نسمة، بينما لا يزال 14 مستشفى فقط من أصل 36، و64 مركزًا للرعاية الصحية الأولية من أصل 181، تعمل جزئيًا في القطاع.",
+   "read_on": "2026-10-20",
+   "said": "64",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:health-gaza-phc-partly-functioning-2025-10-24",
+   "topic": "gaza_health_capacity",
+   "unit": "facilities",
+   "url": "https://wafa.ps/news/2025/10/24/الصحة-العالمية-تطالب-بفتح-دائم-للممرات",
+   "value": 64,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The agency's own count; the Colonization and Wall Resistance Commission is the usual source of these figures and is not named in the sentence.",
+   "cite_id": "barriers-total-2025-12-21",
+   "date": "2025-12-21",
+   "date_precision": "day",
+   "document": "WAFA, 21 December 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "checkpoints_and_gates",
+   "publisher": "WAFA",
+   "quote": "احتلال في الضفة الغربية وصل الى 910 ما بين حاجزاً عسكرياً وبوابة، منها 83 بوابة منذ بداية العام 2025، علماً بأنه تم نصب 247 بوابة حديدية بعد السابع من تشرين الأول/ أكتوبر 2023.",
+   "read_on": "2026-10-20",
+   "said": "910",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:barriers-total-2025-12-21",
+   "topic": "west_bank_barriers",
+   "unit": "sites",
+   "url": "https://wafa.ps/news/2025/12/21/قوات-الاحتلال-تغلق-بوابة-عطارة-شمال-رام-الله",
+   "value": 910,
+   "verification": "read"
+  },
+  {
+   "cite_id": "barriers-gates-since-2023-10-as-of-2025-12-21",
+   "coverage_end": "2025-12-21",
+   "coverage_start": "2023-10-07",
+   "date": "2023-10-07",
+   "date_precision": "day",
+   "document": "WAFA, 21 December 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "iron_gates_since_2023_10",
+   "publisher": "WAFA",
+   "quote": "احتلال في الضفة الغربية وصل الى 910 ما بين حاجزاً عسكرياً وبوابة، منها 83 بوابة منذ بداية العام 2025، علماً بأنه تم نصب 247 بوابة حديدية بعد السابع من تشرين الأول/ أكتوبر 2023.",
+   "read_on": "2026-10-20",
+   "said": "247",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:barriers-gates-since-2023-10-as-of-2025-12-21",
+   "topic": "west_bank_barriers",
+   "unit": "sites",
+   "url": "https://wafa.ps/news/2025/12/21/قوات-الاحتلال-تغلق-بوابة-عطارة-شمال-رام-الله",
+   "value": 247,
+   "verification": "read"
+  },
+  {
+   "cite_id": "barriers-gates-in-2025-as-of-2025-12-21",
+   "coverage_end": "2025-12-21",
+   "coverage_start": "2025-01-01",
+   "date": "2025-01-01",
+   "date_precision": "day",
+   "document": "WAFA, 21 December 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "iron_gates_in_2025",
+   "publisher": "WAFA",
+   "quote": "احتلال في الضفة الغربية وصل الى 910 ما بين حاجزاً عسكرياً وبوابة، منها 83 بوابة منذ بداية العام 2025، علماً بأنه تم نصب 247 بوابة حديدية بعد السابع من تشرين الأول/ أكتوبر 2023.",
+   "read_on": "2026-10-20",
+   "said": "83",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:barriers-gates-in-2025-as-of-2025-12-21",
+   "topic": "west_bank_barriers",
+   "unit": "sites",
+   "url": "https://wafa.ps/news/2025/12/21/قوات-الاحتلال-تغلق-بوابة-عطارة-شمال-رام-الله",
+   "value": 83,
+   "verification": "read"
+  },
+  {
+   "caution": "The same sentence counts 18 gates since the start of 2025 and 146 since 7 October 2023; WAFA's December count gives 83 and 247. Different definitions, not a series.",
+   "cite_id": "barriers-total-2025-09-15",
+   "date": "2025-09-15",
+   "date_precision": "day",
+   "document": "WAFA, 15 September 2025",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "checkpoints_and_gates",
+   "publisher": "WAFA",
+   "quote": "ن عدد الحواجز والبوابات الحديدية، التي نصبها جيش الاحتلال في الضفة الغربية وصل إلى 898 حاجزا عسكريا وبوابة حديدية، منها 18 بوابة حديدية نصبها الاحتلال منذ بداية العام الجاري 2025، منها (146) بوابة حديدية نصبها الاحتلال بعد السابع من تشرين الأول/ أكتوبر 2023، وفق هيئة مقاومة الجدار والاستيطان.",
+   "read_on": "2026-10-20",
+   "said": "898",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:barriers-total-2025-09-15",
+   "topic": "west_bank_barriers",
+   "unit": "sites",
+   "url": "https://wafa.ps/news/2025/9/15/الاحتلال-يعيق-وصول-المعلمين-إلى-مدارس-الأغوار",
+   "value": 898,
+   "verification": "read"
+  },
+  {
+   "caution": "Hebron city, its villages and camps; 16 roads and entrances closed with earth mounds in the same sentence.",
+   "cite_id": "barriers-hebron-gates-2026-06-30",
+   "date": "2026-06-30",
+   "date_precision": "day",
+   "document": "Remarks as WAFA reported them (30 June 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "hebron_iron_gates",
+   "publisher": "Governor of Hebron (Dudin)",
+   "quote": "وكشف دودين عن سياسة الاحتلال في حصار المحافظة، وتقطيع أوصال القرى والبلدات والاحياء عن بعضها البعض، حيث نصب الاحتلال 106بوابات حديدية على مداخل مدينة الخليل، وقراها ومخيماتها، وأغلق بالسواتر الترابية 16طريقا ومدخلا للقرى والبلدات، وكذلك نصب وتدشين أكثر من 20 بؤرة استعمارية جديد في محافظة ا",
+   "read_on": "2026-10-20",
+   "said": "106",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:barriers-hebron-gates-2026-06-30",
+   "topic": "west_bank_barriers",
+   "unit": "sites",
+   "url": "https://wafa.ps/news/2026/6/30/محافظ-الخليل-يستنكر-مخطط-الاحتلال-لسقف-الحرم",
+   "value": 106,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The period's end is the report's date.",
+   "cite_id": "settle-cwrc-land-seized-since-2023-10-as-of-2026-10-06",
+   "coverage_end": "2026-10-06",
+   "coverage_start": "2023-10-07",
+   "date": "2023-10-07",
+   "date_precision": "day",
+   "document": "Three-year tally since 7 October 2023, as Quds News reported it (6 October 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "land_seized_since_2023_10",
+   "publisher": "Colonization and Wall Resistance Commission",
+   "qualifier": "about",
+   "quote": "لضفة الغربية، بما فيها القدس، لتصل إلى 62,916 اعتداءً، فيما بلغت الأراضي التي جرى الاستيلاء عليها أو وضع اليد عليها نحو 64.2 ألف دونم، إلى جانب هدم 5,059 منشأة وإقامة 211 بؤرة استعمارية، وفق هيئة مقاومة الجدار والاستيطان.",
+   "read_on": "2026-10-20",
+   "said": "about 64,200",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-cwrc-land-seized-since-2023-10-as-of-2026-10-06",
+   "topic": "settlements",
+   "unit": "dunums",
+   "url": "https://qudsn.co/post?id=218041&slug=%D8%AE%D9%84%D8%A7%D9%84-%D8%AD%D8%B1%D8%A8-%D8%A7%D9%84%D8%A5%D8%A8%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%A7%D8%AD%D8%AA%D9%84%D8%A7%D9%84-%D9%8A%D8%B5%D8%A7%D8%AF%D8%B1-64-%D8%A3%D9%84%D9%81-%D8%AF%D9%88%D9%86%D9%85-%D9%88%D9%8A%D9%87%D8%AF%D9%85-5-%D8%A2%D9%84%D8%A7%D9%81-%D9%85%D9%86%D8%B4%D8%A3%D8%A9",
+   "value": 64200,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The period's end is the report's date.",
+   "cite_id": "settle-cwrc-attacks-since-2023-10-as-of-2026-10-06",
+   "coverage_end": "2026-10-06",
+   "coverage_start": "2023-10-07",
+   "date": "2023-10-07",
+   "date_precision": "day",
+   "document": "Three-year tally since 7 October 2023, as Quds News reported it (6 October 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "attacks_since_2023_10",
+   "publisher": "Colonization and Wall Resistance Commission",
+   "quote": "لضفة الغربية، بما فيها القدس، لتصل إلى 62,916 اعتداءً، فيما بلغت الأراضي التي جرى الاستيلاء عليها أو وضع اليد عليها نحو 64.2 ألف دونم، إلى جانب هدم 5,059 منشأة وإقامة 211 بؤرة استعمارية، وفق هيئة مقاومة الجدار والاستيطان.",
+   "read_on": "2026-10-20",
+   "said": "62,916",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-cwrc-attacks-since-2023-10-as-of-2026-10-06",
+   "topic": "settlements",
+   "unit": "events",
+   "url": "https://qudsn.co/post?id=218041&slug=%D8%AE%D9%84%D8%A7%D9%84-%D8%AD%D8%B1%D8%A8-%D8%A7%D9%84%D8%A5%D8%A8%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%A7%D8%AD%D8%AA%D9%84%D8%A7%D9%84-%D9%8A%D8%B5%D8%A7%D8%AF%D8%B1-64-%D8%A3%D9%84%D9%81-%D8%AF%D9%88%D9%86%D9%85-%D9%88%D9%8A%D9%87%D8%AF%D9%85-5-%D8%A2%D9%84%D8%A7%D9%81-%D9%85%D9%86%D8%B4%D8%A3%D8%A9",
+   "value": 62916,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The period's end is the report's date.",
+   "cite_id": "settle-cwrc-structures-demolished-since-2023-10-as-of-2026-10-06",
+   "coverage_end": "2026-10-06",
+   "coverage_start": "2023-10-07",
+   "date": "2023-10-07",
+   "date_precision": "day",
+   "document": "Three-year tally since 7 October 2023, as Quds News reported it (6 October 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "structures_demolished_since_2023_10",
+   "publisher": "Colonization and Wall Resistance Commission",
+   "quote": "لضفة الغربية، بما فيها القدس، لتصل إلى 62,916 اعتداءً، فيما بلغت الأراضي التي جرى الاستيلاء عليها أو وضع اليد عليها نحو 64.2 ألف دونم، إلى جانب هدم 5,059 منشأة وإقامة 211 بؤرة استعمارية، وفق هيئة مقاومة الجدار والاستيطان.",
+   "read_on": "2026-10-20",
+   "said": "5,059",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-cwrc-structures-demolished-since-2023-10-as-of-2026-10-06",
+   "topic": "settlements",
+   "unit": "structures",
+   "url": "https://qudsn.co/post?id=218041&slug=%D8%AE%D9%84%D8%A7%D9%84-%D8%AD%D8%B1%D8%A8-%D8%A7%D9%84%D8%A5%D8%A8%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%A7%D8%AD%D8%AA%D9%84%D8%A7%D9%84-%D9%8A%D8%B5%D8%A7%D8%AF%D8%B1-64-%D8%A3%D9%84%D9%81-%D8%AF%D9%88%D9%86%D9%85-%D9%88%D9%8A%D9%87%D8%AF%D9%85-5-%D8%A2%D9%84%D8%A7%D9%81-%D9%85%D9%86%D8%B4%D8%A3%D8%A9",
+   "value": 5059,
+   "verification": "secondary"
+  },
+  {
+   "caution": "The period's end is the report's date.",
+   "cite_id": "settle-cwrc-outposts-since-2023-10-as-of-2026-10-06",
+   "coverage_end": "2026-10-06",
+   "coverage_start": "2023-10-07",
+   "date": "2023-10-07",
+   "date_precision": "day",
+   "document": "Three-year tally since 7 October 2023, as Quds News reported it (6 October 2026)",
+   "location": {
+    "region": "West Bank"
+   },
+   "measure": "outposts_since_2023_10",
+   "publisher": "Colonization and Wall Resistance Commission",
+   "quote": "لضفة الغربية، بما فيها القدس، لتصل إلى 62,916 اعتداءً، فيما بلغت الأراضي التي جرى الاستيلاء عليها أو وضع اليد عليها نحو 64.2 ألف دونم، إلى جانب هدم 5,059 منشأة وإقامة 211 بؤرة استعمارية، وفق هيئة مقاومة الجدار والاستيطان.",
+   "read_on": "2026-10-20",
+   "said": "211",
+   "sources": [
+    {
+     "name": "Cited figures (hand-entered, each with its publisher)"
+    }
+   ],
+   "stable_id": "cited:settle-cwrc-outposts-since-2023-10-as-of-2026-10-06",
+   "topic": "settlements",
+   "unit": "outposts",
+   "url": "https://qudsn.co/post?id=218041&slug=%D8%AE%D9%84%D8%A7%D9%84-%D8%AD%D8%B1%D8%A8-%D8%A7%D9%84%D8%A5%D8%A8%D8%A7%D8%AF%D8%A9-%D8%A7%D9%84%D8%A7%D8%AD%D8%AA%D9%84%D8%A7%D9%84-%D9%8A%D8%B5%D8%A7%D8%AF%D8%B1-64-%D8%A3%D9%84%D9%81-%D8%AF%D9%88%D9%86%D9%85-%D9%88%D9%8A%D9%87%D8%AF%D9%85-5-%D8%A2%D9%84%D8%A7%D9%81-%D9%85%D9%86%D8%B4%D8%A3%D8%A9",
+   "value": 211,
+   "verification": "secondary"
   }
  ],
  "metadata": {

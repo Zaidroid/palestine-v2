@@ -3641,6 +3641,97 @@ names:
 # code on the row whose values we hold (the 2017-PPP poverty lines, since replaced by the 2021-PPP lines;
 # "Female graduates from tertiary education", "Domestic credit to private sector by banks", "Smoking
 # prevalence, total (ages 15+)", "Unemployment with advanced education (% of total labor force)").
+  # 2026-10-20: the cited tallies of section H (2026-10-19, unnamed until now) and
+  # section I (JOB-06: unemployment, Gaza's crossings, cooking gas, hospital beds,
+  # the West Bank's gates).
+  cited.settlements.units_in_plans_advanced:
+    en: "Housing units in settlement plans advanced in the period (cited tallies: Peace Now)"
+    ar: "الوحدات السكنية في مخططات استيطانية دُفعت قدمًا في الفترة (حصائل مقتبسة: السلام الآن)"
+  cited.settlements.units_in_tenders:
+    en: "Housing units in settlement tenders published in the period (cited tallies: Peace Now)"
+    ar: "الوحدات السكنية في عطاءات استيطانية نُشرت في الفترة (حصائل مقتبسة: السلام الآن)"
+  cited.settlements.new_outposts:
+    en: "New settler outposts established in the period (cited tallies: Peace Now)"
+    ar: "البؤر الاستيطانية الجديدة في الفترة (حصائل مقتبسة: السلام الآن)"
+  cited.settlements.units_advanced_area_c:
+    en: "Housing units advanced or approved in Area C in the reporting period (cited tallies: UN)"
+    ar: "الوحدات السكنية التي دُفعت قدمًا أو أُقرّت في المنطقة ج في فترة التقرير (حصائل مقتبسة: الأمم المتحدة)"
+  cited.settlements.units_advanced_east_jerusalem:
+    en: "Housing units advanced or approved in East Jerusalem in the reporting period (cited tallies: UN, EU/Ir Amim)"
+    ar: "الوحدات السكنية التي دُفعت قدمًا أو أُقرّت في القدس الشرقية في فترة التقرير (حصائل مقتبسة: الأمم المتحدة، الاتحاد الأوروبي/عير عميم)"
+  cited.settlements.construction_starts:
+    en: "Dwellings begun in Israeli localities of the 'Judea and Samaria Area' in the year (cited tallies: Israel CBS)"
+    ar: "المساكن التي بدأ بناؤها في التجمعات الإسرائيلية في 'منطقة يهودا والسامرة' في السنة (حصائل مقتبسة: مكتب الإحصاء الإسرائيلي)"
+  cited.settlements.land_seized_since_2023_10:
+    en: "Land seized or placed under military order in the West Bank since 7 October 2023, running total (cited: Colonization and Wall Resistance Commission)"
+    ar: "الأراضي المستولى عليها أو الموضوعة تحت أمر عسكري في الضفة منذ 7 تشرين الأول 2023، مجموع تراكمي (مقتبس: هيئة مقاومة الجدار والاستيطان)"
+  cited.settlements.attacks_since_2023_10:
+    en: "Settler and army attacks recorded in the West Bank since 7 October 2023, running total (cited: Colonization and Wall Resistance Commission)"
+    ar: "اعتداءات المستوطنين والجيش المسجَّلة في الضفة منذ 7 تشرين الأول 2023، مجموع تراكمي (مقتبس: هيئة مقاومة الجدار والاستيطان)"
+  cited.settlements.structures_demolished_since_2023_10:
+    en: "Structures demolished in the West Bank since 7 October 2023, running total (cited: Colonization and Wall Resistance Commission)"
+    ar: "المنشآت المهدومة في الضفة منذ 7 تشرين الأول 2023، مجموع تراكمي (مقتبس: هيئة مقاومة الجدار والاستيطان)"
+  cited.settlements.outposts_since_2023_10:
+    en: "Settler outposts established in the West Bank since 7 October 2023, running total (cited: Colonization and Wall Resistance Commission)"
+    ar: "البؤر الاستيطانية المقامة في الضفة منذ 7 تشرين الأول 2023، مجموع تراكمي (مقتبس: هيئة مقاومة الجدار والاستيطان)"
+  cited.unemployment.rate:
+    en: "Unemployment rate as one publisher stated it for one period (cited: PCBS, UNCTAD, the trade-union federation, the Gaza labour ministry)"
+    ar: "معدل البطالة كما أعلنه ناشر واحد لفترة واحدة (مقتبس: الإحصاء الفلسطيني، الأونكتاد، اتحاد النقابات، وزارة العمل بغزة)"
+  cited.unemployment.unemployed_persons:
+    en: "Unemployed persons as one publisher stated it for one period (cited)"
+    ar: "عدد العاطلين عن العمل كما أعلنه ناشر واحد لفترة واحدة (مقتبس)"
+  cited.gaza_crossings.rafah_open_days:
+    en: "Days the Rafah crossing was open to travellers in the period (cited: Crossings and Borders Authority, Gaza)"
+    ar: "أيام فتح معبر رفح أمام المسافرين في الفترة (مقتبس: هيئة المعابر والحدود، غزة)"
+  cited.gaza_crossings.rafah_closed_days:
+    en: "Days the Rafah crossing was closed to travellers in the period (cited: Crossings and Borders Authority, Gaza)"
+    ar: "أيام إغلاق معبر رفح أمام المسافرين في الفترة (مقتبس: هيئة المعابر والحدود، غزة)"
+  cited.gaza_crossings.kerem_shalom_travel_open_days:
+    en: "Days the Kerem Shalom crossing was open to travellers in the period (cited: Crossings and Borders Authority, Gaza)"
+    ar: "أيام فتح معبر كرم أبو سالم أمام المسافرين في الفترة (مقتبس: هيئة المعابر والحدود، غزة)"
+  cited.gaza_crossings.patients_awaiting_evacuation:
+    en: "Patients in Gaza on the referral lists awaiting evacuation for treatment, on the day (cited: Ministry of Health, Gaza)"
+    ar: "المرضى في غزة على قوائم التحويل بانتظار الإجلاء للعلاج، في اليوم (مقتبس: وزارة الصحة، غزة)"
+  cited.gaza_crossings.deaths_awaiting_evacuation:
+    en: "Patients who died in Gaza while awaiting evacuation for treatment, running total (cited)"
+    ar: "المرضى الذين توفوا في غزة بانتظار الإجلاء للعلاج، مجموع تراكمي (مقتبس)"
+  cited.gaza_crossings.medical_evacuations:
+    en: "Patients evacuated from Gaza for treatment in the period, by crossing (cited)"
+    ar: "المرضى الذين أُجلوا من غزة للعلاج في الفترة، بحسب المعبر (مقتبس)"
+  cited.gaza_cooking_gas.need_tonnes_per_month:
+    en: "Gaza Strip's stated monthly need of cooking gas, tonnes (cited: General Petroleum Authority, Gaza)"
+    ar: "حاجة قطاع غزة الشهرية المعلنة من غاز الطهي، بالطن (مقتبس: هيئة البترول العامة، غزة)"
+  cited.gaza_cooking_gas.need_tonnes_per_day:
+    en: "Gaza Strip's stated daily need of cooking gas, tonnes (cited: General Petroleum Authority, Gaza)"
+    ar: "حاجة قطاع غزة اليومية المعلنة من غاز الطهي، بالطن (مقتبس: هيئة البترول العامة، غزة)"
+  cited.gaza_cooking_gas.trucks_entered:
+    en: "Cooking-gas trucks that entered Gaza in the period (cited: Government Media Office, Gaza)"
+    ar: "شاحنات غاز الطهي التي دخلت غزة في الفترة (مقتبس: المكتب الإعلامي الحكومي، غزة)"
+  cited.gaza_cooking_gas.trucks_agreed:
+    en: "Cooking-gas trucks the ceasefire agreement provided for in the period (cited: Government Media Office, Gaza)"
+    ar: "شاحنات غاز الطهي التي نصّ عليها اتفاق وقف إطلاق النار في الفترة (مقتبس: المكتب الإعلامي الحكومي، غزة)"
+  cited.gaza_health_capacity.hospital_beds:
+    en: "Hospital beds in service in the Gaza Strip, on the day (cited: WHO)"
+    ar: "الأسرّة الشغّالة في مستشفيات قطاع غزة، في اليوم (مقتبس: منظمة الصحة العالمية)"
+  cited.gaza_health_capacity.hospitals_partly_functioning:
+    en: "Hospitals partly functioning in the Gaza Strip, on the day (cited: WHO)"
+    ar: "المستشفيات العاملة جزئيًا في قطاع غزة، في اليوم (مقتبس: منظمة الصحة العالمية)"
+  cited.gaza_health_capacity.phc_centres_partly_functioning:
+    en: "Primary health care centres partly functioning in the Gaza Strip, on the day (cited: WHO)"
+    ar: "مراكز الرعاية الصحية الأولية العاملة جزئيًا في قطاع غزة، في اليوم (مقتبس: منظمة الصحة العالمية)"
+  cited.west_bank_barriers.checkpoints_and_gates:
+    en: "Military checkpoints and iron gates in the West Bank, on the day (cited: WAFA)"
+    ar: "الحواجز العسكرية والبوابات الحديدية في الضفة الغربية، في اليوم (مقتبس: وفا)"
+  cited.west_bank_barriers.iron_gates_since_2023_10:
+    en: "Iron gates installed in the West Bank since 7 October 2023, running total (cited: WAFA)"
+    ar: "البوابات الحديدية المنصوبة في الضفة الغربية منذ 7 تشرين الأول 2023، مجموع تراكمي (مقتبس: وفا)"
+  cited.west_bank_barriers.iron_gates_in_2025:
+    en: "Iron gates installed in the West Bank since the start of 2025, running total (cited: WAFA)"
+    ar: "البوابات الحديدية المنصوبة في الضفة الغربية منذ مطلع 2025، مجموع تراكمي (مقتبس: وفا)"
+  cited.west_bank_barriers.hebron_iron_gates:
+    en: "Iron gates on the entrances of Hebron city, its villages and camps, on the day (cited: Governor of Hebron)"
+    ar: "البوابات الحديدية على مداخل مدينة الخليل وقراها ومخيماتها، في اليوم (مقتبس: محافظ الخليل)"
+
 publisher_names:
 
   # WHO Global Health Observatory: its API carries English names only; translated in WHO's Arabic terminology

@@ -1,8 +1,8 @@
-"""Load the reviewed returns of the DeepSeek harness's jobs 03, 04 and 05.
+"""Load the reviewed returns of the DeepSeek harness's jobs 03, 04, 05 and 06.
 
     .venv/bin/python -m ops.load_job_returns              # load all three
     .venv/bin/python -m ops.load_job_returns --dry-run
-    .venv/bin/python -m ops.load_job_returns --only 03
+    .venv/bin/python -m ops.load_job_returns --only 06
 
 One-off, reviewed files under data/raw/jobs/NN/ (docs/jobs/JOB-NN-RETURN.md
 says how each was read and checked); not in the nightly. Idempotent on
@@ -14,6 +14,14 @@ says how each was read and checked); not in the nightly. Idempotent on
   04  settlement announcements (keep + fix) → settlements.units_announced;
       new outposts (keep + fix) → settlements.outpost_reported.
   05  rota statements with hours → energy.gaza.rota_hours_stated.
+  06  the figures lake's pilot series after Claude's re-read
+      (db/reference/job06_review.yaml, the only rows loaded): tree incidents
+      and land seizure orders → settlements_press_events; the authorities'
+      tree tallies → settlements_press_tallies; the Media Office's truck
+      counts, aid trucks on a day and cooking-gas shipments →
+      gaza_supply_press. Places: the village from the gazetteer dump
+      (data/raw/settlements/localities.json, name + governorate), else the
+      governorate, else the region.
 """
 from __future__ import annotations
 
@@ -121,14 +129,152 @@ def job05(reported: str) -> tuple[str, list[dict]]:
     return "gaza_electricity_rota_press", out
 
 
+REVIEW06 = ROOT / "db" / "reference" / "job06_review.yaml"
+LOCALITIES = ROOT / "data" / "raw" / "settlements" / "localities.json"
+GOV06 = {**GOV, "Jerusalem": 11, "Qalqilya": 7}
+REGION06 = {"West Bank": 2, "Gaza Strip": 1}
+GAZA = 1
+QUAL = {"about": "about", "more_than": "more than", "at_least": "at least", "up_to": "up to"}
+
+
+def _reviewed06(family: str) -> dict:
+    """DeepSeek's reviewed rows of one family, by document id (several rows of one
+    document keep their line index under 'idx')."""
+    import gzip
+    path = JOBS / "06" / "reviewed" / f"{family}.ndjson.gz"
+    if not path.exists():
+        return {}
+    out: dict = {}
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        for i, line in enumerate(fh):
+            if line.strip():
+                r = json.loads(line); r["idx"] = i
+                out.setdefault(r["doc_id"], []).append(r)
+    return out
+
+
+def _pick(rows: dict, doc: int, idx=None) -> dict:
+    cands = rows.get(doc) or []
+    if not cands:
+        raise SystemExit(f"job 06: document {doc} is not in the reviewed file")
+    if idx is not None:
+        for r in cands:
+            if r["idx"] == idx:
+                return r
+        raise SystemExit(f"job 06: document {doc} has no row {idx}")
+    return cands[0]
+
+
+def load_places06(path: Path = LOCALITIES) -> dict:
+    """{(name_ar, governorate_en): place_id} from the extractor's gazetteer dump;
+    the lowest id wins when a name occurs twice in one governorate."""
+    if not path.exists():
+        return {}
+    out: dict = {}
+    for r in json.loads(path.read_text(encoding="utf-8")):
+        k = (r.get("ar"), r.get("gov_en"))
+        if r.get("ar") and (k not in out or r["place_id"] < out[k]):
+            out[k] = r["place_id"]
+    return out
+
+
+def place06(e: dict, places: dict) -> int:
+    """The village when named and found, else the governorate, else the West Bank."""
+    if e.get("place") and e.get("gov"):
+        pid = places.get((e["place"], e["gov"]))
+        if pid:
+            return pid
+    if e.get("gov") in GOV06:
+        return GOV06[e["gov"]]
+    return 2
+
+
+def _attrs06(r: dict, e: dict, extra: dict) -> str:
+    a = {"quote": r.get("quote"), "doc_ids": r.get("doc_ids") or [r["doc_id"]], "publisher": r.get("publisher"),
+         "printed": r.get("printed"), "place_hint": r.get("place_hint"), "lake_verdict": r.get("verdict"),
+         "note": e.get("note"), "caution": e.get("caution"), "reader": "JOB-06 lake + Claude re-read 2026-10-20"}
+    a.update(extra)
+    return json.dumps({k: v for k, v in a.items() if v is not None}, ensure_ascii=False)
+
+
+def job06(reported: str, places: dict | None = None) -> list[tuple[str, list[dict]]]:
+    import yaml
+    rv = yaml.safe_load(REVIEW06.read_text(encoding="utf-8"))
+    places = load_places06() if places is None else places
+    events, tallies, supply = [], [], []
+    trees = _reviewed06("trees_uprooted")
+    for e in rv.get("trees_incidents") or []:
+        r = _pick(trees, e["doc"], e.get("idx"))
+        pid = place06(e, places)
+        attrs = _attrs06(r, e, {"actor": e.get("actor"), "kind": e.get("kind"), "qualifier": QUAL.get(e.get("qualifier") or ""),
+                                "place_ar": e.get("place"), "governorate": e.get("gov"), "placed": "village" if e.get("place") and pid not in GOV06.values() and pid != 2 else "governorate"})
+        events.append({"place_id": pid, "indicator": "settlements.trees_uprooted_reported", "value": float(e["trees"]), "unit": "trees",
+                       "occurred": _day(r["date"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                       "attrs": attrs, "identity": f"settlements_press|trees|{e['doc']}", "stable": f"settlements_press_events:trees:{e['doc']}"})
+    for t in rv.get("trees_tallies") or []:
+        r = _pick(trees, t["doc"], t.get("idx"))
+        for row in t["rows"]:
+            ind = "settlements.trees_damaged_stated" if row["measure"] == "all" else "settlements.trees_damaged_olive_stated"
+            pid = REGION06.get(row["place"]) or GOV06.get(row["place"])
+            if not pid:
+                raise SystemExit(f"job 06: tally place {row['place']!r} unknown")
+            slug = row["place"].lower().replace(" ", "-")
+            attrs = _attrs06(r, t, {"authority": t["authority"], "period_from": t["from"], "period_to": t["to"], "measure": row["measure"],
+                                    "place_en": row["place"], "qualifier": QUAL.get(row.get("qualifier") or "")})
+            tallies.append({"place_id": pid, "indicator": ind, "value": float(row["trees"]), "unit": "trees",
+                            "occurred": _day(t["from"]), "precision": t["precision"], "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                            "attrs": attrs, "identity": f"settlements_press_tallies|{row['measure']}|{slug}|{t['from']}|{t['to']}",
+                            "stable": f"settlements_press_tallies:{row['measure']}:{slug}:{t['from']}:{t['to']}"})
+    land = _reviewed06("land_orders")
+    for e in rv.get("land_orders") or []:
+        r = _pick(land, e["doc"], e.get("idx"))
+        pid = place06(e, places)
+        n = e.get("n", 1)
+        attrs = _attrs06(r, e, {"kind": e.get("kind"), "purpose": e.get("purpose"), "qualifier": QUAL.get(e.get("qualifier") or ""),
+                                "place_ar": e.get("place"), "governorate": e.get("gov"), "placed": "village" if e.get("place") and pid not in GOV06.values() and pid != 2 else ("governorate" if e.get("gov") else "region")})
+        events.append({"place_id": pid, "indicator": "settlements.land_seizure_order_reported", "value": float(e["dunums"]), "unit": "dunums",
+                       "occurred": _day(r["date"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                       "attrs": attrs, "identity": f"settlements_press|land|{e['doc']}|{n}", "stable": f"settlements_press_events:land:{e['doc']}:{n}"})
+    trucks = _reviewed06("aid_trucks")
+    for e in rv.get("gaza_trucks") or []:
+        r = _pick(trucks, e["doc"], e.get("idx"))
+        split = {k: e.get(k) for k in ("aid", "commercial", "fuel", "fuel_agreed") if e.get(k) is not None}
+        base = _attrs06(r, e, {"scope": e["scope"], "as_of": e["as_of"], **split})
+        supply.append({"place_id": GAZA, "indicator": "aid.gaza.ceasefire_trucks_entered_cumulative", "value": float(e["entered"]), "unit": "vehicles",
+                       "occurred": _day(e["as_of"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                       "attrs": base, "identity": f"gaza_supply_press|trucks_entered|{e['doc']}", "stable": f"gaza_supply_press:trucks_entered:{e['doc']}"})
+        if e.get("agreed") is not None:
+            supply.append({"place_id": GAZA, "indicator": "aid.gaza.ceasefire_trucks_agreed_cumulative", "value": float(e["agreed"]), "unit": "vehicles",
+                           "occurred": _day(e["as_of"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                           "attrs": base, "identity": f"gaza_supply_press|trucks_agreed|{e['doc']}", "stable": f"gaza_supply_press:trucks_agreed:{e['doc']}"})
+    for e in rv.get("gaza_aid_trucks_day") or []:
+        r = _pick(trucks, e["doc"], e.get("idx"))
+        supply.append({"place_id": GAZA, "indicator": "aid.gaza.aid_trucks_entered_day_stated", "value": float(e["aid"]), "unit": "vehicles",
+                       "occurred": _day(e["day"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                       "attrs": _attrs06(r, e, {"day_total_trucks": e.get("total")}), "identity": f"gaza_supply_press|aid_day|{e['doc']}",
+                       "stable": f"gaza_supply_press:aid_day:{e['doc']}"})
+    gas = _reviewed06("cooking_gas")
+    for e in rv.get("gaza_cooking_gas") or []:
+        r = _pick(gas, e["doc"], e.get("idx"))
+        supply.append({"place_id": GAZA, "indicator": "energy.gaza.cooking_gas_trucks_entered", "value": float(e["trucks"]), "unit": "vehicles",
+                       "occurred": _day(r["date"]), "precision": "day", "reported": _day(r["date"]).isoformat(), "raw_ref": r.get("url"),
+                       "attrs": _attrs06(r, e, {"authority": "General Petroleum Authority, Gaza"}), "identity": f"gaza_supply_press|gas|{e['doc']}",
+                       "stable": f"gaza_supply_press:gas:{e['doc']}"})
+    return [("settlements_press_events", events), ("settlements_press_tallies", tallies), ("gaza_supply_press", supply)]
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--dry-run", action="store_true"); ap.add_argument("--only")
     a = ap.parse_args(argv)
     reported = datetime.now(timezone.utc).isoformat()
-    jobs = {"03": job03, "04": job04, "05": job05}
+    jobs = {"03": job03, "04": job04, "05": job05, "06": job06}
     if a.only:
         jobs = {a.only: jobs[a.only]}
-    batches = [(n, *fn(reported)) for n, fn in jobs.items()]
+    batches = []
+    for n, fn in jobs.items():
+        got = fn(reported)
+        for ds, obs in (got if isinstance(got, list) else [got]):
+            batches.append((n, ds, obs))
     for n, ds, obs in batches:
         print(f"  job {n}: {len(obs)} observations → {ds}")
     if a.dry_run:
@@ -138,7 +284,7 @@ def main(argv: list[str]) -> int:
         for n, ds, obs in batches:
             row = conn.execute("SELECT dataset_id FROM dataset WHERE key = %s", (ds,)).fetchone()
             if not row:
-                raise SystemExit(f"dataset {ds} missing: apply migration 135")
+                raise SystemExit(f"dataset {ds} missing: apply migration 135 (jobs 03–05) or 136 (job 06)")
             for o in obs:
                 conn.execute(UPSERT, {**o, "dataset_id": row[0]})
             print(f"  loaded job {n}: {len(obs)} into {ds}")

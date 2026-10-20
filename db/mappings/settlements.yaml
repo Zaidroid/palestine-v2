@@ -220,3 +220,38 @@ registry:
       grain: day
       place_grain: locality
       canonical_unit: events
+    # Migration 136 (2026-10-20, JOB-06): tree incidents and land seizure
+    # orders read from the archive (settlements_press_events), and the
+    # authorities' tree tallies (settlements_press_tallies), each loaded by
+    # ops/load_job_returns.py from db/reference/job06_review.yaml.
+    - when: {equals: "settlements.trees_uprooted_reported"}
+      ask_by_name: true          # the detail; the tallies are the answer to "trees"
+      concept: violence.settler
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: locality
+      canonical_unit: trees
+    - when: {equals: "settlements.land_seizure_order_reported"}
+      ask_by_name: true
+      concept: land.confiscation
+      measure_kind: flow
+      polarity: -1
+      grain: day
+      place_grain: locality
+      canonical_unit: dunums
+    - when: {equals: "settlements.trees_damaged_stated"}
+      concept: violence.settler
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: trees
+    - when: {equals: "settlements.trees_damaged_olive_stated"}
+      ask_by_name: true          # the olive share; the all-trees tally answers "trees"
+      concept: violence.settler
+      measure_kind: flow
+      polarity: -1
+      grain: month
+      place_grain: governorate
+      canonical_unit: trees

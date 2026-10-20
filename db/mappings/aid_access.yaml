@@ -219,3 +219,30 @@ registry:
       # tonnes AND lorries, and there is no honest conversion between them.
       # Each row keeps its own resolved unit; the loader records the
       # disagreement rather than picking a winner and hiding it.
+    # Migration 136 (2026-10-20, JOB-06): gaza_supply_press, read from the
+    # archive and loaded by ops/load_job_returns.py (job 06), is served under
+    # this category, so its indicators are classified here. The Media
+    # Office's running counts are cumulative: never summed across dates.
+    - when: {prefix: "aid.gaza.ceasefire_trucks_"}
+      concept: aid.access
+      measure_kind: cumulative
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles
+    - when: {equals: "aid.gaza.aid_trucks_entered_day_stated"}
+      ask_by_name: true          # a few stated days; the UN's offloaded counts are the daily series
+      concept: aid.access
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles
+    - when: {equals: "energy.gaza.cooking_gas_trucks_entered"}
+      ask_by_name: true
+      concept: energy.supply
+      measure_kind: flow
+      polarity: 1
+      grain: day
+      place_grain: region
+      canonical_unit: vehicles

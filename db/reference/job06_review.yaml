@@ -1,0 +1,365 @@
+# JOB-06, the figures lake: Claude's re-read of DeepSeek's ten pilot series
+# (2026-10-20). DeepSeek read 343 candidates against their quotes and kept
+# them when "figure and subject match the family". That is a looser bar than
+# a series needs: a sentence about trees is not a row of trees uprooted, a
+# repeated citation of one half-year report is not six data points, and
+# "5.283 دونم" is five dunums, not five thousand. This file is the second
+# read, row by row, and the only thing ops/load_job_returns.py loads: a
+# document that is not listed here is not loaded. The quote, the URL and the
+# date come from DeepSeek's reviewed files (data/raw/jobs/06/reviewed/).
+#
+# Verdicts: the ten series split four ways.
+#   loaded as series   trees (incidents + the authorities' tallies), land
+#                      seizure orders, the Gaza aid-truck compliance series,
+#                      cooking-gas shipments
+#   cited figures      unemployment, Rafah/crossings, hospital beds, iron
+#                      gates (db/reference/cited_figures.yaml, section I):
+#                      statements with a publisher, not a series
+#   not loaded         displaced (mixed subjects), power plant (anecdotes;
+#                      the rota and OCHA's daily table already cover it)
+#
+# Dot as a decimal in land orders: Palestinian military orders print
+# "7.498 دونم" for 7 dunums and 498 m². DeepSeek's lake read 5283 at Jaba'
+# and 137,500 at Jayyous; both are misparses (5.283 and, by the other
+# outlet, 160). Dot as a thousands separator in WAFA's tallies: "26.395"
+# is 26,395; DeepSeek's self-check caught that one.
+
+reviewed_on: "2026-10-20"
+reader: "JOB-06 lake (DeepSeek) + Claude re-read 2026-10-20"
+
+# ── settlements.trees_uprooted_reported: one incident, trees uprooted, cut,
+# burned or poisoned at a named place on a day, as one outlet reported it.
+# Several outlets on one incident are one row (the agency's, else the fuller
+# count); the others are named in `note`. actor: settlers | army.
+trees_incidents:
+  - {doc: 5040442, trees: 120, place: كيسان, gov: Bethlehem, actor: settlers, kind: olive,
+     note: "Safa (5040750) says more than 80 the same day; Anadolu (5040645) repeats 120: one incident."}
+  - {doc: 2365002, trees: 200, qualifier: more_than, place: اللبن الشرقية, gov: Nablus, actor: army, kind: olive}
+  - {doc: 2364905, idx: 6, trees: 50, qualifier: more_than, place: قصرة, gov: Nablus, actor: settlers, kind: olive}
+  - {doc: 2364809, trees: 100, qualifier: about, place: المغير, gov: Jenin, actor: settlers, kind: olive,
+     note: "al-Mughayyir east of Jenin, not the Ramallah village of the same name."}
+  - {doc: 2364667, trees: 50, qualifier: about, place: مخماس, gov: Jerusalem, actor: settlers, kind: olive}
+  - {doc: 2363775, trees: 400, qualifier: more_than, place: بيت ريما, gov: Ramallah, actor: army, kind: olive}
+  - {doc: 2363636, trees: 60, qualifier: more_than, place: جبع, gov: Jerusalem, actor: army, kind: olive}
+  - {doc: 2362028, trees: 100, qualifier: more_than, place: برطعة, gov: Jenin, actor: army, kind: olive}
+  - {doc: 111106, trees: 110, place: null, gov: Nablus, actor: army, kind: olive,
+     note: "'west of Nablus', no village named; on the governorate."}
+  - {doc: 110544, trees: 150, qualifier: more_than, place: جبع, gov: Jenin, actor: army, kind: olive,
+     note: "Jaba' and Ajja, south of Jenin; placed on Jaba'."}
+  - {doc: 100115, trees: 165, place: يطا, gov: Hebron, actor: settlers, kind: olive,
+     note: "Masafer Yatta; Quds News (12815, 25 Jul) says more than 50 at Ighziwa: one incident, the counted figure kept."}
+  - {doc: 4412692, trees: 40, qualifier: about, place: زبوبا, gov: Jenin, actor: army, kind: olive,
+     note: "Jenin News (393452) says 80 the same day; the agency's count kept."}
+  - {doc: 63776, trees: 300, qualifier: more_than, place: null, gov: Tubas, actor: army, kind: trees,
+     note: "northern Jordan Valley; on the Tubas governorate."}
+  - {doc: 9642, trees: 1500, qualifier: about, place: مادما, gov: Nablus, actor: army, kind: olive}
+  - {doc: 10735, trees: 500, qualifier: about, place: قصرة, gov: Nablus, actor: settlers, kind: olive}
+  - {doc: 2358603, trees: 60, qualifier: about, place: يطا, gov: Hebron, actor: settlers, kind: trees}
+  - {doc: 4125968, trees: 70, qualifier: about, place: ترمسعيا, gov: Ramallah, actor: settlers, kind: olive_almond}
+  - {doc: 2546594, trees: 150, qualifier: about, place: نحالين, gov: Bethlehem, actor: settlers, kind: olive}
+  - {doc: 4414901, trees: 40, place: null, gov: Salfit, actor: settlers, kind: olive, note: "'south of Salfit'; on the governorate."}
+  - {doc: 4414932, trees: 150, qualifier: about, place: ياسوف, gov: Salfit, actor: settlers, kind: fruit_trees}
+  - {doc: 2576674, trees: 3000, place: null, gov: Jenin, actor: army, kind: trees,
+     note: "Jenin News citing Hebrew sources: 3,000 trees on 200 dunums; no Palestinian outlet's own count."}
+  - {doc: 2629022, trees: 400, place: قصرة, gov: Nablus, actor: settlers, kind: olive,
+     note: "Ma'an (4415486, 9 May) repeats 400 at Qusra: one incident, dated by the first report."}
+  - {doc: 4125388, trees: 1000, qualifier: at_least, place: ترمسعيا, gov: Ramallah, actor: settlers, kind: olive}
+  - {doc: 2355819, trees: 30, qualifier: about, place: يطا, gov: Hebron, actor: settlers, kind: olive}
+  - {doc: 2355670, trees: 200, place: الظاهرية, gov: Hebron, actor: settlers, kind: olive_almond}
+  - {doc: 2629462, trees: 500, qualifier: more_than, place: برقة, gov: Nablus, actor: army, kind: olive}
+  - {doc: 4416055, trees: 400, qualifier: about, place: null, gov: Ramallah, actor: settlers, kind: olive,
+     note: "'north of Ramallah', the village not in the sentence; on the governorate."}
+  - {doc: 4125102, trees: 150, qualifier: more_than, place: اللبن الشرقية, gov: Nablus, actor: settlers, kind: olive}
+  - {doc: 2532923, trees: 200, place: حزما, gov: Jerusalem, actor: army, kind: trees}
+  - {doc: 2660504, trees: 500, qualifier: more_than, place: ترمسعيا, gov: Ramallah, actor: settlers, kind: olive,
+     note: "Palinfo (4124705, 7 Apr) says about 400: one incident."}
+  - {doc: 2574101, trees: 23, place: عجة, gov: Jenin, actor: settlers, kind: olive}
+  - {doc: 4124037, trees: 200, qualifier: about, place: بيت إكسا, gov: Jerusalem, actor: army, kind: olive,
+     note: "between Beit Iksa and Biddu; Ma'an (4418040, 14 Mar: 80) and Ma'an (4417375, 28 Mar: about 200) report the same ground."}
+  - {doc: 2352737, trees: 130, place: إذنا, gov: Hebron, actor: army, kind: olive,
+     note: "Ma'an (4418040, 14 Mar) repeats 130 at Idhna."}
+  - {doc: 4418969, trees: 21, place: المغير, gov: Ramallah, actor: settlers, kind: olive}
+  - {doc: 4419721, trees: 300, qualifier: about, place: ترمسعيا, gov: Ramallah, actor: settlers, kind: olive,
+     note: "WAFA (2351480, 13 Feb) prints about 300 at Turmus Ayya again; taken as the same incident."}
+  - {doc: 2350918, trees: 70, qualifier: more_than, place: يطا, gov: Hebron, actor: settlers, kind: olive,
+     note: "south of Hebron; Hebron News (2585167) places it at Ighziwa, Masafer Yatta, about 60."}
+  - {doc: 2350811, trees: 30, qualifier: about, place: يطا, gov: Hebron, actor: settlers, kind: olive}
+  - {doc: 4419832, trees: 200, qualifier: about, place: الخضر, gov: Bethlehem, actor: army, kind: grapevines}
+  - {doc: 4420077, trees: 100, qualifier: about, place: صوريف, gov: Hebron, actor: army, kind: olive,
+     note: "Palinfo (4125623, 12 May) re-prints this sentence word for word in a roundup: not a second incident."}
+  - {doc: 2350486, trees: 200, place: ترمسعيا, gov: Ramallah, actor: settlers, kind: olive}
+  - {doc: 2350443, trees: 500, place: يطا, gov: Hebron, actor: settlers, kind: olive_fig_almond,
+     note: "Wad al-Rakhim, south of Yatta; Palinfo (4123159, 3 Feb) repeats 500."}
+  - {doc: 2349225, trees: 150, qualifier: about, place: يطا, gov: Hebron, actor: settlers, kind: olive,
+     note: "Masafer Yatta; Ma'an (4420927, 10 Jan) says about 150 at Khirbet al-Tabban: one incident."}
+  - {doc: 217692, trees: 1000, qualifier: about, place: قريوت, gov: Nablus, actor: army, kind: olive}
+  - {doc: 4421233, trees: 40, qualifier: about, place: مخماس, gov: Jerusalem, actor: settlers, kind: olive}
+  - {doc: 4122363, trees: 300, qualifier: about, place: قلقيلية, gov: Qalqilya, actor: army, kind: fruit_trees}
+
+# ── settlements.trees_damaged_stated / settlements.trees_damaged_olive_stated:
+# a Palestinian authority's tally for a period, as the press printed it. The
+# Colonization and Wall Resistance Commission (CWRC) reports monthly, the
+# Ministry of Agriculture by the week. `all` counts every tree the tally
+# names, `olive` the olive trees in it. place: West Bank or a governorate.
+trees_tallies:
+  - doc: 2350820
+    authority: "Colonization and Wall Resistance Commission, monthly report (January 2026)"
+    from: "2026-01-01"
+    to: "2026-01-31"
+    precision: month
+    note: "The sentence counts 1,245 olive trees and splits them by governorate; no all-trees total."
+    rows:
+      - {measure: olive, place: West Bank, trees: 1245}
+      - {measure: olive, place: Hebron, trees: 750}
+      - {measure: olive, place: Ramallah, trees: 245}
+      - {measure: olive, place: Nablus, trees: 250}
+  - doc: 2352553
+    authority: "Colonization and Wall Resistance Commission, monthly report (February 2026)"
+    from: "2026-02-01"
+    to: "2026-02-28"
+    precision: month
+    rows:
+      - {measure: all, place: West Bank, trees: 1314}
+      - {measure: olive, place: West Bank, trees: 1054}
+      - {measure: all, place: Ramallah, trees: 731}
+      - {measure: all, place: Bethlehem, trees: 200}
+      - {measure: all, place: Hebron, trees: 183}
+      - {measure: all, place: Nablus, trees: 180}
+      - {measure: all, place: Tulkarm, trees: 20}
+  - doc: 2354203
+    authority: "Colonization and Wall Resistance Commission, monthly report (March 2026)"
+    from: "2026-03-01"
+    to: "2026-03-31"
+    precision: month
+    rows:
+      - {measure: all, place: West Bank, trees: 2286}
+      - {measure: olive, place: West Bank, trees: 2121}
+      - {measure: all, place: Ramallah, trees: 881}
+      - {measure: all, place: Nablus, trees: 500}
+      - {measure: all, place: Bethlehem, trees: 325}
+      - {measure: all, place: Hebron, trees: 285}
+  - doc: 4415711
+    authority: "Colonization and Wall Resistance Commission, monthly report (April 2026)"
+    from: "2026-04-01"
+    to: "2026-04-30"
+    precision: month
+    note: "'all of them olive trees'; WAFA (2356696, 18 May) prints the same tally."
+    rows:
+      - {measure: all, place: West Bank, trees: 4414}
+      - {measure: olive, place: West Bank, trees: 4414}
+      - {measure: all, place: Hebron, trees: 2169}
+      - {measure: all, place: Ramallah, trees: 1170}
+      - {measure: all, place: Nablus, trees: 740}
+      - {measure: all, place: Jerusalem, trees: 200}
+      - {measure: all, place: Bethlehem, trees: 135}
+  - doc: 2359165
+    authority: "Colonization and Wall Resistance Commission, half-year report (January–June 2026)"
+    from: "2026-01-01"
+    to: "2026-06-30"
+    precision: day
+    note: "Repeated by WAFA on 11 Aug, 1 Oct, 4 Oct and 11 Oct and by Quds News on 29 Jul (26,395 olive of 45,195): one tally, dated at its period."
+    rows:
+      - {measure: all, place: West Bank, trees: 45195}
+      - {measure: olive, place: West Bank, trees: 26395}
+      - {measure: all, place: Hebron, trees: 16617}
+      - {measure: all, place: Jenin, trees: 7783}
+      - {measure: all, place: Ramallah, trees: 6834}
+      - {measure: all, place: Nablus, trees: 6015}
+  - doc: 4128228
+    authority: "monthly tally for August 2026 as Palinfo printed it (the authority is not named in the sentence)"
+    from: "2026-08-01"
+    to: "2026-08-31"
+    precision: month
+    caution: "The sentence reads like the Commission's monthly report but does not name it."
+    rows:
+      - {measure: all, place: West Bank, trees: 21508}
+      - {measure: olive, place: West Bank, trees: 19375}
+  - doc: 2364502
+    authority: "an official's statement at a WAFA-covered event (September 2026)"
+    from: "2026-09-01"
+    to: "2026-09-30"
+    precision: month
+    caution: "'about 14,700 trees uprooted during September', the speaker not in the sentence."
+    rows:
+      - {measure: all, place: West Bank, trees: 14700, qualifier: about}
+  - doc: 2352009
+    authority: "Colonization and Wall Resistance Commission, annual report 2025 (892 attacks on trees)"
+    from: "2025-01-01"
+    to: "2025-12-31"
+    precision: year
+    rows:
+      - {measure: all, place: West Bank, trees: 35273}
+      - {measure: olive, place: West Bank, trees: 26988}
+  - doc: 2565811
+    authority: "Ministry of Agriculture, weekly documentation (22–29 January 2026)"
+    from: "2026-01-22"
+    to: "2026-01-29"
+    precision: day
+    rows:
+      - {measure: olive, place: West Bank, trees: 884}
+  - doc: 4123420
+    authority: "Ministry of Agriculture, weekly documentation (the week before 14 February 2026)"
+    from: "2026-02-07"
+    to: "2026-02-13"
+    precision: day
+    caution: "'during one week', published 14 Feb; the week's dates are inferred. Quds News (334598, 15 Mar) prints 777 'in a week' again and is taken as a re-report."
+    rows:
+      - {measure: all, place: West Bank, trees: 777}
+  - doc: 5037382
+    authority: "Ministry of Agriculture, weekly documentation (8–15 October 2026)"
+    from: "2026-10-08"
+    to: "2026-10-15"
+    precision: day
+    rows:
+      - {measure: all, place: West Bank, trees: 3522}
+      - {measure: olive, place: West Bank, trees: 2667}
+
+# ── settlements.land_seizure_order_reported: one Israeli military order
+# (وضع يد / مصادرة) or state-land declaration, in dunums, on the village it
+# names, as the press reported it. kind: order | declaration.
+land_orders:
+  - {doc: 114949, dunums: 741, place: جنين, gov: Jenin, kind: order}
+  - {doc: 2363820, dunums: 2.25, place: قباطية, gov: Jenin, kind: order, purpose: military}
+  - {doc: 27500, dunums: 100, qualifier: about, place: دير نظام, gov: Ramallah, kind: order}
+  - {doc: 384345, dunums: 160, place: جيوس, gov: Qalqilya, kind: order, purpose: "'archaeological sites'",
+     note: "Quds News (23385) prints 137,500 dunums for the same order: a misparse of the figure, dropped."}
+  - {doc: 384345, n: 2, dunums: 21, place: إماتين, gov: Qalqilya, kind: order, purpose: "'archaeological sites'"}
+  - {doc: 4410733, dunums: 37.481, place: بيتونيا, gov: Ramallah, kind: order, purpose: "expansion of a military site (order T/101/26)",
+     note: "Ma'an (4410513, 5 Sep) and Safa (69412) repeat it."}
+  - {doc: 112583, dunums: 7.498, place: قباطية, gov: Jenin, kind: order, purpose: military site}
+  - {doc: 135337, dunums: 200, place: null, gov: null, kind: order, purpose: "for the settlement of Oranit",
+     note: "villages of Salfit and Qalqilya; on the West Bank."}
+  - {doc: 4127809, dunums: 1042, qualifier: about, place: null, gov: null, kind: order, purpose: "the route of a road, 'military purposes'",
+     note: "no village in the sentence; on the West Bank."}
+  - {doc: 14654, dunums: 1152, place: سنجل, gov: Ramallah, kind: declaration,
+     note: "Sinjil, al-Lubban ash-Sharqiya and Qaryut; placed on Sinjil."}
+  - {doc: 375348, dunums: 160, place: null, gov: Tubas, kind: order, purpose: military, note: "Khirbet Makhul and Samra; on the governorate."}
+  - {doc: 2360784, idx: 19, dunums: 199.824, place: null, gov: Jenin, kind: order, purpose: "15 orders in one week, 14 of them for military roads (11.326 km)",
+     note: "Ma'an (4411326, 15 Aug: about 200), Jenin News (392316: 195.014) and Palinfo (4127212: 200) print the same batch."}
+  - {doc: 2361184, dunums: 0.407, place: جينصافوط, gov: Qalqilya, kind: order, purpose: "military (order T/62/26)"}
+  - {doc: 2361177, dunums: 2.224, place: مردة, gov: Salfit, kind: order, purpose: military}
+  - {doc: 396109, dunums: 22, place: اليامون, gov: Jenin, kind: order}
+  - {doc: 367179, dunums: 5.283, place: جبع, gov: Jerusalem, kind: order, purpose: military,
+     note: "Palinfo's Telegram (42789) prints 5283: the dot dropped. 5.283 dunums."}
+  - {doc: 2359966, dunums: 89.514, place: null, gov: null, kind: order, purpose: "seven orders in one week, for security roads and buffer zones",
+     note: "no governorate in the sentence; on the West Bank."}
+  - {doc: 2359875, dunums: 16.5, place: null, gov: Nablus, kind: order, caution: "from WAFA's daily press-headlines roundup, not its own report."}
+
+# ── gaza_supply_press: the Government Media Office's running count of trucks
+# that entered Gaza since the ceasefire of 10 October 2025 against the 600 a
+# day the agreement set (aid.gaza.ceasefire_trucks_entered_cumulative /
+# _agreed_cumulative). `scope` says what the count includes: aid trucks only
+# (October 2025) or aid, commercial and fuel together (2026). The agreed
+# figure is 600 × the days elapsed; `as_of` is the day the count ran to.
+gaza_trucks:
+  - {doc: 4424338, as_of: "2025-10-20", entered: 986, agreed: 6600, scope: aid,
+     note: "al-Qastal (2508140) and Palinfo (4120654, 'fewer than 1,000') carry the same figure."}
+  - {doc: 2507290, as_of: "2025-10-26", entered: 7000, agreed: null, scope: all, aid: 1500,
+     note: "7,000 trucks in all, 1,500 of them aid; the rest commercial."}
+  - {doc: 4123313, as_of: "2026-02-10", entered: 31178, agreed: 72000, scope: all, aid: 17945, commercial: 12402, fuel: 861, fuel_agreed: 6000}
+  - {doc: 333308, as_of: "2026-03-18", entered: 38358, agreed: 94800, scope: all}
+  - {doc: 2604418, as_of: "2026-04-14", entered: 41714, agreed: 110400, scope: all}
+  - {doc: 4414770, as_of: "2026-05-27", entered: 49973, agreed: 135600, scope: all,
+     note: "The lake read '49 ألفا و973' as 973; the sentence says 49,973."}
+  - {doc: 93047, as_of: "2026-06-23", entered: 54023, agreed: 150600, scope: all}
+  - {doc: 93317, as_of: "2026-07-19", entered: 59613, agreed: 168000, scope: all}
+  - {doc: 4127668, as_of: "2026-08-24", entered: 66607, agreed: 189000, scope: all, note: "day 315 of the agreement; al-Kofiya (374427) carries the same."}
+  - {doc: 4128001, as_of: "2026-09-08", entered: 69387, agreed: 198000, scope: all, note: "330 days of the agreement."}
+# aid.gaza.aid_trucks_entered_day_stated: aid trucks that entered on one day,
+# as the Media Office (or the outlet citing it) stated it; the day's total
+# with commercial trucks in attrs when given.
+gaza_aid_trucks_day:
+  - {doc: 1550102, day: "2025-10-12", aid: 173, total: null, note: "3 of them cooking gas."}
+  - {doc: 4120395, day: "2025-10-15", aid: 480, total: null}
+  - {doc: 2604417, day: "2026-04-09", aid: 79, total: 207}
+  - {doc: 355394, day: "2026-05-08", aid: 15, total: 86, note: "71 commercial; no fuel."}
+# energy.gaza.cooking_gas_trucks_entered: one shipment announced by Gaza's
+# General Petroleum Authority, in truckloads.
+gaza_cooking_gas:
+  - {doc: 1574353, trucks: 5}
+  - {doc: 79852, trucks: 5}
+  - {doc: 2224692, trucks: 4}
+  - {doc: 2223477, trucks: 6}
+  - {doc: 2222898, trucks: 5}
+  - {doc: 1570491, trucks: 5}
+  - {doc: 1164895, trucks: 5}
+  - {doc: 2221321, trucks: 5}
+  - {doc: 1567376, trucks: 2, note: "'two truckloads of the five that set out for the crossing'; the lake read 5."}
+  - {doc: 2217443, trucks: 4}
+  - {doc: 2217004, trucks: 5}
+
+# ── Not loaded, and why (document id → reason). Kept so the next reader does
+# not re-litigate them.
+dropped:
+  trees_uprooted:
+    5040645: duplicate of 5040442 (Anadolu repeats WAFA's Kisan count)
+    5040750: duplicate of 5040442 (Safa, the same incident, 'more than 80')
+    2364905#7: the half-year tally repeated (26,395), loaded once from 2359165
+    2364597: "'2,204 olive trees uprooted' during the harvest, no period stated"
+    2364422: the half-year tally repeated
+    2364257: the half-year tally repeated (Nablus 6,015)
+    104352: "'8 orders' to uproot trees; the number is orders, not trees"
+    16728: the same 8 orders
+    2361202: the half-year tally repeated
+    93456: the half-year tally repeated
+    12815: duplicate of 100115 (Masafer Yatta, 24–25 Jul)
+    393452: duplicate of 4412692 (Zbuba, 15 Jul)
+    2356530: "'about 3,000 trees in Salfit over recent weeks', no date or place"
+    4125623: Palinfo re-prints the January Surif sentence in May
+    4415486: duplicate of 2629022 (Qusra, 400)
+    2595624: "'begins uprooting about 40,000 vines', one Telegram channel, unverified and in progress"
+    2356696: the April tally repeated (loaded from 4415711)
+    2354910: the March tally repeated
+    4124705: duplicate of 2660504 (Turmus Ayya, 5–7 Apr)
+    4417375: the Beit Iksa/Biddu ground re-reported 28 Mar
+    2353582: the February tally repeated
+    334598: "'777 in a week' a month after the Ministry's 777; taken as a re-report"
+    4418040: Ma'an 14 Mar repeats Idhna (130) and Biddu/Beit Iksa (80)
+    2654927: the February tally repeated (Telegram)
+    4123420#97: the same document twice
+    2351480: Turmus Ayya 'about 300' eight days after Ma'an's; taken as the same incident
+    2585167: duplicate of 2350918 (Ighziwa, 4 Feb)
+    4123159: a roundup ('more than 700 in 24 hours in January') and a repeat of Wad al-Rakhim
+    4420927: duplicate of 2349225 (Masafer Yatta, 5–10 Jan)
+    2364905#6: kept (see trees_incidents)
+  unemployment: "not a series: 90 kept sentences are repeated citations of a dozen statements (PCBS's annual and quarterly rates, UNCTAD, the trade-union federation, the Gaza labour ministry). The distinct statements are cited figures (cited_figures.yaml, section I); ILOSTAT's quarterly rates are already the series."
+  aid_trucks:
+    4123366: 361 trucks by two HHGF-linked organisations, not the strip's count
+    4421813: "'600 to 800 trucks a day' claimed by an official (COGAT framing), not a count"
+    2468420: a US official's '30,000 trucks since 17 October', a different count
+    4121177: 6,000 trucks held on the Egyptian side, a stock not a flow
+    4130075: "'no more than 135 aid trucks a day' as an average, period not stated"
+    2666325: the same
+    2604504: 3,203 trucks 'in the period mentioned', the period not in the sentence
+    2212197: the Media Office's count re-cited two weeks late (69,000 agreed on 22 Feb is lower than the 72,000 of 10 Feb)
+    374427: duplicate of 4127668
+    2508140: duplicate of 4424338
+    4120654: duplicate of 4424338
+  cooking_gas:
+    2691401: the price of an 8 kg cylinder (74 ILS); the price series is PCBS's and WFP's
+    4124167: the need (8,000 t a month) → cited figures
+    4124003: the same need, repeated
+    1557873: the same need, repeated
+    2211726: "'20 trucks a day needed', officials unnamed"
+    2350834: "'no more than 120–150 t enter on the best days', a range with no date"
+    1556046: "'5 to 6 trucks every two days', a rate with no period"
+    1154889: the 104-of-660 count repeated (loaded as a cited figure from 4422284)
+    2208926: the same
+    1553632: the same, as a share (16 %)
+    4120890: fuel trucks 115 of 1,100 → cited figures
+  land_orders:
+    94473: the Commission's cumulative since October 2023 (64.2 thousand dunums) → cited figures
+    23385: 137,500 dunums at Jayyous, a misparse; the other outlet says 160
+    4410513: duplicate of 4410733 (Beitunia)
+    69412: duplicate of 4410733
+    4411326: the Jenin batch repeated
+    392316: the Jenin batch repeated (195.014)
+    4127212: the Jenin batch repeated
+    42789: 5283 at Jaba', the dot dropped; loaded as 5.283 from 367179
+    396930: a plan to seize 4,000 dunums at Taybeh, not an order
+    2359236: "'estimates put seized land at about 17,000 dunums', an estimate"
+  rafah_crossing: "not a series: patients waiting, deaths while waiting, days open and closed, and evacuation runs are statements by the Health Ministry, the Crossings Authority and the Red Crescent. The dated ones are cited figures (section I); the per-run evacuations (31–96 people a run, July–September 2026) are too few and too mixed (patients vs. patients with companions) to serve."
+  hospital_capacity: "not a series: a foundation stone (200 beds planned), a Jerusalem hospital, a donor's ward. WHO's 2,100 functioning beds and 14 of 36 hospitals (24 Oct 2025) are cited figures."
+  road_gates: "not a series: the Commission's cumulative counts of gates and barriers (898 on 15 Sep 2025; 910 and 247 gates since 7 Oct 2023 on 21 Dec 2025; Hebron's 106) are cited figures. 'More than 1,000 gates' in a Ma'an opinion piece is not."
+  displaced: "not loaded: a shelter's 93 families, a village's 47 families under threat, a minister's 1.86 million, UNICEF's 1,600 families assisted; nothing measures the same thing twice. OCHA's West Bank displacement series (conflict.westbank_cumulative_displaced_*) is the series."
+  power_plant: "not loaded: fuel needs, grant dollars and rota hours around the plant's stoppages, 2017–2023; the rota statements (energy.gaza.rota_hours_stated) and OCHA's daily table already hold the plant's output and the hours."

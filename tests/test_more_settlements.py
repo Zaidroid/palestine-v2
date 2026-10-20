@@ -682,7 +682,12 @@ def test_neither_specs_rule_can_catch_the_others_indicators():
     # still nothing a prefix could catch across the two files
     assert [r["when"] for r in total["rules"]] == [{"equals": TOTAL}, {"equals": "settlements.outposts_established"},
                                                   {"equals": "settlements.outpost"}, {"equals": "settlements.units_announced"},
-                                                  {"equals": "settlements.outpost_reported"}]
+                                                  {"equals": "settlements.outpost_reported"},
+                                                  # migration 136 (2026-10-20, JOB-06): tree incidents, land orders, the tallies
+                                                  {"equals": "settlements.trees_uprooted_reported"},
+                                                  {"equals": "settlements.land_seizure_order_reported"},
+                                                  {"equals": "settlements.trees_damaged_stated"},
+                                                  {"equals": "settlements.trees_damaged_olive_stated"}]
     # the prefix carries its closing dot: neither the bare key nor a neighbour is caught
     for other in ("settlements.population_by_settlement", "settlements.population_by_settlements.pn0016",
                   "settlements.settler_population.pn0016", TOTAL, "land.settlement"):
